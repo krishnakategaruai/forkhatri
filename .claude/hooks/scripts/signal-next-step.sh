@@ -30,22 +30,22 @@ fi
 
 # Fixed sequence: step file basename -> (producer agent, next producer agent)
 declare -A NEXT_AGENT=(
-  ["modules.md"]="solution-architecture-agent"
-  ["ARCHITECTURE.md"]="business-requirements-agent (for every module)"
-  ["01-business-requirements.md"]="functional-requirements-agent"
-  ["02-functional-requirements.md"]="ux-agent"
-  ["03-ux.md"]="ui-agent"
-  ["04-ui.md"]="test-scenarios-agent"
-  ["05-test-scenarios.md"]="impact-analysis-agent"
-  ["06-impact-analysis.md"]="tech-reqs-er-model-agent"
-  ["07-tech-reqs.md"]="security-performance-agent (once 07a-er-model.md is also Sealed)"
-  ["07a-er-model.md"]="security-performance-agent (once 07-tech-reqs.md is also Sealed)"
-  ["08-security-performance.md"]="implementation-agent"
-  ["09-implementation.md"]="test-automation-agent"
-  ["10-test-automation.md"]="test-execution-agent"
-  ["11-test-execution.md"]="improvement-agent"
-  ["12-improvement.md"]="monitoring-agent"
-  ["13-monitoring.md"]="deploy-docs-agent"
+  ["modules.md"]="step0b-solution-architecture-agent"
+  ["ARCHITECTURE.md"]="step1-business-requirements-agent (for every module)"
+  ["01-business-requirements.md"]="step2-functional-requirements-agent"
+  ["02-functional-requirements.md"]="step3-ux-agent"
+  ["03-ux.md"]="step4-ui-agent"
+  ["04-ui.md"]="step5-test-scenarios-agent"
+  ["05-test-scenarios.md"]="step6-impact-analysis-agent"
+  ["06-impact-analysis.md"]="step7-tech-reqs-er-model-agent"
+  ["07-tech-reqs.md"]="step8-security-performance-agent (once 07a-er-model.md is also Sealed)"
+  ["07a-er-model.md"]="step8-security-performance-agent (once 07-tech-reqs.md is also Sealed)"
+  ["08-security-performance.md"]="step9-implementation-agent"
+  ["09-implementation.md"]="step10-test-automation-agent"
+  ["10-test-automation.md"]="step11-test-execution-agent"
+  ["11-test-execution.md"]="step12-improvement-agent"
+  ["12-improvement.md"]="step13-monitoring-agent"
+  ["13-monitoring.md"]="step14-deploy-docs-agent"
 )
 
 BASENAME=$(basename "$FILE_PATH")

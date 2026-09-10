@@ -1,9 +1,8 @@
 {
-  "name": "sdlc-autonomous-pipeline",
+  "name": "sdlc-traceable-pipeline",
   "version": "1.0.0",
-  "description": "Fully autonomous variant of the 16-agent traceable SDLC pipeline. Every gate — including the 8 judgment gates (Module, Architecture, Business Requirements, Impact Analysis, Tech Reqs/ER Model, Security & Performance, Monitoring, Deploy Docs) — is self-certified by a role-based reviewer agent instead of a named human, driven end to end by a single orchestrator command. This trades away the human-accountability guarantee of the companion plugin (sdlc-traceable-pipeline) for genuine start-to-finish autonomy. See README.md for the explicit risk disclosure per gate before using this on anything beyond a trial run.",
+  "description": "A 16-agent, traceability-first AI-native SDLC pipeline. Decomposes a large problem into modules, decides the system architecture once per project (C4 model + ADRs), then runs each module through a 14-step chain (Business Req -> Functional Req -> UX -> UI -> Test Scenarios -> Impact Analysis -> Tech Reqs/ER Model -> Security & Performance -> Implementation -> Test Automation -> Test Execution -> Improvement -> Monitoring -> Deploy Docs), with bidirectional traceability, an evidence graph, and named human approval gates at every step.",
   "author": "Internal Engineering",
-  "keywords": ["sdlc", "requirements", "traceability", "agentic-pipeline", "autonomous"],
-  "agents": "./agents",
-  "commands": "./commands"
+  "keywords": ["sdlc", "requirements", "traceability", "agentic-pipeline"],
+  "agents": "./agents"
 }

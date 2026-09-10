@@ -1,13 +1,13 @@
 ---
-description: >
-  Runs the full autonomous SDLC pipeline end to end from a single command:
-  Module Agent through Deploy Docs, for every module, with every gate
-  self-certified by its paired reviewer agent. Stops only on a genuine
-  Blocked item that neither the producing agent's researcher self-loop nor
-  its reviewer agent can resolve. Pass the raw problem statement as the
-  argument.
-argument-hint: "<raw problem statement, in your own words>"
+name: "source-command-run-pipeline"
+description: "Runs the full autonomous SDLC pipeline end to end from a single command: Module Agent through Deploy Docs, for every module, with every gate self-certified by its paired reviewer agent. Stops only on a genuine Blocked item that neither the producing agent's researcher self-loop nor its reviewer agent can resolve. Pass the raw problem statement as the argument."
 ---
+
+# source-command-run-pipeline
+
+Use this skill when the user asks to run the migrated source command `run-pipeline`.
+
+## Command Template
 
 # Run the autonomous pipeline
 

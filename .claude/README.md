@@ -1,117 +1,186 @@
-# SDLC Autonomous Pipeline — Claude Code Plugin
+# SDLC Traceable Pipeline — Claude Code Plugin
 
-The fully autonomous variant of `sdlc-traceable-pipeline`. Same 16 agents,
-same file formats, same quality gates (ISO 29148, STRIDE, C4/ADRs, test
-pyramid, Keep a Changelog) — the only thing that changes is **who
-approves each step.** Every gate here is self-certified by a role-based
-reviewer agent, driven end to end by one command, instead of waiting on a
-named human at every step.
+A 15-agent pipeline for building large projects with full, bidirectional
+traceability from business intent to deployed code. No skills are used —
+every agent is a focused, single-purpose subagent, because each one does
+one job in one place; there's no cross-cutting policy here that would
+justify a skill layer.
 
-**Read the risk section below before using this on real work.** This
-plugin exists to answer a specific question — does the pipeline actually
-complete, start to finish, from one command — not to replace the
-human-gated plugin as the default way to run real projects.
+## Philosophy
 
-## What's different from `sdlc-traceable-pipeline`
+This system does not promise nothing will go wrong. It promises that if
+something does go wrong, you can find exactly where and why — every
+artifact traces back to the business need that justified it, every
+decision is recorded with its rejected alternatives, and every step is
+signed off by a named human role before the next step begins.
 
-| | Human-gated plugin | This plugin |
-|---|---|---|
-| Approval | Named human per step | Role-based reviewer agent per step |
-| Execution | Pauses at every gate | Runs continuously via `/run-pipeline`, pauses only on a genuine `Blocked` item |
-| Audit trail | `approved_by: <human name>` | `approved_by: reviewer-agent (autonomous mode)`, with explicit risk caveats on the 8 judgment gates |
-| Agent count | 16 | 32 (16 producers + 16 paired reviewers) |
-| New pieces | — | `commands/run-pipeline.md` (orchestrator), `hooks/scripts/signal-next-step.sh` |
+## The 15 agents
 
-Nothing about the artifact formats, the quality gates, or the traceability
-chain changed. This is purely a change in who signs off.
+| # | Agent | Role played | Produces |
+|---|---|---|---|
+| 0 | `module-agent` | Solution Architect / PM | `/modules/modules.md` |
+| 0b | `solution-architecture-agent` | Chief Architect | `/ARCHITECTURE.md` |
+| 1 | `business-requirements-agent` | Product Manager | `01-business-requirements.md` |
+| 2 | `functional-requirements-agent` | Product Manager / BA | `02-functional-requirements.md` |
+| 3 | `ux-agent` | UX Lead | `03-ux.md` |
+| 4 | `ui-agent` | UI/Design Director | `04-ui.md` |
+| 5 | `test-scenarios-agent` | Principal QA | `05-test-scenarios.md` |
+| 6 | `impact-analysis-agent` | Architect / Director | `06-impact-analysis.md` |
+| 7 | `tech-reqs-er-model-agent` | Architect | `07-tech-reqs.md`, `07a-er-model.md`, `07b-component-diagram.md` |
+| 8 | `security-performance-agent` | Security Lead | `08-security-performance.md` |
+| 9 | `implementation-agent` | Eng Manager / Tech Lead | `09-implementation.md`, `09a-external-dependencies.md` + actual code |
+| 10 | `test-automation-agent` | Principal QA | `10-test-automation.md` + actual tests |
+| 11 | `test-execution-agent` | QA Manager | `11-test-execution.md` |
+| 12 | `improvement-agent` | Tech Lead | `12-improvement.md` |
+| 13 | `monitoring-agent` | Ops/SRE Manager | `13-monitoring.md` |
+| 14 | `deploy-docs-agent` | Release Manager / Director | `14-deploy-docs.md` (changelog) |
 
-## Why this isn't automatically the safer or better choice
+Plus one shared subagent, `researcher`, invoked by any of the 15 whenever a
+single item's status is `Needs Research` (max 2 self-loop attempts before
+escalating to a human as `Blocked`).
 
-A reviewer agent checking a producer agent's work is not the same
-guarantee as a human checking it. LLM judges are documented to exhibit
-**self-preference bias** — rating outputs more favorably when the judge
-recognizes the same model family that produced them — and this effect is
-measured to be strongest exactly when the judge can recognize its own
-style. Since the producer and its paired reviewer here will typically run
-on the same underlying model, they are not independent checks. This
-matters most on exactly the kind of subtle, interpretive judgment call
-where a human would catch something an agent wouldn't even flag as
-uncertain.
+## How the pipeline runs
 
-## The 8 gates with elevated risk in this mode
+- **Module Agent runs once per project.** It splits a large problem
+  statement into independent Modules along business-capability boundaries
+  (never technical layers), checked against four named anti-patterns and
+  producing an acyclic dependency map.
+- **Solution Architecture Agent runs once per project, immediately after
+  Module Agent.** Module Agent decides business boundaries; this agent
+  decides how those boundaries become running software — tech stack,
+  deployment topology, and a concrete resolution for every cross-module
+  dependency and shared concern Module Agent flagged but didn't design.
+  Uses the C4 model (Context + Container diagrams) plus the same ADR
+  format used throughout the rest of this pipeline. Steps 1-5
+  (Business Req through Test Scenarios) for any module may proceed in
+  parallel without waiting on this file, since that work is
+  architecture-agnostic — but no module may enter Step 6 (Impact
+  Analysis) until `/ARCHITECTURE.md` is Sealed.
+- **Each module then runs its own full 14-step chain, independently.**
+  Modules do not run in lockstep with each other — MOD01 can be at Step 9
+  while MOD02 is still at Step 2.
+- **Within one module, steps are strictly sequential and batch-complete.**
+  A step is not sealed until every item in it (every BR, every FR, etc.)
+  has reached `Approved` status. The next agent does not begin until the
+  previous step's file is `Sealed`.
+- **Each agent loops over every item from the previous step, one at a
+  time, with full focus** — not in parallel, not partially. An item that
+  is `Blocked` doesn't halt the rest of the loop; the agent keeps working
+  the other items and returns to blocked ones once a human resolves them.
 
-Every reviewer agent for these 8 states its own risk explicitly in its
-file, but the summary:
-
-| Gate | What's actually at risk with no human |
-|---|---|
-| 0. Module | Wrong business-capability split — a strategic error, not a checklist failure |
-| 0b. Architecture | Wrong tech stack/topology — surfaces as accumulating technical debt, not a failed check |
-| 1. Business Requirements | Worth-check #1 self-certified — something gets built that nobody actually needed |
-| 6. Impact Analysis | Worth-check #2 self-certified — risk accepted with no accountable human owner |
-| 7. Tech Reqs / ER Model | The single highest blast-radius artifact in the pipeline — an error here invalidates everything built on top |
-| 8. Security & Performance | Accepting a security risk with no named human risk-owner **can fail a SOC 2 / ISO 27001 audit outright**, independent of technical correctness |
-| 13. Monitoring | Wrong response tiers are a live-production risk, not a documentation error |
-| 14. Deploy Docs | **No human ever authorizes the actual production release** — this is very likely a segregation-of-duties violation under SOC 2 / SOX if this project has any formal change-management obligation |
-
-The last two rows are not soft warnings — they describe a real, likely
-compliance failure mode, not just elevated technical risk. If this
-project is subject to any formal security or change-management review,
-read those two reviewer agents' files (`08-security-performance-reviewer.md`,
-`14-deploy-docs-reviewer.md`) before relying on an autonomous run's output
-as production-ready.
-
-## How to run it
-
-```
-/run-pipeline <your raw problem statement, in your own words>
-```
-
-The orchestrator command drives every agent in sequence, invoking each
-producer then its paired reviewer, checking `status` in the resulting
-file's frontmatter, and proceeding immediately on `Sealed` with no
-confirmation prompts. It stops only when an item reaches genuine
-`Blocked` — either a producing agent's `researcher` subagent exhausted its
-2-attempt limit, or a reviewer agent's own decision rules triggered an
-escalation (each reviewer states exactly when, in its own file).
-
-When it stops, it reports exactly which module, step, and item is
-blocked, and the recorded blocker text. Resolve it, then re-run
-`/run-pipeline` — agents check for already-`Sealed` upstream files and
-won't redo completed work.
-
-## Recommended way to actually use this
-
-1. **Trial run first**, as originally intended — run it on a small,
-   low-stakes module and read every `approved_by: reviewer-agent` line
-   afterward, especially on the 8 elevated-risk gates, before trusting
-   the output.
-2. **If it completes cleanly**, that tells you the mechanics work — the
-   sequencing, the hooks, the handoffs — not that the 8 judgment calls
-   inside it were made as well as a human would have made them. Those
-   still deserve a read.
-3. **If you want the rigor back without giving up the automation of the
-   other 8 mechanical gates**, the two plugins are compatible in
-   structure — you can swap individual reviewer agents in
-   `agents/reviewers/` back to a "stop and wait for named human" version
-   per gate, without touching anything else. The producer agents and file
-   formats are identical between both plugins for exactly this reason.
-4. **For real, audited, production work**, use `sdlc-traceable-pipeline`
-   (the human-gated plugin) as the default, and treat this one as the
-   fast-iteration/prototyping mode.
-
-## Folder structure
-
-Identical to `sdlc-traceable-pipeline`, plus:
+## Folder structure a project using this plugin should have
 
 ```
 /project-root
-  /modules/...            (same as human-gated plugin)
-  ARCHITECTURE.md
-  IMPLEMENTATION-TEST-STANDARDS.md
-  PROCESS-README.md
+  /modules
+    modules.md
+    /MOD01-<slug>
+      01-business-requirements.md
+      02-functional-requirements.md
+      03-ux.md
+      04-ui.md
+      05-test-scenarios.md
+      06-impact-analysis.md
+      07-tech-reqs.md
+      07a-er-model.md
+      07b-component-diagram.md
+      08-security-performance.md
+      09-implementation.md
+      09a-external-dependencies.md
+      10-test-automation.md
+      11-test-execution.md
+      12-improvement.md
+      13-monitoring.md
+      14-deploy-docs.md
+      workflow-table.md
+      evidence-graph.md
+    /MOD02-<slug>
+      ...
+  /change-requests
+    CR01.md
+  ARCHITECTURE.md   <- produced by solution-architecture-agent, once per
+                        project, right after modules.md is approved
+  IMPLEMENTATION-TEST-STANDARDS.md   <- copied from templates/, filled in
+                                         once per project, read by Steps 9 & 10
+  PROCESS-README.md   <- copied from templates/PROCESS-README-TEMPLATE.md
+                         once per project, updated by every agent on seal
 ```
 
-The plugin itself adds `commands/run-pipeline.md` and
-`hooks/scripts/signal-next-step.sh` on top of everything the human-gated
-plugin already has.
+## Setting up a new project
+
+1. Copy `templates/PROCESS-README-TEMPLATE.md` to the project root as
+   `PROCESS-README.md`.
+2. Copy `templates/IMPLEMENTATION-TEST-STANDARDS-TEMPLATE.md` to the
+   project root as `IMPLEMENTATION-TEST-STANDARDS.md` and fill in this
+   project's actual naming conventions, test naming convention, and
+   protected paths — this is a **mandatory read** for the Implementation
+   Agent (Step 9) and Test Automation Agent (Step 10) on every module, not
+   optional reference material.
+3. Invoke `module-agent` with the raw problem statement.
+4. Once `modules.md` is approved, invoke `business-requirements-agent` for
+   each module — this creates that module's folder and
+   `workflow-table.md` / `evidence-graph.md` from the templates.
+5. From there, invoke each subsequent agent once its predecessor's file is
+   `Sealed`, per module.
+
+## The one hook in this plugin
+
+`hooks/scripts/check-referential-integrity.sh` runs before any write into
+a module's step files. It confirms every ID referenced via `Traces from`
+or `Depends on` actually exists in that module's `workflow-table.md`
+before the write is allowed. This is the only deterministic control in the
+system — everything else (approvals, sealing a step, resolving a CR) is
+human judgment at a named gate, by design. Adding more hooks was
+considered and deliberately rejected: this pipeline's safety comes from
+who reviews what, not from automated gatekeeping layered on top of every
+action.
+
+## Templates
+
+`/templates` holds the reference format for every artifact type — the
+same formats embedded in each agent's own instructions, provided here as
+quick-reference copies. These are templates only, with no filled-in
+example data, so nothing here should be mistaken for a real project's
+content.
+
+## Quality methods this pipeline uses (and why)
+
+- **ISO/IEC/IEEE 29148** nine-point requirement quality gate (Necessary,
+  Appropriate, Unambiguous, Complete, Singular, Feasible, Verifiable,
+  Correct, Conforming) — applied to every item in every step, plus a
+  set-level gate (comprehensive, consistent, prioritized, no duplicates)
+  per step file.
+- **ISO 29148 sentence form** — `[condition], the system shall [action]
+  [object] [constraint]` — mandatory for Functional Requirements.
+- **STRIDE threat modeling** (Spoofing, Tampering, Repudiation,
+  Information disclosure, Denial of service, Elevation of privilege) —
+  the actual method behind Step 8's security analysis, run before
+  implementation, not after.
+- **Test pyramid distribution** — test scenarios are tagged Unit /
+  Integration / E2E, with a set-level check flagging E2E-heavy suites.
+- **Change Impact Analysis** — Step 6 splits explicitly into dependency
+  identification and risk assessment as two distinct sub-sections, never
+  blended into one vague paragraph.
+- **Architecture Decision Records (Y-statement form)** — every Decisions
+  section is append-only; corrections supersede explicitly rather than
+  overwriting history.
+- **Keep a Changelog** — Step 14 maintains a running `Unreleased` section,
+  categorized into Added/Changed/Deprecated/Removed/Fixed/Security, sealed
+  into a dated semantic version only at actual release.
+- **C4 model** (Context + Container diagrams at project level, plus a
+  **Component diagram per module** at Step 7) plus **Architecture
+  Decision Records** — used once per project by the Solution Architecture
+  Agent for system-wide structure, and once per module by the Tech
+  Reqs/ER Model agent for that module's internal structure. This is
+  deliberate: the project-level file stays lean (Context + Container +
+  cross-module ADRs only), while each module gets its own properly-scoped
+  architecture artifact via C4's Component level rather than the
+  project-level file growing to hold every module's internals.
+- **SBOM-adjacent dependency tracking** — Implementation (Step 9)
+  produces `09a-external-dependencies.md` as a companion output,
+  following the real-world practice of generating a dependency manifest
+  during/right after build (when exact resolved versions are actually
+  known). Any dependency not already vetted by Security & Performance
+  (Step 8) triggers a scoped, supplementary STRIDE pass before
+  Implementation can seal — new dependencies don't silently bypass the
+  shift-left security gate just because they were discovered mid-build.
