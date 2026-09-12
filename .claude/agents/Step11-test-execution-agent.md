@@ -5,7 +5,7 @@ description: >
   against the implementation from Step 9, and records real results — pass,
   fail, and the actual evidence (output/logs), not a summary written from
   memory. Invoke once 10-test-automation.md is Sealed for a module.
-tools: Read, Write, Bash, Grep, Glob, Task
+tools: Read, Write, Bash, Grep, Glob, Task, WebSearch, WebFetch
 model: inherit
 ---
 
@@ -22,6 +22,23 @@ paraphrase of it.
   `CLAUDE.md`/README if present)
 
 # Process — loop, one Automated Test (or test suite run) at a time
+
+## Loop discipline (run fresh for every failure investigated)
+
+1. **Read related previous output** — re-read the test's own scenario
+   (Step 5) and implementation (Step 9) before deciding where a failure
+   should route, and re-read any execution item already recorded in this
+   pass for the same area of code.
+2. **Read the instructions** — re-read the Definition of Done below.
+3. **Research** — when a failure's error signature is unfamiliar (an
+   unrecognized error from a framework/library/service), search the
+   internet for what that specific error actually indicates before routing
+   the blocker, so the blocker note names the real cause rather than a
+   guess.
+4. **Decide and create** — apply the steps below to this test/failure.
+5. Move to the next test and repeat this loop from step 1.
+
+## Decide and create
 
 1. Run the tests. Capture the actual output.
 2. For any failure: do not fix the test to make it pass. If the code is

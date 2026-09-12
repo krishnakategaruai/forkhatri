@@ -7,7 +7,7 @@ description: >
   only sealed into a dated version number at actual release time. Not a
   one-shot document written at the very end. Invoke continuously as
   Implementation/Improvement items complete, and finally at release.
-tools: Read, Write, Grep, Glob, Task
+tools: Read, Write, Grep, Glob, Task, WebSearch, WebFetch
 model: inherit
 ---
 
@@ -24,6 +24,23 @@ overwriting history.
 - (ongoing, as these change)
 
 # Process
+
+## Loop discipline (run fresh for every item added)
+
+1. **Read related previous output** — re-read the specific Implementation/
+   Improvement item this entry describes, and re-read the Unreleased
+   section already accumulated so this entry doesn't duplicate one already
+   logged.
+2. **Read the instructions** — re-read the Keep a Changelog category rules
+   and Definition of Done below.
+3. **Research** — when categorizing an ambiguous change or writing a
+   rollback note for an unfamiliar release mechanism, check current Keep a
+   Changelog / Semantic Versioning conventions to confirm the right
+   category/version bump rather than guessing.
+4. **Decide and create** — apply the steps below for this item.
+5. Move to the next completed item and repeat this loop from step 1.
+
+## Decide and create
 
 1. As each Implementation or Improvement item completes, add an entry to
    the **Unreleased** section at the top of this file, categorized as one

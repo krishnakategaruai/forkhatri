@@ -1,7 +1,7 @@
 ---
 project: ForKhatri
 status: Draft
-updated: 2026-09-09
+updated: 2026-09-11
 ---
 
 # Modules — ForKhatri
@@ -10,6 +10,7 @@ updated: 2026-09-09
 | Date | Change | Reason / Ref |
 |---|---|---|
 | 2026-09-09 | Initial Step 0 draft for ForKhatri as a whole (7 modules: Vyapar, Milavn, Mangaly, Counsel, Dashboard, Payment Services, Loans & Finance). Mangaly is treated as exactly one module and its internal boundaries are not re-derived here. | Scoping correction — a prior run incorrectly treated "Mangaly" as the entire ForKhatri project and split it into 10 sub-modules; that artifact was wrong and has been deleted. This run decomposes the full ForKhatri business per its own high-level docs, with Mangaly's module-level boundary already decided by the human product owner. |
+| 2026-09-11 | Correction pass (per the Step 0 agent's updated loop-discipline process — re-reading related previous output before treating any item as settled): found this file's Open blockers section was stale. BLOCKER-001 (Payments infrastructure boundary) had already been resolved by the Solution Architecture Agent's `/ARCHITECTURE.md` (Sealed 2026-09-06, ADR-008) but this file still listed it as open — marked resolved with the actual resolution cited, so a reader of this file alone isn't misled into thinking the question is still live. BLOCKER-002 (Loans & Finance regulatory posture) remains genuinely unresolved (no legal/regulatory decision exists in any source document or in `/ARCHITECTURE.md`) — left open, but its scope was clarified: it gates only MOD07's own Step 1, not the rest of the pipeline, and `/ARCHITECTURE.md` already isolated MOD07's container/database in anticipation of it. | Loop-discipline re-verification pass — krishna kategaru (autonomous), 2026-09-11. |
 
 ## Problem statement summary
 
@@ -385,19 +386,20 @@ edge back to Vyapar. No cycle exists.
 | Every shared entity has one declared owner | Pass — see the "Data owned" field of every module above; no entity appears as owned in more than one module. |
 
 ## Open blockers
-- [ ] BLOCKER-001: **Payments infrastructure boundary.** The source
-  documents list "Payments" both under the Common Platform (BRD §29, PRD
-  §55) and as the standalone Payment Services module (BRD §19, PRD §25).
-  It is unclear whether the generic payment-gateway/ledger capability that
-  Vyapar, Milavn, Mangaly, and Counsel each need (to collect their own
-  subscription/event/membership/consultation fees) is part of the Payment
-  Services module's own build, or a separate common-platform "Payments
-  Infrastructure" capability that Payment Services itself also consumes.
-  This changes what "Depends on Payment Services" concretely means for
-  four modules (a business-to-business API call vs. shared platform
-  middleware) and should be resolved — by the founder/product owner, or
-  deferred explicitly to the Solution Architecture step — before Payment
-  Services' Business Requirements are drafted.
+- [x] BLOCKER-001 (RESOLVED 2026-09-11): **Payments infrastructure
+  boundary.** Resolved by the Solution Architecture Agent's `/ARCHITECTURE.md`
+  (Sealed 2026-09-06): the generic payment-gateway/ledger/PCI capability is
+  a separate, shared **Payments Infrastructure Service** (its own container,
+  its own isolated `PaymentsLedgerDB`, ADR-008), distinct from the
+  **Payment Services App** business module. Vyapar, Milavn, Mangaly, and
+  Counsel each depend on the Payment Services App (a business-to-business
+  API call for fee collection / benefit issuance); Payment Services App in
+  turn depends on the shared Payments Infrastructure Service for the actual
+  money movement. Every module's "Depends on Payment Services" edge in this
+  file therefore means the former (an API call to the Payment Services
+  module), not shared platform middleware. This file was inconsistent with
+  the already-Sealed architecture decision until this correction — the
+  blocker is closed, not re-litigated here.
 - [ ] BLOCKER-002: **Loans & Finance regulatory posture.** The source
   documents state ForKhatri "shall not assume regulated financial roles
   without the required authorization" and "shall not represent itself as a
@@ -410,6 +412,16 @@ edge back to Vyapar. No cycle exists.
   regulatory input before MOD07's Business Requirements step, analogous to
   the legal/privacy verification-depth question Mangaly's own master
   requirements input already flags for itself (§13.3–§13.4, §27).
+  **Scope of this blocker (added on 2026-09-11 re-verification):** this
+  gates only MOD07 (Loans & Finance)'s own Step 1 — it does not block any
+  other module's progress through the pipeline, and `/ARCHITECTURE.md`
+  (Sealed) already isolates MOD07 into its own container/database
+  specifically because of this unresolved regulatory load (see
+  `/ARCHITECTURE.md`'s MOD07 row, ADR-001's deployment-topology decision to
+  isolate "modules... with a genuine security/compliance/scaling driver,"
+  and ADR-011's tiered security controls naming Loans & Finance's isolated
+  database explicitly), so no architecture rework is needed once this is
+  resolved — only MOD07's own BRs are waiting on it.
 
 ## Approval
 Solution Architect: [ ] Approved — name, date

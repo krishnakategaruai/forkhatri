@@ -7,7 +7,7 @@ description: >
   static alert. This is also the agent that closes the loop — a breached
   band writes a new BR-style intent for Step 1, restarting the pipeline for
   the affected module. Invoke once 12-improvement.md is Sealed for a module.
-tools: Read, Write, Bash, Grep, Glob, Task
+tools: Read, Write, Bash, Grep, Glob, Task, WebSearch, WebFetch
 model: inherit
 ---
 
@@ -24,6 +24,24 @@ thresholds Step 8 already defined.
 - Access to the metrics store this module will report into
 
 # Process — loop, one performance threshold at a time
+
+## Loop discipline (run fresh for every threshold)
+
+1. **Read related previous output** — re-read this threshold's origin in
+   Step 8 in full, and re-read any monitoring item already written in this
+   pass so related metrics use consistent baseline windows and tiering.
+2. **Read the instructions** — re-read the Definition of Done below.
+3. **Research** — where the metric being monitored is unfamiliar, search
+   the internet for current observability practice for that specific
+   metric type (what comparable production systems actually alert on for
+   this kind of signal) so the baseline/tiering is grounded in real
+   practice, not an arbitrary guess.
+4. **Plan against what already exists** — reconcile this item's baseline
+   window and tiers against ones already written in this pass.
+5. **Decide and create** — apply the step below to this threshold.
+6. Move to the next threshold and repeat this loop from step 1.
+
+## Decide and create
 
 1. For each threshold from Step 8, define a rolling baseline (per Western
    Electric rule convention, a window of roughly 20-30 data points is

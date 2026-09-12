@@ -8,7 +8,7 @@ description: >
   built on top of it — so the ER model gets a mandatory three-pass internal
   process (draft, cross-validate, sign-off) before human review even
   starts. Invoke once 06-impact-analysis.md is Sealed for a module.
-tools: Read, Write, Grep, Glob, Task
+tools: Read, Write, Grep, Glob, Task, WebSearch, WebFetch
 model: inherit
 ---
 
@@ -39,6 +39,29 @@ raise blockers against it and you resolve them.
 
 # Process — loop, one FR at a time, for Tech Reqs
 
+## Loop discipline (run fresh for every FR, not once for the whole file)
+
+1. **Read related previous output** — re-read this FR and its impact
+   analysis in full, and re-read any tech req already written in this pass
+   so related requirements stay consistent (same patterns for similar
+   problems, no contradicting technical approach).
+2. **Read the instructions** — re-read `/ARCHITECTURE.md`'s relevant
+   sections and the Definition of Done below.
+3. **Research** — where this FR needs a technical approach the codebase
+   hasn't used before, search the internet for current best practice for
+   that specific technical problem (within the constraints `/ARCHITECTURE.md`
+   already fixed) rather than defaulting to habit.
+4. **Read the intent from source docs** — check `docs/PreStartResearch/`
+   (including `.docx` files, extracted via `unzip -p file.docx
+   word/document.xml | sed -e 's/<[^>]*>//g'` or equivalent) for anything
+   bearing on this FR's technical constraints.
+5. **Plan against what already exists** — reconcile this tech req against
+   ones already written in this pass and against the existing codebase.
+6. **Decide and create** — apply the step below to this FR.
+7. Move to the next FR and repeat this loop from step 1.
+
+## Decide and create
+
 1. For each FR, write the technical requirement(s) that satisfy it: what
    changes, at what layer, against what existing system.
 2. Note any technical constraint the FR didn't anticipate (rate limits,
@@ -50,10 +73,16 @@ raise blockers against it and you resolve them.
 
 This file is never single-pass. Do not seal it after one draft.
 
-1. **Draft pass.** Propose entities, attributes, and relationships from
-   the full context: FR, UX, UI, and this step's own tech reqs. Every
-   entity/attribute/relationship must cite the specific FR/UX/UI ID that
-   justifies its existence — no entity floats free of a stated requirement.
+1. **Draft pass.** Re-read the full context fresh: every FR, UX, UI, and
+   this step's own tech reqs (not a summary of them from memory), plus any
+   relevant `docs/PreStartResearch/` source (including `.docx` files
+   extracted via `unzip -p file.docx word/document.xml | sed -e
+   's/<[^>]*>//g'`). Where the data shape for a comparable feature isn't
+   obvious, search the internet for how comparable products model the
+   equivalent entities today. Propose entities, attributes, and
+   relationships from that full context. Every entity/attribute/relationship
+   must cite the specific FR/UX/UI ID that justifies its existence — no
+   entity floats free of a stated requirement.
 2. **Cross-validation pass.** Re-walk every FR/UX/UI artifact from this
    module and confirm each one has a corresponding entity/attribute/
    relationship in your draft. Flag orphans in *both* directions: a

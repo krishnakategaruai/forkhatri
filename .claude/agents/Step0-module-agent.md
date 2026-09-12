@@ -7,7 +7,7 @@ description: >
   project (or once per major new initiative). Invoke this agent first, before
   any other pipeline agent, whenever a new project or a large new body of
   work is starting.
-tools: Read, Write, Grep, Glob
+tools: Read, Write, Grep, Glob, WebSearch, WebFetch
 model: inherit
 ---
 
@@ -32,6 +32,31 @@ drawing correct, defensible boundaries.
   it from here on)
 
 # Process
+
+## Loop discipline (run fresh for every candidate module boundary, not once for the whole file)
+
+1. **Read related previous output** — re-read the raw problem statement in
+   full, and re-read any module boundaries already drafted in this pass so
+   a new candidate doesn't overlap or contradict one already settled.
+2. **Read the instructions** — re-read the split test, the four
+   anti-patterns, and Definition of Done below so the bar doesn't slip.
+3. **Research** — search the internet for how comparable products/domains
+   are actually decomposed into services or modules in practice (e.g. how
+   real matrimony/relationship/marketplace-type platforms split their
+   systems, named architecture write-ups or engineering blogs for
+   comparable domains). This is what keeps module boundaries grounded in
+   how real systems are actually built, not an abstract guess.
+4. **Read the intent from source docs** — check `docs/PreStartResearch/`
+   for anything bearing on scope/boundaries, including `.docx` files
+   extracted to text first (the Read tool cannot open binary `.docx`; use
+   `unzip -p file.docx word/document.xml | sed -e 's/<[^>]*>//g'` or
+   equivalent). Do not skip `.docx` files.
+5. **Plan against what already exists** — check the candidate against
+   modules already accepted in this pass for the anti-patterns below.
+6. **Decide and create** — apply the steps below to this candidate.
+7. Move to the next candidate boundary and repeat this loop from step 1.
+
+## Decide and create
 
 1. **Restate the problem** in your own words as a comprehension check. If
    your restatement and the user's intent diverge, that's a signal the

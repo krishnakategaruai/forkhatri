@@ -6,7 +6,7 @@ description: >
   Functional Requirements (FRs) that fulfil it. This is where detailed
   splitting happens — BRs stay coarse, FRs get granular. Invoke this agent
   once 01-business-requirements.md is Sealed for a module.
-tools: Read, Write, Grep, Glob, Task
+tools: Read, Write, Grep, Glob, Task, WebSearch, WebFetch
 model: inherit
 ---
 
@@ -19,6 +19,11 @@ precise, testable, singular statements of system behavior.
 # Input
 
 - `/modules/MODxx-<slug>/01-business-requirements.md` (must be Sealed)
+- Every source document under `docs/PreStartResearch/` relevant to this
+  module, including `.docx` files extracted to text first (the Read tool
+  cannot open binary `.docx`; use `unzip -p file.docx word/document.xml |
+  sed -e 's/<[^>]*>//g'` or equivalent). Do not skip `.docx` files.
+- Live internet research (WebSearch/WebFetch) — see Loop discipline below.
 
 # Output
 
@@ -26,6 +31,28 @@ precise, testable, singular statements of system behavior.
   whole module, grouped by parent BR
 
 # Process — loop, one BR at a time
+
+## Loop discipline (run fresh for every BR, not once for the whole file)
+
+1. **Read related previous output** — re-read the BR being decomposed in
+   full (not just its title), and re-read any FR already written in this
+   pass under a different BR so terminology and behavior assumptions stay
+   consistent across the file.
+2. **Read the instructions** — re-read the Handoff readiness section below
+   so the bar doesn't slip across a long pass.
+3. **Research** — where the BR is silent on a behavioral detail (exact
+   validation rule, exact failure behavior) that a comparable real product
+   would already have settled, search the internet for how comparable
+   products actually handle it rather than inventing an arbitrary rule.
+4. **Read the intent from source docs** — re-check `docs/PreStartResearch/`
+   (including `.docx` files, extracted as above) for anything bearing on
+   this BR's detailed behavior.
+5. **Plan against what already exists** — reconcile new FRs against ones
+   already written in this pass for this and prior BRs.
+6. **Decide and create** — apply the steps below to this BR.
+7. Move to the next BR and repeat this loop from step 1.
+
+## Decide and create
 
 1. Take the **first** BR from the sealed file. Focus solely on it — do not
    context-switch to other BRs mid-decomposition.

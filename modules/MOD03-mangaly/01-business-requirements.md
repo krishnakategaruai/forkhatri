@@ -3,7 +3,7 @@ step: 01-business-requirements
 module: MOD03
 status: Sealed
 approver: Product Manager
-updated: 2026-09-10
+updated: 2026-09-11
 items: "20 | approved: 20 | blockers: 0"
 ---
 
@@ -19,6 +19,8 @@ items: "20 | approved: 20 | blockers: 0"
 | 2026-09-09 | Final PM decision: BR20 elevated from Should to Must (BR20 DEC-003) — Mangaly's safety/trust positioning is foundational, not optional, so the real-world-introduction transition ships in V1 alongside BR14–16 rather than being deferred. All 20 BRs formally approved by the Product Manager; file sealed. | Product Manager final approval — krishna kategaru, 2026-09-09. |
 | 2026-09-10 | Correction (human review): the "Scope of this step" section understated the input corpus as effectively one file and mischaracterized multilingual support as a purely deferred/Common-Platform concern superseded out of Mangaly's BRs. Rewrote the source-corpus paragraph to name the full set of platform-level (`.md`) and Mangaly-domain (`.md` + `.docx`) input documents under `docs/PreStartResearch/`, and corrected the multilingual out-of-scope bullet: the i18n *infrastructure* is still Common Platform, but `ARCHITECTURE.md` ADR-010 applies it "across every container" including Mangaly, and BRD v1.0's day-one English/Hindi/Telugu commitment (with per-person language preference) is corroborated by the platform baseline, not superseded. Added a person-level language-preference Constraint (DEC-004) to BR01. Added a non-normative delivery-form-factor note confirming this BR set is deliverable as a mobile-first responsive web app on the platform's already-decided architecture. | Human correction — krishna kategaru, 2026-09-10. |
 | 2026-09-10 | Full-corpus re-verification: every `.docx` source (previously only keyword-grepped) was extracted and read in full — BRD v0.3, BRD v1.0, FR v0.1, all seven M01 dossiers (B/C/D/E/F/G/I), and the Identity/Home Circle dossier — plus the complete Master Requirements Input `.md`, and every citation in this file was checked against the actual source text. Three citation inaccuracies found and corrected: BR04's "Mom can suggest profiles for you" quote was misattributed to M01-D §3 (actual source: M01-Identity dossier §10; M01-D §3's own example, "Suggest to Family," is now cited separately). BR07 DEC-001 claimed Master Input §11.4 uses mandatory "shall" language; the source text actually reads "should" — corrected. BR09 DEC-001 described the BRD relationship state machine as "ten-state"; the source table (BRD v0.3 §6) has eleven rows (DISCOVERED through CLOSED) — corrected to "eleven-state." No other citation in BR01–BR20 was found to misstate its source. | Full source re-verification — krishna kategaru, 2026-09-10. |
+| 2026-09-11 | Live-internet research pass (per the Step 1 agent's updated loop-discipline process, which now requires external market research wherever a BR's underlying business need or mechanism is non-obvious, not internal-source citation alone). Added corroborating external evidence as new append-only Decisions to the four BRs where the source documents' own claims most needed real-market grounding, with no change to any BR's scope or wording: BR06 DEC-004 (peer-reviewed and regulatory evidence — a 2023 CMU/Tepper study, a 2023 Dutch human-rights ruling against the Breeze dating app, and 2025 fairness-aware re-ranking research — confirms the popularity/bias risk this BR guards against is real and its mitigation is tractable); BR07 DEC-003 (Hinge's shipped "Most Compatible" feature confirms explainable, non-percentage compatibility is a proven, shippable pattern, not an untested ideal); BR08 DEC-003 (Shaadi.com/BharatMatrimony's existing evidence-layer verification, plus a real user-reported fake-profile-request precedent, confirms both the evidence-not-score approach and the need for this BR's still-open anti-abuse safeguards); BR14 DEC-003 (Tinder's and Bumble's shipped two-layer detection-plus-human-review models, with Bumble's Deception Detector measurably cutting fraud reports 45% in testing, confirm this BR's graduated-response model is provenly workable). Also verified, via `02-functional-requirements.md`'s Coverage check, that every BR's `Traced to:` FR range remains accurate — no drift found. | Loop-discipline re-verification pass — krishna kategaru (autonomous), 2026-09-11. |
+| 2026-09-11 | Solution Architect cross-check against `/ARCHITECTURE.md` (Sealed): verified every BR is buildable against an already-resolved architectural component, that no BR forces ADR-009's deferred AI Service to exist prematurely, and that no BR implies a cross-container database join or ownership conflict with the sealed isolation model. All Pass. One non-blocking finding recorded: `/ARCHITECTURE.md` labels Mangaly Service "V2/V3," which is stale against this module's actual build order (it is the first module carried through this pipeline) — flagged for the product owner, not resolved unilaterally given its cascading effect on ADR-007's Search Service extraction timing. File approved by Solution Architect; added the "Architecture cross-check" section above the BR items. | Solution Architect review — krishna kategaru (autonomous), 2026-09-11. |
 
 ## Scope of this step
 
@@ -156,6 +158,28 @@ sufficiently for BR-level drafting via the `researcher` subagent (see BR11
 Decisions); it remains flagged inside BR11 as requiring formal legal
 sign-off before production, which is a downstream (Step 8/implementation)
 gate, not a reason to block BR approval here.
+
+## Architecture cross-check (Solution Architect)
+
+Performed against `/ARCHITECTURE.md` (Sealed 2026-09-06, `docs/PreStartResearch/ARCHITECTURE.md`)
+before this BR set proceeds toward Tech Reqs/ER Model (Step 7), which is
+the step that must build directly against it.
+
+| Check | Result |
+|---|---|
+| Every BR is buildable against an existing, resolved architectural component (no BR implies infrastructure the architecture doesn't provide) | Pass — Mangaly's own isolated container/DB (ADR-001, ADR-002), Identity & Trust for base identity/Level-1-2 (ADR-004, consumed per BR08 DEC-001), Object Storage for photos/video (BR01), Notification Service for alerts (ADR-006), Audit Service for BR15 (ADR-011), and async benefit-trigger events to Payment Services (BR-level "Depends on" in `modules.md`, resolved integration pattern in `/ARCHITECTURE.md`'s Dependency resolution table) — every infrastructure dependency this BR set implies already has an owning container. |
+| No BR silently requires AI infrastructure to exist before it's architecturally available | Pass — `/ARCHITECTURE.md` ADR-009 defers the AI Service container until a module actually commits to an AI surface (V2+). BR07's compatibility explanations and BR06's ranking are explicitly written to be deliverable via "transparent, explainable rules/signals" without AI (BR07 Constraints), and BR14's "AI-based flag" language is conditional ("if AI is used, label it as inference"), never a requirement that AI infrastructure must exist. No BR forces ADR-09's deferral to end prematurely. |
+| No BR implies a cross-container database join or a data-ownership conflict with `/ARCHITECTURE.md`'s isolation model | Pass — Mangaly's data (MatrimonialProfile, HomeCircle, ConnectionRequest, etc., per `modules.md`'s "Data owned" line) all lives in the isolated Mangaly DB; Dashboard's benefit/notification surfacing (BR-level, out of this file's scope) is explicitly resolved as a one-way, privacy-filtered async event in `/ARCHITECTURE.md`, never a direct query into the Mangaly DB — consistent with BR05's privacy model. |
+| **Finding (non-blocking, flagged for the human/product owner, not resolved here):** `/ARCHITECTURE.md`'s Container diagram labels `MangalyService` "V2/V3" and ADR-007 assumes Mangaly's search needs arrive at that same V2 timing — but MOD03-Mangaly is, in practice, the first module being carried through this pipeline's Steps 1-2. This is a real staleness in the architecture's wave-sequencing metadata, not a defect in this BR set's content (nothing here is architecturally infeasible regardless of which wave it ships in). Re-sequencing the wave label has cascading implications for ADR-007's Search Service extraction timing and the non-functional baseline priorities, which is a bigger, cascading architecture decision than a same-pass label fix — it is surfaced here for the product owner to decide, not silently changed. | Flagged, not blocking |
+
+**Solution Architect approval:** This BR set is architecturally sound and
+buildable against the already-Sealed `/ARCHITECTURE.md` with no changes
+required to either file. The one finding above (Mangaly's V2/V3 wave label
+vs. actual build order) does not block this approval — it is a scheduling/
+roadmap staleness for the product owner to resolve, not a technical
+blocker to Tech Reqs proceeding.
+
+Solution Architect — [x] Approved — krishna kategaru (autonomous), 2026-09-11
 
 ---
 
@@ -766,6 +790,31 @@ Correct: Pass · Conforming: Pass
   are legitimately sparse only on enrichment data, accepting that this
   requires FR to actually maintain the tier distinction rather than
   collapsing it back into one number for implementation convenience.
+- DEC-004 · In the context of grounding this BR's anti-popularity-bias
+  constraint against real-world evidence rather than only this project's own
+  stated principle, live research (2026-09-11) found peer-reviewed and
+  industry confirmation that the risk is real and specific, not
+  hypothetical: a 2023 Carnegie Mellon/Tepper study found current dating-
+  platform recommender algorithms weight popularity above compatibility,
+  and unbiased recommendations reduce platform revenue/engagement — i.e.
+  the failure mode this BR guards against is one platforms are
+  commercially incentivized to drift toward, not an unlikely edge case;
+  separately, the Netherlands Institute for Human Rights' 2023 ruling
+  against the Dutch dating app Breeze (ethnicity-based match filtering)
+  shows this failure mode has already produced a real regulatory finding of
+  discrimination, not merely a reputational risk; and a 2025 multi-objective
+  framework (FAIR-MATCH, arXiv:2507.01063) confirms fairness-aware
+  re-ranking that preserves match quality while reducing popularity/
+  demographic bias is an active, tractable research area, not something
+  this BR's Constraints ask FR/implementation to solve from a blank page.
+  We chose to record this as corroborating evidence for the existing
+  Constraints (popularity-bias, wealth/status bias, locality-bias
+  guardrails) rather than adding a new Constraint, since the business
+  requirement itself was already correctly stated — this closes the gap
+  where the file's fairness requirement was asserted on Master Input
+  authority alone with no external validation that the risk or its
+  mitigation approach are real, accepting that FR/architecture still owns
+  selecting the specific fairness technique.
 
 **Assumptions**
 - "Locality and practical geography" (Master Input §10) is assumed to rely
@@ -894,6 +943,24 @@ independently unresolved · Correct: Pass · Conforming: Pass
   caveat, so the priority distinction is structural rather than a note that
   is easy to skip past, accepting the added length in exchange for removing
   a real risk of scope inflation into the FR stage.
+- DEC-003 · In the context of confirming that "explainable, non-score
+  compatibility" is achievable in a real shipped product rather than an
+  aspirational constraint with no working precedent, live research
+  (2026-09-11) found that Hinge's "Most Compatible" feature already ships
+  this exact pattern at scale: it surfaces a reasoned recommendation
+  ("we think you'll connect because...") built from profile answers and
+  behavioral signals, explicitly *not* a percentage-based compatibility
+  score. This directly corroborates this BR's Core capability requirement
+  (concrete, explainable reasons rather than an opaque score) as a proven,
+  shippable product pattern, not a theoretical ideal the Master Requirements
+  Input asserts without market precedent. We chose to record this as
+  supporting evidence for the existing Core capability wording rather than
+  changing it, over leaving the "never a bare similarity or popularity
+  score" requirement unsupported by any real comparable product, accepting
+  that Hinge's specific ML/behavioral-signal mechanism does not itself
+  transfer here (Constraints already commit V1 to transparent, explainable
+  rules/signals, not opaque ML) — only the explainable-recommendation
+  *pattern*, not the underlying algorithm, is the precedent being cited.
 
 **Assumptions**
 - The exact hard/strong/weak preference taxonomy (Master Input §11.2) is
@@ -1009,6 +1076,26 @@ Feasible: Pass · Verifiable: Pass · Correct: Pass · Conforming: Pass
   and with BR14's Trust-vs-Safety distinction (a verified person can still
   behave badly), accepting no change to the underlying business capability
   — this was a framing correction, not a scope change.
+- DEC-003 · In the context of checking whether real matrimony platforms
+  already validate evidence-based (non-score) verification as a workable
+  market approach, live research (2026-09-11) on India's largest incumbents
+  (Shaadi.com, BharatMatrimony) found they already ship exactly the kind of
+  evidence-layer verification this BR describes — phone/email verification,
+  profile review, "blue-tick" identity verification, and BharatMatrimony's
+  SecureConnect® (lets a recipient receive a call without exposing their own
+  number) — none of which reduces to a single trust score, corroborating
+  that this BR's evidence-not-score approach is proven in this exact market,
+  not an unprecedented invention. The same research also surfaced a
+  concrete cautionary precedent for the anti-abuse safeguards this BR
+  already requires but leaves undesigned (Constraints, Assumptions): user
+  reports describe an existing incumbent app sending fake profile/contact
+  requests, i.e. exactly the kind of verifier/evidence abuse this BR's
+  "safeguards against... [still to be designed]" gap must close before
+  implementation, not a hypothetical risk. We chose to record both findings
+  as corroborating evidence and a concrete negative precedent respectively,
+  rather than changing this BR's scope, since the business requirement was
+  already correctly stated — this is added grounding for FR/Security &
+  Performance to design against, not a new business commitment.
 
 **Assumptions**
 - Verifier eligibility/anti-abuse mechanics are assumed resolvable at FR
@@ -1577,6 +1664,27 @@ Correct: Pass · Conforming: Pass
   automated detection), accepting no change to this BR's core commitment —
   a graduated, privacy-respecting safety system must exist — only to how
   it is entered and how tightly its automated component is bounded.
+- DEC-003 · In the context of checking whether this BR's graduated,
+  privacy-preserving detection model is achievable in practice rather than
+  aspirational, live research (2026-09-11) found that Tinder and Bumble
+  already operate the same two-layer model this BR requires, at meaningful
+  effectiveness: Tinder's context-aware "Are You Sure?"/"Does This Bother
+  You?" nudges intervene on harmful messages before escalation (not a
+  block-only response), and its Face Check facial-verification layer is
+  paired with continued human review, not deployed as a sole automated
+  gate; Bumble's Deception Detector — AI pattern detection backed by a
+  dedicated human moderation team, matching this BR's "privacy-preserving
+  detection/triage → controlled human investigation" chain — blocked 95% of
+  spam/scam accounts identified in testing and cut fake-profile user
+  reports by 45% in two months, evidence that automated pattern detection
+  paired with human review measurably reduces the harm categories this BR
+  names, not merely a plausible theory. We chose to record this as
+  corroborating evidence for the existing graduated-response Proposed
+  outcome rather than changing it, accepting that these platforms' specific
+  detection techniques (facial biometrics, LLM-based message scoring) are
+  FR/Security & Performance's decision to adopt, adapt, or reject — this BR
+  only needed confirmation that its overall model is provenly workable, not
+  a specific technique.
 
 **Assumptions**
 - None beyond the Constraints above.

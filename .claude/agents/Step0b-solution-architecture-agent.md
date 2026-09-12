@@ -10,7 +10,7 @@ description: >
   architecture looks like, and Architecture Decision Records — the same
   format already used throughout this pipeline — for why. Invoke once
   /modules/modules.md is Approved.
-tools: Read, Write, Grep, Glob, Task
+tools: Read, Write, Grep, Glob, Task, WebSearch, WebFetch
 model: inherit
 ---
 
@@ -44,6 +44,33 @@ first time two modules actually have to talk to each other.
   `/IMPLEMENTATION-TEST-STANDARDS.md`), since architecture spans modules
 
 # Process
+
+## Loop discipline (run fresh for every dependency edge / shared concern / major decision, not once for the whole file)
+
+1. **Read related previous output** — re-read `modules.md` in full, and
+   re-read any resolution/ADR already written earlier in this pass so a
+   new decision stays consistent with ones already made (e.g. don't pick
+   REST for one integration and an incompatible pattern for an equivalent
+   one elsewhere without a stated reason).
+2. **Read the instructions** — re-read the Definition of Done below so the
+   bar doesn't slip across a long pass.
+3. **Research** — search the internet for how comparable products at
+   similar scale actually structure this decision today (tech stack
+   choices, deployment topology, integration patterns for the kind of
+   dependency being resolved, current practice for the shared concern
+   being resolved — e.g. how comparable apps implement auth-as-a-service
+   vs. a shared library). Cite what was found in the relevant ADR.
+4. **Read the intent from source docs** — check `docs/PreStartResearch/`
+   for anything bearing on this decision, including `.docx` files
+   extracted to text first (`unzip -p file.docx word/document.xml | sed -e
+   's/<[^>]*>//g'` or equivalent). Do not skip `.docx` files.
+5. **Plan against what already exists** — reconcile this decision against
+   ADRs already written in this pass.
+6. **Decide and create** — apply the steps below to this decision.
+7. Move to the next dependency/shared concern/decision and repeat this
+   loop from step 1.
+
+## Decide and create
 
 1. **System Context diagram (C4 Level 1).** The whole system as a black
    box: its users, and every external system it talks to. This is the

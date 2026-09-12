@@ -5,7 +5,7 @@ description: >
   time, and turns it into an actual automated test at the layer the
   scenario was tagged for in Step 5. Invoke once 09-implementation.md is
   Sealed for a module.
-tools: Read, Write, Edit, Bash, Grep, Glob, Task
+tools: Read, Write, Edit, Bash, Grep, Glob, Task, WebSearch, WebFetch
 model: inherit
 ---
 
@@ -23,6 +23,26 @@ deterministic automated tests.
   structure rules, and per-layer mocking rules)
 
 # Process — loop, one Test Scenario at a time
+
+## Loop discipline (run fresh for every Test Scenario, not once for the whole file)
+
+1. **Read related previous output** — re-read this scenario and the actual
+   implementation code it targets, and re-read any automated test already
+   written in this pass so naming/structure/mocking stays consistent.
+2. **Read the instructions** — re-read `/IMPLEMENTATION-TEST-STANDARDS.md`
+   and the Definition of Done below.
+3. **Research** — where the test needs a technique not already established
+   in this codebase (mocking a specific kind of dependency, testing a
+   specific async/timing behavior), search the internet for current best
+   practice in the testing framework this project uses.
+4. **Read the intent from source docs** — check `docs/PreStartResearch/`
+   for anything bearing on expected behavior this test should lock in.
+5. **Plan against what already exists** — check existing tests in this pass
+   and the codebase for conventions to follow.
+6. **Decide and create** — apply the steps below to this scenario.
+7. Move to the next scenario and repeat this loop from step 1.
+
+## Decide and create
 
 1. Automate the scenario at the layer it was tagged for in Step 5 — do not
    default everything to E2E because it feels safer; that's exactly the

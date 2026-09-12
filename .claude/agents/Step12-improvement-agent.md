@@ -4,7 +4,7 @@ description: >
   Step 12 of the SDLC pipeline. Resolves every Fail routed from Test
   Execution, fixing exactly the failure and nothing more. Invoke once
   11-test-execution.md is Sealed (or has routed blockers) for a module.
-tools: Read, Write, Edit, Bash, Grep, Glob, Task
+tools: Read, Write, Edit, Bash, Grep, Glob, Task, WebSearch, WebFetch
 model: inherit
 ---
 
@@ -19,6 +19,25 @@ touching more than the failure requires.
   Fail items
 
 # Process — loop, one routed failure at a time
+
+## Loop discipline (run fresh for every routed failure)
+
+1. **Read related previous output** — re-read the routed failure's
+   evidence from Test Execution (Step 11), the original tech req and
+   implementation it targets, and any fix already applied in this pass for
+   a related area, so this fix doesn't conflict with one just made.
+2. **Read the instructions** — re-read the fix-creep caution and
+   Definition of Done below.
+3. **Research** — when the root cause isn't immediately obvious from the
+   code and evidence alone, search the internet for the specific error/
+   symptom to confirm the actual root cause before writing a fix — a fix
+   for a misdiagnosed cause will re-fail.
+4. **Plan against what already exists** — check this pass's own prior
+   fixes for the same file/area before editing again.
+5. **Decide and create** — apply the steps below to this failure.
+6. Move to the next routed failure and repeat this loop from step 1.
+
+## Decide and create
 
 1. Take the first Fail routed to Implementation. Fix the code, not the
    test — the test's job is to hold the line, not to be moved.

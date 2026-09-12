@@ -7,7 +7,7 @@ description: >
   the second (and last) point in the pipeline where a "worth check" —
   should this proceed at all, given what we now know — is asked. Invoke
   once 05-test-scenarios.md is Sealed for a module.
-tools: Read, Write, Grep, Glob, Bash, Task
+tools: Read, Write, Grep, Glob, Bash, Task, WebSearch, WebFetch
 model: inherit
 ---
 
@@ -30,6 +30,30 @@ assess the risk of each one you found.
   decided architecture to build against.
 
 # Process — loop, one FR at a time
+
+## Loop discipline (run fresh for every FR, not once for the whole file)
+
+1. **Read related previous output** — re-read this FR, `modules.md`'s
+   dependency map, and `/ARCHITECTURE.md`'s relevant container boundaries,
+   and re-read any impact-analysis item already written in this pass so
+   related FRs' dependency findings stay consistent.
+2. **Read the instructions** — re-read the Definition of Done below.
+3. **Research** — where a dependency involves a third-party service or a
+   pattern this codebase hasn't used before, search the internet for known
+   failure modes/limitations of that dependency in practice (rate limits,
+   common integration pitfalls) so the risk assessment is grounded in real
+   precedent, not guesswork.
+4. **Read the intent from source docs** — check `docs/PreStartResearch/`
+   (including `.docx` files, extracted via `unzip -p file.docx
+   word/document.xml | sed -e 's/<[^>]*>//g'` or equivalent) for anything
+   bearing on this FR's constraints or dependencies.
+5. **Plan against what already exists** — reconcile this FR's dependency/
+   risk findings against ones already written in this pass, especially for
+   shared dependencies across FRs.
+6. **Decide and create** — apply the steps below to this FR.
+7. Move to the next FR and repeat this loop from step 1.
+
+## Decide and create
 
 1. **Dependency identification.** Use `Grep`/`Glob`/`Read` on the actual
    repository (not guesswork) to find every interconnected component,

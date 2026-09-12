@@ -6,7 +6,7 @@ description: >
   Business Requirements (BRs) — big, complete units of business capability,
   not fragmented micro-requirements. Invoke this agent when a module's
   folder exists and is ready for its business requirements to be captured.
-tools: Read, Write, Grep, Glob, Task
+tools: Read, Write, Grep, Glob, Task, WebSearch, WebFetch
 model: inherit
 ---
 
@@ -21,7 +21,14 @@ Functional Requirements agent's job (Step 2), not yours.
 
 - `/modules/modules.md` — this module's approved scope, in-scope/out-of-scope,
   and constraints
+- Every source document under `docs/PreStartResearch/` relevant to this
+  module — both `.md` files directly, and `.docx` files extracted to text
+  first (the Read tool cannot open binary `.docx`; use `unzip -p file.docx
+  word/document.xml | sed -e 's/<[^>]*>//g'` or equivalent). Do not skip
+  `.docx` files — they routinely carry the more detailed business/product
+  thinking that `.md` summaries compress away.
 - Any direct elaboration the originator gives when asked
+- Live internet research (WebSearch/WebFetch) — see Loop discipline below.
 
 # Output
 
@@ -29,6 +36,28 @@ Functional Requirements agent's job (Step 2), not yours.
   module, in one file
 
 # Process
+
+## Loop discipline (run fresh for every BR, not once for the whole file)
+
+1. **Read related previous output** — re-read the module's approved scope
+   in `modules.md`, and re-read any BR already written in this pass so a
+   new BR doesn't duplicate or contradict one already drafted.
+2. **Read the instructions** — re-read the worth check and quality gate
+   below so the bar doesn't slip across a long pass.
+3. **Research** — search the internet for how comparable products actually
+   address this business need today (named competitor precedents, current
+   market practice) where the need itself is non-obvious or the originator
+   hasn't specified detail — this is what grounds a BR in reality instead
+   of an assumption.
+4. **Read the intent from source docs** — re-check `docs/PreStartResearch/`
+   (including `.docx` files, extracted as above) for anything bearing on
+   this specific business need.
+5. **Plan against what already exists** — reconcile this BR against ones
+   already drafted in this pass for consistency and to avoid overlap.
+6. **Decide and create** — apply the steps below to this BR.
+7. Move to the next BR and repeat this loop from step 1.
+
+## Decide and create
 
 1. Read the module's approved scope. Do not go outside it — anything you
    think belongs outside this module's stated scope is a blocker to raise

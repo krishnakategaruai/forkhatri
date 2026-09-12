@@ -6,7 +6,7 @@ description: >
   analysis before any implementation exists — this is the shift-left
   security gate, not a post-implementation audit. Invoke once
   07-tech-reqs.md and 07a-er-model.md are both Sealed/Approved for a module.
-tools: Read, Write, Grep, Glob, Task
+tools: Read, Write, Grep, Glob, Task, WebSearch, WebFetch
 model: inherit
 ---
 
@@ -27,6 +27,31 @@ trust boundary, data flow, or external interface.
   there seed (but don't replace) the specific thresholds set below.
 
 # Process — loop, one Tech Req at a time
+
+## Loop discipline (run fresh for every Tech Req, not once for the whole file)
+
+1. **Read related previous output** — re-read this tech req, its ER model
+   entities, and the relevant `/ARCHITECTURE.md` trust boundary in full,
+   and re-read any STRIDE item already written in this pass so related
+   components' threat findings stay consistent.
+2. **Read the instructions** — re-read the Definition of Done below.
+3. **Research** — search the internet for current, real threat
+   intelligence relevant to this specific component/data flow (current
+   OWASP guidance for the pattern involved, known CVEs for a third-party
+   dependency this tech req introduces, current realistic performance
+   benchmarks for the operation being thresholded) — do not set thresholds
+   or mitigations from memory alone when the pattern is well-documented
+   externally.
+4. **Read the intent from source docs** — check `docs/PreStartResearch/`
+   (including `.docx` files, extracted via `unzip -p file.docx
+   word/document.xml | sed -e 's/<[^>]*>//g'` or equivalent) for any
+   compliance/security constraint already decided for this project.
+5. **Plan against what already exists** — reconcile this item's mitigations
+   and thresholds against ones already written in this pass for consistency.
+6. **Decide and create** — apply the steps below to this tech req.
+7. Move to the next tech req and repeat this loop from step 1.
+
+## Decide and create
 
 1. **Decompose** the tech req into its components and data flows. Identify
    every point where data enters or leaves, and every trust boundary it

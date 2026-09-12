@@ -6,7 +6,7 @@ description: >
   behavior, written before implementation exists. Tags each scenario by
   test-pyramid layer so the eventual automation isn't accidentally
   e2e-heavy. Invoke once 04-ui.md is Sealed for a module.
-tools: Read, Write, Grep, Glob, Task
+tools: Read, Write, Grep, Glob, Task, WebSearch, WebFetch
 model: inherit
 ---
 
@@ -24,6 +24,29 @@ is set independent of the implementation that will eventually try to meet it.
 - `/modules/MODxx-<slug>/04-ui.md` (all Sealed)
 
 # Process — loop, one FR at a time
+
+## Loop discipline (run fresh for every FR, not once for the whole file)
+
+1. **Read related previous output** — re-read this FR, its parent UX flow,
+   and its UI spec in full, and re-read any test scenario already written
+   in this pass so scenarios don't duplicate or miss a state.
+2. **Read the instructions** — re-read the Definition of Done below.
+3. **Research** — where the domain has well-known edge cases (e.g. common
+   failure modes for the kind of feature this FR implements — payment
+   flows, auth flows, file uploads), search the internet for what edge
+   cases comparable products' QA practice actually tests for, so scenario
+   coverage isn't limited to what's explicitly spelled out in the FR/UX/UI.
+4. **Read the intent from source docs** — check `docs/PreStartResearch/`
+   (including `.docx` files, extracted via `unzip -p file.docx
+   word/document.xml | sed -e 's/<[^>]*>//g'` or equivalent) for anything
+   bearing on expected behavior this FR's scenarios should verify.
+5. **Plan against what already exists** — reconcile new scenarios against
+   ones already written in this pass, and against the running test
+   distribution ratio.
+6. **Decide and create** — apply the steps below to this FR.
+7. Move to the next FR and repeat this loop from step 1.
+
+## Decide and create
 
 1. For each FR, write scenarios covering: the success path, the
    failure/edge path (both already defined by FR/UX), and any interaction

@@ -6,7 +6,7 @@ description: >
   comment block stating intent and reasoning for that requirement's code.
   No code is written until its comment is complete. Invoke once
   08-security-performance.md is Sealed for a module.
-tools: Read, Write, Edit, Bash, Grep, Glob, Task
+tools: Read, Write, Edit, Bash, Grep, Glob, Task, WebSearch, WebFetch
 model: inherit
 ---
 
@@ -27,6 +27,31 @@ actual product repository.
 - The product repository this module builds into
 
 # Process — loop, one Tech Req at a time
+
+## Loop discipline (run fresh for every Tech Req, not once for the whole file)
+
+1. **Read related previous output** — re-read this tech req, its ER model
+   entities, and its security/performance requirement in full, and re-read
+   any implementation item already written in this pass so this
+   requirement's code follows the same patterns/conventions already
+   established, not a divergent style.
+2. **Read the instructions** — re-read `/IMPLEMENTATION-TEST-STANDARDS.md`
+   and the Definition of Done below.
+3. **Research** — where this requirement needs a library, framework
+   feature, or approach not already established in this codebase, search
+   the internet for current best practice and the current stable version/
+   API for it — do not implement against outdated or remembered API shapes
+   when the real current one is one search away.
+4. **Read the intent from source docs** — check `docs/PreStartResearch/`
+   (including `.docx` files, extracted via `unzip -p file.docx
+   word/document.xml | sed -e 's/<[^>]*>//g'` or equivalent) for anything
+   bearing on this requirement's intended behavior.
+5. **Plan against what already exists** — check the existing codebase and
+   this pass's own prior implementation items for conventions to follow.
+6. **Decide and create** — apply the steps below to this tech req.
+7. Move to the next tech req and repeat this loop from step 1.
+
+## Decide and create
 
 1. Take the first tech req. Before writing any code for it, write a
    **requirement-level comment block** in the file(s) it touches, using

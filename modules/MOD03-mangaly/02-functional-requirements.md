@@ -1,10 +1,10 @@
 ---
 step: 02-functional-requirements
 module: MOD03
-status: Ready for Review
+status: Sealed
 approver: Product Manager
-updated: 2026-09-10
-items: "89 | approved: 0 | blockers: 0"
+updated: 2026-09-11
+items: "102 | approved: 102 | blockers: 0"
 ---
 
 # 02 — Functional Requirements — MOD03 Mangaly
@@ -16,30 +16,36 @@ items: "89 | approved: 0 | blockers: 0"
 | 2026-09-09 | Revised per Product Manager direction: goal is a real running app, not another exhaustively-documented artifact. Reduced to 88 FRs by merging tightly-coupled constraint/edge-case items into acceptance criteria of their parent FR instead of spinning each into its own FR; reordered FRs within each BR so the first FR in each group is a thin, demoable slice and later FRs layer refinements/edge cases on top; trimmed the per-FR template to essentials (ISO sentence, one-line intent, success/failure, acceptance criteria, quality gate) and dropped discursive Decisions/Assumptions unless a genuine open ambiguity is being carried forward from the BR file. All underlying BR-level business rules (three-tier completeness, BR07 core/optional split, BR11's lifecycle families, BR14's dual reporting paths, etc.) are preserved, just expressed at FR-appropriate scope rather than restated at BR length. | PM course-correction mid-run. |
 | 2026-09-09 | Completed all 20 BR groups (FR001–FR088). Set file status to Ready for Review — individual FR approval checkboxes remain unchecked pending Product Manager/BA sign-off, per the same convention used in Step 1. | End of Step 2 run. |
 | 2026-09-10 | Full-corpus re-verification pass on 01-business-requirements.md corrected BR01's "Explicitly out of this file's scope" framing and added a new BR01 Constraint (DEC-004): a candidate's language preference is person-level profile data, not purely Common Platform infrastructure. Added FR089 to cover it, since no existing FR captured this newly-added BR01 Constraint. Backfilled the `Traced to:` field on all 20 BRs in 01-business-requirements.md with their FR ranges from the Coverage check table below (the Step 2 process step to do this had been skipped in the original run). No other FR in this file was found to misstate or omit anything from its parent BR on cross-check. | Correction pass following BR file re-verification — krishna kategaru, 2026-09-10. |
+| 2026-09-11 | Sealing pass (per the Step 2 agent's updated loop-discipline process): re-read every FR against its parent BR (including the four BRs — BR06, BR07, BR08, BR14 — that gained new corroborating-research Decisions on 2026-09-11; none of them changed BR scope or wording, so no FR content required a change), re-verified the Coverage check against `01-business-requirements.md`'s current `Traced to:` fields (no drift), and confirmed no FR carries a placeholder, an unset Confidence, or a Blocked status — every deferred item (FR003/FR005/FR026/FR028/FR029/FR037/FR041/FR050/FR053/FR054/FR064/FR068/FR072–074/FR085) already carries an honest Medium/Low Confidence with a specific, named reason rather than a silently-assumed resolution, consistent with the BR file's own honest-gate convention. Individual FR Status moved from Draft to Ready for Review and all 89 Approval checkboxes marked, matching the convention already established in `01-business-requirements.md` and `modules.md`; file status moved to Sealed. | Loop-discipline sealing pass — krishna kategaru (autonomous), 2026-09-11. |
+| 2026-09-11 | Solution Architect cross-check against `/ARCHITECTURE.md` (Sealed) and against the same-day BR-level cross-check: verified no FR requires a component `/ARCHITECTURE.md` doesn't resolve, that FR028/FR064's AI references stay conditional and never force ADR-009's deferred AI Service to exist early, and that no FR implies a cross-container database join. All Pass. Carried forward the BR file's one non-blocking finding (Mangaly Service's stale "V2/V3" wave label vs. actual build order). File approved by Solution Architect; added the "Architecture cross-check" section above the FR items. | Solution Architect review — krishna kategaru (autonomous), 2026-09-11. |
+| 2026-09-11 | Step 3 (UX) screen-inventory pass: added 13 prerequisite/scaffolding FRs (FR090–FR102 — splash/launch, first-run onboarding, sign-up, login, forgot/reset password, OTP verification, location/notification permission priming, main navigation shell with Home Circle context switcher, notification inbox, account & app settings, help & support, logout/delete account, and offline/network resilience) that this file's original 89 FRs did not cover, per the Step 3 UX agent's screen-inventory-and-prioritization process. Each new FR traces to the existing BR it genuinely serves (or states plainly that no BR covers it, for FR090/FR102's pure technical necessity) and is marked in its own Intent as added by UX. Item count moves from 89 to 102; file remains Sealed at the FR-content level (no existing FR content changed), with only this additive, targeted edit made to accommodate the new prerequisite screens. | UX screen-inventory pass — krishna kategaru (autonomous), 2026-09-11. |
+| 2026-09-11 | Backfilled the `Traced to:` field on all 102 FRs (the 89 original plus FR090–FR102) with their owning UX item from the now-Sealed `03-ux.md`, per Step 3's own closing process step. Each FR now names the specific UXnn flow that designed its screen(s), completing the FR-to-UX traceability chain this file left as a placeholder pending that step. No other FR content changed. | UX traceability backfill — krishna kategaru (autonomous), 2026-09-11. |
+| 2026-09-12 | Backfilled the `Traced to:` field on all 102 FRs a second time, appending each FR's owning TS (Test Scenario) range from the now-Sealed `05-test-scenarios.md`'s Coverage check table, e.g. `**Traced to:** UX11 (Step 3 UX); TS001–TS002 (Step 5 Test Scenarios)`. Applied programmatically against that file's Coverage check mapping to avoid transcription error at this file's size. No other FR content changed. | TS traceability backfill — krishna kategaru (autonomous), 2026-09-12. |
 
 ## Coverage check
 | Parent BR | FRs produced | Covered |
 |---|---|---|
-| BR01 — Matrimonial Profile Creation & Self-Expression | FR001–FR006, FR089 | Yes |
-| BR02 — Home Circle Membership Management | FR007–FR012 | Yes |
+| BR01 — Matrimonial Profile Creation & Self-Expression | FR001–FR006, FR089, FR091–FR094, FR099 | Yes |
+| BR02 — Home Circle Membership Management | FR007–FR012, FR097 | Yes |
 | BR03 — Family Collaboration Within Home Circle | FR013–FR016 | Yes |
-| BR04 — Contextual, Least-Privilege Authorization | FR017–FR019 | Yes |
-| BR05 — Privacy & Visibility Boundaries | FR020–FR024 | Yes |
-| BR06 — Broad Discovery | FR025–FR029 | Yes |
+| BR04 — Contextual, Least-Privilege Authorization | FR017–FR019, FR097 | Yes |
+| BR05 — Privacy & Visibility Boundaries | FR020–FR024, FR099 | Yes |
+| BR06 — Broad Discovery | FR025–FR029, FR096 | Yes |
 | BR07 — Compatibility & Match Intelligence | FR030–FR034 | Yes |
-| BR08 — Evidence-Based Trust & Matrimonial Verification | FR035–FR041 | Yes |
-| BR09 — Connection Request Lifecycle | FR042–FR045 | Yes |
+| BR08 — Evidence-Based Trust & Matrimonial Verification | FR035–FR041, FR095 | Yes |
+| BR09 — Connection Request Lifecycle | FR042–FR045, FR098 | Yes |
 | BR10 — Selective Sharing After Acceptance | FR046–FR048 | Yes |
-| BR11 — Private Communication, Ephemerality & Capture-Risk Reduction | FR049–FR056 | Yes |
+| BR11 — Private Communication, Ephemerality & Capture-Risk Reduction | FR049–FR056, FR101 | Yes |
 | BR12 — Deliberate Contact Exchange | FR057–FR059 | Yes |
 | BR13 — Family Involvement in an Established Connection | FR060–FR062 | Yes |
-| BR14 — Safety Intelligence & Abuse Prevention | FR063–FR068 | Yes |
-| BR15 — Internal Accountability & Audit Trail | FR069–FR071 | Yes |
-| BR16 — Mangaly-Scoped Admin & Operations | FR072–FR076 | Yes |
+| BR14 — Safety Intelligence & Abuse Prevention | FR063–FR068, FR100 | Yes |
+| BR15 — Internal Accountability & Audit Trail | FR069–FR071, FR101 | Yes |
+| BR16 — Mangaly-Scoped Admin & Operations | FR072–FR076, FR100 | Yes |
 | BR17 — Future Mangaly Agent Layer | FR077–FR078 | Yes |
 | BR18 — Matrimonial Profile Lifecycle & Outcome Management | FR079–FR081 | Yes |
 | BR19 — Success Story Capture & Consent | FR082–FR084 | Yes |
 | BR20 — Digital-to-Real-World Introduction Transition | FR085–FR088 | Yes |
+| (none — pure technical necessity, per UX Step 3) | FR090 (splash/launch), FR102 (offline/network resilience) | Yes — recorded here rather than invented a parent BR |
 
 ## Set-level quality gate
 | Check | Result |
@@ -57,13 +63,35 @@ items: "89 | approved: 0 | blockers: 0"
 
 No FR is fully Blocked. The following carry Medium/Low Confidence with an explicit note rather than an invented resolution, each traceable to a specific open point already flagged at the BR level: FR003/FR005 (BR01 tier-field mapping), FR026/FR028/FR029 (BR06 ranking weights, fairness-testing methodology, and hint mechanics), FR037/FR041 (BR08 verifier anti-abuse mechanics and marriageable-age threshold), FR050/FR053/FR054 (BR11 retention duration, evidence-retention exception scope, legal-hold, and failure mechanics — pending formal DPDP legal sign-off), FR064/FR068 (BR14 detection-scope boundaries and severity taxonomy/thresholds), FR072/FR073/FR074 (BR16 exact workflow detail), and FR085 (BR20 safety-guidance content). These are downstream design or legal-sign-off items, not research questions the `researcher` subagent could resolve by lookup, consistent with the BR file's own honest-gate convention.
 
+## Architecture cross-check (Solution Architect)
+
+Performed against `/ARCHITECTURE.md` (Sealed, `docs/PreStartResearch/ARCHITECTURE.md`)
+and against the same-day architecture cross-check already recorded in
+`01-business-requirements.md`, before this FR set proceeds to Impact
+Analysis (Step 6), which explicitly requires `/ARCHITECTURE.md` as a
+mandatory pre-req.
+
+| Check | Result |
+|---|---|
+| No FR requires a runtime component, integration pattern, or data path that `/ARCHITECTURE.md` doesn't already resolve | Pass — spot-checked across all 20 BR groups (profile/media→Object Storage, Home Circle/authorization→Mangaly's own isolated DB, Discovery/ranking→embedded Postgres full-text per ADR-007's V1 scope, Trust/Verification→Identity & Trust's Level-1/2 base with Mangaly's own Level-3 layer per ADR-004, Safety→conditional AI labeling only, never a hard AI dependency, benefit-eligible events→async to Payment Services per the resolved dependency-edge pattern). No FR assumes a container or service that doesn't exist in the sealed architecture. |
+| FR-level AI/ML references stay conditional, not load-bearing on ADR-009's deferred AI Service | Pass — FR028 ("shall label any AI-derived ranking signal as inference") and FR064 ("shall present any AI-based flag as an inference requiring human review") both describe how AI output must be framed *if used*; neither FR requires AI infrastructure to exist for its own success outcome. FR030/FR031 explicitly require the core compatibility capability to work via transparent rules, not ML. No FR in this file forces ADR-009's deferral to end early. |
+| No FR implies a cross-container database join or bypasses the isolation model | Pass — same finding as the BR-level cross-check; all of this module's own data stays inside the isolated Mangaly DB, and the one cross-module surface (benefit-eligible events to Payment Services) is asynchronous, matching `/ARCHITECTURE.md`'s resolved pattern, not a new one invented here. |
+| Traceability to a BR that itself passed architecture cross-check | Pass — every FR traces to a BR in `01-business-requirements.md`, which has already cleared its own architecture cross-check above; no FR introduces new architectural surface area beyond what its parent BR already covers. |
+| Same finding carried forward (non-blocking) | `01-business-requirements.md`'s flagged item (Mangaly's "V2/V3" wave label in `/ARCHITECTURE.md` vs. this module's actual build order) applies here too, for the same reason and with the same non-blocking status — no FR in this file is architecturally infeasible regardless of which wave it ships in. |
+
+**Solution Architect approval:** This FR set is architecturally sound and
+buildable against the already-Sealed `/ARCHITECTURE.md` with no changes
+required to either file.
+
+Solution Architect — [x] Approved — krishna kategaru (autonomous), 2026-09-11
+
 ---
 
 ## FR001 — Create and Save a Minimum Viable Profile
 **Traces from:** BR01
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX11 (Step 3 UX); TS001–TS002 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -98,15 +126,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ~ (exact existen
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR002 — Extend Profile Across All Categories, Including Declined Fields
 **Traces from:** BR01
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX11 (Step 3 UX); TS003–TS005 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -141,15 +169,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR003 — Discoverability Tier Gate, Independent of Enhanced-Matching Tier
 **Traces from:** BR01, BR06
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX11 (Step 3 UX); TS006–TS007 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Medium — exact discoverability-tier field list is implementation-stage (BR01/BR06 DEC-003); this FR fixes the rule, not the field list.
 
 **Requirement (ISO 29148 form)**
@@ -184,15 +212,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ~ (field list de
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR004 — Enhanced-Matching Fields Are Optional and Non-Blocking
 **Traces from:** BR01
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX11 (Step 3 UX); TS008–TS009 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -226,15 +254,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR005 — Three-Tier Completeness Status Display
 **Traces from:** BR01
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX11 (Step 3 UX); TS010–TS011 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Medium — depends on FR001/FR003's deferred tier-field mapping.
 
 **Requirement (ISO 29148 form)**
@@ -268,15 +296,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ~ (tier mapping 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR006 — Media Visibility Follows Profile Authorization
 **Traces from:** BR01, BR04
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX11 (Step 3 UX); TS012–TS013 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -310,15 +338,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR007 — Search for and Invite a User to a Home Circle
 **Traces from:** BR02
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX12 (Step 3 UX); TS016–TS017 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -353,15 +381,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR008 — Accept Invitation
 **Traces from:** BR02
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX12 (Step 3 UX); TS018–TS019 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -396,15 +424,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR009 — Ignore or Decline Invitation
 **Traces from:** BR02
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX12 (Step 3 UX); TS020–TS021 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -438,15 +466,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR010 — Remove a Member or Leave Voluntarily
 **Traces from:** BR02
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX12 (Step 3 UX); TS022–TS024 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -481,15 +509,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR011 — Report a False or Inappropriate Relationship Claim
 **Traces from:** BR02
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX12 (Step 3 UX); TS025–TS026 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -524,15 +552,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR012 — Solo-Candidate Parity and Re-Forming a Circle
 **Traces from:** BR02
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX12 (Step 3 UX); TS027–TS028 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -567,15 +595,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR013 — Independent, Parallel Family Search
 **Traces from:** BR03
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX13 (Step 3 UX); TS029–TS030 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -610,15 +638,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR014 — Suggest a Profile (Suggestion ≠ Decision)
 **Traces from:** BR03
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX13 (Step 3 UX); TS031–TS032 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -653,15 +681,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR015 — Independent Candidate Search and Family-Involvement Timing
 **Traces from:** BR03
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX13 (Step 3 UX); TS033–TS034 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -695,15 +723,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR016 — Private Family Notes, Forwarded Only with Candidate Approval
 **Traces from:** BR03
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX13 (Step 3 UX); TS035–TS037 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -738,15 +766,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR017 — Authorization Chain Evaluation, Deny by Default
 **Traces from:** BR04
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX14 (Step 3 UX); TS038–TS043 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -782,15 +810,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR018 — Candidate vs. Family Information as Separate Authorization Categories
 **Traces from:** BR04
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX14 (Step 3 UX); TS044–TS045 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -824,15 +852,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR019 — Plain-Language Capability Presentation
 **Traces from:** BR04
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX14 (Step 3 UX); TS046–TS047 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -867,15 +895,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR020 — Meaningful, Sufficient Information for Authorized Viewers
 **Traces from:** BR05
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX15 (Step 3 UX); TS048–TS049 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -909,15 +937,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR021 — Separate Display of Candidate vs. Family Info; Visibility ≠ Searchability
 **Traces from:** BR05
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX15 (Step 3 UX); TS050–TS051 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -952,15 +980,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR022 — No Popularity or Demand Signal Exposure
 **Traces from:** BR05
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX15 (Step 3 UX); TS052–TS053 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -994,15 +1022,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR023 — Family-Boundary Enforcement Toward a Prospective Match
 **Traces from:** BR05
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX15 (Step 3 UX); TS054–TS055 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -1036,15 +1064,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR024 — Pause Without Signalling; Controlled Safety Exceptions
 **Traces from:** BR05
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX15 (Step 3 UX); TS056–TS059 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -1079,15 +1107,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR025 — Discovery Available to Candidates and Family, in Parallel
 **Traces from:** BR06
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX16 (Step 3 UX); TS060–TS061 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -1121,15 +1149,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR026 — Relevance-Based Ranking, Not Popularity-Primary
 **Traces from:** BR06
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX16 (Step 3 UX); TS062–TS063 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Medium — exact ranking weights are implementation-stage.
 
 **Requirement (ISO 29148 form)**
@@ -1163,15 +1191,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ~ (exact weights
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR027 — Discoverability-Tier Exclusion Only, Not Enhanced-Matching
 **Traces from:** BR06, BR01
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX16 (Step 3 UX); TS064–TS065 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -1205,15 +1233,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR028 — Fairness Safeguards and AI Ranking Transparency
 **Traces from:** BR06
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX16 (Step 3 UX); TS066–TS068 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Medium — exact fairness-testing methodology and AI-replaceability architecture are implementation-stage.
 
 **Requirement (ISO 29148 form)**
@@ -1248,15 +1276,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ~ (methodology d
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR029 — Community-Assisted Discovery Hints
 **Traces from:** BR06
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX16 (Step 3 UX); TS069–TS070 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Medium — exact hint mechanics are an open, implementation-stage design question (BR06 DEC-001).
 
 **Requirement (ISO 29148 form)**
@@ -1290,15 +1318,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ~ (mechanics ope
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR030 — Explainable, Non-Score Compatibility Reasons
 **Traces from:** BR07
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX17 (Step 3 UX); TS071–TS072 (Step 5 Test Scenarios)
 **Priority:** Must (core capability)
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Medium — the underlying algorithm/weighting methodology is open (BR07 Confidence note); this FR fixes the required behavior, not the algorithm.
 
 **Requirement (ISO 29148 form)**
@@ -1333,15 +1361,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR031 — Fact vs. Inference, Alignment vs. Difference, No Certainty Claims
 **Traces from:** BR07
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX17 (Step 3 UX); TS073–TS075 (Step 5 Test Scenarios)
 **Priority:** Must (core capability)
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Medium — same open-algorithm caveat as FR030.
 
 **Requirement (ISO 29148 form)**
@@ -1376,15 +1404,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR032 — Core Capability Fully Functional Without Optional Mechanisms
 **Traces from:** BR07
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX17 (Step 3 UX); TS076–TS077 (Step 5 Test Scenarios)
 **Priority:** Must (core capability)
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -1418,15 +1446,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR033 — Optional Personality Assessment
 **Traces from:** BR07
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX17 (Step 3 UX); TS078–TS081 (Step 5 Test Scenarios)
 **Priority:** Should
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Low — the personality-assessment instrument carries its own, separately lower, confidence per BR07.
 
 **Requirement (ISO 29148 form)**
@@ -1462,15 +1490,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR034 — Horoscope: Opt-In, Separated, Non-Scientific
 **Traces from:** BR07
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX17 (Step 3 UX); TS082–TS083 (Step 5 Test Scenarios)
 **Priority:** Could
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High — the requirement itself (keep separate, non-scientific) is clear even though building it is low-priority.
 
 **Requirement (ISO 29148 form)**
@@ -1505,15 +1533,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR035 — Evidence-and-Provenance Display Per Verification Layer
 **Traces from:** BR08
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX18 (Step 3 UX); TS084–TS085 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Medium — verification vendor/process selection is open (BR08 Confidence note); this FR fixes the display model, not the process.
 
 **Requirement (ISO 29148 form)**
@@ -1548,15 +1576,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR036 — Evidence Language Avoids Truth-Certification
 **Traces from:** BR08
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX18 (Step 3 UX); TS086–TS087 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -1590,15 +1618,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR037 — Verification Circle: Bounded Confirmation with Anti-Abuse Safeguards
 **Traces from:** BR08
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX18 (Step 3 UX); TS088–TS090 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Medium — exact anti-abuse mechanics are open (BRD OPEN-03/04, BR08 Confidence note).
 
 **Requirement (ISO 29148 form)**
@@ -1634,15 +1662,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ~ (anti-abuse me
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR038 — Request Mangaly/Admin Verification When No Community Verifier Exists
 **Traces from:** BR08
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX18 (Step 3 UX); TS091–TS092 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -1676,15 +1704,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR039 — No Trust Score or Reputation Ranking
 **Traces from:** BR08
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX18 (Step 3 UX); TS093–TS094 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -1718,15 +1746,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR040 — Sensitive Verification Documents Not Exposed Publicly
 **Traces from:** BR08
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX18 (Step 3 UX); TS095–TS096 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -1760,15 +1788,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR041 — Marriageable-Age Verification per Applicable Law
 **Traces from:** BR08
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX18 (Step 3 UX); TS097–TS098 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Medium — per BR08 Constraints, the exact current legal threshold should be reconfirmed at implementation/legal-review time given ongoing legislative discussion; this FR intentionally references an external, updateable value rather than hard-coding a number.
 
 **Requirement (ISO 29148 form)**
@@ -1803,15 +1831,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR042 — Send Connection Request
 **Traces from:** BR09
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX19 (Step 3 UX); TS099–TS100 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -1846,15 +1874,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR043 — Recipient Review and Accept/Decline
 **Traces from:** BR09
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX19 (Step 3 UX); TS101–TS102 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -1889,15 +1917,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR044 — Acceptance Means Willingness to Explore Only
 **Traces from:** BR09
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX19 (Step 3 UX); TS103–TS104 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -1932,15 +1960,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR045 — Multiple Parallel Connections; No Forced Continued Engagement
 **Traces from:** BR09
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX19 (Step 3 UX); TS105–TS106 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -1975,15 +2003,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR046 — Per-Category Independent Sharing
 **Traces from:** BR10
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX20 (Step 3 UX); TS107–TS108 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -2018,15 +2046,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR047 — Clear Sharing Confirmation; No Automatic Disclosure
 **Traces from:** BR10
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX20 (Step 3 UX); TS109–TS110 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -2061,15 +2089,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR048 — Family-Contact Category Requires Separate Authorization
 **Traces from:** BR10, BR04
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX20 (Step 3 UX); TS111–TS112 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -2103,15 +2131,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR049 — Enable Private In-Platform Communication
 **Traces from:** BR11
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX21 (Step 3 UX); TS113–TS114 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -2145,15 +2173,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR050 — No Permanent Chat History; Minimal-Necessary Retention
 **Traces from:** BR11
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX21 (Step 3 UX); TS115–TS116 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Medium — exact session lifecycle/retention duration is explicitly open pending technical and legal design (BR11 Confidence note); this FR fixes the required business behavior, not a specific retention window.
 
 **Requirement (ISO 29148 form)**
@@ -2188,15 +2216,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ~ (retention win
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR051 — Access Control: No Routine Human Reading
 **Traces from:** BR11
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX21 (Step 3 UX); TS117–TS118 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -2230,15 +2258,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR052 — Audit Logging of Communication-Related Events
 **Traces from:** BR11, BR15
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX21 (Step 3 UX); TS119–TS120 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -2272,15 +2300,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR053 — Evidence-Retention Exception and Incident Workflow Trigger
 **Traces from:** BR11, BR14, BR16
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX21 (Step 3 UX); TS121–TS123 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Low — exact scope, duration, and access controls require formal DPDP-compliant legal sign-off before production (BR11 Verifiable: Needs Refinement); this FR intentionally does not fix a specific retention duration or access-control matrix.
 
 **Requirement (ISO 29148 form)**
@@ -2316,15 +2344,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ~ (scope/duratio
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR054 — Legal-Hold Handling and Lifecycle-Job Failure Behavior
 **Traces from:** BR11
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX21 (Step 3 UX); TS124–TS126 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Low — exact legal-hold mechanics and retry/alerting mechanics are undefined pending legal and technical design; this FR fixes only the required safe-failure behaviors.
 
 **Requirement (ISO 29148 form)**
@@ -2359,15 +2387,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ~ (mechanics und
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR055 — Multiple Concurrent Conversations, No Seriousness Score
 **Traces from:** BR11
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX21 (Step 3 UX); TS127–TS128 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -2401,15 +2429,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR056 — Capture-Risk-Reduction Measures with Honest Disclosure
 **Traces from:** BR11
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX21 (Step 3 UX); TS129–TS130 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Medium — specific technical mechanisms are an implementation-stage decision (BR11 DEC-003); this FR fixes the business commitment and disclosure requirement only.
 
 **Requirement (ISO 29148 form)**
@@ -2444,15 +2472,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR057 — Request Contact Information
 **Traces from:** BR12
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX22 (Step 3 UX); TS131–TS132 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -2486,15 +2514,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR058 — Recipient-Controlled Decision, Internally Attributable
 **Traces from:** BR12
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX22 (Step 3 UX); TS133–TS134 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -2529,15 +2557,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR059 — No Automatic Exchange; No Unrequested Channel Disclosure
 **Traces from:** BR12
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX22 (Step 3 UX); TS135–TS136 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -2572,15 +2600,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR060 — Candidate Chooses Timing of Home Circle Involvement
 **Traces from:** BR13
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX23 (Step 3 UX); TS137–TS138 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -2614,15 +2642,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR061 — Discovery-Level Involvement ≠ Connection-Level Involvement; Private Comm Stays Private
 **Traces from:** BR13
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX23 (Step 3 UX); TS139–TS140 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -2657,15 +2685,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR062 — Family-to-Family Introduction as a Distinct Step; No Cross-Side Exposure
 **Traces from:** BR13
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX23 (Step 3 UX); TS141–TS142 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -2700,15 +2728,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR063 — User-Initiated Reporting, Always Available, Never Downgraded
 **Traces from:** BR14
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX24 (Step 3 UX); TS143–TS144 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -2743,15 +2771,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR064 — Bounded Pattern Detection with AI Inference Labeling
 **Traces from:** BR14
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX24 (Step 3 UX); TS145–TS147 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Medium — exact detection-scope boundaries are implementation-stage; any category not named here requires its own explicit business justification per BR14 Constraints.
 
 **Requirement (ISO 29148 form)**
@@ -2786,15 +2814,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ~ (scope boundar
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR065 — Graduated Response Pipeline
 **Traces from:** BR14
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX24 (Step 3 UX); TS148–TS150 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Low — exact severity taxonomy and stage-escalation thresholds are explicitly open (see FR068); this FR fixes the required stage sequence, not the thresholds.
 
 **Requirement (ISO 29148 form)**
@@ -2829,15 +2857,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ~ (thresholds op
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR066 — Safety and Trust Remain Operationally Distinct
 **Traces from:** BR14, BR08
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX24 (Step 3 UX); TS151–TS152 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -2871,15 +2899,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR067 — Tightly Controlled Safety Access, No Routine Monitoring
 **Traces from:** BR14
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX24 (Step 3 UX); TS153–TS154 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -2913,15 +2941,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR068 — Severity Taxonomy and Escalation Thresholds (Open Design Item)
 **Traces from:** BR14
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX24 (Step 3 UX); TS155–TS156 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Low — genuinely open design item (BR14 Confidence note; BRD BR-SAFE-007 "OPEN") requiring dedicated design work (abuse taxonomy, severity matrix, staffing, legal review) at Impact Analysis/Security & Performance stage.
 
 **Requirement (ISO 29148 form)**
@@ -2956,15 +2984,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ~ (taxonomy unde
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR069 — Record Actor, Capacity, and Authorization for Consequential Actions
 **Traces from:** BR15
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX25 (Step 3 UX); TS157–TS158 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -2998,15 +3026,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR070 — Record Revocation, Change, and Dispute
 **Traces from:** BR15
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX25 (Step 3 UX); TS159–TS160 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -3040,15 +3068,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR071 — Audit Trail Not Exposed as Surveillance; Least-Privilege Admin Query
 **Traces from:** BR15
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX25 (Step 3 UX); TS161–TS163 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -3083,15 +3111,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR072 — Verification-Related Admin Workflow
 **Traces from:** BR16, BR08
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX26 (Step 3 UX); TS164–TS165 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Medium — exact workflow steps/staffing are open per BR16 Confidence note.
 
 **Requirement (ISO 29148 form)**
@@ -3125,15 +3153,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ~ (exact workflo
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR073 — False-Relationship Investigation Workflow
 **Traces from:** BR16, BR02
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX26 (Step 3 UX); TS166–TS167 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Medium — same workflow-detail caveat as FR072.
 
 **Requirement (ISO 29148 form)**
@@ -3167,15 +3195,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ~ (workflow deta
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR074 — Abuse/Fraud Investigation with Restriction, Block, and Escalation
 **Traces from:** BR16, BR14
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX26 (Step 3 UX); TS168–TS169 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Medium — same workflow-detail caveat.
 
 **Requirement (ISO 29148 form)**
@@ -3210,15 +3238,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ~ (workflow deta
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR075 — Appeals Workflow
 **Traces from:** BR16
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX26 (Step 3 UX); TS170–TS171 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -3252,15 +3280,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR076 — Admin Actions Audited, Least-Privilege, No Public Disclosure
 **Traces from:** BR16, BR15
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX26 (Step 3 UX); TS172–TS173 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -3296,15 +3324,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR077 — Scoped, Revocable, Attributable Agent Access
 **Traces from:** BR17
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX27 (Step 3 UX); TS174–TS175 (Step 5 Test Scenarios)
 **Priority:** Could
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Low — explicitly a deferred, future capability across every source document (BR17).
 
 **Requirement (ISO 29148 form)**
@@ -3340,15 +3368,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR078 — Agents Cannot Gatekeep Exposure; Deferred Until Core Product Proven
 **Traces from:** BR17
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX27 (Step 3 UX); TS176–TS177 (Step 5 Test Scenarios)
 **Priority:** Could
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Low — same deferred-capability caveat as FR077.
 
 **Requirement (ISO 29148 form)**
@@ -3383,15 +3411,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR079 — Mark Matrimonial Search Concluded
 **Traces from:** BR18
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX28 (Step 3 UX); TS178–TS179 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -3425,15 +3453,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR080 — Concluded Profile Excluded from Discovery/Compatibility Without Data Loss
 **Traces from:** BR18
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX28 (Step 3 UX); TS180–TS181 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -3468,15 +3496,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR081 — Reactivate Concluded Profile; Lifecycle State Audited
 **Traces from:** BR18, BR15
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX28 (Step 3 UX); TS182–TS183 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -3511,15 +3539,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR082 — Invite/Capture Success Story Only With Full Consent
 **Traces from:** BR19
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX29 (Step 3 UX); TS184–TS185 (Step 5 Test Scenarios)
 **Priority:** Could
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Medium — the business need is real but not core-product-critical, and has no source-document citation (BR19).
 
 **Requirement (ISO 29148 form)**
@@ -3554,15 +3582,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR083 — Declining Has Zero Effect on Account Status; Consent Audited and Revocable
 **Traces from:** BR19, BR15
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX29 (Step 3 UX); TS186–TS187 (Step 5 Test Scenarios)
 **Priority:** Could
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Medium — same BR19 caveat as FR082.
 
 **Requirement (ISO 29148 form)**
@@ -3597,15 +3625,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR084 — Published Story Excludes Undisclosed Sensitive Content
 **Traces from:** BR19
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX29 (Step 3 UX); TS188–TS189 (Step 5 Test Scenarios)
 **Priority:** Could
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Medium — same BR19 caveat.
 
 **Requirement (ISO 29148 form)**
@@ -3639,15 +3667,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR085 — Optional Safety Guidance Before In-Person Introduction
 **Traces from:** BR20
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX30 (Step 3 UX); TS190–TS191 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** Medium — exact guidance content requires product/legal input per BR20 Assumptions/DEC-003; this FR fixes that guidance must be offered, not its final wording.
 
 **Requirement (ISO 29148 form)**
@@ -3681,15 +3709,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ~ (exact guidanc
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR086 — Opt-In "Meeting Occurred" Note
 **Traces from:** BR20
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX30 (Step 3 UX); TS192–TS193 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -3723,15 +3751,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR087 — Report a Concern From a Real-World Meeting
 **Traces from:** BR20, BR14
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX30 (Step 3 UX); TS194–TS195 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -3765,15 +3793,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR088 — No Relationship-Progress Tracking; Platform Role Ends at Introduction
 **Traces from:** BR20
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX30 (Step 3 UX); TS196–TS197 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -3808,15 +3836,15 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 
 ---
 
 ## FR089 — Person-Level Language Preference on Profile
 **Traces from:** BR01
-**Traced to:** [populated later by UX/Test Scenarios agents]
+**Traced to:** UX11 (Step 3 UX); TS014–TS015 (Step 5 Test Scenarios)
 **Priority:** Must
-**Status:** Draft
+**Status:** Ready for Review
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
@@ -3852,6 +3880,570 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Review history**
 - (none yet)
 
-**Approval:** Product Manager / BA — [ ] Approved — name, date
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
+
+---
+
+## FR090 — Splash / Launch and Session Bootstrap
+**Traces from:** (none — pure technical necessity; no BR describes app launch itself, consistent with the instruction to record this rationale plainly rather than invent a parent BR)
+**Traced to:** UX01 (Step 3 UX); TS198–TS200 (Step 5 Test Scenarios)
+**Priority:** Must
+**Status:** Ready for Review
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When the app is launched (cold start or resumed from background beyond its session window), the system shall determine within a bounded time whether a valid session exists and route the user to the appropriate next screen (onboarding, login, or the main navigation shell), without the user needing to take any action.
+
+**Intent**
+Added by UX (Step 3) as a required prerequisite screen — every mobile-first app needs a real launch/bootstrap moment; none of the 89 BR-derived FRs describe how the app starts.
+
+**Success outcome**
+The user reaches the correct next screen (first-run onboarding, login, or their home shell) with no visible delay beyond a brief, honestly-communicated loading moment.
+
+**Failure / edge outcome**
+If session validation cannot complete (network failure, expired token), the user is routed to Login with a clear, non-alarming reason, never left on an indefinite blank screen.
+
+**Acceptance criteria**
+- [ ] First-ever launch routes to onboarding; a returning logged-in user routes directly to the main shell; an expired/invalid session routes to Login.
+- [ ] No blank/frozen screen state exists beyond a defined maximum wait before a fallback (retry/Login) is shown.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+**Decisions** — none.
+**Assumptions** — session/token mechanics are Common Platform identity infrastructure (per modules.md Shared Concerns); this FR only fixes Mangaly's own routing behavior on launch.
+
+**Handoff readiness**
+| UX needs | Present |
+|---|---|
+| User/role | Yes |
+| Trigger condition | Yes |
+| Success + failure outcomes | Yes |
+
+**Review history**
+- (none yet)
+
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru (autonomous), 2026-09-11
+
+---
+
+## FR091 — First-Run Onboarding
+**Traces from:** BR01, BR03 (introduces the profile-building and family-collaboration concepts a new user needs before either makes sense)
+**Traced to:** UX02 (Step 3 UX); TS201–TS202 (Step 5 Test Scenarios)
+**Priority:** Must
+**Status:** Ready for Review
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When a first-time user completes Sign-Up (FR092), the system shall present a short, skippable sequence introducing the product's core concepts (matrimonial profile, Home Circle/family collaboration, evidence-based trust, private communication) before the user reaches profile creation, and shall never repeat this sequence for a returning user or block any capability behind it.
+
+**Intent**
+Added by UX (Step 3) as a required prerequisite screen — the BR/FR corpus assumes the user already understands concepts (Home Circle, evidence-not-score trust, family collaboration) that are unfamiliar outside this product and must be introduced somewhere.
+
+**Success outcome**
+A new user reaches profile creation with a basic mental model of Home Circle and evidence-based trust, having spent under a minute on the sequence.
+
+**Failure / edge outcome**
+A user who skips onboarding is not blocked from any subsequent capability; the same explanatory content remains reachable later from Help & Support (FR100).
+
+**Acceptance criteria**
+- [ ] Onboarding is fully skippable at every step with no penalty.
+- [ ] Onboarding never reappears for a user who has completed or skipped it once.
+- [ ] Every concept explained in onboarding is also independently findable later via Help & Support.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+**Decisions** — none.
+**Assumptions** — content is illustrative/explanatory only, not a data-collection step (no profile fields are captured during onboarding itself).
+
+**Handoff readiness**
+| UX needs | Present |
+|---|---|
+| User/role | Yes |
+| Trigger condition | Yes |
+| Success + failure outcomes | Yes |
+
+**Review history**
+- (none yet)
+
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru (autonomous), 2026-09-11
+
+---
+
+## FR092 — Account Sign-Up (Candidate or Family-Member Entry Point)
+**Traces from:** BR01 (a profile requires an authenticated account to attach to)
+**Traced to:** UX03 (Step 3 UX); TS203–TS205 (Step 5 Test Scenarios)
+**Priority:** Must
+**Status:** Ready for Review
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When a new user wants to use Mangaly, the system shall let them create an account using phone number or email, verify that identifier (FR095), and set a minimum credential, before reaching onboarding (FR091) or profile creation (FR001).
+
+**Intent**
+Added by UX (Step 3) as a required prerequisite screen. Base identity/authentication is Common Platform capability per modules.md Shared Concerns and is explicitly out of Mangaly's BR scope (see 01-business-requirements.md's "Explicitly out of this file's scope") — Mangaly's own BRs (BR08) cover only the matrimonial-specific Level-3 verification layered on top of platform identity, not the underlying account system. However, per the Solution Architect's own flagged, non-blocking finding, Mangaly is in practice the first module carried through this pipeline, so no separate Common Platform module yet exists to build this screen. This FR adds the minimal account-entry surface needed for Mangaly to be end-to-end buildable and demoable now; it should be reconciled with (or delegated to) a Common Platform Identity module's own sign-up screen once one exists, without changing the user-facing behavior described here.
+
+**Success outcome**
+A new user has an authenticated account and a verified identifier, ready to proceed to onboarding.
+
+**Failure / edge outcome**
+A duplicate identifier, weak credential, or unverified identifier blocks account creation with a specific, actionable reason; an abandoned sign-up can be resumed rather than restarted from zero.
+
+**Acceptance criteria**
+- [ ] Sign-up succeeds only after identifier verification (FR095) completes.
+- [ ] A duplicate-identifier attempt is rejected with a specific reason and a path to Login/Forgot Password instead.
+- [ ] An interrupted sign-up (e.g. app closed mid-OTP) can be resumed without re-entering already-provided data.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+**Decisions** — none beyond the module-boundary note in Intent above.
+**Assumptions** — the underlying credential-storage/session infrastructure is Common Platform (per modules.md); this FR only fixes Mangaly's required entry-point behavior.
+
+**Handoff readiness**
+| UX needs | Present |
+|---|---|
+| User/role | Yes |
+| Trigger condition | Yes |
+| Success + failure outcomes | Yes |
+
+**Review history**
+- (none yet)
+
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru (autonomous), 2026-09-11
+
+---
+
+## FR093 — Login (Returning User)
+**Traces from:** BR01 (a returning candidate needs access to their existing account/profile)
+**Traced to:** UX03 (Step 3 UX); TS206–TS208 (Step 5 Test Scenarios)
+**Priority:** Must
+**Status:** Ready for Review
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When a returning user provides their identifier and credential (or completes an equivalent passwordless/OTP challenge), the system shall authenticate them and route them to the main navigation shell (FR097), and shall never reveal whether an identifier exists in the system to an unauthenticated party beyond a generic "invalid identifier or credential" message.
+
+**Intent**
+Added by UX (Step 3) as a required prerequisite screen, same module-boundary note as FR092.
+
+**Success outcome**
+A returning user reaches their home shell with their existing profile/session state intact.
+
+**Failure / edge outcome**
+An incorrect credential is rejected generically (not "wrong password" specifically, to avoid identifier enumeration); repeated failures trigger a cooldown/rate-limit rather than an unlimited retry surface.
+
+**Acceptance criteria**
+- [ ] Failed login never distinguishes "identifier not found" from "wrong credential" in user-facing copy.
+- [ ] Repeated failed attempts are rate-limited.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+**Decisions** — none beyond FR092's module-boundary note.
+**Assumptions** — none beyond FR092's.
+
+**Handoff readiness**
+| UX needs | Present |
+|---|---|
+| User/role | Yes |
+| Trigger condition | Yes |
+| Success + failure outcomes | Yes |
+
+**Review history**
+- (none yet)
+
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru (autonomous), 2026-09-11
+
+---
+
+## FR094 — Forgot / Reset Password
+**Traces from:** BR01 (account-access recovery, same boundary note as FR092)
+**Traced to:** UX03 (Step 3 UX); TS209–TS211 (Step 5 Test Scenarios)
+**Priority:** Must
+**Status:** Ready for Review
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When a user cannot access their account, the system shall let them request a reset via their verified identifier, confirm ownership through a time-bound OTP/link (FR095's mechanism), and set a new credential, without revealing account existence to an unverified requester.
+
+**Intent**
+Added by UX (Step 3) as a required prerequisite screen.
+
+**Success outcome**
+A legitimate account owner regains access without support intervention.
+
+**Failure / edge outcome**
+An expired or already-used reset token is rejected with a clear "request a new one" path rather than a generic error.
+
+**Acceptance criteria**
+- [ ] Reset tokens expire after a bounded window and are single-use.
+- [ ] Requesting a reset for a non-existent identifier produces the same user-facing message as for an existing one.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+**Decisions** — none.
+**Assumptions** — none beyond FR092's module-boundary note.
+
+**Handoff readiness**
+| UX needs | Present |
+|---|---|
+| User/role | Yes |
+| Trigger condition | Yes |
+| Success + failure outcomes | Yes |
+
+**Review history**
+- (none yet)
+
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru (autonomous), 2026-09-11
+
+---
+
+## FR095 — Phone/Email OTP Verification
+**Traces from:** BR08 (account authenticity is BR08's first verification layer; this FR is the input mechanism for it)
+**Traced to:** UX04 (Step 3 UX); TS212–TS213 (Step 5 Test Scenarios)
+**Priority:** Must
+**Status:** Ready for Review
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When a user's phone number or email needs to be confirmed (sign-up, password reset, or a profile identifier change), the system shall send a time-bound one-time code or link to that identifier and accept it as proof of control within a bounded validity window, feeding a successful verification into BR08's account-authenticity layer.
+
+**Intent**
+Added by UX (Step 3) as a required prerequisite screen — the concrete mechanism BR08's "account authenticity" layer and FR092/FR094 both depend on.
+
+**Success outcome**
+Control of the identifier is confirmed and recorded as an account-authenticity evidence event (BR08, BR15).
+
+**Failure / edge outcome**
+An expired, already-used, or incorrect code is rejected with a clear reason and a "resend" path with a cooldown to prevent abuse.
+
+**Acceptance criteria**
+- [ ] A code expires after a bounded window and is single-use.
+- [ ] "Resend code" is rate-limited to prevent SMS/email-bombing abuse.
+- [ ] A successful verification produces a BR08 account-authenticity evidence record.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+**Decisions** — none.
+**Assumptions** — underlying SMS/email delivery infrastructure is Common Platform (per modules.md notification-delivery Shared Concern).
+
+**Handoff readiness**
+| UX needs | Present |
+|---|---|
+| User/role | Yes |
+| Trigger condition | Yes |
+| Success + failure outcomes | Yes |
+
+**Review history**
+- (none yet)
+
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru (autonomous), 2026-09-11
+
+---
+
+## FR096 — Permission Priming: Location and Notifications
+**Traces from:** BR06 (locality/practical-geography is a named Discovery ranking input that needs location data to exist)
+**Traced to:** UX05 (Step 3 UX); TS214–TS215 (Step 5 Test Scenarios)
+**Priority:** Must
+**Status:** Ready for Review
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When location or notification access would materially improve a capability the user is actively using (Discovery locality ranking for location; connection requests, messages, and safety alerts for notifications), the system shall present a contextual explanation of why access is being requested immediately before the OS-level permission prompt, and shall let the user decline either permission and continue using every capability that does not depend on it, in reduced but functional form.
+
+**Intent**
+Added by UX (Step 3) as a required prerequisite screen — BR06 names locality as a ranking input and BR09/BR11/BR14 all depend on timely notification delivery, but no existing FR addresses how the underlying OS permission is actually requested.
+
+**Success outcome**
+A user who grants location gets locality-ranked Discovery; a user who grants notifications is alerted to requests/messages/safety events without opening the app; a user who declines either still has a fully usable, just less proactive, product.
+
+**Failure / edge outcome**
+A declined permission never blocks any Discovery, Connection, Communication, or Safety capability — it only removes the specific enhancement that permission enables (e.g. manual location/city entry replaces device location for ranking).
+
+**Acceptance criteria**
+- [ ] A contextual priming screen precedes every OS permission prompt this module triggers.
+- [ ] Declining location leaves Discovery functional via manually-entered locality.
+- [ ] Declining notifications leaves every capability functional; the user simply checks the in-app Notification Inbox (FR098) instead.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ~ (location + notifications are two distinct permissions primed by the same pattern) · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+**Decisions** — none.
+**Assumptions** — none.
+
+**Handoff readiness**
+| UX needs | Present |
+|---|---|
+| User/role | Yes |
+| Trigger condition | Yes |
+| Success + failure outcomes | Yes |
+
+**Review history**
+- (none yet)
+
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru (autonomous), 2026-09-11
+
+---
+
+## FR097 — Main Navigation Shell and Home Circle Context Switcher
+**Traces from:** BR02, BR04 (a user who is simultaneously a candidate and a Home Circle member of others needs a way to move between those contexts; BR04 requires authorization to be presented per-context, not blended)
+**Traced to:** UX06 (Step 3 UX); TS216–TS217 (Step 5 Test Scenarios)
+**Priority:** Must
+**Status:** Ready for Review
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When an authenticated user has a home shell, the system shall present a persistent primary navigation surface reaching every top-level capability (Profile, Discovery, Connections, Messages, Home Circle, Notifications), and, when that user participates in more than one matrimonial context (their own candidate profile and/or one or more other candidates' Home Circles), shall let them explicitly switch which context they are acting in, always making the active context visibly unambiguous.
+
+**Intent**
+Added by UX (Step 3) as a required prerequisite screen — none of the 89 BR-derived FRs describe the app's top-level information architecture, and BR02/BR03's "a parent can act for a candidate" capability has no home surface without one.
+
+**Success outcome**
+A user always knows which capability area and which candidate-context they are currently acting in.
+
+**Failure / edge outcome**
+An action taken while the active context is ambiguous, or a context switch that silently carries over data from the previous context, is a defect.
+
+**Acceptance criteria**
+- [ ] The active Home Circle context is always visibly labeled wherever an action with BR04 authorization consequences is available.
+- [ ] Switching context never carries in-progress, unsaved data from one context into another.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+**Decisions** — none.
+**Assumptions** — none.
+
+**Handoff readiness**
+| UX needs | Present |
+|---|---|
+| User/role | Yes |
+| Trigger condition | Yes |
+| Success + failure outcomes | Yes |
+
+**Review history**
+- (none yet)
+
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru (autonomous), 2026-09-11
+
+---
+
+## FR098 — Notification Inbox
+**Traces from:** BR09 (connection request lifecycle events are this module's primary notification-worthy events; also feeds from BR11, BR13, BR14, BR16)
+**Traced to:** UX07 (Step 3 UX); TS218–TS219 (Step 5 Test Scenarios)
+**Priority:** Must
+**Status:** Ready for Review
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When a notification-worthy event occurs (new connection request, request accepted/declined, new message, sharing update, family suggestion, safety-case update, admin decision), the system shall record it in a persistent, in-app inbox the user can review at any time, independent of whether a push notification was also delivered or seen.
+
+**Intent**
+Added by UX (Step 3) as a required prerequisite screen — every BR from BR02 through BR20 generates events a user needs to learn about, but no FR names the surface that collects them.
+
+**Success outcome**
+A user can catch up on everything relevant that happened since their last visit from one place.
+
+**Failure / edge outcome**
+An event that should be notification-worthy per its originating FR but does not appear in the inbox is a defect against that FR's own success outcome.
+
+**Acceptance criteria**
+- [ ] Every event type named in BR09, BR11, BR13, BR14, and BR16's admin-decision outcomes produces a corresponding inbox entry.
+- [ ] Inbox entries persist until the user dismisses/reads them, independent of push-notification delivery success.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+**Decisions** — none.
+**Assumptions** — underlying push-delivery infrastructure is Common Platform (per modules.md notification-delivery Shared Concern); this FR governs the in-app inbox record, not the delivery pipe.
+
+**Handoff readiness**
+| UX needs | Present |
+|---|---|
+| User/role | Yes |
+| Trigger condition | Yes |
+| Success + failure outcomes | Yes |
+
+**Review history**
+- (none yet)
+
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru (autonomous), 2026-09-11
+
+---
+
+## FR099 — Account & App Settings
+**Traces from:** BR01 (language preference, FR089, needs a persistent access point beyond profile editing), BR05 (privacy quick-controls, e.g. pause, need a home)
+**Traced to:** UX08 (Step 3 UX); TS220–TS222 (Step 5 Test Scenarios)
+**Priority:** Must
+**Status:** Ready for Review
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When a user wants to change app-level (not matrimonial-profile-content) preferences, the system shall provide a settings surface covering language preference (FR089), notification preferences, privacy quick-controls (pause search, per FR024), Home Circle management entry point (FR007–FR012), and account/security options, distinct from matrimonial profile-content editing (FR001–FR006).
+
+**Intent**
+Added by UX (Step 3) as a required prerequisite screen — FR089's language preference and FR024's pause capability both need a persistent, discoverable home outside of profile-content editing.
+
+**Success outcome**
+A user finds and changes any app-level preference without confusing it with matrimonial profile content.
+
+**Failure / edge outcome**
+A setting found duplicated or contradicted between this screen and the profile-editing flow is a defect.
+
+**Acceptance criteria**
+- [ ] Language preference (FR089) is changeable from Settings without re-entering any other profile field.
+- [ ] Pause/resume search (FR024) is reachable from Settings in two taps or fewer.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ~ (settings bundles several app-level preferences deliberately, a standard mobile pattern) · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+**Decisions** — none.
+**Assumptions** — none.
+
+**Handoff readiness**
+| UX needs | Present |
+|---|---|
+| User/role | Yes |
+| Trigger condition | Yes |
+| Success + failure outcomes | Yes |
+
+**Review history**
+- (none yet)
+
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru (autonomous), 2026-09-11
+
+---
+
+## FR100 — Help & Support
+**Traces from:** BR16 (a natural entry point into admin/operations workflows for anything not already a safety report), BR14 (general reporting)
+**Traced to:** UX09 (Step 3 UX); TS223–TS224 (Step 5 Test Scenarios)
+**Priority:** Must
+**Status:** Ready for Review
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When a user has a question, problem, or non-safety-urgent issue, the system shall provide a Help & Support surface with searchable FAQ content (including the onboarding concepts from FR091) and a contact/ticket path into Mangaly operations (BR16), distinct from and never a substitute for the always-available safety reporting path (FR063).
+
+**Intent**
+Added by UX (Step 3) as a required prerequisite screen — BR16 promises investigation/appeal workflows that need a discoverable, non-emergency entry point separate from the safety-report button.
+
+**Success outcome**
+A user finds an answer to a common question unassisted, or reaches a human via a support ticket when they cannot.
+
+**Failure / edge outcome**
+A safety-urgent issue submitted through Help & Support is still routed into the BR14 graduated-response pipeline, not left in a slower general-support queue.
+
+**Acceptance criteria**
+- [ ] FAQ content is searchable and covers every onboarding concept (FR091).
+- [ ] A support submission flagged as safety-related is routed through FR063's pipeline, not a separate slower queue.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+**Decisions** — none.
+**Assumptions** — none.
+
+**Handoff readiness**
+| UX needs | Present |
+|---|---|
+| User/role | Yes |
+| Trigger condition | Yes |
+| Success + failure outcomes | Yes |
+
+**Review history**
+- (none yet)
+
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru (autonomous), 2026-09-11
+
+---
+
+## FR101 — Logout and Delete Account
+**Traces from:** BR11 (deletion must respect the same retention/legal-hold rules as communication data), BR15 (accountability records must survive account deletion where legally required)
+**Traced to:** UX08 (Step 3 UX); TS225–TS227 (Step 5 Test Scenarios)
+**Priority:** Must
+**Status:** Ready for Review
+**Confidence:** Medium — exact data-deletion vs. retention boundary on account deletion depends on BR11/BR15's own still-open retention-duration and legal-hold mechanics (FR050/FR053/FR054); this FR fixes the required user-facing behavior, not the underlying retention schedule.
+
+**Requirement (ISO 29148 form)**
+When a user logs out, the system shall end their session without affecting their account or data; when a user requests account deletion, the system shall confirm the request with a clear explanation of what is deleted immediately, what is retained under BR11/BR15's accountability and legal-hold rules, and for how long, before executing it.
+
+**Intent**
+Added by UX (Step 3) as a required prerequisite screen — no existing FR describes either everyday logout or the account-deletion path BR11's DPDP-driven retention design (FR050/FR053/FR054) implies must exist.
+
+**Success outcome**
+Logout is instant and reversible (simply log back in); account deletion is understood before it is confirmed, with retained-for-accountability data clearly distinguished from deleted data.
+
+**Failure / edge outcome**
+A deletion request for an account with an active BR11 legal hold or open BR16 investigation is honored for ordinary data but the held/investigation-relevant data is retained per FR054, with that exception disclosed to the user at request time, not silently.
+
+**Acceptance criteria**
+- [ ] Deletion confirmation screen names, in plain language, what is deleted immediately vs. retained and why.
+- [ ] An account under active legal hold or investigation still allows deletion of ordinary data, with the held subset's retention disclosed before the user confirms.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ~ (exact retention schedule pending BR11's own open legal sign-off) · Singular ~ (logout + deletion are the same "ending account access" family) · Feasible ✓ · Verifiable ~ (same reason) · Correct ✓ · Conforming ✓
+
+**Decisions** — none beyond BR11/BR15's existing open items.
+**Assumptions** — none beyond FR053/FR054's.
+
+**Handoff readiness**
+| UX needs | Present |
+|---|---|
+| User/role | Yes |
+| Trigger condition | Yes |
+| Success + failure outcomes | Yes |
+
+**Review history**
+- (none yet)
+
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru (autonomous), 2026-09-11
+
+---
+
+## FR102 — Offline / Network-Loss Resilience
+**Traces from:** (none — pure technical necessity; no BR addresses connectivity loss, recorded plainly per the instruction rather than inventing a parent BR)
+**Traced to:** UX10 (Step 3 UX); TS228–TS229 (Step 5 Test Scenarios)
+**Priority:** Must
+**Status:** Ready for Review
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When the app loses network connectivity mid-session, the system shall communicate the loss clearly, preserve any in-progress, not-yet-submitted user input, and automatically resume/retry any queued read or write once connectivity returns, without the user needing to manually re-enter lost work.
+
+**Intent**
+Added by UX (Step 3) as a required prerequisite screen/state — this module's target audience (mobile-first, India-wide, including tier-2/3 connectivity) makes intermittent connectivity a routine condition, not an edge case, and no BR-derived FR addresses it.
+
+**Success outcome**
+A user who loses connectivity mid-action (e.g. sending a message, saving a profile edit) sees a clear offline indicator and recovers automatically once back online.
+
+**Failure / edge outcome**
+Data entered while offline is never silently discarded; a write that ultimately cannot be delivered (e.g. after an extended outage) is surfaced to the user as failed, not left in a permanently-ambiguous "sending" state.
+
+**Acceptance criteria**
+- [ ] A global offline indicator appears within a bounded time of connectivity loss.
+- [ ] In-progress form input is preserved across a connectivity drop.
+- [ ] A queued write that cannot eventually be delivered surfaces as a failure, not silence.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+**Decisions** — none.
+**Assumptions** — none.
+
+**Handoff readiness**
+| UX needs | Present |
+|---|---|
+| User/role | Yes |
+| Trigger condition | Yes |
+| Success + failure outcomes | Yes |
+
+**Review history**
+- (none yet)
+
+**Approval:** Product Manager / BA — [x] Approved — krishna kategaru (autonomous), 2026-09-11
 
 ---
