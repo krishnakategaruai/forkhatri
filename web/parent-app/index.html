@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#101b3b" />
+    <meta
+      name="description"
+      content="ForKhatri — one trusted home for community opportunity, participation and progress."
+    />
+    <title>ForKhatri — Your community, connected</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#home" aria-label="ForKhatri home">
+          <span class="brand-mark" aria-hidden="true">fk</span>
+          <span>
+            <strong>ForKhatri</strong>
+            <small>Trust · Connect · Enable · Progress</small>
+          </span>
+        </a>
+
+        <label class="search-box" for="global-search">
+          <span aria-hidden="true">⌕</span>
+          <input id="global-search" type="search" placeholder="Search your community" />
+          <kbd>/</kbd>
+        </label>
+
+        <div class="topbar-actions">
+          <button class="icon-button notification-trigger" type="button" aria-label="Open notifications" aria-expanded="false">
+            <span aria-hidden="true">♧</span>
+            <i class="notification-dot"></i>
+          </button>
+          <button class="member-menu-trigger" type="button" aria-expanded="false">
+            <span class="avatar">KK</span>
+            <span class="member-label"><strong>Krishna</strong><small>Member</small></span>
+            <span class="chevron" aria-hidden="true">⌄</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="workspace">
+        <aside class="sidebar" aria-label="Primary navigation">
+          <div class="sidebar-label">Your space</div>
+          <nav class="main-nav">
+            <a class="nav-link active" href="#home" data-view="home"><span>⌂</span><span>Home</span></a>
+            <a class="nav-link" href="#modules" data-view="modules"><span>✦</span><span>Modules</span></a>
+            <a class="nav-link" href="#activity" data-view="activity"><span>◷</span><span>Activity</span><em>3</em></a>
+            <a class="nav-link" href="#account" data-view="account"><span>◎</span><span>Account</span></a>
+          </nav>
+
+          <div class="sidebar-divider"></div>
+          <div class="sidebar-label">Quick start</div>
+          <div class="quick-links">
+            <button type="button" data-action="explore"><span class="quick-icon saffron">✦</span>Explore modules</button>
+            <button type="button" data-action="activity"><span class="quick-icon blue">◷</span>Review activity</button>
+            <button type="button" data-action="help"><span class="quick-icon green">?</span>Get support</button>
+          </div>
+
+          <div class="sidebar-spacer"></div>
+          <div class="trust-note">
+            <span class="trust-icon" aria-hidden="true">✓</span>
+            <div><strong>Built on trust</strong><p>Your identity and choices stay yours.</p></div>
+          </div>
+        </aside>
+
+        <main class="main-content" id="main-content" tabindex="-1">
+          <section class="view active-view" id="view-home" data-view-panel="home">
+            <div class="eyebrow">Saturday, 13 September 2026 <span class="eyebrow-dot"></span> Hyderabad</div>
+            <div class="hero-row">
+              <div>
+                <h1>Good morning, Krishna.</h1>
+                <p class="hero-copy">A calmer way to find what matters in your community.</p>
+              </div>
+              <button class="primary-button" type="button" data-action="explore"><span aria-hidden="true">✦</span> Explore ForKhatri</button>
+            </div>
+
+            <div class="insight-banner">
+              <div class="insight-symbol" aria-hidden="true">↗</div>
+              <div><strong>Your community is moving.</strong><p>There are 12 new opportunities and 4 activities near you this week.</p></div>
+              <button class="text-button" type="button" data-action="activity">See activity <span aria-hidden="true">→</span></button>
+            </div>
+
+            <div class="section-heading"><div><span class="section-kicker">The ecosystem</span><h2>One home. Many ways forward.</h2></div><button class="quiet-button" type="button" data-action="explore">View all modules <span aria-hidden="true">→</span></button></div>
+            <div class="module-grid" id="module-grid" aria-live="polite"></div>
+
+            <div class="lower-grid">
+              <section class="panel activity-panel">
+                <div class="panel-heading"><div><span class="section-kicker">Keep moving</span><h2>Recent activity</h2></div><button class="quiet-button" type="button" data-action="activity">View all</button></div>
+                <div class="activity-list">
+                  <div class="activity-item"><span class="activity-icon icon-vyapar">✦</span><div><strong>New opportunities match your interests</strong><p>Vyapar · 2 hours ago</p></div><span class="activity-arrow">→</span></div>
+                  <div class="activity-item"><span class="activity-icon icon-milavn">◌</span><div><strong>Saturday founders' circle is this evening</strong><p>Milavn · Tomorrow at 6:00 PM</p></div><span class="activity-arrow">→</span></div>
+                  <div class="activity-item"><span class="activity-icon icon-system">✓</span><div><strong>Your ForKhatri profile is ready</strong><p>Account · Add a language preference to personalize your experience</p></div><span class="activity-arrow">→</span></div>
+                </div>
+              </section>
+
+              <section class="panel community-panel">
+                <div class="community-orbit"><span class="orbit-center">fk</span><i class="orbit-dot dot-one"></i><i class="orbit-dot dot-two"></i><i class="orbit-dot dot-three"></i><i class="orbit-dot dot-four"></i></div>
+                <span class="section-kicker">The ForKhatri promise</span>
+                <h2>Progress feels better together.</h2>
+                <p>Find trusted people, useful opportunities, and the next meaningful step — all from one place.</p>
+                <button class="quiet-button" type="button" data-action="help">Learn how it works <span aria-hidden="true">→</span></button>
+              </section>
+            </div>
+          </section>
+
+          <section class="view" id="view-modules" data-view-panel="modules">
+            <div class="eyebrow">ForKhatri ecosystem</div>
+            <div class="hero-row"><div><h1>Explore modules.</h1><p class="hero-copy">Every capability has a place. Your ForKhatri identity travels with you.</p></div></div>
+            <div class="module-grid module-grid-expanded" id="module-grid-expanded"></div>
+          </section>
+
+          <section class="view" id="view-activity" data-view-panel="activity">
+            <div class="eyebrow">Your ForKhatri timeline</div>
+            <div class="hero-row"><div><h1>Activity, in one view.</h1><p class="hero-copy">A simple record of what needs your attention next.</p></div></div>
+            <section class="panel activity-panel full-panel"><div class="panel-heading"><div><span class="section-kicker">All recent activity</span><h2>Everything in one place</h2></div></div><div class="activity-list activity-list-large"></div></section>
+          </section>
+
+          <section class="view" id="view-account" data-view-panel="account">
+            <div class="eyebrow">Your account</div>
+            <div class="hero-row"><div><h1>Account and settings.</h1><p class="hero-copy">One identity, with choices that stay in your hands.</p></div></div>
+            <div class="account-grid"><section class="panel profile-card"><div class="profile-header"><span class="avatar avatar-large">KK</span><div><h2>Krishna Kategaru</h2><p>ForKhatri member</p></div></div><div class="profile-rows"><div><span>Language</span><strong>English <small>Change</small></strong></div><div><span>Location</span><strong>Hyderabad <small>Change</small></strong></div><div><span>Notifications</span><strong>Personalized <small>Manage</small></strong></div></div></section><section class="panel account-note"><span class="trust-icon">✓</span><span class="section-kicker">One shared identity</span><h2>Move between modules without starting over.</h2><p>Your ForKhatri account is the foundation. Module profiles and roles build on it; they never replace it.</p></section></div>
+          </section>
+        </main>
+      </div>
+
+      <div class="notification-popover" role="dialog" aria-label="Notifications" aria-hidden="true">
+        <div class="popover-heading"><div><span class="section-kicker">Your inbox</span><h2>Notifications</h2></div><button class="close-popover" type="button" aria-label="Close notifications">×</button></div>
+        <div class="notification-entry"><span class="activity-icon icon-vyapar">✦</span><div><strong>12 new opportunities</strong><p>Matched in Vyapar</p></div></div>
+        <div class="notification-entry"><span class="activity-icon icon-milavn">◌</span><div><strong>Reminder: founders' circle</strong><p>Tomorrow at 6:00 PM</p></div></div>
+        <button class="text-button" type="button" data-action="activity">Open activity <span aria-hidden="true">→</span></button>
+      </div>
+
+      <div class="member-popover" role="menu" aria-hidden="true"><div class="member-popover-head"><span class="avatar">KK</span><div><strong>Krishna Kategaru</strong><small>ForKhatri member</small></div></div><button type="button" data-action="account">Account settings <span>→</span></button><button type="button" data-action="help">Help & support <span>→</span></button><div class="popover-divider"></div><button type="button" data-action="signout">Sign out <span>↗</span></button></div>
+
+      <div class="toast" role="status" aria-live="polite"></div>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,6 +1,6 @@
 # SDLC Traceable Pipeline — Claude Code Plugin
 
-A 15-agent pipeline for building large projects with full, bidirectional
+A 16-agent pipeline for building large projects with full, bidirectional
 traceability from business intent to deployed code. No skills are used —
 every agent is a focused, single-purpose subagent, because each one does
 one job in one place; there's no cross-cutting policy here that would
@@ -14,7 +14,7 @@ artifact traces back to the business need that justified it, every
 decision is recorded with its rejected alternatives, and every step is
 signed off by a named human role before the next step begins.
 
-## The 15 agents
+## The 16 agents
 
 | # | Agent | Role played | Produces |
 |---|---|---|---|
@@ -26,7 +26,8 @@ signed off by a named human role before the next step begins.
 | 4 | `ui-agent` | UI/Design Director | `04-ui.md` |
 | 5 | `test-scenarios-agent` | Principal QA | `05-test-scenarios.md` |
 | 6 | `impact-analysis-agent` | Architect / Director | `06-impact-analysis.md` |
-| 7 | `tech-reqs-er-model-agent` | Architect | `07-tech-reqs.md`, `07a-er-model.md`, `07b-component-diagram.md` |
+| 7 | `tech-reqs-er-model-agent` | Architect | `07-tech-reqs.md` (Tech Reqs only — see 7a for the ER model/database) |
+| 7a | `step7a-er-model-agent` | Database Architect / Engineer | `07a-er-model.md` + `07a-db-implementation/` (schema, migrations, seeds, init script) |
 | 8 | `security-performance-agent` | Security Lead | `08-security-performance.md` |
 | 9 | `implementation-agent` | Eng Manager / Tech Lead | `09-implementation.md`, `09a-external-dependencies.md` + actual code |
 | 10 | `test-automation-agent` | Principal QA | `10-test-automation.md` + actual tests |
@@ -34,6 +35,15 @@ signed off by a named human role before the next step begins.
 | 12 | `improvement-agent` | Tech Lead | `12-improvement.md` |
 | 13 | `monitoring-agent` | Ops/SRE Manager | `13-monitoring.md` |
 | 14 | `deploy-docs-agent` | Release Manager / Director | `14-deploy-docs.md` (changelog) |
+
+Each module also gets its own `modules/MODxx-<slug>/architecture.md` —
+that module's internal Component-level (C4 L3) design, following the
+generic patterns fixed once in `/MODULE-ARCHITECTURE-STANDARD.md` (schema-
+per-component, RLS, authorization chokepoint, event bus, idempotency).
+It's normally produced alongside Step 7/7a but can exist earlier, by
+explicit direction, if a module is the pipeline's active focus ahead of
+schedule (Mangaly's is the worked example) — this superseded the older
+`07b-component-diagram.md` naming.
 
 Plus one shared subagent, `researcher`, invoked by any of the 15 whenever a
 single item's status is `Needs Research` (max 2 self-loop attempts before
@@ -81,9 +91,10 @@ escalating to a human as `Blocked`).
       04-ui.md
       05-test-scenarios.md
       06-impact-analysis.md
+      architecture.md
       07-tech-reqs.md
       07a-er-model.md
-      07b-component-diagram.md
+      07a-db-implementation/
       08-security-performance.md
       09-implementation.md
       09a-external-dependencies.md

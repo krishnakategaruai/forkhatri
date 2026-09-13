@@ -1,10 +1,10 @@
 ---
 step: 01-business-requirements
 module: MOD01
-status: Ready for Review
+status: Sealed
 approver: Product Manager
 updated: 2026-09-12
-items: "18 | approved: 0 | blockers: 0"
+items: "18 | approved: 18 | blockers: 0"
 ---
 
 # 01 - Business Requirements - MOD01 Vyapar
@@ -17,6 +17,8 @@ items: "18 | approved: 0 | blockers: 0"
 | 2026-09-12 | Added explicit boundary, payment-contract, V1-wedge, verification, monetization, and legal/compliance blockers instead of silently absorbing broader source-document proposals. | Reconciliation of `modules/modules.md`, `ARCHITECTURE.md`, and the Vyapar source corpus. |
 | 2026-09-12 | Recorded the Product Manager's V1 product-thesis decision: Vyapar is primarily an **opportunity distribution** product, not a professional/business discovery product. General "find a professional/business to consult or hire for advice" discovery is out of scope for Vyapar because MOD04 Counsel already owns consultant/expert reach and appointment-based discovery. Business/professional presence in Vyapar exists to support opportunity supply, enquiries, and networking, not to duplicate Counsel's discovery surface. This partially resolves `BLOCKER-003`; the exact launch opportunity types and geography remain open. | Product Manager decision during Step 1 review, in response to the reviewer's Option A/B/C product-framing question. |
 | 2026-09-12 | **Correction pass, superseding the immediately preceding entry.** The Product Manager rejected the "opportunity distribution, not discovery" reframing as a genuine misinterpretation: in the Product Manager's own words, the only thing that belongs to MOD04 Counsel is "if people are finding something to learn or someone to give direction, which comes under counselling" — a member seeking structured counselling/mentorship/guidance/advisory delivery. Ordinary business/professional discovery ("like any other business app, where they can discover also") is explicitly co-equal MOD01 scope, per the Product Manager's own prior agreement recorded across the Vyapar `.docx`/`.md` corpus and `modules/modules.md`'s own scope line. Every place this file had subordinated discovery to opportunity distribution (the scope narrative, the out-of-scope bullet, the actor rows for Professional/freelancer and Customer/client, cross-cutting rule 1, and the BR02/BR05 constraints) is corrected below. Separately, per explicit Product Manager direction to stop manufacturing avoidable complexity: BLOCKER-001 (public/community opportunity source boundary) is resolved with a simple Community/Public-External source-segment tag plus submitter attribution; BLOCKER-002 (MOD01→MOD06 payment contract) is resolved by making V1 payment collection self-contained within Vyapar, with an explicit loose-coupling architecture principle carried into BR17; BLOCKER-003 (V1 opportunity wedge) is substantially resolved using the source corpus's own stated wedge recommendation (critqureport §24), with launch geography recorded as a non-blocking working assumption; BLOCKER-004 (Level-3 verification policy) is resolved with a concrete, deliberately lightweight V1 policy (a small number of checkable claims, not a broad multi-registry system); BLOCKER-005 (legal sign-off) is resolved by rewriting BR18 as a proportionate compliance-awareness constraint appropriate to an early-stage, founder-built product rather than a hard pre-launch legal gate; BLOCKER-006 (monetization phase) is resolved directly from the pricing/revenue-model docx's own V1 roadmap. Zero blockers remain open. | Product Manager correction, in response to explicit feedback that the previous pass misread the Vyapar corpus's Counsel boundary and manufactured avoidable blockers instead of resolving them from the source material already supplied. |
+| 2026-09-12 | **Reviewer verification pass, correcting a citation error in the immediately preceding entry (kept above for the audit trail).** A full read of the entire Vyapar source corpus (PM Planning P1-P5, the Complete Product Definition, Vyapar_01/02/03, and critqureport — every `.docx` extracted and read in full, not summarized) found that this deeper research corpus is built almost entirely around a Person+Opportunity model with no standalone business-directory concept, and that critqureport explicitly warns against a profile/directory-style "LinkedIn-lite" product (§12). The claim above that co-equal business/professional discovery was "recorded across the Vyapar `.docx`/`.md` corpus" is therefore not accurate — only `modules/modules.md`'s sealed Step 0 boundary (business + professional discovery/search; `BusinessProfile`/`ProfessionalListingProfile` as owned data) actually supports it. That is still the higher-priority source per this file's own stated hierarchy, and the Product Manager has separately and explicitly confirmed the standalone discovery intent directly (not by way of the research corpus), so the co-equal-scope decision itself stands unchanged. What changed in this pass: the Scope-of-this-step narrative, BR05's Worth check, and BR05's Traced-to line were corrected to stop attributing this decision to the research corpus, name `modules/modules.md` as its actual basis, and record the tension with the corpus honestly; unverified named-app comparisons (Sulekha, UrbanCompany, LinkedIn-as-precedent) were removed since they were never actually checked, keeping only Justdial, WorkIndia, and Apna, which were. | Product Manager instruction to verify the file "as reviewer and with complete docsx knowledge" rather than spot-check it. |
+| 2026-09-12 | Sealed. All 18 BRs approved and the file marked Sealed on Product Manager direction ("complete if not complete, and let's move to next") following the reviewer verification pass above, with zero open blockers. | Product Manager approval and directive to proceed to Step 2 (Functional Requirements). |
 
 ## Scope of this step
 
@@ -25,18 +27,39 @@ This file defines the business needs for the approved MOD01 - Vyapar boundary in
 that is equally, and just as fundamentally, a **member-originated opportunity
 distribution network**. These are co-equal, first-class capabilities of the same
 module — neither is primary infrastructure for the other, and neither may be
-silently narrowed in favor of the other. It covers business profiles and
-professional/freelancer listing profiles; business, professional, and customer
-discovery/search — an ordinary "find a business or professional" experience,
-comparable in spirit to a trusted community business/professional directory
-(the kind of discovery real products such as JustDial and Sulekha provide, and
-that UrbanCompany-style local-services marketplaces and LinkedIn-style
-professional discovery each provide in their own domain); business enquiries;
-business networking and partnership requests; employment and business
-opportunity listings originated or shared by ForKhatri business members;
-business-specific Level-3 verification; reviews and in-module reputation
-signals; and verified-listing promotion that is visibly distinct from organic
-discovery.
+silently narrowed in favor of the other.
+
+This dual framing is a deliberate Product Manager decision, and it is worth
+recording honestly rather than papering over: `modules/modules.md`'s sealed
+Step 0 boundary explicitly names "business + professional discovery/search" as
+MOD01 scope and owns `BusinessProfile`/`ProfessionalListingProfile` as
+first-class data — that is the higher-priority source per this file's own
+stated hierarchy, and it is what BR01/BR02/BR05 below rest on. The deeper
+Vyapar product-research corpus (the PM Planning P1-P5 document, the Complete
+Product Definition, Vyapar_01/02/03, and critqureport), by contrast, is built
+almost entirely around a Person+Opportunity model with no standalone
+business-directory concept, and critqureport explicitly warns against building
+a profile/follower/directory-style "LinkedIn-lite" product (critqureport §12).
+Read literally, that corpus does not itself ask for an independent "browse
+businesses" experience the way `modules/modules.md` does. The Product Manager
+has confirmed, directly and specifically, that Vyapar should nonetheless work
+like an ordinary business/professional discovery app in addition to
+distributing opportunities — a member can look someone up without any
+opportunity being involved — and that decision is what this file follows,
+consistent with the Step 0 boundary. One concrete consequence: `Vyapar_02`'s
+screen architecture was designed around an opportunity-only Discover tab (For
+You / Explore / Near You / Community / Public) with no dedicated
+business/professional browsing surface, so Step 3 (UX) must design that
+standalone discovery surface itself rather than assume the research corpus
+already specifies it.
+
+It covers business profiles and professional/freelancer listing profiles;
+business, professional, and customer discovery/search — an ordinary "find a
+business or professional" experience; business enquiries; business networking
+and partnership requests; employment and business opportunity listings
+originated or shared by ForKhatri business members; business-specific Level-3
+verification; reviews and in-module reputation signals; and verified-listing
+promotion that is visibly distinct from organic discovery.
 
 Business and professional profiles serve two equally valid purposes: they are
 supply-side and trust infrastructure for the opportunity loop, **and** they are
@@ -134,7 +157,7 @@ Out of scope for MOD01:
 | Consistent - no contradicting BRs | Pass; BR04's Community/Public-External source-segment tagging reconciles the source corpus's broader opportunity vision with the Step 0 member-originated/MOD05 boundary without a residual contradiction. |
 | Prioritized - every BR ranked | Pass; every BR below is Must or Should and the rationale is stated. |
 | No duplicates/overlaps | Pass; profile, verification, discovery, opportunity, enquiry, networking, reputation, monetization, privacy, safety, operations, integration, and compliance are separate business capabilities. |
-| Human approval present | Fail pending Product Manager review; no BR is marked Approved and this file is not Sealed. |
+| Human approval present | Pass; the Product Manager approved all 18 BRs and directed the file to Sealed on 2026-09-12 after the reviewer verification pass. |
 
 ## Open blockers
 
@@ -299,6 +322,8 @@ Pass · Verifiable Pass · Correct Pass · Conforming Pass
 - The business representative has authority to act for the named business;
   the evidence source and approval method are decided concretely in BR03.
 
+**Traced to (Step 2 FRs):** FR01, FR02, FR03
+
 **Traced to:** `modules/modules.md` MOD01 Scope/Data owned; PM P3.4/P4.1;
 Complete Product Definition §§5, 6, 12-15; Vyapar_03 §§1-4; Pricing Model
 §§5.3, 5.6.
@@ -307,7 +332,7 @@ Complete Product Definition §§5, 6, 12-15; Vyapar_03 §§1-4; Pricing Model
 
 - 2026-09-12 - Drafted for Product Manager review; no approval yet.
 
-**Approval:** Product Manager - [ ] Approved - name, date
+**Approval:** Product Manager - [x] Approved - Krishna Kategaru, 2026-09-12
 
 ---
 
@@ -390,6 +415,8 @@ Pass · Verifiable Pass · Correct Pass · Conforming Pass
   attributes; verification claims specific to this listing are decided
   concretely in BR03.
 
+**Traced to (Step 2 FRs):** FR03, FR04, FR05, FR06
+
 **Traced to:** `modules/modules.md` MOD01 Scope/Data owned and MOD04 boundary;
 Architecture ADR-013; PM P3.4/P4.1/P4.2; Complete Product Definition §§6-15;
 Vyapar_01 §§3-7; Vyapar_03 §§1-8.
@@ -401,7 +428,7 @@ Vyapar_01 §§3-7; Vyapar_03 §§1-8.
   ordinary discovery of this listing as subordinate to opportunity response;
   discovery and opportunity response are equally valid uses of this listing.
 
-**Approval:** Product Manager - [ ] Approved - name, date
+**Approval:** Product Manager - [x] Approved - Krishna Kategaru, 2026-09-12
 
 ---
 
@@ -542,6 +569,16 @@ testable · Correct Pass · Conforming Pass
   path) — to achieve a shippable trust baseline that does not exclude
   unregistered/informal businesses, accepting that category coverage and
   registry automation expand in later phases.
+- DEC-004 · (Step 2 approver check, 2026-09-12) In the context of the V1
+  document menu above listing Aadhaar, facing UIDAI's Aadhaar (Authentication
+  and Offline Verification) Regulations 2021 - which direct verification
+  entities not to collect or store Aadhaar numbers, with any retained copy
+  masked and irretrievable - and UIDAI's move to require private entities to
+  register and use approved offline QR/XML or API methods rather than collect
+  copies, we chose to drop Aadhaar from the V1 menu (FR08 DEC-002) over storing
+  masked Aadhaar images, to stay simple and compliant, accepting four options
+  (GST/GSTIN, Udyam, PAN, Shops & Establishment License) for V1. Aadhaar
+  offline QR verification through a UIDAI-registered path is future scope.
 
 **Assumptions**
 
@@ -553,6 +590,8 @@ testable · Correct Pass · Conforming Pass
   government database) — a future automated PAN/Aadhaar verification
   integration would require an authorized KYC provider and its own
   vendor/legal review, consistent with UIDAI/Income Tax API access rules.
+
+**Traced to (Step 2 FRs):** FR06, FR07, FR08, FR09, FR10
 
 **Traced to:** `modules/modules.md` MOD01 Level-3 scope/data; Architecture
 ADR-004, ADR-005, ADR-013; PM P2 Rules 7/11/12, P3.12, P5.7; Complete Product
@@ -567,7 +606,7 @@ verification-requirement precedent, below).
   policy blocker with a concrete, deliberately lightweight V1 policy; broader
   registry coverage remains explicit future scope, not a launch blocker.
 
-**Approval:** Product Manager - [ ] Approved - name, date
+**Approval:** Product Manager - [x] Approved - Krishna Kategaru, 2026-09-12
 
 ---
 
@@ -689,6 +728,8 @@ boundary · Conforming Pass
   Manager geography decision; it should be confirmed before go-to-market but
   does not block this BR.
 
+**Traced to (Step 2 FRs):** FR11, FR12, FR13, FR14
+
 **Traced to:** `modules/modules.md` MOD01 scope/out-of-scope/data; PM P3.2,
 P3.3, P3.9, P5.2, P5.4; Complete Product Definition §§17-24, 41-47;
 Vyapar_02 §§8, 12; Vyapar_03 §§3, 9-10; Vyapar_01 §§1-3; critqureport §24.
@@ -700,7 +741,7 @@ Vyapar_02 §§8, 12; Vyapar_03 §§3, 9-10; Vyapar_01 §§1-3; critqureport §24
   question with the Community/Public-External segment rule, and the V1 wedge
   using the source corpus's own stated recommendation.
 
-**Approval:** Product Manager - [ ] Approved - name, date
+**Approval:** Product Manager - [x] Approved - Krishna Kategaru, 2026-09-12
 
 ---
 
@@ -759,11 +800,15 @@ matrimonial discovery, and a popularity or follower graph.
 **Worth check**
 
 Business/professional/customer discovery is named directly in the approved
-scope, as its own capability, not as a byproduct of opportunity distribution.
-Without it, profiles and verification have no customer value and the module
-cannot solve the stated fragmentation problem — and members lose the ordinary,
-JustDial/Sulekha-style "just find me a business" experience the source corpus
-and the Product Manager both explicitly expect Vyapar to provide.
+Step 0 scope, as its own capability, not as a byproduct of opportunity
+distribution. Without it, profiles and verification have no customer value and
+the module cannot solve the stated fragmentation problem — and members lose
+the ordinary "just find me a business" experience `modules/modules.md` scopes
+in and the Product Manager has explicitly confirmed Vyapar should provide.
+(The deeper Vyapar product-research corpus does not itself describe this
+standalone directory experience — it is built around opportunity discovery —
+but Step 0's sealed boundary is the higher-priority source, and the Product
+Manager's direction is explicit; see the Scope-of-this-step note above.)
 
 **Quality gate (ISO 29148, adapted for business-level requirements)**
 
@@ -782,10 +827,16 @@ Pass · Verifiable Pass · Correct Pass · Conforming Pass
 - Taxonomy and search implementation may begin with indexed structured/text
   retrieval and evolve later; no particular search vendor is a BR decision.
 
-**Traced to:** `modules/modules.md` MOD01 scope/out-of-scope; PM P2 Rules 1,
-4-8, P3.6-P3.8, P5.1/P5.3; Complete Product Definition §§37-40, 54-56;
-Vyapar_02 §§4-6, 12; Vyapar_03 §§4-7; external research R8 (Justdial/Sulekha
-discovery-directory precedent, below).
+**Traced to (Step 2 FRs):** FR15, FR16, FR17
+
+**Traced to:** `modules/modules.md` MOD01 scope/out-of-scope (the source of the
+standalone discovery requirement); PM P2 Rules 1, 4-8, P3.6-P3.8, P5.1/P5.3;
+Complete Product Definition §§37-40, 54-56; Vyapar_02 §§4-6, 12; Vyapar_03
+§§4-7 (these apply to in-module ranking/discovery mechanics generally; note
+that the underlying research corpus designs these mechanics for opportunity
+discovery specifically, not a standalone business directory — see this BR's
+Worth check); external research R8 (Justdial precedent for a low-friction
+local-business discovery experience, below).
 
 **Review history**
 
@@ -795,7 +846,7 @@ discovery-directory precedent, below).
   opportunity-distribution loop; both are equally valid, first-class uses of
   this capability.
 
-**Approval:** Product Manager - [ ] Approved - name, date
+**Approval:** Product Manager - [x] Approved - Krishna Kategaru, 2026-09-12
 
 ---
 
@@ -880,6 +931,8 @@ Correct Pass · Conforming Pass
 - The first score weights and notification thresholds are product configuration
   subject to experiment governance, not fixed prices or hidden personalization.
 
+**Traced to (Step 2 FRs):** FR13, FR17, FR18, FR19, FR20, FR21, FR55
+
 **Traced to:** PM P2 Rules 2, 4-8, P3.6-P3.8, P3.13-P3.15, P5.5; Complete
 Product Definition §§23-36, 52-53, 57; Pricing Model §§2, 5.2, 6, 14, 16;
 Vyapar_01 §§4-7; Vyapar_03 §§5-8; critqureport §24.
@@ -890,7 +943,7 @@ Vyapar_01 §§4-7; Vyapar_03 §§5-8; critqureport §24.
 - 2026-09-12 - Product Manager correction pass: launch wedge resolved via
   BR04; this BR's scope note updated accordingly.
 
-**Approval:** Product Manager - [ ] Approved - name, date
+**Approval:** Product Manager - [x] Approved - Krishna Kategaru, 2026-09-12
 
 ---
 
@@ -968,6 +1021,8 @@ Feasible Pass · Verifiable Pass · Correct Pass · Conforming Pass
 - The first response channel may be asynchronous and platform-mediated; real-
   time chat is not assumed.
 
+**Traced to (Step 2 FRs):** FR16, FR22, FR23, FR24
+
 **Traced to:** `modules/modules.md` Enquiry/Data owned and MOD04 boundary; PM
 P3.10-P3.12, P5.1/P5.2/P5.8; Complete Product Definition §§40-46;
 Pricing Model §§5.5, 14.1, 15; Vyapar_02 §§6, 9-11.
@@ -979,7 +1034,7 @@ Pricing Model §§5.5, 14.1, 15; Vyapar_02 §§6, 9-11.
   clarified via BR10/BR11's resolved monetization roadmap; payment collection
   is self-contained per BR17.
 
-**Approval:** Product Manager - [ ] Approved - name, date
+**Approval:** Product Manager - [x] Approved - Krishna Kategaru, 2026-09-12
 
 ---
 
@@ -1051,6 +1106,8 @@ Verifiable Pass · Correct Pass · Conforming Pass
 - The partnership request itself is a MOD01-owned record and can later be
   linked to a qualifying interaction for reputation, subject to consent.
 
+**Traced to (Step 2 FRs):** FR25, FR26
+
 **Traced to:** `modules/modules.md` PartnershipRequest and MOD01 rationale; PM
 P1.3-P1.4, P3.10-P3.12, P5.8; Complete Product Definition §§31, 41-46;
 critqureport §§12, 17-18; Pricing Model §5.4.
@@ -1059,7 +1116,7 @@ critqureport §§12, 17-18; Pricing Model §5.4.
 
 - 2026-09-12 - Drafted; no approval yet.
 
-**Approval:** Product Manager - [ ] Approved - name, date
+**Approval:** Product Manager - [x] Approved - Krishna Kategaru, 2026-09-12
 
 ---
 
@@ -1136,6 +1193,8 @@ Pass · Verifiable Pass · Correct Pass · Conforming Pass
 - The platform reputation engine will expose context-aware read signals but will
   not write or rewrite MOD01's underlying evidence.
 
+**Traced to (Step 2 FRs):** FR27, FR28, FR29
+
 **Traced to:** `modules/modules.md` Review/ReputationSignal; Architecture
 ADR-005; PM P3.12, P5.7; Complete Product Definition §§48-50, 52;
 critqureport §§9-11, 16, 22-23; Pricing Model §§2, 5.6, 16.
@@ -1144,7 +1203,7 @@ critqureport §§9-11, 16, 22-23; Pricing Model §§2, 5.6, 16.
 
 - 2026-09-12 - Drafted; policy details remain review items, not silently assumed.
 
-**Approval:** Product Manager - [ ] Approved - name, date
+**Approval:** Product Manager - [x] Approved - Krishna Kategaru, 2026-09-12
 
 ---
 
@@ -1257,6 +1316,8 @@ proportionate commercial-disclosure practice per BR18
 - Indicative rupee price points named in the pricing source remain hypotheses to
   be tested through experiments, not fixed launch prices.
 
+**Traced to (Step 2 FRs):** FR30, FR31, FR32, FR35, FR54
+
 **Traced to:** `modules/modules.md` PromotionPlacement, revenue rationale, and
 MOD06 boundary; Pricing Model §§1-6, 9, 14-18; PM P2.7-P2.8 and Rule 4;
 critqureport §§15-18; Architecture ADR-008.
@@ -1267,7 +1328,7 @@ critqureport §§15-18; Architecture ADR-008.
 - 2026-09-12 - Product Manager correction pass: V1 commercial catalog and
   payment self-containment resolved directly from the pricing source and BR17.
 
-**Approval:** Product Manager - [ ] Approved - name, date
+**Approval:** Product Manager - [x] Approved - Krishna Kategaru, 2026-09-12
 
 ---
 
@@ -1346,6 +1407,8 @@ Pass · Conforming Pass - proportionate commercial-disclosure practice per BR18
   discovery evidence; this does not authorize a V1 paywall on discovery or
   opportunity access.
 
+**Traced to (Step 2 FRs):** FR31, FR33, FR34, FR35
+
 **Traced to:** Pricing Model §§4-5, 8-9, 15-18; PM P2.7-P2.8 and Product
 Decision Record; `modules/modules.md` MOD01 revenue rationale; Architecture
 ADR-008.
@@ -1356,7 +1419,7 @@ ADR-008.
 - 2026-09-12 - Product Manager correction pass: V1 phase and payment
   self-containment confirmed via BR10/BR17.
 
-**Approval:** Product Manager - [ ] Approved - name, date
+**Approval:** Product Manager - [x] Approved - Krishna Kategaru, 2026-09-12
 
 ---
 
@@ -1452,6 +1515,8 @@ compliance approach per BR18
   applicable transition dates even if a particular provision is not yet in force
   on the implementation date.
 
+**Traced to (Step 2 FRs):** FR05, FR21, FR24, FR36, FR37, FR38, FR52
+
 **Traced to:** PM P2 Rules 8/10, P3.5, P3.12, P5.7; Complete Product
 Definition §§12, 49, 52; critqureport §§11, 21; Pricing Model §§7-8, 16;
 Architecture ADR-004, ADR-010, ADR-011; external research R1-R2 below.
@@ -1463,7 +1528,7 @@ Architecture ADR-004, ADR-010, ADR-011; external research R1-R2 below.
   softened to the proportionate posture defined in BR18; no hard blocker
   remains.
 
-**Approval:** Product Manager - [ ] Approved - name, date
+**Approval:** Product Manager - [x] Approved - Krishna Kategaru, 2026-09-12
 
 ---
 
@@ -1552,6 +1617,8 @@ Pass · Conforming Pass - proportionate compliance approach per BR18
   user-generated opportunity publishing is enabled, even if that owner is the
   founder in the earliest phase.
 
+**Traced to (Step 2 FRs):** FR24, FR29, FR39, FR40, FR41
+
 **Traced to:** PM P3.12, P5.7, Rules 10-12, P5.6; Complete Product Definition
 §§45, 48-52; Vyapar_02 §§11-12; Vyapar_03 §11; critqureport §§9-11, 14, 16;
 external research R3-R4 below.
@@ -1563,7 +1630,7 @@ external research R3-R4 below.
   softened to a good-faith, configurable operating policy per BR18; no hard
   blocker remains.
 
-**Approval:** Product Manager - [ ] Approved - name, date
+**Approval:** Product Manager - [x] Approved - Krishna Kategaru, 2026-09-12
 
 ---
 
@@ -1646,6 +1713,8 @@ Conforming Pass
 - Vyapar uses the shared platform i18n and Web Client rather than creating a
   module-specific localization stack.
 
+**Traced to (Step 2 FRs):** FR42, FR43, FR44
+
 **Traced to:** Architecture ADR-010; PM P1.5/P2 Rules 8-9, P3.4, P5.1/P5.3;
 Complete Product Definition §§6, 12, 15, 54-56; Vyapar_02 §§3-4, 12; external
 research R5.
@@ -1654,7 +1723,7 @@ research R5.
 
 - 2026-09-12 - Drafted; no approval yet.
 
-**Approval:** Product Manager - [ ] Approved - name, date
+**Approval:** Product Manager - [x] Approved - Krishna Kategaru, 2026-09-12
 
 ---
 
@@ -1741,6 +1810,8 @@ compliance approach per BR18
 - Outcome confirmation may be self-reported, bilateral, or operator-verified;
   the confidence level of each outcome remains visible in analytics.
 
+**Traced to (Step 2 FRs):** FR32, FR45, FR46
+
 **Traced to:** PM P1.5/P2.5/P3.16; Complete Product Definition §§13-16, 23,
 33-36, 49; Pricing Model §§3, 9-13, 15-18; Vyapar_02 §14; Vyapar_03 §12;
 critqureport §§23-26.
@@ -1752,7 +1823,7 @@ critqureport §§23-26.
   measurement alongside opportunity-outcome measurement, reflecting the
   corrected co-equal scope.
 
-**Approval:** Product Manager - [ ] Approved - name, date
+**Approval:** Product Manager - [x] Approved - Krishna Kategaru, 2026-09-12
 
 ---
 
@@ -1835,6 +1906,8 @@ Admin Console contract.
   and escalation are explicitly staffed before public launch; "founder-operated"
   is not an excuse for an undefined safety SLA.
 
+**Traced to (Step 2 FRs):** FR40, FR46, FR47, FR48, FR49
+
 **Traced to:** Architecture ADR-011/ADR-012; PM P4.1/P5.6-P5.8; Complete
 Product Definition §§21-24, 45, 51; Vyapar_02 §§11-12; Vyapar_03 §11;
 `modules/modules.md` shared concerns.
@@ -1845,7 +1918,7 @@ Product Definition §§21-24, 45, 51; Vyapar_02 §§11-12; Vyapar_03 §11;
 - 2026-09-12 - Product Manager correction pass: removed stale blocker
   references now resolved in BR03/BR12/BR18/BR10/BR11.
 
-**Approval:** Product Manager - [ ] Approved - name, date
+**Approval:** Product Manager - [x] Approved - Krishna Kategaru, 2026-09-12
 
 ---
 
@@ -1964,6 +2037,8 @@ Pass · Verifiable Pass · Correct Pass · Conforming Pass
   unless the Solution Architect records a superseding decision, including
   recording MOD01's direct payment-gateway integration as a sanctioned pattern.
 
+**Traced to (Step 2 FRs):** FR06, FR50, FR51, FR52
+
 **Traced to:** `modules/modules.md` MOD01 Depends on/Depended on/Data owned and
 shared concerns; Architecture dependency table, ADR-004 through ADR-013;
 PM P4.3-P4.4 and P5.8; Pricing Model §12.2 (payment processing as a cost
@@ -1976,7 +2051,7 @@ driver, supporting a direct-gateway model).
   mismatch with self-contained V1 payment collection; added the loose-coupling
   architectural principle per explicit Product Manager direction.
 
-**Approval:** Product Manager - [ ] Approved - name, date
+**Approval:** Product Manager - [x] Approved - Krishna Kategaru, 2026-09-12
 
 ---
 
@@ -2100,6 +2175,8 @@ Conforming Pass
   materially higher-risk capability; that engagement is a scaling milestone, not
   a Step 1 precondition.
 
+**Traced to (Step 2 FRs):** FR37, FR41, FR53, FR54
+
 **Traced to:** `modules/modules.md` out-of-scope payment boundary/shared
 concerns; Architecture ADR-008/ADR-011/ADR-012; Pricing Model §§14-18;
 external research R1-R7 below.
@@ -2111,7 +2188,7 @@ external research R1-R7 below.
   pre-launch legal-sign-off gate to a proportionate, achievable
   compliance-awareness posture; BLOCKER-005 removed accordingly.
 
-**Approval:** Product Manager - [ ] Approved - name, date
+**Approval:** Product Manager - [x] Approved - Krishna Kategaru, 2026-09-12
 
 ---
 
@@ -2165,7 +2242,7 @@ implementation prescriptions beyond the sealed architecture baseline.
 |---|---|
 | `modules/modules.md` - MOD01 and shared concerns | Approved scope, out-of-scope boundary, primary users, dependencies, owned entities, and cross-module ownership. |
 | `docs/PreStartResearch/PROCESS-README.md` | Process status and handoff controls. The recorded prior MOD01 seal conflicts with the current missing artifact; this file does not treat that log as evidence that this artifact is present or approved. |
-| `docs/PreStartResearch/ARCHITECTURE.md` | Container/ownership/dependency baseline: Identity & Trust, Search, Notification, Audit, Object Storage, Admin Console, MOD06/Payments Infrastructure, shared credential, and NFR baselines. |
+| `/ARCHITECTURE.md` (project root) | Container/ownership/dependency baseline: Identity & Trust, Search, Notification, Audit, Object Storage, Admin Console, MOD06/Payments Infrastructure, shared credential, and NFR baselines. |
 | `docs/PreStartResearch/vyapar/critqureport.md` | Risks and hypotheses: cold start, trust/fraud, privacy, WhatsApp/input behavior, pay-to-win, qualified introductions, Business Passport, north-star metrics, and the explicit V1-wedge recommendation (§24) used to resolve BLOCKER-003. |
 | `docs/PreStartResearch/vyapar/ForKhatri_Vyapar_Final_Pricing_and_Revenue_Model_v1.docx` | Free-core philosophy, Boost/business workspace/campaign layers, future qualified responses/intelligence/membership, the explicit V1 Monetization Roadmap (§17) and Final Decisions (§18) used to resolve BLOCKER-006, pricing experiments, and disclosure/refund/analytics guardrails. |
 | `docs/PreStartResearch/vyapar/ForKhatri_Vyapar_Product_Management_Planning_P1-P5.md` | Problem/actors, product principles, canonical Opportunity/Person concepts, lifecycle, matching/distribution rules, journeys, terminology, decision rules, and handoff boundary. |
@@ -2185,7 +2262,7 @@ implementation prescriptions beyond the sealed architecture baseline.
 | R5 | [W3C Web Content Accessibility Guidelines 2.2](https://www.w3.org/TR/WCAG22/) | WCAG 2.2 is a testable web accessibility standard covering mobile/web content; it supports BR14's proposed AA baseline. |
 | R6 | [Department of Consumer Affairs - misleading advertisements and endorsements](https://consumeraffairs.nic.in/latestnews/guidelines-prevention-misleading-advertisements-and-endorsements-misleading) and [Consumer Protection resource page](https://consumeraffairs.nic.in/acts-and-rules/consumer-protection/consumer-protection) | Paid/sponsored placements and provider claims need non-misleading, clearly disclosed commercial treatment, per BR10/BR11/BR18. |
 | R7 | [RBI reference to Payment Aggregator/Payment Gateway directions](https://www.rbi.org.in/scripts/NotificationUser.aspx?Id=11996) and [RBI discussion/reference material](https://www.rbi.org.in/Scripts/PublicationReportDetails.aspx?ID=943&UrlPage=) | Money movement, merchant onboarding, settlement, security, dispute handling, and raw card-data boundaries inform BR17's direct-gateway integration: Vyapar is a merchant client of a licensed/compliant gateway, not a payment aggregator itself. |
-| R8 | [How to Register Your Business on Just Dial (GetSwipe)](https://getswipe.in/blog/article/register-your-business-on-just-dial); [WorkIndia KYC Process](https://www.workindia.in/kyc-process/) and [WorkIndia Employer Login guide](https://resumeera.xyz/JobPost/blog/workindia-employer-login-complete-guide-access-portal-2026); [Apna — Which documents are required, and why](https://apna.co/employer-help-center/2/which-documents-are-required-and-why) and [Apna — How can I get my account verified](https://employer-help-centre.apna.co/support/solutions/articles/1060000139180-how-can-i-get-my-account-verified-) | Directly checked (not assumed) what comparable real apps require: Justdial lists a business on name/contact/address/category alone with no GSTIN requirement; WorkIndia verifies employers via OTP plus company-profile review and requires GST/MSME evidence only in specific edge cases; Apna accepts a GST Certificate as only one of several company-verification options (Company PAN, CIN, FSSAI, Shops & Establishment License), with personal PAN/Aadhaar as its actual fastest path. This directly grounds BR03's phone/OTP-baseline-plus-flexible-document V1 policy (no mandatory GSTIN) and confirms BR05's co-equal discovery scope. |
+| R8 | [How to Register Your Business on Just Dial (GetSwipe)](https://getswipe.in/blog/article/register-your-business-on-just-dial); [WorkIndia KYC Process](https://www.workindia.in/kyc-process/) and [WorkIndia Employer Login guide](https://resumeera.xyz/JobPost/blog/workindia-employer-login-complete-guide-access-portal-2026); [Apna — Which documents are required, and why](https://apna.co/employer-help-center/2/which-documents-are-required-and-why) and [Apna — How can I get my account verified](https://employer-help-centre.apna.co/support/solutions/articles/1060000139180-how-can-i-get-my-account-verified-) | Directly checked (not assumed) what comparable real apps require: Justdial lists a business on name/contact/address/category alone with no GSTIN requirement; WorkIndia verifies employers via OTP plus company-profile review and requires GST/MSME evidence only in specific edge cases; Apna accepts a GST Certificate as only one of several company-verification options (Company PAN, CIN, FSSAI, Shops & Establishment License), with personal PAN/Aadhaar as its actual fastest path. This directly grounds BR03's phone/OTP-baseline-plus-flexible-document V1 policy (no mandatory GSTIN); it also illustrates one real precedent for a low-friction local-business discovery experience, though BR05's standalone-discovery scope itself is grounded in `modules/modules.md`'s Step 0 boundary, not in this research finding. |
 
 ## Open items for downstream awareness (non-blocking)
 
@@ -2202,3 +2279,10 @@ These are residual, Step-2-or-later-level details, not Step 1 blockers:
    migration, if/when ForKhatri centralizes payments across modules (BR17).
 5. Final accessibility conformance testing plan and untranslated
    user-authored-content handling (BR14, Step 3/UX/QA detail).
+6. Module name collision (found 2026-09-13 during Step 4 research): "Vyapar"
+   is also the name of a widely used, unrelated Indian GST billing and
+   accounting app (vyaparapp.in, Simply Vyapar Apps Pvt Ltd; Play Store
+   `in.android.vyapar`). Inside ForKhatri the module can keep its working
+   name, but the Product Manager should decide the public-facing label
+   (e.g. "ForKhatri Vyapar" always with the umbrella brand) and have a
+   trademark check done before launch marketing. Not a pipeline blocker.

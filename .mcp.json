@@ -1,8 +1,10 @@
 {
   "mcpServers": {
     "dbhub": {
-      "type": "http",
-      "url": "http://localhost:8081/mcp"
+      "command": "dbhub",
+      "env": {
+        "DATABASE_URL": "postgresql://postgres:admin@localhost:5433/forKhatridb"
+      }
     }
   }
 }
