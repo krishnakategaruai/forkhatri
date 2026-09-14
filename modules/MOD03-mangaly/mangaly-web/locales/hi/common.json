@@ -12,7 +12,8 @@
     "title": "सेटिंग्स",
     "language": "भाषा",
     "theme": "थीम",
-    "themeOption": { "light": "हल्की", "dark": "गहरी", "system": "सिस्टम" }
+    "themeOption": { "light": "हल्की", "dark": "गहरी", "system": "सिस्टम" },
+    "logOutConfirm": "इस डिवाइस पर मंगल्य से लॉग आउट करें?"
   },
   "action": {
     "back": "वापस",

@@ -1,0 +1,40 @@
+
+> mangaly-web@0.1.0 dev
+> next dev --port 3000
+
+▲ Next.js 16.3.5 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.11:3000
+✓ Ready in 4.4s
+✓ Running next.config.ts took 321ms
+
+ GET /me?edit=food_travel_hobbies 200 in 1579ms (next.js: 1242ms, application-code: 337ms)
+✓ Compiled in 65ms
+ GET /me/edit/pets 200 in 1077ms (next.js: 993ms, application-code: 84ms)
+ GET /me?edit=pets 200 in 92ms (next.js: 13ms, application-code: 79ms)
+ GET /me?edit=pets 200 in 48ms (next.js: 12ms, application-code: 35ms)
+ GET /me?edit=food_travel_hobbies 200 in 65ms (next.js: 9ms, application-code: 56ms)
+ GET /login 200 in 80ms (next.js: 52ms, application-code: 28ms)
+ GET / 200 in 119ms (next.js: 58ms, application-code: 61ms)
+ GET / 200 in 24ms (next.js: 8ms, application-code: 17ms)
+ GET /me?edit=food_travel_hobbies 200 in 45ms (next.js: 8ms, application-code: 37ms)
+▲ Next.js 16.3.5 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.11:3000
+✓ Ready in 1005ms
+✓ Running next.config.ts took 154ms
+
+ GET /me 200 in 755ms (next.js: 395ms, application-code: 360ms)
+ GET /me/completeness 200 in 91ms (next.js: 53ms, application-code: 38ms)
+ GET /me 200 in 29ms (next.js: 8ms, application-code: 21ms)
+[?25h
+▲ Next.js 16.3.5 (Turbopack)
+- Local:         http://localhost:3002
+- Network:       http://192.168.1.11:3002
+✓ Ready in 930ms
+✓ Running next.config.ts took 76ms
+
+ GET /me 200 in 718ms (next.js: 370ms, application-code: 349ms)
+ GET /login 200 in 102ms (next.js: 58ms, application-code: 43ms)
+ GET / 200 in 110ms (next.js: 81ms, application-code: 29ms)
+ GET /me 200 in 56ms (next.js: 8ms, application-code: 47ms)

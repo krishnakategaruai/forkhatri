@@ -160,12 +160,15 @@ def _include_feature_routers(app: FastAPI) -> None:
         app.include_router(occurrences.router)
     except ImportError:
         pass
-    for name in ("circles", "calendar", "trust", "privacy", "connect", "public", "notifications", "organizer", "safety", "feedback", "admin", "conversation"):
+    for name in ("circles", "calendar", "trust", "privacy", "connect", "public", "notifications", "organizer", "safety", "feedback", "admin", "conversation", "chat"):
         try:
             module = __import__(f"app.api.routes.{name}", fromlist=["router"])
         except ImportError:
             continue
         app.include_router(module.router)
+        for extra in ("presence_router", "ws_router"):
+            if hasattr(module, extra):
+                app.include_router(getattr(module, extra))
 
 
 app = create_app()

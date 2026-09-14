@@ -5,7 +5,7 @@
  * the frontend's single copy of the same tuples the backend already treats
  * as its one source of truth. */
 
-export type FieldKind = 'select' | 'text' | 'ageRange';
+export type FieldKind = 'select' | 'text' | 'ageRange' | 'tags';
 
 export type FieldDef = {
   category: string;
@@ -124,7 +124,7 @@ export const ENHANCED_CATEGORIES: CategoryDef[] = [
       {
         category: 'food_travel_hobbies',
         key: 'hobbies',
-        kind: 'text',
+        kind: 'tags',
         labelKey: 'field.food_travel_hobbies.hobbies',
       },
     ],

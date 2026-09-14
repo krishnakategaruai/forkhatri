@@ -11,9 +11,10 @@ import { useTranslation } from 'react-i18next';
 import OfflineBanner from '@/components/OfflineBanner';
 import SideNav from '@/components/SideNav';
 import TabBar from '@/components/TabBar';
+import { api } from '@/lib/api';
 import { useIdentity } from '@/lib/identity';
 
-const CHROMELESS_PREFIXES = ['/welcome', '/onboarding', '/a/', '/create', '/organizer/', '/admin'];
+const CHROMELESS_PREFIXES = ['/welcome', '/onboarding', '/a/', '/create', '/organizer/', '/admin', '/chats/'];
 // On a wide screen the rail stays for everything except the launch/onboarding flow, so a person never loses their way.
 const RAILLESS_PREFIXES = ['/welcome', '/onboarding'];
 
@@ -35,6 +36,16 @@ export default function AppChrome({ children }: { children: React.ReactNode }) {
       if (saved === 'light' || saved === 'dark') document.documentElement.dataset.theme = saved;
     } catch { /* ignore */ }
   }, []);
+
+  // Presence heartbeat (chat: "active now"): a timestamp, never a location.
+  useEffect(() => {
+    if (!identity) return;
+    let alive = true;
+    const beat = () => { if (alive) api('/presence', { body: {} }).catch(() => undefined); };
+    beat();
+    const id = setInterval(beat, 30000);
+    return () => { alive = false; clearInterval(id); };
+  }, [identity]);
 
   useEffect(() => {
     if (!ready || isPublic) return;

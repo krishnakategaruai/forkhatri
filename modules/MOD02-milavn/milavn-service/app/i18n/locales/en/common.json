@@ -67,5 +67,6 @@
   "digest.today": "{n} things are happening near you today.",
   "digest.tomorrow": "{n} things are on tomorrow near you.",
   "digest.peers": "{n} of them have people from your circles going.",
-  "digest.quiet": "It's a quiet week around {locality} — a good one to make something happen."
+  "digest.quiet": "It's a quiet week around {locality} — a good one to make something happen.",
+  "chat.notAllowed": "You can message people you share an activity or a circle with."
 }

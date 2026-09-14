@@ -14,7 +14,7 @@ cd modules\MOD02-milavn\milavn-web
 npm run dev
 ```
 
-Prerequisites already in place on this machine: Postgres on `localhost:5433`, database `forkhatridb`, roles `milavn_owner` / `milavn_app` (dev passwords in `07a-db-implementation/.env`), migrations `001–014` applied, `seeds.sql` + `seeds-dev.sql` loaded. To rebuild from scratch: `cd 07a-db-implementation && ./init.sh` then apply `migrations/002..014` and `seeds-dev.sql` as `milavn_owner`.
+Prerequisites already in place on this machine: Postgres on `localhost:5433`, database `forkhatridb`, roles `milavn_owner` / `milavn_app` (dev passwords in `07a-db-implementation/.env`), migrations `001–015` applied, `seeds.sql` + `seeds-dev.sql` loaded. To rebuild from scratch: `cd 07a-db-implementation && ./init.sh` then apply `migrations/002..015` and `seeds-dev.sql` as `milavn_owner`.
 
 Why no `--reload` on Windows: uvicorn's reloader binds the socket and spawns the real server as a `multiprocessing` child that inherits it. If the reloader is killed, that child survives as an orphan (`python -c "from multiprocessing.spawn import spawn_main; spawn_main(parent_pid=…)"`) and keeps serving stale code on the port — `netstat` then shows a LISTENING socket owned by a dead PID. That is what had made 8001 unusable earlier. To clear it: find `python.exe` processes whose command line contains `spawn_main` and whose `parent_pid` is gone, and stop them. Restart the API by hand after code changes instead.
 
@@ -33,6 +33,8 @@ Works as a phone app (≤ 899px: floating tab bar) and as a desktop app (≥ 900
 8. Moderator (`/admin/moderation`): the shared Admin & Governance Console contract, rendered.
 
 Real time, on the device: a **Live** pulse on posters while an activity is on, "in 40 min" when it is close, a **Happening now** rail on Home, and **Use where I am** (a one-shot device position that changes what you see, never your stored profile). Threads refresh every 15 s.
+
+**Chats** (tab before Profile): 1:1 and group messaging with people you share an activity or a circle with (a stranger gets a 403), live over WebSocket (`/ws/chat`), emoji reactions instead of likes, photos, typing, "active now" presence, and **expressions**: turn on the camera icon in a chat and your mood (😊 😂 😮 😉 🤔 😍) is detected on the device and shown next to your messages; the manual mood row works without a camera. From a person page, **Message** opens the chat.
 
 Public page without login: `http://localhost:3001/a/<slug>` (server-rendered, SEO metadata).
 

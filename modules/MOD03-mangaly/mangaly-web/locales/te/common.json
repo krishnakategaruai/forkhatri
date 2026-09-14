@@ -12,7 +12,8 @@
     "title": "సెట్టింగ్‌లు",
     "language": "భాష",
     "theme": "రూపం",
-    "themeOption": { "light": "లైట్", "dark": "డార్క్", "system": "సిస్టమ్" }
+    "themeOption": { "light": "లైట్", "dark": "డార్క్", "system": "సిస్టమ్" },
+    "logOutConfirm": "ఈ పరికరంలో మంగళ్య నుండి లాగ్ అవుట్ అవ్వాలా?"
   },
   "action": {
     "back": "వెనుకకు",

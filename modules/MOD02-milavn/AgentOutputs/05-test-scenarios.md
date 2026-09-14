@@ -15,6 +15,7 @@ items: "175 | approved: 175 | blockers: 0"
 | 2026-09-13 | Initial draft: 175 test scenarios covering all 88 Sealed FRs in `02-functional-requirements.md`, cross-referencing their parent UX flows (`03-ux.md`) and UI specs (`04-ui.md`) for interaction-state coverage. Deferred FRs (FR070–FR075, BR16–BR18) each get one minimal "not yet testable" scenario rather than fabricated coverage for unbuilt capability. Researched current QA practice for the one genuinely novel-risk area this module introduces (OTP/authentication rate-limiting, lockout, and expiry edge cases) rather than relying on the FR text alone, and researched the current "testing trophy" vs. classic pyramid debate directly, confirming that for a frontend-heavy mobile web app the credible shape biases toward Integration as the largest layer (not Unit), with E2E kept deliberately thin and reserved for genuine critical cross-screen journeys. Status intentionally left at Ready for Review with every scenario's approval line unticked, per this project's standing approval-gate rule. | First Step 5 run for MOD02, one pass over all 88 FRs per the Loop discipline. |
 | 2026-09-13 | Corrected a garbled Set-level quality gate/Test distribution summary error (claimed 46 Unit/121 Integration/8 E2E; actual tagged counts were 31/140/4) — fixed to match reality. Also closed the real gap TS129 had flagged (no moderator-facing screen existed for FR065): root-caused to an error in BR14's own "Affected users and systems" line, now corrected in `01-business-requirements.md`, with Steps 3/4 adding UX20/UI20 to close it. Updated TS129 to trace to that real screen instead of a flagged absence. User approved the file; all 175 scenarios' approval lines ticked and file Sealed. | User approval, with the flagged gap closed first, per explicit request — krishna kategaru, 2026-09-13. |
 | 2026-09-13 | Authentication ownership corrected: login/auth is owned solely by the parent ForKhatri platform (one source of truth); the scenarios for FR076–FR080 and FR088 (Splash, Sign Up, Log In, Forgot Password, OTP, Logout) are re-tagged as platform-owned: they execute in the ForKhatri platform's test suite; Milavn's Step 10 automates only the module's own scenarios. Nothing was deleted — the original text stays for traceability. | User correction "User login, authentication will be done by one source of truth, the parent ForKhatri" — krishna kategaru. |
+| 2026-09-14 | **TS176–TS190 added** for FR089–FR101 (ask-first discovery, smart fill, thread, moments, board, person page, circle locality, messaging, expressions, digest, poster, use-where-I-am, de-duplication/live). Tagged by layer; Step 10 automates them. | Accountability request from the owner — krishna kategaru (autonomous). |
 
 ## Coverage check
 | Parent FR | Scenarios produced | Covered |
@@ -107,6 +108,278 @@ items: "175 | approved: 175 | blockers: 0"
 | FR086 | TS169–TS170 | Yes |
 | FR087 | TS171–TS172 | Yes |
 | FR088 | TS173–TS175 | Yes — platform-owned; runs in the ForKhatri platform's suite, not Milavn's (see Revision history) |
+| FR089–FR101 (Step 9 additions) | TS176–TS190 | Yes — drafted with the FRs; automated in Step 10 |
+
+## TS176 — FR089 (Integration)
+**Traces from:** FR089
+**Layer:** Integration
+**Status:** Draft (added in Step 9 for the owner-decided FRs; Step 10 automates it)
+**Confidence:** High
+
+**Scenario**
+Given a member types "badminton this weekend near me", when the ask is interpreted, then the chips read this weekend · near me · Badminton and the filters weekend, zone and Play are applied.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-14 — added with FR089–FR101 (accountability request).
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS177 — FR089 (E2E)
+**Traces from:** FR089
+**Layer:** E2E
+**Status:** Draft (added in Step 9 for the owner-decided FRs; Step 10 automates it)
+**Confidence:** High
+
+**Scenario**
+Given an ask that matches nothing this weekend, when results come back empty, then the search widens (distance, then date), shows the matching activities, and says which widening happened.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-14 — added with FR089–FR101 (accountability request).
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS178 — FR090 (Integration)
+**Traces from:** FR090
+**Layer:** Integration
+**Status:** Draft (added in Step 9 for the owner-decided FRs; Step 10 automates it)
+**Confidence:** High
+
+**Scenario**
+Given "Chai and chapters tomorrow 6pm at Ameerpet for 10 people", when Smart fill runs, then category Meet, title "Chai and chapters", tomorrow 18:00, Ameerpet and capacity 10 are pre-filled and nothing is created until Create is tapped.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-14 — added with FR089–FR101 (accountability request).
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS179 — FR091 (Integration)
+**Traces from:** FR091
+**Layer:** Integration
+**Status:** Draft (added in Step 9 for the owner-decided FRs; Step 10 automates it)
+**Confidence:** High
+
+**Scenario**
+Given a member who has not RSVP'd, when they request an activity thread, then the API returns 403 and no message is written.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-14 — added with FR089–FR101 (accountability request).
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS180 — FR091 (E2E)
+**Traces from:** FR091
+**Layer:** E2E
+**Status:** Draft (added in Step 9 for the owner-decided FRs; Step 10 automates it)
+**Confidence:** High
+
+**Scenario**
+Given a checked-in participant, when they post to the thread, then the organizer sees the message and can retract only their own messages.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-14 — added with FR089–FR101 (accountability request).
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS181 — FR092 (Integration)
+**Traces from:** FR092
+**Layer:** Integration
+**Status:** Draft (added in Step 9 for the owner-decided FRs; Step 10 automates it)
+**Confidence:** High
+
+**Scenario**
+Given a member who was not at the activity, when they upload a moment, then 403; given one who attended, then the photo appears for the people who were there and for nobody else.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-14 — added with FR089–FR101 (accountability request).
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS182 — FR093 (Integration)
+**Traces from:** FR093
+**Layer:** Integration
+**Status:** Draft (added in Step 9 for the owner-decided FRs; Step 10 automates it)
+**Confidence:** High
+
+**Scenario**
+Given a non-member of a circle, when they read the board, then it is empty and posting returns 403; given a member, then their post appears newest first.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-14 — added with FR089–FR101 (accountability request).
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS183 — FR094 (Integration)
+**Traces from:** FR094
+**Layer:** Integration
+**Status:** Draft (added in Step 9 for the owner-decided FRs; Step 10 automates it)
+**Confidence:** High
+
+**Scenario**
+Given a person who has set City-only precision, when another member opens their page, then only the city is shown, attendance history is absent, and a blocked pair receives 404.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-14 — added with FR089–FR101 (accountability request).
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS184 — FR095 (Integration)
+**Traces from:** FR095
+**Layer:** Integration
+**Status:** Draft (added in Step 9 for the owner-decided FRs; Step 10 automates it)
+**Confidence:** High
+
+**Scenario**
+Given circles in Jubilee Hills, Kondapur and Ameerpet and a viewer in Jubilee Hills, when Near me is selected, then only the Jubilee Hills (and city-wide) circles are listed.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-14 — added with FR089–FR101 (accountability request).
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS185 — FR096 (Integration)
+**Traces from:** FR096
+**Layer:** Integration
+**Status:** Draft (added in Step 9 for the owner-decided FRs; Step 10 automates it)
+**Confidence:** High
+
+**Scenario**
+Given two members with no shared activity or circle, when one opens a direct chat, then 403 with the explanation; given a shared circle, then 201 and the same conversation id on repeat.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-14 — added with FR089–FR101 (accountability request).
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS186 — FR096 (E2E)
+**Traces from:** FR096
+**Layer:** E2E
+**Status:** Draft (added in Step 9 for the owner-decided FRs; Step 10 automates it)
+**Confidence:** High
+
+**Scenario**
+Given two members on one conversation, when one sends a message, reacts and types, then the other receives message, reaction and typing events over the WebSocket within a second; a non-member reading the conversation gets 404.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-14 — added with FR089–FR101 (accountability request).
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS187 — FR097 (Unit)
+**Traces from:** FR097
+**Layer:** Unit
+**Status:** Draft (added in Step 9 for the owner-decided FRs; Step 10 automates it)
+**Confidence:** High
+
+**Scenario**
+Given blendshape scores (jawOpen 0.6 + mouthSmile 0.5), when classified, then the expression is laugh; (one eye blink 0.7, other 0.1) then wink; (browInnerUp 0.5 + jawOpen 0.6) then surprised.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-14 — added with FR089–FR101 (accountability request).
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS188 — FR097 (E2E)
+**Traces from:** FR097
+**Layer:** E2E
+**Status:** Draft (added in Step 9 for the owner-decided FRs; Step 10 automates it)
+**Confidence:** High
+
+**Scenario**
+Given a member picks a mood, when the other member's chat is open, then that member's expressive avatar on the stage and beside their messages changes within a second, and the API has stored only the word.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-14 — added with FR089–FR101 (accountability request).
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS189 — FR099 (Unit)
+**Traces from:** FR099
+**Layer:** Unit
+**Status:** Draft (added in Step 9 for the owner-decided FRs; Step 10 automates it)
+**Confidence:** High
+
+**Scenario**
+Given an activity with a cover, when the poster is rendered, then a 1080×1350 PNG contains title, date pill, place, host and a QR that decodes to the public URL, with no network upload.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-14 — added with FR089–FR101 (accountability request).
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS190 — FR100/FR101 (Integration)
+**Traces from:** FR100/FR101
+**Layer:** Integration
+**Status:** Draft (added in Step 9 for the owner-decided FRs; Step 10 automates it)
+**Confidence:** High
+
+**Scenario**
+Given ?lat&lng of Madhapur, when Around You is requested, then viewer_locality is Madhapur and the stored profile is unchanged; given join → withdraw → join, then the organizer has exactly one "is going" alert.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-14 — added with FR089–FR101 (accountability request).
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
 
 ## Set-level quality gate
 | Check | Result |

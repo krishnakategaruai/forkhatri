@@ -1,10 +1,13 @@
 ---
-title: ForKhatri Single Source of Truth - Architecture Rework Analysis
+project: ForKhatri
+title: Platform Consolidation — Single Source of Truth Research
 date: 2026-09-14
-status: Complete Research Report
+status: Research Complete
+scope: All modules (Vyapar, Milavn, Mangaly, Counsel, Dashboard, Payment Services, Loans & Finance)
+approver: Chief Architect (Krishna Kategaru)
 ---
 
-# ForKhatri Single Source of Truth Architecture Rework
+# Platform Consolidation: Single Source of Truth — Research Report
 
 ## Executive Summary
 

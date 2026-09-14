@@ -145,4 +145,6 @@ async def public_profile(session: AsyncSession, *, viewer_member_id: UUID, membe
         "shared_circles": [{"id": str(r[0]), "name": r[1]} for r in shared],
         "hosted_ids": hosted,
         "is_me": member_id == viewer_member_id,
+        "can_message": member_id != viewer_member_id
+        and bool((await session.execute(text("SELECT milavn_connect.can_message(:a, :b)"), {"a": str(viewer_member_id), "b": str(member_id)})).scalar_one()),
     }

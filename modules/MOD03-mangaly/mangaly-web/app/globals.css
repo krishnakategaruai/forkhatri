@@ -62,6 +62,7 @@
   --surface-container-low: var(--surface-sunken);
   --surface-container: var(--surface-raised);
   --surface-container-high: #ffffff;
+  --surface-container-highest: #ffffff;
   --text-primary: var(--ink-900);
   --text-secondary: var(--ink-600);
   --accent-primary: var(--saffron-500);
@@ -124,20 +125,10 @@
     --surface-container-low: var(--surface-sunken);
     --surface-container: var(--navy-900);
     --surface-container-high: var(--navy-700);
-    /* [Bug found from a real screenshot, 2026-09-13] NOT navy-700 (#2E4370) —
-       that is lighter than --surface-raised (#14213D), which inverted the
-       intended elevation order and made an unselected segmented-control
-       option (background: this token, showing through its transparent
-       button) look more prominent than the selected one (surface-raised).
-       04-ui.md fixes navy-700 for a DIFFERENT role ("dark-theme card
-       surfaces, disabled-dark accents" — an elevated tone), not for sunken/
-       recessed panels. #101a2f is a derived in-between tone (04-ui.md fixes
-       surface.sunken as a semantic role, not a literal per-theme hex, the
-       same way this file already derives light mode's #fffdf9 for
-       surface.raised) — darker than raised so a sunken panel always recedes
-       behind it, lighter than base so press-states/badges stay visible
-       against the page rather than disappearing into it. */
-    --surface-sunken: #101a2f;
+    /* Must stay lighter than container-high: a selected segment inside a sheet
+       (container-high) otherwise reads as recessed instead of chosen. */
+    --surface-container-highest: #36363b;
+    --surface-sunken: #111113;
     --focus-ring: var(--saffron-500);
     --tabbar-bg: var(--navy-900);
   }
@@ -164,11 +155,11 @@
 
   --surface-base: var(--navy-950);
   --surface-raised: var(--navy-900);
-  /* Same fix as the system-preference dark block above — see its comment. */
   --surface-sunken: #111113;
   --surface-container-low: var(--surface-sunken);
   --surface-container: var(--navy-900);
   --surface-container-high: var(--navy-700);
+  --surface-container-highest: #36363b;
   --focus-ring: var(--saffron-500);
   --tabbar-bg: var(--navy-900);
 }
@@ -588,11 +579,14 @@ button {
   padding-bottom: env(safe-area-inset-bottom, 0px);
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  background: color-mix(in srgb, var(--tabbar-bg) 78%, transparent);
+  /* [palette v3] Follows the theme: a near-white bar in light mode, a dark
+     one in dark mode. It was always dark before, which read as a heavy grey
+     slab across every light-mode screen. */
+  background: color-mix(in srgb, var(--surface-raised) 92%, transparent);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   backdrop-filter: blur(20px) saturate(160%);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 -8px 32px rgba(11, 18, 32, 0.28);
+  border-top: 1px solid var(--border-hairline);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
   z-index: 20;
 }
 
@@ -606,7 +600,7 @@ button {
   justify-content: center;
   gap: 3px;
   min-height: 48px;
-  color: rgba(244, 241, 234, 0.62);
+  color: var(--text-secondary);
   font-size: 0.625rem;
   font-weight: 600;
   letter-spacing: 0.01em;
@@ -1095,7 +1089,7 @@ button {
 }
 
 .segmented__opt.is-active {
-  background: var(--surface-raised);
+  background: var(--surface-container-highest);
   color: var(--text-primary);
   box-shadow: var(--elevation-1);
 }
@@ -1526,10 +1520,12 @@ select.field__input {
   opacity: 0.6;
 }
 
+/* Selected = solid accent with near-black text (Bumble's selected-chip
+   pattern), not a tinted fill — tints of saffron on dark read as brown. */
 .quick-pick__chip--active {
   border-color: var(--saffron-500);
-  background: var(--accent-tint);
-  color: var(--saffron-600);
+  background: var(--saffron-500);
+  color: var(--navy-950);
 }
 
 .quick-pick__chip--decline {
@@ -1675,8 +1671,10 @@ select.field__input {
   width: 100%;
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
-  border: 1px solid color-mix(in srgb, var(--saffron-500) 45%, var(--border-hairline));
-  background: var(--accent-tint);
+  /* Neutral card, accent only on the dot: a low-luminance saffron tint on a
+     dark surface reads as brown, which is what made this card look muddy. */
+  border: 1px solid var(--border-hairline);
+  background: var(--surface-container);
   color: var(--text-primary);
   font: inherit;
   text-align: left;
@@ -1685,6 +1683,129 @@ select.field__input {
 
 .next-step:active {
   transform: scale(0.98);
+}
+
+/* Photo grid — six slots, main photo 2×2, the layout Hinge and Bumble both
+   open their profile editors on. Row height comes from the square singles
+   in the third column, so the main slot always fills exactly two rows. */
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.photo-slot {
+  position: relative;
+  aspect-ratio: 1;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-hairline);
+  background: var(--surface-sunken);
+  color: var(--saffron-600);
+  font: inherit;
+  font-size: 1.5rem;
+}
+
+.photo-slot img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-slot--main {
+  grid-column: span 2;
+  grid-row: span 2;
+  aspect-ratio: auto;
+}
+
+.photo-slot--empty {
+  border-style: dashed;
+  background: transparent;
+}
+
+.photo-slot--empty:disabled {
+  color: var(--text-secondary);
+  opacity: 0.45;
+}
+
+.photo-slot__badge {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.prompt-card--elevated {
+  background: var(--surface-container);
+  box-shadow: var(--elevation-1);
+}
+
+.prompt-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-3);
+}
+
+.prompt-add__title {
+  color: var(--saffron-600);
+  font-weight: 600;
+}
+
+.preview-photo {
+  overflow: hidden;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radius-lg);
+  background: var(--surface-sunken);
+}
+
+.preview-photo img,
+.sheet__photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.preview-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 var(--space-1);
+}
+
+.sheet__photo {
+  overflow: hidden;
+  aspect-ratio: 1;
+  max-height: 45vh;
+  margin: 0 auto var(--space-3);
+  border-radius: var(--radius-md);
+}
+
+.sheet__stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sheet__danger {
+  min-height: 48px;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--danger-action) 50%, var(--border-hairline));
+  background: transparent;
+  color: var(--danger-action);
+  font: inherit;
+  font-weight: 600;
 }
 
 .next-step__dot {
@@ -1908,12 +2029,18 @@ select.field__input {
   margin-top: var(--space-3);
 }
 
+/* Pinned so Save stays reachable when a sheet's content scrolls (long chip lists). */
 .sheet__actions {
+  position: sticky;
+  bottom: calc(-1 * (var(--space-5) + env(safe-area-inset-bottom, 0px)));
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  margin-top: var(--space-4);
+  margin: var(--space-4) calc(-1 * var(--space-4)) 0;
+  padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+  background: var(--surface-container-high);
+  border-top: 1px solid var(--border-hairline);
 }
 
 .sheet__save {
@@ -1978,4 +2105,115 @@ select.field__input {
   font-size: 0.8125rem;
   font-weight: 600;
   text-align: right;
+}
+
+/* Long-press drag reorder. Filled slots opt out of browser panning so the
+   drag isn't cancelled mid-gesture; scrolling still works from anywhere
+   else on the page, and the photo sheet offers Move buttons as the
+   non-drag alternative (WCAG 2.5.7). */
+.photo-slot {
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.photo-slot:not(.photo-slot--empty) {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.photo-slot img {
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+.photo-slot.is-dragging {
+  z-index: 2;
+  opacity: 0.9;
+  transform: scale(1.04);
+  box-shadow: var(--elevation-2);
+}
+
+.photo-slot.is-drop-target {
+  outline: 2px solid var(--saffron-500);
+  outline-offset: 2px;
+}
+
+.sheet__row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.sheet__row > * {
+  flex: 1;
+}
+
+.sheet__row--add {
+  margin-top: var(--space-3);
+}
+
+.sheet__row--add > button {
+  flex: 0 0 auto;
+  padding-inline: var(--space-4);
+}
+
+/* Dual-thumb age range: two native range inputs stacked on one track.
+   Only the thumbs take pointer events, so each can be dragged even where
+   the inputs overlap; the exact number fields below stay the precise,
+   keyboard-friendly fallback (Baymard slider guidance). */
+.range-dual {
+  position: relative;
+  height: 36px;
+  margin: 4px 0 12px;
+}
+
+.range-dual__track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 4px;
+  border-radius: 999px;
+  transform: translateY(-50%);
+}
+
+.range-dual input[type='range'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background: transparent;
+  pointer-events: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.range-dual input[type='range']::-webkit-slider-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 3px solid var(--surface-container-high);
+  background: var(--saffron-500);
+  box-shadow: var(--elevation-1);
+  pointer-events: auto;
+  cursor: grab;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.range-dual input[type='range']::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 3px solid var(--surface-container-high);
+  background: var(--saffron-500);
+  box-shadow: var(--elevation-1);
+  pointer-events: auto;
+  cursor: grab;
+}
+
+.range-dual input[type='range']::-webkit-slider-runnable-track,
+.range-dual input[type='range']::-moz-range-track {
+  background: transparent;
 }

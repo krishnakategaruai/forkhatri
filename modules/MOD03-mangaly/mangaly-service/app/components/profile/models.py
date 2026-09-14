@@ -113,6 +113,9 @@ class ProfileMedia(Base):
     )
     storage_ref: Mapped[str | None] = mapped_column(default=None)
     is_primary: Mapped[bool] = mapped_column(Boolean, default=False)
+    # [migration 013] Person-chosen grid order; position 0 is always the
+    # primary photo (the application keeps the two in step).
+    sort_order: Mapped[int] = mapped_column(default=0)
     upload_status: Mapped[MediaUploadStatus] = mapped_column(
         SqlEnum(
             MediaUploadStatus,

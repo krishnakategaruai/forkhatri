@@ -8,7 +8,8 @@
     "circles": "Circles",
     "calendar": "Calendar",
     "notifications": "Alerts",
-    "profile": "Profile"
+    "profile": "Profile",
+    "chats": "Chats"
   },
   "welcome": {
     "title": "Continue as",
@@ -455,5 +456,41 @@
     "time": "Time",
     "today": "Today",
     "tomorrow": "Tmrw"
+  },
+  "chat": {
+    "title": "Chats",
+    "new": "New chat",
+    "scope": "You can message people you share an activity or a circle with.",
+    "empty": "No chats yet. Start one with someone you’re going somewhere with.",
+    "nobodyYet": "Join an activity or a circle first — the people there appear here.",
+    "groupName": "Group name",
+    "groupDefault": "Group",
+    "start": "Start chat",
+    "startGroup": "Start group ({{count}})",
+    "activeNow": "Active now",
+    "offline": "Not active",
+    "sayHello": "Say hello",
+    "first": "This stays between the people here. Say hello.",
+    "typing": "{{name}} is typing…",
+    "placeholder": "Message…",
+    "photo": "Send a photo",
+    "react": "React",
+    "mood": "Your mood",
+    "message": "Message",
+    "cameraOn": "Show my expressions (camera, on-device)",
+    "cameraOff": "Stop expressions",
+    "cameraHint": "Your camera is analysed on this device only; just a mood word is shared.",
+    "cameraFailed": "Camera not available — pick a mood below instead.",
+    "expr": {
+      "smile": "Smiling",
+      "laugh": "Laughing",
+      "surprised": "Surprised",
+      "wink": "Wink",
+      "thinking": "Thinking",
+      "love": "Love it",
+      "neutral": "Neutral"
+    },
+    "stage": "Who’s here",
+    "you": "You"
   }
 }

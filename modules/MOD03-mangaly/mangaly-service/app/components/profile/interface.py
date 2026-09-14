@@ -44,14 +44,26 @@ from app.config.thresholds import MARRIAGEABLE_AGE_DEFAULT_YEARS, MARRIAGEABLE_A
 from app.events import bus
 
 __all__ = [
+    "MAX_PHOTOS",
     "AlreadyExists",
     "CompletenessReport",
+    "LastPhotoRequired",
     "MissingRequiredFields",
+    "PhotoLimitReached",
+    "PhotoNotFound",
+    "PhotoOrderMismatch",
+    "PhotoSummary",
     "ProfileNotFound",
     "TooYoung",
+    "add_photo",
     "completeness",
     "create_profile",
+    "delete_photo",
+    "get_all_attribute_values",
     "get_all_attributes",
+    "list_own_photos",
+    "reorder_photos",
+    "set_primary_photo",
     "get_category",
     "get_own_profile",
     "is_discoverable",
@@ -263,6 +275,11 @@ class PhotoNotFound(Exception):
     """No such photo on the caller's own profile."""
 
 
+class PhotoOrderMismatch(Exception):
+    """A reorder request did not list exactly the caller's current photos,
+    once each."""
+
+
 @dataclass(frozen=True, slots=True)
 class PhotoSummary:
     id: UUID
@@ -280,7 +297,7 @@ async def _own_photo_rows(session: AsyncSession, profile_id: UUID) -> list:
                     ProfileMedia.media_type == MediaType.PHOTO,
                     ProfileMedia.upload_status == MediaUploadStatus.COMPLETE,
                 )
-                .order_by(ProfileMedia.is_primary.desc(), text("created_at"))
+                .order_by(ProfileMedia.sort_order, text("created_at"))
             )
         ).all()
     )
@@ -309,7 +326,10 @@ async def add_photo(session: AsyncSession, *, account_id: UUID, photo: UploadFil
         await session.execute(
             select(func.count())
             .select_from(ProfileMedia)
-            .where(ProfileMedia.profile_id == profile_id, ProfileMedia.media_type == MediaType.PHOTO)
+            .where(
+                ProfileMedia.profile_id == profile_id,
+                ProfileMedia.media_type == MediaType.PHOTO,
+            )
         )
     ).scalar_one()
     if count >= MAX_PHOTOS:
@@ -325,6 +345,7 @@ async def add_photo(session: AsyncSession, *, account_id: UUID, photo: UploadFil
             media_type=MediaType.PHOTO,
             storage_ref=storage_ref,
             is_primary=is_primary,
+            sort_order=count,
             upload_status=MediaUploadStatus.COMPLETE,
         )
     )
@@ -353,13 +374,11 @@ async def delete_photo(session: AsyncSession, *, account_id: UUID, media_id: UUI
         raise LastPhotoRequired
 
     await session.execute(
-        delete(ProfileMedia).where(ProfileMedia.id == media_id, ProfileMedia.profile_id == profile_id)
-    )
-    if target.is_primary:
-        successor = next(r for r in rows if r.id != media_id)
-        await session.execute(
-            update(ProfileMedia).where(ProfileMedia.id == successor.id).values(is_primary=True)
+        delete(ProfileMedia).where(
+            ProfileMedia.id == media_id, ProfileMedia.profile_id == profile_id
         )
+    )
+    await _apply_photo_order(session, profile_id, [r.id for r in rows if r.id != media_id])
     await bus.publish(
         session,
         schema="mangaly_profile",
@@ -378,13 +397,42 @@ async def set_primary_photo(session: AsyncSession, *, account_id: UUID, media_id
     if not any(r.id == media_id for r in rows):
         raise PhotoNotFound
 
-    await session.execute(
-        update(ProfileMedia)
-        .where(ProfileMedia.profile_id == profile_id, ProfileMedia.id != media_id)
-        .values(is_primary=False)
+    await _apply_photo_order(
+        session, profile_id, [media_id, *(r.id for r in rows if r.id != media_id)]
     )
-    await session.execute(
-        update(ProfileMedia).where(ProfileMedia.id == media_id).values(is_primary=True)
+
+
+async def _apply_photo_order(
+    session: AsyncSession, profile_id: UUID, ordered_ids: list[UUID]
+) -> None:
+    """Write a full order; position 0 becomes the one primary photo, so
+    "make main", "move to first" and "delete the main photo" all share one rule
+    (the same one Hinge and Bumble use: the first photo is the main one)."""
+    for position, media_id in enumerate(ordered_ids):
+        await session.execute(
+            update(ProfileMedia)
+            .where(ProfileMedia.id == media_id, ProfileMedia.profile_id == profile_id)
+            .values(sort_order=position, is_primary=position == 0)
+        )
+
+
+async def reorder_photos(
+    session: AsyncSession, *, account_id: UUID, ordered_ids: list[UUID]
+) -> None:
+    """Person-chosen photo order from the grid's long-press drag."""
+    profile_id = await _own_profile_id(session, account_id=account_id)
+    if profile_id is None:
+        raise ProfileNotFound
+    current = {r.id for r in await _own_photo_rows(session, profile_id)}
+    if len(ordered_ids) != len(set(ordered_ids)) or set(ordered_ids) != current:
+        raise PhotoOrderMismatch
+    await _apply_photo_order(session, profile_id, ordered_ids)
+    await bus.publish(
+        session,
+        schema="mangaly_profile",
+        aggregate_id=profile_id,
+        event_type="ProfilePhotosReordered",
+        payload={"profile_id": str(profile_id), "order": [str(i) for i in ordered_ids]},
     )
 
 

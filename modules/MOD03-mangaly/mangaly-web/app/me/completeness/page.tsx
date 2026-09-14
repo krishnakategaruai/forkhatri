@@ -114,7 +114,7 @@ export default function CompletenessPage() {
                   const category = categoryOf(missing);
                   return (
                     <li key={missing}>
-                      <Link href={`/me/edit/${category}`} className="tier-section__missing-item">
+                      <Link href={`/me?edit=${category}`} className="tier-section__missing-item">
                         <span>{t(`profile:hub.category.${category}`)}</span>
                         <span aria-hidden="true">→</span>
                       </Link>
@@ -144,7 +144,7 @@ export default function CompletenessPage() {
             <ul className="tier-section__missing">
               {unfilledEnhanced.map((cat) => (
                 <li key={cat.category}>
-                  <Link href={`/me/edit/${cat.category}`} className="tier-section__missing-item">
+                  <Link href={`/me?edit=${cat.category}`} className="tier-section__missing-item">
                     <span>{t(`profile:hub.category.${cat.category}`)}</span>
                     <span aria-hidden="true">→</span>
                   </Link>

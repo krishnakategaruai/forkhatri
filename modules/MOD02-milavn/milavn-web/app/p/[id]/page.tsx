@@ -18,7 +18,7 @@ import { api, ApiError, resolveMediaUrl, type Card } from '@/lib/api';
 
 type Person = {
   member_id: string; display_name: string; handle: string; avatar: string | null; bio: string | null; interests: string[];
-  location_label: string | null; reputation: string[]; shared_circles: { id: string; name: string }[]; hosting: Card[]; is_me: boolean;
+  location_label: string | null; reputation: string[]; shared_circles: { id: string; name: string }[]; hosting: Card[]; is_me: boolean; can_message?: boolean;
 };
 
 export default function PersonPage() {
@@ -92,7 +92,10 @@ export default function PersonPage() {
             </section>
 
             {!p.is_me && (
-              <button className="btn btn--danger-outline btn--sm" style={{ alignSelf: 'flex-start' }} onClick={() => setBlockAsk(true)}>{t('safety.block', { name: p.display_name })}</button>
+              <div className="row" style={{ gap: 8 }}>
+                {p.can_message && <button className="btn btn--primary btn--sm" onClick={async () => { try { const r = await api<{ id: string }>('/chats/direct', { body: { member_id: p.member_id } }); router.push(`/chats/${r.id}`); } catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); } }}>{t('chat.message')}</button>}
+                <button className="btn btn--danger-outline btn--sm" onClick={() => setBlockAsk(true)}>{t('safety.block', { name: p.display_name })}</button>
+              </div>
             )}
             {p.is_me && <Link href="/me" className="btn btn--secondary btn--sm" style={{ alignSelf: 'flex-start' }}>{t('profile.edit')}</Link>}
           </>

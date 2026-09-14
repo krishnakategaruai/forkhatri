@@ -29,6 +29,28 @@
     "pets": { "preference": "Pets" },
     "horoscope": { "matching_required": "Horoscope matching" }
   },
+  "tag": {
+    "cooking": "Cooking",
+    "street_food": "Street food",
+    "trekking": "Trekking",
+    "road_trips": "Road trips",
+    "pilgrimages": "Pilgrimages",
+    "beaches": "Beaches",
+    "cricket": "Cricket",
+    "badminton": "Badminton",
+    "yoga": "Yoga",
+    "fitness": "Fitness",
+    "music": "Music",
+    "classical_dance": "Classical dance",
+    "movies": "Movies",
+    "reading": "Reading",
+    "photography": "Photography",
+    "gardening": "Gardening",
+    "volunteering": "Volunteering",
+    "spirituality": "Spirituality",
+    "board_games": "Board games",
+    "art": "Art & craft"
+  },
   "option": {
     "highest_education_level": {
       "high_school": "High school",
@@ -104,6 +126,9 @@
     "hidden": "Hidden",
     "add": "Add",
     "ageRange": "Age {{min}}–{{max}}",
+    "partnerPrivate": "Only you see this. It's used to find your matches, never shown on your profile.",
+    "photosReorderHint": "Press and hold a photo, then drag it to a new spot. The first photo is your main one.",
+    "tags": {"pick":"Pick up to {{max}} · {{count}} chosen","custom":"Add your own","addCustom":"Add"},
     "section": {
       "basics": "Basics",
       "lifestyle": "Lifestyle",
@@ -126,6 +151,8 @@
       "makeMain": "Make main photo",
       "remove": "Remove photo",
       "uploading": "Uploading…",
+      "moveEarlier": "Move earlier",
+      "moveLater": "Move later",
       "hint": "Add up to 6. Photos stay private until you both connect."
     },
     "prompts": {

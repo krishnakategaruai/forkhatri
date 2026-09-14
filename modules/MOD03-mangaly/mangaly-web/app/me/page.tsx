@@ -16,6 +16,7 @@ import {
   getAllAttributeValues,
   getOwnProfile,
   listPhotos,
+  reorderPhotos,
   setPrimaryPhoto,
   updateCategoryAttributes,
   uploadPhoto,
@@ -58,6 +59,77 @@ import { getStoredTheme, setPreferredTheme, type Theme } from '@/lib/theme';
 
 const THEME_OPTIONS: Theme[] = ['light', 'dark', 'system'];
 
+// Partner age range bounds for the slider (Baymard: pair a range slider with
+// exact number fields; the slider sets an approximate range fast, the fields
+// allow precision).
+const AGE_MIN = 18;
+const AGE_MAX = 70;
+
+// Autocomplete suggestions for occupation — typing is faster than a long
+// dropdown on mobile, and suggestions keep common answers consistent so
+// matching isn't split across spellings. Free text still accepted.
+const OCCUPATION_SUGGESTIONS = [
+  'Software Engineer',
+  'Doctor',
+  'Teacher',
+  'Professor',
+  'Chartered Accountant',
+  'Lawyer',
+  'Civil Engineer',
+  'Architect',
+  'Banker',
+  'Business Owner',
+  'Entrepreneur',
+  'Government Employee',
+  'Civil Services (IAS/IPS)',
+  'Defence Services',
+  'Nurse',
+  'Pharmacist',
+  'Product Manager',
+  'Data Scientist',
+  'Designer',
+  'Consultant',
+];
+
+// Interest badges instead of a blank hobbies box (Bumble: pick up to five from
+// a catalogue). Custom entries are still allowed.
+const INTEREST_TAGS = [
+  'cooking',
+  'street_food',
+  'trekking',
+  'road_trips',
+  'pilgrimages',
+  'beaches',
+  'cricket',
+  'badminton',
+  'yoga',
+  'fitness',
+  'music',
+  'classical_dance',
+  'movies',
+  'reading',
+  'photography',
+  'gardening',
+  'volunteering',
+  'spirituality',
+  'board_games',
+  'art',
+];
+const MAX_TAGS = 5;
+
+function toTagKey(raw: string): string {
+  const trimmed = raw.trim();
+  const key = trimmed.toLowerCase().replace(/[\s&-]+/g, '_');
+  return INTEREST_TAGS.includes(key) ? key : trimmed;
+}
+
+// Also accepts older comma-separated text answers.
+function parseTags(value: unknown): string[] {
+  const parts: unknown[] = Array.isArray(value) ? value : typeof value === 'string' ? value.split(',') : [];
+  const tags = parts.filter((p): p is string => typeof p === 'string' && p.trim() !== '').map(toTagKey);
+  return [...new Set(tags)];
+}
+
 type Values = Record<string, CategoryAttributes>;
 type Status = 'answered' | 'hidden' | 'empty';
 type Draft = Record<string, { state: AttributeState; value: unknown }>;
@@ -65,6 +137,7 @@ type Sheet =
   | { kind: 'category'; category: string }
   | { kind: 'prompt'; slot: PromptSlot }
   | { kind: 'photo'; id: string }
+  | { kind: 'settings' }
   | null;
 type PageState =
   | { phase: 'checking' }
@@ -137,7 +210,19 @@ function statusOf(values: Values, category: string): Status {
 }
 
 function emptyValue(f: FieldDef): unknown {
-  return f.kind === 'ageRange' ? { min: '', max: '' } : '';
+  if (f.kind === 'ageRange') return { min: '', max: '' };
+  return f.kind === 'tags' ? [] : '';
+}
+
+function buildDraft(def: CategoryDef, saved: CategoryAttributes): Draft {
+  const next: Draft = {};
+  for (const f of def.fields) {
+    const row = saved[f.key];
+    if (!row) next[f.key] = { state: 'unset', value: emptyValue(f) };
+    else if (row.state !== 'value') next[f.key] = { state: row.state, value: emptyValue(f) };
+    else next[f.key] = { state: 'value', value: f.kind === 'tags' ? parseTags(row.value) : row.value };
+  }
+  return next;
 }
 
 function promptAt(values: Values, slot: PromptSlot): PromptValue | null {
@@ -162,16 +247,22 @@ export default function ProfileHubPage() {
   // 'system' on first render so server and client markup agree; corrected
   // from localStorage after mount.
   const [theme, setTheme] = useState<Theme>('system');
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [confirmLogout, setConfirmLogout] = useState(false);
   const [sheet, setSheet] = useState<Sheet>(null);
   const [draft, setDraft] = useState<Draft>({});
   const [promptDraft, setPromptDraft] = useState<PromptValue>({ q: '', a: '' });
   const [saving, setSaving] = useState(false);
   const [sheetError, setSheetError] = useState<string | null>(null);
+  const [tagInput, setTagInput] = useState('');
   const [uploading, setUploading] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [fileInputKey, setFileInputKey] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dropIndex, setDropIndex] = useState<number | null>(null);
+  const pressTimer = useRef<number | null>(null);
+  const pressStart = useRef<{ x: number; y: number } | null>(null);
+  const suppressClick = useRef(false);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -197,6 +288,13 @@ export default function ProfileHubPage() {
       const [values, photos] = await Promise.all([getAllAttributeValues(), listPhotos()]);
       if (!active) return;
       setState({ phase: 'ready', profile, values, photos });
+      // Deep link from the completeness screen: /me?edit=<category> opens that sheet.
+      const editDef = findCategory(new URLSearchParams(window.location.search).get('edit') ?? '');
+      if (editDef) {
+        setDraft(buildDraft(editDef, values[editDef.category] ?? {}));
+        setSheet({ kind: 'category', category: editDef.category });
+        window.history.replaceState(null, '', '/me');
+      }
     })();
     return () => {
       active = false;
@@ -225,9 +323,17 @@ export default function ProfileHubPage() {
 
   const { profile, values, photos } = state;
 
+  function tagLabel(tag: string): string {
+    return INTEREST_TAGS.includes(tag) ? t(`profile:tag.${tag}`) : tag;
+  }
+
   function formatField(field: FieldDef, value: AttributeValue): string | null {
     if (value === null || value === undefined || value === '') return null;
     if (field.kind === 'select') return t(`profile:option.${field.key}.${String(value)}`);
+    if (field.kind === 'tags') {
+      const tags = parseTags(value);
+      return tags.length ? tags.map(tagLabel).join(', ') : null;
+    }
     if (field.kind === 'ageRange' && typeof value === 'object') {
       const { min, max } = value as { min?: number | null; max?: number | null };
       if (!min && !max) return null;
@@ -309,18 +415,85 @@ export default function ProfileHubPage() {
     setSheet(null);
   }
 
+  async function commitOrder(next: Photo[]) {
+    setState((prev) =>
+      prev.phase !== 'ready'
+        ? prev
+        : {
+            ...prev,
+            photos: next.map((p, i) => ({ ...p, is_primary: i === 0 })),
+            profile: { ...prev.profile, photo_url: next[0]?.url ?? prev.profile.photo_url },
+          }
+    );
+    const outcome = await reorderPhotos(next.map((p) => p.id));
+    if (!outcome.ok) {
+      setPhotoError(outcome.message ?? t('profile:editor.saveError'));
+      await refreshPhotos();
+    }
+  }
+
+  function movePhoto(from: number, to: number) {
+    if (from < 0 || to < 0 || to >= photos.length || from === to) return;
+    const next = [...photos];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    void commitOrder(next);
+  }
+
+  // Long-press (350 ms) then drag to reorder — Bumble's pattern. Moving more
+  // than 8 px before the press completes is treated as a scroll and cancels
+  // it; the photo sheet's Move buttons are the non-drag alternative.
+  function clearPress() {
+    if (pressTimer.current !== null) window.clearTimeout(pressTimer.current);
+    pressTimer.current = null;
+    pressStart.current = null;
+  }
+
+  function onPhotoPointerDown(e: React.PointerEvent<HTMLButtonElement>, id: string) {
+    // A finished drag never produces a click, so the suppression flag from
+    // the previous gesture must be cleared here — otherwise the first real
+    // tap after any reorder is silently swallowed (found live).
+    suppressClick.current = false;
+    pressStart.current = { x: e.clientX, y: e.clientY };
+    const target = e.currentTarget;
+    const pointerId = e.pointerId;
+    pressTimer.current = window.setTimeout(() => {
+      suppressClick.current = true;
+      setDragId(id);
+      setDropIndex(photos.findIndex((p) => p.id === id));
+      try {
+        target.setPointerCapture(pointerId);
+      } catch {
+        // The pointer may already be released or cancelled; the drag still
+        // tracks pointermove events delivered to the slot itself.
+      }
+    }, 350);
+  }
+
+  function onPhotoPointerMove(e: React.PointerEvent<HTMLButtonElement>) {
+    if (!dragId) {
+      const start = pressStart.current;
+      if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 8) clearPress();
+      return;
+    }
+    const over = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>('[data-photo-index]');
+    if (over) setDropIndex(Math.min(Number(over.dataset.photoIndex), photos.length - 1));
+  }
+
+  function onPhotoPointerUp() {
+    clearPress();
+    if (dragId !== null && dropIndex !== null) {
+      movePhoto(photos.findIndex((p) => p.id === dragId), dropIndex);
+    }
+    setDragId(null);
+    setDropIndex(null);
+  }
+
   function openCategory(category: string) {
     const def = findCategory(category);
     if (!def) return;
-    const saved = values[category] ?? {};
-    const next: Draft = {};
-    for (const f of def.fields) {
-      const row = saved[f.key];
-      next[f.key] = row
-        ? { state: row.state, value: row.state === 'value' ? row.value : emptyValue(f) }
-        : { state: 'unset', value: emptyValue(f) };
-    }
-    setDraft(next);
+    setDraft(buildDraft(def, values[category] ?? {}));
+    setTagInput('');
     setSheetError(null);
     setSheet({ kind: 'category', category });
   }
@@ -341,6 +514,9 @@ export default function ProfileHubPage() {
         const min = Number(v.min) || null;
         const max = Number(v.max) || null;
         if (min || max) payload[f.key] = { state: 'value', value: { min, max } };
+      } else if (f.kind === 'tags') {
+        const tags = parseTags(entry.value);
+        if (tags.length) payload[f.key] = { state: 'value', value: tags };
       } else if (typeof entry.value === 'string' && entry.value.trim()) {
         payload[f.key] = { state: 'value', value: entry.value.trim() };
       }
@@ -392,8 +568,19 @@ export default function ProfileHubPage() {
                 <button
                   key={photo.id}
                   type="button"
-                  className={`photo-slot${i === 0 ? ' photo-slot--main' : ''}`}
+                  data-photo-index={i}
+                  className={`photo-slot${i === 0 ? ' photo-slot--main' : ''}${dragId === photo.id ? ' is-dragging' : ''}${dragId && dropIndex === i && dragId !== photo.id ? ' is-drop-target' : ''}`}
+                  aria-label={`${t('profile:hub.photos.title')} ${i + 1}${photo.is_primary ? ` · ${t('profile:hub.photos.main')}` : ''}`}
+                  onPointerDown={(e) => onPhotoPointerDown(e, photo.id)}
+                  onPointerMove={onPhotoPointerMove}
+                  onPointerUp={onPhotoPointerUp}
+                  onPointerCancel={onPhotoPointerUp}
+                  onContextMenu={(e) => e.preventDefault()}
                   onClick={() => {
+                    if (suppressClick.current) {
+                      suppressClick.current = false;
+                      return;
+                    }
                     setSheetError(null);
                     setSheet({ kind: 'photo', id: photo.id });
                   }}
@@ -423,7 +610,10 @@ export default function ProfileHubPage() {
             );
           })}
         </div>
-        <p className="caption">{t('profile:hub.photos.hint')}</p>
+        <p className="caption">
+          {t('profile:hub.photos.hint')}
+          {photos.length > 1 ? ` ${t('profile:hub.photosReorderHint')}` : ''}
+        </p>
         {photoError && (
           <p className="form__error" role="status">
             {photoError}
@@ -433,6 +623,7 @@ export default function ProfileHubPage() {
           key={fileInputKey}
           ref={fileRef}
           type="file"
+          name="photo"
           accept="image/jpeg,image/png,image/webp"
           hidden
           onChange={onFileChosen}
@@ -496,6 +687,7 @@ export default function ProfileHubPage() {
             );
           })}
         </div>
+        {id === 'partner' && <p className="caption">🔒 {t('profile:hub.partnerPrivate')}</p>}
       </section>
     );
   }
@@ -529,6 +721,9 @@ export default function ProfileHubPage() {
         </div>
       );
     }
+    // Partner preferences are private matching filters, never shown to
+    // anyone else — Hinge treats preferences the same way.
+    if (block.id === 'partner') return null;
     const section = PROFILE_SECTIONS.find((s) => s.id === block.id);
     const rows = (section?.categories ?? [])
       .map((c) => findCategory(c))
@@ -558,8 +753,11 @@ export default function ProfileHubPage() {
             type="button"
             className="icon-btn"
             aria-label={t('common:settings.title')}
-            aria-expanded={settingsOpen}
-            onClick={() => setSettingsOpen((v) => !v)}
+            aria-haspopup="dialog"
+            onClick={() => {
+              setConfirmLogout(false);
+              setSheet({ kind: 'settings' });
+            }}
           >
             <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
               <path
@@ -571,9 +769,6 @@ export default function ProfileHubPage() {
                 d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z M19.4 13.5a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V19.4a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H4.6a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H10.5a1.65 1.65 0 0 0 1-1.51V4.6a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V10.5a1.65 1.65 0 0 0 1.51 1H19.4a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"
               />
             </svg>
-          </button>
-          <button className="icon-btn icon-btn--text" onClick={() => void logOut().then(() => router.replace('/login'))}>
-            {t('common:action.logOut')}
           </button>
         </div>
       </header>
@@ -593,47 +788,6 @@ export default function ProfileHubPage() {
             </button>
           ))}
         </div>
-
-        {settingsOpen && (
-          <div className="card">
-            <div className="label">{t('common:settings.language')}</div>
-            <div className="segmented segmented--3" role="radiogroup">
-              {SUPPORTED_LANGUAGES.map((lang) => (
-                <button
-                  key={lang}
-                  type="button"
-                  className={`segmented__opt${i18n.language === lang ? ' is-active' : ''}`}
-                  aria-pressed={i18n.language === lang}
-                  onClick={() => {
-                    void i18n.changeLanguage(lang as Language);
-                    setPreferredLanguage(lang as Language);
-                  }}
-                >
-                  {t(`common:language.${lang}`)}
-                </button>
-              ))}
-            </div>
-            <div className="label" style={{ marginTop: 16 }}>
-              {t('common:settings.theme')}
-            </div>
-            <div className="segmented segmented--3" role="radiogroup">
-              {THEME_OPTIONS.map((opt) => (
-                <button
-                  key={opt}
-                  type="button"
-                  className={`segmented__opt${theme === opt ? ' is-active' : ''}`}
-                  aria-pressed={theme === opt}
-                  onClick={() => {
-                    setTheme(opt);
-                    setPreferredTheme(opt);
-                  }}
-                >
-                  {t(`common:settings.themeOption.${opt}`)}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
 
         {mode === 'edit' ? (
           <>
@@ -742,7 +896,9 @@ export default function ProfileHubPage() {
                   ? t(`profile:hub.category.${sheet.category}`)
                   : sheet.kind === 'photo'
                     ? t('profile:hub.photos.title')
-                    : t('profile:hub.section.prompts')}
+                    : sheet.kind === 'settings'
+                      ? t('common:settings.title')
+                      : t('profile:hub.section.prompts')}
               </h2>
               <button
                 type="button"
@@ -754,6 +910,70 @@ export default function ProfileHubPage() {
               </button>
             </div>
 
+            {sheet.kind === 'settings' && (
+              <>
+                <div className="label">{t('common:settings.language')}</div>
+                <div className="segmented segmented--3" role="radiogroup">
+                  {SUPPORTED_LANGUAGES.map((lang) => (
+                    <button
+                      key={lang}
+                      type="button"
+                      className={`segmented__opt${i18n.language === lang ? ' is-active' : ''}`}
+                      aria-pressed={i18n.language === lang}
+                      onClick={() => {
+                        void i18n.changeLanguage(lang as Language);
+                        setPreferredLanguage(lang as Language);
+                      }}
+                    >
+                      {t(`common:language.${lang}`)}
+                    </button>
+                  ))}
+                </div>
+                <div className="label" style={{ marginTop: 16 }}>
+                  {t('common:settings.theme')}
+                </div>
+                <div className="segmented segmented--3" role="radiogroup">
+                  {THEME_OPTIONS.map((opt) => (
+                    <button
+                      key={opt}
+                      type="button"
+                      className={`segmented__opt${theme === opt ? ' is-active' : ''}`}
+                      aria-pressed={theme === opt}
+                      onClick={() => {
+                        setTheme(opt);
+                        setPreferredTheme(opt);
+                      }}
+                    >
+                      {t(`common:settings.themeOption.${opt}`)}
+                    </button>
+                  ))}
+                </div>
+                <div className="sheet__stack" style={{ marginTop: 24 }}>
+                  {confirmLogout ? (
+                    <>
+                      <p className="caption" style={{ margin: 0 }}>
+                        {t('common:settings.logOutConfirm')}
+                      </p>
+                      <button
+                        type="button"
+                        className="sheet__danger"
+                        onClick={() => void logOut().then(() => router.replace('/login'))}
+                      >
+                        {t('common:action.logOut')}
+                      </button>
+                      <button type="button" className="quick-pick__chip" onClick={() => setConfirmLogout(false)}>
+                        {t('common:action.cancel')}
+                      </button>
+                    </>
+                  ) : (
+                    <button type="button" className="sheet__danger" onClick={() => setConfirmLogout(true)}>
+                      {t('common:action.logOut')}
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+
             {sheet.kind === 'photo' && sheetPhoto && (
               <>
                 <div className="sheet__photo">
@@ -761,6 +981,24 @@ export default function ProfileHubPage() {
                   <img src={resolveMediaUrl(sheetPhoto.url) ?? ''} alt="" />
                 </div>
                 <div className="sheet__stack">
+                  <div className="sheet__row">
+                    <button
+                      type="button"
+                      className="quick-pick__chip"
+                      disabled={saving || photos.indexOf(sheetPhoto) === 0}
+                      onClick={() => movePhoto(photos.indexOf(sheetPhoto), photos.indexOf(sheetPhoto) - 1)}
+                    >
+                      ← {t('profile:hub.photos.moveEarlier')}
+                    </button>
+                    <button
+                      type="button"
+                      className="quick-pick__chip"
+                      disabled={saving || photos.indexOf(sheetPhoto) === photos.length - 1}
+                      onClick={() => movePhoto(photos.indexOf(sheetPhoto), photos.indexOf(sheetPhoto) + 1)}
+                    >
+                      {t('profile:hub.photos.moveLater')} →
+                    </button>
+                  </div>
                   {!sheetPhoto.is_primary && (
                     <button
                       type="button"
@@ -811,7 +1049,113 @@ export default function ProfileHubPage() {
                             );
                           })}
                         </div>
+                      ) : f.kind === 'tags' ? (
+                        (() => {
+                          const chosen = parseTags(entry?.value);
+                          const full = chosen.length >= MAX_TAGS;
+                          const setTags = (next: string[]) =>
+                            setDraft((d) => ({ ...d, [f.key]: { state: 'value', value: next } }));
+                          const toggle = (tag: string) =>
+                            setTags(chosen.includes(tag) ? chosen.filter((c) => c !== tag) : full ? chosen : [...chosen, tag]);
+                          const addCustom = () => {
+                            const tag = toTagKey(tagInput);
+                            if (tag && !chosen.includes(tag) && !full) setTags([...chosen, tag]);
+                            setTagInput('');
+                          };
+                          return (
+                            <>
+                              <div className="label">{t('profile:hub.tags.pick', { max: MAX_TAGS, count: chosen.length })}</div>
+                              <div className="quick-pick__chips">
+                                {[...INTEREST_TAGS, ...chosen.filter((c) => !INTEREST_TAGS.includes(c))].map((tag) => {
+                                  const active = chosen.includes(tag);
+                                  return (
+                                    <button
+                                      key={tag}
+                                      type="button"
+                                      aria-pressed={active}
+                                      className={`quick-pick__chip${active ? ' quick-pick__chip--active' : ''}`}
+                                      disabled={saving || (!active && full)}
+                                      onClick={() => toggle(tag)}
+                                    >
+                                      {tagLabel(tag)}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                              <div className="sheet__row sheet__row--add">
+                                <input
+                                  className="field__input"
+                                  type="text"
+                                  name="custom-interest"
+                                  maxLength={30}
+                                  autoComplete="off"
+                                  aria-label={t('profile:hub.tags.custom')}
+                                  placeholder={t('profile:hub.tags.custom')}
+                                  value={tagInput}
+                                  disabled={full}
+                                  onChange={(e) => setTagInput(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      addCustom();
+                                    }
+                                  }}
+                                />
+                                <button
+                                  type="button"
+                                  className="quick-pick__chip"
+                                  disabled={full || !tagInput.trim()}
+                                  onClick={addCustom}
+                                >
+                                  {t('profile:hub.tags.addCustom')}
+                                </button>
+                              </div>
+                            </>
+                          );
+                        })()
                       ) : f.kind === 'ageRange' ? (
+                        <>
+                          {(() => {
+                            const rv = (entry?.value as Record<string, unknown> | undefined) ?? {};
+                            const lo = Number(rv.min) || AGE_MIN;
+                            const hi = Number(rv.max) || AGE_MAX;
+                            const pct = (n: number) => ((n - AGE_MIN) / (AGE_MAX - AGE_MIN)) * 100;
+                            return (
+                              <div className="range-dual">
+                                <div
+                                  className="range-dual__track"
+                                  style={{
+                                    background: `linear-gradient(to right, var(--surface-sunken) ${pct(lo)}%, var(--saffron-500) ${pct(lo)}%, var(--saffron-500) ${pct(hi)}%, var(--surface-sunken) ${pct(hi)}%)`,
+                                  }}
+                                />
+                                {(['min', 'max'] as const).map((bound) => (
+                                  <input
+                                    key={bound}
+                                    type="range"
+                                    min={AGE_MIN}
+                                    max={AGE_MAX}
+                                    step={1}
+                                    name={`${f.key}-${bound}-slider`}
+                                    aria-label={t(bound === 'min' ? 'profile:editor.ageRangeFrom' : 'profile:editor.ageRangeTo')}
+                                    value={bound === 'min' ? lo : hi}
+                                    onChange={(e) => {
+                                      const next = Number(e.target.value);
+                                      setDraft((d) => {
+                                        const prev = (d[f.key]?.value as Record<string, unknown>) ?? {};
+                                        const otherKey = bound === 'min' ? 'max' : 'min';
+                                        const other = Number(prev[otherKey]) || (bound === 'min' ? AGE_MAX : AGE_MIN);
+                                        const clamped = bound === 'min' ? Math.min(next, other) : Math.max(next, other);
+                                        return {
+                                          ...d,
+                                          [f.key]: { state: 'value', value: { ...prev, [otherKey]: other, [bound]: clamped } },
+                                        };
+                                      });
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            );
+                          })()}
                         <div className="age-range">
                           {(['min', 'max'] as const).map((bound, i) => (
                             <span key={bound} style={{ display: 'contents' }}>
@@ -820,6 +1164,7 @@ export default function ProfileHubPage() {
                                 className="field__input"
                                 type="number"
                                 inputMode="numeric"
+                                name={`${f.key}-${bound}`}
                                 aria-label={t(bound === 'min' ? 'profile:editor.ageRangeFrom' : 'profile:editor.ageRangeTo')}
                                 placeholder={t(bound === 'min' ? 'profile:editor.ageRangeFrom' : 'profile:editor.ageRangeTo')}
                                 value={String((entry?.value as Record<string, unknown> | undefined)?.[bound] ?? '')}
@@ -839,10 +1184,14 @@ export default function ProfileHubPage() {
                             </span>
                           ))}
                         </div>
+                        </>
                       ) : (
                         <input
                           className="field__input"
                           type="text"
+                          name={f.key}
+                          list={f.key === 'occupation' ? 'occupation-suggestions' : undefined}
+                          autoComplete="off"
                           aria-label={t(`profile:${f.labelKey}`)}
                           placeholder={t(`profile:${f.labelKey}`)}
                           value={typeof entry?.value === 'string' ? entry.value : ''}
@@ -854,6 +1203,11 @@ export default function ProfileHubPage() {
                     </div>
                   );
                 })}
+                <datalist id="occupation-suggestions">
+                  {OCCUPATION_SUGGESTIONS.map((o) => (
+                    <option key={o} value={o} />
+                  ))}
+                </datalist>
                 <div className="sheet__actions">
                   <button
                     type="button"
@@ -901,11 +1255,11 @@ export default function ProfileHubPage() {
                     <textarea
                       id="prompt-answer"
                       className="field__input prompt-textarea"
-                      maxLength={200}
+                      maxLength={150}
                       value={promptDraft.a}
                       onChange={(e) => setPromptDraft((p) => ({ ...p, a: e.target.value }))}
                     />
-                    <span className="caption">{promptDraft.a.length}/200</span>
+                    <span className="caption">{promptDraft.a.length}/150</span>
                   </div>
                 )}
                 <div className="sheet__actions">

@@ -29,6 +29,28 @@
     "pets": { "preference": "पालतू जानवर" },
     "horoscope": { "matching_required": "कुंडली मिलान" }
   },
+  "tag": {
+    "cooking": "खाना बनाना",
+    "street_food": "स्ट्रीट फ़ूड",
+    "trekking": "ट्रेकिंग",
+    "road_trips": "रोड ट्रिप",
+    "pilgrimages": "तीर्थ यात्रा",
+    "beaches": "समुद्र तट",
+    "cricket": "क्रिकेट",
+    "badminton": "बैडमिंटन",
+    "yoga": "योग",
+    "fitness": "फ़िटनेस",
+    "music": "संगीत",
+    "classical_dance": "शास्त्रीय नृत्य",
+    "movies": "फ़िल्में",
+    "reading": "पढ़ना",
+    "photography": "फ़ोटोग्राफ़ी",
+    "gardening": "बागवानी",
+    "volunteering": "स्वयंसेवा",
+    "spirituality": "आध्यात्मिकता",
+    "board_games": "बोर्ड गेम्स",
+    "art": "कला और शिल्प"
+  },
   "option": {
     "highest_education_level": {
       "high_school": "हाई स्कूल",
@@ -104,6 +126,9 @@
     "hidden": "छिपा हुआ",
     "add": "जोड़ें",
     "ageRange": "आयु {{min}}–{{max}}",
+    "partnerPrivate": "यह केवल आपको दिखता है। इसका उपयोग आपके मैच खोजने में होता है, यह आपकी प्रोफ़ाइल पर कभी नहीं दिखता।",
+    "photosReorderHint": "किसी तस्वीर को दबाकर रखें, फिर उसे नई जगह पर खींचें। पहली तस्वीर आपकी मुख्य तस्वीर है।",
+    "tags": {"pick":"अधिकतम {{max}} चुनें · {{count}} चुने गए","custom":"अपना जोड़ें","addCustom":"जोड़ें"},
     "section": {
       "basics": "मूल जानकारी",
       "lifestyle": "जीवनशैली",
@@ -126,6 +151,8 @@
       "makeMain": "मुख्य तस्वीर बनाएँ",
       "remove": "तस्वीर हटाएँ",
       "uploading": "अपलोड हो रहा है…",
+      "moveEarlier": "पहले ले जाएँ",
+      "moveLater": "बाद में ले जाएँ",
       "hint": "6 तक तस्वीरें जोड़ें। जब तक आप दोनों नहीं जुड़ते, तस्वीरें निजी रहती हैं।"
     },
     "prompts": {

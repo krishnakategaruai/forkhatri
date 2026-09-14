@@ -17,6 +17,7 @@ items: "88 | approved: 88 | blockers: 0"
 | 2026-09-12 | Step 3 (UX) screen-inventory pass added 13 prerequisite-screen FRs (FR076–FR088) this file had no coverage for: Splash/Launch, Sign Up, Log In, Forgot Password, OTP Verification, Location and Notification permission priming, Main Navigation Shell, generic Empty/Offline/Error state handling, Account/Profile Settings, Notification Inbox, Help/Support, and Logout/Delete-Account confirmation. None trace to a Milavn business capability BR directly (the underlying identity/auth infrastructure is Common Platform per `modules.md` Shared Concerns, and this pipeline has no separate Common-Platform-tracked module) — each states this plainly in its own Intent per the Step 3 agent's explicit instruction, traced to the nearest sensible existing BR (mostly BR01) rather than left as a gap, consistent with "a mobile app without a login screen is not shippable." | Step 3 screen-inventory pass — krishna kategaru, 2026-09-12. |
 | 2026-09-13 | FR065's `Traced to:` moved from UX15 to UX20 — Step 5's test-scenario pass found no moderator-facing screen had ever been designed for FR065's own "basic review queue," traced to an error in BR14's own "Affected users and systems" line (now corrected in `01-business-requirements.md`), and Step 3 added UX20 to close it. No change to FR065's own requirement text. | Traceability update following the BR14 correction and new UX20 — krishna kategaru, 2026-09-13. |
 | 2026-09-13 | Authentication ownership corrected: login/auth is owned solely by the parent ForKhatri platform (one source of truth); FR076–FR080 and FR088 are marked platform-owned (hand-off briefs, not Milavn build scope); Milavn keeps only its post-login routing, onboarding (FR001–FR003) and profile settings (FR085). Nothing was deleted — the original text stays for traceability. | User correction "User login, authentication will be done by one source of truth, the parent ForKhatri" — krishna kategaru. |
+| 2026-09-14 | **FR089–FR101 added** for the capabilities the owner asked for during Step 9 beyond the sealed MVP: ask-first discovery, smart fill, activity thread, moments, circle board, person page, circle locality, trust-scoped messaging, live expressions with expressive avatars, weekly digest, poster share, use-where-I-am, notification de-duplication/live status. Each entry carries the requirement, the *why*, the owner decision that sourced it and acceptance criteria; nothing sealed was changed. | Owner: "are you also updating .md files on what you're doing for that FR and why — I want each agent responsible and accounted" — krishna kategaru (autonomous). |
 
 ## Coverage check
 | Parent BR | FRs produced | Covered |
@@ -40,6 +41,7 @@ items: "88 | approved: 88 | blockers: 0"
 | BR17 — Future AI-Native Planning and Organizing (Could, deferred) | FR072–FR073 | Yes |
 | BR18 — Future Local Commerce Layer (Could, deferred) | FR074–FR075 | Yes |
 | (prerequisite screens, added by Step 3 — see Revision history) | FR076–FR088 | Yes |
+| (Step 9 additions on owner decisions, 2026-09-14 — see Revision history and `DESIGN-DIRECTION-2030.md`) | FR089–FR101 | Yes |
 
 ## Set-level quality gate
 | Check | Result |
@@ -4319,3 +4321,341 @@ infrastructure; this FR fixes only the user-facing confirmation flow.
 - (none yet)
 
 **Approval:** Product Manager / BA — [ ] Approved — name, date
+
+## FR089 — Ask-First Natural-Language Discovery
+> **Added in Step 9 on an explicit owner decision (2026-09-14).** Recorded here so the requirement, its reason and its source are owned by a number, tested in `05-test-scenarios.md`, and accounted for in `09-implementation.md`.
+
+**Traces from:** BR02
+**Traced to:** UX04/UX05; `09-implementation.md` IMP21–IMP24
+**Priority:** Must
+**Status:** Implemented (Step 9), awaiting owner approval of the text
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When a member types or speaks a request in English, Hindi or Telugu (e.g. "badminton this weekend near me"), the system shall interpret it into discovery filters, show the interpretation back as editable chips before results are shown, and, when nothing matches, widen the search step by step (distance, then date) and say so.
+
+**Intent (why)**
+Thesis §31–§32 and §40 call for natural-language and voice interaction; Brand §13–§14 for text-and-voice in Indian languages. Deterministic parsing over the module's own vocabulary keeps the interpretation legible and keeps AI out of the permission path (§33).
+
+**Source / decision**
+Owner instruction 2026-09-14 ("make yourself live in 2030 with all AI upgrades"); DESIGN-DIRECTION-2030.md §3.1.
+
+**Acceptance criteria**
+- [x] Typed and spoken asks produce the same filters.
+- [x] Every understood token is shown as a chip and can be cleared.
+- [x] An empty result widens once for distance and once for date, each announced to the person.
+- [x] Works in en, hi, te.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR090 — Smart Fill for Activity Creation
+> **Added in Step 9 on an explicit owner decision (2026-09-14).** Recorded here so the requirement, its reason and its source are owned by a number, tested in `05-test-scenarios.md`, and accounted for in `09-implementation.md`.
+
+**Traces from:** BR03
+**Traced to:** UX07; `09-implementation.md` IMP21–IMP24
+**Priority:** Must
+**Status:** Implemented (Step 9), awaiting owner approval of the text
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When a member describes an activity in one line ("badminton tomorrow 7pm at Madhapur for 8 people"), the system shall pre-fill category, title, time, place and capacity, show which words it used, and require the member to confirm before anything is created.
+
+**Intent (why)**
+Thesis §31 (natural-language creation: extract activity, date, time, locality, capacity; user confirms; then create). Category words stay in the title ("Chai and chapters" is a name).
+
+**Source / decision**
+Owner instruction 2026-09-14; DESIGN-DIRECTION-2030.md §3.1.
+
+**Acceptance criteria**
+- [x] No activity is created without the Create tap.
+- [x] Matched words are echoed as chips.
+- [x] Unmatched fields stay empty for the member to fill.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR091 — Activity Thread ("Plan Together")
+> **Added in Step 9 on an explicit owner decision (2026-09-14).** Recorded here so the requirement, its reason and its source are owned by a number, tested in `05-test-scenarios.md`, and accounted for in `09-implementation.md`.
+
+**Traces from:** BR04
+**Traced to:** UX06; `09-implementation.md` IMP21–IMP24
+**Priority:** Must
+**Status:** Implemented (Step 9), awaiting owner approval of the text
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When a member is going to, interested in, waitlisted for, checked in to or organising an activity, the system shall give them a message thread with the other people in that set; nobody else can read or write it.
+
+**Intent (why)**
+Thesis §57 takes "simple coordination" from WhatsApp; §68 says not a WhatsApp clone. Attendance stays private (FR040) because only the RSVP set sees the thread.
+
+**Source / decision**
+Owner instruction 2026-09-14 ("why limit ourselves with MVP scope"); DESIGN-DIRECTION-2030.md.
+
+**Acceptance criteria**
+- [x] A non-participant receives 403 on read and write.
+- [x] Blocked pairs never see each other's messages.
+- [x] A member can retract their own message.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR092 — Moments (Photos After an Activity)
+> **Added in Step 9 on an explicit owner decision (2026-09-14).** Recorded here so the requirement, its reason and its source are owned by a number, tested in `05-test-scenarios.md`, and accounted for in `09-implementation.md`.
+
+**Traces from:** BR15
+**Traced to:** UX06; `09-implementation.md` IMP21–IMP24
+**Priority:** Must
+**Status:** Implemented (Step 9), awaiting owner approval of the text
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When an activity has happened, the system shall let the people who were there (checked in, attended, or organising) add photos to it, visible to the same set; others cannot see them.
+
+**Intent (why)**
+Strava's "activity becomes identity" and Meetup's event photos, kept private to the people who were there so no one's attendance is exposed (FR040).
+
+**Source / decision**
+Owner instruction 2026-09-14; DESIGN-DIRECTION-2030.md.
+
+**Acceptance criteria**
+- [x] Upload is refused for people who were not there.
+- [x] JPEG/PNG/WebP only.
+- [x] The uploader can remove their own photo.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR093 — Circle Board
+> **Added in Step 9 on an explicit owner decision (2026-09-14).** Recorded here so the requirement, its reason and its source are owned by a number, tested in `05-test-scenarios.md`, and accounted for in `09-implementation.md`.
+
+**Traces from:** BR05
+**Traced to:** UX09; `09-implementation.md` IMP21–IMP24
+**Priority:** Must
+**Status:** Implemented (Step 9), awaiting owner approval of the text
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When a member belongs to a circle, the system shall give the circle a members-only board for posts; non-members cannot read it.
+
+**Intent (why)**
+Meetup's group discussions, scoped to membership (FR023: nothing outside the Circle package reads membership).
+
+**Source / decision**
+Owner instruction 2026-09-14.
+
+**Acceptance criteria**
+- [x] Non-members get an empty board and cannot post.
+- [x] Posts are shown newest first with author and time.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR094 — Person Page
+> **Added in Step 9 on an explicit owner decision (2026-09-14).** Recorded here so the requirement, its reason and its source are owned by a number, tested in `05-test-scenarios.md`, and accounted for in `09-implementation.md`.
+
+**Traces from:** BR10
+**Traced to:** UX10; `09-implementation.md` IMP21–IMP24
+**Priority:** Must
+**Status:** Implemented (Step 9), awaiting owner approval of the text
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When a member taps another person anywhere in the app, the system shall show a page with that person's name, bio, interests, earned reputation labels, locality at the precision that person chose, the circles the two share, and the public activities they host — and nothing about their attendance history.
+
+**Intent (why)**
+Thesis §22 (contextual people discovery), §21 (privacy), FR040/FR041. No follow, like or open message button: you meet people at activities.
+
+**Source / decision**
+Owner instruction 2026-09-14.
+
+**Acceptance criteria**
+- [x] Blocked pairs get 404, not a hint.
+- [x] Locality is clamped to the person's own precision setting.
+- [x] Attendance history is never listed.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR095 — Circle Home Locality and Nearby Discovery
+> **Added in Step 9 on an explicit owner decision (2026-09-14).** Recorded here so the requirement, its reason and its source are owned by a number, tested in `05-test-scenarios.md`, and accounted for in `09-implementation.md`.
+
+**Traces from:** BR05
+**Traced to:** UX09; `09-implementation.md` IMP21–IMP24
+**Priority:** Must
+**Status:** Implemented (Step 9), awaiting owner approval of the text
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When a member discovers circles, the system shall list circles in their own locality first (Near me / All), and a new circle shall default to its creator's locality or "anywhere".
+
+**Intent (why)**
+Thesis §84 #6 local relevance; the owner asked "can I find nearby circles?" and the answer was no.
+
+**Source / decision**
+Owner question 2026-09-14; migration 012.
+
+**Acceptance criteria**
+- [x] Circles carry an approximate place only (FR038).
+- [x] Near me returns only circles in the viewer's locality or city-wide ones.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR096 — Trust-Scoped Messaging
+> **Added in Step 9 on an explicit owner decision (2026-09-14).** Recorded here so the requirement, its reason and its source are owned by a number, tested in `05-test-scenarios.md`, and accounted for in `09-implementation.md`.
+
+**Traces from:** BR10
+**Traced to:** UX21 (new); `09-implementation.md` IMP21–IMP24
+**Priority:** Must
+**Status:** Implemented (Step 9), awaiting owner approval of the text
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When a member wants to message another person, the system shall allow it only if the two already share an activity or a circle and neither has blocked the other; it shall support 1:1 and group chats, photos, emoji reactions, typing and presence ("active now"), delivered live.
+
+**Intent (why)**
+Thesis §41 lists messaging under the mobile primary experience; §57 takes simple coordination from WhatsApp; Brand §15 forbids likes/followers (reactions instead). Trust scope is decided by one definer helper so it cannot be bypassed.
+
+**Source / decision**
+Owner decision 2026-09-14 ("i want messaging system like snapchat"; "yes i agree with your recommendations"); DESIGN-DIRECTION-2030.md §5–§6.
+
+**Acceptance criteria**
+- [x] A stranger receives 403 with a plain explanation.
+- [x] A non-member of a conversation receives 404 on read.
+- [x] Events (message, reaction, retract, typing, presence) arrive over the socket within a second; polling covers a lost socket.
+- [x] No read receipts, no forwarding chains, no broadcast lists.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR097 — Live Expressions and Expressive Avatars
+> **Added in Step 9 on an explicit owner decision (2026-09-14).** Recorded here so the requirement, its reason and its source are owned by a number, tested in `05-test-scenarios.md`, and accounted for in `09-implementation.md`.
+
+**Traces from:** BR10
+**Traced to:** UX21 (new); `09-implementation.md` IMP21–IMP24
+**Priority:** Must
+**Status:** Implemented (Step 9), awaiting owner approval of the text
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When two or more members are in a chat, the system shall show each person as an expressive cartoon avatar whose face animates with that person's current expression; the expression shall come from on-device face detection (opt-in, camera indicator visible) or from a manual mood row, and only the expression word — never an image — shall leave the device.
+
+**Intent (why)**
+The owner's Snapchat reference: "their emotion is actually shown as avatar shows, like smiling". Thesis §21 privacy-first and Brand §9 privacy by design rule out sending video.
+
+**Source / decision**
+Owner decision 2026-09-14 (video skipped for now).
+
+**Acceptance criteria**
+- [x] Expressions are one of: smile, laugh, surprised, wink, thinking, love, neutral.
+- [x] No frame is uploaded; the API only ever receives the word.
+- [x] Camera is opt-in per chat and visibly indicated; the mood row works without a camera.
+- [x] Avatars on the stage and beside messages animate within a second of a change.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR098 — Personal Weekly Digest
+> **Added in Step 9 on an explicit owner decision (2026-09-14).** Recorded here so the requirement, its reason and its source are owned by a number, tested in `05-test-scenarios.md`, and accounted for in `09-implementation.md`.
+
+**Traces from:** BR02
+**Traced to:** UX04; `09-implementation.md` IMP21–IMP24
+**Priority:** Must
+**Status:** Implemented (Step 9), awaiting owner approval of the text
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When a member opens Home, the system shall show up to three sentences composed from their own real data (things they are going to, what is on today/tomorrow near them, how many have circle-mates going), in their language.
+
+**Intent (why)**
+Thesis §67 "immediately understand"; no model, no invention — sentences from counts.
+
+**Source / decision**
+Owner instruction 2026-09-14.
+
+**Acceptance criteria**
+- [x] Every number in the digest is a real count from the person's own view.
+- [x] Available in en, hi, te.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR099 — Shareable Poster Image
+> **Added in Step 9 on an explicit owner decision (2026-09-14).** Recorded here so the requirement, its reason and its source are owned by a number, tested in `05-test-scenarios.md`, and accounted for in `09-implementation.md`.
+
+**Traces from:** BR11
+**Traced to:** UX06; `09-implementation.md` IMP21–IMP24
+**Priority:** Must
+**Status:** Implemented (Step 9), awaiting owner approval of the text
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When a member shares an activity, the system shall offer a poster image (cover, title, date, place, host, QR of the public link) rendered on the device, suitable for WhatsApp status and Instagram stories.
+
+**Intent (why)**
+Thesis §43 (share through WhatsApp, Instagram, SMS, email, QR); a link alone is not what people forward in India.
+
+**Source / decision**
+Owner instruction 2026-09-14; DESIGN-DIRECTION-2030.md §3.3.
+
+**Acceptance criteria**
+- [x] Rendered locally; nothing uploaded.
+- [x] QR opens the public page without login (FR046).
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR100 — Use Where I Am (One-Shot Device Position)
+> **Added in Step 9 on an explicit owner decision (2026-09-14).** Recorded here so the requirement, its reason and its source are owned by a number, tested in `05-test-scenarios.md`, and accounted for in `09-implementation.md`.
+
+**Traces from:** BR09
+**Traced to:** UX04; `09-implementation.md` IMP21–IMP24
+**Priority:** Must
+**Status:** Implemented (Step 9), awaiting owner approval of the text
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When a member taps "Use where I am", the system shall read the device position once, snap it to the nearest approximate locality, and show Around You for that locality for the current session — without storing coordinates or changing the profile.
+
+**Intent (why)**
+Owner question "does the app take real-time location now?" answered honestly; thesis §21 and FR038 forbid exact locations and tracking.
+
+**Source / decision**
+Owner instruction 2026-09-14 ("real time right now").
+
+**Acceptance criteria**
+- [x] No coordinates are persisted.
+- [x] The stored profile locality is unchanged.
+- [x] The choice can be cleared.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR101 — Notification De-duplication and Live Status
+> **Added in Step 9 on an explicit owner decision (2026-09-14).** Recorded here so the requirement, its reason and its source are owned by a number, tested in `05-test-scenarios.md`, and accounted for in `09-implementation.md`.
+
+**Traces from:** BR12
+**Traced to:** UX04/UX15; `09-implementation.md` IMP21–IMP24
+**Priority:** Must
+**Status:** Implemented (Step 9), awaiting owner approval of the text
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+The system shall not deliver the same notification (member, class, title, source activity) twice within 24 hours, shall refuse an identical organizer update within an hour, and shall mark activities that are on right now as Live and those starting within 90 minutes with a countdown.
+
+**Intent (why)**
+Thesis §84 #13 need over noise; §39 notifications with purpose; live status computed on the device.
+
+**Source / decision**
+Owner instruction 2026-09-14; migration 011.
+
+**Acceptance criteria**
+- [x] Join/withdraw/join produces one alert for the organizer.
+- [x] The second identical announcement inside an hour returns 409.
+- [x] Live and countdown states refresh at least every minute.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+

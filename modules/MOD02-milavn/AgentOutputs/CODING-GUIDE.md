@@ -23,7 +23,7 @@ Queries are explicit `text()` SQL with bound parameters, not ORM models, because
 
 - One request = one transaction = one member context. `api/deps.py` binds `milavn.member_id` (and `milavn.permission_scope` for moderators) with `set_config(..., true)` — transaction-local, never plain `SET`. Anonymous requests bind the nil UUID so policies evaluate to "public rows only" instead of a cast error.
 - Bind-parameter casts are written `CAST(:p AS type)`. `:p::type` silently breaks SQLAlchemy's parameter parsing.
-- When a legitimate read or write crosses another member's private rows (aggregate counts, organizer-side status changes, dispatcher fan-out, batch jobs), it goes through a `SECURITY DEFINER` function owned by `milavn_owner` that returns only counts/labels/ids — never by widening a policy. Migrations 002–014 are the catalogue.
+- When a legitimate read or write crosses another member's private rows (aggregate counts, organizer-side status changes, dispatcher fan-out, batch jobs), it goes through a `SECURITY DEFINER` function owned by `milavn_owner` that returns only counts/labels/ids — never by widening a policy. Migrations 002–015 are the catalogue.
 - A participant cannot `SELECT … FOR UPDATE` a row they may not update; serialise per-occurrence critical sections with `pg_advisory_xact_lock(hashtext(id))`.
 
 ## 3. Cross-cutting rules (MODULE-ARCHITECTURE-STANDARD §4b–§6)
@@ -51,6 +51,7 @@ The API resolves the request language once (`X-Milavn-Language`, then `Accept-La
 - `milavn-web/scripts/cdp.mjs` drives a private headless Chrome over CDP (mobile viewport); scenarios live in `scripts/scenarios/` and screenshot to `.logs/`. Run one: `node scripts/cdp.mjs scripts/scenarios/core-loop.mjs`.
 - Lint/type gates: `ruff check app` (API), `npx tsc --noEmit` and `npm run lint` (web). React-Compiler heuristics (`set-state-in-effect`, `immutability`) are warnings, not errors.
 - Visual system = `AgentOutputs/DESIGN-DIRECTION-2030.md` (poster cards, category colour via `data-cat`, navy primary / saffron accent, Fraunces display type, glass controls, designed pickers `PlacePicker` / `WhenPicker` — never the browser's native select/datetime in product screens).
+- Messaging (`components/connect/chat.py`, `routes/chat.py`): every conversation is created through `milavn_connect.create_conversation()` which enforces `can_message()` (shared circle or activity, no block); the WebSocket carries events only — the database read under RLS is the truth; expressions are words, never frames.
 - Layout is responsive from one stylesheet: phones get the floating tab bar, ≥ 900px gets the rail (`SideNav`), card grids and the two-column detail; sheets become centred dialogs. Never add a second, desktop-only page.
 - Natural-language features (`discovery/nl.py`) are deterministic parsers over the module's own vocabulary; anything they understand is echoed back to the person as chips. Do not call an external model from the request path.
 - Do not hand-write `-webkit-` prefixed duplicates in `globals.css` (`-webkit-backdrop-filter` next to `backdrop-filter` made Turbopack's Lightning CSS drop the property entirely). Write the standard property once; the bundler prefixes from its targets.

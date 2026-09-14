@@ -157,6 +157,28 @@ async def add_photo(
     return _photo_response(result)
 
 
+class PhotoOrderRequest(BaseModel):
+    ids: list[UUID]
+
+
+# PATCH, not PUT: the service's CORS policy (main.py) deliberately allows only
+# GET/POST/PATCH/DELETE, and a reorder is a partial update of existing rows.
+@router.patch("/photos/order", status_code=status.HTTP_204_NO_CONTENT)
+async def reorder_photos(
+    body: PhotoOrderRequest, session: DbSession, account_id: AuthenticatedAccount, lang: Locale
+) -> None:
+    """Save the grid order chosen by long-press drag; the first photo is main."""
+    try:
+        await profile.reorder_photos(session, account_id=account_id, ordered_ids=body.ids)
+    except profile.ProfileNotFound as exc:
+        raise _profile_not_found(lang) from exc
+    except profile.PhotoOrderMismatch as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=translate("profile.error.photoOrder", lang),
+        ) from exc
+
+
 @router.delete("/photos/{media_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_photo(
     media_id: UUID, session: DbSession, account_id: AuthenticatedAccount, lang: Locale

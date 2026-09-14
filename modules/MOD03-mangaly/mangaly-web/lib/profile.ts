@@ -134,6 +134,15 @@ export function setPrimaryPhoto(id: string): Promise<PhotoOutcome> {
   return photoRequest(`/profile/photos/${id}/primary`, { method: 'POST' });
 }
 
+/** Save a full photo order; the first id becomes the main photo. */
+export function reorderPhotos(ids: string[]): Promise<PhotoOutcome> {
+  return photoRequest('/profile/photos/order', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...currentLanguageHeader() },
+    body: JSON.stringify({ ids }),
+  });
+}
+
 /** [FR021] View ANY account's profile, not just the caller's own — returns
  * `null` both when it doesn't exist and when the caller isn't authorized to
  * see it yet (self, or an accepted-connection grant); the two are
@@ -160,7 +169,7 @@ export async function viewProfile(accountId: string): Promise<Profile | null> {
 
 export type AttributeState = 'unset' | 'declined' | 'value';
 
-export type AttributeValue = string | number | boolean | Record<string, unknown> | null;
+export type AttributeValue = string | number | boolean | string[] | Record<string, unknown> | null;
 
 export type CompletenessReport = {
   existence_complete: boolean;

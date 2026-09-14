@@ -4,7 +4,7 @@
  * The pill slides and reshapes with the spring token on every tab switch —
  * the single most-repeated animated moment in the app. */
 
-import { CalendarDays, Home, UserRound, Users } from 'lucide-react';
+import { CalendarDays, Home, MessageCircle, UserRound, Users } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLayoutEffect, useRef, useState } from 'react';
@@ -15,6 +15,7 @@ export const TABS = [
   { href: '/', key: 'home', icon: (a: boolean) => <Home size={22} strokeWidth={a ? 2.2 : 1.7} aria-hidden="true" /> },
   { href: '/circles', key: 'circles', icon: (a: boolean) => <Users size={22} strokeWidth={a ? 2.2 : 1.7} aria-hidden="true" /> },
   { href: '/calendar', key: 'calendar', icon: (a: boolean) => <CalendarDays size={22} strokeWidth={a ? 2.2 : 1.7} aria-hidden="true" /> },
+  { href: '/chats', key: 'chats', icon: (a: boolean) => <MessageCircle size={22} strokeWidth={a ? 2.2 : 1.7} aria-hidden="true" /> },
   { href: '/me', key: 'profile', icon: (a: boolean) => <UserRound size={22} strokeWidth={a ? 2.2 : 1.7} aria-hidden="true" /> },
 ];
 

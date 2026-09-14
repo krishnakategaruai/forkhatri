@@ -12,7 +12,8 @@
     "title": "Settings",
     "language": "Language",
     "theme": "Appearance",
-    "themeOption": { "light": "Light", "dark": "Dark", "system": "System" }
+    "themeOption": { "light": "Light", "dark": "Dark", "system": "System" },
+    "logOutConfirm": "Log out of Mangaly on this device?"
   },
   "action": {
     "back": "Back",

@@ -57,13 +57,38 @@ None of the comparables combine all of these. Each is a thing Milavn already has
 - **Icons**: one consistent set (Lucide) for navigation and actions; emoji only as category glyphs on gem tiles.
 - **Real time, on the device**: Live pulse while an activity is on, "in N min" up to 90 minutes before, a Happening-now rail, and "Use where I am" (one-shot position, request-scoped).
 
-## 5. Not doing (on purpose)
+## 5. Social layer — decided with the owner (2026-09-14)
 
-Likes, follower counts, star ratings, story rings, infinite scroll, autoplay video, confetti-for-everything, exact locations, external model calls in the request path, and any "theme picker" that lets an organizer make a page illegible.
+The owner asked why likes, ratings, stories, infinite scroll, exact locations and themes were excluded, and asked for a Snapchat-like messaging system. Resolution, item by item:
 
-## 6. Revision history
+| Item | Decision | Why |
+|---|---|---|
+| Likes, follower counts | **Reactions instead** (emoji on messages, moments, announcements); no follower graph | Brand §15 rejects followers/likes/virality; reactions express warmth without a popularity score |
+| Star ratings | **No public ratings**; private post-event feedback feeds earned labels | Thesis §20 |
+| Story rings | **Circle moments ring** for 24 h, tied to a real activity; no personal broadcast channel | Thesis §3, Brand §15 |
+| Infinite scroll | **Groups that end** on Home; "load more" only inside Search | Thesis §66 |
+| Video | **Skipped for now** (owner); later: short clips as moments, tap to play, never autoplay | India device/data realities |
+| Exact locations | **Locality only, for everyone** — never an exact private location or meeting-point pin (owner restated) | Thesis §21, FR038 |
+| External AI models | **Later and asynchronous**, never in the request path | Thesis §102–§103, latency, privacy |
+| Theme picker | **Curated**: 8–12 tested themes per activity that keep text legible | Partiful/Luma parity without illegible pages |
+
+## 6. Messaging — "plan together", the Milavn way
+
+- **Trust-scoped.** You can message people you already share an activity or a circle with, never strangers; blocks are honoured both ways. One definer helper (`can_message`) decides, and all conversation creation goes through it.
+- **1:1 and groups**, real-time over WebSocket (messages, reactions, typing, presence), polling as fallback. Photos in chat. Unread counts on the Chats tab and the bell.
+- **Reactions, not likes.** Six emoji, toggled by tapping a bubble.
+- **Presence.** "Active now" from a 30-second heartbeat; "at the activity" from check-in.
+- **Expressions, Snapchat-style, privacy-first.** The front camera is analysed *on the device* (MediaPipe face landmarker blendshapes → smile / laugh / surprised / wink / thinking / love / neutral); only that word is shared, shown as a mood badge on the person's avatar and next to their messages. Opt-in per chat with a visible camera indicator; a manual mood picker is always available.
+- **Not a WhatsApp clone.** No broadcast lists, no forwarding chains, no read-receipt pressure, no "last seen at 03:12".
+
+## 7. Still not doing
+
+Follower counts, public star ratings, personal stories, infinite feeds, autoplay video, exact private locations, external model calls in the request path, free-form themes, and any read-receipt or "seen" mechanics designed to pressure a reply.
+
+## 8. Revision history
 | Date | Change | Reason / Ref |
 |---|---|---|
+| 2026-09-14 | Completed with the owner's social-layer decisions (§5–§7) and the messaging design (§6): trust-scoped chats, reactions instead of likes, on-device expressions, locality only. | Owner: "and yes, complete the design direction 2030… video you can skip for now… never expose exact private location, share locality" — krishna kategaru (autonomous). |
 | 2026-09-14 | v2 after the first poster pass was still rejected: colour roles inverted (paper default, navy primary, saffron accent, per-category hues), Fraunces display type, designed pickers, voice input, digest, poster share. | Product-owner feedback ("colour combinations are the worst") — krishna kategaru (autonomous). |
 | 2026-09-14 | Initial direction after the owner rejected the first visual pass ("very old styled screens… look at competitive apps… be better than them… 2030 people should still think our app is modernised"). Research: thesis §19–§21, §30–§33, §40–§43, §66–§71, §84; Brand §9, §12–§15; product and trend sources linked above. | Product-owner instruction — krishna kategaru (autonomous). |
 
