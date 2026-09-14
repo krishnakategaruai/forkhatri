@@ -1,0 +1,9 @@
+{
+  "error": {
+    "notFound": "That couldn't be found.",
+    "invalidTarget": "You can't send a connection request to yourself.",
+    "alreadyPending": "You already have a pending request to this profile.",
+    "rateLimited": "Too many connection requests. Please try again later.",
+    "unauthorizedOnBehalfOf": "You're not an authorized Home Circle member for that profile."
+  }
+}

@@ -1,0 +1,197 @@
+{
+  "wizard": {
+    "step": "चरण {{current}} / {{total}}",
+    "next": "आगे",
+    "save": "प्रोफ़ाइल सहेजें",
+    "saving": "सहेजा जा रहा है…"
+  },
+  "field": {
+    "name": "आपका पूरा नाम",
+    "dateOfBirth": "जन्म तिथि",
+    "gender": "लिंग",
+    "genderOption": { "female": "महिला", "male": "पुरुष", "other": "अन्य" },
+    "cityLocality": "शहर / इलाका",
+    "photo": "एक तस्वीर जोड़ें",
+    "education": { "highest_education_level": "उच्चतम शिक्षा स्तर" },
+    "profession": { "occupation": "पेशा" },
+    "marital_history": { "marital_status": "वैवाहिक स्थिति" },
+    "relocation": { "relocation_willingness": "स्थानांतरण के लिए तैयार?" },
+    "partner_preference": {
+      "age_range": "पसंदीदा आयु सीमा",
+      "locality": "पसंदीदा इलाका"
+    },
+    "lifestyle": { "diet": "आहार" },
+    "food_travel_hobbies": { "hobbies": "शौक" },
+    "communication_style": { "style": "संवाद शैली" },
+    "independence": { "preference": "स्वतंत्रता प्राथमिकता" },
+    "family_involvement_expectations": { "level": "पारिवारिक भागीदारी" },
+    "career_children_living_financial": { "wants_children": "बच्चे चाहते हैं?" },
+    "pets": { "preference": "पालतू जानवर" },
+    "horoscope": { "matching_required": "कुंडली मिलान" }
+  },
+  "option": {
+    "highest_education_level": {
+      "high_school": "हाई स्कूल",
+      "bachelors": "स्नातक",
+      "masters": "स्नातकोत्तर",
+      "doctorate": "डॉक्टरेट",
+      "other": "अन्य"
+    },
+    "marital_status": {
+      "never_married": "कभी शादी नहीं हुई",
+      "divorced": "तलाकशुदा",
+      "widowed": "विधवा/विधुर",
+      "awaiting_divorce": "तलाक लंबित"
+    },
+    "relocation_willingness": {
+      "yes": "हाँ",
+      "no": "नहीं",
+      "open_to_discussion": "चर्चा के लिए तैयार"
+    },
+    "diet": {
+      "vegetarian": "शाकाहारी",
+      "non_vegetarian": "मांसाहारी",
+      "eggetarian": "अंडाहारी",
+      "vegan": "वीगन"
+    },
+    "style": {
+      "direct": "स्पष्टवादी",
+      "thoughtful": "विचारशील",
+      "playful": "चंचल"
+    },
+    "preference": {
+      "high": "अत्यधिक स्वतंत्र",
+      "balanced": "संतुलित",
+      "family_led": "परिवार-निर्देशित निर्णय",
+      "love_pets": "पालतू जानवर पसंद हैं",
+      "neutral": "पालतू जानवरों के प्रति तटस्थ",
+      "prefer_none": "पालतू जानवर नहीं चाहते"
+    },
+    "level": {
+      "close_knit": "घनिष्ठ",
+      "moderate": "मध्यम",
+      "independent": "स्वतंत्र"
+    },
+    "wants_children": {
+      "yes": "हाँ",
+      "no": "नहीं",
+      "undecided": "अनिश्चित"
+    },
+    "matching_required": {
+      "yes": "आवश्यक",
+      "no": "आवश्यक नहीं",
+      "open": "दोनों तरह से ठीक है"
+    }
+  },
+  "photo": {
+    "empty": "जारी रखने के लिए कम से कम एक तस्वीर जोड़ें",
+    "change": "तस्वीर बदलें"
+  },
+  "error": {
+    "network": "हम मंगल्य तक नहीं पहुँच सके। अपना कनेक्शन जाँचें और फिर कोशिश करें।"
+  },
+  "hub": {
+    "title": "मेरी प्रोफ़ाइल",
+    "savedBadge": "प्रोफ़ाइल सहेजी गई",
+    "completenessCta": "पूर्णता देखें →",
+    "preview": "मेरी प्रोफ़ाइल देखें",
+    "ageYears": "{{age}} वर्ष",
+    "tabEdit": "संपादित करें",
+    "tabPreview": "पूर्वावलोकन",
+    "answered": "{{total}} में से {{done}} के उत्तर दिए",
+    "nextUp": "अगला",
+    "nextHint": "बस कुछ सेकंड लगेंगे",
+    "hidden": "छिपा हुआ",
+    "add": "जोड़ें",
+    "ageRange": "आयु {{min}}–{{max}}",
+    "section": {
+      "basics": "मूल जानकारी",
+      "lifestyle": "जीवनशैली",
+      "family": "परिवार और मूल्य",
+      "future": "भविष्य की योजनाएँ",
+      "partner": "जीवनसाथी की पसंद",
+      "prompts": "मेरे शब्दों में"
+    },
+    "preview": {
+      "before": "जुड़ने से पहले",
+      "after": "जुड़ने के बाद",
+      "beforeNote": "जब तक आप दोनों स्वीकार नहीं करते, कोई भी बस इतना ही देखता है — न नाम, न तस्वीर। वे आपके बीच की समान बातें भी देखते हैं।",
+      "afterNote": "आप दोनों के स्वीकार करने के बाद वे आपकी पूरी प्रोफ़ाइल देखते हैं। जो आपने छिपाया है, वह छिपा ही रहता है।",
+      "noBasics": "मूल जानकारी अभी नहीं जोड़ी गई"
+    },
+    "photos": {
+      "title": "तस्वीरें",
+      "main": "मुख्य",
+      "add": "तस्वीर जोड़ें",
+      "makeMain": "मुख्य तस्वीर बनाएँ",
+      "remove": "तस्वीर हटाएँ",
+      "uploading": "अपलोड हो रहा है…",
+      "hint": "6 तक तस्वीरें जोड़ें। जब तक आप दोनों नहीं जुड़ते, तस्वीरें निजी रहती हैं।"
+    },
+    "prompts": {
+      "add": "एक सवाल जोड़ें",
+      "pick": "एक सवाल चुनें",
+      "answer": "आपका जवाब",
+      "remove": "हटाएँ",
+      "emptyHint": "ऐसे सवाल लोगों को जवाब देने के लिए कुछ सच्चा देते हैं।",
+      "q": {
+        "ideal_weekend": "मेरा आदर्श सप्ताहांत",
+        "family_means": "मेरे लिए परिवार का मतलब है",
+        "looking_for": "मैं ऐसे व्यक्ति की तलाश में हूँ जो",
+        "non_negotiable": "एक बात जिस पर कोई समझौता नहीं",
+        "simple_pleasures": "मेरी छोटी-छोटी खुशियाँ",
+        "together_we": "साथ मिलकर हम"
+      }
+    },
+    "state": {
+      "filled": "भरा हुआ",
+      "declined": "अस्वीकृत",
+      "empty": "शुरू नहीं हुआ"
+    },
+    "category": {
+      "education": "शिक्षा",
+      "profession": "पेशा",
+      "marital_history": "वैवाहिक इतिहास",
+      "relocation": "स्थानांतरण",
+      "partner_preference": "साथी प्राथमिकताएँ",
+      "lifestyle": "जीवनशैली",
+      "food_travel_hobbies": "भोजन, यात्रा और शौक",
+      "communication_style": "संवाद शैली",
+      "independence": "स्वतंत्रता",
+      "family_involvement_expectations": "पारिवारिक भागीदारी",
+      "career_children_living_financial": "करियर, बच्चे और वित्त",
+      "pets": "पालतू जानवर",
+      "horoscope": "कुंडली"
+    }
+  },
+  "completeness": {
+    "title": "प्रोफ़ाइल पूर्णता",
+    "tier": {
+      "existence": {
+        "title": "सहेजी गई",
+        "met": "आपकी प्रोफ़ाइल सहेज ली गई है।"
+      },
+      "discoverability": {
+        "title": "खोजने योग्य",
+        "met": "आप खोज और मैचों में दिखते हैं।",
+        "notMet": "खोज और मैचों में दिखने के लिए ये जोड़ें:"
+      },
+      "enhanced": {
+        "title": "उन्नत मिलान",
+        "note": "वैकल्पिक — इससे कभी असर नहीं पड़ता कि आप मैचों में दिखते हैं या नहीं।",
+        "progress": "{{total}} में से {{filled}} श्रेणियाँ जोड़ी गईं"
+      }
+    }
+  },
+  "editor": {
+    "save": "सहेजें",
+    "saving": "सहेजा जा रहा है…",
+    "decline": "बताना नहीं चाहते",
+    "declined": "आपने इसे साझा न करने का विकल्प चुना।",
+    "change": "बदलें",
+    "selectPlaceholder": "चुनें…",
+    "ageRangeFrom": "से",
+    "ageRangeTo": "तक",
+    "saveError": "सहेज नहीं पाए — अपना कनेक्शन जाँचें और फिर कोशिश करें।"
+  }
+}

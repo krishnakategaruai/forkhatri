@@ -1,0 +1,15 @@
+{
+  "title": "Messages",
+  "empty": "No conversations yet — accept a connection request to start one.",
+  "thread": {
+    "placeholder": "Type a message…",
+    "send": "Send",
+    "privacyTag": "Private · Limited-retention",
+    "empty": "No messages yet. Say hello!"
+  },
+  "error": {
+    "network": "We couldn't reach Mangaly. Check your connection and try again.",
+    "notAvailable": "You can only message a connection you've both accepted.",
+    "rateLimited": "You're sending messages too quickly. Please slow down."
+  }
+}

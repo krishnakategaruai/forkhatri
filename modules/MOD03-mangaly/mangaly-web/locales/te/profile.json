@@ -1,0 +1,197 @@
+{
+  "wizard": {
+    "step": "దశ {{current}} / {{total}}",
+    "next": "తర్వాత",
+    "save": "ప్రొఫైల్ సేవ్ చేయండి",
+    "saving": "సేవ్ అవుతోంది…"
+  },
+  "field": {
+    "name": "మీ పూర్తి పేరు",
+    "dateOfBirth": "పుట్టిన తేదీ",
+    "gender": "లింగం",
+    "genderOption": { "female": "స్త్రీ", "male": "పురుషుడు", "other": "ఇతర" },
+    "cityLocality": "నగరం / ప్రాంతం",
+    "photo": "ఒక ఫోటో జోడించండి",
+    "education": { "highest_education_level": "అత్యున్నత విద్యా స్థాయి" },
+    "profession": { "occupation": "వృత్తి" },
+    "marital_history": { "marital_status": "వైవాహిక స్థితి" },
+    "relocation": { "relocation_willingness": "తరలింపుకు సిద్ధమేనా?" },
+    "partner_preference": {
+      "age_range": "ఇష్టమైన వయస్సు పరిధి",
+      "locality": "ఇష్టమైన ప్రాంతం"
+    },
+    "lifestyle": { "diet": "ఆహారం" },
+    "food_travel_hobbies": { "hobbies": "అభిరుచులు" },
+    "communication_style": { "style": "సంభాషణ శైలి" },
+    "independence": { "preference": "స్వాతంత్ర్య ప్రాధాన్యత" },
+    "family_involvement_expectations": { "level": "కుటుంబ ప్రమేయం" },
+    "career_children_living_financial": { "wants_children": "పిల్లలు కావాలా?" },
+    "pets": { "preference": "పెంపుడు జంతువులు" },
+    "horoscope": { "matching_required": "జాతక సరిపోలిక" }
+  },
+  "option": {
+    "highest_education_level": {
+      "high_school": "హైస్కూల్",
+      "bachelors": "బ్యాచిలర్స్ డిగ్రీ",
+      "masters": "మాస్టర్స్ డిగ్రీ",
+      "doctorate": "డాక్టరేట్",
+      "other": "ఇతర"
+    },
+    "marital_status": {
+      "never_married": "ఎప్పుడూ వివాహం కాలేదు",
+      "divorced": "విడాకులు తీసుకున్నారు",
+      "widowed": "వితంతువు/వితంతుడు",
+      "awaiting_divorce": "విడాకుల కోసం వేచి ఉన్నారు"
+    },
+    "relocation_willingness": {
+      "yes": "అవును",
+      "no": "కాదు",
+      "open_to_discussion": "చర్చకు సిద్ధం"
+    },
+    "diet": {
+      "vegetarian": "శాఖాహారం",
+      "non_vegetarian": "మాంసాహారం",
+      "eggetarian": "గుడ్డు ఆహారం",
+      "vegan": "వీగన్"
+    },
+    "style": {
+      "direct": "నేరుగా",
+      "thoughtful": "ఆలోచనాత్మకం",
+      "playful": "చిలిపిగా"
+    },
+    "preference": {
+      "high": "అత్యంత స్వతంత్రం",
+      "balanced": "సమతుల్యం",
+      "family_led": "కుటుంబ-ఆధారిత నిర్ణయాలు",
+      "love_pets": "పెంపుడు జంతువులంటే ఇష్టం",
+      "neutral": "పెంపుడు జంతువుల పట్ల తటస్థం",
+      "prefer_none": "పెంపుడు జంతువులు వద్దు"
+    },
+    "level": {
+      "close_knit": "సన్నిహిత",
+      "moderate": "మధ్యస్థం",
+      "independent": "స్వతంత్రం"
+    },
+    "wants_children": {
+      "yes": "అవును",
+      "no": "కాదు",
+      "undecided": "నిర్ణయించుకోలేదు"
+    },
+    "matching_required": {
+      "yes": "అవసరం",
+      "no": "అవసరం లేదు",
+      "open": "ఏదైనా పర్వాలేదు"
+    }
+  },
+  "photo": {
+    "empty": "కొనసాగించడానికి కనీసం ఒక ఫోటో జోడించండి",
+    "change": "ఫోటో మార్చండి"
+  },
+  "error": {
+    "network": "మేము మంగళ్యను చేరుకోలేకపోయాము. మీ కనెక్షన్‌ని తనిఖీ చేసి మళ్ళీ ప్రయత్నించండి."
+  },
+  "hub": {
+    "title": "నా ప్రొఫైల్",
+    "savedBadge": "ప్రొఫైల్ సేవ్ చేయబడింది",
+    "completenessCta": "పరిపూర్णత చూడండి →",
+    "preview": "నా ప్రొఫైల్‌ను ప్రివ్యూ చేయండి",
+    "ageYears": "{{age}} సంవత్సరాలు",
+    "tabEdit": "సవరించు",
+    "tabPreview": "ప్రివ్యూ",
+    "answered": "{{total}}లో {{done}} సమాధానాలు",
+    "nextUp": "తర్వాత",
+    "nextHint": "కొన్ని సెకన్లే పడుతుంది",
+    "hidden": "దాచబడింది",
+    "add": "జోడించు",
+    "ageRange": "వయస్సు {{min}}–{{max}}",
+    "section": {
+      "basics": "ప్రాథమిక వివరాలు",
+      "lifestyle": "జీవనశైలి",
+      "family": "కుటుంబం & విలువలు",
+      "future": "భవిష్యత్ ప్రణాళికలు",
+      "partner": "భాగస్వామి ప్రాధాన్యత",
+      "prompts": "నా మాటల్లో"
+    },
+    "preview": {
+      "before": "కనెక్ట్ అయ్యే ముందు",
+      "after": "కనెక్ట్ అయిన తర్వాత",
+      "beforeNote": "మీరిద్దరూ అంగీకరించే వరకు ఎవరైనా చూసేది ఇంతే — పేరు లేదు, ఫోటో లేదు. మీ మధ్య ఉన్న సమాన విషయాలను కూడా వారు చూస్తారు.",
+      "afterNote": "మీరిద్దరూ అంగీకరించిన తర్వాత వారు మీ పూర్తి ప్రొఫైల్ చూస్తారు. మీరు దాచినవి దాచే ఉంటాయి.",
+      "noBasics": "ప్రాథమిక వివరాలు ఇంకా జోడించలేదు"
+    },
+    "photos": {
+      "title": "ఫోటోలు",
+      "main": "ప్రధాన",
+      "add": "ఫోటో జోడించు",
+      "makeMain": "ప్రధాన ఫోటోగా చేయి",
+      "remove": "ఫోటో తొలగించు",
+      "uploading": "అప్‌లోడ్ అవుతోంది…",
+      "hint": "6 వరకు జోడించండి. మీరిద్దరూ కనెక్ట్ అయ్యే వరకు ఫోటోలు ప్రైవేట్‌గా ఉంటాయి."
+    },
+    "prompts": {
+      "add": "ఒక ప్రశ్న జోడించండి",
+      "pick": "ఒక ప్రశ్న ఎంచుకోండి",
+      "answer": "మీ సమాధానం",
+      "remove": "తొలగించు",
+      "emptyHint": "ఇలాంటి ప్రశ్నలు ఇతరులకు స్పందించడానికి నిజమైనది ఇస్తాయి.",
+      "q": {
+        "ideal_weekend": "నా ఆదర్శ వారాంతం",
+        "family_means": "నాకు కుటుంబం అంటే",
+        "looking_for": "నేను ఇలాంటి వ్యక్తి కోసం చూస్తున్నాను",
+        "non_negotiable": "నేను రాజీపడని ఒక విషయం",
+        "simple_pleasures": "నా చిన్న చిన్న ఆనందాలు",
+        "together_we": "కలిసి మనం"
+      }
+    },
+    "state": {
+      "filled": "నింపబడింది",
+      "declined": "తిరస్కరించబడింది",
+      "empty": "ప్రారంభించలేదు"
+    },
+    "category": {
+      "education": "విద్య",
+      "profession": "వృత్తి",
+      "marital_history": "వైవాహిక చరిత్ర",
+      "relocation": "తరలింపు",
+      "partner_preference": "భాగస్వామి ప్రాధాన్యతలు",
+      "lifestyle": "జీవనశైలి",
+      "food_travel_hobbies": "ఆహారం, ప్రయాణం & అభిరుచులు",
+      "communication_style": "సంభాషణ శైలి",
+      "independence": "స్వాతంత్ర్యం",
+      "family_involvement_expectations": "కుటుంబ ప్రమేయం",
+      "career_children_living_financial": "కెరీర్, పిల్లలు & ఆర్థికాంశాలు",
+      "pets": "పెంపుడు జంతువులు",
+      "horoscope": "జాతకం"
+    }
+  },
+  "completeness": {
+    "title": "ప్రొఫైల్ పరిపూర్णత",
+    "tier": {
+      "existence": {
+        "title": "సేవ్ చేయబడింది",
+        "met": "మీ ప్రొఫైల్ సేవ్ చేయబడింది."
+      },
+      "discoverability": {
+        "title": "కనుగొనదగినది",
+        "met": "మీరు శోధన మరియు మ్యాచ్‌లలో కనిపిస్తారు.",
+        "notMet": "శోధన మరియు మ్యాచ్‌లలో కనిపించడానికి వీటిని జోడించండి:"
+      },
+      "enhanced": {
+        "title": "మెరుగైన సరిపోలిక",
+        "note": "ఐచ్ఛికం — మీరు మ్యాచ్‌లలో కనిపించడాన్ని ఇది ఎప్పుడూ ప్రభావితం చేయదు.",
+        "progress": "{{total}}లో {{filled}} వర్గాలు జోడించబడ్డాయి"
+      }
+    }
+  },
+  "editor": {
+    "save": "సేవ్ చేయండి",
+    "saving": "సేవ్ అవుతోంది…",
+    "decline": "చెప్పదలచుకోలేదు",
+    "declined": "దీన్ని పంచుకోకూడదని మీరు ఎంచుకున్నారు.",
+    "change": "మార్చండి",
+    "selectPlaceholder": "ఎంచుకోండి…",
+    "ageRangeFrom": "నుండి",
+    "ageRangeTo": "వరకు",
+    "saveError": "సేవ్ చేయలేకపోయాము — మీ కనెక్షన్‌ని తనిఖీ చేసి మళ్ళీ ప్రయత్నించండి."
+  }
+}

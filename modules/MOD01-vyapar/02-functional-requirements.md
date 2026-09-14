@@ -3,7 +3,7 @@ step: 02-functional-requirements
 module: MOD01
 status: Sealed
 approver: Product Manager
-updated: 2026-09-12
+updated: 2026-09-14
 items: "55 | approved: 55 | blockers: 0"
 ---
 
@@ -16,6 +16,7 @@ items: "55 | approved: 55 | blockers: 0"
 | 2026-09-12 | Initial full decomposition of the 18 Sealed BRs into 54 lean, incrementally buildable FRs. Written tersely by Product Manager direction ("complete it fast"): near-identical CRUD/lifecycle variants are consolidated into single FRs with parameterized acceptance criteria rather than split into near-duplicates. | `01-business-requirements.md` Sealed 2026-09-12; PM speed/leanness directive. |
 | 2026-09-12 | Approver check (Product Manager role) on the full file. Corrections: FR03 now requires the FR07 OTP check before a Listing leaves Draft (was inconsistent); FR08 drops Aadhaar from the V1 document menu after checking UIDAI's offline-verification rules (storing Aadhaar images/numbers is not a compliant path for a private entity) - four options remain; FR23 gains the "Refer to Counsel" action so FR52(f) has a user-facing trigger; FR35 priority raised Could -> Should to match BR11 and the pricing model's V1 "Campaign foundation"; FR44 clarified as 5 screens after authentication; FR45 consent reference corrected to FR37. Gap found and filled: no FR specified the Opportunity detail screen, its actions/feedback, or the Activity screen - added FR55 under BR06 (55 FRs total); BR06's Traced-to updated in the Step 1 file and BR03 gains DEC-004 for the Aadhaar refinement. | "act as approver and do check" - Product Manager. |
 | 2026-09-13 | Post-seal vocabulary refinement on Product Manager direction ("look over existing applications and inspire the words"): FR22's typed actions renamed so stored type = label (Enquire / Apply / Propose / Contact / Register) using words verified on Sulekha, Naukri, Apna, Upwork and IndiaMART (FR22 DEC-002); FR16 primary is "Enquire Now"; FR55 primary labels aligned; FR28 responsiveness cue worded "Responds in ~X". No behaviour changed. Resolves the Step 4 Fidelity flag on FR22. | Product Manager, during Step 4 review. |
+| 2026-09-14 | Post-seal correction: authentication single source of truth = parent ForKhatri platform; FR50 reduced to consuming the platform session/member identity and its entry/return points; no Vyapar-owned login/signup/session/credential behaviour; FR07 clarified as listing contact verification (not authentication). Wording aligned in the Member definition, FR34, FR42, FR44, FR52, and the build-order note; FR50 gains DEC-001 recording the correction. Approval marks and Sealed status unchanged. | Product owner standing correction, 2026-09-14. |
 
 ## Scope of this step
 
@@ -70,7 +71,7 @@ None.
 ## Shared definitions (used by every FR below)
 
 - **Listing** = a BusinessProfile or ProfessionalListingProfile.
-- **Member** = an authenticated ForKhatri identity supplied by Identity & Trust.
+- **Member** = an authenticated ForKhatri identity supplied by the parent ForKhatri platform's Identity & Trust service (ARCHITECTURE.md ADR-004), the single source of truth for login and authentication. Vyapar never signs members up, logs them in, or handles their OTP sign-in, passwords, sessions, or logout; it consumes the already-authenticated member identity (FR50).
 - **Operator** = a staff role in the unified Admin Console with a named permission.
 - **Audit event** = actor, timestamp, object id, action, reason code, outcome, written append-only to the platform Audit service.
 - Every FR that changes state records an Audit event; this is not repeated per FR.
@@ -253,9 +254,9 @@ None.
 ### FR07 - Phone/OTP contact baseline on every Listing
 **Traces from:** BR03 · **Priority:** Must · **Status:** Ready for Review · **Confidence:** High
 
-**Requirement:** When a Listing is submitted, the system shall require that its declared primary mobile number is verified via a 6-digit OTP (valid 10 minutes, maximum 5 attempts, resend after 30 seconds) before the Listing can leave Draft, reusing the Identity & Trust OTP service.
+**Requirement:** When a Listing is submitted, the system shall require that its declared primary mobile number is verified via a 6-digit OTP (valid 10 minutes, maximum 5 attempts, resend after 30 seconds) before the Listing can leave Draft, reusing the parent ForKhatri platform's OTP-sending capability; this is verification of the Listing's contact number (a Vyapar business-verification step), not member login or authentication, which the parent platform alone owns (FR50).
 
-**Intent:** Universal, low-friction legitimacy baseline matching real comparable apps.
+**Intent:** Universal, low-friction legitimacy baseline matching real comparable apps; a listing-contact check, never a sign-in.
 
 **Success outcome:** "Contact verified" flag set on the Listing; shown as a trust cue.
 
@@ -265,12 +266,13 @@ None.
 - [ ] No Listing leaves Draft without a verified mobile number.
 - [ ] OTP limits above enforced; lockout message shown.
 - [ ] Number change resets the flag.
+- [ ] The OTP verifies the Listing's contact number only; it creates no session, credential, or login state - authentication remains the parent platform's (FR50).
 
 **Quality gate:** Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
 
 **Handoff readiness:** User/role Yes · Trigger Yes · Success + failure Yes
 
-**Review history:** 2026-09-12 - Drafted.
+**Review history:** 2026-09-12 - Drafted. 2026-09-14 - Post-seal clarification: listing contact verification reusing the platform's OTP-sending capability, not authentication (product owner standing correction).
 
 **Approval:** Product Manager / BA - [x] Approved - Krishna Kategaru, 2026-09-12
 
@@ -1020,7 +1022,7 @@ None.
 ### FR34 - Multi-user business administration roles
 **Traces from:** BR11 · **Priority:** Should · **Status:** Ready for Review · **Confidence:** High
 
-**Requirement:** When a Workspace owner invites another member by phone number, the system shall assign a role of Admin (all actions except delete/transfer) or Operator (opportunities, enquiries, reports; no billing), require the invitee to accept, and let the owner revoke a role at any time with immediate effect on all sessions.
+**Requirement:** When a Workspace owner invites another member by phone number, the system shall assign a role of Admin (all actions except delete/transfer) or Operator (opportunities, enquiries, reports; no billing), require the invitee to accept, and let the owner revoke a role at any time with immediate effect on every Vyapar surface the invitee has open (the Vyapar role is removed; the member's ForKhatri platform session itself is untouched, as Vyapar owns no sessions).
 
 **Intent:** Auditable delegated authority.
 
@@ -1243,7 +1245,7 @@ None.
 **Failure / edge outcome:** Untranslated taxonomy term -> English shown with the member's language tag preserved; a member-authored Hindi listing appears in a Telugu member's results by text/category match, unchanged.
 
 **Acceptance criteria**
-- [ ] Three languages; device-locale default; switch takes effect without re-login.
+- [ ] Three languages; device-locale default; switch takes effect immediately without any re-sign-in on the parent platform.
 - [ ] Member content untouched with language tag.
 - [ ] Language not in the FR19 signal allow-list.
 
@@ -1286,7 +1288,7 @@ None.
 ### FR44 - Progressive first-run to discovery
 **Traces from:** BR14, BR02 · **Priority:** Must · **Status:** Ready for Review · **Confidence:** High
 
-**Requirement:** When a new member opens Vyapar for the first time, the system shall present a Welcome, ask what they want help with (multi-select, including "I'm not sure yet"), capture capabilities via structured choices plus free text, capture location/radius and work mode, set privacy defaults (FR36), and land them on Discover within 5 screens after authentication (FR50) and under 3 minutes, with every step skippable except location.
+**Requirement:** When a member already signed in through the parent ForKhatri platform opens Vyapar for the first time (the FR50 entry point - Vyapar presents no sign-up, login, or OTP sign-in screens of its own), the system shall present a Welcome, ask what they want help with (multi-select, including "I'm not sure yet"), capture capabilities via structured choices plus free text, capture location/radius and work mode, set privacy defaults (FR36), and land them on Discover within 5 screens after arriving from the platform sign-in and under 3 minutes, with every step skippable except location.
 
 **Intent:** Value before a resume.
 
@@ -1298,12 +1300,13 @@ None.
 - [ ] <= 5 screens; only location mandatory; skip everywhere else.
 - [ ] "Not sure yet" path exists.
 - [ ] Abandonment step logged.
+- [ ] The 5 screens are all Vyapar first-run screens; none is a sign-up, login, or OTP sign-in screen (those belong to the parent platform, FR50).
 
 **Quality gate:** Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
 
 **Handoff readiness:** User/role Yes · Trigger Yes · Success + failure Yes
 
-**Review history:** 2026-09-12 - Drafted.
+**Review history:** 2026-09-12 - Drafted. 2026-09-14 - Post-seal clarification: first-run starts after the parent platform's sign-in; no Vyapar-owned authentication screens (product owner standing correction).
 
 **Approval:** Product Manager / BA - [x] Approved - Krishna Kategaru, 2026-09-12
 
@@ -1448,24 +1451,26 @@ None.
 ### FR50 - Identity & Trust integration
 **Traces from:** BR17 · **Priority:** Must · **Status:** Ready for Review · **Confidence:** High
 
-**Requirement:** When a member accesses MOD01, the system shall authenticate them solely through the Identity & Trust service (phone/OTP session), read the canonical member id, display name, platform trust level, and VerifiedCredential references through its versioned read contract, store only the member id as a foreign key in MOD01 records, and never create, duplicate, or modify platform identity data.
+**Requirement:** When a member enters MOD01, the system shall consume the authenticated member identity provided by the parent ForKhatri platform's Identity & Trust service (ARCHITECTURE.md ADR-004), which is the single source of truth for user login and authentication - the parent platform alone owns sign-up, login, OTP sign-in, password/credential handling, session issuance, and logout - read the canonical member id, display name, platform trust level, and VerifiedCredential references through its versioned read contract, store only the member id as a foreign key in MOD01 records (a thin identity bridge), send an unauthenticated visitor to the platform sign-in and, on successful ForKhatri sign-in, return them to Vyapar's first-run (FR44) or Discover, and never create, duplicate, or modify platform identity data.
 
-**Intent:** One identity; no fork.
+**Intent:** One identity owned by the parent platform; no fork; Vyapar holds only the entry and return points.
 
-**Success outcome:** MOD01 works against the contract version it declares; identity changes upstream appear within one sync (<= 1 hour).
+**Success outcome:** MOD01 works against the contract version it declares; identity changes upstream appear within one sync (<= 1 hour); a member signed in on the platform reaches Vyapar with no second sign-in.
 
-**Failure / edge outcome:** Identity & Trust unavailable -> existing sessions continue read-only for up to 15 minutes with a banner; new logins blocked with a retry message; no local credential fallback exists.
+**Failure / edge outcome:** Identity & Trust unavailable -> members holding a valid platform session continue read-only in Vyapar for up to 15 minutes with a banner; unauthenticated visitors are sent to the platform sign-in, which shows its own retry message; no Vyapar-owned credential, session, or authentication fallback exists.
 
 **Acceptance criteria**
-- [ ] Auth only via Identity & Trust; member id as sole stored identity key.
+- [ ] Authentication provided only by the parent ForKhatri platform; Vyapar has no sign-up, login, OTP sign-in, password, session, or logout behaviour of its own; member id as sole stored identity key.
 - [ ] Contract version declared; upstream changes synced within 1 hour.
-- [ ] Read-only degradation on outage; no local auth.
+- [ ] Read-only degradation on outage; unauthenticated entry routes to the platform sign-in and returns to FR44 or Discover; no local auth.
 
 **Quality gate:** Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
 
+**Decisions:** DEC-001 · (Product owner standing correction, 2026-09-14: "User login, authentication will be done by one source of truth that is parent: ForKhatri.") Facing a module-described phone/OTP session vs. consuming the parent platform's authentication, we chose to have Vyapar consume only the parent ForKhatri platform's authenticated member identity and its entry/return points (ADR-004), over any Vyapar-owned login, sign-up, OTP sign-in, session, or credential behaviour, to keep one source of truth for identity across every module, accepting that Vyapar's entry and return points depend on the platform sign-in flow. FR07 is unaffected: it is verification of a Listing's contact number, not authentication.
+
 **Handoff readiness:** User/role Yes · Trigger Yes · Success + failure Yes
 
-**Review history:** 2026-09-12 - Drafted.
+**Review history:** 2026-09-12 - Drafted. 2026-09-14 - Post-seal correction per product owner: reduced to consuming the platform session/member identity and its entry/return points; DEC-001 recorded. Approval unchanged.
 
 **Approval:** Product Manager / BA - [x] Approved - Krishna Kategaru, 2026-09-12
 
@@ -1504,9 +1509,9 @@ None.
 ### FR52 - Loosely coupled platform and adjacent-module contracts
 **Traces from:** BR17, BR12 · **Priority:** Must · **Status:** Ready for Review · **Confidence:** Medium - adjacent owners must accept the minimum-field contracts.
 
-**Requirement:** When MOD01 interacts with Search, Notification, Audit, Object Storage, MOD05, or MOD04, the system shall use only versioned, minimum-field contracts: (a) publish Active Listing/Opportunity index documents to Search and remove them on state change within 5 seconds; (b) send notification requests with template id, member id, and parameters only; (c) send audit events per the shared definition; (d) store media/evidence in Object Storage under MOD01 access policy; (e) expose to MOD05 a read-only, privacy-filtered summary (public fields only, no contact, no private intent) with no write path; (f) send to MOD04 an explicit referral (member id, problem summary, consent flag) only when the member taps "Refer to Counsel", with no appointment or payment state exchanged; every call shall carry an idempotency key where retried and shall fail without corrupting MOD01 state.
+**Requirement:** When MOD01 interacts with Search, Notification, Audit, Object Storage, MOD05, or MOD04, the system shall use only versioned, minimum-field contracts: (a) publish Active Listing/Opportunity index documents to Search and remove them on state change within 5 seconds; (b) send notification requests with template id, member id, and parameters only; (c) send audit events per the shared definition; (d) store media/evidence in Object Storage under MOD01 access policy; (e) expose to MOD05 a read-only, privacy-filtered summary (public fields only, no contact, no private intent) with no write path; (f) send to MOD04 an explicit referral (member id, problem summary, consent flag) only when the member taps "Refer to Counsel", with no appointment or payment state exchanged; every call shall carry an idempotency key where retried and shall fail without corrupting MOD01 state; the Identity & Trust contract is FR50 and is consume-only - no contract in this FR carries login, session, or credential data, only the platform member id.
 
-**Intent:** One owner per entity; failures do not cascade; everything replaceable.
+**Intent:** One owner per entity (identity and authentication are owned by the parent ForKhatri platform, never re-implemented here); failures do not cascade; everything replaceable.
 
 **Success outcome:** Any adjacent service outage degrades only its own feature (search fallback, queued notifications, buffered audit) and MOD01 domain state stays consistent.
 
@@ -1584,7 +1589,7 @@ None.
 ## Build-order note for Step 3 onward
 
 Suggested incremental slices so each step yields visible app progress:
-1. FR50, FR44, FR01-FR05, FR07 - identity, first-run, profiles, OTP baseline.
+1. FR50, FR44, FR01-FR05, FR07 - identity bridge to the parent platform's sign-in (no Vyapar login/sign-up screens), first-run, profiles, listing-contact OTP baseline (not authentication).
 2. FR15-FR17, FR16 - standalone Businesses & Professionals discovery.
 3. FR11-FR14, FR18-FR20, FR55 - opportunities, the Discover feed, and Opportunity detail/Activity.
 4. FR22-FR24 - enquiries and consented contact.

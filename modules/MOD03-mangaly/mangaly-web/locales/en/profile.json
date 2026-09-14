@@ -1,0 +1,197 @@
+{
+  "wizard": {
+    "step": "Step {{current}} of {{total}}",
+    "next": "Next",
+    "save": "Save profile",
+    "saving": "Saving…"
+  },
+  "field": {
+    "name": "Your full name",
+    "dateOfBirth": "Date of birth",
+    "gender": "Gender",
+    "genderOption": { "female": "Female", "male": "Male", "other": "Other" },
+    "cityLocality": "City / locality",
+    "photo": "Add a photo",
+    "education": { "highest_education_level": "Highest education level" },
+    "profession": { "occupation": "Occupation" },
+    "marital_history": { "marital_status": "Marital status" },
+    "relocation": { "relocation_willingness": "Willing to relocate?" },
+    "partner_preference": {
+      "age_range": "Preferred age range",
+      "locality": "Preferred locality"
+    },
+    "lifestyle": { "diet": "Diet" },
+    "food_travel_hobbies": { "hobbies": "Hobbies" },
+    "communication_style": { "style": "Communication style" },
+    "independence": { "preference": "Independence preference" },
+    "family_involvement_expectations": { "level": "Family involvement" },
+    "career_children_living_financial": { "wants_children": "Wants children?" },
+    "pets": { "preference": "Pets" },
+    "horoscope": { "matching_required": "Horoscope matching" }
+  },
+  "option": {
+    "highest_education_level": {
+      "high_school": "High school",
+      "bachelors": "Bachelor's degree",
+      "masters": "Master's degree",
+      "doctorate": "Doctorate",
+      "other": "Other"
+    },
+    "marital_status": {
+      "never_married": "Never married",
+      "divorced": "Divorced",
+      "widowed": "Widowed",
+      "awaiting_divorce": "Awaiting divorce"
+    },
+    "relocation_willingness": {
+      "yes": "Yes",
+      "no": "No",
+      "open_to_discussion": "Open to discussion"
+    },
+    "diet": {
+      "vegetarian": "Vegetarian",
+      "non_vegetarian": "Non-vegetarian",
+      "eggetarian": "Eggetarian",
+      "vegan": "Vegan"
+    },
+    "style": {
+      "direct": "Direct",
+      "thoughtful": "Thoughtful",
+      "playful": "Playful"
+    },
+    "preference": {
+      "high": "Highly independent",
+      "balanced": "Balanced",
+      "family_led": "Family-led decisions",
+      "love_pets": "Love pets",
+      "neutral": "Neutral about pets",
+      "prefer_none": "Prefer no pets"
+    },
+    "level": {
+      "close_knit": "Close-knit",
+      "moderate": "Moderate",
+      "independent": "Independent"
+    },
+    "wants_children": {
+      "yes": "Yes",
+      "no": "No",
+      "undecided": "Undecided"
+    },
+    "matching_required": {
+      "yes": "Required",
+      "no": "Not required",
+      "open": "Open either way"
+    }
+  },
+  "photo": {
+    "empty": "Add at least one photo to continue",
+    "change": "Change photo"
+  },
+  "error": {
+    "network": "We couldn't reach Mangaly. Check your connection and try again."
+  },
+  "hub": {
+    "title": "My profile",
+    "savedBadge": "Profile saved",
+    "completenessCta": "See completeness →",
+    "preview": "Preview my profile",
+    "ageYears": "{{age}} yrs",
+    "tabEdit": "Edit",
+    "tabPreview": "Preview",
+    "answered": "{{done}} of {{total}} answered",
+    "nextUp": "Next up",
+    "nextHint": "Takes a few seconds",
+    "hidden": "Hidden",
+    "add": "Add",
+    "ageRange": "Age {{min}}–{{max}}",
+    "section": {
+      "basics": "Basics",
+      "lifestyle": "Lifestyle",
+      "family": "Family & values",
+      "future": "Future plans",
+      "partner": "Partner preference",
+      "prompts": "In my words"
+    },
+    "preview": {
+      "before": "Before you connect",
+      "after": "After you connect",
+      "beforeNote": "This is all anyone sees until you both accept — no name, no photo. They also see the facts you have in common.",
+      "afterNote": "Once you both accept, they see your full profile. Anything you chose to hide stays hidden.",
+      "noBasics": "Basics not added yet"
+    },
+    "photos": {
+      "title": "Photos",
+      "main": "Main",
+      "add": "Add photo",
+      "makeMain": "Make main photo",
+      "remove": "Remove photo",
+      "uploading": "Uploading…",
+      "hint": "Add up to 6. Photos stay private until you both connect."
+    },
+    "prompts": {
+      "add": "Add a prompt",
+      "pick": "Pick a question",
+      "answer": "Your answer",
+      "remove": "Remove",
+      "emptyHint": "Prompts give people something real to reply to.",
+      "q": {
+        "ideal_weekend": "My ideal weekend",
+        "family_means": "Family to me means",
+        "looking_for": "I'm looking for someone who",
+        "non_negotiable": "One thing I won't compromise on",
+        "simple_pleasures": "My simple pleasures",
+        "together_we": "Together, we could"
+      }
+    },
+    "state": {
+      "filled": "Filled",
+      "declined": "Declined",
+      "empty": "Not started"
+    },
+    "category": {
+      "education": "Education",
+      "profession": "Profession",
+      "marital_history": "Marital history",
+      "relocation": "Relocation",
+      "partner_preference": "Partner preferences",
+      "lifestyle": "Lifestyle",
+      "food_travel_hobbies": "Food, travel & hobbies",
+      "communication_style": "Communication style",
+      "independence": "Independence",
+      "family_involvement_expectations": "Family involvement",
+      "career_children_living_financial": "Career, children & finances",
+      "pets": "Pets",
+      "horoscope": "Horoscope"
+    }
+  },
+  "completeness": {
+    "title": "Profile completeness",
+    "tier": {
+      "existence": {
+        "title": "Saved",
+        "met": "Your profile is saved."
+      },
+      "discoverability": {
+        "title": "Discoverable",
+        "met": "You appear in search and matches.",
+        "notMet": "Add these to appear in search and matches:"
+      },
+      "enhanced": {
+        "title": "Enhanced matching",
+        "note": "Optional — never affects whether you appear in matches.",
+        "progress": "{{filled}} of {{total}} categories added"
+      }
+    }
+  },
+  "editor": {
+    "save": "Save",
+    "saving": "Saving…",
+    "decline": "Prefer not to say",
+    "declined": "You chose not to share this.",
+    "change": "Change",
+    "selectPlaceholder": "Select…",
+    "ageRangeFrom": "From",
+    "ageRangeTo": "To",
+    "saveError": "Couldn't save — check your connection and try again."
+  }
+}

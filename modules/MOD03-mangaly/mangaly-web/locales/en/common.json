@@ -1,0 +1,49 @@
+{
+  "app": { "name": "Mangaly", "tagline": "A family-involved search, built on evidence." },
+  "nav": {
+    "home": "Home",
+    "discover": "Discover",
+    "circle": "Circle",
+    "messages": "Messages",
+    "me": "Me"
+  },
+  "language": { "en": "English", "hi": "हिन्दी", "te": "తెలుగు", "change": "Change language" },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Appearance",
+    "themeOption": { "light": "Light", "dark": "Dark", "system": "System" }
+  },
+  "action": {
+    "back": "Back",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "retry": "Try again",
+    "logOut": "Log out",
+    "showLess": "Show less"
+  },
+  "state": {
+    "loading": "Loading…",
+    "empty": "Nothing here yet",
+    "offline": "You're offline"
+  },
+  "status": {
+    "apiConnected": "API connected",
+    "apiDown": "API not running",
+    "apiChecking": "Checking API…"
+  },
+  "build": {
+    "title": "Build progress",
+    "inBuild": "In build",
+    "live": "Live",
+    "building": "Building",
+    "notYet": "Not yet",
+    "liveOf": "{{live}} of {{total}} live",
+    "notBuilt": "Not yet built",
+    "plannedHere": "Planned here",
+    "lightsUp": "This tab lights up as the requirements below are implemented.",
+    "explainer": "Every row carries its real parent IDs, extracted from the sealed pipeline documents rather than typed by hand. A row turns Live only once it works end to end against the database.",
+    "foundations": "Foundations",
+    "foundationsBlurb": "Cross-cutting infrastructure every feature sits on. Not user-visible, but nothing else is correct without it."
+  }
+}

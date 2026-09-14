@@ -1,0 +1,42 @@
+{
+  "title": "Home Circle",
+  "blurb": "The family members helping with this search, and what each can see.",
+  "invite": {
+    "title": "Invite a family member",
+    "identifier": "Their phone number or email",
+    "relationship": "Relationship",
+    "relationshipOption": { "parent": "Parent", "sibling": "Sibling", "relative": "Relative" },
+    "submit": "Send invitation",
+    "sending": "Sending…",
+    "success": "Invitation sent."
+  },
+  "pendingInvitations": {
+    "title": "Invitations for you",
+    "from": "Invited as {{relationship}}",
+    "accept": "Accept",
+    "decline": "Decline"
+  },
+  "suggestions": {
+    "title": "Suggestions from your circle",
+    "from": "Suggested by your {{relationship}}",
+    "noActionTaken": "Suggestion — no action has been taken on your behalf.",
+    "unknownProfile": "A profile"
+  },
+  "members": {
+    "title": "Members",
+    "empty": "No one has joined this Home Circle yet — invite a family member above.",
+    "remove": "Remove"
+  },
+  "notes": {
+    "title": "Family notes",
+    "pendingCount": "{{count}} note waiting for your approval",
+    "pendingCount_other": "{{count}} notes waiting for your approval",
+    "approve": "Read & approve",
+    "empty": "No notes yet."
+  },
+  "error": {
+    "network": "We couldn't reach Mangaly. Check your connection and try again.",
+    "inviteSelf": "You can't invite yourself.",
+    "alreadyInvited": "There's already a pending invitation for that phone number or email."
+  }
+}

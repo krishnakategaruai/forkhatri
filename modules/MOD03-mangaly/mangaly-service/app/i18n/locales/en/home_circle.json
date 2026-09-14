@@ -1,0 +1,9 @@
+{
+  "error": {
+    "inviteSelf": "You can't invite yourself.",
+    "alreadyInvited": "There's already a pending invitation for that phone number or email.",
+    "invitationNotFound": "That invitation isn't available anymore — it may have expired or already been used.",
+    "notFound": "That couldn't be found.",
+    "rateLimited": "Too many invitations sent. Please try again later."
+  }
+}

@@ -19,6 +19,7 @@ items: "18 | approved: 18 | blockers: 0"
 | 2026-09-12 | **Correction pass, superseding the immediately preceding entry.** The Product Manager rejected the "opportunity distribution, not discovery" reframing as a genuine misinterpretation: in the Product Manager's own words, the only thing that belongs to MOD04 Counsel is "if people are finding something to learn or someone to give direction, which comes under counselling" — a member seeking structured counselling/mentorship/guidance/advisory delivery. Ordinary business/professional discovery ("like any other business app, where they can discover also") is explicitly co-equal MOD01 scope, per the Product Manager's own prior agreement recorded across the Vyapar `.docx`/`.md` corpus and `modules/modules.md`'s own scope line. Every place this file had subordinated discovery to opportunity distribution (the scope narrative, the out-of-scope bullet, the actor rows for Professional/freelancer and Customer/client, cross-cutting rule 1, and the BR02/BR05 constraints) is corrected below. Separately, per explicit Product Manager direction to stop manufacturing avoidable complexity: BLOCKER-001 (public/community opportunity source boundary) is resolved with a simple Community/Public-External source-segment tag plus submitter attribution; BLOCKER-002 (MOD01→MOD06 payment contract) is resolved by making V1 payment collection self-contained within Vyapar, with an explicit loose-coupling architecture principle carried into BR17; BLOCKER-003 (V1 opportunity wedge) is substantially resolved using the source corpus's own stated wedge recommendation (critqureport §24), with launch geography recorded as a non-blocking working assumption; BLOCKER-004 (Level-3 verification policy) is resolved with a concrete, deliberately lightweight V1 policy (a small number of checkable claims, not a broad multi-registry system); BLOCKER-005 (legal sign-off) is resolved by rewriting BR18 as a proportionate compliance-awareness constraint appropriate to an early-stage, founder-built product rather than a hard pre-launch legal gate; BLOCKER-006 (monetization phase) is resolved directly from the pricing/revenue-model docx's own V1 roadmap. Zero blockers remain open. | Product Manager correction, in response to explicit feedback that the previous pass misread the Vyapar corpus's Counsel boundary and manufactured avoidable blockers instead of resolving them from the source material already supplied. |
 | 2026-09-12 | **Reviewer verification pass, correcting a citation error in the immediately preceding entry (kept above for the audit trail).** A full read of the entire Vyapar source corpus (PM Planning P1-P5, the Complete Product Definition, Vyapar_01/02/03, and critqureport — every `.docx` extracted and read in full, not summarized) found that this deeper research corpus is built almost entirely around a Person+Opportunity model with no standalone business-directory concept, and that critqureport explicitly warns against a profile/directory-style "LinkedIn-lite" product (§12). The claim above that co-equal business/professional discovery was "recorded across the Vyapar `.docx`/`.md` corpus" is therefore not accurate — only `modules/modules.md`'s sealed Step 0 boundary (business + professional discovery/search; `BusinessProfile`/`ProfessionalListingProfile` as owned data) actually supports it. That is still the higher-priority source per this file's own stated hierarchy, and the Product Manager has separately and explicitly confirmed the standalone discovery intent directly (not by way of the research corpus), so the co-equal-scope decision itself stands unchanged. What changed in this pass: the Scope-of-this-step narrative, BR05's Worth check, and BR05's Traced-to line were corrected to stop attributing this decision to the research corpus, name `modules/modules.md` as its actual basis, and record the tension with the corpus honestly; unverified named-app comparisons (Sulekha, UrbanCompany, LinkedIn-as-precedent) were removed since they were never actually checked, keeping only Justdial, WorkIndia, and Apna, which were. | Product Manager instruction to verify the file "as reviewer and with complete docsx knowledge" rather than spot-check it. |
 | 2026-09-12 | Sealed. All 18 BRs approved and the file marked Sealed on Product Manager direction ("complete if not complete, and let's move to next") following the reviewer verification pass above, with zero open blockers. | Product Manager approval and directive to proceed to Step 2 (Functional Requirements). |
+| 2026-09-14 | Post-seal correction: authentication single source of truth = parent ForKhatri platform; Vyapar owns no login/signup/session/credential requirement; listing phone/OTP contact verification retained as business verification only. | Product owner standing correction, 2026-09-14. |
 
 ## Scope of this step
 
@@ -127,6 +128,14 @@ Out of scope for MOD01:
   A member-submitted Public/External item (see BR04) is in scope; an
   independently harvested one is not.
 - Matrimonial-context data or discovery (MOD03 Mangaly).
+- Member sign-up, log-in, OTP login, forgot/reset password, session, and
+  credential handling. These are provided by the parent ForKhatri platform
+  (Identity & Trust Service, Architecture ADR-004) as the single source of
+  truth for every module; Vyapar consumes that shared flow, references only
+  its entry and return points (on successful ForKhatri sign-in the member
+  lands in Vyapar), and keeps a thin identity bridge holding a `member_id`
+  reference (see BR17). Vyapar specifies no authentication requirement of its
+  own.
 - A generic social network: followers, likes, popularity leaderboards,
   open-ended social feeds, or a general-purpose chat product.
 - A full ATS, escrow/freelance marketplace, financial marketplace, or
@@ -144,7 +153,7 @@ Out of scope for MOD01:
 | Verification operator | Review Level-3 evidence, approve, reject, expire, suspend, or revoke a verification state. | Least privilege; cannot rewrite source evidence or grant reputation through a manual shortcut. |
 | Trust & Safety / moderator | Review reports, fraud signals, disputes, harmful content, spam, and appeals. | Actions require reason codes and audit records; serious matters may require legal/law-enforcement escalation. |
 | Commercial / revenue operator | Configure products, promotions, campaigns, refunds/credits, and provider reporting. | Cannot change hard eligibility, organic relevance, verification truth, or trust signals. |
-| Platform services | Identity & Trust, Search, Notification, Audit, Object Storage, and i18n services provide shared contracts. | MOD01 is the business-data owner for the entities listed in Step 0; it does not fork platform identity or shared infrastructure. |
+| Platform services | Identity & Trust, Search, Notification, Audit, Object Storage, and i18n services provide shared contracts. Identity & Trust (the parent ForKhatri platform) is the single source of truth for member sign-up, log-in, OTP login, password reset, session, and credential handling. | MOD01 is the business-data owner for the entities listed in Step 0; it does not fork platform identity or shared infrastructure, and it owns no login/signup/session/credential requirement — it consumes the platform sign-in flow and holds only a `member_id` reference. |
 | MOD05 Dashboard | Read-only consumer of approved Vyapar listing/opportunity summaries for cross-module surfacing. | No write access to Vyapar data; no access to private fields by default. |
 | MOD04 Counsel | Optional recipient of a referral only when a member specifically wants structured counselling/advisory delivery. | Referral is not consultation delivery, appointment scheduling, or payment. |
 | MOD06 Payment Services | Optional future integration point. | V1 Vyapar collects payment directly through its own payment-gateway integration and does not depend on a MOD06 contract at launch; MOD01 never captures/settles money or stores raw payment credentials regardless of whether collection is direct or (later) via MOD06. |
@@ -171,7 +180,7 @@ resolved below; see the resolution log for where each is recorded.
 | BLOCKER-001 | Public/government/NGO opportunity source boundary | Every opportunity is tagged with a source segment — **Community** (the member's own opportunity) or **Public/External** (an opportunity a member found elsewhere and chose to share) — plus submitter attribution. No elaborate provenance/ownership adjudication is built; MOD01 never autonomously ingests a source no member has shared, preserving MOD05's ownership of that pipeline. | BR04 |
 | BLOCKER-002 | MOD01 -> MOD06 paid-product contract | V1 Vyapar collects payment for its own products directly through a payment-gateway integration; the MOD06 contract is a future consolidation option, not a launch dependency. A general loose-coupling principle is recorded for every adjacent-module contract. | BR17 |
 | BLOCKER-003 | V1 opportunity wedge | Launch opportunity types (employment, freelance/project work, local business/professional service opportunities) are taken directly from the source corpus's own stated V1-wedge recommendation. Launch geography (Hyderabad/Secunderabad, Telangana) is recorded as a non-blocking working assumption inferred from the corpus's own repeated illustrative examples, to be confirmed by the Product Manager before go-to-market. | BR04, BR06 |
-| BLOCKER-004 | Level-3 verification policy | A concrete, deliberately lightweight V1 policy, checked directly against real comparable apps (Justdial, WorkIndia, Apna): a phone/OTP baseline for every listing, plus a flexible member-chosen business-existence document (GST/Udyam/PAN/Aadhaar/Shops & Establishment License) to reach Active-Verified — not a mandatory GSTIN requirement. Verified contact, self-declared authority, and single-document professional-credential review round out V1; broader registry coverage/automation is explicit future scope. | BR03 |
+| BLOCKER-004 | Level-3 verification policy | A concrete, deliberately lightweight V1 policy, checked directly against real comparable apps (Justdial, WorkIndia, Apna): a phone/OTP baseline for every listing (verification of the listing's contact number via the platform's shared OTP capability — a business-verification step, not member login/authentication, which the parent ForKhatri platform owns), plus a flexible member-chosen business-existence document (GST/Udyam/PAN/Aadhaar/Shops & Establishment License) to reach Active-Verified — not a mandatory GSTIN requirement. Verified contact, self-declared authority, and single-document professional-credential review round out V1; broader registry coverage/automation is explicit future scope. | BR03 |
 | BLOCKER-005 | Legal classification and launch sign-off | Rewritten from a hard pre-launch legal-sign-off gate to a proportionate, documented compliance-awareness posture (DPDP-aligned privacy practice, clear terms, non-misleading commercial claims) appropriate to an early-stage, founder-built product; a formal counsel engagement is recorded as a future scaling milestone, not a Step 1 precondition. | BR18 |
 | BLOCKER-006 | Monetization phase and commercial claims | V1 vs V1.5 vs V2 commercial layers are decided directly from the pricing/revenue-model docx's own V1 roadmap (§17-18): V1 = Free core + Opportunity Boost + Business Membership/Workspace + Community/Opportunity Campaigns; qualified-response billing, Business Passport, advertising, and intelligence products are V1.5+. | BR10, BR11 |
 
@@ -214,9 +223,13 @@ new Product Manager decision:
    that no member has actively chosen to share.
 10. Reports are safety signals, not preference signals. Reviews must be tied to
     a real interaction and must support anti-gaming and non-retaliation controls.
-11. MOD01 owns its domain records; common identity, Level-1/2 trust, shared
-    credential evidence, search infrastructure, notifications, audit delivery,
-    object storage, and payment rails remain platform/adjacent contracts. Every
+11. MOD01 owns its domain records; common identity and authentication
+    (sign-up, log-in, OTP login, forgot/reset password, session, and credential
+    handling — provided solely by the parent ForKhatri platform's Identity &
+    Trust Service, ADR-004, and only consumed by Vyapar), Level-1/2 trust,
+    shared credential evidence, search infrastructure, notifications, audit
+    delivery, object storage, and payment rails remain platform/adjacent
+    contracts. Every
     such contract should favor the smallest practical, loosely-coupled
     integration shape (a single well-defined API call or event with minimum
     fields) over shared databases or synchronous multi-hop dependencies (see
@@ -283,8 +296,10 @@ Admin Console.
 
 **Constraints**
 
-- BusinessProfile is owned by MOD01; base Member identity is owned by Identity
-  & Trust.
+- BusinessProfile is owned by MOD01; base Member identity and member
+  authentication (sign-up, log-in, session) are owned by Identity & Trust, the
+  parent ForKhatri platform. Vyapar links a BusinessProfile to its owner only
+  through a `member_id` reference obtained from the platform sign-in.
 - Business verification, paid status, and reputation must remain independent.
 - A business may have multiple services/opportunities, but each record must
   retain its own status, source, and freshness.
@@ -475,7 +490,11 @@ existence, not a single mandatory registry check:
 
 - **Contact/identity baseline** (every listing, no exceptions): a
   platform-verified mobile number for the business/professional, matching the
-  OTP-first pattern all three comparable apps above use.
+  OTP-first pattern all three comparable apps above use. This is a Vyapar
+  business-verification step for the *listing's contact number*: it reuses the
+  parent ForKhatri platform's shared OTP capability and is not member
+  login/authentication, which the parent platform (Identity & Trust) alone
+  provides and Vyapar only consumes.
 - **Business-existence claim** (needed to reach Active-Verified, not to exist
   as a listing): the member picks ONE document from a short menu of easily
   checkable proofs — a GST Certificate/GSTIN, Udyam Registration, a business
@@ -515,7 +534,11 @@ Search/ranking.
 **Constraints**
 
 - Level-3 is domain-specific and layered on platform identity/trust; it does
-  not replace base authentication or imply moral/financial reliability.
+  not replace or re-implement base authentication — member sign-up, log-in,
+  OTP login, password reset, session, and credential handling are provided
+  solely by the parent ForKhatri platform (Identity & Trust, ADR-004), and
+  Vyapar owns no requirement for them — nor does it imply moral/financial
+  reliability.
 - Payment and subscription status cannot create or improve verification.
 - Evidence access follows least privilege, retention, consent, and applicable
   registry terms; raw identity documents are not exposed in public listings.
@@ -605,6 +628,10 @@ verification-requirement precedent, below).
 - 2026-09-12 - Product Manager correction pass: resolved the verification-
   policy blocker with a concrete, deliberately lightweight V1 policy; broader
   registry coverage remains explicit future scope, not a launch blocker.
+- 2026-09-14 - Post-seal correction (product owner): clarified that the
+  phone/OTP contact baseline is listing contact verification reusing the
+  platform's OTP capability, not member authentication, which the parent
+  ForKhatri platform alone provides (see BR17 DEC-004).
 
 **Approval:** Product Manager - [x] Approved - Krishna Kategaru, 2026-09-12
 
@@ -1653,14 +1680,17 @@ to the opportunity network.
 
 Vyapar provides a mobile-first, responsive, accessible experience with English,
 Hindi, and Telugu support at launch consistent with the platform architecture.
-Members can reach discovery after a short, progressive setup and can use
-structured choices plus a free-text/assisted path for capabilities, intents,
-constraints, and opportunities. Important listing/opportunity content and
+Members can reach discovery after a short, progressive Vyapar setup that
+begins once the parent ForKhatri platform's sign-in has completed (Vyapar
+owns no sign-up/log-in step of its own), and can use structured choices plus
+a free-text/assisted path for capabilities, intents, constraints, and
+opportunities. Important listing/opportunity content and
 explanations are rendered in the selected language where a translation exists;
 language preference is a member attribute where appropriate, not a hidden
 ranking signal. The experience supports keyboard/screen-reader use, readable
-text, error recovery, accessible authentication, and non-drag/non-visual paths
-for core actions.
+text, error recovery, and non-drag/non-visual paths for core actions;
+accessible authentication is delivered by the parent ForKhatri platform's
+shared sign-in flow, which Vyapar consumes rather than builds.
 
 **Affected users and systems**
 
@@ -1722,6 +1752,10 @@ research R5.
 **Review history**
 
 - 2026-09-12 - Drafted; no approval yet.
+- 2026-09-14 - Post-seal correction (product owner): progressive setup is
+  stated as following the parent platform's sign-in, and accessible
+  authentication is recorded as a platform-owned concern Vyapar consumes (see
+  BR17 DEC-004).
 
 **Approval:** Product Manager - [x] Approved - Krishna Kategaru, 2026-09-12
 
@@ -1944,8 +1978,15 @@ handoffs.
 MOD01 operates through explicit, versioned business contracts, deliberately
 kept as loosely coupled as practical:
 
-- Identity & Trust supplies the canonical member identity, authentication, and
-  platform Level-1/2 trust; MOD01 owns Level-3 business/professional records.
+- Identity & Trust — the parent ForKhatri platform — is the single source of
+  truth for member identity and authentication (sign-up, log-in, OTP login,
+  forgot/reset password, session, and credential handling; Architecture
+  ADR-004) and for platform Level-1/2 trust. Vyapar consumes that shared flow:
+  it references only the platform sign-in's entry and return points (on
+  successful ForKhatri sign-in the member lands in Vyapar) and keeps a thin
+  identity bridge holding a `member_id` reference; it specifies no
+  login/signup/session/credential requirement of its own. MOD01 owns Level-3
+  business/professional records.
 - Identity & Trust exposes the shared VerifiedCredential fact without merging
   ProfessionalListingProfile with Counsel ExpertProfile.
 - Search indexes approved MOD01 records through the shared search contract;
@@ -2030,6 +2071,19 @@ Pass · Verifiable Pass · Correct Pass · Conforming Pass
   dependency chains, to preserve independent evolution and failure isolation,
   accepting that some cross-module conveniences (e.g., richer aggregated views)
   take more integration work to achieve.
+- DEC-004 · (Post-seal correction, product owner, 2026-09-14) In the context
+  of every ForKhatri module needing member authentication, facing the choice
+  between module-owned sign-up/log-in/OTP-login/password-reset/session
+  handling and one shared platform flow, we chose the parent ForKhatri
+  platform (Identity & Trust Service, ADR-004) as the single source of truth
+  for user login and authentication, with Vyapar consuming that flow through
+  its entry and return points and a thin identity bridge holding a `member_id`
+  reference, over any Vyapar-owned authentication requirement, to achieve one
+  consistent identity across modules and no duplicated credential handling,
+  accepting that Vyapar's first-run experience begins only after the
+  platform sign-in returns. The BR03 phone/OTP verification of a listing's
+  contact number is retained as a Vyapar business-verification step that
+  reuses the platform's OTP capability; it is not authentication.
 
 **Assumptions**
 
@@ -2050,6 +2104,9 @@ driver, supporting a direct-gateway model).
 - 2026-09-12 - Product Manager correction pass: resolved the payment-contract
   mismatch with self-contained V1 payment collection; added the loose-coupling
   architectural principle per explicit Product Manager direction.
+- 2026-09-14 - Post-seal correction (product owner): recorded the parent
+  ForKhatri platform as the single source of truth for login/authentication
+  (DEC-004); Vyapar owns no login/signup/session/credential requirement.
 
 **Approval:** Product Manager - [x] Approved - Krishna Kategaru, 2026-09-12
 
@@ -2286,3 +2343,10 @@ These are residual, Step-2-or-later-level details, not Step 1 blockers:
    name, but the Product Manager should decide the public-facing label
    (e.g. "ForKhatri Vyapar" always with the umbrella brand) and have a
    trademark check done before launch marketing. Not a pipeline blocker.
+7. Authentication single source of truth (post-seal correction, 2026-09-14):
+   downstream steps (Step 2 FRs, Step 3 UX screen inventory, Step 4 UI, Step 5
+   tests) must not specify, design, or test any Vyapar-owned Sign Up, Log In,
+   Forgot/Reset Password, OTP-login, session, or credential-handling flow;
+   they reference only the parent ForKhatri platform sign-in's entry and
+   return points and the `member_id` identity bridge (BR17 DEC-004). Listing
+   phone/OTP contact verification (BR03) stays, as business verification.

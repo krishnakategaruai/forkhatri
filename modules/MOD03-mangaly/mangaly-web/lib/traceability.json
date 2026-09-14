@@ -1,0 +1,3342 @@
+{
+ "spine": {
+  "FR001": {
+   "title": "Create and Save a Minimum Viable Profile",
+   "BR": [
+    "BR01"
+   ],
+   "UX": [
+    "UX11"
+   ],
+   "UI": [
+    "UI11"
+   ],
+   "TS": [
+    "TS001",
+    "TS002",
+    "TS010"
+   ],
+   "IA": [
+    "IA001"
+   ],
+   "TR": [
+    "TR001"
+   ],
+   "SP": [
+    "SP001"
+   ]
+  },
+  "FR002": {
+   "title": "Extend Profile Across All Categories, Including Declined Fields",
+   "BR": [
+    "BR01"
+   ],
+   "UX": [
+    "UX11"
+   ],
+   "UI": [
+    "UI11"
+   ],
+   "TS": [
+    "TS003",
+    "TS004",
+    "TS005"
+   ],
+   "IA": [
+    "IA002"
+   ],
+   "TR": [
+    "TR002"
+   ],
+   "SP": [
+    "SP002"
+   ]
+  },
+  "FR003": {
+   "title": "Discoverability Tier Gate, Independent of Enhanced-Matching Tier",
+   "BR": [
+    "BR01",
+    "BR06"
+   ],
+   "UX": [
+    "UX11"
+   ],
+   "UI": [
+    "UI11"
+   ],
+   "TS": [
+    "TS006",
+    "TS007",
+    "TS010"
+   ],
+   "IA": [
+    "IA003"
+   ],
+   "TR": [
+    "TR003"
+   ],
+   "SP": [
+    "SP003"
+   ]
+  },
+  "FR004": {
+   "title": "Enhanced-Matching Fields Are Optional and Non-Blocking",
+   "BR": [
+    "BR01"
+   ],
+   "UX": [
+    "UX11"
+   ],
+   "UI": [
+    "UI11"
+   ],
+   "TS": [
+    "TS008",
+    "TS009"
+   ],
+   "IA": [
+    "IA004"
+   ],
+   "TR": [
+    "TR004"
+   ],
+   "SP": [
+    "SP004"
+   ]
+  },
+  "FR005": {
+   "title": "Three-Tier Completeness Status Display",
+   "BR": [
+    "BR01"
+   ],
+   "UX": [
+    "UX11"
+   ],
+   "UI": [
+    "UI11"
+   ],
+   "TS": [
+    "TS010",
+    "TS011"
+   ],
+   "IA": [
+    "IA005"
+   ],
+   "TR": [
+    "TR005"
+   ],
+   "SP": [
+    "SP005"
+   ]
+  },
+  "FR006": {
+   "title": "Media Visibility Follows Profile Authorization",
+   "BR": [
+    "BR01",
+    "BR04"
+   ],
+   "UX": [
+    "UX11"
+   ],
+   "UI": [
+    "UI11"
+   ],
+   "TS": [
+    "TS012",
+    "TS013"
+   ],
+   "IA": [
+    "IA006"
+   ],
+   "TR": [
+    "TR006"
+   ],
+   "SP": [
+    "SP006"
+   ]
+  },
+  "FR007": {
+   "title": "Search for and Invite a User to a Home Circle",
+   "BR": [
+    "BR02"
+   ],
+   "UX": [
+    "UX12"
+   ],
+   "UI": [
+    "UI12"
+   ],
+   "TS": [
+    "TS016",
+    "TS017"
+   ],
+   "IA": [
+    "IA007"
+   ],
+   "TR": [
+    "TR007"
+   ],
+   "SP": [
+    "SP007"
+   ]
+  },
+  "FR008": {
+   "title": "Accept Invitation",
+   "BR": [
+    "BR02"
+   ],
+   "UX": [
+    "UX12"
+   ],
+   "UI": [
+    "UI12"
+   ],
+   "TS": [
+    "TS018",
+    "TS019"
+   ],
+   "IA": [
+    "IA008"
+   ],
+   "TR": [
+    "TR008"
+   ],
+   "SP": [
+    "SP008"
+   ]
+  },
+  "FR009": {
+   "title": "Ignore or Decline Invitation",
+   "BR": [
+    "BR02"
+   ],
+   "UX": [
+    "UX12"
+   ],
+   "UI": [
+    "UI12"
+   ],
+   "TS": [
+    "TS020",
+    "TS021"
+   ],
+   "IA": [
+    "IA009"
+   ],
+   "TR": [
+    "TR009"
+   ],
+   "SP": [
+    "SP009"
+   ]
+  },
+  "FR010": {
+   "title": "Remove a Member or Leave Voluntarily",
+   "BR": [
+    "BR02"
+   ],
+   "UX": [
+    "UX12"
+   ],
+   "UI": [
+    "UI12"
+   ],
+   "TS": [
+    "TS022",
+    "TS023",
+    "TS024"
+   ],
+   "IA": [
+    "IA010"
+   ],
+   "TR": [
+    "TR010"
+   ],
+   "SP": [
+    "SP010"
+   ]
+  },
+  "FR011": {
+   "title": "Report a False or Inappropriate Relationship Claim",
+   "BR": [
+    "BR02"
+   ],
+   "UX": [
+    "UX12"
+   ],
+   "UI": [
+    "UI12"
+   ],
+   "TS": [
+    "TS025",
+    "TS026"
+   ],
+   "IA": [
+    "IA011"
+   ],
+   "TR": [
+    "TR011"
+   ],
+   "SP": [
+    "SP011"
+   ]
+  },
+  "FR012": {
+   "title": "Solo-Candidate Parity and Re-Forming a Circle",
+   "BR": [
+    "BR02"
+   ],
+   "UX": [
+    "UX12"
+   ],
+   "UI": [
+    "UI12"
+   ],
+   "TS": [
+    "TS027",
+    "TS028"
+   ],
+   "IA": [
+    "IA012"
+   ],
+   "TR": [
+    "TR012"
+   ],
+   "SP": [
+    "SP012"
+   ]
+  },
+  "FR013": {
+   "title": "Independent, Parallel Family Search",
+   "BR": [
+    "BR03"
+   ],
+   "UX": [
+    "UX13"
+   ],
+   "UI": [
+    "UI13"
+   ],
+   "TS": [
+    "TS029",
+    "TS030"
+   ],
+   "IA": [
+    "IA013"
+   ],
+   "TR": [
+    "TR013"
+   ],
+   "SP": [
+    "SP013"
+   ]
+  },
+  "FR014": {
+   "title": "Suggest a Profile (Suggestion \u2260 Decision)",
+   "BR": [
+    "BR03"
+   ],
+   "UX": [
+    "UX13"
+   ],
+   "UI": [
+    "UI13"
+   ],
+   "TS": [
+    "TS031",
+    "TS032"
+   ],
+   "IA": [
+    "IA014"
+   ],
+   "TR": [
+    "TR014"
+   ],
+   "SP": [
+    "SP014"
+   ]
+  },
+  "FR015": {
+   "title": "Independent Candidate Search and Family-Involvement Timing",
+   "BR": [
+    "BR03"
+   ],
+   "UX": [
+    "UX13"
+   ],
+   "UI": [
+    "UI13"
+   ],
+   "TS": [
+    "TS033",
+    "TS034"
+   ],
+   "IA": [
+    "IA015"
+   ],
+   "TR": [
+    "TR015"
+   ],
+   "SP": [
+    "SP015"
+   ]
+  },
+  "FR016": {
+   "title": "Private Family Notes, Forwarded Only with Candidate Approval",
+   "BR": [
+    "BR03"
+   ],
+   "UX": [
+    "UX13"
+   ],
+   "UI": [
+    "UI13"
+   ],
+   "TS": [
+    "TS035",
+    "TS036",
+    "TS037"
+   ],
+   "IA": [
+    "IA016"
+   ],
+   "TR": [
+    "TR016"
+   ],
+   "SP": [
+    "SP016"
+   ]
+  },
+  "FR017": {
+   "title": "Authorization Chain Evaluation, Deny by Default",
+   "BR": [
+    "BR04"
+   ],
+   "UX": [
+    "UX14"
+   ],
+   "UI": [
+    "UI14"
+   ],
+   "TS": [
+    "TS038",
+    "TS039",
+    "TS040",
+    "TS041",
+    "TS042",
+    "TS043"
+   ],
+   "IA": [
+    "IA017"
+   ],
+   "TR": [
+    "TR017"
+   ],
+   "SP": [
+    "SP017"
+   ]
+  },
+  "FR018": {
+   "title": "Candidate vs. Family Information as Separate Authorization Categories",
+   "BR": [
+    "BR04"
+   ],
+   "UX": [
+    "UX14"
+   ],
+   "UI": [
+    "UI14"
+   ],
+   "TS": [
+    "TS044",
+    "TS045"
+   ],
+   "IA": [
+    "IA018"
+   ],
+   "TR": [
+    "TR018"
+   ],
+   "SP": [
+    "SP018"
+   ]
+  },
+  "FR019": {
+   "title": "Plain-Language Capability Presentation",
+   "BR": [
+    "BR04"
+   ],
+   "UX": [
+    "UX14"
+   ],
+   "UI": [
+    "UI14"
+   ],
+   "TS": [
+    "TS046",
+    "TS047"
+   ],
+   "IA": [
+    "IA019"
+   ],
+   "TR": [
+    "TR019"
+   ],
+   "SP": [
+    "SP019"
+   ]
+  },
+  "FR020": {
+   "title": "Meaningful, Sufficient Information for Authorized Viewers",
+   "BR": [
+    "BR05"
+   ],
+   "UX": [
+    "UX15"
+   ],
+   "UI": [
+    "UI15"
+   ],
+   "TS": [
+    "TS048",
+    "TS049"
+   ],
+   "IA": [
+    "IA020"
+   ],
+   "TR": [
+    "TR020"
+   ],
+   "SP": [
+    "SP020"
+   ]
+  },
+  "FR021": {
+   "title": "Separate Display of Candidate vs. Family Info; Visibility \u2260 Searchability",
+   "BR": [
+    "BR05"
+   ],
+   "UX": [
+    "UX15"
+   ],
+   "UI": [
+    "UI15"
+   ],
+   "TS": [
+    "TS050",
+    "TS051"
+   ],
+   "IA": [
+    "IA021"
+   ],
+   "TR": [
+    "TR021"
+   ],
+   "SP": [
+    "SP021"
+   ]
+  },
+  "FR022": {
+   "title": "No Popularity or Demand Signal Exposure",
+   "BR": [
+    "BR05"
+   ],
+   "UX": [
+    "UX15"
+   ],
+   "UI": [
+    "UI15"
+   ],
+   "TS": [
+    "TS052",
+    "TS053"
+   ],
+   "IA": [
+    "IA022"
+   ],
+   "TR": [
+    "TR022"
+   ],
+   "SP": [
+    "SP022"
+   ]
+  },
+  "FR023": {
+   "title": "Family-Boundary Enforcement Toward a Prospective Match",
+   "BR": [
+    "BR05"
+   ],
+   "UX": [
+    "UX15"
+   ],
+   "UI": [
+    "UI15"
+   ],
+   "TS": [
+    "TS054",
+    "TS055"
+   ],
+   "IA": [
+    "IA023"
+   ],
+   "TR": [
+    "TR023"
+   ],
+   "SP": [
+    "SP023"
+   ]
+  },
+  "FR024": {
+   "title": "Pause Without Signalling; Controlled Safety Exceptions",
+   "BR": [
+    "BR05"
+   ],
+   "UX": [
+    "UX15"
+   ],
+   "UI": [
+    "UI15"
+   ],
+   "TS": [
+    "TS056",
+    "TS057",
+    "TS058",
+    "TS059"
+   ],
+   "IA": [
+    "IA024"
+   ],
+   "TR": [
+    "TR024"
+   ],
+   "SP": [
+    "SP024"
+   ]
+  },
+  "FR025": {
+   "title": "Discovery Available to Candidates and Family, in Parallel",
+   "BR": [
+    "BR06"
+   ],
+   "UX": [
+    "UX16"
+   ],
+   "UI": [
+    "UI16"
+   ],
+   "TS": [
+    "TS060",
+    "TS061"
+   ],
+   "IA": [
+    "IA025"
+   ],
+   "TR": [
+    "TR025"
+   ],
+   "SP": [
+    "SP025"
+   ]
+  },
+  "FR026": {
+   "title": "Relevance-Based Ranking, Not Popularity-Primary",
+   "BR": [
+    "BR06"
+   ],
+   "UX": [
+    "UX16"
+   ],
+   "UI": [
+    "UI16"
+   ],
+   "TS": [
+    "TS062",
+    "TS063"
+   ],
+   "IA": [
+    "IA026"
+   ],
+   "TR": [
+    "TR026"
+   ],
+   "SP": [
+    "SP026"
+   ]
+  },
+  "FR027": {
+   "title": "Discoverability-Tier Exclusion Only, Not Enhanced-Matching",
+   "BR": [
+    "BR01",
+    "BR06"
+   ],
+   "UX": [
+    "UX16"
+   ],
+   "UI": [
+    "UI16"
+   ],
+   "TS": [
+    "TS064",
+    "TS065"
+   ],
+   "IA": [
+    "IA027"
+   ],
+   "TR": [
+    "TR027"
+   ],
+   "SP": [
+    "SP027"
+   ]
+  },
+  "FR028": {
+   "title": "Fairness Safeguards and AI Ranking Transparency",
+   "BR": [
+    "BR06"
+   ],
+   "UX": [
+    "UX16"
+   ],
+   "UI": [
+    "UI16"
+   ],
+   "TS": [
+    "TS066",
+    "TS067",
+    "TS068"
+   ],
+   "IA": [
+    "IA028"
+   ],
+   "TR": [
+    "TR028"
+   ],
+   "SP": [
+    "SP028"
+   ]
+  },
+  "FR029": {
+   "title": "Community-Assisted Discovery Hints",
+   "BR": [
+    "BR06"
+   ],
+   "UX": [
+    "UX16"
+   ],
+   "UI": [
+    "UI16"
+   ],
+   "TS": [
+    "TS069",
+    "TS070"
+   ],
+   "IA": [
+    "IA029"
+   ],
+   "TR": [
+    "TR029"
+   ],
+   "SP": [
+    "SP029"
+   ]
+  },
+  "FR030": {
+   "title": "Explainable, Non-Score Compatibility Reasons",
+   "BR": [
+    "BR07"
+   ],
+   "UX": [
+    "UX17"
+   ],
+   "UI": [
+    "UI17"
+   ],
+   "TS": [
+    "TS071",
+    "TS072"
+   ],
+   "IA": [
+    "IA030"
+   ],
+   "TR": [
+    "TR030"
+   ],
+   "SP": [
+    "SP030"
+   ]
+  },
+  "FR031": {
+   "title": "Fact vs. Inference, Alignment vs. Difference, No Certainty Claims",
+   "BR": [
+    "BR07"
+   ],
+   "UX": [
+    "UX17"
+   ],
+   "UI": [
+    "UI17"
+   ],
+   "TS": [
+    "TS073",
+    "TS074",
+    "TS075"
+   ],
+   "IA": [
+    "IA031"
+   ],
+   "TR": [
+    "TR031"
+   ],
+   "SP": [
+    "SP031"
+   ]
+  },
+  "FR032": {
+   "title": "Core Capability Fully Functional Without Optional Mechanisms",
+   "BR": [
+    "BR07"
+   ],
+   "UX": [
+    "UX17"
+   ],
+   "UI": [
+    "UI17"
+   ],
+   "TS": [
+    "TS076",
+    "TS077"
+   ],
+   "IA": [
+    "IA032"
+   ],
+   "TR": [
+    "TR032"
+   ],
+   "SP": [
+    "SP032"
+   ]
+  },
+  "FR033": {
+   "title": "Optional Personality Assessment",
+   "BR": [
+    "BR07"
+   ],
+   "UX": [
+    "UX17"
+   ],
+   "UI": [
+    "UI17"
+   ],
+   "TS": [
+    "TS078",
+    "TS079",
+    "TS080",
+    "TS081"
+   ],
+   "IA": [
+    "IA033"
+   ],
+   "TR": [
+    "TR033"
+   ],
+   "SP": [
+    "SP033"
+   ]
+  },
+  "FR034": {
+   "title": "Horoscope: Opt-In, Separated, Non-Scientific",
+   "BR": [
+    "BR07"
+   ],
+   "UX": [
+    "UX17"
+   ],
+   "UI": [
+    "UI17"
+   ],
+   "TS": [
+    "TS082",
+    "TS083"
+   ],
+   "IA": [
+    "IA034"
+   ],
+   "TR": [
+    "TR034"
+   ],
+   "SP": [
+    "SP034"
+   ]
+  },
+  "FR035": {
+   "title": "Evidence-and-Provenance Display Per Verification Layer",
+   "BR": [
+    "BR08"
+   ],
+   "UX": [
+    "UX18"
+   ],
+   "UI": [
+    "UI18"
+   ],
+   "TS": [
+    "TS084",
+    "TS085"
+   ],
+   "IA": [
+    "IA035"
+   ],
+   "TR": [
+    "TR035"
+   ],
+   "SP": [
+    "SP035"
+   ]
+  },
+  "FR036": {
+   "title": "Evidence Language Avoids Truth-Certification",
+   "BR": [
+    "BR08"
+   ],
+   "UX": [
+    "UX18"
+   ],
+   "UI": [
+    "UI18"
+   ],
+   "TS": [
+    "TS086",
+    "TS087"
+   ],
+   "IA": [
+    "IA036"
+   ],
+   "TR": [
+    "TR036"
+   ],
+   "SP": [
+    "SP036"
+   ]
+  },
+  "FR037": {
+   "title": "Verification Circle: Bounded Confirmation with Anti-Abuse Safeguards",
+   "BR": [
+    "BR08"
+   ],
+   "UX": [
+    "UX18"
+   ],
+   "UI": [
+    "UI18"
+   ],
+   "TS": [
+    "TS088",
+    "TS089",
+    "TS090"
+   ],
+   "IA": [
+    "IA037"
+   ],
+   "TR": [
+    "TR037"
+   ],
+   "SP": [
+    "SP037"
+   ]
+  },
+  "FR038": {
+   "title": "Request Mangaly/Admin Verification When No Community Verifier Exists",
+   "BR": [
+    "BR08"
+   ],
+   "UX": [
+    "UX18"
+   ],
+   "UI": [
+    "UI18"
+   ],
+   "TS": [
+    "TS091",
+    "TS092"
+   ],
+   "IA": [
+    "IA038"
+   ],
+   "TR": [
+    "TR038"
+   ],
+   "SP": [
+    "SP038"
+   ]
+  },
+  "FR039": {
+   "title": "No Trust Score or Reputation Ranking",
+   "BR": [
+    "BR08"
+   ],
+   "UX": [
+    "UX18"
+   ],
+   "UI": [
+    "UI18"
+   ],
+   "TS": [
+    "TS093",
+    "TS094"
+   ],
+   "IA": [
+    "IA039"
+   ],
+   "TR": [
+    "TR039"
+   ],
+   "SP": [
+    "SP039"
+   ]
+  },
+  "FR040": {
+   "title": "Sensitive Verification Documents Not Exposed Publicly",
+   "BR": [
+    "BR08"
+   ],
+   "UX": [
+    "UX18"
+   ],
+   "UI": [
+    "UI18"
+   ],
+   "TS": [
+    "TS095",
+    "TS096"
+   ],
+   "IA": [
+    "IA040"
+   ],
+   "TR": [
+    "TR040"
+   ],
+   "SP": [
+    "SP040"
+   ]
+  },
+  "FR041": {
+   "title": "Marriageable-Age Verification per Applicable Law",
+   "BR": [
+    "BR08"
+   ],
+   "UX": [
+    "UX18"
+   ],
+   "UI": [
+    "UI18"
+   ],
+   "TS": [
+    "TS097",
+    "TS098"
+   ],
+   "IA": [
+    "IA041"
+   ],
+   "TR": [
+    "TR041"
+   ],
+   "SP": [
+    "SP041"
+   ]
+  },
+  "FR042": {
+   "title": "Send Connection Request",
+   "BR": [
+    "BR09"
+   ],
+   "UX": [
+    "UX19"
+   ],
+   "UI": [
+    "UI19"
+   ],
+   "TS": [
+    "TS099",
+    "TS100"
+   ],
+   "IA": [
+    "IA042"
+   ],
+   "TR": [
+    "TR042"
+   ],
+   "SP": [
+    "SP042"
+   ]
+  },
+  "FR043": {
+   "title": "Recipient Review and Accept/Decline",
+   "BR": [
+    "BR09"
+   ],
+   "UX": [
+    "UX19"
+   ],
+   "UI": [
+    "UI19"
+   ],
+   "TS": [
+    "TS101",
+    "TS102"
+   ],
+   "IA": [
+    "IA043"
+   ],
+   "TR": [
+    "TR043"
+   ],
+   "SP": [
+    "SP043"
+   ]
+  },
+  "FR044": {
+   "title": "Acceptance Means Willingness to Explore Only",
+   "BR": [
+    "BR09"
+   ],
+   "UX": [
+    "UX19"
+   ],
+   "UI": [
+    "UI19"
+   ],
+   "TS": [
+    "TS103",
+    "TS104"
+   ],
+   "IA": [
+    "IA044"
+   ],
+   "TR": [
+    "TR044"
+   ],
+   "SP": [
+    "SP044"
+   ]
+  },
+  "FR045": {
+   "title": "Multiple Parallel Connections; No Forced Continued Engagement",
+   "BR": [
+    "BR09"
+   ],
+   "UX": [
+    "UX19"
+   ],
+   "UI": [
+    "UI19"
+   ],
+   "TS": [
+    "TS105",
+    "TS106"
+   ],
+   "IA": [
+    "IA045"
+   ],
+   "TR": [
+    "TR045"
+   ],
+   "SP": [
+    "SP045"
+   ]
+  },
+  "FR046": {
+   "title": "Per-Category Independent Sharing",
+   "BR": [
+    "BR10"
+   ],
+   "UX": [
+    "UX20"
+   ],
+   "UI": [
+    "UI20"
+   ],
+   "TS": [
+    "TS107",
+    "TS108"
+   ],
+   "IA": [
+    "IA046"
+   ],
+   "TR": [
+    "TR046"
+   ],
+   "SP": [
+    "SP046"
+   ]
+  },
+  "FR047": {
+   "title": "Clear Sharing Confirmation; No Automatic Disclosure",
+   "BR": [
+    "BR10"
+   ],
+   "UX": [
+    "UX20"
+   ],
+   "UI": [
+    "UI20"
+   ],
+   "TS": [
+    "TS109",
+    "TS110"
+   ],
+   "IA": [
+    "IA047"
+   ],
+   "TR": [
+    "TR047"
+   ],
+   "SP": [
+    "SP047"
+   ]
+  },
+  "FR048": {
+   "title": "Family-Contact Category Requires Separate Authorization",
+   "BR": [
+    "BR04",
+    "BR10"
+   ],
+   "UX": [
+    "UX20"
+   ],
+   "UI": [
+    "UI20"
+   ],
+   "TS": [
+    "TS111",
+    "TS112"
+   ],
+   "IA": [
+    "IA048"
+   ],
+   "TR": [
+    "TR048"
+   ],
+   "SP": [
+    "SP048"
+   ]
+  },
+  "FR049": {
+   "title": "Enable Private In-Platform Communication",
+   "BR": [
+    "BR11"
+   ],
+   "UX": [
+    "UX21"
+   ],
+   "UI": [
+    "UI21"
+   ],
+   "TS": [
+    "TS113",
+    "TS114"
+   ],
+   "IA": [
+    "IA049"
+   ],
+   "TR": [
+    "TR049"
+   ],
+   "SP": [
+    "SP049"
+   ]
+  },
+  "FR050": {
+   "title": "No Permanent Chat History; Minimal-Necessary Retention",
+   "BR": [
+    "BR11"
+   ],
+   "UX": [
+    "UX21"
+   ],
+   "UI": [
+    "UI21"
+   ],
+   "TS": [
+    "TS115",
+    "TS116"
+   ],
+   "IA": [
+    "IA050"
+   ],
+   "TR": [
+    "TR050"
+   ],
+   "SP": [
+    "SP050"
+   ]
+  },
+  "FR051": {
+   "title": "Access Control: No Routine Human Reading",
+   "BR": [
+    "BR11"
+   ],
+   "UX": [
+    "UX21"
+   ],
+   "UI": [
+    "UI21"
+   ],
+   "TS": [
+    "TS117",
+    "TS118"
+   ],
+   "IA": [
+    "IA051"
+   ],
+   "TR": [
+    "TR051"
+   ],
+   "SP": [
+    "SP051"
+   ]
+  },
+  "FR052": {
+   "title": "Audit Logging of Communication-Related Events",
+   "BR": [
+    "BR11",
+    "BR15"
+   ],
+   "UX": [
+    "UX21"
+   ],
+   "UI": [
+    "UI21"
+   ],
+   "TS": [
+    "TS119",
+    "TS120"
+   ],
+   "IA": [
+    "IA052"
+   ],
+   "TR": [
+    "TR052"
+   ],
+   "SP": [
+    "SP052"
+   ]
+  },
+  "FR053": {
+   "title": "Evidence-Retention Exception and Incident Workflow Trigger",
+   "BR": [
+    "BR11",
+    "BR14",
+    "BR16"
+   ],
+   "UX": [
+    "UX21"
+   ],
+   "UI": [
+    "UI21"
+   ],
+   "TS": [
+    "TS121",
+    "TS122",
+    "TS123"
+   ],
+   "IA": [
+    "IA053"
+   ],
+   "TR": [
+    "TR053"
+   ],
+   "SP": [
+    "SP053"
+   ]
+  },
+  "FR054": {
+   "title": "Legal-Hold Handling and Lifecycle-Job Failure Behavior",
+   "BR": [
+    "BR11"
+   ],
+   "UX": [
+    "UX21"
+   ],
+   "UI": [
+    "UI21"
+   ],
+   "TS": [
+    "TS124",
+    "TS125",
+    "TS126"
+   ],
+   "IA": [
+    "IA054"
+   ],
+   "TR": [
+    "TR054"
+   ],
+   "SP": [
+    "SP054"
+   ]
+  },
+  "FR055": {
+   "title": "Multiple Concurrent Conversations, No Seriousness Score",
+   "BR": [
+    "BR11"
+   ],
+   "UX": [
+    "UX21"
+   ],
+   "UI": [
+    "UI21"
+   ],
+   "TS": [
+    "TS127",
+    "TS128"
+   ],
+   "IA": [
+    "IA055"
+   ],
+   "TR": [
+    "TR055"
+   ],
+   "SP": [
+    "SP055"
+   ]
+  },
+  "FR056": {
+   "title": "Capture-Risk-Reduction Measures with Honest Disclosure",
+   "BR": [
+    "BR11"
+   ],
+   "UX": [
+    "UX21"
+   ],
+   "UI": [
+    "UI21"
+   ],
+   "TS": [
+    "TS129",
+    "TS130"
+   ],
+   "IA": [
+    "IA056"
+   ],
+   "TR": [
+    "TR056"
+   ],
+   "SP": [
+    "SP056"
+   ]
+  },
+  "FR057": {
+   "title": "Request Contact Information",
+   "BR": [
+    "BR12"
+   ],
+   "UX": [
+    "UX22"
+   ],
+   "UI": [
+    "UI22"
+   ],
+   "TS": [
+    "TS131",
+    "TS132"
+   ],
+   "IA": [
+    "IA057"
+   ],
+   "TR": [
+    "TR057"
+   ],
+   "SP": [
+    "SP057"
+   ]
+  },
+  "FR058": {
+   "title": "Recipient-Controlled Decision, Internally Attributable",
+   "BR": [
+    "BR12"
+   ],
+   "UX": [
+    "UX22"
+   ],
+   "UI": [
+    "UI22"
+   ],
+   "TS": [
+    "TS133",
+    "TS134"
+   ],
+   "IA": [
+    "IA058"
+   ],
+   "TR": [
+    "TR058"
+   ],
+   "SP": [
+    "SP058"
+   ]
+  },
+  "FR059": {
+   "title": "No Automatic Exchange; No Unrequested Channel Disclosure",
+   "BR": [
+    "BR12"
+   ],
+   "UX": [
+    "UX22"
+   ],
+   "UI": [
+    "UI22"
+   ],
+   "TS": [
+    "TS135",
+    "TS136"
+   ],
+   "IA": [
+    "IA059"
+   ],
+   "TR": [
+    "TR059"
+   ],
+   "SP": [
+    "SP059"
+   ]
+  },
+  "FR060": {
+   "title": "Candidate Chooses Timing of Home Circle Involvement",
+   "BR": [
+    "BR13"
+   ],
+   "UX": [
+    "UX23"
+   ],
+   "UI": [
+    "UI23"
+   ],
+   "TS": [
+    "TS137",
+    "TS138"
+   ],
+   "IA": [
+    "IA060"
+   ],
+   "TR": [
+    "TR060"
+   ],
+   "SP": [
+    "SP060"
+   ]
+  },
+  "FR061": {
+   "title": "Discovery-Level Involvement \u2260 Connection-Level Involvement; Private Comm Stays Private",
+   "BR": [
+    "BR13"
+   ],
+   "UX": [
+    "UX23"
+   ],
+   "UI": [
+    "UI23"
+   ],
+   "TS": [
+    "TS139",
+    "TS140"
+   ],
+   "IA": [
+    "IA061"
+   ],
+   "TR": [
+    "TR061"
+   ],
+   "SP": [
+    "SP061"
+   ]
+  },
+  "FR062": {
+   "title": "Family-to-Family Introduction as a Distinct Step; No Cross-Side Exposure",
+   "BR": [
+    "BR13"
+   ],
+   "UX": [
+    "UX23"
+   ],
+   "UI": [
+    "UI23"
+   ],
+   "TS": [
+    "TS141",
+    "TS142"
+   ],
+   "IA": [
+    "IA062"
+   ],
+   "TR": [
+    "TR062"
+   ],
+   "SP": [
+    "SP062"
+   ]
+  },
+  "FR063": {
+   "title": "User-Initiated Reporting, Always Available, Never Downgraded",
+   "BR": [
+    "BR14"
+   ],
+   "UX": [
+    "UX24"
+   ],
+   "UI": [
+    "UI24"
+   ],
+   "TS": [
+    "TS143",
+    "TS144"
+   ],
+   "IA": [
+    "IA063"
+   ],
+   "TR": [
+    "TR063"
+   ],
+   "SP": [
+    "SP063"
+   ]
+  },
+  "FR064": {
+   "title": "Bounded Pattern Detection with AI Inference Labeling",
+   "BR": [
+    "BR14"
+   ],
+   "UX": [
+    "UX24"
+   ],
+   "UI": [
+    "UI24"
+   ],
+   "TS": [
+    "TS145",
+    "TS146",
+    "TS147"
+   ],
+   "IA": [
+    "IA064"
+   ],
+   "TR": [
+    "TR064"
+   ],
+   "SP": [
+    "SP064"
+   ]
+  },
+  "FR065": {
+   "title": "Graduated Response Pipeline",
+   "BR": [
+    "BR14"
+   ],
+   "UX": [
+    "UX24"
+   ],
+   "UI": [
+    "UI24"
+   ],
+   "TS": [
+    "TS148",
+    "TS149",
+    "TS150"
+   ],
+   "IA": [
+    "IA065"
+   ],
+   "TR": [
+    "TR065"
+   ],
+   "SP": [
+    "SP065"
+   ]
+  },
+  "FR066": {
+   "title": "Safety and Trust Remain Operationally Distinct",
+   "BR": [
+    "BR08",
+    "BR14"
+   ],
+   "UX": [
+    "UX24"
+   ],
+   "UI": [
+    "UI24"
+   ],
+   "TS": [
+    "TS151",
+    "TS152"
+   ],
+   "IA": [
+    "IA066"
+   ],
+   "TR": [
+    "TR066"
+   ],
+   "SP": [
+    "SP066"
+   ]
+  },
+  "FR067": {
+   "title": "Tightly Controlled Safety Access, No Routine Monitoring",
+   "BR": [
+    "BR14"
+   ],
+   "UX": [
+    "UX24"
+   ],
+   "UI": [
+    "UI24"
+   ],
+   "TS": [
+    "TS153",
+    "TS154"
+   ],
+   "IA": [
+    "IA067"
+   ],
+   "TR": [
+    "TR067"
+   ],
+   "SP": [
+    "SP067"
+   ]
+  },
+  "FR068": {
+   "title": "Severity Taxonomy and Escalation Thresholds (Open Design Item)",
+   "BR": [
+    "BR14"
+   ],
+   "UX": [
+    "UX24"
+   ],
+   "UI": [
+    "UI24"
+   ],
+   "TS": [
+    "TS148",
+    "TS155",
+    "TS156"
+   ],
+   "IA": [
+    "IA068"
+   ],
+   "TR": [
+    "TR068"
+   ],
+   "SP": [
+    "SP068"
+   ]
+  },
+  "FR069": {
+   "title": "Record Actor, Capacity, and Authorization for Consequential Actions",
+   "BR": [
+    "BR15"
+   ],
+   "UX": [
+    "UX25"
+   ],
+   "UI": [
+    "UI25"
+   ],
+   "TS": [
+    "TS157",
+    "TS158"
+   ],
+   "IA": [
+    "IA069"
+   ],
+   "TR": [
+    "TR069"
+   ],
+   "SP": [
+    "SP069"
+   ]
+  },
+  "FR070": {
+   "title": "Record Revocation, Change, and Dispute",
+   "BR": [
+    "BR15"
+   ],
+   "UX": [
+    "UX25"
+   ],
+   "UI": [
+    "UI25"
+   ],
+   "TS": [
+    "TS159",
+    "TS160"
+   ],
+   "IA": [
+    "IA070"
+   ],
+   "TR": [
+    "TR070"
+   ],
+   "SP": [
+    "SP070"
+   ]
+  },
+  "FR071": {
+   "title": "Audit Trail Not Exposed as Surveillance; Least-Privilege Admin Query",
+   "BR": [
+    "BR15"
+   ],
+   "UX": [
+    "UX25"
+   ],
+   "UI": [
+    "UI25"
+   ],
+   "TS": [
+    "TS161",
+    "TS162",
+    "TS163"
+   ],
+   "IA": [
+    "IA071"
+   ],
+   "TR": [
+    "TR071"
+   ],
+   "SP": [
+    "SP071"
+   ]
+  },
+  "FR072": {
+   "title": "Verification-Related Admin Workflow",
+   "BR": [
+    "BR08",
+    "BR16"
+   ],
+   "UX": [
+    "UX26"
+   ],
+   "UI": [
+    "UI26"
+   ],
+   "TS": [
+    "TS164",
+    "TS165"
+   ],
+   "IA": [
+    "IA072"
+   ],
+   "TR": [
+    "TR072"
+   ],
+   "SP": [
+    "SP072"
+   ]
+  },
+  "FR073": {
+   "title": "False-Relationship Investigation Workflow",
+   "BR": [
+    "BR02",
+    "BR16"
+   ],
+   "UX": [
+    "UX26"
+   ],
+   "UI": [
+    "UI26"
+   ],
+   "TS": [
+    "TS166",
+    "TS167"
+   ],
+   "IA": [
+    "IA073"
+   ],
+   "TR": [
+    "TR073"
+   ],
+   "SP": [
+    "SP073"
+   ]
+  },
+  "FR074": {
+   "title": "Abuse/Fraud Investigation with Restriction, Block, and Escalation",
+   "BR": [
+    "BR14",
+    "BR16"
+   ],
+   "UX": [
+    "UX26"
+   ],
+   "UI": [
+    "UI26"
+   ],
+   "TS": [
+    "TS168",
+    "TS169"
+   ],
+   "IA": [
+    "IA074"
+   ],
+   "TR": [
+    "TR074"
+   ],
+   "SP": [
+    "SP074"
+   ]
+  },
+  "FR075": {
+   "title": "Appeals Workflow",
+   "BR": [
+    "BR16"
+   ],
+   "UX": [
+    "UX26"
+   ],
+   "UI": [
+    "UI26"
+   ],
+   "TS": [
+    "TS170",
+    "TS171"
+   ],
+   "IA": [
+    "IA075"
+   ],
+   "TR": [
+    "TR075"
+   ],
+   "SP": [
+    "SP075"
+   ]
+  },
+  "FR076": {
+   "title": "Admin Actions Audited, Least-Privilege, No Public Disclosure",
+   "BR": [
+    "BR15",
+    "BR16"
+   ],
+   "UX": [
+    "UX26"
+   ],
+   "UI": [
+    "UI26"
+   ],
+   "TS": [
+    "TS172",
+    "TS173"
+   ],
+   "IA": [
+    "IA076"
+   ],
+   "TR": [
+    "TR076"
+   ],
+   "SP": [
+    "SP076"
+   ]
+  },
+  "FR077": {
+   "title": "Scoped, Revocable, Attributable Agent Access",
+   "BR": [
+    "BR17"
+   ],
+   "UX": [
+    "UX27"
+   ],
+   "UI": [
+    "UI27"
+   ],
+   "TS": [
+    "TS174",
+    "TS175"
+   ],
+   "IA": [
+    "IA077"
+   ],
+   "TR": [
+    "TR077"
+   ],
+   "SP": [
+    "SP077"
+   ]
+  },
+  "FR078": {
+   "title": "Agents Cannot Gatekeep Exposure; Deferred Until Core Product Proven",
+   "BR": [
+    "BR17"
+   ],
+   "UX": [
+    "UX27"
+   ],
+   "UI": [
+    "UI27"
+   ],
+   "TS": [
+    "TS176",
+    "TS177"
+   ],
+   "IA": [
+    "IA078"
+   ],
+   "TR": [
+    "TR078"
+   ],
+   "SP": [
+    "SP078"
+   ]
+  },
+  "FR079": {
+   "title": "Mark Matrimonial Search Concluded",
+   "BR": [
+    "BR18"
+   ],
+   "UX": [
+    "UX28"
+   ],
+   "UI": [
+    "UI28"
+   ],
+   "TS": [
+    "TS178",
+    "TS179"
+   ],
+   "IA": [
+    "IA079"
+   ],
+   "TR": [
+    "TR079"
+   ],
+   "SP": [
+    "SP079"
+   ]
+  },
+  "FR080": {
+   "title": "Concluded Profile Excluded from Discovery/Compatibility Without Data Loss",
+   "BR": [
+    "BR18"
+   ],
+   "UX": [
+    "UX28"
+   ],
+   "UI": [
+    "UI28"
+   ],
+   "TS": [
+    "TS180",
+    "TS181"
+   ],
+   "IA": [
+    "IA080"
+   ],
+   "TR": [
+    "TR080"
+   ],
+   "SP": [
+    "SP080"
+   ]
+  },
+  "FR081": {
+   "title": "Reactivate Concluded Profile; Lifecycle State Audited",
+   "BR": [
+    "BR15",
+    "BR18"
+   ],
+   "UX": [
+    "UX28"
+   ],
+   "UI": [
+    "UI28"
+   ],
+   "TS": [
+    "TS182",
+    "TS183"
+   ],
+   "IA": [
+    "IA081"
+   ],
+   "TR": [
+    "TR081"
+   ],
+   "SP": [
+    "SP081"
+   ]
+  },
+  "FR082": {
+   "title": "Invite/Capture Success Story Only With Full Consent",
+   "BR": [
+    "BR19"
+   ],
+   "UX": [
+    "UX29"
+   ],
+   "UI": [
+    "UI29"
+   ],
+   "TS": [
+    "TS184",
+    "TS185"
+   ],
+   "IA": [
+    "IA082"
+   ],
+   "TR": [
+    "TR082"
+   ],
+   "SP": [
+    "SP082"
+   ]
+  },
+  "FR083": {
+   "title": "Declining Has Zero Effect on Account Status; Consent Audited and Revocable",
+   "BR": [
+    "BR15",
+    "BR19"
+   ],
+   "UX": [
+    "UX29"
+   ],
+   "UI": [
+    "UI29"
+   ],
+   "TS": [
+    "TS186",
+    "TS187"
+   ],
+   "IA": [
+    "IA083"
+   ],
+   "TR": [
+    "TR083"
+   ],
+   "SP": [
+    "SP083"
+   ]
+  },
+  "FR084": {
+   "title": "Published Story Excludes Undisclosed Sensitive Content",
+   "BR": [
+    "BR19"
+   ],
+   "UX": [
+    "UX29"
+   ],
+   "UI": [
+    "UI29"
+   ],
+   "TS": [
+    "TS188",
+    "TS189"
+   ],
+   "IA": [
+    "IA084"
+   ],
+   "TR": [
+    "TR084"
+   ],
+   "SP": [
+    "SP084"
+   ]
+  },
+  "FR085": {
+   "title": "Optional Safety Guidance Before In-Person Introduction",
+   "BR": [
+    "BR20"
+   ],
+   "UX": [
+    "UX30"
+   ],
+   "UI": [
+    "UI30"
+   ],
+   "TS": [
+    "TS190",
+    "TS191"
+   ],
+   "IA": [
+    "IA085"
+   ],
+   "TR": [
+    "TR085"
+   ],
+   "SP": [
+    "SP085"
+   ]
+  },
+  "FR086": {
+   "title": "Opt-In \"Meeting Occurred\" Note",
+   "BR": [
+    "BR20"
+   ],
+   "UX": [
+    "UX30"
+   ],
+   "UI": [
+    "UI30"
+   ],
+   "TS": [
+    "TS192",
+    "TS193"
+   ],
+   "IA": [
+    "IA086"
+   ],
+   "TR": [
+    "TR086"
+   ],
+   "SP": [
+    "SP086"
+   ]
+  },
+  "FR087": {
+   "title": "Report a Concern From a Real-World Meeting",
+   "BR": [
+    "BR14",
+    "BR20"
+   ],
+   "UX": [
+    "UX30"
+   ],
+   "UI": [
+    "UI30"
+   ],
+   "TS": [
+    "TS194",
+    "TS195"
+   ],
+   "IA": [
+    "IA087"
+   ],
+   "TR": [
+    "TR087"
+   ],
+   "SP": [
+    "SP087"
+   ]
+  },
+  "FR088": {
+   "title": "No Relationship-Progress Tracking; Platform Role Ends at Introduction",
+   "BR": [
+    "BR20"
+   ],
+   "UX": [
+    "UX30"
+   ],
+   "UI": [
+    "UI30"
+   ],
+   "TS": [
+    "TS196",
+    "TS197"
+   ],
+   "IA": [
+    "IA088"
+   ],
+   "TR": [
+    "TR088"
+   ],
+   "SP": [
+    "SP088"
+   ]
+  },
+  "FR089": {
+   "title": "Person-Level Language Preference on Profile",
+   "BR": [
+    "BR01"
+   ],
+   "UX": [
+    "UX08",
+    "UX11"
+   ],
+   "UI": [
+    "UI08",
+    "UI11"
+   ],
+   "TS": [
+    "TS014",
+    "TS015"
+   ],
+   "IA": [
+    "IA089"
+   ],
+   "TR": [
+    "TR089"
+   ],
+   "SP": [
+    "SP089"
+   ]
+  },
+  "FR090": {
+   "title": "Splash / Launch and Session Bootstrap",
+   "BR": [],
+   "UX": [
+    "UX01"
+   ],
+   "UI": [
+    "UI01"
+   ],
+   "TS": [
+    "TS198",
+    "TS199",
+    "TS200"
+   ],
+   "IA": [
+    "IA090"
+   ],
+   "TR": [
+    "TR090"
+   ],
+   "SP": [
+    "SP090"
+   ]
+  },
+  "FR091": {
+   "title": "First-Run Onboarding",
+   "BR": [
+    "BR01",
+    "BR03"
+   ],
+   "UX": [
+    "UX02"
+   ],
+   "UI": [
+    "UI02"
+   ],
+   "TS": [
+    "TS201",
+    "TS202"
+   ],
+   "IA": [
+    "IA091"
+   ],
+   "TR": [
+    "TR091"
+   ],
+   "SP": [
+    "SP091"
+   ]
+  },
+  "FR092": {
+   "title": "Account Sign-Up (Candidate or Family-Member Entry Point)",
+   "BR": [
+    "BR01"
+   ],
+   "UX": [
+    "UX03"
+   ],
+   "UI": [
+    "UI03"
+   ],
+   "TS": [
+    "TS203",
+    "TS204",
+    "TS205"
+   ],
+   "IA": [
+    "IA092"
+   ],
+   "TR": [
+    "TR092"
+   ],
+   "SP": [
+    "SP092",
+    "SP104"
+   ]
+  },
+  "FR093": {
+   "title": "Login (Returning User)",
+   "BR": [
+    "BR01"
+   ],
+   "UX": [
+    "UX03"
+   ],
+   "UI": [
+    "UI03"
+   ],
+   "TS": [
+    "TS206",
+    "TS207",
+    "TS208"
+   ],
+   "IA": [
+    "IA093"
+   ],
+   "TR": [
+    "TR093"
+   ],
+   "SP": [
+    "SP093"
+   ]
+  },
+  "FR094": {
+   "title": "Forgot / Reset Password",
+   "BR": [
+    "BR01"
+   ],
+   "UX": [
+    "UX03"
+   ],
+   "UI": [
+    "UI03"
+   ],
+   "TS": [
+    "TS209",
+    "TS210",
+    "TS211"
+   ],
+   "IA": [
+    "IA094"
+   ],
+   "TR": [
+    "TR094"
+   ],
+   "SP": [
+    "SP094"
+   ]
+  },
+  "FR095": {
+   "title": "Phone/Email OTP Verification",
+   "BR": [
+    "BR08"
+   ],
+   "UX": [
+    "UX04"
+   ],
+   "UI": [
+    "UI04"
+   ],
+   "TS": [
+    "TS212",
+    "TS213"
+   ],
+   "IA": [
+    "IA095"
+   ],
+   "TR": [
+    "TR095"
+   ],
+   "SP": [
+    "SP095"
+   ]
+  },
+  "FR096": {
+   "title": "Permission Priming: Location and Notifications",
+   "BR": [
+    "BR06"
+   ],
+   "UX": [
+    "UX05"
+   ],
+   "UI": [
+    "UI05"
+   ],
+   "TS": [
+    "TS214",
+    "TS215"
+   ],
+   "IA": [
+    "IA096"
+   ],
+   "TR": [
+    "TR096"
+   ],
+   "SP": [
+    "SP096"
+   ]
+  },
+  "FR097": {
+   "title": "Main Navigation Shell and Home Circle Context Switcher",
+   "BR": [
+    "BR02",
+    "BR04"
+   ],
+   "UX": [
+    "UX06"
+   ],
+   "UI": [
+    "UI06"
+   ],
+   "TS": [
+    "TS216",
+    "TS217"
+   ],
+   "IA": [
+    "IA097"
+   ],
+   "TR": [
+    "TR097"
+   ],
+   "SP": [
+    "SP097"
+   ]
+  },
+  "FR098": {
+   "title": "Notification Inbox",
+   "BR": [
+    "BR09",
+    "BR11",
+    "BR13",
+    "BR14",
+    "BR16"
+   ],
+   "UX": [
+    "UX07"
+   ],
+   "UI": [
+    "UI07"
+   ],
+   "TS": [
+    "TS218",
+    "TS219"
+   ],
+   "IA": [
+    "IA098"
+   ],
+   "TR": [
+    "TR098"
+   ],
+   "SP": [
+    "SP098"
+   ]
+  },
+  "FR099": {
+   "title": "Account & App Settings",
+   "BR": [
+    "BR01",
+    "BR05"
+   ],
+   "UX": [
+    "UX08"
+   ],
+   "UI": [
+    "UI08"
+   ],
+   "TS": [
+    "TS220",
+    "TS221",
+    "TS222"
+   ],
+   "IA": [
+    "IA099"
+   ],
+   "TR": [
+    "TR099"
+   ],
+   "SP": [
+    "SP099"
+   ]
+  },
+  "FR100": {
+   "title": "Help & Support",
+   "BR": [
+    "BR14",
+    "BR16"
+   ],
+   "UX": [
+    "UX09"
+   ],
+   "UI": [
+    "UI09"
+   ],
+   "TS": [
+    "TS223",
+    "TS224"
+   ],
+   "IA": [
+    "IA100"
+   ],
+   "TR": [
+    "TR100"
+   ],
+   "SP": [
+    "SP100"
+   ]
+  },
+  "FR101": {
+   "title": "Logout and Delete Account",
+   "BR": [
+    "BR11",
+    "BR15"
+   ],
+   "UX": [
+    "UX08"
+   ],
+   "UI": [
+    "UI08"
+   ],
+   "TS": [
+    "TS225",
+    "TS226",
+    "TS227"
+   ],
+   "IA": [
+    "IA101"
+   ],
+   "TR": [
+    "TR101"
+   ],
+   "SP": [
+    "SP101"
+   ]
+  },
+  "FR102": {
+   "title": "Offline / Network-Loss Resilience",
+   "BR": [],
+   "UX": [
+    "UX10"
+   ],
+   "UI": [
+    "UI10"
+   ],
+   "TS": [
+    "TS228",
+    "TS229"
+   ],
+   "IA": [
+    "IA102"
+   ],
+   "TR": [
+    "TR102"
+   ],
+   "SP": [
+    "SP102"
+   ]
+  }
+ },
+ "titles": {
+  "BR": {
+   "BR01": "Matrimonial Profile Creation & Self-Expression",
+   "BR02": "Home Circle Membership Management",
+   "BR03": "Family Collaboration Within Home Circle",
+   "BR04": "Contextual, Least-Privilege Authorization",
+   "BR05": "Privacy & Visibility Boundaries for Matrimonial Information",
+   "BR06": "Broad Discovery for Candidates and Authorized Family Participants",
+   "BR07": "Compatibility & Match Intelligence, Explainable and Non-Score",
+   "BR08": "Evidence-Based Trust & Matrimonial Verification",
+   "BR09": "Connection Request Lifecycle",
+   "BR10": "Selective Sharing After Acceptance",
+   "BR11": "Private Communication, Ephemerality & Capture-Risk Reduction",
+   "BR12": "Deliberate Contact Exchange",
+   "BR13": "Family Involvement in an Established Connection",
+   "BR14": "Safety Intelligence & Abuse Prevention",
+   "BR15": "Internal Accountability & Audit Trail",
+   "BR16": "Mangaly-Scoped Admin & Operations",
+   "BR17": "Future Mangaly Agent Layer",
+   "BR18": "Matrimonial Profile Lifecycle & Outcome Management",
+   "BR19": "Success Story Capture & Consent",
+   "BR20": "Digital-to-Real-World Introduction Transition"
+  },
+  "FR": {
+   "FR001": "Create and Save a Minimum Viable Profile",
+   "FR002": "Extend Profile Across All Categories, Including Declined Fields",
+   "FR003": "Discoverability Tier Gate, Independent of Enhanced-Matching Tier",
+   "FR004": "Enhanced-Matching Fields Are Optional and Non-Blocking",
+   "FR005": "Three-Tier Completeness Status Display",
+   "FR006": "Media Visibility Follows Profile Authorization",
+   "FR007": "Search for and Invite a User to a Home Circle",
+   "FR008": "Accept Invitation",
+   "FR009": "Ignore or Decline Invitation",
+   "FR010": "Remove a Member or Leave Voluntarily",
+   "FR011": "Report a False or Inappropriate Relationship Claim",
+   "FR012": "Solo-Candidate Parity and Re-Forming a Circle",
+   "FR013": "Independent, Parallel Family Search",
+   "FR014": "Suggest a Profile (Suggestion \u2260 Decision)",
+   "FR015": "Independent Candidate Search and Family-Involvement Timing",
+   "FR016": "Private Family Notes, Forwarded Only with Candidate Approval",
+   "FR017": "Authorization Chain Evaluation, Deny by Default",
+   "FR018": "Candidate vs. Family Information as Separate Authorization Categories",
+   "FR019": "Plain-Language Capability Presentation",
+   "FR020": "Meaningful, Sufficient Information for Authorized Viewers",
+   "FR021": "Separate Display of Candidate vs. Family Info; Visibility \u2260 Searchability",
+   "FR022": "No Popularity or Demand Signal Exposure",
+   "FR023": "Family-Boundary Enforcement Toward a Prospective Match",
+   "FR024": "Pause Without Signalling; Controlled Safety Exceptions",
+   "FR025": "Discovery Available to Candidates and Family, in Parallel",
+   "FR026": "Relevance-Based Ranking, Not Popularity-Primary",
+   "FR027": "Discoverability-Tier Exclusion Only, Not Enhanced-Matching",
+   "FR028": "Fairness Safeguards and AI Ranking Transparency",
+   "FR029": "Community-Assisted Discovery Hints",
+   "FR030": "Explainable, Non-Score Compatibility Reasons",
+   "FR031": "Fact vs. Inference, Alignment vs. Difference, No Certainty Claims",
+   "FR032": "Core Capability Fully Functional Without Optional Mechanisms",
+   "FR033": "Optional Personality Assessment",
+   "FR034": "Horoscope: Opt-In, Separated, Non-Scientific",
+   "FR035": "Evidence-and-Provenance Display Per Verification Layer",
+   "FR036": "Evidence Language Avoids Truth-Certification",
+   "FR037": "Verification Circle: Bounded Confirmation with Anti-Abuse Safeguards",
+   "FR038": "Request Mangaly/Admin Verification When No Community Verifier Exists",
+   "FR039": "No Trust Score or Reputation Ranking",
+   "FR040": "Sensitive Verification Documents Not Exposed Publicly",
+   "FR041": "Marriageable-Age Verification per Applicable Law",
+   "FR042": "Send Connection Request",
+   "FR043": "Recipient Review and Accept/Decline",
+   "FR044": "Acceptance Means Willingness to Explore Only",
+   "FR045": "Multiple Parallel Connections; No Forced Continued Engagement",
+   "FR046": "Per-Category Independent Sharing",
+   "FR047": "Clear Sharing Confirmation; No Automatic Disclosure",
+   "FR048": "Family-Contact Category Requires Separate Authorization",
+   "FR049": "Enable Private In-Platform Communication",
+   "FR050": "No Permanent Chat History; Minimal-Necessary Retention",
+   "FR051": "Access Control: No Routine Human Reading",
+   "FR052": "Audit Logging of Communication-Related Events",
+   "FR053": "Evidence-Retention Exception and Incident Workflow Trigger",
+   "FR054": "Legal-Hold Handling and Lifecycle-Job Failure Behavior",
+   "FR055": "Multiple Concurrent Conversations, No Seriousness Score",
+   "FR056": "Capture-Risk-Reduction Measures with Honest Disclosure",
+   "FR057": "Request Contact Information",
+   "FR058": "Recipient-Controlled Decision, Internally Attributable",
+   "FR059": "No Automatic Exchange; No Unrequested Channel Disclosure",
+   "FR060": "Candidate Chooses Timing of Home Circle Involvement",
+   "FR061": "Discovery-Level Involvement \u2260 Connection-Level Involvement; Private Comm Stays Private",
+   "FR062": "Family-to-Family Introduction as a Distinct Step; No Cross-Side Exposure",
+   "FR063": "User-Initiated Reporting, Always Available, Never Downgraded",
+   "FR064": "Bounded Pattern Detection with AI Inference Labeling",
+   "FR065": "Graduated Response Pipeline",
+   "FR066": "Safety and Trust Remain Operationally Distinct",
+   "FR067": "Tightly Controlled Safety Access, No Routine Monitoring",
+   "FR068": "Severity Taxonomy and Escalation Thresholds (Open Design Item)",
+   "FR069": "Record Actor, Capacity, and Authorization for Consequential Actions",
+   "FR070": "Record Revocation, Change, and Dispute",
+   "FR071": "Audit Trail Not Exposed as Surveillance; Least-Privilege Admin Query",
+   "FR072": "Verification-Related Admin Workflow",
+   "FR073": "False-Relationship Investigation Workflow",
+   "FR074": "Abuse/Fraud Investigation with Restriction, Block, and Escalation",
+   "FR075": "Appeals Workflow",
+   "FR076": "Admin Actions Audited, Least-Privilege, No Public Disclosure",
+   "FR077": "Scoped, Revocable, Attributable Agent Access",
+   "FR078": "Agents Cannot Gatekeep Exposure; Deferred Until Core Product Proven",
+   "FR079": "Mark Matrimonial Search Concluded",
+   "FR080": "Concluded Profile Excluded from Discovery/Compatibility Without Data Loss",
+   "FR081": "Reactivate Concluded Profile; Lifecycle State Audited",
+   "FR082": "Invite/Capture Success Story Only With Full Consent",
+   "FR083": "Declining Has Zero Effect on Account Status; Consent Audited and Revocable",
+   "FR084": "Published Story Excludes Undisclosed Sensitive Content",
+   "FR085": "Optional Safety Guidance Before In-Person Introduction",
+   "FR086": "Opt-In \"Meeting Occurred\" Note",
+   "FR087": "Report a Concern From a Real-World Meeting",
+   "FR088": "No Relationship-Progress Tracking; Platform Role Ends at Introduction",
+   "FR089": "Person-Level Language Preference on Profile",
+   "FR090": "Splash / Launch and Session Bootstrap",
+   "FR091": "First-Run Onboarding",
+   "FR092": "Account Sign-Up (Candidate or Family-Member Entry Point)",
+   "FR093": "Login (Returning User)",
+   "FR094": "Forgot / Reset Password",
+   "FR095": "Phone/Email OTP Verification",
+   "FR096": "Permission Priming: Location and Notifications",
+   "FR097": "Main Navigation Shell and Home Circle Context Switcher",
+   "FR098": "Notification Inbox",
+   "FR099": "Account & App Settings",
+   "FR100": "Help & Support",
+   "FR101": "Logout and Delete Account",
+   "FR102": "Offline / Network-Loss Resilience"
+  },
+  "UX": {
+   "UX01": "Splash / Launch",
+   "UX02": "First-Run Onboarding",
+   "UX03": "Sign-Up, Login, Forgot/Reset Password",
+   "UX04": "OTP / Phone-Email Verification",
+   "UX05": "Permission Priming: Location & Notifications",
+   "UX06": "Main Navigation Shell & Home Circle Context Switcher",
+   "UX07": "Notification Inbox",
+   "UX08": "Account & App Settings (incl. Logout / Delete Account)",
+   "UX09": "Help & Support",
+   "UX10": "Offline / Network-Loss Resilience",
+   "UX11": "Profile Creation & Completeness",
+   "UX12": "Home Circle Membership",
+   "UX13": "Family Collaboration Within Home Circle",
+   "UX14": "Authorization Transparency (\"What [Name] can do\")",
+   "UX15": "Privacy, Visibility & Pause",
+   "UX16": "Discovery",
+   "UX17": "Compatibility (\"Why this match\")",
+   "UX18": "Trust & Verification",
+   "UX19": "Connection Requests",
+   "UX20": "Selective Sharing After Acceptance",
+   "UX21": "Private Communication",
+   "UX22": "Contact Exchange",
+   "UX23": "Family Involvement in an Established Connection",
+   "UX24": "Safety Reporting & Intelligence",
+   "UX25": "Accountability & Audit Trail",
+   "UX26": "Admin / Operations Console",
+   "UX27": "Future Mangaly Agent Layer (deferred, concept-level only)",
+   "UX28": "Matrimonial Profile Lifecycle (Conclude / Reactivate)",
+   "UX29": "Success Story Capture & Consent",
+   "UX30": "Real-World Meeting Safety"
+  },
+  "UI": {
+   "UI01": "Splash / Launch",
+   "UI02": "First-Run Onboarding",
+   "UI03": "Sign-Up, Login, Forgot/Reset Password",
+   "UI04": "OTP / Phone-Email Verification",
+   "UI05": "Permission Priming: Location & Notifications",
+   "UI06": "Main Navigation Shell & Home Circle Context Switcher",
+   "UI07": "Notification Inbox",
+   "UI08": "Account & App Settings (incl. Logout / Delete Account)",
+   "UI09": "Help & Support",
+   "UI10": "Offline / Network-Loss Resilience",
+   "UI11": "Profile Creation & Completeness",
+   "UI12": "Home Circle Membership",
+   "UI13": "Family Collaboration Within Home Circle",
+   "UI14": "Authorization Transparency (\"What [Name] can do\")",
+   "UI15": "Privacy, Visibility & Pause",
+   "UI16": "Discovery",
+   "UI17": "Compatibility (\"Why this match\")",
+   "UI18": "Trust & Verification",
+   "UI19": "Connection Requests",
+   "UI20": "Selective Sharing After Acceptance",
+   "UI21": "Private Communication",
+   "UI22": "Contact Exchange",
+   "UI23": "Family Involvement in an Established Connection",
+   "UI24": "Safety Reporting & Intelligence",
+   "UI25": "Accountability & Audit Trail",
+   "UI26": "Admin / Operations Console",
+   "UI27": "Future Mangaly Agent Layer (deferred, concept-level only)",
+   "UI28": "Matrimonial Profile Lifecycle (Conclude / Reactivate)",
+   "UI29": "Success Story Capture & Consent",
+   "UI30": "Real-World Meeting Safety"
+  },
+  "TS": {
+   "TS001": "MVP profile saves once existence tier complete",
+   "TS002": "MVP save blocked with specific missing fields listed",
+   "TS003": "Profile categories editable independently",
+   "TS004": "Failed category save preserves edits for retry",
+   "TS005": "Declining a field is recorded distinct from leaving it empty",
+   "TS006": "Discoverability clears with only discoverability-tier fields complete",
+   "TS007": "Discoverability gap excludes profile with specific missing fields shown",
+   "TS008": "Declining an enhanced-matching field never reduces Discovery eligibility",
+   "TS009": "Compatibility degrades gracefully rather than blocking on a declined field",
+   "TS010": "Three completeness tiers always shown as separate indicators",
+   "TS011": "Field with undefined tier membership excluded from all tier calculations",
+   "TS012": "Authorized viewer sees candidate media",
+   "TS013": "Undetermined media authorization defaults to deny",
+   "TS014": "Language preference persists on the person's own record and is read by other surfaces",
+   "TS015": "Unset language preference never blocks profile creation",
+   "TS016": "All four Home Circle invitation paths supported",
+   "TS017": "Invalid or duplicate invitation rejected with specific reason",
+   "TS018": "Accepting an invitation establishes membership end-to-end and is audited",
+   "TS019": "Expired or withdrawn invitation cannot be accepted",
+   "TS020": "Explicit decline recorded distinctly, no penalty either side",
+   "TS021": "Ignored invitation recorded distinctly from an explicit decline",
+   "TS022": "Removed/departed member's access revoked immediately, history preserved",
+   "TS023": "Voluntary departure requires no other member's approval",
+   "TS024": "Technical failure mid-removal triggers retry/alert, not an ambiguous state",
+   "TS025": "False-relationship report reaches BR16 workflow and withholds disputed access",
+   "TS026": "Report still accepted even if the underlying invitation was already withdrawn",
+   "TS027": "Zero-member candidate exercises every Candidate-level capability without gating",
+   "TS028": "Candidate re-forms a new Home Circle after leaving a prior one",
+   "TS029": "Family member searches independently and in parallel with the candidate",
+   "TS030": "Candidate-set scope restriction on a relative's search is enforced",
+   "TS031": "Suggestion recorded as suggestion only; candidate decides independently",
+   "TS032": "A suggestion never auto-triggers a Connection Request",
+   "TS033": "Candidate's independent search is invisible to family by default",
+   "TS034": "Attempted family access to a candidate's private search is denied",
+   "TS035": "Private family note visible only to its author by default",
+   "TS036": "Forwarding a note requires explicit candidate approval and shares only that note",
+   "TS037": "Content the author isn't authorized to hold cannot be captured into a note",
+   "TS038": "Full authorization chain resolves affirmatively, access granted and logged",
+   "TS039": "Any unresolved chain link denies by default, with reason logged",
+   "TS040": "Home Circle membership alone never grants access",
+   "TS041": "Parents never automatically receive private candidate conversations",
+   "TS042": "Siblings/relatives never automatically gain decision authority",
+   "TS043": "A prospective match/family never automatically sees the candidate's Home Circle",
+   "TS044": "Candidate and family information recorded as distinct authorization categories",
+   "TS045": "A conflated candidate/family grant is flagged as a defect",
+   "TS046": "Authorization always presented as plain-language capability statements",
+   "TS047": "No raw RBAC-style permission matrix surfaced anywhere",
+   "TS048": "Authorized viewer with legitimate purpose sees sufficiently complete information",
+   "TS049": "Information withheld for a non-authorization reason is a defect",
+   "TS050": "Profile is searchable with only partial visibility to a given viewer",
+   "TS051": "Conflating \"found in search\" with \"full content visible\" is a defect",
+   "TS052": "No profile-view, rejection, or popularity indicator displayed anywhere",
+   "TS053": "Any popularity/demand metric found exposed is flagged for removal",
+   "TS054": "Prospective candidate sees only the searching side's candidate-level info",
+   "TS055": "Searching parent's Home Circle exposed without deliberate involvement is a defect",
+   "TS056": "Pausing broadcasts no status change to other users",
+   "TS057": "An \"inactive\"/\"away\" badge visible to others is a defect",
+   "TS058": "Safety-visibility exception is narrowly scoped and fully audited",
+   "TS059": "An exception too broad to scope narrowly routes to human investigation instead",
+   "TS060": "Parent runs Discovery with zero prior candidate activity",
+   "TS061": "Discovery access requiring the candidate to act first is a defect",
+   "TS062": "Ranking order reflects named relevance factors, not popularity",
+   "TS063": "Popularity data found influencing primary rank order is a defect",
+   "TS064": "Profile with only enhanced-matching gaps remains in Discovery",
+   "TS065": "Profile lacking a discoverability-tier field is excluded",
+   "TS066": "Documented fairness-review process covers each named bias category",
+   "TS067": "Every AI-derived ranking signal is labeled inference, never fact",
+   "TS068": "Unlabeled AI inference or a confirmed named bias flags the mechanism for correction",
+   "TS069": "Community hint delivers bounded context without exposing profile content",
+   "TS070": "A hint revealing identifiable content beyond the bounded scope is a defect",
+   "TS071": "\"Why this match\" shows concrete reasons, never a score",
+   "TS072": "No explainable reason available is omitted, never fabricated",
+   "TS073": "Every explanation element is labeled fact or inference",
+   "TS074": "Explanations can surface meaningful differences, not only shared traits",
+   "TS075": "Certainty-claim language is rejected/regenerated before display",
+   "TS076": "Compatibility signal generates fully from profile/evidence data alone",
+   "TS077": "Blocking explanation generation pending optional-mechanism data is a defect",
+   "TS078": "Opted-in personality assessment enriches only that candidate's own signal",
+   "TS079": "Assessment is fully skippable with zero Discovery/Compatibility penalty",
+   "TS080": "Abandoned assessment is discarded, not used as complete input",
+   "TS081": "No clinical or suitability-verdict language surfaces for assessment results",
+   "TS082": "Only opted-in candidates' results are touched by horoscope data",
+   "TS083": "Horoscope content shown without its non-scientific disclaimer is a defect",
+   "TS084": "Six verification layers independently labeled, never an aggregate score",
+   "TS085": "A surface reducing verification to a single score/merged badge is a defect",
+   "TS086": "Verification copy consistently uses evidence/provenance framing",
+   "TS087": "Copy asserting a claim as absolutely \"true\"/\"confirmed\" is a defect",
+   "TS088": "Only an eligible, checked verifier's bounded response counts as evidence",
+   "TS089": "A rating or free-form judgment submission is rejected",
+   "TS090": "Ineligible/malicious verifier's confirmation is visibly flagged/revoked, not silently removed",
+   "TS091": "Candidate obtains a verification path via admin request with no community verifier",
+   "TS092": "Unfulfillable admin request states missing evidence rather than failing silently",
+   "TS093": "No trust/reputation score field exists in the data model, API, or UI",
+   "TS094": "Any such score found, even for internal-only use, is flagged for removal",
+   "TS095": "Raw sensitive verification document accessible only within the verification/admin workflow",
+   "TS096": "Raw document accessible outside the verification workflow is a critical defect",
+   "TS097": "Underage candidate cannot become Discovery-eligible",
+   "TS098": "Inconclusive age evidence withholds Discovery eligibility rather than assuming compliance",
+   "TS099": "Connection request created recording requester identity and capacity",
+   "TS100": "Unauthorized on-behalf-of request is blocked",
+   "TS101": "Recipient reviews full context before deciding, with no teaser gating",
+   "TS102": "Pending request with no decision remains pending indefinitely, no forced timeout",
+   "TS103": "Post-acceptance messaging matches the bounded \"willingness to explore\" meaning",
+   "TS104": "A surface implying stronger meaning from acceptance alone is a defect",
+   "TS105": "Candidate holds 2+ simultaneous accepted connections with no exclusivity block",
+   "TS106": "Withdrawal requires no justification and produces no visible penalty",
+   "TS107": "Sharing one category does not reveal another",
+   "TS108": "A category dependency (sharing one reveals another) found is a defect",
+   "TS109": "Share action produces an explicit confirmation naming category and recipient",
+   "TS110": "A category visible with no corresponding sharing action is a defect",
+   "TS111": "Family-contact sharing checks the family member's own authorization",
+   "TS112": "Candidate sharing family contact without that family member's authorization is blocked",
+   "TS113": "Private messaging is available immediately upon acceptance, before contact exchange",
+   "TS114": "Communication blocked pending contact exchange is a defect",
+   "TS115": "Ordinary conversation content is not permanently browsable; retention maps to named purposes",
+   "TS116": "Content retained/browsable beyond the minimal-necessity window is a defect",
+   "TS117": "Only case-specific authorized safety access occurs, individually logged",
+   "TS118": "Access outside a logged, case-linked safety pathway is a defect/incident",
+   "TS119": "Each of six named event categories has a corresponding, reconstructable audit entry type",
+   "TS120": "An accountability-relevant event not reconstructable from the audit trail is a gap",
+   "TS121": "Severe-incident evidence is preserved narrowly and reaches a human investigator",
+   "TS122": "Exception invoked without documented case-specific justification is itself an incident",
+   "TS123": "Over-aggressive deletion of a flagged incident triggers an operational alert, not a silent drop",
+   "TS124": "Data under active legal hold is excluded from routine deletion jobs",
+   "TS125": "Held data found deleted by the normal lifecycle is a serious defect/incident",
+   "TS126": "A failed lifecycle job produces an operational alert and retries",
+   "TS127": "Candidate holds 2+ active conversations with no exclusivity block or seriousness score",
+   "TS128": "A seriousness/exclusivity indicator found anywhere is a defect",
+   "TS129": "Capture-risk disclosure shown once per thread with honest \"risk-reduction, not guarantee\" language",
+   "TS130": "Copy implying an absolute capture guarantee is a defect",
+   "TS131": "Contact-information request created recording requester identity and timestamp",
+   "TS132": "Requester lacking BR04 authorization to request on the candidate's behalf is blocked",
+   "TS133": "Requester cannot approve their own contact-exchange request, even within the same Home Circle",
+   "TS134": "A completed exchange missing any chain element is a defect",
+   "TS135": "No proxy signal (elapsed time or message count) ever triggers automatic contact exchange",
+   "TS136": "Sharing one channel found to also expose an unrequested channel is a defect",
+   "TS137": "Family involvement in a specific connection requires an explicit candidate action",
+   "TS138": "An automatic or time-based trigger for family involvement is a defect",
+   "TS139": "A parent's pre-existing discovery-level involvement grants zero automatic connection visibility",
+   "TS140": "Involving family does not retroactively expose prior private message content",
+   "TS141": "Family-to-family introduction has its own explicit trigger action and record",
+   "TS142": "One side's involvement exposing the other's Home Circle as a side effect is a defect",
+   "TS143": "A report is captured and enters the graduated-response pipeline on its own merits",
+   "TS144": "Reporting gated behind a condition, or downgraded by absent automated detection, is a defect",
+   "TS145": "Detection is scoped to named risk categories using minimum necessary information",
+   "TS146": "Every automated flag is labeled as requiring human review, never definitive",
+   "TS147": "Detection on an unnamed category, or a flag acted on as definitive without review, is a defect",
+   "TS148": "Each of the five graduated-response stages exists as a distinct, sequenced state",
+   "TS149": "Escalation to human investigation is possible from any stage, not solely at pipeline end",
+   "TS150": "A severe case failing to reach escalation due to an unset threshold is flagged, not silently missed",
+   "TS151": "Safety evaluation and action are independent of the subject's verification status",
+   "TS152": "A safety case deprioritized due to the subject's verified status is a defect",
+   "TS153": "Every safety-purpose data access is individually logged with the minimum necessary scope",
+   "TS154": "Safety access used for general monitoring beyond specific cases is a defect/incident",
+   "TS155": "A named owner and milestone exist for severity-taxonomy design, tracked as a release gate",
+   "TS156": "Production launch without a defined severity taxonomy is caught as a release blocker",
+   "TS157": "A consequential action is fully reconstructable from the audit trail",
+   "TS158": "A consequential action with no corresponding audit record is a defect",
+   "TS159": "Revocation/dispute is recorded additively, linked to and preserving the original record",
+   "TS160": "A revocation found to overwrite/delete the original audit record is a defect",
+   "TS161": "No end-user role can query another user's full audit trail",
+   "TS162": "Admin audit-trail query is scoped to an assigned case ID and is itself logged",
+   "TS163": "A member viewing another's trail, or an admin browsing out-of-scope records, is a defect",
+   "TS164": "Operator completes a verification review that feeds back into the Evidence display",
+   "TS165": "Insufficient evidence lets the operator mark the request incomplete rather than forcing a decision",
+   "TS166": "Reported relationship claim is investigated and resolved with a recorded determination",
+   "TS167": "A case not yet decidable is marked open/pending rather than forced to a premature outcome",
+   "TS168": "Abuse/fraud case is investigated and actioned with a linked case reference in Audit",
+   "TS169": "Insufficient evidence lets the operator record the case inconclusive rather than forcing a block",
+   "TS170": "Candidate appeals a restriction and has it reviewed, with the outcome recorded to Audit",
+   "TS171": "An action/outcome type found with no available appeal path is a completeness gap",
+   "TS172": "100% of admin actions produce an audit record; operator access is scoped",
+   "TS173": "An admin action without an audit record, out-of-scope access, or a publicly exposed outcome is a defect",
+   "TS174": "(Forward-looking) Agent access, when eventually built, is scoped, revocable, and attributable",
+   "TS175": "Default broad access or an unattributed Agent action would be a defect whenever built",
+   "TS176": "Discovery ranking logic contains zero input tied to Agent representation status (testable now)",
+   "TS177": "Agent-layer functionality found active before the core-product-maturity gate is met is a defect",
+   "TS178": "Marking a search concluded requires an explicit user action",
+   "TS179": "The system inferring a concluded state from reduced activity is a defect",
+   "TS180": "Concluded profile is immediately excluded from Discovery/Compatibility, history intact",
+   "TS181": "Concluding a profile deleting or invalidating historical records is a defect",
+   "TS182": "Reactivation restores full participation without redundant re-verification, and is audited",
+   "TS183": "Reactivation blocked pending unnecessary re-verification, or an untracked transition, is a defect",
+   "TS184": "Success story is captured only when every involved candidate gives explicit consent",
+   "TS185": "One non-consenting party blocks capture/publication entirely, regardless of the other's consent",
+   "TS186": "Declining or never being invited shows zero difference in account status",
+   "TS187": "Consent grant/modify/revoke is audited, and revocation halts active publication",
+   "TS188": "Pre-publication checklist confirms only explicitly-approved content is included",
+   "TS189": "A published story containing unapproved sensitive content triggers immediate takedown",
+   "TS190": "Safety guidance surfaces contextually and never blocks platform use",
+   "TS191": "Guidance presented as a mandatory gate blocking further use is a defect",
+   "TS192": "\"Meeting occurred\" note recorded only via a distinct, deliberate, manual action",
+   "TS193": "The system inferring a meeting occurred from behavioral signals is a defect",
+   "TS194": "Post-meeting concern report uses the identical BR14 reporting pipeline as any other report",
+   "TS195": "A post-meeting report routed through a separate, weaker path is a defect",
+   "TS196": "No data-model field or UI surface represents relationship status/progress beyond lifecycle and the note",
+   "TS197": "Any scheduling, chaperone, or coordination feature found anywhere is a defect",
+   "TS198": "First-ever launch routes to Onboarding",
+   "TS199": "Returning user with a valid session routes directly to the Main Shell",
+   "TS200": "Session-check failure routes to Login with a clear, non-alarming reason, never an indefinite blank screen",
+   "TS201": "Onboarding is fully skippable and never reappears once completed or skipped",
+   "TS202": "Every onboarding concept remains independently findable later via Help & Support",
+   "TS203": "New user creates an account, verifies identifier, and reaches Onboarding",
+   "TS204": "Duplicate-identifier sign-up rejected with a specific reason and a path to Login",
+   "TS205": "Interrupted sign-up is resumable without re-entering already-provided data",
+   "TS206": "Returning user authenticates and reaches the Main Shell with session state intact",
+   "TS207": "Failed login never distinguishes \"identifier not found\" from \"wrong credential\"",
+   "TS208": "Repeated failed login attempts are rate-limited",
+   "TS209": "Legitimate account owner regains access via the reset flow without support intervention",
+   "TS210": "Expired or already-used reset token is rejected with a \"request a new one\" path",
+   "TS211": "Reset request for a non-existent identifier produces the identical message as for an existing one (anti-enumeration; resolves the FR094 Fidelity flag)",
+   "TS212": "Correct code within validity confirms identifier control and produces a BR08 authenticity evidence record",
+   "TS213": "Expired/incorrect code is rejected with a clear reason; resend is rate-limited",
+   "TS214": "Contextual priming precedes every OS permission prompt; granting improves the relevant capability",
+   "TS215": "Declining either permission never blocks any capability, only removes the specific enhancement",
+   "TS216": "Active Home Circle context is always visibly labeled wherever a BR04-consequential action is available",
+   "TS217": "Switching context never carries in-progress, unsaved data into the new context",
+   "TS218": "Every named event type produces a persistent inbox entry, independent of push-delivery success",
+   "TS219": "An event that should be notification-worthy but is missing from the inbox is a defect",
+   "TS220": "Language preference is changeable from Settings without re-entering any other profile field",
+   "TS221": "Pause/resume search is reachable from Settings in two taps or fewer",
+   "TS222": "A setting duplicated or contradicted between Settings and profile-editing is a defect",
+   "TS223": "FAQ content is searchable and covers every onboarding concept",
+   "TS224": "A safety-urgent support submission is routed through the FR063 pipeline, not a slower queue",
+   "TS225": "Logout ends the session without affecting account or data",
+   "TS226": "Deletion confirmation names what's deleted vs. retained, in plain language, before execution",
+   "TS227": "Deletion under active legal hold/investigation still proceeds for ordinary data, with the held subset disclosed first",
+   "TS228": "Global offline indicator appears within a bounded time and preserves in-progress input",
+   "TS229": "A queued write that cannot eventually be delivered surfaces as a failure, not silence"
+  },
+  "IA": {
+   "IA001": "Create and Save a Minimum Viable Profile",
+   "IA002": "Extend Profile Across All Categories, Including Declined Fields",
+   "IA003": "Discoverability Tier Gate, Independent of Enhanced-Matching Tier",
+   "IA004": "Enhanced-Matching Fields Are Optional and Non-Blocking",
+   "IA005": "Three-Tier Completeness Status Display",
+   "IA006": "Media Visibility Follows Profile Authorization",
+   "IA007": "Search for and Invite a User to a Home Circle",
+   "IA008": "Accept Invitation",
+   "IA009": "Ignore or Decline Invitation",
+   "IA010": "Remove a Member or Leave Voluntarily",
+   "IA011": "Report a False or Inappropriate Relationship Claim",
+   "IA012": "Solo-Candidate Parity and Re-Forming a Circle",
+   "IA013": "Independent, Parallel Family Search",
+   "IA014": "Suggest a Profile (Suggestion \u2260 Decision)",
+   "IA015": "Independent Candidate Search and Family-Involvement Timing",
+   "IA016": "Private Family Notes, Forwarded Only with Candidate Approval",
+   "IA017": "Authorization Chain Evaluation, Deny by Default",
+   "IA018": "Candidate vs. Family Information as Separate Authorization Categories",
+   "IA019": "Plain-Language Capability Presentation",
+   "IA020": "Meaningful, Sufficient Information for Authorized Viewers",
+   "IA021": "Separate Display of Candidate vs. Family Info; Visibility \u2260 Searchability",
+   "IA022": "No Popularity or Demand Signal Exposure",
+   "IA023": "Family-Boundary Enforcement Toward a Prospective Match",
+   "IA024": "Pause Without Signalling; Controlled Safety Exceptions",
+   "IA025": "Discovery Available to Candidates and Family, in Parallel",
+   "IA026": "Relevance-Based Ranking, Not Popularity-Primary",
+   "IA027": "Discoverability-Tier Exclusion Only, Not Enhanced-Matching",
+   "IA028": "Fairness Safeguards and AI Ranking Transparency",
+   "IA029": "Community-Assisted Discovery Hints",
+   "IA030": "Explainable, Non-Score Compatibility Reasons",
+   "IA031": "Fact vs. Inference, Alignment vs. Difference, No Certainty Claims",
+   "IA032": "Core Capability Fully Functional Without Optional Mechanisms",
+   "IA033": "Optional Personality Assessment",
+   "IA034": "Horoscope: Opt-In, Separated, Non-Scientific",
+   "IA035": "Evidence-and-Provenance Display Per Verification Layer",
+   "IA036": "Evidence Language Avoids Truth-Certification",
+   "IA037": "Verification Circle: Bounded Confirmation with Anti-Abuse Safeguards",
+   "IA038": "Request Mangaly/Admin Verification When No Community Verifier Exists",
+   "IA039": "No Trust Score or Reputation Ranking",
+   "IA040": "Sensitive Verification Documents Not Exposed Publicly",
+   "IA041": "Marriageable-Age Verification per Applicable Law",
+   "IA042": "Send Connection Request",
+   "IA043": "Recipient Review and Accept/Decline",
+   "IA044": "Acceptance Means Willingness to Explore Only",
+   "IA045": "Multiple Parallel Connections; No Forced Continued Engagement",
+   "IA046": "Per-Category Independent Sharing",
+   "IA047": "Clear Sharing Confirmation; No Automatic Disclosure",
+   "IA048": "Family-Contact Category Requires Separate Authorization",
+   "IA049": "Enable Private In-Platform Communication",
+   "IA050": "No Permanent Chat History; Minimal-Necessary Retention",
+   "IA051": "Access Control: No Routine Human Reading",
+   "IA052": "Audit Logging of Communication-Related Events",
+   "IA053": "Evidence-Retention Exception and Incident Workflow Trigger",
+   "IA054": "Legal-Hold Handling and Lifecycle-Job Failure Behavior",
+   "IA055": "Multiple Concurrent Conversations, No Seriousness Score",
+   "IA056": "Capture-Risk-Reduction Measures with Honest Disclosure",
+   "IA057": "Request Contact Information",
+   "IA058": "Recipient-Controlled Decision, Internally Attributable",
+   "IA059": "No Automatic Exchange; No Unrequested Channel Disclosure",
+   "IA060": "Candidate Chooses Timing of Home Circle Involvement",
+   "IA061": "Discovery-Level Involvement \u2260 Connection-Level Involvement; Private Comm Stays Private",
+   "IA062": "Family-to-Family Introduction as a Distinct Step; No Cross-Side Exposure",
+   "IA063": "User-Initiated Reporting, Always Available, Never Downgraded",
+   "IA064": "Bounded Pattern Detection with AI Inference Labeling",
+   "IA065": "Graduated Response Pipeline",
+   "IA066": "Safety and Trust Remain Operationally Distinct",
+   "IA067": "Tightly Controlled Safety Access, No Routine Monitoring",
+   "IA068": "Severity Taxonomy and Escalation Thresholds",
+   "IA069": "Record Actor, Capacity, and Authorization for Consequential Actions",
+   "IA070": "Record Revocation, Change, and Dispute",
+   "IA071": "Audit Trail Not Exposed as Surveillance; Least-Privilege Admin Query",
+   "IA072": "Verification-Related Admin Workflow",
+   "IA073": "False-Relationship Investigation Workflow",
+   "IA074": "Abuse/Fraud Investigation with Restriction, Block, and Escalation",
+   "IA075": "Appeals Workflow",
+   "IA076": "Admin Actions Audited, Least-Privilege, No Public Disclosure",
+   "IA077": "Scoped, Revocable, Attributable Agent Access",
+   "IA078": "Agents Cannot Gatekeep Exposure; Deferred Until Core Product Proven",
+   "IA079": "Mark Matrimonial Search Concluded",
+   "IA080": "Concluded Profile Excluded from Discovery/Compatibility Without Data Loss",
+   "IA081": "Reactivate Concluded Profile; Lifecycle State Audited",
+   "IA082": "Invite/Capture Success Story Only With Full Consent",
+   "IA083": "Declining Has Zero Effect on Account Status; Consent Audited and Revocable",
+   "IA084": "Published Story Excludes Undisclosed Sensitive Content",
+   "IA085": "Optional Safety Guidance Before In-Person Introduction",
+   "IA086": "Opt-In \"Meeting Occurred\" Note",
+   "IA087": "Report a Concern From a Real-World Meeting",
+   "IA088": "No Relationship-Progress Tracking; Platform Role Ends at Introduction",
+   "IA089": "Person-Level Language Preference on Profile",
+   "IA090": "Splash / Launch and Session Bootstrap",
+   "IA091": "First-Run Onboarding",
+   "IA092": "Account Sign-Up (Candidate or Family-Member Entry Point)",
+   "IA093": "Login (Returning User)",
+   "IA094": "Forgot / Reset Password",
+   "IA095": "Phone/Email OTP Verification",
+   "IA096": "Permission Priming: Location and Notifications",
+   "IA097": "Main Navigation Shell and Home Circle Context Switcher",
+   "IA098": "Notification Inbox",
+   "IA099": "Account & App Settings",
+   "IA100": "Help & Support",
+   "IA101": "Logout and Delete Account",
+   "IA102": "Offline / Network-Loss Resilience"
+  },
+  "TR": {
+   "TR001": "Minimum Viable Profile save endpoint",
+   "TR002": "Per-category profile extension with distinct \"declined\" state",
+   "TR003": "Shared discoverability-tier gate function",
+   "TR004": "Enhanced-matching fields as non-gating, degrade-gracefully input",
+   "TR005": "Three-tier completeness display endpoint",
+   "TR006": "Media visibility routed through the Authorization Engine and time-bound signed URLs",
+   "TR007": "Home Circle invite-by-lookup",
+   "TR008": "Accept invitation, create membership record",
+   "TR009": "Ignore/decline invitation as distinct terminal states",
+   "TR010": "Immediate authorization revocation on member removal/leave",
+   "TR011": "Report false/inappropriate relationship claim, withhold pending review",
+   "TR012": "Solo-candidate parity: negative-dependency contract test on every component",
+   "TR013": "Relative's independent, scope-bounded search",
+   "TR014": "Suggestion record structurally distinct from a connection request",
+   "TR015": "Candidate's own search stays private from family by default",
+   "TR016": "Private family notes, forwarded only on candidate approval",
+   "TR017": "Authorization Engine: canonical chokepoint, RLS pooling-safety implementation",
+   "TR018": "Candidate vs. family info as two distinct grant types in the authz data model",
+   "TR019": "Plain-language capability copy layer",
+   "TR020": "No teaser-pattern gating on authorized-viewer content",
+   "TR021": "Searchability and per-viewer visibility as two independently-queried states",
+   "TR022": "Structural absence of popularity/demand-signal fields",
+   "TR023": "Home Circle exposure gated by the Authorization Engine before any candidate-side surfacing",
+   "TR024": "Pause state (non-broadcast) and the audited safety-exception override path",
+   "TR025": "Discovery available in parallel to candidate and family, via embedded Postgres FTS",
+   "TR026": "Ranking service implements DEC-V1-002's weighted model plus diversity re-rank",
+   "TR027": "Discovery enforcement calls the shared tier-gate function (see TR003)",
+   "TR028": "Fairness safeguards structurally enforced; AI ranking signal conditional-only",
+   "TR029": "Community-assisted discovery hint: structurally content-limited entity",
+   "TR030": "Templated, non-score compatibility explanation generation",
+   "TR031": "Fact/inference labeling and banned-claim template constraints",
+   "TR032": "Core compatibility capability has zero dependency on FR033/FR034",
+   "TR033": "Personality assessment: build skip/non-blocking scaffolding now, instrument selection stays open",
+   "TR034": "Horoscope: isolated, opt-in-only input path",
+   "TR035": "Six-layer independent evidence/provenance display",
+   "TR036": "Evidence copy avoids truth-certification language",
+   "TR037": "Verification Circle: DEC-V1-004 anti-abuse mechanics; canonical shared rate-limiting utility",
+   "TR038": "Admin/Mangaly-operated verification fallback path",
+   "TR039": "Structural absence of any trust score / reputation field",
+   "TR040": "Evidence panel response contract has no raw-document field",
+   "TR041": "Marriageable-age gate as a versioned, admin-configurable setting",
+   "TR042": "Send connection request, on-behalf-of authorization check",
+   "TR043": "Full pre-acceptance review information, no forced timeout",
+   "TR044": "Acceptance triggers nothing beyond \"willing to explore\" state",
+   "TR045": "No single-current-connection constraint",
+   "TR046": "Per-category sharing grants, independently timestamped",
+   "TR047": "Explicit sharing confirmation, no automated disclosure",
+   "TR048": "Family-contact sharing requires two independently-resolved AuthzContexts",
+   "TR049": "In-platform messaging, accepted-connection precondition",
+   "TR050": "Minimal-necessity message processing; no permanent browsable log",
+   "TR051": "Application-level access restriction plus a named production DB-access-control review",
+   "TR052": "Transactional-outbox audit logging for every communication event",
+   "TR053": "Evidence-retention exception, scoped and individually logged",
+   "TR054": "Legal-hold suspension of deletion; lifecycle-job failure alerting",
+   "TR055": "No exclusivity/seriousness model on conversations",
+   "TR056": "Android FLAG_SECURE capture-risk mitigation; honest platform-asymmetry disclosure",
+   "TR057": "Request contact information, on-behalf-of check",
+   "TR058": "Recipient-only decision authority, even within one Home Circle",
+   "TR059": "Single-channel disclosure only; no proxy-signal auto-reveal",
+   "TR060": "Candidate-controlled, non-automatic Home Circle involvement timing",
+   "TR061": "Discovery-level family involvement is independent of connection-level involvement",
+   "TR062": "Family-to-family introduction as two independently-resolved exposures",
+   "TR063": "Universal, non-downgradable reporting entry point",
+   "TR064": "Bounded detection scope, repository-layer enforced",
+   "TR065": "Graduated response pipeline, with on-call paging and CSAM reporting actually wired",
+   "TR066": "Safety triage never references Trust/Verification status",
+   "TR067": "Tightly controlled safety access, application-level plus named DB-access review",
+   "TR068": "Severity taxonomy consumed as fixed configuration, not re-derived per component",
+   "TR069": "Consequential-action audit events via lint-enforced publish discipline",
+   "TR070": "Append-only audit trail (platform property, not re-implemented)",
+   "TR071": "Audit trail denied to end-users; case-scoped, self-logged admin query",
+   "TR072": "Verification admin workflow against DEC-V1-007's fixed states",
+   "TR073": "False-relationship dispute workflow, Tier 2 SLA",
+   "TR074": "Abuse/fraud investigation with attributable restriction/block/escalation",
+   "TR075": "Appeals workflow; reviewer-independence as a named, honest constraint",
+   "TR076": "100% admin-action audit coverage; no all-access role, structurally enforced",
+   "TR077": "Agent access: no component built, per BR17's explicit deferral",
+   "TR078": "Discovery ranking formula structurally has zero Agent-status term",
+   "TR079": "Deliberate-action-only search conclusion",
+   "TR080": "Concluded-profile exclusion without historical data loss",
+   "TR081": "Reactivation, freshness-window verification skip, and the Dashboard activity-summary event contract",
+   "TR082": "Success-story invitation, per-party independent consent",
+   "TR083": "Zero account-status effect from decline; revocable, audited consent",
+   "TR084": "Published story: manual review plus an automated pre-publication data-minimization scan",
+   "TR085": "Optional, non-blocking safety guidance using DEC-V1-008's fixed copy",
+   "TR086": "Manual-only \"meeting occurred\" note",
+   "TR087": "Post-meeting reporting uses the identical BR14 pipeline, no weaker path",
+   "TR088": "Structural absence of relationship-progress/scheduling features",
+   "TR089": "Person-level language preference, non-gating",
+   "TR090": "Splash/launch session bootstrap",
+   "TR091": "First-run onboarding, content-consistent with Help & Support",
+   "TR092": "Interim account sign-up (Identity Bridge-owned), named migration debt",
+   "TR093": "Login with structural anti-enumeration and rate-limiting",
+   "TR094": "Password reset with anti-enumeration and single-use, expiring tokens",
+   "TR095": "OTP verification: correct DLT route, resend rate-limiting, fallback-channel budget",
+   "TR096": "Location/notification permission priming, graceful degradation",
+   "TR097": "Navigation shell context switcher: server-authorized context list, client-side leak prevention",
+   "TR098": "Notification inbox against the resolved `mangaly_notification` schema",
+   "TR099": "Account & app settings, thin aggregator",
+   "TR100": "Help & Support with safety-aware routing",
+   "TR101": "Logout and account deletion with DPDP-gated disclosure",
+   "TR102": "Cross-cutting mutation-endpoint idempotency middleware"
+  },
+  "SP": {
+   "SP001": "Minimum Viable Profile save endpoint",
+   "SP002": "Per-category profile extension with distinct \"declined\" state",
+   "SP003": "Shared discoverability-tier gate function",
+   "SP004": "Enhanced-matching fields as non-gating, degrade-gracefully input",
+   "SP005": "Three-tier completeness display endpoint",
+   "SP006": "Media visibility routed through the Authorization Engine and time-bound signed URLs",
+   "SP007": "Home Circle invite-by-lookup",
+   "SP008": "Accept invitation, create membership record",
+   "SP009": "Ignore/decline invitation as distinct terminal states",
+   "SP010": "Immediate authorization revocation on member removal/leave",
+   "SP011": "Report false/inappropriate relationship claim, withhold pending review",
+   "SP012": "Solo-candidate parity: negative-dependency contract test on every component",
+   "SP013": "Relative's independent, scope-bounded search",
+   "SP014": "Suggestion record structurally distinct from a connection request",
+   "SP015": "Candidate's own search stays private from family by default",
+   "SP016": "Private family notes, forwarded only on candidate approval",
+   "SP017": "Authorization Engine: canonical chokepoint, RLS pooling-safety implementation",
+   "SP018": "Candidate vs. family info as two distinct grant types in the authz data model",
+   "SP019": "Plain-language capability copy layer",
+   "SP020": "No teaser-pattern gating on authorized-viewer content",
+   "SP021": "Searchability and per-viewer visibility as two independently-queried states",
+   "SP022": "Structural absence of popularity/demand-signal fields",
+   "SP023": "Home Circle exposure gated by the Authorization Engine before any candidate-side surfacing",
+   "SP024": "Pause state (non-broadcast) and the audited safety-exception override path",
+   "SP025": "Discovery available in parallel to candidate and family, via embedded Postgres FTS",
+   "SP026": "Ranking service implements DEC-V1-002's weighted model plus diversity re-rank",
+   "SP027": "Discovery enforcement calls the shared tier-gate function (see SP003)",
+   "SP028": "Fairness safeguards structurally enforced; AI ranking signal conditional-only",
+   "SP029": "Community-assisted discovery hint: structurally content-limited entity",
+   "SP030": "Templated, non-score compatibility explanation generation",
+   "SP031": "Fact/inference labeling and banned-claim template constraints",
+   "SP032": "Core compatibility capability has zero dependency on FR033/FR034",
+   "SP033": "Personality assessment: build skip/non-blocking scaffolding now, instrument selection stays open",
+   "SP034": "Horoscope: isolated, opt-in-only input path",
+   "SP035": "Six-layer independent evidence/provenance display",
+   "SP036": "Evidence copy avoids truth-certification language",
+   "SP037": "Verification Circle: DEC-V1-004 anti-abuse mechanics; canonical shared rate-limiting utility",
+   "SP038": "Admin/Mangaly-operated verification fallback path",
+   "SP039": "Structural absence of any trust score / reputation field",
+   "SP040": "Evidence panel response contract has no raw-document field",
+   "SP041": "Marriageable-age gate as a versioned, admin-configurable setting",
+   "SP042": "Send connection request, on-behalf-of authorization check",
+   "SP043": "Full pre-acceptance review information, no forced timeout",
+   "SP044": "Acceptance triggers nothing beyond \"willing to explore\" state",
+   "SP045": "No single-current-connection constraint",
+   "SP046": "Per-category sharing grants, independently timestamped",
+   "SP047": "Explicit sharing confirmation, no automated disclosure",
+   "SP048": "Family-contact sharing requires two independently-resolved AuthzContexts",
+   "SP049": "In-platform messaging, accepted-connection precondition",
+   "SP050": "Minimal-necessity message processing; no permanent browsable log",
+   "SP051": "Application-level access restriction plus a named production DB-access-control review",
+   "SP052": "Transactional-outbox audit logging for every communication event",
+   "SP053": "Evidence-retention exception, scoped and individually logged",
+   "SP054": "Legal-hold suspension of deletion; lifecycle-job failure alerting",
+   "SP055": "No exclusivity/seriousness model on conversations",
+   "SP056": "Android FLAG_SECURE capture-risk mitigation; honest platform-asymmetry disclosure",
+   "SP057": "Request contact information, on-behalf-of check",
+   "SP058": "Recipient-only decision authority, even within one Home Circle",
+   "SP059": "Single-channel disclosure only; no proxy-signal auto-reveal",
+   "SP060": "Candidate-controlled, non-automatic Home Circle involvement timing",
+   "SP061": "Discovery-level family involvement is independent of connection-level involvement",
+   "SP062": "Family-to-family introduction as two independently-resolved exposures",
+   "SP063": "Universal, non-downgradable reporting entry point",
+   "SP064": "Bounded detection scope, repository-layer enforced",
+   "SP065": "Graduated response pipeline, with on-call paging and CSAM reporting actually wired",
+   "SP066": "Safety triage never references Trust/Verification status",
+   "SP067": "Tightly controlled safety access, application-level plus DB-access review",
+   "SP068": "Severity taxonomy consumed as fixed configuration",
+   "SP069": "Consequential-action audit events via lint-enforced publish discipline",
+   "SP070": "Append-only audit trail (platform property, consumed not re-implemented)",
+   "SP071": "Audit trail denied to end-users; case-scoped, self-logged admin query",
+   "SP072": "Verification admin workflow against DEC-V1-007's fixed states",
+   "SP073": "False-relationship dispute workflow, Tier 2 SLA",
+   "SP074": "Abuse/fraud investigation with attributable restriction/block/escalation",
+   "SP075": "Appeals workflow; reviewer independence as a named, honest constraint",
+   "SP076": "100% admin-action audit coverage; no all-access role, structurally enforced",
+   "SP077": "Agent access: no component built, verified absent",
+   "SP078": "Discovery ranking formula structurally has zero Agent-status term",
+   "SP079": "Deliberate-action-only search conclusion",
+   "SP080": "Concluded-profile exclusion without historical data loss",
+   "SP081": "Reactivation, freshness-window skip, and the Dashboard activity-summary event contract",
+   "SP082": "Success-story invitation, per-party independent consent",
+   "SP083": "Zero account-status effect from decline; revocable, audited consent",
+   "SP084": "Published story: allow-list assembly plus automated pre-publication scan",
+   "SP085": "Optional, non-blocking real-world safety guidance",
+   "SP086": "Manual-only \"meeting occurred\" note",
+   "SP087": "Post-meeting reporting uses the identical BR14 pipeline",
+   "SP088": "Structural absence of relationship-progress/scheduling features",
+   "SP089": "Person-level language preference, non-gating",
+   "SP090": "Splash/launch session bootstrap",
+   "SP091": "First-run onboarding, content-consistent with Help & Support",
+   "SP092": "Interim account sign-up (Identity Bridge-owned)",
+   "SP093": "Login with structural anti-enumeration and rate-limiting",
+   "SP094": "Password reset with anti-enumeration and single-use, expiring tokens",
+   "SP095": "OTP verification: DLT route, resend rate-limiting, fallback-channel budget",
+   "SP096": "Location/notification permission priming, graceful degradation",
+   "SP097": "Navigation shell context switcher: server-authorized list, client-side leak prevention",
+   "SP098": "Notification inbox against the resolved `mangaly_notification` schema",
+   "SP099": "Account & app settings, thin aggregator",
+   "SP100": "Help & Support with safety-aware routing",
+   "SP101": "Logout and account deletion with DPDP-grounded disclosure",
+   "SP102": "Cross-cutting mutation-endpoint idempotency middleware",
+   "SP103": "`mangaly_identity.lookup_by_identifier()`: the pre-authentication RLS exception",
+   "SP104": "The interim `mangaly_identity` credential store as a threat target"
+  }
+ }
+}

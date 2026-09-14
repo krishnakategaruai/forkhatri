@@ -1,0 +1,6 @@
+{
+  "error": {
+    "notAvailable": "You can only message a connection you've both accepted.",
+    "rateLimited": "You're sending messages too quickly. Please slow down."
+  }
+}

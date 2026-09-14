@@ -1,0 +1,1981 @@
+/* Mangaly design tokens — sourced verbatim from 04-ui.md §"Color" and §"Type scale".
+   Do not invent values here; this file is the single realization of that sealed spec. */
+
+:root {
+  /* Color — light theme
+     [2026-09-14, systematic rework — see /09-implementation.md's "color
+     rhythm" entry for the full research citation] The previous pass's
+     three-stop saffron->rose->violet gradient, applied decoratively to
+     every accent surface, is a specifically documented anti-pattern as of
+     2025-2026 ("the purple/gradient problem" — Tailwind's own creator
+     publicly named this the default AI-generated-UI signature). Replaced
+     with a disciplined ROLE system instead of a brand gradient: ONE primary
+     accent (saffron — kept as the single culturally load-bearing color),
+     semantic success/danger roles, and violet demoted from decoration to a
+     single reserved semantic meaning — "you are viewing on behalf of
+     someone else" (Home Circle family-capacity mode, not yet wired to any
+     screen, reserved here so it means one thing everywhere the moment it
+     is). Rose is retired entirely: a fifth decorative hue with no assigned
+     meaning is exactly what "no rhythm" describes. Every color below must
+     answer "what does this mean" before it answers "does this look good." */
+  /* [2026-09-14, palette v3 — "color combinations really bad"] The
+     previous neutrals were blue-tinted navy; against a saffron accent that
+     produced the navy-plus-orange-plus-muddy-brown clash visible in real
+     screenshots (the brown came from low-luminance saffron tints). Neutrals
+     are now true, hue-free greys with only a faint warm lean in light mode,
+     so saffron is the ONLY hue on screen besides semantic green/red. The
+     token names are historical; the values are neutral. */
+  --navy-950: #111113;
+  --navy-900: #1c1c1f;
+  --navy-700: #2d2d31;
+  --offwhite-50: #f6f5f2;
+  --offwhite-100: #ecebe7;
+  /* Saffron — the one primary accent, as a proper tonal ramp rather than a
+     single swatch, so "primary, pressed, tint" all stay one hue at
+     different tones instead of leaning on a second color for emphasis. */
+  --saffron-800: #8a430b;
+  --saffron-600: #c2600f;
+  --saffron-500: #ef8a2a;
+  --saffron-300: #f6b36e;
+  --saffron-100: #fdebd6;
+  /* Violet — reserved exclusively for "acting on behalf of" (Home Circle
+     family-capacity), never a decorative accent. Not consumed by any
+     component yet; defined now so its single meaning is fixed in advance. */
+  --violet-500: #7c5cff;
+  --violet-600: #6544e0;
+  --green-600: #1f9d68;
+  --green-100: #d9f2e6;
+  --danger-600: #e34d4d;
+  --ink-900: #14151f;
+  --ink-600: #5c6070;
+  --ink-300: #dcd7cd;
+  --ink-100: #efebe2;
+
+  /* Role mapping (04-ui.md §"Role mapping") */
+  --surface-base: var(--offwhite-50);
+  --surface-raised: #fffdf9;
+  --surface-sunken: var(--offwhite-100);
+  /* Tonal elevation tiers (Material 3's "surface container" pattern) — a
+     raised surface is communicated by a lighter/darker TONE of the same
+     neutral, not by a colored border or a shadow doing all the work. This
+     is what replaces the old gradient hairline on every card. */
+  --surface-container-low: var(--surface-sunken);
+  --surface-container: var(--surface-raised);
+  --surface-container-high: #ffffff;
+  --text-primary: var(--ink-900);
+  --text-secondary: var(--ink-600);
+  --accent-primary: var(--saffron-500);
+  --accent-primary-pressed: var(--saffron-600);
+  --accent-tint: var(--saffron-100);
+  --trust-positive: var(--green-600);
+  --trust-positive-tint: var(--green-100);
+  --danger-action: var(--danger-600);
+  --border-default: var(--ink-300);
+  --border-hairline: var(--ink-100);
+  --focus-ring: var(--saffron-600);
+  --tabbar-bg: var(--navy-900);
+
+  /* Spacing / radius / elevation */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --elevation-1: 0 1px 2px rgba(11, 18, 32, 0.06), 0 2px 8px rgba(11, 18, 32, 0.05);
+  --elevation-2: 0 4px 12px rgba(11, 18, 32, 0.1), 0 12px 32px rgba(11, 18, 32, 0.08);
+
+  --tabbar-h: 60px;
+  color-scheme: light dark;
+}
+
+/* --font-body / --font-display are injected on <html> by next/font/google
+   (see app/layout.tsx) as self-hosted, build-time font faces. Consumed here
+   via var()'s own fallback arm — never redeclared in :root — so there is
+   only one source of truth for what the variable resolves to. */
+
+/* Dark theme — only the tokens that change, per 04-ui.md's second color column.
+   Defined for both the explicit toggle and the system default. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --navy-950: #0b0b0c;
+    --navy-900: #161618;
+    --navy-700: #242427;
+    --saffron-800: #8a4a14;
+    --saffron-600: #f19a46;
+    --saffron-500: #f5a352;
+    --saffron-300: #f8c48a;
+    --saffron-100: #2a2119;
+    --violet-500: #9b83ff;
+    --violet-600: #8267f0;
+    --green-600: #4cc38a;
+    --green-100: #15261e;
+    --danger-600: #ff6f6f;
+    --ink-900: #f2f2f3;
+    --ink-600: #a1a1a9;
+    --ink-300: #34343a;
+    --ink-100: #232327;
+
+    --surface-base: var(--navy-950);
+    --surface-raised: var(--navy-900);
+    --surface-container-low: var(--surface-sunken);
+    --surface-container: var(--navy-900);
+    --surface-container-high: var(--navy-700);
+    /* [Bug found from a real screenshot, 2026-09-13] NOT navy-700 (#2E4370) —
+       that is lighter than --surface-raised (#14213D), which inverted the
+       intended elevation order and made an unselected segmented-control
+       option (background: this token, showing through its transparent
+       button) look more prominent than the selected one (surface-raised).
+       04-ui.md fixes navy-700 for a DIFFERENT role ("dark-theme card
+       surfaces, disabled-dark accents" — an elevated tone), not for sunken/
+       recessed panels. #101a2f is a derived in-between tone (04-ui.md fixes
+       surface.sunken as a semantic role, not a literal per-theme hex, the
+       same way this file already derives light mode's #fffdf9 for
+       surface.raised) — darker than raised so a sunken panel always recedes
+       behind it, lighter than base so press-states/badges stay visible
+       against the page rather than disappearing into it. */
+    --surface-sunken: #101a2f;
+    --focus-ring: var(--saffron-500);
+    --tabbar-bg: var(--navy-900);
+  }
+}
+
+:root[data-theme='dark'] {
+  --navy-950: #0b0b0c;
+  --navy-900: #161618;
+  --navy-700: #242427;
+  --saffron-800: #8a4a14;
+  --saffron-600: #f19a46;
+  --saffron-500: #f5a352;
+  --saffron-300: #f8c48a;
+  --saffron-100: #2a2119;
+  --violet-500: #9b83ff;
+  --violet-600: #8267f0;
+  --green-600: #4cc38a;
+  --green-100: #15261e;
+  --danger-600: #ff6f6f;
+  --ink-900: #f2f2f3;
+  --ink-600: #a1a1a9;
+  --ink-300: #34343a;
+  --ink-100: #232327;
+
+  --surface-base: var(--navy-950);
+  --surface-raised: var(--navy-900);
+  /* Same fix as the system-preference dark block above — see its comment. */
+  --surface-sunken: #111113;
+  --surface-container-low: var(--surface-sunken);
+  --surface-container: var(--navy-900);
+  --surface-container-high: var(--navy-700);
+  --focus-ring: var(--saffron-500);
+  --tabbar-bg: var(--navy-900);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  /* Three-color-wash aurora, fixed to the viewport rather than the page, so
+     it reads as ambient light behind the UI rather than something that
+     scrolls with content. [2026-09-14, color-rhythm rework] Reduced from
+     three hues (saffron/violet/rose) to ONE — the same "each color must
+     mean something" rule applies to a background wash as much as a button:
+     violet is now reserved solely for family-capacity mode (see :root's
+     comment) and rose was retired outright, so neither belongs here as
+     decoration. Two saffron-only washes keep the subtle sense of depth
+     without turning the page into an unassigned rainbow. Kept deliberately
+     faint (8-11% mix) — this sits behind dense, data-heavy screens, not
+     just the auth flow, so it must never fight body-copy legibility. */
+  /* [palette v3] The saffron washes are gone too: on dark surfaces a faint
+     orange glow reads as a brown stain, one more source of the muddy look.
+     A flat neutral page lets the one accent colour mean something. */
+  background: var(--surface-base);
+  color: var(--text-primary);
+  /* Type scale base: type.body 14/20. Scales with OS text size via rem.
+     --font-body is next/font's self-hosted Plus Jakarta Sans (app/layout.tsx);
+     the arm after the first comma is var()'s own fallback, not a second
+     custom property, so this degrades cleanly if the variable is ever
+     absent (e.g. a raw HTML export of a single component in isolation). */
+  font: 400 0.875rem/1.25rem
+    var(--font-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Focus ring: 2px, 2px offset, never suppressed (04-ui.md accessibility) */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* All motion collapses to instant under OS reduced-motion (04-ui.md) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------- App shell ---------- */
+
+.shell {
+  min-height: 100%;
+  max-width: 480px; /* mobile-first; centered gutter on larger screens */
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  /* [Bug found 2026-09-14 from a real screenshot] This was `var(--surface-base)`
+     — an opaque flat fill that sits directly in front of `body`'s aurora
+     background on every viewport at or under 480px wide, i.e. exactly the
+     mobile-first target this app is built for. The ambient gradient was
+     being painted every render and then completely hidden behind this
+     panel — not a subtle effect that needed more contrast, an effect that
+     was never visible at all. Transparent lets `body`'s wash read through;
+     individual surfaces (`.card`, `.topbar`, the auth `.form` glass panel)
+     already carry their own background, so nothing here loses contrast. */
+  background: transparent;
+  padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px));
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  padding-block: var(--space-3);
+  /* Glass: a translucent surface over blurred content, not a flat panel —
+     the "floating over the app" feel most 2025+ mobile shells use for
+     persistent chrome. `-webkit-` prefix for Safari/iOS, still the one
+     engine that needs it for `backdrop-filter`. */
+  background: color-mix(in srgb, var(--surface-base) 82%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.topbar h1 {
+  /* type.h1 22/28 700 — set in the display face, not the body face, so
+     headings read as a distinct, designed layer over regular content. */
+  margin: 0;
+  font-family: var(--font-display, inherit);
+  font-size: 1.375rem;
+  line-height: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  font-family: var(--font-display, inherit);
+  /* Solid primary fill, not a gradient — the brand mark is one shape that
+     should read instantly, not a decorative swatch of the whole ramp. */
+  background: var(--saffron-500);
+  color: var(--navy-950);
+  font-weight: 700;
+  font-size: 0.8125rem;
+  flex: none;
+}
+
+.icon-btn {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+}
+
+.icon-btn:active {
+  background: var(--surface-sunken);
+}
+
+.screen {
+  flex: 1;
+  padding: var(--space-4);
+  padding-block: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* ---------- Typography helpers ---------- */
+
+.h2 {
+  /* type.h2 18/24 600 — display face, matching .topbar h1's treatment. */
+  margin: 0;
+  font-family: var(--font-display, inherit);
+  font-size: 1.125rem;
+  line-height: 1.5rem;
+  font-weight: 600;
+}
+
+.body-lg {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+.caption {
+  /* type.caption 12/16 500 */
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.label {
+  /* type.label 11/14 600 uppercase +0.04em */
+  font-size: 0.6875rem;
+  line-height: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.muted {
+  color: var(--text-secondary);
+}
+
+/* ---------- Card ---------- */
+
+.card {
+  position: relative;
+  overflow: hidden;
+  /* Glass, matching .topbar/.tabbar and the auth .form panel, so cards now
+     let the body aurora show faintly through rather than sitting as an
+     opaque block in front of it — the previous flat `--surface-raised` fill
+     was part of why the app read as static once the ambient background
+     existed but nothing on top of it could ever show it. */
+  /* [2026-09-14, color-rhythm rework] Tonal elevation (Material 3's
+     "surface container" idea) instead of glass-plus-gradient-hairline: a
+     card is a step lighter than the page, full stop — the same mechanism
+     communicates "this is a distinct, contained group" (the M3 Expressive
+     research's "containment" finding: high-contrast grouping measurably
+     speeds up scanning) without a colored accent that means nothing. */
+  background: var(--surface-container);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elevation-1);
+  padding: var(--space-4);
+  animation: card-rise 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: box-shadow 200ms ease, transform 200ms ease;
+}
+
+.card > * + * {
+  margin-top: var(--space-3);
+}
+
+@media (hover: hover) {
+  .card:hover {
+    box-shadow: var(--elevation-2);
+    transform: translateY(-1px);
+  }
+}
+
+/* Staggered entrance for a list of cards/rows — later items fade in a beat
+   after earlier ones instead of all popping in on the same frame. Applied
+   via `nth-child` so no per-item inline style or JS index is needed. */
+@keyframes card-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.category-list > li:nth-child(1) .card,
+.category-list > li:nth-child(1).card,
+.category-list > li:nth-child(1) > .category-card {
+  animation-delay: 0ms;
+}
+.category-list > li:nth-child(n + 2) .card,
+.category-list > li:nth-child(n + 2) > .category-card {
+  animation: card-rise 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.category-list > li:nth-child(2) .card,
+.category-list > li:nth-child(2) > .category-card {
+  animation-delay: 40ms;
+}
+.category-list > li:nth-child(3) .card,
+.category-list > li:nth-child(3) > .category-card {
+  animation-delay: 80ms;
+}
+.category-list > li:nth-child(4) .card,
+.category-list > li:nth-child(4) > .category-card {
+  animation-delay: 120ms;
+}
+.category-list > li:nth-child(n + 5) .card,
+.category-list > li:nth-child(n + 5) > .category-card {
+  animation-delay: 160ms;
+}
+
+/* ---------- Status pills (04-ui.md UI18 convention) ---------- */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Verified / live — green, reserved for positive-trust states only */
+.pill--live {
+  background: var(--trust-positive-tint);
+  color: var(--trust-positive);
+}
+
+/* Not yet — neutral ink, never alarming (an unbuilt item is not a warning) */
+.pill--pending {
+  background: var(--ink-100);
+  color: var(--text-secondary);
+}
+
+/* In progress — informational amber, not danger */
+.pill--wip {
+  background: var(--accent-tint);
+  color: var(--saffron-600);
+}
+
+.pill--down {
+  background: var(--ink-100);
+  color: var(--danger-action);
+}
+
+/* ---------- Connection banner ---------- */
+
+.conn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-hairline);
+  background: var(--surface-raised);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--text-secondary);
+}
+
+.dot--ok {
+  background: var(--trust-positive);
+}
+
+.dot--bad {
+  background: var(--danger-action);
+}
+
+.dot--wait {
+  background: var(--saffron-500);
+}
+
+/* ---------- Requirement tracker rows ---------- */
+
+.req-group + .req-group {
+  margin-top: var(--space-4);
+}
+
+.req-group__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.req-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--surface-raised);
+}
+
+.req {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  min-height: 48px;
+}
+
+.req + .req {
+  border-top: 1px solid var(--border-hairline);
+}
+
+.req__id {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  flex: none;
+  width: 44px;
+}
+
+.req__title {
+  flex: 1;
+  min-width: 0;
+}
+
+.progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ink-100);
+  overflow: hidden;
+}
+
+.progress__bar {
+  height: 100%;
+  background: var(--accent-primary);
+  border-radius: 999px;
+  transition: width 240ms ease;
+}
+
+/* ---------- Bottom tab bar ---------- */
+
+.tabbar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  height: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  background: color-mix(in srgb, var(--tabbar-bg) 78%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 -8px 32px rgba(11, 18, 32, 0.28);
+  z-index: 20;
+}
+
+.tab {
+  position: relative;
+  background: none;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 48px;
+  color: rgba(244, 241, 234, 0.62);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 0;
+  /* .tab is a next/link <a>, which carries a default browser underline on
+     its text — invisible on the icon-only `button`-styled controls
+     elsewhere in this file but very visible here since the label text sits
+     directly in the link. A real nav bar never underlines its own labels. */
+  text-decoration: none;
+  transition: color 180ms ease;
+}
+
+.tab[aria-current='page'] {
+  color: var(--saffron-500);
+}
+
+/* A soft glow pill behind the active icon, not just a color swap — the
+   "living, responsive chrome" feel of a modern tab bar rather than a
+   static one. Pure CSS, no JS state needed: the pill is just an
+   absolutely-positioned pseudo-element shown only on the current tab. */
+.tab[aria-current='page']::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--saffron-500) 22%, transparent) 0%,
+    transparent 72%
+  );
+  animation: tab-pop 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes tab-pop {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.tab svg {
+  width: 22px;
+  height: 22px;
+  position: relative;
+  transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.tab[aria-current='page'] svg {
+  transform: translateY(-1px) scale(1.08);
+}
+
+/* ---------- Empty states ---------- */
+
+.empty {
+  text-align: center;
+  padding: var(--space-6) var(--space-4);
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.empty__mark {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: var(--surface-sunken);
+  display: grid;
+  place-items: center;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-1);
+}
+
+/* ---------- Totals strip ---------- */
+
+.totals {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+}
+
+.totals__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: var(--space-2) 0;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+}
+
+.totals__cell strong {
+  font-size: 0.9375rem;
+  line-height: 1.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.totals__cell .label {
+  color: var(--text-secondary);
+}
+
+/* ---------- Parent-chain row ---------- */
+
+.req--stacked {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-2);
+  padding-block: var(--space-3);
+}
+
+.req__main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.chain {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  padding-left: calc(44px + var(--space-3));
+}
+
+.chain__seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--surface-sunken);
+  font-size: 0.6875rem;
+  line-height: 0.875rem;
+}
+
+.chain__kind {
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.03em;
+}
+
+.chain__ids {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+/* ---------- Auth form template (UI03) ---------- */
+
+.screen--form {
+  position: relative;
+  overflow: hidden;
+  gap: var(--space-5);
+  /* Auth screens render without the tab bar, so reclaim the space the shell
+     reserves for it — otherwise the CTA floats well above the thumb zone. */
+  margin-bottom: calc(-1 * var(--tabbar-h));
+}
+
+/* Ambient AI-glow backdrop: two slow-drifting blurred gradient orbs behind
+   the auth form content, never behind text (z-index kept under the form).
+   This is the same "living surface" cue used by 2026-era AI-native apps
+   (Perplexity, Arc, Rabbit) instead of a flat single-color background —
+   applied only on auth screens so the rest of the app's dense, data-heavy
+   surfaces stay calm and legible. */
+.screen--form::before,
+.screen--form::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+.screen--form::before {
+  width: 260px;
+  height: 260px;
+  top: -80px;
+  right: -60px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--saffron-500) 55%, transparent) 0%,
+    transparent 70%
+  );
+  animation: orb-drift-a 16s ease-in-out infinite;
+}
+
+.screen--form::after {
+  width: 220px;
+  height: 220px;
+  bottom: 40px;
+  left: -70px;
+  /* Same saffron hue as ::before, a deeper tone — depth from tone, not a
+     second color (see :root's color-rhythm comment: violet is reserved for
+     family-capacity mode only, never decoration). */
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--saffron-800) 55%, transparent) 0%,
+    transparent 70%
+  );
+  animation: orb-drift-b 20s ease-in-out infinite;
+}
+
+@keyframes orb-drift-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-18px, 24px) scale(1.12); }
+}
+
+@keyframes orb-drift-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(20px, -16px) scale(1.08); }
+}
+
+.screen--form > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* The form itself reads as a floating glass panel over the ambient orbs,
+   matching the glassmorphism already applied to the topbar/tabbar. */
+.screen--form > .form {
+  background: color-mix(in srgb, var(--surface-raised) 78%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elevation-1);
+  padding: var(--space-4);
+  animation: card-rise 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.screen--centered {
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  text-align: center;
+}
+
+.brand-mark--lg {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  font-size: 1.5rem;
+  background: var(--saffron-500);
+  box-shadow:
+    0 8px 24px color-mix(in srgb, var(--saffron-600) 35%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--saffron-600) 30%, transparent);
+  position: relative;
+}
+
+.brand-mark--lg::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 26px;
+  border: 1px solid color-mix(in srgb, var(--saffron-500) 40%, transparent);
+  animation: brand-pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes brand-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0; transform: scale(1.12); }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  flex: 1;
+}
+
+.field__box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.field__input {
+  width: 100%;
+  min-height: 56px;
+  padding: 22px var(--space-4) 8px;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--text-primary);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  outline: none;
+}
+
+.field__input:focus {
+  border-color: var(--focus-ring);
+  box-shadow: 0 0 0 1px var(--focus-ring);
+}
+
+.field__input:disabled {
+  opacity: 0.6;
+}
+
+/* Floating label: rests centred, rises when the field has content or focus. */
+.field__label {
+  position: absolute;
+  left: var(--space-4);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  pointer-events: none;
+  transition: transform 140ms ease, font-size 140ms ease;
+}
+
+.field__input:focus + .field__label,
+.field__input:not(:placeholder-shown) + .field__label {
+  transform: translateY(-166%);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.field__reveal {
+  position: absolute;
+  right: 6px;
+  min-width: 44px;
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 0;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+}
+
+.field--error .field__input {
+  border-color: var(--danger-action);
+}
+
+.field__err {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  color: var(--danger-action);
+}
+
+.form__row-end {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: -8px;
+}
+
+.link {
+  color: var(--saffron-600);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.form__error {
+  margin: 0;
+  min-height: 1.25rem;
+  font-size: 0.8125rem;
+  color: var(--danger-action);
+}
+
+.form__actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+}
+
+.form__alt {
+  margin: 0;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+/* CTA — the single primary accent, solid. [2026-09-14, color-rhythm rework]
+   Previously an animated 3-hue gradient shifting its own background-position
+   — exactly the "living gradient" pattern now documented as the default
+   AI-generated-UI tell (see /09-implementation.md's citation). The single
+   highest-visibility surface in the app is where a loud, decorative
+   treatment is most conspicuous, so it is also where a disciplined ONE-hue
+   treatment matters most: a two-stop gradient between saffron-500 and
+   saffron-600 (the "ultra-subtle" pattern research on 2026 gradients still
+   endorses — two very similar tones, not three unrelated hues) gives it
+   just enough depth to not read as a flat swatch. */
+.cta {
+  position: relative;
+  width: 100%;
+  min-height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--saffron-500) 0%, var(--saffron-600) 100%);
+  color: var(--navy-950);
+  font-family: var(--font-display, inherit);
+  font-weight: 700;
+  font-size: 1rem;
+  border: 0;
+  border-radius: var(--radius-md);
+  box-shadow:
+    var(--elevation-1),
+    0 6px 20px color-mix(in srgb, var(--saffron-600) 35%, transparent);
+  text-decoration: none;
+  transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+}
+
+.cta:active:not(:disabled) {
+  filter: brightness(0.94);
+  transform: scale(0.98);
+  box-shadow: var(--elevation-1);
+}
+
+@media (hover: hover) {
+  .cta:hover:not(:disabled) {
+    box-shadow:
+      var(--elevation-2),
+      0 10px 28px color-mix(in srgb, var(--saffron-600) 42%, transparent);
+  }
+}
+
+.cta:disabled {
+  opacity: 0.5;
+}
+
+.cta--link {
+  text-decoration: none;
+}
+
+.cta__label--hidden {
+  visibility: hidden;
+}
+
+.cta__spinner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(15, 27, 51, 0.25);
+  border-top-color: var(--navy-900);
+  border-radius: 50%;
+  animation: spin 720ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Segmented Phone/Email control */
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+}
+
+/* [Bug found live, 2026-09-13] A 3-option control (gender) forced into the
+   2-column grid above wrapped its third option onto an uneven second row.
+   A distinct modifier rather than a generic auto-fit rule on the base class,
+   so the 2-option Phone/Email control's exact layout is untouched. */
+.segmented--3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.segmented__opt {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.segmented__opt.is-active {
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  box-shadow: var(--elevation-1);
+}
+
+/* Four-segment strength meter (not a numeric score) */
+.strength {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: -8px;
+}
+
+.strength__bars {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.strength__bar {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--ink-100);
+}
+
+.strength__bar.is-on {
+  background: var(--accent-primary);
+}
+
+.icon-btn--text {
+  width: auto;
+  padding: 0 var(--space-3);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+/* ---------- OTP entry (UX04/UI04) ---------- */
+
+.otp-boxes {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: center;
+}
+
+.otp-box {
+  width: 48px;
+  height: 56px;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+}
+
+.otp-box:focus {
+  border-color: var(--focus-ring);
+  box-shadow: 0 0 0 1px var(--focus-ring);
+  outline: none;
+}
+
+/* [UI04] "Complete-but-unconfirmed" tint is a distinct, separate visual moment
+   from the success-checkmark animation — never conflated with it. */
+.otp-box.otp-box--filled:not(.otp-box--error) {
+  border-color: var(--trust-positive);
+  background: var(--trust-positive-tint);
+}
+
+.otp-box--error {
+  border-color: var(--danger-action);
+  animation: otp-shake 300ms ease;
+}
+
+@keyframes otp-shake {
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+.otp-resend {
+  text-align: center;
+}
+
+.link--button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- Profile creation wizard (UX11/UI11) ---------- */
+
+@keyframes wizard-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.wizard-step {
+  animation: wizard-fade-in 220ms ease;
+}
+
+.photo-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.photo-picker__dropzone {
+  width: 200px;
+  height: 200px;
+  border-radius: var(--radius-lg);
+  border: 2px dashed var(--border-default);
+  background: var(--surface-raised);
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  text-align: center;
+  overflow: hidden;
+}
+
+.photo-picker__preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ---------- Profile edit hub (UX11) ---------- */
+
+.profile-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.profile-hero__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.profile-hero__name {
+  font-family: var(--font-display, inherit);
+  font-size: 1.25rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Settings (language/theme) moved behind a gear icon in the topbar per
+   product feedback ("you can simply keep [just] the settings icon") —
+   no permanent row at all now, not even a collapsed summary one; the
+   expanded panel reuses `.card`/`.segmented` directly. */
+
+.category-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.category-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  min-height: 56px;
+  /* Same glass treatment as .card — see its comment on why an opaque
+     `--surface-raised` fill was hiding the body aurora behind every row. */
+  background: color-mix(in srgb, var(--surface-raised) 88%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  backdrop-filter: blur(14px) saturate(150%);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-lg);
+  text-align: left;
+  width: 100%;
+  color: inherit;
+  text-decoration: none;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.category-card:active {
+  transform: scale(0.98);
+  background: var(--surface-sunken);
+}
+
+@media (hover: hover) {
+  .category-card:hover {
+    border-color: var(--saffron-500);
+    box-shadow: var(--elevation-1);
+  }
+}
+
+/* Filled/empty/declined conveyed via icon shape AND color, never color alone
+   (UX11 accessibility note: "not by color alone"). */
+.category-card__state {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  flex: none;
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.category-card__state--filled {
+  background: var(--trust-positive-tint);
+  color: var(--trust-positive);
+}
+
+.category-card__state--declined {
+  background: var(--ink-100);
+  color: var(--text-secondary);
+}
+
+.category-card__state--empty {
+  background: transparent;
+  border: 1.5px dashed var(--border-default);
+  color: transparent;
+}
+
+.category-card__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.category-card__title {
+  font-weight: 600;
+}
+
+.category-card__preview {
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- Completeness status screen — three physically separate
+   sections, never blended into one bar (UX11 DEC-003 / accessibility note:
+   exposed to screen readers as three distinct, separately-labeled regions). ---------- */
+
+.tier-section {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+.tier-section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.tier-section__note {
+  margin: var(--space-2) 0 0;
+  color: var(--text-secondary);
+}
+
+.tier-section__missing {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.tier-section__missing-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+  border: 0;
+  text-align: left;
+  color: var(--text-primary);
+  font: inherit;
+  text-decoration: none;
+}
+
+/* ---------- Category attribute editor (generic, config-driven) ---------- */
+
+.attr-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) 0;
+}
+
+.attr-field + .attr-field {
+  border-top: 1px solid var(--border-hairline);
+}
+
+.attr-field__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.attr-field__label {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+/* [UX11 accessibility note] Given its own accessible label distinguishing it
+   from "leave empty" — never a bare checkbox. */
+.attr-field__decline {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-decoration: underline;
+  flex: none;
+}
+
+.attr-field__declined-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-sunken);
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-sm);
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+select.field__input {
+  appearance: none;
+  padding-top: 8px;
+}
+
+.age-range {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.age-range .field__input {
+  padding-top: 8px;
+  text-align: center;
+}
+
+/* ---------- Date-of-birth field (native date input, own label) ---------- */
+
+.date-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.date-field__input {
+  min-height: 56px;
+  padding: 0 var(--space-4);
+  color-scheme: dark light;
+}
+
+/* Inline quick-pick: a single-select category's options as chips, applied
+   immediately on tap — no separate save step (see /me/page.tsx's own
+   comment on why this replaced navigate-to-edit for 10 of 13 categories). */
+.quick-pick__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.quick-pick__chip {
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border-default);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+.quick-pick__chip:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+@media (hover: hover) {
+  .quick-pick__chip:hover:not(:disabled) {
+    border-color: var(--saffron-500);
+  }
+}
+
+.quick-pick__chip:disabled {
+  opacity: 0.6;
+}
+
+.quick-pick__chip--active {
+  border-color: var(--saffron-500);
+  background: var(--accent-tint);
+  color: var(--saffron-600);
+}
+
+.quick-pick__chip--decline {
+  border-style: dashed;
+  color: var(--text-secondary);
+  margin-left: auto;
+}
+
+/* ---------- Swipe deck (Discover candidate review) ---------- */
+
+.swipe-deck {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.swipe-deck__stack {
+  position: relative;
+  width: 100%;
+  height: min(380px, 44vh);
+}
+
+.swipe-deck__card {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-hairline);
+  background: var(--surface-container-high);
+  box-shadow: var(--elevation-2);
+  cursor: grab;
+  user-select: none;
+  touch-action: pan-y;
+  overflow: hidden;
+}
+
+.swipe-deck__card:active {
+  cursor: grabbing;
+}
+
+.swipe-deck__stamp {
+  position: absolute;
+  top: 20px;
+  z-index: 4;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-family: var(--font-display, inherit);
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.swipe-deck__stamp--right {
+  right: 20px;
+  border: 2px solid var(--green-600);
+  color: var(--green-600);
+  transform: rotate(8deg);
+}
+
+.swipe-deck__stamp--left {
+  left: 20px;
+  border: 2px solid var(--danger-action);
+  color: var(--danger-action);
+  transform: rotate(-8deg);
+}
+
+.swipe-deck__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+}
+
+.swipe-deck__action {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 1.5rem;
+  border: 1px solid var(--border-hairline);
+  background: var(--surface-raised);
+  box-shadow: var(--elevation-1);
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.swipe-deck__action:active {
+  transform: scale(0.92);
+}
+
+.swipe-deck__action--skip {
+  color: var(--text-secondary);
+}
+
+.swipe-deck__action--connect {
+  width: 64px;
+  height: 64px;
+  font-size: 1.75rem;
+  color: var(--navy-950);
+  background: linear-gradient(135deg, var(--saffron-500) 0%, var(--saffron-600) 100%);
+  box-shadow:
+    var(--elevation-1),
+    0 8px 20px color-mix(in srgb, var(--saffron-600) 38%, transparent);
+}
+
+@media (hover: hover) {
+  .swipe-deck__action:hover {
+    box-shadow: var(--elevation-2);
+  }
+}
+
+/* ---------- Profile hub v3 (Hinge/Bumble vitals + matrimony biodata) ---------- */
+
+.hero-ring {
+  flex: none;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+}
+
+.hero-ring > * {
+  border: 3px solid var(--surface-container);
+}
+
+.profile-hero__answered {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--saffron-600);
+}
+
+.next-step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--saffron-500) 45%, var(--border-hairline));
+  background: var(--accent-tint);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  transition: transform 120ms ease;
+}
+
+.next-step:active {
+  transform: scale(0.98);
+}
+
+.next-step__dot {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--saffron-500);
+  color: var(--navy-950);
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.next-step__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.next-step__title {
+  font-weight: 700;
+}
+
+.section-card__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.section-card__icon {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--surface-sunken);
+  color: var(--saffron-600);
+}
+
+.section-card__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.section-card__title {
+  flex: 1;
+}
+
+.section-card__count {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.section-card__count.is-done {
+  color: var(--trust-positive);
+}
+
+.vitals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.vital {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-height: 60px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-hairline);
+  background: var(--surface-sunken);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  transition: transform 120ms ease, border-color 120ms ease;
+}
+
+.vital:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) {
+  .vital:hover {
+    border-color: var(--saffron-500);
+  }
+}
+
+.vital__label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.vital__value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.vital--empty {
+  background: transparent;
+  border-style: dashed;
+}
+
+.vital--empty .vital__value {
+  color: var(--saffron-600);
+}
+
+.vital--hidden .vital__value {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.vital--wide {
+  grid-column: 1 / -1;
+}
+
+.prompt-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-hairline);
+  background: var(--surface-sunken);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.prompt-card__q {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.prompt-card__a {
+  font-family: var(--font-display, inherit);
+  font-size: 1.125rem;
+  line-height: 1.5rem;
+  font-weight: 600;
+}
+
+.prompt-add {
+  width: 100%;
+  min-height: 48px;
+  border-radius: var(--radius-md);
+  border: 1.5px dashed var(--border-default);
+  background: transparent;
+  color: var(--saffron-600);
+  font: inherit;
+  font-weight: 600;
+}
+
+.prompt-textarea {
+  min-height: 96px;
+  padding-top: 12px;
+  resize: vertical;
+}
+
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(6, 7, 15, 0.55);
+  animation: sheet-fade 160ms ease both;
+}
+
+.sheet {
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: var(--space-2) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
+  border-radius: 24px 24px 0 0;
+  background: var(--surface-container-high);
+  box-shadow: var(--elevation-2);
+  animation: sheet-up 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.sheet__handle {
+  width: 40px;
+  height: 4px;
+  margin: 6px auto 10px;
+  border-radius: 2px;
+  background: var(--border-default);
+}
+
+.sheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.sheet__field + .sheet__field,
+.label + .quick-pick__chips {
+  margin-top: var(--space-2);
+}
+
+.sheet__field {
+  margin-top: var(--space-3);
+}
+
+.sheet__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.sheet__save {
+  width: auto;
+  min-height: 44px;
+  padding: 0 var(--space-5);
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheet-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.preview-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.preview-card > * + * {
+  margin-top: 0;
+}
+
+.biodata {
+  margin: 4px 0 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.biodata__row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.biodata__row:last-child {
+  border-bottom: 0;
+}
+
+.biodata dt {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.biodata dd {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-align: right;
+}

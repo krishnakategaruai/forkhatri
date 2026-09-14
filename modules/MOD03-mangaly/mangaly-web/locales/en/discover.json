@@ -1,0 +1,33 @@
+{
+  "title": "Discover",
+  "blurb": "Ranked by evidence you can check, never a score.",
+  "identityProtected": "Identity protected until you connect",
+  "requests": {
+    "title": "Requests for you",
+    "accept": "Accept",
+    "decline": "Decline"
+  },
+  "search": {
+    "localityPlaceholder": "Filter by locality",
+    "empty": "No profiles match yet. Complete more of your own profile to improve your matches.",
+    "connect": "Connect",
+    "skip": "Not now",
+    "pending": "Request sent",
+    "whyThisMatch": "Why this match",
+    "seeMoreReasons_one": "See {{count}} more reason",
+    "seeMoreReasons_other": "See {{count}} more reasons"
+  },
+  "detail": {
+    "back": "Back",
+    "connect": "Send connection request",
+    "sent": "Connection request sent.",
+    "locked": "Full profile visible once you're connected.",
+    "noReasons": "Not enough shared information yet to explain this match."
+  },
+  "error": {
+    "network": "We couldn't reach Mangaly. Check your connection and try again.",
+    "invalidTarget": "You can't send a connection request to yourself.",
+    "alreadyPending": "You already have a pending request to this profile.",
+    "rateLimited": "Too many connection requests. Please try again later."
+  }
+}
