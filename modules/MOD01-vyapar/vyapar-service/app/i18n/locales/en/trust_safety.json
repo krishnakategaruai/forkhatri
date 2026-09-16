@@ -1,0 +1,38 @@
+{
+  "error": {
+    "cannotReportOwn": "You can't report your own content.",
+    "objectNotFound": "That item is no longer available.",
+    "dailyCapReached": "You've reached today's limit of {cap} reports — thank you, our team is reviewing them.",
+    "caseNotFound": "Decision not found.",
+    "notAppealable": "This decision can't be appealed.",
+    "windowClosed": "The 15-day appeal window for this decision has closed.",
+    "alreadyAppealed": "You've already appealed this decision.",
+    "permissionRequired": "Operator 'moderation' permission required.",
+    "appealNotFound": "Appeal not found."
+  },
+  "action": {
+    "limit": "distribution limited",
+    "remove": "removed or hidden",
+    "restore": "restored",
+    "request_verification": "verification requested",
+    "suspend": "account suspended",
+    "dismiss": "no action"
+  },
+  "reasonCode": {
+    "scam_confirmed": "confirmed scam or advance-payment request",
+    "fake_listing": "fake or misleading information",
+    "impersonation": "impersonation",
+    "harassment": "harassment or abuse",
+    "discrimination": "discrimination",
+    "spam": "spam",
+    "stale_info": "out-of-date information",
+    "privacy_violation": "privacy violation",
+    "policy_other": "another policy breach",
+    "no_violation": "no violation found",
+    "appeal_evidence_accepted": "appeal evidence accepted"
+  },
+  "appealDecision": {
+    "upheld": "not accepted — the decision stands",
+    "overturned": "accepted — your content has been restored"
+  }
+}

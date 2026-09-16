@@ -1,0 +1,20 @@
+{
+  "signal": {
+    "capability_fit": "आपकी क्षमताओं से मेल खाता है",
+    "intent_fit": "आप जो खोज रहे हैं उससे मेल खाता है",
+    "location_fit": "आपके पास",
+    "timing_fit": "आपके लिए सही समय",
+    "value_fit": "अच्छा मूल्य",
+    "experience_fit": "आपके अनुभव से मेल खाता है",
+    "freshness_fit": "हाल ही में पोस्ट किया गया",
+    "trust_fit": "एक सत्यापित पोस्टर से"
+  },
+  "fallback": {
+    "matchedSearch": "आपकी खोज से मेल खाया",
+    "recentlyAdded": "हाल ही में जोड़ा गया",
+    "matchesFilters": "आपके फ़िल्टर से मेल खाता है"
+  },
+  "gap": {
+    "missingSkills": "इसके लिए {{skills}} आवश्यक है — आपने यह सूचीबद्ध नहीं किया है"
+  }
+}

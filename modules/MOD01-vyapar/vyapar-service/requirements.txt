@@ -1,0 +1,6 @@
+fastapi>=0.141
+uvicorn[standard]>=0.53
+asyncpg>=0.31
+pydantic-settings>=2.15
+python-dotenv>=1.0
+cryptography>=50.0

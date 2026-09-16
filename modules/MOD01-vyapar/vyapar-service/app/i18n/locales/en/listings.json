@@ -1,0 +1,36 @@
+{
+  "state": {
+    "draft": "a draft",
+    "submitted": "submitted and awaiting review",
+    "active_unverified": "live",
+    "active_verified": "live and verified",
+    "suspended": "suspended",
+    "archived": "archived"
+  },
+  "reason": {
+    "prohibited_content": "This listing's text matched content we don't allow.",
+    "spam_pattern": "This listing's text looked like spam (repeated links or characters)."
+  },
+  "error": {
+    "duplicate": "You already have a listing with this name and locality.",
+    "noReachWarning": "Every contact channel is hidden and enquiries are disabled — customers cannot reach this business. Confirm to proceed anyway.",
+    "alreadySubmitted": "This listing is already {state} and can't be submitted again.",
+    "missingNameOrCapability": "Missing mandatory field: name and at least one category/capability",
+    "missingLocality": "Missing mandatory field: locality",
+    "activeCapReached": "You have reached the limit of {cap} active listings",
+    "verifyContactFirst": "Verify your listing's contact number before submitting",
+    "noCredentialFound": "No verified credential found for your account (dev stand-in).",
+    "alreadyArchived": "Already archived",
+    "otpLockedUntil": "Too many attempts. Try again after {time}",
+    "otpResendWait": "Please wait before requesting another code",
+    "otpNotRequested": "No OTP requested",
+    "otpLocked": "Locked — too many failed attempts",
+    "otpExpired": "Code expired — request a new one",
+    "otpLockedNow": "Too many failed attempts — locked for 15 minutes",
+    "otpIncorrect": "Incorrect code ({attempts}/5 attempts)"
+  },
+  "success": {
+    "otpSent": "OTP sent",
+    "contactVerified": "Contact verified"
+  }
+}

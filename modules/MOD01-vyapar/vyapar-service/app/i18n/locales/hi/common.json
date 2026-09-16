@@ -1,0 +1,7 @@
+{
+  "error": {
+    "listingNotFound": "लिस्टिंग नहीं मिली या अब उपलब्ध नहीं है",
+    "opportunityNotFound": "यह अवसर अब उपलब्ध नहीं है",
+    "operatorPermissionRequired": "ऑपरेटर अनुमति आवश्यक है"
+  }
+}

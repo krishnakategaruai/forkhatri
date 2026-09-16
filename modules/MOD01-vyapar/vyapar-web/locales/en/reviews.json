@@ -1,0 +1,53 @@
+{
+  "newOnVyapar": "New on Vyapar",
+  "counts": "{{n}} verified interactions · {{m}} of {{n}} recommend",
+  "respondsIn": "Responds in ~{{time}}",
+  "minutes": "{{n}} min",
+  "hours": "{{n}} h",
+  "days": "{{n}} days",
+  "underReview": "{{count}} under review",
+  "sectionTitle": "Reviews",
+  "empty": "No reviews yet. Reviews come only from completed enquiries and partnerships.",
+  "recommends": "Recommends",
+  "doesNotRecommend": "Doesn't recommend",
+  "verifiedInteraction": "verified interaction",
+  "chipUnderReview": "Under review",
+  "chipHidden": "Hidden — visible only to you",
+  "dispute": "Dispute this review",
+  "disputeHelp": "You can dispute a review once. It stays visible, marked \"under review\", until a moderator decides.",
+  "disputeSubmit": "Submit dispute",
+  "disputed": "Dispute submitted — a moderator will decide.",
+  "disputeReason": {
+    "retaliation": "Retaliation",
+    "manipulation": "Manipulation",
+    "not_the_interaction": "Not about this interaction",
+    "abusive": "Abusive"
+  },
+  "composer": {
+    "writeReview": "Write a review",
+    "question": "Would you recommend them?",
+    "yes": "Yes",
+    "no": "No",
+    "pickTags": "Pick up to 3 tags ({{n}} of 3)",
+    "comment": "Comment (optional, 20–500 characters)",
+    "identityNote": "Shown as your first name · verified interaction. One review per interaction.",
+    "submit": "Submit review",
+    "submitted": "Submitted — we run a quick safety check before it appears.",
+    "already": "You reviewed this interaction.",
+    "closesOn": "Open until {{date}}"
+  },
+  "tag": {
+    "on_time": "On time",
+    "clear_pricing": "Clear pricing",
+    "fair_price": "Fair price",
+    "good_communication": "Good communication",
+    "quality": "Quality work",
+    "professional": "Professional",
+    "responsive": "Responsive",
+    "would_hire_again": "Would hire again",
+    "late": "Late",
+    "unclear_pricing": "Unclear pricing",
+    "poor_communication": "Poor communication",
+    "slow_response": "Slow to respond"
+  }
+}

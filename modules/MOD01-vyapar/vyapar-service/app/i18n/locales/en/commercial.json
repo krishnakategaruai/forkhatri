@@ -1,0 +1,15 @@
+{
+  "error": {
+    "notFound": "That item isn't available.",
+    "notOwner": "Only the owner can boost this.",
+    "notActive": "Only active items can be boosted.",
+    "verifyFirst": "Boost is available for verified listings. Verify your business first.",
+    "productNotFound": "That boost option isn't available.",
+    "invalidAudience": "A boost can only narrow to the item's own locality or category.",
+    "invalidTransition": "This action isn't available in the boost's current state.",
+    "promotionNotFound": "Boost not found.",
+    "orderNotFound": "Payment order not found.",
+    "permissionRequired": "Operator 'commercial' permission required.",
+    "gatewayUnavailable": "The payment service is unavailable right now. Your order is saved — retry in a little while."
+  }
+}

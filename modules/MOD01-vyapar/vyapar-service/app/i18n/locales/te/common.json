@@ -1,0 +1,7 @@
+{
+  "error": {
+    "listingNotFound": "లిస్టింగ్ కనుగొనబడలేదు లేదా ఇక అందుబాటులో లేదు",
+    "opportunityNotFound": "ఈ అవకాశం ఇక అందుబాటులో లేదు",
+    "operatorPermissionRequired": "ఆపరేటర్ అనుమతి అవసరం"
+  }
+}

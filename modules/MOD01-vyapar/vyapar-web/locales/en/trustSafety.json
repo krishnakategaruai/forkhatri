@@ -1,0 +1,112 @@
+{
+  "report": {
+    "button": "Report",
+    "title": "What's wrong?",
+    "evidencePlaceholder": "Anything that helps us check (optional)",
+    "submit": "Send report",
+    "received": "Thanks — our team will review this. The other person won't know who reported it.",
+    "grievance": "Need to escalate? Write to grievance@forkhatri.example — we reply within 7 days.",
+    "block": "Also block this member",
+    "blocked": "Blocked. You won't see each other's enquiries."
+  },
+  "reason": {
+    "scam": "Scam or asked for advance payment",
+    "fake": "Fake or misleading",
+    "impersonation": "Pretending to be someone else",
+    "harassment": "Harassment or abuse",
+    "discrimination": "Discrimination",
+    "spam": "Spam",
+    "stale": "Out of date or wrong",
+    "privacy": "Privacy violation",
+    "other": "Something else"
+  },
+  "primaryReason": {
+    "scam": "Scam or advance payment",
+    "fake": "Fake or misleading",
+    "impersonation": "Impersonation",
+    "harassment": "Harassment",
+    "discrimination": "Discrimination",
+    "spam": "Spam",
+    "stale": "Out of date",
+    "privacy": "Privacy",
+    "other": "Other",
+    "advance_payment": "Mentions advance payment or fees",
+    "prohibited_content": "Prohibited wording",
+    "spam_pattern": "Looks like spam",
+    "retaliation": "Retaliatory review"
+  },
+  "severity": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "critical": "Critical"
+  },
+  "source": {
+    "report": "Member report",
+    "auto_flag": "Automated flag",
+    "review_dispute": "Review dispute"
+  },
+  "objectKind": {
+    "listing": "Listing",
+    "opportunity": "Opportunity",
+    "enquiry": "Enquiry",
+    "partnership": "Partnership request",
+    "review": "Review"
+  },
+  "action": {
+    "limit": "Limit distribution",
+    "remove": "Remove / hide",
+    "restore": "Restore",
+    "request_verification": "Request verification",
+    "suspend": "Suspend account",
+    "dismiss": "Dismiss"
+  },
+  "reasonCode": {
+    "scam_confirmed": "Confirmed scam or advance-payment request",
+    "fake_listing": "Fake or misleading information",
+    "impersonation": "Impersonation",
+    "harassment": "Harassment or abuse",
+    "discrimination": "Discrimination",
+    "spam": "Spam",
+    "stale_info": "Out-of-date information",
+    "privacy_violation": "Privacy violation",
+    "policy_other": "Another policy breach",
+    "no_violation": "No violation found",
+    "appeal_evidence_accepted": "Appeal evidence accepted"
+  },
+  "queue": {
+    "title": "Moderation queue",
+    "empty": "Nothing waiting for review.",
+    "overdue": "Past target time",
+    "due": "Due {{date}}",
+    "reporters": "{{n}} reports",
+    "priorCases": "{{n}} earlier cases",
+    "openObject": "Open item",
+    "distributionLimited": "Limited pending review",
+    "evidence": "Evidence",
+    "chooseReason": "Choose a reason code",
+    "durationLabel": "Suspension length (days)",
+    "apply": "Apply",
+    "appealsTitle": "Appeals",
+    "appealsEmpty": "No open appeals.",
+    "uphold": "Uphold decision",
+    "overturn": "Overturn and restore",
+    "notOperator": "This queue is only for operators with moderation permission."
+  },
+  "outcomes": {
+    "title": "My moderation outcomes",
+    "empty": "No moderation decisions on your content.",
+    "process": "You can appeal a decision once, within 15 days. A different operator reviews appeals where possible, usually within 7 days.",
+    "decidedOn": "Decided {{date}}",
+    "appealBy": "by {{date}}",
+    "appeal": "Appeal",
+    "appealPlaceholder": "Explain why this decision should change (up to 1000 characters)",
+    "windowClosed": "The appeal window has closed.",
+    "appealState": {
+      "open": "Appeal under review",
+      "upheld": "Appeal not accepted — decision stands",
+      "overturned": "Appeal accepted — restored",
+      "delayed": "Appeal delayed — escalated"
+    }
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "home": {
+    "greeting": "Namaste, {{name}}",
+    "postOpportunity": "+ Post opportunity",
+    "openDirectory": "Businesses & Professionals",
+    "loadingFeed": "Loading your feed…",
+    "addCapabilities": "Add my capabilities",
+    "noOpportunities": "No opportunities to show yet — check Businesses & Professionals to browse listings instead.",
+    "sectionForYou": "For You",
+    "sectionExplore": "Explore",
+    "sectionNearYou": "Near You",
+    "sectionCommunity": "Community",
+    "sectionPublic": "Public",
+    "seeAll": "See all {{count}}"
+  },
+  "card": {
+    "postedToday": "posted today",
+    "postedYesterday": "posted yesterday",
+    "postedDaysAgo": "posted {{days}} days ago"
+  },
+  "businesses": {
+    "title": "Businesses & Professionals",
+    "searchPlaceholder": "Try \"plumber near Ameerpet\"",
+    "search": "Search",
+    "chipCategory": "category: {{category}}",
+    "chipNear": "near: {{locality}}",
+    "verifiedLabel": "Business existence verified",
+    "noExactMatch": "No exact match found.",
+    "postWhatYouNeed": "Post what you need",
+    "hint": "Search by name, category or locality — or just browse by tapping Search.",
+    "broadenRadius": "Widen to {{km}} km",
+    "broadenAdjacentCategories": "Include adjacent categories",
+    "broadenRemoveFilter": "Remove one filter",
+    "broadenIncludeUnverified": "Include unverified listings",
+    "tooManySearches": "Too many searches — please slow down.",
+    "searchUnavailable": "Search is temporarily unavailable — showing recently added listings instead.",
+    "recentlyAdded": "recently added"
+  },
+  "post": {
+    "title": "What are you posting?",
+    "listingTitle": "A business or professional listing",
+    "listingDesc": "A durable presence people can find and contact.",
+    "opportunityTitle": "An opportunity",
+    "opportunityDesc": "A job, gig, or something time-bound worth sharing."
+  }
+}

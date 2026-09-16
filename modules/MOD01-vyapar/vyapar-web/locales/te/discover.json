@@ -1,0 +1,46 @@
+{
+  "home": {
+    "greeting": "నమస్తే, {{name}}",
+    "postOpportunity": "+ అవకాశం పోస్ట్ చేయండి",
+    "openDirectory": "వ్యాపారాలు & నిపుణులు",
+    "loadingFeed": "మీ ఫీడ్ లోడ్ అవుతోంది…",
+    "addCapabilities": "నా సామర్థ్యాలను జోడించండి",
+    "noOpportunities": "ఇంకా చూపించడానికి అవకాశాలు లేవు — లిస్టింగ్‌లను బ్రౌజ్ చేయడానికి బదులుగా వ్యాపారాలు & నిపుణులను చూడండి.",
+    "sectionForYou": "మీ కోసం",
+    "sectionExplore": "అన్వేషించండి",
+    "sectionNearYou": "మీ దగ్గర",
+    "sectionCommunity": "సంఘం",
+    "sectionPublic": "పబ్లిక్",
+    "seeAll": "అన్నీ {{count}} చూడండి"
+  },
+  "card": {
+    "postedToday": "ఈరోజు పోస్ట్ చేయబడింది",
+    "postedYesterday": "నిన్న పోస్ట్ చేయబడింది",
+    "postedDaysAgo": "{{days}} రోజుల క్రితం పోస్ట్ చేయబడింది"
+  },
+  "businesses": {
+    "title": "వ్యాపారాలు & నిపుణులు",
+    "searchPlaceholder": "ఉదా. \"అమీర్‌పేట్ దగ్గర ప్లంబర్\"",
+    "search": "వెతకండి",
+    "chipCategory": "వర్గం: {{category}}",
+    "chipNear": "దగ్గర: {{locality}}",
+    "verifiedLabel": "వ్యాపార ఉనికి వెరిఫై చేయబడింది",
+    "noExactMatch": "ఖచ్చితమైన సరిపోలిక కనుగొనబడలేదు.",
+    "postWhatYouNeed": "మీకు కావలసినది పోస్ట్ చేయండి",
+    "hint": "పేరు, వర్గం లేదా ప్రాంతం ద్వారా వెతకండి — లేదా వెతకండి నొక్కి బ్రౌజ్ చేయండి.",
+    "broadenRadius": "{{km}} కి.మీ.కు విస్తరించండి",
+    "broadenAdjacentCategories": "సమీప వర్గాలను చేర్చండి",
+    "broadenRemoveFilter": "ఒక ఫిల్టర్‌ను తీసివేయండి",
+    "broadenIncludeUnverified": "వెరిఫై చేయని లిస్టింగ్‌లను చేర్చండి",
+    "tooManySearches": "చాలా శోధనలు — దయచేసి నెమ్మదించండి.",
+    "searchUnavailable": "శోధన తాత్కాలికంగా అందుబాటులో లేదు — బదులుగా ఇటీవల జోడించిన లిస్టింగ్‌లను చూపుతున్నాము.",
+    "recentlyAdded": "ఇటీవల జోడించినది"
+  },
+  "post": {
+    "title": "మీరు ఏమి పోస్ట్ చేస్తున్నారు?",
+    "listingTitle": "ఒక వ్యాపారం లేదా వృత్తిపరమైన లిస్టింగ్",
+    "listingDesc": "ప్రజలు కనుగొని సంపర్కించగల శాశ్వత ఉనికి.",
+    "opportunityTitle": "ఒక అవకాశం",
+    "opportunityDesc": "ఒక ఉద్యోగం, గిగ్, లేదా షేర్ చేయదగిన సమయ-పరిమిత విషయం."
+  }
+}

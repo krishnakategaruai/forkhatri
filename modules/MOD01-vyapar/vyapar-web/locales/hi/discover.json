@@ -1,0 +1,46 @@
+{
+  "home": {
+    "greeting": "नमस्ते, {{name}}",
+    "postOpportunity": "+ अवसर पोस्ट करें",
+    "openDirectory": "व्यवसाय और पेशेवर",
+    "loadingFeed": "आपकी फ़ीड लोड हो रही है…",
+    "addCapabilities": "अपनी क्षमताएँ जोड़ें",
+    "noOpportunities": "अभी दिखाने के लिए कोई अवसर नहीं है — इसके बजाय लिस्टिंग ब्राउज़ करने के लिए व्यवसाय व पेशेवर देखें।",
+    "sectionForYou": "आपके लिए",
+    "sectionExplore": "एक्सप्लोर करें",
+    "sectionNearYou": "आपके पास",
+    "sectionCommunity": "समुदाय",
+    "sectionPublic": "सार्वजनिक",
+    "seeAll": "सभी {{count}} देखें"
+  },
+  "card": {
+    "postedToday": "आज पोस्ट किया गया",
+    "postedYesterday": "कल पोस्ट किया गया",
+    "postedDaysAgo": "{{days}} दिन पहले पोस्ट किया गया"
+  },
+  "businesses": {
+    "title": "व्यवसाय और पेशेवर",
+    "searchPlaceholder": "जैसे \"अमीरपेट के पास प्लंबर\"",
+    "search": "खोजें",
+    "chipCategory": "श्रेणी: {{category}}",
+    "chipNear": "पास: {{locality}}",
+    "verifiedLabel": "व्यवसाय अस्तित्व सत्यापित",
+    "noExactMatch": "कोई सटीक मिलान नहीं मिला।",
+    "postWhatYouNeed": "आपको जो चाहिए वह पोस्ट करें",
+    "hint": "नाम, श्रेणी या इलाके से खोजें — या केवल खोजें दबाकर ब्राउज़ करें।",
+    "broadenRadius": "{{km}} किमी तक बढ़ाएँ",
+    "broadenAdjacentCategories": "समान श्रेणियाँ शामिल करें",
+    "broadenRemoveFilter": "एक फ़िल्टर हटाएँ",
+    "broadenIncludeUnverified": "असत्यापित लिस्टिंग शामिल करें",
+    "tooManySearches": "बहुत अधिक खोजें — कृपया धीमे करें।",
+    "searchUnavailable": "खोज अभी अस्थायी रूप से उपलब्ध नहीं है — इसके बजाय हाल ही में जोड़ी गई लिस्टिंग दिखा रहे हैं।",
+    "recentlyAdded": "हाल ही में जोड़ा गया"
+  },
+  "post": {
+    "title": "आप क्या पोस्ट कर रहे हैं?",
+    "listingTitle": "एक व्यवसाय या पेशेवर लिस्टिंग",
+    "listingDesc": "एक स्थायी उपस्थिति जिसे लोग खोज और संपर्क कर सकते हैं।",
+    "opportunityTitle": "एक अवसर",
+    "opportunityDesc": "एक नौकरी, गिग, या साझा करने लायक कुछ समय-सीमित।"
+  }
+}

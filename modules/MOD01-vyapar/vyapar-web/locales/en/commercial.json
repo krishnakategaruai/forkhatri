@@ -1,0 +1,135 @@
+{
+  "action": { "boost": "Boost" },
+  "why": {
+    "sponsored": "Sponsored: the poster paid for extra reach among people this already fits. It didn't change why it matches you."
+  },
+  "boost": {
+    "title": "Boost {{name}}",
+    "duration": "Duration",
+    "days": "{{n}} days",
+    "inclTax": "{{amount}} incl. GST",
+    "audience": "Audience (optional)",
+    "audienceHelp": "Boost shows this to more of the people it already fits. It never changes who is eligible or your organic position.",
+    "onlyLocality": "Only in {{locality}}",
+    "onlyCategory": "Only for {{category}}",
+    "chooseDuration": "Choose a duration to see the full price."
+  },
+  "disclosure": {
+    "title": "Confirm your boost",
+    "product": "Product",
+    "price": "Price",
+    "tax": "GST",
+    "credit": "Credit applied",
+    "total": "You pay",
+    "starts": "Starts",
+    "startsOnPayment": "As soon as payment succeeds",
+    "ends": "Ends",
+    "changes": "What changes",
+    "changesText": "More impressions within the eligible audience, and the label “Sponsored” everywhere it appears.",
+    "doesNot": "What doesn't change",
+    "doesNotText": "Eligibility, safety checks, verification, reputation, organic ranking and relevance explanations.",
+    "renewal": "Renewal",
+    "renewalText": "None — one-time purchase, no auto-renew.",
+    "refund": "Cancel and refund",
+    "refundText": "Cancel before paying at no cost. Cancel while it runs for a pro-rata credit. If the boosted item is suspended or stops being active, unused time is credited automatically. A boost rejected for safety is refunded in full.",
+    "receipt": "Receipt",
+    "receiptText": "Kept with this boost's history, with the payment reference and GST line.",
+    "confirmPay": "Confirm and pay {{amount}}",
+    "confirmCredit": "Confirm — fully covered by credit",
+    "redirecting": "Taking you to secure payment…"
+  },
+  "ineligible": {
+    "verifyFirst": "Boost is available for verified listings.",
+    "getVerified": "Get verified",
+    "notActive": "Only active items can be boosted.",
+    "notOwner": "Only the owner can boost this.",
+    "notFound": "This item isn't available."
+  },
+  "state": {
+    "draft": "Draft",
+    "awaiting_payment": "Awaiting payment",
+    "scheduled": "Scheduled",
+    "active": "Active",
+    "paused": "Paused",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "rejected": "Rejected",
+    "refunded": "Refunded"
+  },
+  "paymentState": {
+    "pending": "pending",
+    "succeeded": "paid",
+    "failed": "failed",
+    "refunded": "refunded"
+  },
+  "product": {
+    "boost_3d": "Boost · 3 days",
+    "boost_7d": "Boost · 7 days",
+    "boost_14d": "Boost · 14 days"
+  },
+  "promotion": {
+    "title": "Boost for {{name}}",
+    "target": "Item",
+    "version": "Price version {{v}}",
+    "period": "{{from}} – {{to}}",
+    "price": "Price {{amount}}",
+    "tax": "GST {{amount}}",
+    "creditApplied": "Credit applied {{amount}}",
+    "charged": "Paid {{amount}}",
+    "receiptRef": "Payment reference {{ref}}",
+    "refundRef": "Refund reference {{ref}}",
+    "creditOnThis": "Credit from this boost: {{amount}} — applied automatically to your next boost.",
+    "history": "History",
+    "cancelOrder": "Cancel order",
+    "cancelActive": "Stop boost — {{amount}} credit",
+    "retryPayment": "Retry payment",
+    "rejected": "Rejected for safety — reason: {{reason}}. A full refund is requested.",
+    "resultSucceeded": "Payment received — your boost is live.",
+    "resultFailed": "Payment didn't go through. Your order is saved for 24 hours.",
+    "resultPending": "Waiting for the payment result… this page updates automatically.",
+    "resultUnavailable": "The payment service is unavailable right now. Your order is saved — retry in a little while.",
+    "notFound": "Boost not found"
+  },
+  "list": {
+    "title": "My boosts",
+    "empty": "No boosts yet. Boost a verified listing or an active opportunity from its page.",
+    "endsOn": "Ends {{date}}"
+  },
+  "historyReason": {
+    "created": "Draft created",
+    "confirmed": "Confirmed on the disclosure screen",
+    "credit_applied": "Credit applied",
+    "payment_succeeded": "Payment succeeded",
+    "payment_failed": "Payment failed",
+    "payment_refunded": "Refunded",
+    "paid_with_credit": "Paid with credit",
+    "cancelled_by_owner": "Cancelled by you",
+    "payment_window_expired": "Payment window (24 h) ended",
+    "duration_ended": "Boost period ended",
+    "target_inactive_credited": "Item stopped being active — paused and credited",
+    "rejected": "Rejected for safety"
+  },
+  "report": {
+    "title": "Performance",
+    "period": "{{from}} – {{to}}",
+    "kind": {
+      "impression": "Impressions",
+      "view": "Detail views",
+      "save": "Saves",
+      "enquiry": "Enquiries",
+      "outcome": "Outcomes confirmed"
+    },
+    "split": "Boosted {{b}} · Organic {{o}}",
+    "tooLittle": "Too little data to compare",
+    "note": "Counts for the period. No projections or guarantees."
+  },
+  "checkout": {
+    "title": "Dev sandbox payment gateway",
+    "note": "Development stand-in for the real payment gateway. No real money moves and no card or bank details are collected here.",
+    "amount": "Amount {{amount}}",
+    "succeed": "Simulate successful payment",
+    "fail": "Simulate failed payment",
+    "done": "This order is already {{state}}.",
+    "back": "Back to the boost"
+  }
+}

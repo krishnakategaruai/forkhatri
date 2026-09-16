@@ -1,0 +1,23 @@
+{
+  "section": {
+    "for_you": "For You",
+    "explore": "Explore",
+    "near_you": "Near You",
+    "community": "Community",
+    "public": "Public"
+  },
+  "notice": {
+    "rateLimited": "Too many searches — please slow down.",
+    "degraded": "Search is temporarily unavailable — showing recently added listings instead.",
+    "noMatch": "No exact match found."
+  },
+  "broaden": {
+    "radius": "Widen to {km} km",
+    "adjacent_categories": "Include adjacent categories",
+    "remove_filter": "Remove one filter",
+    "include_unverified": "Include unverified listings"
+  },
+  "enrichment": {
+    "sparseProfile": "Add what you can do to your professional listing to see opportunities picked just for you."
+  }
+}

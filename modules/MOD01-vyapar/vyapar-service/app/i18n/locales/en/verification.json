@@ -1,0 +1,12 @@
+{
+  "error": {
+    "permissionRequired": "Operator 'verification' permission required.",
+    "recordNotFound": "Verification record not found",
+    "credentialFieldsRequired": "Add the credential's name and the authority that issued it.",
+    "invalidFormat": {
+      "gst": "That doesn't look like a valid 15-character GSTIN.",
+      "pan": "That doesn't look like a valid 10-character PAN.",
+      "udyam": "That doesn't look like a valid Udyam registration number."
+    }
+  }
+}

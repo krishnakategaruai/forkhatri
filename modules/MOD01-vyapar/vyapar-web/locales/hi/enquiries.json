@@ -1,0 +1,35 @@
+{
+  "compose": {
+    "title": "अपना संदेश भेजें",
+    "help": "आपको क्या चाहिए बताएं — प्रदाता इसे आपकी पूछताछ के रूप में देखेगा।",
+    "placeholder": "जैसे मुझे इसमें मदद चाहिए... (कम से कम 20 अक्षर)",
+    "send": "भेजें"
+  },
+  "detail": {
+    "notFound": "पूछताछ नहीं मिली",
+    "stateOpen": "खुला",
+    "stateAwaitingResponse": "प्रतिक्रिया की प्रतीक्षा",
+    "stateInProgress": "प्रगति पर",
+    "stateResolved": "हल किया गया",
+    "stateClosed": "बंद",
+    "stateWithdrawn": "वापस लिया गया",
+    "stateRestricted": "प्रतिबंधित",
+    "safetyNotice": "कभी अग्रिम भुगतान न करें; संदिग्ध अनुरोधों की रिपोर्ट करें।",
+    "contactRevealed": "संपर्क विवरण",
+    "accept": "स्वीकार करें",
+    "resolve": "हल किया गया चिह्नित करें",
+    "close": "बंद करें",
+    "withdraw": "वापस लें",
+    "restrict": "थ्रेड प्रतिबंधित करें",
+    "block": "इस सदस्य को ब्लॉक करें",
+    "referToCounsel": "काउंसल के पास भेजें",
+    "replyPlaceholder": "एक जवाब लिखें…",
+    "reply": "जवाब दें"
+  },
+  "mine": {
+    "title": "पूछताछ",
+    "tabSent": "भेजी गई",
+    "tabReceived": "प्राप्त हुई",
+    "empty": "अभी तक कोई पूछताछ नहीं।"
+  }
+}

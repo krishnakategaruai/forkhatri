@@ -1,0 +1,35 @@
+{
+  "compose": {
+    "title": "Send your message",
+    "help": "Say what you need — the provider will see this as your enquiry.",
+    "placeholder": "e.g. I need help with... (at least 20 characters)",
+    "send": "Send"
+  },
+  "detail": {
+    "notFound": "Enquiry not found",
+    "stateOpen": "Open",
+    "stateAwaitingResponse": "Awaiting response",
+    "stateInProgress": "In progress",
+    "stateResolved": "Resolved",
+    "stateClosed": "Closed",
+    "stateWithdrawn": "Withdrawn",
+    "stateRestricted": "Restricted",
+    "safetyNotice": "Never pay in advance; report suspicious requests.",
+    "contactRevealed": "Contact details",
+    "accept": "Accept",
+    "resolve": "Mark resolved",
+    "close": "Close",
+    "withdraw": "Withdraw",
+    "restrict": "Restrict thread",
+    "block": "Block this member",
+    "referToCounsel": "Refer to Counsel",
+    "replyPlaceholder": "Write a reply…",
+    "reply": "Reply"
+  },
+  "mine": {
+    "title": "Enquiries",
+    "tabSent": "Sent",
+    "tabReceived": "Received",
+    "empty": "No enquiries yet."
+  }
+}

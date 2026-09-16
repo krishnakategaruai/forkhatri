@@ -1,0 +1,20 @@
+{
+  "signal": {
+    "capability_fit": "matches your capabilities",
+    "intent_fit": "matches what you're looking for",
+    "location_fit": "close to you",
+    "timing_fit": "good timing for you",
+    "value_fit": "good value",
+    "experience_fit": "matches your experience",
+    "freshness_fit": "recently posted",
+    "trust_fit": "from a verified poster"
+  },
+  "fallback": {
+    "matchedSearch": "matched your search",
+    "recentlyAdded": "recently added",
+    "matchesFilters": "matches your filters"
+  },
+  "gap": {
+    "missingSkills": "requires {skills} — you haven't listed this"
+  }
+}

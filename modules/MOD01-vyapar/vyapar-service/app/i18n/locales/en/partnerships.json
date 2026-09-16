@@ -1,0 +1,23 @@
+{
+  "error": {
+    "targetNotActive": "This listing isn't active right now.",
+    "notAccepting": "This listing isn't accepting partnership requests.",
+    "cannotProposeOwn": "You can't propose a partnership to your own listing.",
+    "needActiveListing": "Create an active listing first to propose partnerships.",
+    "senderListingInvalid": "Choose one of your own active listings.",
+    "cooldown": "They declined your last request. You can send a new one after {date}.",
+    "alreadyPending": "You already have a pending request to this listing.",
+    "pendingCap": "You have {cap} pending requests. Withdraw one to send more.",
+    "notFound": "Partnership request not found.",
+    "recipientOnly": "Only the recipient can do this.",
+    "senderOnly": "Only the sender can do this.",
+    "invalidTransition": "This action isn't available in the request's current state."
+  },
+  "stateWord": {
+    "accepted": "accepted",
+    "declined": "declined",
+    "withdrawn": "withdrawn",
+    "restricted": "restricted",
+    "closed": "closed"
+  }
+}

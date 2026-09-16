@@ -1,0 +1,15 @@
+{
+  "error": {
+    "noTarget": "Choose a listing or an opportunity to enquire about.",
+    "targetNotActive": "This is no longer available.",
+    "enquiriesDisabled": "This business isn't accepting enquiries right now.",
+    "cannotEnquireOwn": "You can't enquire about your own listing or opportunity.",
+    "dailyCapReached": "You've reached today's limit of {cap} enquiries — try again tomorrow.",
+    "alreadyOpen": "You already have an open enquiry for this.",
+    "notFound": "Enquiry not found",
+    "restricted": "This thread has been restricted — no further messages.",
+    "invalidTransition": "Can't do that from the current state.",
+    "providerOnly": "Only the provider can do that.",
+    "senderOnly": "Only the sender can do that."
+  }
+}

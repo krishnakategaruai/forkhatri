@@ -20,6 +20,7 @@ items: "18 | approved: 18 | blockers: 0"
 | 2026-09-12 | **Reviewer verification pass, correcting a citation error in the immediately preceding entry (kept above for the audit trail).** A full read of the entire Vyapar source corpus (PM Planning P1-P5, the Complete Product Definition, Vyapar_01/02/03, and critqureport — every `.docx` extracted and read in full, not summarized) found that this deeper research corpus is built almost entirely around a Person+Opportunity model with no standalone business-directory concept, and that critqureport explicitly warns against a profile/directory-style "LinkedIn-lite" product (§12). The claim above that co-equal business/professional discovery was "recorded across the Vyapar `.docx`/`.md` corpus" is therefore not accurate — only `modules/modules.md`'s sealed Step 0 boundary (business + professional discovery/search; `BusinessProfile`/`ProfessionalListingProfile` as owned data) actually supports it. That is still the higher-priority source per this file's own stated hierarchy, and the Product Manager has separately and explicitly confirmed the standalone discovery intent directly (not by way of the research corpus), so the co-equal-scope decision itself stands unchanged. What changed in this pass: the Scope-of-this-step narrative, BR05's Worth check, and BR05's Traced-to line were corrected to stop attributing this decision to the research corpus, name `modules/modules.md` as its actual basis, and record the tension with the corpus honestly; unverified named-app comparisons (Sulekha, UrbanCompany, LinkedIn-as-precedent) were removed since they were never actually checked, keeping only Justdial, WorkIndia, and Apna, which were. | Product Manager instruction to verify the file "as reviewer and with complete docsx knowledge" rather than spot-check it. |
 | 2026-09-12 | Sealed. All 18 BRs approved and the file marked Sealed on Product Manager direction ("complete if not complete, and let's move to next") following the reviewer verification pass above, with zero open blockers. | Product Manager approval and directive to proceed to Step 2 (Functional Requirements). |
 | 2026-09-14 | Post-seal correction: authentication single source of truth = parent ForKhatri platform; Vyapar owns no login/signup/session/credential requirement; listing phone/OTP contact verification retained as business verification only. | Product owner standing correction, 2026-09-14. |
+| 2026-09-14 | Added a pointer under BR17 DEC-004 to the ForKhatri platform identity contract (`docs/ParentApp/07-tech-reqs.md` TR10–TR16). No BR text changed. Not re-sealed; awaits the owner's review. | Product-owner instruction, 2026-09-14: one ForKhatri identity and entrance. |
 
 ## Scope of this step
 
@@ -2084,6 +2085,9 @@ Pass · Verifiable Pass · Correct Pass · Conforming Pass
   platform sign-in returns. The BR03 phone/OTP verification of a listing's
   contact number is retained as a Vyapar business-verification step that
   reuses the platform's OTP capability; it is not authentication.
+  > **2026-09-14 pointer:** the platform identity contract behind DEC-004 is
+  > `docs/ParentApp/07-tech-reqs.md` TR10–TR16 (decisions:
+  > `docs/ParentApp/00c-identity-and-entrance-decisions.md`).
 
 **Assumptions**
 

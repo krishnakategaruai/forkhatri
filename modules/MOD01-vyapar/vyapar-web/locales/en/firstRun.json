@@ -1,0 +1,27 @@
+{
+  "step0": {
+    "title": "Welcome to Vyapar",
+    "namePrompt": "What should we call you?",
+    "namePlaceholder": "Your name"
+  },
+  "step1": {
+    "title": "Where are you based?",
+    "help": "Used for discovery radius — you can change this anytime. If location access is unavailable, type it below.",
+    "placeholder": "Locality, e.g. Ameerpet"
+  },
+  "step2": {
+    "title": "What brings you here?",
+    "help": "Pick as many as apply — this only shapes what we show first.",
+    "options": {
+      "findCustomers": "Find customers",
+      "findWork": "Find work / opportunities",
+      "hire": "Hire people",
+      "partners": "Find business partners"
+    }
+  },
+  "step3": {
+    "title": "You're set, {{name}}.",
+    "help": "Post your business or professional listing next, or explore what others have shared.",
+    "cta": "Go to Vyapar"
+  }
+}

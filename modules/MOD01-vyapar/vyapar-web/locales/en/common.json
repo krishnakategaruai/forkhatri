@@ -1,0 +1,50 @@
+{
+  "app": {
+    "name": "Vyapar",
+    "tagline": "Business, professional and opportunity discovery for the Khatri community."
+  },
+  "nav": {
+    "discover": "Discover",
+    "businesses": "Businesses",
+    "post": "Post",
+    "activity": "Activity",
+    "profile": "Profile",
+    "collapse": "Collapse navigation",
+    "open": "Open navigation"
+  },
+  "action": {
+    "save": "Save",
+    "saved": "Saved",
+    "share": "Share",
+    "continue": "Continue",
+    "back": "Back",
+    "cancel": "Cancel",
+    "retry": "Retry",
+    "myListings": "My listings",
+    "linkCopied": "Link copied."
+  },
+  "state": {
+    "loading": "Loading…",
+    "saving": "Saving…",
+    "searching": "Searching…",
+    "notFound": "No longer available",
+    "somethingWentWrong": "Something went wrong.",
+    "actionFailed": "Action failed"
+  },
+  "language": {
+    "en": "English",
+    "hi": "हिन्दी",
+    "te": "తెలుగు",
+    "change": "Change language"
+  },
+  "badge": {
+    "sponsored": "Sponsored",
+    "verified": "Verified",
+    "memberProvided": "Member-provided"
+  },
+  "devTools": {
+    "switcherLabel": "Choose dev member",
+    "notSignIn": "Dev-only member switcher — not sign-in.",
+    "operator": "operator"
+  }
+}

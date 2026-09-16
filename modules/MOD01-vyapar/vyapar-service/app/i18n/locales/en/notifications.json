@@ -1,0 +1,62 @@
+{
+  "strongMatch": {
+    "title": "New match: {title}",
+    "body": "This opportunity matches your capabilities."
+  },
+  "moderationOutcome": {
+    "title": "A moderation decision about your content",
+    "body": "Outcome: {action}. Reason: {reason}. You can appeal once within 15 days from Profile → My moderation outcomes. Grievances: {contact}"
+  },
+  "appealDecided": {
+    "title": "Your appeal has been decided",
+    "body": "Your appeal was {decision}. Grievances: {contact}"
+  },
+  "appealDelayed": {
+    "title": "Your appeal is taking longer than planned",
+    "body": "It has been escalated and you'll hear back soon. Grievances: {contact}"
+  },
+  "verificationReminder": {
+    "title": "Reconfirm verification: {name}",
+    "body": "Your verification expires in a month. Submit a current document to keep your verified label."
+  },
+  "digest": {
+    "title": "{count} new opportunities for you",
+    "body": "Open Vyapar to see what's new since your last digest."
+  },
+  "reviewInvite": {
+    "title": "How did it go? Leave a review",
+    "body": "You can recommend them within 30 days. Reviews on Vyapar come only from real interactions."
+  },
+  "partnershipReceived": {
+    "title": "New partnership request from {name}",
+    "body": "Open it to see what they need and offer, then accept or decline."
+  },
+  "partnershipUpdated": {
+    "title": "Partnership request {state}",
+    "body": "Open the request to see what happens next."
+  },
+  "reviewDisputeOutcome": {
+    "title": "A disputed review has been decided",
+    "body": "Outcome: {outcome}. Reason: {reason}. Grievances: {contact}"
+  },
+  "reviewAutoHidden": {
+    "title": "Your review was hidden",
+    "body": "The conversation it was about was removed by moderation, so your review is hidden too. Grievances: {contact}"
+  },
+  "promotionActive": {
+    "title": "Your boost is live",
+    "body": "Sponsored until {date}. Eligibility, verification and organic ranking are unchanged."
+  },
+  "paymentFailed": {
+    "title": "Payment didn't go through",
+    "body": "Your boost order is saved for 24 hours. Retry from the boost page."
+  },
+  "promotionPaused": {
+    "title": "Boost paused and credited",
+    "body": "The boosted item is no longer active, so the boost stopped. Unused time credited: {amount}."
+  },
+  "promotionRejected": {
+    "title": "Boost rejected",
+    "body": "Reason: {reason}. A full refund has been requested. Grievances: grievance@forkhatri.example"
+  }
+}

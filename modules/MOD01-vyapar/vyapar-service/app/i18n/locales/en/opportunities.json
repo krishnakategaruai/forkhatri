@@ -1,0 +1,20 @@
+{
+  "actionLabel": {
+    "apply": "Apply",
+    "submitProposal": "Submit a Proposal",
+    "enquireNow": "Enquire Now",
+    "contact": "Contact",
+    "register": "Register"
+  },
+  "error": {
+    "untitled": "Untitled opportunity",
+    "sourceRequired": "Tell us where you found it — a source name or link is required.",
+    "compensationRequired": "Employment opportunities need a compensation field.",
+    "locationRequired": "Local service opportunities need a location.",
+    "alreadyPublished": "This opportunity has already been published.",
+    "confirmRequired": "Please confirm: {fields}",
+    "tooOldToRenew": "This listing is too old to renew directly — please review and re-confirm its details first.",
+    "invalidTransition": "Can't do that from the current state.",
+    "removedCannotShare": "This item has been removed and can't be shared."
+  }
+}

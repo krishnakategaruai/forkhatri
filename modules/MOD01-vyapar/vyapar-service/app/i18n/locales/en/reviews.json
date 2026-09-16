@@ -1,0 +1,17 @@
+{
+  "error": {
+    "noQualifyingInteraction": "Reviews can only be written after a completed enquiry or partnership.",
+    "alreadyReviewed": "You already reviewed this interaction.",
+    "commentLength": "A comment must be 20–500 characters, or left empty.",
+    "invalidTag": "Pick tags from the list.",
+    "notSubject": "Only the member a review is about can dispute it.",
+    "notDisputable": "This review can't be disputed right now.",
+    "alreadyDisputed": "This review has already been disputed.",
+    "reviewNotFound": "Review not found."
+  },
+  "outcome": {
+    "published": "kept published",
+    "hidden": "hidden (visible to its author only)",
+    "removed": "removed"
+  }
+}

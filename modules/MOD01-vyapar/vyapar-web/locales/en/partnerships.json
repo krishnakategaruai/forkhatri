@@ -1,0 +1,49 @@
+{
+  "propose": "Propose partnership",
+  "compose": {
+    "title": "Propose a partnership",
+    "to": "To {{name}}",
+    "fromListing": "From your listing",
+    "need": "What you need",
+    "offer": "What you offer",
+    "expectations": "Expectations",
+    "category": "Category",
+    "locality": "Locality",
+    "timing": "Timing",
+    "nextStep": "Intended next step",
+    "nextStepPlaceholder": "e.g. a call, a meeting, a trial order",
+    "counter": "{{n}}/500",
+    "minHint": "At least 10 characters",
+    "contactNote": "Contact details are shared only if they accept.",
+    "send": "Send request",
+    "needListing": "Create a listing first to propose partnerships.",
+    "createListing": "Create listing",
+    "viewPending": "View pending requests"
+  },
+  "detail": {
+    "title": "Partnership request",
+    "sent": "Sent {{date}}",
+    "from": "From",
+    "to": "To",
+    "accept": "Accept",
+    "decline": "Decline",
+    "restrict": "Restrict",
+    "withdraw": "Withdraw",
+    "close": "Close partnership",
+    "closeHelp": "Closing marks this partnership as concluded; you'll both be invited to review.",
+    "declinedCooldown": "Declined. You can send a new request to this listing after 30 days.",
+    "restrictedNote": "Restricted. No further requests between you and this member.",
+    "contactTitle": "Contact details",
+    "safety": "Meet in a public place first and never pay anyone in advance.",
+    "notFound": "Partnership request not found"
+  },
+  "state": {
+    "draft": "Draft",
+    "pending": "Pending",
+    "accepted": "Accepted",
+    "declined": "Declined",
+    "withdrawn": "Withdrawn",
+    "restricted": "Restricted",
+    "closed": "Closed"
+  }
+}

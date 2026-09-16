@@ -1,0 +1,7 @@
+{
+  "error": {
+    "listingNotFound": "Listing not found or no longer available",
+    "opportunityNotFound": "This opportunity is no longer available",
+    "operatorPermissionRequired": "Operator permission required"
+  }
+}
