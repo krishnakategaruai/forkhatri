@@ -10,18 +10,21 @@ import { useTranslation } from 'react-i18next';
 
 import OfflineBanner from '@/components/OfflineBanner';
 import SideNav from '@/components/SideNav';
+import { ErrorState } from '@/components/States';
 import TabBar from '@/components/TabBar';
 import { api } from '@/lib/api';
+import { appUrl } from '@/lib/base-path';
 import { useIdentity } from '@/lib/identity';
+import { goToEntrance } from '@/lib/platform';
 
-const CHROMELESS_PREFIXES = ['/welcome', '/onboarding', '/a/', '/create', '/organizer/', '/admin', '/chats/'];
+const CHROMELESS_PREFIXES = ['/welcome', '/onboarding', '/a/', '/create', '/organizer/', '/admin', '/chats/', '/pay/'];
 // On a wide screen the rail stays for everything except the launch/onboarding flow, so a person never loses their way.
 const RAILLESS_PREFIXES = ['/welcome', '/onboarding'];
 
 export default function AppChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { ready, identity, profile } = useIdentity();
+  const { ready, identity, profile, unavailable, reload } = useIdentity();
   const { t } = useTranslation();
 
   const isPublic = pathname.startsWith('/a/');
@@ -48,14 +51,28 @@ export default function AppChrome({ children }: { children: React.ReactNode }) {
   }, [identity]);
 
   useEffect(() => {
-    if (!ready || isPublic) return;
-    if (!identity && pathname !== '/welcome') router.replace('/welcome');
+    if (!ready || isPublic || unavailable) return;
+    // [ParentApp TR16] Signed out → the ForKhatri entrance signs the person in and returns them here.
+    // /welcome is the old launch screen: come back to Milavn's home, not to it.
+    if (!identity) goToEntrance(pathname === '/welcome' ? appUrl('/') : undefined);
     // A moderator works the console without a participant profile (UX20 is operations-facing).
-    else if (identity && profile === null && pathname !== '/onboarding' && pathname !== '/welcome' && !pathname.startsWith('/admin')) router.replace('/onboarding');
-    else if (identity && profile && (pathname === '/welcome' || pathname === '/onboarding')) router.replace('/');
-  }, [ready, identity, profile, pathname, router, isPublic]);
+    else if (profile === null && pathname !== '/onboarding' && !pathname.startsWith('/admin')) router.replace('/onboarding');
+    else if (profile && (pathname === '/welcome' || pathname === '/onboarding')) router.replace('/');
+  }, [ready, identity, profile, pathname, router, isPublic, unavailable]);
 
-  if (!ready && !isPublic) {
+  if (ready && unavailable && !isPublic) {
+    return (
+      <div className="shell shell--chromeless">
+        <div className="screen" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
+          <div className="brand-mark" style={{ width: 64, height: 64, fontSize: '1.6rem', borderRadius: 20 }}>M</div>
+          <ErrorState message={t('platform.unavailable')} onRetry={() => void reload()} />
+        </div>
+      </div>
+    );
+  }
+
+  // Signed out on a member-only page: hold the splash while the entrance loads, never flash member UI.
+  if ((!ready || !identity) && !isPublic) {
     return (
       <div className="shell shell--chromeless" aria-busy="true">
         <div className="screen" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>

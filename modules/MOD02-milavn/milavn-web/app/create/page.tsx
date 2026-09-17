@@ -15,6 +15,7 @@ import WhenPicker from '@/components/WhenPicker';
 import { Modal } from '@/components/Sheet';
 import { Toast } from '@/components/States';
 import { api, ApiError, type Card, type Circle } from '@/lib/api';
+import { appUrl } from '@/lib/base-path';
 import { toLocalInputValue } from '@/lib/format';
 import { useIdentity } from '@/lib/identity';
 
@@ -26,6 +27,10 @@ const QUICK_WHEN: [string, () => Date][] = [
   ['tonight', () => at(0, 19)], ['tomorrowMorning', () => at(1, 7)], ['tomorrowEvening', () => at(1, 19)],
   ['saturday', () => nextWeekday(6, 8)], ['sunday', () => nextWeekday(0, 8)],
 ];
+
+// FR110: who it's for, and food and drink.
+const AUDIENCE = ['family_friendly', 'elder_friendly', 'beginner_friendly'];
+const FOOD = ['veg', 'jain_options', 'non_veg', 'alcohol_free'];
 
 function CreateInner() {
   const { t } = useTranslation();
@@ -41,6 +46,13 @@ function CreateInner() {
   const [city, setCity] = useState(profile?.locality_city ?? '');
   const [locality, setLocality] = useState(profile?.locality_locality ?? '');
   const [count, setCount] = useState<number | null>(null);
+  // FR102: free by default; a price only when the organizer chooses Paid.
+  const [paid, setPaid] = useState(false);
+  const [priceRupees, setPriceRupees] = useState('');
+  const [cutoff, setCutoff] = useState(24);
+  const [audience, setAudience] = useState<string[]>([]);
+  const [food, setFood] = useState<string[]>([]);
+  const [foodTouched, setFoodTouched] = useState(false);
   const [more, setMore] = useState(false);
   const [description, setDescription] = useState('');
   const [scope, setScope] = useState<'public' | 'community' | 'circle'>(presetCircle ? 'circle' : 'public');
@@ -79,8 +91,11 @@ function CreateInner() {
   useEffect(() => {
     api<Circle[]>('/circles/mine').then(setCircles).catch(() => undefined);
     if (editId) {
-      api<Card & { description: string | null }>(`/occurrences/${editId}`).then((o) => {
+      api<Card & { description: string | null; refund_cutoff_hours?: number; max_guests_per_member?: number }>(`/occurrences/${editId}`).then((o) => {
         setTitle(o.title); setCategory(o.intent_category); setWhen(toLocalInputValue(o.time_start)); setCount(o.capacity);
+        setPaid(o.price_paise != null); setPriceRupees(o.price_paise != null ? String(o.price_paise / 100) : ''); setCutoff(o.refund_cutoff_hours ?? 24);
+        setAudience(o.audience_tags ?? []); setFood(o.food_tags ?? []); setFoodTouched(true);
+        setGuests(o.max_guests_per_member ?? 0);
         setDescription(o.description ?? ''); setHighRisk(o.high_risk);
         setScope(o.visibility_scope === 'circle' ? 'circle' : o.visibility_scope === 'community' ? 'community' : 'public');
         setCircleId(o.circle_id ?? ''); setMore(true);
@@ -89,7 +104,28 @@ function CreateInner() {
   }, [editId]);
   useEffect(() => { if (profile && !editId) { setCity(profile.locality_city); setLocality(profile.locality_locality ?? ''); } }, [profile, editId]);
 
-  const canSubmit = !!category && title.trim().length > 0 && !!when && !!city && (scope !== 'circle' || !!circleId);
+  // FR110: community food defaults — vegetarian and alcohol-free unless the host changes it (81% of Indians limit meat, Pew 2021).
+  const pickCategory = (c: string) => {
+    setCategory(c);
+    if (!foodTouched && (c === 'eat' || c === 'celebrate') && food.length === 0) setFood(['veg', 'alcohol_free']);
+  };
+  const toggleAudience = (tag: string) => setAudience((cur) => (cur.includes(tag) ? cur.filter((x) => x !== tag) : [...cur, tag]));
+  // [FR114] How many people each person may bring. Free activities only — a paid spot is per person.
+  const [guests, setGuests] = useState(0);
+  const toggleFood = (tag: string) => {
+    setFoodTouched(true);
+    setFood((cur) => {
+      if (cur.includes(tag)) return cur.filter((x) => x !== tag);
+      const next = [...cur, tag];
+      if (tag === 'veg') return next.filter((x) => x !== 'non_veg');
+      if (tag === 'non_veg') return next.filter((x) => x !== 'veg');
+      return next;
+    });
+  };
+
+  const pricePaise = paid ? Math.round(Number(priceRupees) * 100) : null;
+  const priceOk = !paid || (pricePaise !== null && Number.isFinite(pricePaise) && pricePaise >= 100 && pricePaise <= 10_000_000);
+  const canSubmit = !!category && title.trim().length > 0 && !!when && !!city && (scope !== 'circle' || !!circleId) && priceOk;
 
   const uploadCover = async (file: File | undefined) => {
     if (!file) return;
@@ -105,6 +141,8 @@ function CreateInner() {
       title: title.trim(), intent_category: category, time_start: new Date(when).toISOString(), locality_city: city, locality_locality: locality || null,
       capacity: count, description: description || null, visibility_scope: scope, circle_id: scope === 'circle' ? circleId : null,
       high_risk: highRisk, recurrence_rule: recurring ? { freq: 'weekly' } : null, cover_image_media_id: cover?.media_id ?? null,
+      price_paise: pricePaise, refund_cutoff_hours: cutoff, audience_tags: audience, food_tags: food,
+      max_guests_per_member: paid ? 0 : guests,
     };
     try {
       if (editId) {
@@ -128,13 +166,13 @@ function CreateInner() {
 
   const shareNow = async () => {
     if (!created) return;
-    const url = `${window.location.origin}/a/${created.slug}`;
+    const url = appUrl(`/a/${created.slug}`);
     if (navigator.share) { try { await navigator.share({ title: created.title, url }); } catch { /* cancelled */ } }
     else { await navigator.clipboard?.writeText(url); setToast(t('create.copied')); setTimeout(() => setToast(null), 2000); }
   };
 
   if (created) {
-    const url = typeof window !== 'undefined' ? `${window.location.origin}/a/${created.slug}` : '';
+    const url = typeof window !== 'undefined' ? appUrl(`/a/${created.slug}`) : '';
     return (
       <main className="screen" style={{ minHeight: '100vh', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
         <div className="check-pop" style={{ width: 88, height: 88, borderRadius: 28, background: 'var(--success-tint)', color: 'var(--success-trust)', display: 'grid', placeItems: 'center' }}>
@@ -175,7 +213,7 @@ function CreateInner() {
           <span className="label">{t('create.what')}</span>
           <div className="grid-4" role="radiogroup" aria-label={t('create.what')}>
             {CATEGORIES.map(([c, icon]) => (
-              <button key={c} type="button" role="radio" aria-checked={category === c} aria-pressed={category === c} className={`cat${category === c ? ' pop' : ''}`} data-cat={c} onClick={() => setCategory(c)}>
+              <button key={c} type="button" role="radio" aria-checked={category === c} aria-pressed={category === c} className={`cat${category === c ? ' pop' : ''}`} data-cat={c} onClick={() => pickCategory(c)}>
                 <span>{icon}</span><span>{t(`create.categories.${c}`)}</span>
               </button>
             ))}
@@ -207,6 +245,59 @@ function CreateInner() {
             <button type="button" aria-label="More" onClick={() => setCount((c) => (c === null ? 2 : c + 1))}>+</button>
           </div>
         </div>
+
+        <div className="stack" style={{ gap: 10 }}>
+          <div className="row row--between">
+            <span className="field__label">{t('pay.entry')}</span>
+            <div className="chips" role="radiogroup" aria-label={t('pay.entry')}>
+              <button type="button" role="radio" className="chip chip--sm" aria-checked={!paid} aria-pressed={!paid} onClick={() => setPaid(false)}>{t('pay.free')}</button>
+              <button type="button" role="radio" className="chip chip--sm" aria-checked={paid} aria-pressed={paid} onClick={() => { setPaid(true); setGuests(0); }}>{t('pay.paid')}</button>
+            </div>
+          </div>
+          {paid && (
+            <div className="paybox fade-in">
+              <label className="field">
+                <span className="field__label">{t('pay.pricePerPerson')}</span>
+                <span className="rupee-input"><span aria-hidden="true">₹</span><input className="field__input" name="price" type="number" inputMode="decimal" min={1} max={100000} step="1" value={priceRupees} onChange={(e) => setPriceRupees(e.target.value)} placeholder="200" /></span>
+              </label>
+              <span className="field__label">{t('pay.refundWindow')}</span>
+              <div className="chips">
+                {[24, 48, 168, 0].map((h) => <button key={h} type="button" className="chip chip--sm" aria-pressed={cutoff === h} onClick={() => setCutoff(h)}>{t(`pay.cutoff.h${h}`)}</button>)}
+              </div>
+              <p className="caption" style={{ margin: 0 }}>{t('pay.organizerNote')}</p>
+            </div>
+          )}
+        </div>
+
+        {!paid && (
+          <div className="stack" style={{ gap: 8 }}>
+            <span className="field__label">{t('guest.canBring')}</span>
+            <div className="chips">
+              {[0, 1, 2, 3].map((g) => (
+                <button key={g} type="button" className="chip chip--sm" aria-pressed={guests === g} onClick={() => setGuests(g)}>
+                  {g === 0 ? t('guest.none') : t('guest.upTo', { count: g })}
+                </button>
+              ))}
+            </div>
+            {guests > 0 && <p className="caption" style={{ margin: 0 }}>{t('guest.countsNote')}</p>}
+          </div>
+        )}
+
+        <div className="stack" style={{ gap: 8 }}>
+          <span className="field__label">{t('fit.whoFor')}</span>
+          <div className="chips">
+            {AUDIENCE.map((a) => <button key={a} type="button" className="chip chip--sm" aria-pressed={audience.includes(a)} onClick={() => toggleAudience(a)}>{t(`fit.audience.${a}`)}</button>)}
+          </div>
+        </div>
+        {(category === 'eat' || category === 'celebrate' || food.length > 0) && (
+          <div className="stack" style={{ gap: 8 }}>
+            <span className="field__label">{t('fit.foodDrink')}</span>
+            <div className="chips">
+              {FOOD.map((f) => <button key={f} type="button" className="chip chip--sm" aria-pressed={food.includes(f)} onClick={() => toggleFood(f)}>{t(`fit.food.${f}`)}</button>)}
+            </div>
+            {!foodTouched && <p className="caption" style={{ margin: 0 }}>{t('fit.foodDefaultNote')}</p>}
+          </div>
+        )}
 
         <button type="button" className="row row--between" style={{ background: 'none', border: 0, padding: '8px 0', color: 'var(--accent-pressed)', fontWeight: 600 }} aria-expanded={more} aria-controls="more-options" onClick={() => setMore((v) => !v)}>
           <span>{more ? t('create.less') : t('create.more')}</span><span>{more ? '▴' : '▾'}</span>

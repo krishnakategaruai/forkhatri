@@ -25,13 +25,43 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel, Field, field_validator
 
-from app.api.deps import AppSettings, DbSession, Locale, get_current_session_token
+from app.api.deps import (
+    AppSettings,
+    AuthenticatedSession,
+    DbSession,
+    Locale,
+    get_current_session_token,
+)
 from app.components.identity_bridge import interface as identity
 from app.i18n import translate
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 SESSION_COOKIE = "mangaly_session"
+
+
+def require_interim_identity(settings: AppSettings) -> None:
+    """[ForKhatri TR15/TR16, 2026-09-14] The interim credential routes are retired.
+
+    Sign-up, sign-in, one-time codes and password reset belong to the ForKhatri
+    Identity & Trust Service. With `interim_identity_enabled` false (the
+    default) each credential route answers `410 Gone` with a stable code and
+    the entrance URL, so an old client or bookmark learns where to go instead
+    of failing obscurely. The code below each route is kept, not deleted, and
+    automated tests may re-enable it.
+    """
+    if not settings.interim_identity_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE,
+            detail={
+                "code": "moved_to_forkhatri",
+                "message": "Sign-in, sign-up and password reset now happen in ForKhatri.",
+                "entrance_url": settings.forkhatri_entrance_url,
+            },
+        )
+
+
+InterimOnly = [Depends(require_interim_identity)]
 
 
 def generic_auth_error(lang: str) -> HTTPException:
@@ -110,7 +140,12 @@ def _set_session_cookie(response: Response, token: str, secure: bool) -> None:
     )
 
 
-@router.post("/signup", response_model=SignUpResponse, status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "/signup",
+    response_model=SignUpResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    dependencies=InterimOnly,
+)
 async def sign_up(
     body: SignUpRequest,
     session: DbSession,
@@ -143,7 +178,7 @@ async def sign_up(
     return SignUpResponse(message=translate("auth.signup.sent", lang))
 
 
-@router.post("/login", response_model=SessionResponse)
+@router.post("/login", response_model=SessionResponse, dependencies=InterimOnly)
 async def log_in(
     body: LoginRequest,
     response: Response,
@@ -172,7 +207,10 @@ async def log_in(
 
 
 @router.post(
-    "/login/otp/request", status_code=status.HTTP_202_ACCEPTED, response_model=SignUpResponse
+    "/login/otp/request",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=SignUpResponse,
+    dependencies=InterimOnly,
 )
 async def request_login_otp(
     body: LoginOtpRequest, session: DbSession, lang: Locale
@@ -200,7 +238,10 @@ class PasswordResetRequest(BaseModel):
 
 
 @router.post(
-    "/reset/request", status_code=status.HTTP_202_ACCEPTED, response_model=SignUpResponse
+    "/reset/request",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=SignUpResponse,
+    dependencies=InterimOnly,
 )
 async def request_password_reset(
     body: PasswordResetRequest, session: DbSession, lang: Locale
@@ -236,7 +277,9 @@ class PasswordResetConfirmResponse(BaseModel):
     message: str | None = None
 
 
-@router.post("/reset/confirm", response_model=PasswordResetConfirmResponse)
+@router.post(
+    "/reset/confirm", response_model=PasswordResetConfirmResponse, dependencies=InterimOnly
+)
 async def confirm_password_reset(
     body: PasswordResetConfirmRequest, session: DbSession, lang: Locale
 ) -> PasswordResetConfirmResponse:
@@ -263,22 +306,21 @@ async def confirm_password_reset(
 
 
 @router.get("/me", response_model=SessionResponse)
-async def me(
-    session: DbSession,
-    token: Annotated[str | None, Depends(get_current_session_token)],
-    lang: Locale,
-) -> SessionResponse:
-    """[FR090/TR090] Resolve the current session for launch routing."""
-    not_authenticated = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail=translate("auth.error.notAuthenticated", lang),
+async def me(caller: AuthenticatedSession) -> SessionResponse:
+    """[FR090/TR090 → ForKhatri TR15] Resolve the current session for launch routing.
+
+    Goes through the same `get_authenticated_account` dependency as every other
+    endpoint, so it answers for the ForKhatri session (and for the interim
+    session only when that path is explicitly enabled). Creating the member-link
+    row on a new member's first visit happens here as a side effect.
+
+    `expires_at` is the ForKhatri session's `session_expires_at` (ISO 8601);
+    it stays "" only for the interim path, which has no platform expiry.
+    """
+    return SessionResponse(
+        account_id=str(caller.account_id),
+        expires_at=caller.expires_at.isoformat() if caller.expires_at else "",
     )
-    if token is None:
-        raise not_authenticated
-    account_id = await identity.validate_session(session, token)
-    if account_id is None:
-        raise not_authenticated
-    return SessionResponse(account_id=str(account_id), expires_at="")
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
@@ -318,7 +360,7 @@ class OtpVerifyResponse(BaseModel):
     expires_at: str | None = None
 
 
-@router.post("/otp/verify", response_model=OtpVerifyResponse)
+@router.post("/otp/verify", response_model=OtpVerifyResponse, dependencies=InterimOnly)
 async def verify_otp(
     body: OtpVerifyRequest, response: Response, session: DbSession, settings: AppSettings
 ) -> OtpVerifyResponse:
@@ -336,7 +378,12 @@ async def verify_otp(
     return OtpVerifyResponse(outcome=result.outcome)
 
 
-@router.post("/otp/resend", status_code=status.HTTP_202_ACCEPTED, response_model=SignUpResponse)
+@router.post(
+    "/otp/resend",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=SignUpResponse,
+    dependencies=InterimOnly,
+)
 async def resend_otp(body: OtpResendRequest, session: DbSession, lang: Locale) -> SignUpResponse:
     """[FR095/SP095] Resend, rate-limited. Same response whether or not the
     identifier is registered — see `identity.request_otp_resend`."""

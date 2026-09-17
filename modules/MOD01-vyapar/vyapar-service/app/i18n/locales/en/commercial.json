@@ -10,6 +10,9 @@
     "promotionNotFound": "Boost not found.",
     "orderNotFound": "Payment order not found.",
     "permissionRequired": "Operator 'commercial' permission required.",
-    "gatewayUnavailable": "The payment service is unavailable right now. Your order is saved — retry in a little while."
+    "gatewayUnavailable": "The payment service is unavailable right now. Your order is saved — retry in a little while.",
+    "productKindMismatch": "A product id always keeps its original kind.",
+    "notRefundable": "This order can't be refunded.",
+    "refundExceedsOrder": "A refund can't exceed the remaining order value ({remaining})."
   }
 }

@@ -16,9 +16,10 @@ from uuid import UUID
 from fastapi import APIRouter, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect, status
 from pydantic import BaseModel, Field
 
-from app.api.deps import CurrentMember, DbSession, IdempotencyKeyHeader, Locale
+from app.api.deps import CurrentMember, DbSession, IdempotencyKeyHeader, Locale, origin_allowed, resolve_member_identity
 from app.components.connect import chat
 from app.components.identity_bridge import interface as identity
+from app.config.settings import get_settings
 from app.db.engine import get_process_session_factory
 from app.db.session import set_member_context
 from app.i18n import translate
@@ -53,7 +54,20 @@ class PresenceRequest(BaseModel):
 
 
 def _person(p: chat.Person) -> dict:
-    return {"member_id": str(p.member_id), "display_name": p.display_name, "avatar": p.avatar, "active": p.active, "expression": p.expression}
+    return {
+        "member_id": str(p.member_id),
+        "display_name": p.display_name,
+        "avatar": p.avatar,
+        "active": p.active,
+        "expression": p.expression,
+        "last_seen_at": p.last_seen_at.isoformat() if p.last_seen_at else None,
+    }
+
+
+def _context(x: chat.SharedContext | None) -> dict | None:
+    if x is None:
+        return None
+    return {"kind": x.kind, "title": x.title, "ref": x.ref, "starts_at": x.starts_at.isoformat() if x.starts_at else None, "locality": x.locality}
 
 
 def _conv(c: chat.Conversation, me: UUID) -> dict:
@@ -70,6 +84,7 @@ def _conv(c: chat.Conversation, me: UUID) -> dict:
         "avatar": others[0].avatar if c.kind == "direct" and others else None,
         "active": any(p.active for p in others),
         "expression": others[0].expression if c.kind == "direct" and others else None,
+        "context": _context(c.context),
     }
 
 
@@ -129,7 +144,11 @@ async def get_conversation(conversation_id: UUID, session: DbSession, member: Cu
         msgs = await chat.messages(session, conversation_id=conversation_id, me=member.member_id, after=after)
     except (chat.NotFound, chat.NotAllowed) as exc:
         raise HTTPException(status_code=404, detail=translate("common.notFound", lang)) from exc
-    return {"conversation": _conv(c, member.member_id), "messages": [_msg(m) for m in msgs], "reactions": list(chat.REACTIONS), "expressions": list(chat.EXPRESSIONS)}
+    conv = _conv(c, member.member_id)
+    here = chat.hub.present_in(conversation_id)
+    for p in conv["members"]:
+        p["here"] = UUID(p["member_id"]) in here  # in this chat now; `active` stays the app-wide heartbeat
+    return {"conversation": conv, "messages": [_msg(m) for m in msgs], "reactions": list(chat.REACTIONS), "expressions": list(chat.EXPRESSIONS)}
 
 
 @router.post("/{conversation_id}/messages", status_code=201)
@@ -209,20 +228,30 @@ ws_router = APIRouter()
 
 
 @ws_router.websocket("/ws/chat")
-async def chat_socket(ws: WebSocket, member: str, conversation: str | None = None) -> None:
+async def chat_socket(ws: WebSocket, conversation: str | None = None, member: str | None = None) -> None:
     """Live events for one conversation (or the inbox when no conversation is given).
-    Identity: the same dev bridge as HTTP (query param here because browsers cannot set headers on sockets);
-    the platform session cookie takes over once ForKhatri auth is wired."""
+    Identity [ParentApp TR15]: the browser sends the ForKhatri `fk_session` cookie on the handshake and it is
+    resolved exactly like HTTP (`deps.resolve_member_identity`). `member` is honoured only as the legacy
+    development stand-in when `dev_identity_enabled` is explicitly on. The Origin must be a Milavn web origin,
+    because a cookie-authenticated socket is otherwise open to cross-site hijacking."""
+    settings = get_settings()
+    if not origin_allowed(ws.headers.get("origin"), settings):
+        await ws.close(code=4403)
+        return
     try:
-        member_id = UUID(member)
         conv_id = UUID(conversation) if conversation else None
     except ValueError:
         await ws.close(code=4400)
         return
-    ident = identity.resolve(member_id)
+    try:
+        ident = await resolve_member_identity(ws.cookies, member, settings)
+    except identity.IdentityServiceUnavailable:
+        await ws.close(code=1013)  # try again later; never a default member
+        return
     if ident is None:
         await ws.close(code=4401)
         return
+    member_id = ident.member_id
     if conv_id is not None:
         factory = get_process_session_factory()
         async with factory() as s, s.begin():
@@ -264,7 +293,8 @@ async def chat_socket(ws: WebSocket, member: str, conversation: str | None = Non
     finally:
         task.cancel()
         chat.hub.unsubscribe(conv_id, member_id, q)
-        if conv_id is not None:
+        # A second tab (or a dev double-mount) still open means the person is still here.
+        if conv_id is not None and member_id not in chat.hub.present_in(conv_id):
             chat.hub.publish(conv_id, {"type": "presence", "member_id": str(member_id), "active": False})
 
 

@@ -11,6 +11,15 @@ updated: 2026-09-11
 |---|---|---|
 | 2026-09-09 | Initial Step 0 draft for ForKhatri as a whole (7 modules: Vyapar, Milavn, Mangaly, Counsel, Dashboard, Payment Services, Loans & Finance). Mangaly is treated as exactly one module and its internal boundaries are not re-derived here. | Scoping correction — a prior run incorrectly treated "Mangaly" as the entire ForKhatri project and split it into 10 sub-modules; that artifact was wrong and has been deleted. This run decomposes the full ForKhatri business per its own high-level docs, with Mangaly's module-level boundary already decided by the human product owner. |
 | 2026-09-11 | Correction pass (per the Step 0 agent's updated loop-discipline process — re-reading related previous output before treating any item as settled): found this file's Open blockers section was stale. BLOCKER-001 (Payments infrastructure boundary) had already been resolved by the Solution Architecture Agent's `/ARCHITECTURE.md` (Sealed 2026-09-06, ADR-008) but this file still listed it as open — marked resolved with the actual resolution cited, so a reader of this file alone isn't misled into thinking the question is still live. BLOCKER-002 (Loans & Finance regulatory posture) remains genuinely unresolved (no legal/regulatory decision exists in any source document or in `/ARCHITECTURE.md`) — left open, but its scope was clarified: it gates only MOD07's own Step 1, not the rest of the pipeline, and `/ARCHITECTURE.md` already isolated MOD07's container/database in anticipation of it. | Loop-discipline re-verification pass — krishna kategaru (autonomous), 2026-09-11. |
+| 2026-09-14 | Added the "Platform foundation" note and one-line identity pointers. Module boundaries, status and approvals unchanged. | Product-owner instruction, 2026-09-14: one ForKhatri sign-in and member identity. |
+
+> **Platform foundation (2026-09-14).** ForKhatri has one identity and one
+> entrance, owned by the platform, not by any module: the Identity & Trust
+> Service (`platform/identity-service`) and the ForKhatri web entrance
+> (`platform/forkhatri-web`). Members sign in once and choose a module from the
+> ForKhatri hub. Each module keeps its own member-link record, tiers, roles and
+> Level-3 trust. See `docs/ParentApp/00c-identity-and-entrance-decisions.md` and
+> `docs/ParentApp/07-tech-reqs.md`.
 
 ## Problem statement summary
 
@@ -175,6 +184,9 @@ guideline used for every other module in this file. This is a deliberate,
 human-directed exception (see Rationale above), not a boundary judgment
 made by this decomposition, and is called out explicitly rather than
 silently smoothed over.
+**Identity (2026-09-14):** the "identity" layer above means Mangaly's
+member-link record only; sign-in and credentials belong to the platform (see
+`docs/ParentApp/07-tech-reqs.md` TR10–TR16).
 
 ### MOD04 — Counsel
 **Scope:** Verified professional/expert discovery for structured guidance
@@ -351,7 +363,9 @@ edge back to Vyapar. No cycle exists.
   business module. Each module layers its own Level-3 domain-specific
   verification on top of this (BRD §11.2, PRD §11). Resolution (which
   container owns identity/trust infrastructure, how modules consume it)
-  belongs in `/ARCHITECTURE.md`.
+  belongs in `/ARCHITECTURE.md`. **2026-09-14:** resolved as one platform
+  identity and entrance; see `/ARCHITECTURE.md` ADR-019–ADR-021 and
+  `docs/ParentApp/07-tech-reqs.md`.
 - **Notification delivery mechanism** — Dashboard owns notification
   *prioritization logic*, but the underlying send/delivery
   infrastructure (push, SMS, email, in-app) is listed as a Common Platform

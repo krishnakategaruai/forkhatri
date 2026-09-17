@@ -9,25 +9,54 @@
     "name": "Your full name",
     "dateOfBirth": "Date of birth",
     "gender": "Gender",
-    "genderOption": { "female": "Female", "male": "Male", "other": "Other" },
+    "genderOption": {
+      "female": "Female",
+      "male": "Male",
+      "other": "Other"
+    },
     "cityLocality": "City / locality",
     "photo": "Add a photo",
-    "education": { "highest_education_level": "Highest education level" },
-    "profession": { "occupation": "Occupation" },
-    "marital_history": { "marital_status": "Marital status" },
-    "relocation": { "relocation_willingness": "Willing to relocate?" },
+    "education": {
+      "highest_education_level": "Highest education level"
+    },
+    "profession": {
+      "occupation": "Occupation"
+    },
+    "marital_history": {
+      "marital_status": "Marital status"
+    },
+    "relocation": {
+      "relocation_willingness": "Willing to relocate?"
+    },
     "partner_preference": {
       "age_range": "Preferred age range",
-      "locality": "Preferred locality"
+      "locality": "Preferred locality",
+      "looking_for": "Looking for"
     },
-    "lifestyle": { "diet": "Diet" },
-    "food_travel_hobbies": { "hobbies": "Hobbies" },
-    "communication_style": { "style": "Communication style" },
-    "independence": { "preference": "Independence preference" },
-    "family_involvement_expectations": { "level": "Family involvement" },
-    "career_children_living_financial": { "wants_children": "Wants children?" },
-    "pets": { "preference": "Pets" },
-    "horoscope": { "matching_required": "Horoscope matching" }
+    "lifestyle": {
+      "diet": "Diet"
+    },
+    "food_travel_hobbies": {
+      "hobbies": "Hobbies"
+    },
+    "communication_style": {
+      "style": "Communication style"
+    },
+    "independence": {
+      "preference": "Independence preference"
+    },
+    "family_involvement_expectations": {
+      "level": "Family involvement"
+    },
+    "career_children_living_financial": {
+      "wants_children": "Wants children?"
+    },
+    "pets": {
+      "preference": "Pets"
+    },
+    "horoscope": {
+      "matching_required": "Horoscope matching"
+    }
   },
   "tag": {
     "cooking": "Cooking",
@@ -50,6 +79,56 @@
     "spirituality": "Spirituality",
     "board_games": "Board games",
     "art": "Art & craft"
+  },
+  "view": {
+    "title": "Profile",
+    "locked": "This profile opens once you are connected",
+    "lockedHint": "Send a request from Discover. When they accept, you both see full profiles and photos.",
+    "photoAlt": "Photo of {{name}}",
+    "message": "Message",
+    "privateNote": "Only the two of you can read your conversation.",
+    "share": {
+      "title": "Sharing with {{name}}",
+      "intro": "Each item stays private until you share it. Sharing one never reveals another.",
+      "category": {
+        "additional_photos": "More photos",
+        "phone": "Phone number",
+        "email": "Email",
+        "family_contact": "Family contact"
+      },
+      "notShared": "Not shared",
+      "sharedOn": "Shared {{date}}",
+      "share": "Share",
+      "stop": "Stop sharing",
+      "confirm": {
+        "additional_photos": "Share your other photos with {{name}}? They will see every photo on your profile.",
+        "phone": "Share your phone number with {{name}}? They will see {{value}}.",
+        "email": "Share your email with {{name}}? They will see {{value}}.",
+        "family_contact": "Whose phone number should {{name}} get? That person approves it themselves before anything is shared."
+      },
+      "confirmCta": "Yes, share",
+      "cancel": "Cancel",
+      "unavailable": {
+        "additional_photos": "Add more photos to your profile first",
+        "phone": "No phone number on your ForKhatri account",
+        "email": "No email on your ForKhatri account",
+        "family_contact": "Add someone to your Home Circle first"
+      },
+      "theirsTitle": "What {{name}} has shared",
+      "theirsEmpty": "Nothing shared yet. That is normal early on.",
+      "photosShared": "All photos are in their profile above",
+      "error": "Couldn't update sharing. Try again.",
+      "waiting": "Waiting for your {{relationship}} to approve",
+      "askMember": "Ask your {{relationship}}",
+      "relationship": {
+        "parent": "parent",
+        "sibling": "sibling",
+        "relative": "relative"
+      }
+    },
+    "familyHint": "Name and contact stay private until {{name}} and this match connect.",
+    "publicHint": "Name and contact are shared only after you connect.",
+    "biodata": "Biodata"
   },
   "option": {
     "highest_education_level": {
@@ -103,6 +182,10 @@
       "yes": "Required",
       "no": "Not required",
       "open": "Open either way"
+    },
+    "looking_for": {
+      "bride": "Bride",
+      "groom": "Groom"
     }
   },
   "photo": {
@@ -116,7 +199,13 @@
     "title": "My profile",
     "savedBadge": "Profile saved",
     "completenessCta": "See completeness →",
-    "preview": "Preview my profile",
+    "preview": {
+      "before": "Before you connect",
+      "after": "After you connect",
+      "beforeNote": "This is all anyone sees until you both accept — no name, no photo. They also see the facts you have in common.",
+      "afterNote": "Once you both accept, they see your full profile. Anything you chose to hide stays hidden.",
+      "noBasics": "Basics not added yet"
+    },
     "ageYears": "{{age}} yrs",
     "tabEdit": "Edit",
     "tabPreview": "Preview",
@@ -128,7 +217,11 @@
     "ageRange": "Age {{min}}–{{max}}",
     "partnerPrivate": "Only you see this. It's used to find your matches, never shown on your profile.",
     "photosReorderHint": "Press and hold a photo, then drag it to a new spot. The first photo is your main one.",
-    "tags": {"pick":"Pick up to {{max}} · {{count}} chosen","custom":"Add your own","addCustom":"Add"},
+    "tags": {
+      "pick": "Pick up to {{max}} · {{count}} chosen",
+      "custom": "Add your own",
+      "addCustom": "Add"
+    },
     "section": {
       "basics": "Basics",
       "lifestyle": "Lifestyle",
@@ -136,13 +229,6 @@
       "future": "Future plans",
       "partner": "Partner preference",
       "prompts": "In my words"
-    },
-    "preview": {
-      "before": "Before you connect",
-      "after": "After you connect",
-      "beforeNote": "This is all anyone sees until you both accept — no name, no photo. They also see the facts you have in common.",
-      "afterNote": "Once you both accept, they see your full profile. Anything you chose to hide stays hidden.",
-      "noBasics": "Basics not added yet"
     },
     "photos": {
       "title": "Photos",
@@ -220,5 +306,39 @@
     "ageRangeFrom": "From",
     "ageRangeTo": "To",
     "saveError": "Couldn't save — check your connection and try again."
+  },
+  "notes": {
+    "title": "Your private notes",
+    "intro": "Only you can see these. You can ask {{name}} to read one; nothing is shared unless {{name}} agrees.",
+    "placeholder": "What stood out about this match?",
+    "guard": "Keep notes about this match. Never paste private messages here.",
+    "save": "Save note",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "saveEdit": "Save",
+    "ask": "Ask {{name}} to read",
+    "askConfirm": "{{name}} will read exactly this:",
+    "askSend": "Send request",
+    "status": {
+      "private": "Only you",
+      "requested": "Waiting for {{name}}",
+      "shared": "{{name}} read this",
+      "declined": "{{name}} said not now"
+    },
+    "error": "Couldn't save. Try again."
+  },
+  "voice": {
+    "title": "Your voice introduction",
+    "intro": "Say hello in your own voice, up to a minute. Only someone you have connected with can hear it.",
+    "record": "Record",
+    "rerecord": "Record again",
+    "stop": "Stop ({{seconds}}s left)",
+    "delete": "Delete",
+    "speak": "Speak",
+    "listening": "Listening…",
+    "error": "That recording could not be saved. Try again.",
+    "noMicrophone": "No microphone available in this browser.",
+    "theirs": "{{name}} recorded an introduction"
   }
 }

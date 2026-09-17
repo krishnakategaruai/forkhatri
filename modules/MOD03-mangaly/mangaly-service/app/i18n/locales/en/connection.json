@@ -4,6 +4,8 @@
     "invalidTarget": "You can't send a connection request to yourself.",
     "alreadyPending": "You already have a pending request to this profile.",
     "rateLimited": "Too many connection requests. Please try again later.",
-    "unauthorizedOnBehalfOf": "You're not an authorized Home Circle member for that profile."
+    "onBehalfNotAllowed": "Only someone in this candidate's Home Circle can send a request for them.",
+    "shareUnavailable": "There is nothing to share in this category yet.",
+    "notAMember": "Choose someone who is in your Home Circle."
   }
 }

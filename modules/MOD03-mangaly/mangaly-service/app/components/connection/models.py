@@ -23,8 +23,8 @@ from datetime import datetime
 from enum import StrEnum
 from uuid import UUID, uuid4
 
+from sqlalchemy import DateTime, text
 from sqlalchemy import Enum as SqlEnum
-from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -54,6 +54,7 @@ class ConnectionRequest(Base):
 
     id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True, default=uuid4)
     acting_account_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True))
+    subject_account_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True))
     on_behalf_of_profile_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True), default=None)
     target_profile_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True))
     status: Mapped[ConnectionStatus] = mapped_column(
@@ -70,3 +71,22 @@ class ConnectionRequest(Base):
     decided_by_account_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True), default=None)
     created_at: Mapped[datetime] = mapped_column(server_default=text("now()"))
     updated_at: Mapped[datetime] = mapped_column(server_default=text("now()"))
+
+
+class SharingGrant(Base):
+    """[TR046] One row per sharer per category (migration 015). `revoked_at` is
+    set when the sharer stops sharing; `shared_value` holds the phone or email
+    they revealed and is cleared at the same moment."""
+
+    __tablename__ = "sharing_grant"
+    __table_args__ = {"schema": _SCHEMA}
+
+    id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True, default=uuid4)
+    connection_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True))
+    category: Mapped[str]
+    granted_by_account_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True))
+    granted_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=text("now()")
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    shared_value: Mapped[str | None] = mapped_column(default=None)

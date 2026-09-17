@@ -5,6 +5,9 @@
  * -side ORM. Every mutation helper added later must send an idempotency key
  * (TR102), which is why that lives here rather than per call site. */
 
+import { reportOutage } from './outage';
+import { redirectToEntrance } from './platform';
+
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8000';
 
@@ -38,6 +41,34 @@ export async function getHealth(signal?: AbortSignal): Promise<HealthResult> {
       reason: err instanceof Error ? err.message : 'unreachable',
     };
   }
+}
+
+/**
+ * [ForKhatri TR16, 2026-09-14] Every MangalyService call goes through here:
+ * `credentials: 'include'` so the HttpOnly ForKhatri session cookie rides
+ * along, and a 401 hands the member to the ForKhatri entrance (with
+ * `return_to`) instead of leaving a screen silently empty. Only a 401 does
+ * that — a 503 means "cannot check right now", not "signed out".
+ *
+ * A READ that cannot reach the service (network error, 502/503/504) reports an
+ * outage, which swaps the screen for the shared retry state (`lib/outage.ts`).
+ * Mutations keep their own inline errors. Callers still see the same
+ * Response/exception as before.
+ */
+const OUTAGE_STATUSES = new Set([502, 503, 504]);
+
+export async function apiFetch(input: string, init: RequestInit = {}): Promise<Response> {
+  const isRead = (init.method ?? 'GET').toUpperCase() === 'GET';
+  let res: Response;
+  try {
+    res = await fetch(input, { ...init, credentials: 'include' });
+  } catch (err) {
+    if (isRead && !(err instanceof DOMException && err.name === 'AbortError')) reportOutage();
+    throw err;
+  }
+  if (res.status === 401) redirectToEntrance();
+  else if (isRead && OUTAGE_STATUSES.has(res.status)) reportOutage();
+  return res;
 }
 
 /** Client-generated idempotency key for queueable mutations (TR102/SP102). */

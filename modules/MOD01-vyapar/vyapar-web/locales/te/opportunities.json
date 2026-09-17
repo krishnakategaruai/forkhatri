@@ -1,4 +1,17 @@
 {
+  "actionLabel": {
+    "apply": "అప్లై చేయండి",
+    "submitProposal": "ప్రపోజల్ పంపండి",
+    "enquireNow": "విచారించండి",
+    "contact": "సంప్రదించండి",
+    "register": "నమోదు చేయండి",
+    "applyOnSource": "సోర్స్ వెబ్‌సైట్‌లో అప్లై చేయండి"
+  },
+  "workMode": {
+    "on_site": "ఆన్-సైట్",
+    "remote": "రిమోట్",
+    "both": "ఆన్-సైట్ లేదా రిమోట్"
+  },
   "new": {
     "chooseModeTitle": "ఒక అవకాశాన్ని షేర్ చేయండి",
     "modeCreate": "నేను స్వయంగా రాస్తాను",

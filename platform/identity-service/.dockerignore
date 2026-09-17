@@ -1,0 +1,15 @@
+.venv
+.env
+.env.*
+!.env.example
+**/__pycache__
+.pytest_cache
+.ruff_cache
+.mypy_cache
+.logs
+*.egg-info
+tests
+Dockerfile
+.dockerignore
+# Development member switcher: never shipped (07-tech-reqs.md "Development tools").
+app/dev_tools

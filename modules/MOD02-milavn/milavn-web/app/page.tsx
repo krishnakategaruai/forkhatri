@@ -13,6 +13,8 @@ import { useTranslation } from 'react-i18next';
 import ActivityCard from '@/components/ActivityCard';
 import AskBar from '@/components/AskBar';
 import TopActions from '@/components/TopActions';
+import { ChevronLeft } from 'lucide-react';
+import { FORKHATRI_ENTRANCE_URL } from '@/lib/platform';
 import ModeSwitcher, { type Mode } from '@/components/ModeSwitcher';
 import { CardSkeleton, EmptyState, ErrorState } from '@/components/States';
 import { api, type AroundYou } from '@/lib/api';
@@ -76,9 +78,13 @@ export default function HomePage() {
   return (
     <>
       <header className="topbar">
-        <div className="row">
+        <div className="row home-brand">
           <span className="brand-mark">M</span>
-          <div>
+          <div className="home-brand__text">
+            {/* [ParentApp TR16] Milavn sits inside ForKhatri: a breadcrumb-style way back to the hub (phones; the desktop rail has its own). */}
+            <a href={`${FORKHATRI_ENTRANCE_URL}/`} className="hub-eyebrow" aria-label={t('platform.backToHub')}>
+              <ChevronLeft size={12} strokeWidth={2.4} aria-hidden="true" />{t('platform.hub')}
+            </a>
             <h1 className="greeting" style={{ fontSize: '1.15rem' }}>{t('app.name')}</h1>
             {data && (
               <button type="button" className="link caption herechip" onClick={here ? clearHere : locateHere} disabled={locating} aria-live="polite">

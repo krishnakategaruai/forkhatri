@@ -1,0 +1,57 @@
+{
+  "title": "Commercial administration",
+  "notOperator": "This area is only for operators with commercial permission.",
+  "scopeNote": "Commercial records only. Verification, ranking weights and safety decisions cannot be changed from here — they have no control on this screen and no route behind it.",
+  "products": {
+    "title": "Products and prices",
+    "insertOnly": "A price change creates a new version. Existing versions are never edited, so every past order still reconstructs at the price it was bought at.",
+    "orders": "{{n}} orders",
+    "newPricePlaceholder": "New price (₹)",
+    "addVersion": "Add version",
+    "billing": {
+      "one_time": "One-time",
+      "monthly": "Monthly",
+      "annual": "Annual"
+    }
+  },
+  "orders": {
+    "title": "Orders",
+    "kind": {
+      "promotion": "Boosts",
+      "entitlement": "Plans",
+      "campaign": "Campaigns"
+    },
+    "empty": "No orders of this kind.",
+    "refunded": "refunded {{amount}}"
+  },
+  "refund": {
+    "open": "Refund or credit",
+    "amount": "Amount (₹)",
+    "submit": "Process refund",
+    "done": "Refund processed."
+  },
+  "diagnostics": {
+    "title": "Ranking diagnostics",
+    "help": "Shows the eligibility verdict and the score breakdown from the same ranking function members see. There is no override.",
+    "idPlaceholder": "Record id",
+    "run": "Explain",
+    "eligible": "Eligible for distribution",
+    "excluded": "Excluded from distribution",
+    "score": "Score {{total}}",
+    "memberRelative": "Relevance for opportunities is scored per viewer, so there is no single global score to show.",
+    "exclusion": {
+      "state_not_active": "Not in an active state",
+      "not_discoverable": "Owner turned off discoverability",
+      "distribution_limited_pending_review": "Distribution limited pending moderation review",
+      "unverified_excluded_from_verified_only_searches": "Unverified — excluded from verified-only searches",
+      "material_fields_unconfirmed": "Material fields still unconfirmed"
+    }
+  },
+  "audit": {
+    "title": "Audit log",
+    "actorPlaceholder": "Actor id",
+    "actionPlaceholder": "Action",
+    "search": "Search",
+    "empty": "No audit entries match."
+  }
+}

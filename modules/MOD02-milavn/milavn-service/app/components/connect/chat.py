@@ -52,18 +52,31 @@ class Hub:
     def __init__(self) -> None:
         self._subs: dict[UUID, set[asyncio.Queue]] = {}
         self._member_subs: dict[UUID, set[asyncio.Queue]] = {}
+        self._present: dict[UUID, dict[UUID, int]] = {}  # conversation -> member -> open sockets
 
     def subscribe(self, conversation_id: UUID | None, member_id: UUID) -> asyncio.Queue:
         q: asyncio.Queue = asyncio.Queue(maxsize=200)
         if conversation_id is not None:
             self._subs.setdefault(conversation_id, set()).add(q)
+            room = self._present.setdefault(conversation_id, {})
+            room[member_id] = room.get(member_id, 0) + 1
         self._member_subs.setdefault(member_id, set()).add(q)
         return q
 
     def unsubscribe(self, conversation_id: UUID | None, member_id: UUID, q: asyncio.Queue) -> None:
         if conversation_id is not None:
             self._subs.get(conversation_id, set()).discard(q)
+            room = self._present.get(conversation_id, {})
+            if room.get(member_id, 0) <= 1:
+                room.pop(member_id, None)
+            else:
+                room[member_id] -= 1
         self._member_subs.get(member_id, set()).discard(q)
+
+    def present_in(self, conversation_id: UUID) -> set[UUID]:
+        """Who has this conversation open right now — "here" in the room (Snapchat's Friends in Chat).
+        Distinct from the app-wide heartbeat, which only says someone used Milavn in the last two minutes."""
+        return set(self._present.get(conversation_id, {}))
 
     def publish(self, conversation_id: UUID, event: dict) -> None:
         for q in list(self._subs.get(conversation_id, ())):
@@ -94,6 +107,18 @@ class Person:
     avatar: str | None
     active: bool = False
     expression: str | None = None
+    last_seen_at: datetime | None = None
+
+
+@dataclass(slots=True)
+class SharedContext:
+    """Why two people can talk (FR096): the next activity they share, else a shared circle. Approximate place only."""
+
+    kind: str  # 'activity' | 'circle'
+    title: str
+    ref: str  # activity slug or circle id
+    starts_at: datetime | None
+    locality: str | None
 
 
 @dataclass(slots=True)
@@ -105,6 +130,7 @@ class Conversation:
     last_message_at: datetime | None
     last_preview: str | None
     unread: int
+    context: SharedContext | None = None
 
 
 @dataclass(slots=True)
@@ -123,18 +149,30 @@ class Message:
     reactions: dict[str, list[UUID]] = field(default_factory=dict)
 
 
-def _person_rows(ids: list[UUID], presence: dict[UUID, tuple[bool, str | None]]) -> list[Person]:
-    names = identity.display_names_for(ids)
-    return [Person(i, names[i].display_name, names[i].avatar, *(presence.get(i, (False, None)))) for i in ids]
+Presence = tuple[bool, str | None, datetime | None]  # active, expression, last_seen_at
 
 
-async def presence_of(session: AsyncSession, ids: list[UUID]) -> dict[UUID, tuple[bool, str | None]]:
+async def _person_rows(ids: list[UUID], presence: dict[UUID, Presence]) -> list[Person]:
+    names = await identity.display_names_for(ids)
+    return [Person(i, names[i].display_name, names[i].avatar, *(presence.get(i, (False, None, None)))) for i in ids]
+
+
+async def presence_of(session: AsyncSession, ids: list[UUID]) -> dict[UUID, Presence]:
     if not ids:
         return {}
     rows = (
-        await session.execute(text("SELECT member_id, active, expression FROM milavn_connect.presence_of(CAST(:ids AS uuid[]))"), {"ids": [str(i) for i in ids]})
+        await session.execute(
+            text("SELECT member_id, active, expression, last_seen_at FROM milavn_connect.presence_of(CAST(:ids AS uuid[]))"), {"ids": [str(i) for i in ids]}
+        )
     ).all()
-    return {r[0]: (bool(r[1]), r[2]) for r in rows}
+    return {r[0]: (bool(r[1]), r[2], r[3]) for r in rows}
+
+
+async def shared_context(session: AsyncSession, *, me: UUID, other: UUID) -> SharedContext | None:
+    row = (
+        await session.execute(text("SELECT kind, title, ref, starts_at, locality FROM milavn_connect.shared_context(:me, :other)"), {"me": str(me), "other": str(other)})
+    ).first()
+    return SharedContext(*row) if row else None
 
 
 async def can_message(session: AsyncSession, a: UUID, b: UUID) -> bool:
@@ -206,7 +244,7 @@ async def list_conversations(session: AsyncSession, *, me: UUID) -> list[Convers
         if prev:
             preview = prev[1] if prev[0] == "text" else ("📷" if prev[0] == "photo" else f"· {prev[2]}")
         unread = int((await session.execute(text("SELECT milavn_connect.unread_count(:c, :m)"), {"c": str(cid), "m": str(me)})).scalar_one() or 0)
-        out.append(Conversation(cid, kind, title, _person_rows(others, pres), last_at, preview, unread))
+        out.append(Conversation(cid, kind, title, await _person_rows(others, pres), last_at, preview, unread))
     return out
 
 
@@ -216,7 +254,9 @@ async def conversation(session: AsyncSession, *, conversation_id: UUID, me: UUID
         raise NotFound()
     ids = await member_ids(session, conversation_id)
     pres = await presence_of(session, ids)
-    return Conversation(row[0], row[1], row[2], _person_rows(ids, pres), row[3], None, 0)
+    others = [i for i in ids if i != me]
+    context = await shared_context(session, me=me, other=others[0]) if row[1] == "direct" and others else None
+    return Conversation(row[0], row[1], row[2], await _person_rows(ids, pres), row[3], None, 0, context)
 
 
 # --- messages ------------------------------------------------------------------------
@@ -240,7 +280,7 @@ async def messages(session: AsyncSession, *, conversation_id: UUID, me: UUID, af
             {"c": str(conversation_id), "after": after, "l": limit},
         )
     ).all()
-    names = identity.display_names_for([r[2] for r in rows])
+    names = await identity.display_names_for([r[2] for r in rows])
     out = [_msg(r, names, me) for r in rows]
     if out:
         rx = (
@@ -270,7 +310,7 @@ async def send(session: AsyncSession, *, conversation_id: UUID, me: UUID, kind: 
         {"id": str(mid), "c": str(conversation_id), "m": str(me), "k": kind, "b": (body or "").strip()[:2000] or None, "r": media_ref, "e": expression},
     )
     await session.execute(text("SELECT milavn_connect.touch_conversation(:c)"), {"c": str(conversation_id)})
-    ident = identity.display_names_for([me])[me]
+    ident = (await identity.display_names_for([me]))[me]
     return Message(
         mid,
         conversation_id,

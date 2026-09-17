@@ -25,6 +25,7 @@ from app.db import get_conn
 from app.deps import Locale
 from app.i18n import translate
 from app.identity import AuthzContext, resolve_authz_context
+from app.routers.privacy import require_accepted
 from app.routers.opportunities import TYPE_ACTION_LABEL
 from app.routers.reviews import issue_review_invites
 from app.impressions import log_events
@@ -119,6 +120,9 @@ async def create_enquiry(
 ) -> EnquiryOut:
     if not body.listing_id and not body.opportunity_id:
         raise HTTPException(status_code=422, detail=translate("enquiries.error.noTarget", lang))
+    # [FR53/TR053] the gate every gated action calls before proceeding.
+    await require_accepted(conn, ctx.member_id, "privacy", lang)
+    await require_accepted(conn, ctx.member_id, "terms", lang)
 
     # [Idempotency-CC] repeated key returns the original response.
     if idempotency_key:
@@ -164,6 +168,12 @@ async def create_enquiry(
         # outer request-scoped transaction (get_conn()'s own) stays usable
         # for the lookup query that follows.
         async with conn.transaction():
+            # [Real bug found via curl testing, fixed here] content_language
+            # lives on vyapar_enquiries.enquiry_messages (the actual authored
+            # text), not on vyapar_enquiries.enquiries (the thread/state
+            # container) — the ER model only put the TR042 column on tables
+            # holding authored content. An earlier pass wrongly inserted it
+            # into the enquiries INSERT, which raised UndefinedColumnError.
             row = await conn.fetchrow(
                 """INSERT INTO vyapar_enquiries.enquiries
                      (sender_id, provider_id, listing_id, opportunity_id, action_type, sub_choice, delivered)
@@ -184,8 +194,8 @@ async def create_enquiry(
         )
 
     await conn.execute(
-        "INSERT INTO vyapar_enquiries.enquiry_messages (enquiry_id, sender_id, body, attachment_url) VALUES ($1,$2,$3,$4)",
-        row["id"], ctx.member_id, body.message, body.attachment_url,
+        "INSERT INTO vyapar_enquiries.enquiry_messages (enquiry_id, sender_id, body, attachment_url, content_language) VALUES ($1,$2,$3,$4,$5)",
+        row["id"], ctx.member_id, body.message, body.attachment_url, lang,
     )
     # [FR32] enquiry event on the target (sponsored if it is boosted right now)
     if body.listing_id:
@@ -266,9 +276,11 @@ async def reply_to_enquiry(
     row = await _get_enquiry_or_404(conn, enquiry_id, ctx.member_id, lang)
     if row["state"] == "restricted":
         raise HTTPException(status_code=400, detail=translate("enquiries.error.restricted", lang))
+    # [TR042] content_language recorded on every authored message, same as
+    # the create-enquiry path — reply text is content too.
     msg = await conn.fetchrow(
-        "INSERT INTO vyapar_enquiries.enquiry_messages (enquiry_id, sender_id, body, attachment_url) VALUES ($1,$2,$3,$4) RETURNING *",
-        enquiry_id, ctx.member_id, body.body, body.attachment_url,
+        "INSERT INTO vyapar_enquiries.enquiry_messages (enquiry_id, sender_id, body, attachment_url, content_language) VALUES ($1,$2,$3,$4,$5) RETURNING *",
+        enquiry_id, ctx.member_id, body.body, body.attachment_url, lang,
     )
     new_state = row["state"]
     is_provider = ctx.member_id == row["provider_id"]

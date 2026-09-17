@@ -1,5 +1,6 @@
 'use client';
 
+import EntranceRedirect from '@/components/EntranceRedirect';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -21,7 +22,15 @@ import { authErrorText } from '@/lib/authErrorText';
  * TR093 requires an identical response whether the identifier exists, on
  * both the OTP-request and password paths alike. */
 
+/* [ForKhatri TR16, 2026-09-14] Sign-in, sign-up, one-time codes and password
+ * reset belong to the ForKhatri entrance. This route only hands off to it; the
+ * interim screen below is retained (not rendered) rather than deleted. */
 export default function LoginPage() {
+  return <EntranceRedirect />;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function LegacyLoginPage() {
   const { t } = useTranslation(['auth', 'common']);
   const router = useRouter();
 

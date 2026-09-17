@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
@@ -20,7 +21,13 @@ router = APIRouter(prefix="/feedback", tags=["feedback"])
 class FeedbackRequest(BaseModel):
     occurrence_id: UUID
     rating: int | None = Field(default=None, ge=1, le=5)
-    comments: str | None = None
+    comments: str | None = Field(default=None, max_length=500)
+    come_again: Literal["yes", "maybe", "no"] | None = None  # [FR107] validated here: anything else is a 422
+
+
+class ThanksRequest(BaseModel):
+    occurrence_id: UUID
+    message: str = Field(min_length=1, max_length=140)
 
 
 @router.get("/prompt/{occurrence_id}")
@@ -48,6 +55,21 @@ async def submit(body: FeedbackRequest, session: DbSession, member: CurrentMembe
                 organizer_member_id=occ.creator_member_id,
                 rating=body.rating,
                 comments=body.comments,
+                come_again=body.come_again,
             )
             outcome.set_result(201, {"ok": True})
     return JSONResponse(outcome.response, status_code=outcome.status_code)
+
+
+@router.post("/thanks", status_code=201)
+async def thank_host(body: ThanksRequest, session: DbSession, member: CurrentMember, lang: Locale) -> dict:
+    """[FR107] An attendee thanks the host once per activity (they can reword it). The host is told the first time."""
+    st = await activity.viewer_status(session, body.occurrence_id, member.member_id)
+    if st not in ("attended", "checked_in"):
+        raise HTTPException(status_code=409, detail=translate("feedback.notAttended", lang))
+    occ = await activity.get(session, occurrence_id=body.occurrence_id)
+    try:
+        first = await trust.give_thanks(session, occurrence_id=body.occurrence_id, member_id=member.member_id, host_member_id=occ.creator_member_id, message=body.message)
+    except trust.InvalidThanks as exc:
+        raise HTTPException(status_code=422, detail={"fields": ["message"]}) from exc
+    return {"ok": True, "first": first}

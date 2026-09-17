@@ -25,6 +25,8 @@ interface SearchListing {
   locality: string;
   categories: string[];
   capabilities: string[];
+  category_labels: string[];
+  capability_labels: string[];
   verification_state: string;
   contact_verified: boolean;
   reputation?: Reputation | null; // [FR28] reputation line on every result card
@@ -121,7 +123,7 @@ export default function BusinessesPage() {
               key={`sponsored-${r.listing.id}`}
               href={`/listings/${r.listing.id}`}
               title={r.listing.name}
-              subtitle={`${r.listing.locality} · ${[...r.listing.categories, ...r.listing.capabilities].join(", ") || "—"}`}
+              subtitle={`${r.listing.locality} · ${[...r.listing.category_labels, ...r.listing.capability_labels].join(", ") || "—"}`}
               verified={r.listing.verification_state === "verified"}
               verificationLabel={t("discover:businesses.verifiedLabel")}
               sponsored
@@ -139,7 +141,7 @@ export default function BusinessesPage() {
               key={r.listing.id}
               href={`/listings/${r.listing.id}`}
               title={r.listing.name}
-              subtitle={`${r.listing.locality} · ${[...r.listing.categories, ...r.listing.capabilities].join(", ") || "—"}`}
+              subtitle={`${r.listing.locality} · ${[...r.listing.category_labels, ...r.listing.capability_labels].join(", ") || "—"}`}
               verified={r.listing.verification_state === "verified"}
               verificationLabel={t("discover:businesses.verifiedLabel")}
               meta={[reputationText(r.listing.reputation), relevanceLabel(r.relevance_reason)].filter(Boolean).join(" · ")}

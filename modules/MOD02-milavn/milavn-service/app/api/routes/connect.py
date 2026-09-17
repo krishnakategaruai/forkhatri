@@ -5,6 +5,7 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 from app.api.deps import CurrentMember, DbSession, Locale
 from app.api.schemas import CardOut
@@ -37,6 +38,74 @@ async def suggestions(session: DbSession, member: CurrentMember) -> list[dict]:
         }
         for s in await connect.suggestions(session, viewer_member_id=member.member_id)
     ]
+
+
+class FollowRequest(BaseModel):
+    follow: bool = True
+
+
+@router.post("/{member_id}/follow")
+async def follow_host(member_id: UUID, body: FollowRequest, session: DbSession, member: CurrentMember) -> dict:
+    """[FR122] Follow a host's calendar (private — the host is not told)."""
+    from app.components.activity import interface as activity
+
+    following = await activity.follow_host(session, member_id=member.member_id, host_member_id=member_id, follow=body.follow)
+    return {"following": following}
+
+
+class FreeNowRequest(BaseModel):
+    minutes: int = 120  # [FR119] 15 minutes to 4 hours; nothing longer is "right now"
+    locality: str | None = None
+    note: str | None = None
+
+
+@router.get("/free-now")
+async def free_now(session: DbSession, member: CurrentMember) -> dict:
+    """[FR119] Who in my circles is free at the moment, and am I?"""
+    return {
+        "mine": await connect.my_free_now(session, member_id=member.member_id),
+        "people": await connect.free_now_nearby(session, viewer_member_id=member.member_id),
+    }
+
+
+@router.post("/free-now")
+async def set_free_now(body: FreeNowRequest, session: DbSession, member: CurrentMember) -> dict:
+    return await connect.set_free_now(session, member_id=member.member_id, minutes=body.minutes, locality=body.locality, note=body.note)
+
+
+@router.delete("/free-now", status_code=204)
+async def clear_free_now(session: DbSession, member: CurrentMember) -> None:
+    await connect.clear_free_now(session, member_id=member.member_id)
+
+
+class MeetAgainRequest(BaseModel):
+    occurrence_id: UUID
+    member_id: UUID
+    pick: bool
+
+
+@router.get("/meet-again/{occurrence_id}")
+async def meet_again_candidates(occurrence_id: UUID, session: DbSession, member: CurrentMember) -> list[dict]:
+    """[FR106] People who were there, for someone who was there; `picked` is only the viewer's own private choice."""
+    return await connect.meet_again_candidates(session, occurrence_id=occurrence_id, viewer_member_id=member.member_id)
+
+
+@router.post("/meet-again")
+async def meet_again(body: MeetAgainRequest, session: DbSession, member: CurrentMember, lang: Locale) -> dict:
+    """[FR106] Pick or un-pick. `mutual` is true only when both picked each other — a one-sided pick is never revealed."""
+    try:
+        mutual = await connect.pick_meet_again(
+            session, occurrence_id=body.occurrence_id, chooser_member_id=member.member_id, chosen_member_id=body.member_id, pick=body.pick
+        )
+    except connect.NotThere as exc:
+        raise HTTPException(status_code=404, detail=translate("meet.notThere", lang)) from exc
+    return {"picked": body.pick, "mutual": mutual}
+
+
+@router.get("/connections")
+async def connections(session: DbSession, member: CurrentMember) -> list[dict]:
+    """[FR106] "You'd both meet again" — mutual picks only, visible to the two people."""
+    return await connect.connections(session, viewer_member_id=member.member_id)
 
 
 @router.get("/{member_id}")

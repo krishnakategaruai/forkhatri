@@ -552,6 +552,75 @@ password" affordance itself — the mechanism (a real, hashed, Argon2id
 credential a user can set) already exists server-side from the original
 implementation; only the entry-point screen is deferred.
 
+### DEC-V1-016 — Discover shows each candidate's main photo and age (product-owner decision, 2026-09-15)
+
+In the context of reviewing the live Discover screen as a parent helping a daughter, the product owner compared it with a Shaadi.com profile card and rejected the text-only card: "at least one pic should be shown to user, without that what will they see? It is just time waste." This reverses the earlier choice (Step 9, 2026-09-14) that Discovery results carry no name or photo until a connection is accepted.
+
+**Decision.** A signed-in member (or a Home Circle member searching for their candidate) sees each searchable candidate's **main photo** and **age** on Discover cards, on incoming connection requests and on suggestion cards. The following stay consent-gated exactly as before: the candidate's **name**, every **additional photo** (FR046, shared per connection), **phone, email and family contact** (FR046–FR048, FR057–FR059), and the full biodata (FR020, unlocked by an accepted connection).
+
+**How it is enforced.** The main photo is served only through the authorized media route, to signed-in members, and only while the candidate is searchable (hiding or pausing a profile also hides the photo). Non-main photos remain readable only by the owner or an accepted connection the owner shared them with.
+
+**What this changes.** FR021's "searchable ≠ viewer-visible" separation still holds for everything except the main photo and age. `discovery.SearchResult`'s earlier "never name or photo" rationale is superseded by this entry.
+
+### DEC-V1-017 — Matches follow each member's own "looking for" answer, asked while creating the profile (product-owner decision, 2026-09-15)
+
+In the context of the Discover engine returning candidates of any gender (the documents are silent on it: M01-G §7 and §23 leave the hard-filter taxonomy open, and gender appears only as a basic-tier field in DEC-V1-001), the product owner decided: "it comes based on their preference … they give who you're interested in, as per that it should be coming", and "those details needed to be taken while filling profile".
+
+**Decision.**
+- Every member answers **Looking for: Bride / Groom** in the profile-creation wizard (step 2, beside gender). It is stored as `partner_preference.looking_for` and can be changed later under Partner preferences.
+- Discover (for a candidate, or for a Home Circle member searching for their candidate) shows a profile **only when both sides fit**: the candidate is who the seeker is looking for, and the seeker is who the candidate is looking for. This is a hard filter, applied before DEC-V1-002's weighted ranking.
+- A member who has not answered sees a prompt to answer instead of results; a family member sees that the candidate has not answered yet. Candidates who have not answered do not appear in anyone's results.
+
+**What this changes.** DEC-V1-002's ranking weights are unchanged; "looking for" is an eligibility rule, not a ranking signal. Other partner preferences (age range, locality) stay ranking signals per M01-G §7 unless the owner decides otherwise.
+
+### DEC-V1-018 — Private family notes are about one match, private to their author, and read by the candidate only by choice (implementation decision from the source documents, 2026-09-15)
+
+In the context of the product owner asking what "family notes" were and to "improve and innovate here", the existing build was checked against the sources. M01-B §12 and M01-I say parents keep private working notes "while evaluating potential matches", notes are not automatically visible to the candidate or the prospective family, and a selected note can be taken forward to the candidate with the candidate's approval. UX13 specifies "My notes on [Profile]", a per-note request with a preview of exactly what would be shared, and a candidate decision that may be a decline with no explanation. TS035 says no other Home Circle member may see a note. The existing build had no match on a note, let every family member read every other member's notes, had no request step and no decline.
+
+**Decision.**
+- A note belongs to one match and is written on that match's profile while acting for the candidate (the context switcher). Discover's family card links to it ("Private note"). A family member who is not connected sees the same pre-connection card Discover shows (photo, age, place, education, profession), so they know which match the notes are about.
+- Only the author can read, edit or delete their notes. The candidate and every other member of the circle cannot.
+- Per note, the author may **ask the candidate to read it**, after seeing exactly the words the candidate would read. The candidate sees **who asks and which match** but not the words, and chooses **Read note** or **Not now**. Reading shares only that note. "Not now" records no reason and the author sees only "said not now".
+- A shared note is fixed: the author may delete it but never change what the candidate agreed to read. Editing a note that was asked about or declined makes it private again, and a declined note cannot be asked about again unchanged, so a "no" is never met with the same request.
+- A note is at most 1,000 characters. The editor says "Never paste private messages here", and no API copies message content into a note (TR016's product-level guardrail).
+- When a member leaves the circle, they lose access to their notes. Pending requests disappear, and notes the candidate already read stay with the candidate.
+
+**How it is enforced.** Migration 022: `subject_account_id` on `home_circle_note`; RLS `hc_note_author` (active author only, and an author can never mark a note shared) and `hc_note_candidate_reads_shared` (the candidate reads only shared notes); SECURITY DEFINER `list_note_forward_requests` (no content), `decide_note_forward` and `list_shared_notes`, each requiring the caller to be the candidate.
+
+### DEC-V1-019 — Family members suggest; only the candidate sends a connection request (implementation decision from the source documents, 2026-09-15)
+
+In the context of a suspected bug in accepting a connection request sent by a family member "on behalf of" a candidate, the code and the sources were checked. Accepting grants profile visibility between the request's **sender account** and the recipient (`grant_connection_candidate_info`, migration 010). For a parent with no profile of their own, nobody got visibility. For a family member who is also a candidate, the wrong person did, and the candidate became connected with someone they never chose. A live example was found in the development data: a removed circle member's pending request in Ananya's name.
+
+The sources settle what should happen. M01-D §7 says that when a relative finds a potential match, "the natural action is to raise a suggestion". M01-I §6–7 says a suggestion is an initiation action, not a decision, and that the person who initiates does not control the final decision. M01-B and M01-D §9 list *connect* among the candidate's own actions. A request sent in the candidate's name is a decision taken for them.
+
+**Decision.** `POST /connections` refuses any `on_behalf_of_profile_id` with a translated message ("Family members suggest profiles. Only the candidate can send a connection request."). Family members use **Suggest to [Candidate]** (FR014), and the candidate decides whether to connect. FR042's accountability requirement still holds: every request records who sent it. The `on_behalf_of_profile_id` column stays for history. If on-behalf sending is ever wanted, it needs a candidate-confirmation step first, and accept must grant to the candidate, not to the sender.
+
+### DEC-V1-020 — A searchable candidate's biodata is readable before connecting; identity is not (product-owner decision, 2026-09-17)
+
+In the context of the product owner asking that "parents should see details like shaadi.com about other candidate whereas candidate see hing[e] kind of details that user added also", both roles were in fact seeing the same four fields — age, locality, education, profession — because every other attribute sat behind the `candidate_info` grant that only the two parties of an accepted connection ever hold. A parent judging a match for their daughter could not see marital status, diet, family expectations, or what the person is looking for.
+
+Checked against the reference service: Shaadi.com shows a registered member another member's full biodata and gates identity and contact instead — photos behind a per-member photo-privacy setting ("Photo Visible to Contacted and Accepted Members"), phone numbers behind contact settings and acceptance (Shaadi.com photo FAQ, privacy tips, and privacy policy, read 2026-09-17).
+
+**Decision.** Any signed-in member may read a **searchable** candidate's profile attributes — education, profession, marital history, relocation, lifestyle, family expectations, horoscope, partner preferences, and the candidate's own written prompts — together with the main photo, age and locality. The **name, phone, email and every non-primary photo stay hidden until a connection is accepted**, exactly as before (FR021). A declined or unset field is simply absent.
+
+**The same facts, two readings.** A Home Circle member acting for their candidate sees a **biodata sheet**: dense labelled rows, the way every Indian matrimony service presents a match. A candidate sees the **Hinge-style** read of the same facts: photo first, then the person's own prompts, then grouped sections.
+
+**How it is enforced.** Migration 027's `mangaly_profile.public_biodata()` returns only `state = 'value'` attributes, only for a profile whose Discovery row is `searchable`, only to a signed-in member, and never touches `profile.name` or any identifier. `GET /profile/view/{id}/public` composes it with the existing Discovery snippet and main-photo card.
+
+### DEC-V1-021 — A conversation is a session, not a history; screenshots are not claimed to be preventable (product-owner decision, 2026-09-17)
+
+In the context of the product owner asking for a private conversation that is "session based and no memory, which prohibits screenshots and image uploads also and close[s] as soon as session ends from any one candidate", the previous behaviour was a persistent thread with a 30-day lazy purge (DEC-V1-014).
+
+Research: screenshot prevention is **not possible on the web**. Screen capture is an operating-system function; HTML, CSS and JavaScript cannot override it; third-party capture tools are invisible to the page; and even native apps that block it (Telegram secret chats, Confide's ScreenShield) are defeated by a second camera. Platforms that "protect" ephemeral content in practice either notify or accept the risk — expiring content adds little, because screenshots, separate cameras, and copy-paste all give it permanent form.
+
+**Decision.**
+- The thread is a **session**. When either person leaves it — closing the tab, switching away on a phone, pressing back, or tapping "End chat and delete" — every message the two wrote is deleted for both, and the thread reopens empty. The conversation itself remains (the connection is still accepted) with its system line.
+- **No memory:** nothing written in a session survives it. This replaces DEC-V1-014's 30-day window as the promise the product makes; the lazy purge stays as a backstop for anything a crash leaves behind.
+- **No uploads:** a conversation carries text only. There is no attachment path in the API or the UI, so there is nothing to disable.
+- **Screenshots:** the thread states plainly that a browser cannot prevent a screenshot or a screen recording, and that anything sent can be captured. Claiming a protection we cannot deliver would be worse than the risk itself; the product's whole position is honest disclosure.
+
+**What this leaves open.** Presence is not tracked: the session ends on the leaver's own signal, not on a heartbeat, so a browser killed without firing `pagehide` leaves the messages until either person next opens or closes the thread. A heartbeat-based close is the natural next step if the owner wants the guarantee to hold through a crash.
+
 ## Known technical debt (tracked, not blocking V1)
 
 Per `06-impact-analysis.md` IA092: Mangaly is building its own interim account/credential system (FR092-FR095) because no Common Platform Identity & Trust Service exists yet, ahead of Mangaly in build order (ADR-016/017) — a fact FR092 itself already discloses honestly rather than silently. This is the correct and only viable choice given Mangaly's build-order position, not a mistake, but it creates a real, high-likelihood future obligation: whenever a platform-wide Identity module is eventually built, Mangaly's live candidate credentials and sessions will need migrating into it, and live credential/session migration is a genuinely high-risk operation class. Recording this now, explicitly, as a planned future migration rather than a surprise discovered later, is the entire value of naming it here — no action is required of V1 itself beyond building FR092-FR095 exactly as specified. **Credential hashing (2026-09-13, Step 8 note):** the interim `mangaly_identity.account.credential_hash` column names no algorithm in `schema.sql` — Step 9 must implement this using **Argon2id** (current OWASP-recommended default) or bcrypt with a work factor tuned to ~250–500ms verification cost, never an unsalted or fast general-purpose hash; this is a plain implementation instruction, not an open design question.

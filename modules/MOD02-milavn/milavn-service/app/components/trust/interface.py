@@ -37,8 +37,10 @@ REPUTATION_LABELS = {
     "has_hosted": "Has hosted before",
     "reliable_attendee": "Reliable attendee",
     "community_contributor": "Community contributor",
+    "appreciated_host": "Appreciated host",
     "new_to_community": "New to the community",
 }
+COME_AGAIN = ("yes", "maybe", "no")
 
 
 @dataclass(frozen=True, slots=True)
@@ -157,19 +159,73 @@ async def submit_feedback(
     organizer_member_id: UUID,
     rating: int | None,
     comments: str | None,
+    come_again: str | None = None,
 ) -> None:
+    """[FR066-FR069, FR107] One private question — "Would you come again?" — plus an optional line. Nobody but
+    a moderator ever reads an individual answer; the host sees counts only."""
+    if come_again is not None and come_again not in COME_AGAIN:
+        raise FeedbackNotAllowed(come_again)
     await session.execute(
         text(
             """
-            INSERT INTO milavn_trust.feedback (occurrence_id, participant_member_id, rating_internal, comments_internal)
-            VALUES (:o, :m, :r, NULLIF(:c, ''))
+            INSERT INTO milavn_trust.feedback (occurrence_id, participant_member_id, rating_internal, comments_internal, come_again)
+            VALUES (:o, :m, :r, NULLIF(:c, ''), :ca)
             ON CONFLICT (occurrence_id, participant_member_id) DO UPDATE
-              SET rating_internal = EXCLUDED.rating_internal, comments_internal = EXCLUDED.comments_internal
+              SET rating_internal = EXCLUDED.rating_internal, comments_internal = EXCLUDED.comments_internal, come_again = EXCLUDED.come_again
             """
         ),
-        {"o": str(occurrence_id), "m": str(member_id), "r": rating, "c": (comments or "").strip()},
+        {"o": str(occurrence_id), "m": str(member_id), "r": rating, "c": (comments or "").strip(), "ca": come_again},
     )
-    # [FR067] Feeds reputation internally; [FR069] a positive rating adds a
-    # signal, a low rating adds nothing automatic — a human decides.
-    if rating is not None and rating >= 4:
+    # [FR067] Feeds reputation internally; [FR069] a positive answer adds a
+    # signal, a negative one adds nothing automatic — a human decides.
+    if come_again == "yes" or (rating is not None and rating >= 4):
         await record_signal(session, member_id=organizer_member_id, signal="community_contribution", occurrence_id=occurrence_id, weight=0.5)
+
+
+# --- Thanks (FR107) -------------------------------------------------------------
+
+
+class InvalidThanks(Exception):
+    pass
+
+
+async def give_thanks(session: AsyncSession, *, occurrence_id: UUID, member_id: UUID, host_member_id: UUID, message: str) -> bool:
+    """One thank-you per attendee per activity (editable). Returns True the first time, so the host is told once."""
+    msg = (message or "").strip()
+    if not 1 <= len(msg) <= 140 or member_id == host_member_id:
+        raise InvalidThanks
+    inserted = (
+        await session.execute(
+            text(
+                "INSERT INTO milavn_trust.thanks (occurrence_id, from_member_id, to_member_id, message) VALUES (:o, :f, :t, :m) "
+                "ON CONFLICT (occurrence_id, from_member_id) DO UPDATE SET message = EXCLUDED.message RETURNING (xmax = 0)"
+            ),
+            {"o": str(occurrence_id), "f": str(member_id), "t": str(host_member_id), "m": msg},
+        )
+    ).scalar_one()
+    if inserted:
+        from app.events import bus
+
+        await bus.publish(
+            session,
+            schema="milavn_trust",
+            event_type="thanks.given",
+            aggregate_id=occurrence_id,
+            payload={"occurrence_id": occurrence_id, "from_member_id": member_id, "to_member_id": host_member_id},
+        )
+    return bool(inserted)
+
+
+async def has_thanked(session: AsyncSession, *, occurrence_id: UUID, member_id: UUID) -> bool:
+    row = (
+        await session.execute(text("SELECT 1 FROM milavn_trust.thanks WHERE occurrence_id = :o AND from_member_id = :m"), {"o": str(occurrence_id), "m": str(member_id)})
+    ).first()
+    return row is not None
+
+
+async def thanks_received(session: AsyncSession, *, occurrence_id: UUID) -> list[tuple[UUID, str]]:
+    """The host's own thank-you notes for this activity (RLS: only the sender and the host can read a note)."""
+    rows = (
+        await session.execute(text("SELECT from_member_id, message FROM milavn_trust.thanks WHERE occurrence_id = :o ORDER BY created_at"), {"o": str(occurrence_id)})
+    ).all()
+    return [(r[0], r[1]) for r in rows]

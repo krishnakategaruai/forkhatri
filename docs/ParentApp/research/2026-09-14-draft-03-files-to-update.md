@@ -2,9 +2,11 @@
 project: ForKhatri
 title: Platform Consolidation — Files to Update Checklist
 date: 2026-09-14
-status: Update Plan
+status: Superseded
 scope: All sealed & in-progress pipeline artifacts
 ---
+
+> **Superseded draft.** Kept for history. Decisions and corrections: ../00c-identity-and-entrance-decisions.md. Contract: ../07-tech-reqs.md.
 
 # Files to Update for Platform Consolidation
 

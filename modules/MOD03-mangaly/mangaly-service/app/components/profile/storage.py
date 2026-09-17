@@ -29,6 +29,14 @@ from app.config.settings import get_settings
 _LOCAL_MEDIA_ROOT = Path(__file__).resolve().parents[3] / ".local-media"
 _ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
 _MAX_BYTES = 8 * 1024 * 1024  # 8 MiB — generous for a phone photo, bounded regardless
+# A voice introduction is short by design; the browser records webm/mp4.
+_ALLOWED_AUDIO_TYPES = {
+    "audio/webm": "webm",
+    "audio/ogg": "ogg",
+    "audio/mp4": "m4a",
+    "audio/mpeg": "mp3",
+}
+_MAX_AUDIO_BYTES = 5 * 1024 * 1024  # 5 MiB — about a minute of speech, bounded regardless
 
 
 class UnsupportedMedia(ValueError):
@@ -71,15 +79,55 @@ async def save_photo(profile_id: uuid.UUID, upload: UploadFile) -> str:
     return f"local://{profile_id}/{filename}"
 
 
+async def save_voice(profile_id: uuid.UUID, upload: UploadFile) -> str:
+    """Persist a recorded voice introduction, returning an opaque `storage_ref`.
+
+    Same contract and same local-disk stand-in as `save_photo()`; only the
+    accepted content types and the size cap differ."""
+    settings = get_settings()
+    if settings.object_storage_access_key != "CHANGE_ME":
+        raise NotImplementedError(
+            "OBJECT_STORAGE_ACCESS_KEY is configured but storage.py still only "
+            "implements the local-disk stand-in — wire the real backend here."
+        )
+
+    content_type = (upload.content_type or "").split(";")[0].strip()
+    ext = _ALLOWED_AUDIO_TYPES.get(content_type)
+    if ext is None:
+        raise UnsupportedMedia(f"unsupported content type: {content_type!r}")
+
+    data = await upload.read()
+    if not data:
+        raise UnsupportedMedia("empty recording")
+    if len(data) > _MAX_AUDIO_BYTES:
+        raise UnsupportedMedia(f"recording exceeds {_MAX_AUDIO_BYTES} bytes")
+
+    directory = _LOCAL_MEDIA_ROOT / str(profile_id)
+    directory.mkdir(parents=True, exist_ok=True)
+    filename = f"{uuid.uuid4()}.{ext}"
+    (directory / filename).write_bytes(data)
+
+    return f"local://{profile_id}/{filename}"
+
+
 def resolve_url(storage_ref: str) -> str:
     """[TR006 stand-in] Resolve a `storage_ref` to something a client can load.
 
-    Local-disk implementation returns a path under this service's own static
-    mount (see `main.py`) with NO expiry and NO scoping — this is explicitly
-    NOT TR006's time-bound signed URL, which is that tech req's own future
-    implementation once a real Object Storage vendor is selected. Fine for
-    local development; must not ship to production as-is.
+    Local-disk implementation returns a path served by `api/routes/media.py`,
+    which checks the viewer's authorization on every request (FR006). A real
+    Object Storage backend replaces this with TR006's short-lived signed URL.
     """
     if not storage_ref.startswith("local://"):
         raise ValueError(f"unrecognised storage_ref: {storage_ref!r}")
     return f"/media/{storage_ref.removeprefix('local://')}"
+
+
+def local_path(storage_ref: str) -> Path:
+    """The file behind a local `storage_ref`, refusing anything outside the media root."""
+    if not storage_ref.startswith("local://"):
+        raise ValueError(f"unrecognised storage_ref: {storage_ref!r}")
+    root = _LOCAL_MEDIA_ROOT.resolve()
+    path = (root / storage_ref.removeprefix("local://")).resolve()
+    if root not in path.parents:
+        raise ValueError(f"storage_ref escapes the media root: {storage_ref!r}")
+    return path

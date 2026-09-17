@@ -1,0 +1,20 @@
+# Local http rehearsal of the production stack on a machine with Docker.
+# Never used on the server.
+#
+#   LOCAL_PORT=8080 deploy/scripts/generate-secrets.sh --local-test
+#   docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.local-test.yml \
+#     --env-file deploy/secrets/.env.local-test up -d --build
+#
+# Differences from production, all driven by .env.local-test: origin
+# http://localhost:<port>, cookie `fk_session` without Secure (LOCAL_HTTP_TEST=true,
+# which the identity service accepts only for this purpose), email codes disabled,
+# no Cloudflare Tunnel, and Caddy published on 127.0.0.1 only.
+
+services:
+  caddy:
+    ports: ["127.0.0.1:${LOCAL_PORT:-8080}:80"]
+
+  cloudflared:
+    profiles: [never]
+    environment:
+      TUNNEL_TOKEN: unused-in-local-test

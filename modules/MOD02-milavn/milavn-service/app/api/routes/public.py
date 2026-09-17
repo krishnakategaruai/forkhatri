@@ -10,10 +10,13 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, status
+from datetime import UTC, datetime, timedelta
+from uuid import UUID
+
+from fastapi import APIRouter, HTTPException, Response, status
 from pydantic import BaseModel
 
-from app.api.deps import DbSession, Locale, OptionalMember
+from app.api.deps import AppSettings, DbSession, Locale, OptionalMember
 from app.api.schemas import CardOut
 from app.components.activity import interface as activity
 from app.components.discovery import interface as discovery
@@ -48,6 +51,48 @@ class PublicPage(BaseModel):
     viewer_role: str | None
 
 
+def _ics_escape(value: str) -> str:
+    return value.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
+
+
+def _ics_time(value: datetime) -> str:
+    return value.astimezone(UTC).strftime("%Y%m%dT%H%M%SZ")
+
+
+@router.get("/hosts/{host_member_id}/calendar.ics")
+async def host_calendar_feed(host_member_id: UUID, session: DbSession, settings: AppSettings) -> Response:
+    """[FR122] A calendar feed anyone can subscribe to from their phone: this host's public
+    activities, refreshed by the calendar app itself. No session is involved, so nothing that is not
+    already public on the web appears here (migration 032)."""
+    items = await activity.public_activities_of(session, host_member_id=host_member_id)
+    host = (await identity.display_names_for([host_member_id]))[host_member_id]
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//ForKhatri//Milavn//EN",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        f"X-WR-CALNAME:{_ics_escape(host.display_name)} on Milavn",
+    ]
+    for item in items:
+        ends = item["time_end"] or (item["time_start"] + timedelta(hours=2))
+        lines += [
+            "BEGIN:VEVENT",
+            f"UID:{item['id']}@milavn.forkhatri",
+            f"DTSTAMP:{_ics_time(datetime.now(UTC))}",
+            f"DTSTART:{_ics_time(item['time_start'])}",
+            f"DTEND:{_ics_time(ends)}",
+            f"SUMMARY:{_ics_escape(item['title'])}",
+            f"LOCATION:{_ics_escape(item['locality'] or '')}",
+            f"DESCRIPTION:{_ics_escape((item['description'] or '')[:300])}",
+            f"URL:{settings.web_base_url}/a/{item['slug']}",
+            "END:VEVENT",
+        ]
+    lines.append("END:VCALENDAR")
+    body = "\r\n".join(lines) + "\r\n"
+    return Response(content=body, media_type="text/calendar; charset=utf-8")
+
+
 @router.get("/occurrences/{slug}", response_model=PublicPage)
 async def public_occurrence(slug: str, session: DbSession, member: OptionalMember, lang: Locale) -> PublicPage:
     try:
@@ -62,7 +107,7 @@ async def public_occurrence(slug: str, session: DbSession, member: OptionalMembe
     v = await discovery.viewer_profile(session, member.member_id) if member else None
     cards = await discovery.build_cards(session, [occ], v, rank=False)
     card = CardOut.from_card(cards[0])
-    host = identity.display_names_for([occ.creator_member_id])[occ.creator_member_id]
+    host = (await identity.display_names_for([occ.creator_member_id]))[occ.creator_member_id]
     org_trust = await trust.trust_for(session, subject_type="organizer", subject_id=occ.creator_member_id)
     org_labels = trust.label_text(await trust.reputation_labels(session, member_id=occ.creator_member_id))
     series = None

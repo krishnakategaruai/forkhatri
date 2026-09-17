@@ -1,0 +1,90 @@
+[
+  {
+    "name": "home: network outage → retry state, no redirect",
+    "ok": true,
+    "detail": "http://localhost:3000/"
+  },
+  {
+    "name": "home: Retry after recovery → screen loads",
+    "ok": true,
+    "detail": "http://localhost:3000/"
+  },
+  {
+    "name": "discover: network outage → retry state, no redirect",
+    "ok": true,
+    "detail": "http://localhost:3000/discover"
+  },
+  {
+    "name": "discover: Retry after recovery → screen loads",
+    "ok": true,
+    "detail": "http://localhost:3000/discover"
+  },
+  {
+    "name": "circle: network outage → retry state, no redirect",
+    "ok": true,
+    "detail": "http://localhost:3000/circle"
+  },
+  {
+    "name": "circle: Retry after recovery → screen loads",
+    "ok": true,
+    "detail": "http://localhost:3000/circle"
+  },
+  {
+    "name": "messages: identity-503 outage → retry state, no redirect",
+    "ok": true,
+    "detail": "http://localhost:3000/messages"
+  },
+  {
+    "name": "messages: Retry after recovery → screen loads",
+    "ok": true,
+    "detail": "http://localhost:3000/messages"
+  },
+  {
+    "name": "me: identity-503 outage → retry state, no redirect",
+    "ok": true,
+    "detail": "http://localhost:3000/me"
+  },
+  {
+    "name": "me: Retry after recovery → screen loads",
+    "ok": true,
+    "detail": "http://localhost:3000/me"
+  },
+  {
+    "name": "completeness: network outage → retry state, no redirect",
+    "ok": true,
+    "detail": "http://localhost:3000/me/completeness"
+  },
+  {
+    "name": "completeness: Retry after recovery → screen loads",
+    "ok": true,
+    "detail": "http://localhost:3000/me/completeness"
+  },
+  {
+    "name": "thread: network outage → retry state, no redirect",
+    "ok": true,
+    "detail": "http://localhost:3000/messages/00000000-0000-4000-8000-000000000000"
+  },
+  {
+    "name": "thread: Retry after recovery → screen loads",
+    "ok": true,
+    "detail": "http://localhost:3000/messages/00000000-0000-4000-8000-000000000000"
+  },
+  {
+    "name": "profile-create: identity-503 outage → retry state, no redirect",
+    "ok": true,
+    "detail": "http://localhost:3000/profile/create"
+  },
+  {
+    "name": "profile-create: Retry after recovery → screen loads",
+    "ok": true,
+    "detail": "http://localhost:3000/profile/create"
+  },
+  {
+    "name": "hi: localized retry state",
+    "ok": true
+  },
+  {
+    "name": "te: localized retry state",
+    "ok": true
+  }
+]

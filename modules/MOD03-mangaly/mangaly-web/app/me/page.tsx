@@ -6,17 +6,21 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Avatar } from '@/components/Avatar';
+import VoiceIntro from '@/components/VoiceIntro';
 import { resolveMediaUrl } from '@/lib/api';
-import { getSession, logOut, type Session } from '@/lib/auth';
+import ForKhatriHubLink from '@/components/ForKhatriHubLink';
+import { requireSession, logOut, type Session } from '@/lib/auth';
 import { SUPPORTED_LANGUAGES, type Language } from '@/lib/i18n/config';
 import { setPreferredLanguage } from '@/lib/i18n/provider';
 import { findCategory, type CategoryDef, type FieldDef } from '@/lib/profileCategoryConfig';
+import { INTEREST_TAGS, MAX_TAGS, parseTags, toTagKey } from '@/lib/profileFormat';
 import {
   deletePhoto,
   getAllAttributeValues,
   getOwnProfile,
   listPhotos,
   reorderPhotos,
+  getVoiceIntro,
   setPrimaryPhoto,
   updateCategoryAttributes,
   uploadPhoto,
@@ -36,6 +40,7 @@ import {
   type PromptValue,
   type SectionId,
 } from '@/lib/profileSections';
+import { getContexts } from '@/lib/homeCircle';
 import { getStoredTheme, setPreferredTheme, type Theme } from '@/lib/theme';
 
 /* FR001/FR002/FR003/FR005 · UX11 "Profile edit hub" — v3, built from
@@ -90,45 +95,6 @@ const OCCUPATION_SUGGESTIONS = [
   'Designer',
   'Consultant',
 ];
-
-// Interest badges instead of a blank hobbies box (Bumble: pick up to five from
-// a catalogue). Custom entries are still allowed.
-const INTEREST_TAGS = [
-  'cooking',
-  'street_food',
-  'trekking',
-  'road_trips',
-  'pilgrimages',
-  'beaches',
-  'cricket',
-  'badminton',
-  'yoga',
-  'fitness',
-  'music',
-  'classical_dance',
-  'movies',
-  'reading',
-  'photography',
-  'gardening',
-  'volunteering',
-  'spirituality',
-  'board_games',
-  'art',
-];
-const MAX_TAGS = 5;
-
-function toTagKey(raw: string): string {
-  const trimmed = raw.trim();
-  const key = trimmed.toLowerCase().replace(/[\s&-]+/g, '_');
-  return INTEREST_TAGS.includes(key) ? key : trimmed;
-}
-
-// Also accepts older comma-separated text answers.
-function parseTags(value: unknown): string[] {
-  const parts: unknown[] = Array.isArray(value) ? value : typeof value === 'string' ? value.split(',') : [];
-  const tags = parts.filter((p): p is string => typeof p === 'string' && p.trim() !== '').map(toTagKey);
-  return [...new Set(tags)];
-}
 
 type Values = Record<string, CategoryAttributes>;
 type Status = 'answered' | 'hidden' | 'empty';
@@ -249,6 +215,8 @@ export default function ProfileHubPage() {
   const [theme, setTheme] = useState<Theme>('system');
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [sheet, setSheet] = useState<Sheet>(null);
+  // The owner's spoken introduction, recorded beside their photos.
+  const [voiceIntroUrl, setVoiceIntroUrl] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>({});
   const [promptDraft, setPromptDraft] = useState<PromptValue>({ q: '', a: '' });
   const [saving, setSaving] = useState(false);
@@ -273,21 +241,30 @@ export default function ProfileHubPage() {
   useEffect(() => {
     let active = true;
     (async () => {
-      const session: Session | null = await getSession();
+      const session: Session | null = await requireSession();
       if (!active) return;
       if (!session) {
-        router.replace('/login');
+        // requireSession() has already handed off to the ForKhatri entrance (TR16).
         return;
       }
       const profile = await getOwnProfile();
       if (!active) return;
       if (!profile) {
-        router.replace('/profile/create');
+        // A parent or relative helping someone else has no candidate profile of
+        // their own; they belong in that candidate's circle, not the wizard.
+        const contexts = await getContexts();
+        if (!active) return;
+        router.replace(contexts?.circles.length ? '/circle' : '/profile/create');
         return;
       }
-      const [values, photos] = await Promise.all([getAllAttributeValues(), listPhotos()]);
+      const [values, photos, voice] = await Promise.all([
+        getAllAttributeValues(),
+        listPhotos(),
+        getVoiceIntro(),
+      ]);
       if (!active) return;
       setState({ phase: 'ready', profile, values, photos });
+      setVoiceIntroUrl(voice);
       // Deep link from the completeness screen: /me?edit=<category> opens that sheet.
       const editDef = findCategory(new URLSearchParams(window.location.search).get('edit') ?? '');
       if (editDef) {
@@ -550,6 +527,10 @@ export default function ProfileHubPage() {
     .filter(Boolean);
   const sheetPhoto = sheet?.kind === 'photo' ? photos.find((p) => p.id === sheet.id) : undefined;
 
+  function renderVoice() {
+    return <VoiceIntro key="voice" initialUrl={voiceIntroUrl} />;
+  }
+
   function renderPhotos() {
     return (
       <section key="photos" className="card section-card" aria-label={t('profile:hub.photos.title')}>
@@ -749,6 +730,7 @@ export default function ProfileHubPage() {
       <header className="topbar">
         <h1>{t('profile:hub.title')}</h1>
         <div style={{ display: 'flex', gap: 4 }}>
+          <ForKhatriHubLink />
           <button
             type="button"
             className="icon-btn"
@@ -824,7 +806,7 @@ export default function ProfileHubPage() {
 
             {EDIT_LAYOUT.map((block) =>
               block.kind === 'photos'
-                ? renderPhotos()
+                ? [renderPhotos(), renderVoice()]
                 : block.kind === 'prompt'
                   ? renderPromptEdit(block.slot)
                   : renderSectionEdit(block.id)
@@ -957,7 +939,7 @@ export default function ProfileHubPage() {
                       <button
                         type="button"
                         className="sheet__danger"
-                        onClick={() => void logOut().then(() => router.replace('/login'))}
+                        onClick={() => void logOut()}
                       >
                         {t('common:action.logOut')}
                       </button>

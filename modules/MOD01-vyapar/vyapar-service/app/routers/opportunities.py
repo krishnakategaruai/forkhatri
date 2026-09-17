@@ -29,6 +29,7 @@ from app.db import get_conn
 from app.deps import Locale
 from app.i18n import translate
 from app.identity import AuthzContext, resolve_authz_context
+from app.routers.privacy import require_accepted
 from app.impressions import boosted_ids, log_events
 
 router = APIRouter(prefix="/v1/opportunities", tags=["opportunities"])
@@ -223,13 +224,13 @@ async def create_opportunity(
              (poster_id, title, type, description, requirements, compensation, value_amount,
               location, work_mode, timing, required_capabilities, response_method, deadline,
               source_segment, source_name, source_url, entry_mode, raw_input, raw_image_url,
-              unconfirmed_fields)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
+              unconfirmed_fields, content_language)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
            RETURNING *""",
         ctx.member_id, title, type_, body.description, body.requirements, body.compensation, body.value_amount,
         body.location, body.work_mode, body.timing, body.required_capabilities, body.response_method, body.deadline,
         body.source_segment, body.source_name, body.source_url, body.entry_mode, body.raw_input, body.raw_image_url,
-        unconfirmed,
+        unconfirmed, lang,
     )
     return _row_to_opp(row, ctx.member_id)
 
@@ -347,6 +348,9 @@ async def publish_opportunity(
     current = await conn.fetchrow("SELECT * FROM vyapar_opportunities.opportunities WHERE id = $1", opportunity_id)
     if current is None or current["poster_id"] != ctx.member_id:
         raise HTTPException(status_code=404, detail=translate("common.error.opportunityNotFound", lang))
+    # [FR53/TR053] the gate every publish path calls before proceeding.
+    await require_accepted(conn, ctx.member_id, "privacy", lang)
+    await require_accepted(conn, ctx.member_id, "terms", lang)
     if current["state"] not in ("draft",):
         raise HTTPException(status_code=400, detail=translate("opportunities.error.alreadyPublished", lang))
     missing = MATERIAL_FIELDS - set(current["confirmed_fields"])

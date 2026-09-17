@@ -10,9 +10,10 @@ import { usePathname } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 
 import { TABS } from '@/components/TabBar';
-import { Users } from 'lucide-react';
+import { ChevronLeft, LayoutGrid, Users } from 'lucide-react';
 import { resolveMediaUrl } from '@/lib/api';
 import { useIdentity } from '@/lib/identity';
+import { FORKHATRI_ENTRANCE_URL } from '@/lib/platform';
 
 export default function SideNav() {
   const pathname = usePathname();
@@ -22,6 +23,12 @@ export default function SideNav() {
 
   return (
     <aside className="sidenav" aria-label="Primary">
+      {/* [ParentApp TR16] Milavn is one module inside ForKhatri: a persistent way back to the hub (a zone link, so a plain <a>). */}
+      <a href={`${FORKHATRI_ENTRANCE_URL}/`} className="hub-link" aria-label={t('platform.backToHub')}>
+        <ChevronLeft size={16} strokeWidth={2} aria-hidden="true" />
+        <LayoutGrid size={15} strokeWidth={2} aria-hidden="true" />
+        <span>{t('platform.hub')}</span>
+      </a>
       <Link href="/" className="sidenav__brand">
         <span className="brand-mark brand-mark--glow">M</span>
         <span><b>{t('app.name')}</b><span className="caption" style={{ display: 'block' }}>{t('app.tagline')}</span></span>
@@ -44,7 +51,7 @@ export default function SideNav() {
       </nav>
       {identity && (
         <Link href="/me" className="sidenav__me">
-          {identity.avatar ? <img className="avatar avatar--lg" src={resolveMediaUrl(identity.avatar) ?? ''} alt="" /> : <span className="avatar avatar--lg" />}
+          {profile?.photo_url || identity.avatar ? <img className="avatar avatar--lg" src={resolveMediaUrl(profile?.photo_url ?? identity.avatar) ?? ''} alt="" /> : <span className="avatar avatar--lg" />}
           <span className="grow truncate"><b className="truncate" style={{ display: 'block' }}>{identity.display_name}</b><span className="caption">{profile?.locality_locality ?? profile?.locality_city ?? `@${identity.handle}`}</span></span>
         </Link>
       )}

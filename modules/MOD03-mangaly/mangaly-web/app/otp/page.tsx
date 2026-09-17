@@ -1,5 +1,6 @@
 'use client';
 
+import EntranceRedirect from '@/components/EntranceRedirect';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -148,7 +149,15 @@ function OtpEntry() {
   );
 }
 
+/* [ForKhatri TR16, 2026-09-14] Sign-in, sign-up, one-time codes and password
+ * reset belong to the ForKhatri entrance. This route only hands off to it; the
+ * interim screen below is retained (not rendered) rather than deleted. */
 export default function OtpPage() {
+  return <EntranceRedirect />;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function LegacyOtpPage() {
   // useSearchParams requires a Suspense boundary in the App Router.
   return (
     <Suspense fallback={null}>

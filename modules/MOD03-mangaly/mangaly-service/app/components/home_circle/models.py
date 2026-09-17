@@ -143,10 +143,11 @@ class Membership(Base):
 
 
 class HomeCircleNote(Base):
-    """[TR016] Family-only by default (`forwarded_at IS NULL`). Forwarding is
-    a candidate-approved, per-note action — approving one note never exposes
-    any other note from the same author (FR016's own explicit failure
-    outcome)."""
+    """[TR016, migration 022] A private working note about one match
+    (`subject_account_id`, an account id), readable only by its author.
+    Forwarding is per note: the author asks (`forward_requested_at`), the
+    candidate reads it (`forwarded_at`) or says not now
+    (`forward_declined_at`) — reading one note never exposes another."""
 
     __tablename__ = "home_circle_note"
     __table_args__ = {"schema": _SCHEMA}
@@ -156,9 +157,13 @@ class HomeCircleNote(Base):
     author_membership_id: Mapped[UUID] = mapped_column(
         PgUUID(as_uuid=True), ForeignKey(f"{_SCHEMA}.membership.id", ondelete="CASCADE")
     )
+    subject_account_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True))
     content: Mapped[str]
+    forward_requested_at: Mapped[datetime | None] = mapped_column(default=None)
     forwarded_at: Mapped[datetime | None] = mapped_column(default=None)
+    forward_declined_at: Mapped[datetime | None] = mapped_column(default=None)
     created_at: Mapped[datetime] = mapped_column(server_default=text("now()"))
+    updated_at: Mapped[datetime] = mapped_column(server_default=text("now()"))
 
 
 class Suggestion(Base):

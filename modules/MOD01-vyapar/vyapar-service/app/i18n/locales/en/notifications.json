@@ -58,5 +58,45 @@
   "promotionRejected": {
     "title": "Boost rejected",
     "body": "Reason: {reason}. A full refund has been requested. Grievances: grievance@forkhatri.example"
+  },
+  "entitlementActive": {
+    "title": "Business Workspace is active",
+    "body": "Your plan runs to {date}. Team roles and campaigns are unlocked. Verification, reputation and ranking are never part of a plan."
+  },
+  "entitlementRenewalReminder": {
+    "title": "Your plan renews on {date}",
+    "body": "Nothing is charged automatically — we will ask you to complete the payment. Cancel any time before then from your workspace."
+  },
+  "entitlementRenewalDue": {
+    "title": "Renewal payment due",
+    "body": "Complete the renewal payment by {date} to keep team roles and campaigns. Your data stays either way."
+  },
+  "entitlementPaused": {
+    "title": "Business Workspace paused",
+    "body": "Reason: {reason}. Team roles and campaigns are locked; all your data is kept and returns the moment the plan is active again."
+  },
+  "entitlementEnded": {
+    "title": "Business Workspace ended",
+    "body": "Your plan ran to {date} and was not renewed, as you asked. All your data is kept."
+  },
+  "workspaceInvite": {
+    "title": "You have been invited to {business}",
+    "body": "Role: {role}. Open your profile to accept or decline. The invite expires in 30 days."
+  },
+  "workspaceRoleRevoked": {
+    "title": "Your role at {business} was removed",
+    "body": "You no longer act for this business on Vyapar. Your own ForKhatri account is unaffected."
+  },
+  "workspaceRoleChanged": {
+    "title": "Your role at {business} changed",
+    "body": "You are now {role}."
+  },
+  "campaignActive": {
+    "title": "Your campaign is live",
+    "body": "Every item runs as a labelled Sponsored boost until {date}. Organic ranking is unchanged."
+  },
+  "campaignCompleted": {
+    "title": "Campaign finished",
+    "body": "{name} has ended. Its report stays available."
   }
 }

@@ -217,3 +217,25 @@ The correct mental model is:
 
 The modules are separate in planning and internal engineering responsibility. They are not separate user-facing products by default, and they must not require separate logins.
 
+## Resolution status (2026-09-14)
+
+On 2026-09-14 the product owner approved building the platform identity and
+entrance: `platform/identity-service` (Identity & Trust Service, database
+`forkhatri_identity`) and `platform/forkhatri-web` (ForKhatri web entrance).
+Decisions: `docs/ParentApp/00c-identity-and-entrance-decisions.md`. Contract:
+`docs/ParentApp/07-tech-reqs.md` (TR10–TR24). Where each finding under
+"Documentation findings requiring later cleanup" stands:
+
+| # | Finding | Status | Where |
+|---|---|---|---|
+| 1 | `docs/PreStartResearch/PROCESS-README.md` has a stale module-wave/status picture | **Still open.** Not edited; `docs/PreStartResearch/` is read-only source material. | — |
+| 2 | `modules/modules.md` is Draft with a blank approval area | **Still open.** A dated "Platform foundation" note and identity pointers were added; status and approval lines are unchanged pending the owner's approval. | `modules/modules.md` |
+| 3 | Module UX/UI documents repeat login/sign-up screens without saying they use the shared identity | **Addressed by correction notes, awaiting owner review.** Dated notes state these screens are delivered by the ForKhatri entrance and module routes redirect there. | Mangaly `03-ux.md` (UX01–UX04, UX08), `04-ui.md` (UI01, UI03, UI04, UI08); Milavn `03-ux.md` (UX01, UX11), `04-ui.md` (UI01); Vyapar `03-ux.md`/`04-ui.md` were already corrected by the owner on 2026-09-14 and now point to TR10–TR16 |
+| 4 | Mangaly's interim identity needs a migration boundary and plan | **Decided and specified; implementation in progress.** Active accounts move with ids and Argon2id hashes, pending accounts are not imported, interim routes are switched off by a setting, and `mangaly_identity.account` becomes the member-link table. | `00c` PA-DEC-08; `07-tech-reqs.md` TR15, TR23; Mangaly `06-impact-analysis.md` IA092, `07-tech-reqs.md` TR092–TR095, `07a-er-model.md` |
+| 5 | Future module documents should carry the standard statement that the module does not own a platform login | **Addressed at the standard level.** New modules inherit it from `/MODULE-ARCHITECTURE-STANDARD.md` §5b and `/PRODUCT-GUARDRAILS.md` "Platform guardrails", including checkpoint question 9. Existing module documents were not rewritten. | `/MODULE-ARCHITECTURE-STANDARD.md`, `/PRODUCT-GUARDRAILS.md` |
+| 6 | Root architecture should be the authority for the single web client and shared identity | **Addressed, awaiting owner review.** `/ARCHITECTURE.md` now shows the ForKhatri web entrance as the Multi-Zones host, with ADR-019 (session mechanism), ADR-020 (Multi-Zones) and ADR-021 (member-link tables). | `/ARCHITECTURE.md` |
+
+Still open beyond this list: platform password reset/change and
+identifier-change flows, cross-module account deletion orchestration, and
+production `basePath` adoption in each module web app.
+

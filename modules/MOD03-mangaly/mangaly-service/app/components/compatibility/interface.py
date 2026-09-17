@@ -60,7 +60,11 @@ class Reason:
 
 
 async def explain(
-    session: AsyncSession, *, viewer_account_id: UUID, candidate_account_id: UUID
+    session: AsyncSession,
+    *,
+    viewer_account_id: UUID,
+    candidate_account_id: UUID,
+    for_candidate_account_id: UUID | None = None,
 ) -> list[Reason]:
     """[FR030/FR031] 2-4 concrete reasons, or an empty list — never a
     fabricated one when nothing genuinely matches (FR030's own explicit
@@ -73,7 +77,15 @@ async def explain(
     """
     from app.components.discovery import interface as discovery_module
 
-    viewer = await discovery_module.get_snapshot(session, account_id=viewer_account_id) or {}
+    ranking_account_id = viewer_account_id
+    if for_candidate_account_id is not None:
+        await discovery_module.authorize_family_viewer(
+            session,
+            viewer_account_id=viewer_account_id,
+            candidate_account_id=for_candidate_account_id,
+        )
+        ranking_account_id = for_candidate_account_id
+    viewer = await discovery_module.get_snapshot(session, account_id=ranking_account_id) or {}
     candidate = await discovery_module.get_snapshot(session, account_id=candidate_account_id) or {}
 
     reasons: list[Reason] = []

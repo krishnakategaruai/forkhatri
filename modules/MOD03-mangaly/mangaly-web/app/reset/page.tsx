@@ -1,5 +1,6 @@
 'use client';
 
+import EntranceRedirect from '@/components/EntranceRedirect';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -27,7 +28,15 @@ const OUTCOME_ERROR_KEY = {
   too_many_attempts: 'auth:otp.error.tooManyAttempts',
 } as const;
 
+/* [ForKhatri TR16, 2026-09-14] Sign-in, sign-up, one-time codes and password
+ * reset belong to the ForKhatri entrance. This route only hands off to it; the
+ * interim screen below is retained (not rendered) rather than deleted. */
 export default function ResetPage() {
+  return <EntranceRedirect />;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function LegacyResetPage() {
   const { t } = useTranslation('auth');
 
   const [step, setStep] = useState<Step>({ phase: 'request' });

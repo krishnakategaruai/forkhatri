@@ -22,6 +22,18 @@ and it must never become "FR → accidentally redefine product." Each stage **pr
 | Date | Change | Reason |
 |---|---|---|
 | 2026-09-13 | Initial creation, following the Product Manager's Step 6 review of MOD02 Milavn, which found the detailed requirements work product-aligned but flagged the risk of specification effort outpacing product-thesis preservation. | First formal Product Guardrails pass for the project. |
+| 2026-09-14 | Post-seal correction: added "Platform guardrails (all modules)" and checkpoint question 9. Not re-sealed; awaits the Product Manager's review. | Product owner's instruction of 2026-09-14: ForKhatri is one app with one sign-in and one member identity, and the member chooses which module to enter. See `docs/ParentApp/00c-identity-and-entrance-decisions.md`. |
+
+## Platform guardrails (all modules)
+
+| Decision | Rule |
+|---|---|
+| One ForKhatri identity | A member has one ForKhatri account and one `member_id`. No module creates its own accounts, logins, sign-up, OTP or password flows. |
+| Entrance and hub are the front door | Members sign in at the ForKhatri entrance and enter modules from the ForKhatri hub; every module surface offers a way back to the hub. |
+| Trust is contextual | The platform holds only Level 1/2 trust (verified phone/email, later identity document). Each module's Level-3 trust is its own and is never shared with or read by another module. |
+| Tiers and roles are module-owned | Tiers (free, premium) and roles (organiser, moderator, Home Circle member) are module data in module databases, never platform session data. Every member may enter every available module. |
+| Hub privacy | The hub never surfaces sensitive module data (for example Mangaly profile, match or family details) without an explicit, privacy-reviewed contract. |
+| Credentials never readable by page JavaScript | The browser's only credential is an HttpOnly session cookie; no token in `localStorage`, `sessionStorage`, URLs or response bodies. |
 
 ## Core guardrails (Milavn, and the pattern to replicate per module)
 
@@ -60,6 +72,7 @@ and it must never become "FR → accidentally redefine product." Each stage **pr
 6. Does it help the broader ForKhatri ecosystem?
 7. Can a solo founder realistically build and operate it?
 8. Are we solving a real user problem, or merely building an impressive feature?
+9. Does this keep one ForKhatri identity and entrance?
 
 ## Two tracks that must run in parallel, not sequentially
 

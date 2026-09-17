@@ -16,6 +16,12 @@ items: "175 | approved: 175 | blockers: 0"
 | 2026-09-13 | Corrected a garbled Set-level quality gate/Test distribution summary error (claimed 46 Unit/121 Integration/8 E2E; actual tagged counts were 31/140/4) — fixed to match reality. Also closed the real gap TS129 had flagged (no moderator-facing screen existed for FR065): root-caused to an error in BR14's own "Affected users and systems" line, now corrected in `01-business-requirements.md`, with Steps 3/4 adding UX20/UI20 to close it. Updated TS129 to trace to that real screen instead of a flagged absence. User approved the file; all 175 scenarios' approval lines ticked and file Sealed. | User approval, with the flagged gap closed first, per explicit request — krishna kategaru, 2026-09-13. |
 | 2026-09-13 | Authentication ownership corrected: login/auth is owned solely by the parent ForKhatri platform (one source of truth); the scenarios for FR076–FR080 and FR088 (Splash, Sign Up, Log In, Forgot Password, OTP, Logout) are re-tagged as platform-owned: they execute in the ForKhatri platform's test suite; Milavn's Step 10 automates only the module's own scenarios. Nothing was deleted — the original text stays for traceability. | User correction "User login, authentication will be done by one source of truth, the parent ForKhatri" — krishna kategaru. |
 | 2026-09-14 | **TS176–TS190 added** for FR089–FR101 (ask-first discovery, smart fill, thread, moments, board, person page, circle locality, messaging, expressions, digest, poster, use-where-I-am, de-duplication/live). Tagged by layer; Step 10 automates them. | Accountability request from the owner — krishna kategaru (autonomous). |
+| 2026-09-14 | **TS191–TS192 added, TS188 updated** for chat room v3 (IMP26): two-live-participant sync (presence, expression, typing, message, reaction, leave, reload, second tab) and the shared-context helper including its anti-probe rule. TS188 no longer refers to the removed stage panel. | Owner: "is this a 2040 app?", "user is chatting but you're not syncing" — krishna kategaru (autonomous). |
+| 2026-09-15 | **TS204–TS205 added** for FR112 (regulars, welcome back) and FR113 (photo privacy). | Research roadmap items 11–12 — krishna kategaru (autonomous). |
+| 2026-09-15 | **TS206 added** for FR106 (would meet again). | Research roadmap item 5 — krishna kategaru (autonomous). |
+| 2026-09-17 | **TS209–TS211 added** for FR115–FR124 (circle door and assistants; polls, free-now, cards, familiar faces; chapters, drives, followed calendars). | Owner's picks from the competitor research — krishna kategaru (autonomous). |
+| 2026-09-17 | **TS208 added** for FR114 (bringing someone with you), including the party-together waitlist rule. | Owner's pick from the competitor research — krishna kategaru (autonomous). |
+| 2026-09-15 | **TS207 added** for FR015–FR016: once an activity is over nobody joins or withdraws, and someone who was there cannot withdraw. | Defect found during the FR106 browser check (a past, attended activity offered "You're going · Withdraw") — krishna kategaru (autonomous). |
 
 ## Coverage check
 | Parent FR | Scenarios produced | Covered |
@@ -108,7 +114,16 @@ items: "175 | approved: 175 | blockers: 0"
 | FR086 | TS169–TS170 | Yes |
 | FR087 | TS171–TS172 | Yes |
 | FR088 | TS173–TS175 | Yes — platform-owned; runs in the ForKhatri platform's suite, not Milavn's (see Revision history) |
-| FR089–FR101 (Step 9 additions) | TS176–TS190 | Yes — drafted with the FRs; automated in Step 10 |
+| FR089–FR101 (Step 9 additions) | TS176–TS192 | Yes — drafted with the FRs; automated in Step 10 |
+| FR102 (paid spots) | TS193–TS195 | Yes — executed manually; TS194 automated |
+| FR103–FR105 (showing up) | TS196–TS198 | Yes — executed manually; TS197 unit part automated |
+| FR107–FR109 (belonging and safety) | TS199–TS201 | Yes — executed manually |
+| FR110–FR111 (discovery that fits) | TS202–TS203 | Yes — executed; unit parts automated |
+| FR112–FR113 (regulars, photo privacy) | TS204–TS205 | Yes — executed; welcome-back wording automated |
+| FR106 (would meet again) | TS206 | Yes — executed |
+| FR015–FR016 (after an activity ends) | TS207 | Yes — executed |
+| FR114 (bringing someone with you) | TS208 | Yes — executed |
+| FR115–FR124 (the rest of the 2026-09-17 picks) | TS209–TS211 | Yes — executed |
 
 ## TS176 — FR089 (Integration)
 **Traces from:** FR089
@@ -333,7 +348,7 @@ Given blendshape scores (jawOpen 0.6 + mouthSmile 0.5), when classified, then th
 **Confidence:** High
 
 **Scenario**
-Given a member picks a mood, when the other member's chat is open, then that member's expressive avatar on the stage and beside their messages changes within a second, and the API has stored only the word.
+Given a member picks a mood, when the other member's chat is open, then that member's expressive avatar in the header and in the presence dock changes within a second, and the API has stored only the word. *(Updated 2026-09-14 for chat room v3 — the stage panel no longer exists.)*
 
 **Covers**
 - [x] Success path
@@ -377,6 +392,384 @@ Given ?lat&lng of Madhapur, when Around You is requested, then viewer_locality i
 
 **Review history**
 - 2026-09-14 — added with FR089–FR101 (accountability request).
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS191 — FR096/FR097 (E2E, two live participants)
+**Traces from:** FR096, FR097
+**Layer:** E2E
+**Status:** Draft (added in Step 9 with chat room v3, IMP26; Step 10 automates it)
+**Confidence:** High
+
+**Scenario**
+Given Asha has the Asha–Priya chat open and Priya opens it on another device, then within a second Asha sees **Here now**, a presence ring and Priya's avatar above the composer; when Priya changes expression, types, sends a message and reacts, Asha sees the avatar change, "Priya is typing…" with dots, the message and the reaction without reloading; when Asha sends a quick reply, a mood and a sticker, Priya's socket receives each; when Priya closes the chat, Asha sees **Active just now** and the avatar leaves the dock; reloading Asha's page after Priya left never shows **Here now**; with two tabs open for Priya, closing one keeps her **Here now**.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-14 — added after the owner reported the room was "not syncing"; executed manually (milavn Chrome profile + platform development session for Priya) before being recorded.
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS192 — FR096 (Integration, shared context)
+**Traces from:** FR096
+**Layer:** Integration
+**Status:** Draft (added in Step 9 with chat room v3, IMP26; Step 10 automates it)
+**Confidence:** High
+
+**Scenario**
+Given Asha and Priya share an upcoming activity and a circle, when Asha opens their direct chat, then `context` is the soonest unfinished shared activity (title, slug, start, locality) and never an address; given they share only a circle, then `context` is that circle; given `shared_context(Priya, Asha)` is called while the request is bound to Asha, then no row is returned.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-14 — added with migration 016; the probe case executed against the database.
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS193 — FR102 (E2E, paid spot lifecycle)
+**Traces from:** FR102
+**Layer:** E2E
+**Status:** Draft (added in Step 9 with IMP27; executed manually before being recorded; Step 10 automates it)
+**Confidence:** High
+
+**Scenario**
+Given Priya hosts a one-spot activity at ₹250 with a full refund until one day before: when Asha taps the free Going toggle, it is refused; when she joins, a spot is held and a checkout is returned, and Vikram sees no spots left; Vikram takes a free waitlist place; Asha pays and is going; Priya sees one paid spot and ₹250 and nothing about who paid, and a participant cannot open that view; Priya cannot change the price; Asha cannot drop the spot through the free toggle; Asha is told she would get ₹250 back, withdraws and is refunded; the spot is offered to Vikram with a payment window; he pays and is in; totals show ₹500 collected and ₹250 refunded; an event from an unknown caller is refused; Priya cancels and Vikram is refunded automatically; Asha's payment history shows the refund; Vikram was notified of the offer, the confirmation and the refund.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-15 — added with FR102; executed 22/22 (`paid_spots_scenario.py`), data removed afterwards.
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS194 — FR102 (Unit, rules and provider boundary)
+**Traces from:** FR102, FR036
+**Layer:** Unit
+**Status:** Draft (implemented as `milavn-service/tests/test_paid_spots.py`)
+**Confidence:** High
+
+**Scenario**
+Refund is full up to the cutoff and nothing after (cutoff 0 = until the start); a waitlist offer lasts 12 hours, never past an hour before the start, and at least 30 minutes; payments are off by default; the sandbox runs only on localhost; a sandbox charge is idempotent per key; the Payment Services adapter is not configured with a placeholder key; events need the shared key; trust and discovery never import payment code.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-15 — added and passing (9 tests).
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS195 — FR102 (Integration, lapsed hold passes the spot on)
+**Traces from:** FR102
+**Layer:** Integration
+**Status:** Draft (executed manually; Step 10 automates it)
+**Confidence:** High
+
+**Scenario**
+Given Asha holds the only spot of a paid activity and Vikram is waitlisted, when Asha's hold runs out, then the API's minute job marks her hold expired and offers the spot to Vikram with a payment window, without anyone acting.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-15 — executed (`paid_hold_expiry_scenario.py`): hold expired, offer created by the job; the hold's clock was moved into the past instead of waiting 15 minutes; data removed afterwards.
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS196 — FR103 (E2E, still coming?)
+**Traces from:** FR103
+**Layer:** E2E
+**Status:** Draft (executed manually; Step 10 automates it)
+**Confidence:** High
+
+**Scenario**
+Given Asha and Vikram are going to Priya's walk tomorrow, when the reminder job runs, then Asha gets "Still coming tomorrow?" once, with a link that opens the question; her activity page asks in place; she answers "Yes, I'm coming" and is not asked again; Vikram can't make it and frees his spot; Priya (the host) receives no attendee reminder.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-15 — executed within `showing_up_scenario.py` (11/11); data removed afterwards.
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS197 — FR104 (Integration + Unit, two reminders)
+**Traces from:** FR104
+**Layer:** Integration (job) + Unit (`tests/test_showing_up.py`)
+**Status:** Draft (executed; unit tests automated)
+**Confidence:** High
+
+**Scenario**
+Given activities in three days and in two hours with Asha going and her plan set to metro, on her own: when the reminder job runs, she receives "In 3 days: …" with day, time and locality, and "Starts at …" that repeats "You planned to come by metro or bus" and the say-hello line; running the job again sends nothing new. Unit: copy for every kind, waitlist phrasing for 0/1/many people waiting, paid spots point to the refund rule, no penalty words, unknown kind refused.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-15 — executed (`showing_up_scenario.py`) and 5 unit tests passing.
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS198 — FR105 (Integration, one-tap plan)
+**Traces from:** FR105
+**Layer:** Integration
+**Status:** Draft (executed manually; Step 10 automates it)
+**Confidence:** High
+
+**Scenario**
+Given Asha is going, when she sets travel "metro_bus" and company "alone", then the plan is stored and returned on her activity page; an unknown travel value is refused with 422; a member who is not going cannot set a plan.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-15 — executed within `showing_up_scenario.py`.
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS199 — FR107 (E2E, thank the host and one private question)
+**Traces from:** FR107
+**Layer:** E2E
+**Status:** Draft (executed manually; Step 10 automates it)
+**Confidence:** High
+
+**Scenario**
+Given Priya hosts a chai meetup that Asha and Ravi joined: before check-in Asha cannot thank the host (409); after Priya checks both in, Asha thanks Priya with a preset (first = true), rewords it (first = false, no second notification), answers "Would you come again? Yes" with a line; an unknown answer is refused with 422; Asha's page knows she has thanked; Priya is notified once in Asha's words; "After the activity" shows 2 came, 1 first-timer, 1 of 1 would come again and Asha's note; a participant opening it gets 403.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-15 — executed within `belonging_scenario.py` (15/15). The first run found a real defect (the app role could not mark trust events dispatched, crashing the first thank-you response); fixed in migration 019 and re-run. A loose check (accepting a 500 for an unknown answer) was tightened to 422 and the route fixed.
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS200 — FR108 (Integration, welcome newcomers)
+**Traces from:** FR108
+**Layer:** Integration
+**Status:** Draft (executed manually; Step 10 automates it)
+**Confidence:** High
+
+**Scenario**
+Given Ravi has never checked in anywhere and Asha has: when both join Priya's activity and Ravi sets his plan to "on my own", then Priya is notified "Ravi Kumar is going · first time", her attendee list marks Ravi "First time" and "On their own" but not Asha, Ravi's page returns `first_time = true`, and Priya's own page returns `first_time = false`.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-15 — executed within `belonging_scenario.py`.
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS201 — FR109 (E2E, share my plan)
+**Traces from:** FR109
+**Layer:** E2E
+**Status:** Draft (executed in the browser; Step 10 automates it)
+**Confidence:** High
+
+**Scenario**
+Given Asha is going to a morning walk, when she taps "Share my plan with family", then WhatsApp opens with the title, date and time, locality, the host's first name, the activity link and "I'll message you when I'm back", and no T-Safe line (morning activity); for an evening activity and a member in a Telangana city the T-Safe line is added.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-15 — morning case executed in the browser (window.open captured).
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS202 — FR110 (E2E, who it's for, food and drink, Free filter)
+**Traces from:** FR110
+**Layer:** E2E + Unit (`tests/test_discovery_fit.py::test_tags_accept_known_values_only`)
+**Status:** Draft (executed; unit part automated)
+**Confidence:** High
+
+**Scenario**
+Given Priya creates a family cooking morning (Eat; Family & kids, Elder-friendly; Veg, Alcohol-free) and a paid badminton session, then the card returns the tags; veg together with non-veg is refused (422); Asha's search with Veg finds the cooking morning; Family & kids finds it and not the badminton session; Free keeps the cooking morning and drops the paid session. On Create, choosing Eat pre-selects Veg and Alcohol-free with a note until the organizer changes the food row.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-15 — executed (`discovery_fit_scenario.py` 11/11; browser check of Create defaults). The first scenario run found a real defect (a variable-name collision that crashed activity creation), fixed and re-run.
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS203 — FR111 (E2E + Unit, honest discovery)
+**Traces from:** FR111
+**Layer:** E2E + Unit (`tests/test_discovery_fit.py`)
+**Status:** Draft (executed; unit tests automated)
+**Confidence:** High
+
+**Scenario**
+Given Asha checked in at Priya's chai meetup today, when Priya posts an evening walk tomorrow, then Asha's card for it says "You've been to Priya's activities before" (factor `host`); Asha marks the cooking morning "Not interested · Not my thing" and it disappears from her search; an unknown reason is refused (422); after Asha joins the walk and hides Priya's badminton session with "Not this host", Priya's other activities disappear but the walk Asha joined stays. Unit: the returning-host reason and score, the +0.08 fair-start boost only for a nearby host with no held activity, no host more than twice in the top ten.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-15 — executed within `discovery_fit_scenario.py`; 4 unit tests passing.
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS204 — FR112 (E2E + Unit, regulars and welcome back)
+**Traces from:** FR112
+**Layer:** E2E + Unit (`tests/test_showing_up.py::test_three_days_welcomes_someone_back_after_a_missed_date`)
+**Status:** Draft (executed; wording unit-tested)
+**Confidence:** High
+
+**Scenario**
+Given Priya's weekly "Sunday cycling loop" was held with Asha and Ravi checked in and Vikram withdrawn, when Priya adds tomorrow's ride and Asha taps "Keep a spot for me each time", then Asha is going to it at once and her page shows "You've been to 1 of the last 1"; when Priya adds next week's ride, Asha is going automatically and has a "Your spot is kept" notification; after Asha stops, a further new date does not add her; keeping a spot in a paid series is refused (409). When Vikram joins the ride in three days, the real reminder job's three-day reminder starts "We missed you last time; glad you're coming." Unit: the welcome appears only with `missed_last`, and no text mentions a streak.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-15 — executed within `regulars_photos_scenario.py` (8 checks); unit test passing.
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS205 — FR113 (E2E, photo privacy)
+**Traces from:** FR113
+**Layer:** E2E
+**Status:** Draft (executed)
+**Confidence:** High
+
+**Scenario**
+Given Ravi set "Please don't include me" and was checked in at the ride, when Asha (also there) opens Moments, then she sees "Ravi K. asked not to be in photos" and Share stays disabled until both confirmations are ticked; after Asha shares, Vikram (withdrawn, cannot view the thread) gets 404 trying to remove it; Ravi taps "I'm in this photo · remove it" and the photo disappears for everyone; Asha receives "A photo you shared was taken down" without Ravi's name.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-15 — executed within `regulars_photos_scenario.py` (7 checks).
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS206 — FR106 (E2E, would meet again)
+**Traces from:** FR106
+**Layer:** E2E
+**Status:** Draft (executed)
+**Confidence:** High
+
+**Scenario**
+Given Priya hosts "Chai and conversation evening" and checks in Asha, Ravi and Meera while Vikram does not come, when nobody can pick before it starts; after it starts Asha can pick Priya, Ravi and Meera (not herself, not Vikram); Vikram sees nobody and picking Asha returns 404; Priya sees her three guests. Asha picks Ravi → not mutual, Ravi's list does not show it, nobody is notified, no connection. Ravi picks Asha → mutual; each gets exactly one "You and … would both meet again" and sees the other under "You'd both meet again". Ravi un-picks and picks again → still one notification each. Asha un-picks → the connection disappears for both.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-15 — executed with `meet_again_scenario.py` (13/13); all rows removed.
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS207 — FR015/FR016 (E2E, after an activity ends)
+**Traces from:** FR015, FR016, FR018
+**Layer:** E2E
+**Status:** Draft (executed)
+**Confidence:** High
+
+**Scenario**
+Given Priya's "Evening chess at Prism Café" with Asha checked in and Ravi Going, while it is live Asha's withdrawal is refused (409 "You were there, so your attendance stays on record.") and Ravi can still switch to Interested; once it is over (end time, or three hours after the start when no end is set) Meera's Going is refused (409 "This activity has already happened."), Ravi's withdrawal is refused, and Asha is still checked in. On screen, a past activity the member attended shows "✓ Attended" instead of Going/Withdraw, the count reads "N went", and the spots/interested figures are hidden. A walk-in scanning a still-valid check-in code is not refused.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-15 — executed with `ended_activity_scenario.py` (6/6); all rows removed.
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS208 — FR114 (E2E + UI, bringing someone with you)
+**Traces from:** FR114, FR058
+**Layer:** E2E + UI
+**Status:** Draft (executed)
+**Confidence:** High
+
+**Scenario**
+Given Priya's badminton evening has 4 spots and allows up to 2 guests each, and Meera is going with one guest (2 spots left): when Asha asks to come with 2 guests, her party of 3 does not fit and the WHOLE party waits; when she comes with 1 instead it fits exactly and the activity reads "2 going · 2 guests · Full"; raising it to 2 is refused with "There is not enough room for that many extra people" and she stays going with one; Ravi then waits, and when Asha drops her guest the freed spot promotes Ravi, whose party of 1 fits. On screen (412×580), tapping Going reveals "Bringing someone?" with Just me / +1 / +2 in place — no extra screen — the choice survives a reload, and the counts and "Full" pill update with it.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-17 — `guests_scenario.py` 8/8 against the live API; browser check as Asha at 412×580; demo activity removed afterwards.
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS209 — FR115/FR121 (E2E, getting into a circle)
+**Traces from:** FR115, FR121
+**Layer:** E2E
+**Status:** Draft (executed)
+**Confidence:** High
+
+**Scenario**
+Given Priya starts "Jubilee Hills morning walkers" and chooses to be asked first with two questions: Asha (not a member) can read the questions but gets 404 on the circle itself; her request is recorded as pending, not an instant join, and she is shown as waiting; Priya sees who asked and what they answered while Ravi sees an empty list and cannot decide (403); Priya lets Asha in and Asha is told "You are in"; Meera is declined, is not in the circle, and is never pushed anything about being turned down; asking again once already a member is harmless. With FR121: Priya asks Asha to help run it, a plain member cannot appoint anyone (403), and an assistant then sees the people waiting at the door.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-17 — `circle_join_scenario.py` 16/16; assistant parts in `community_batch_scenario.py`. All rows removed.
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS210 — FR116/FR117/FR118/FR119/FR120 (E2E, deciding together and being around)
+**Traces from:** FR116, FR117, FR118, FR119, FR120
+**Layer:** E2E + UI
+**Status:** Draft (executed)
+**Confidence:** High
+
+**Scenario**
+Given a circle with Priya, Asha, Meera and Ravi: Priya asks "which morning suits everyone?" with two times; Meera and Ravi pick Sunday and the option shows their names; a member who did not ask cannot settle it and Priya can. Ravi says he is free for three hours from Madhapur: Asha, who shares a circle with him, sees it; Meera, removed from that circle, does not; it disappears when he takes it back. On a past activity both attended, Asha's page for Ravi reads "You have both been to 1 activity", while a stranger's page reads nothing. On an activity starting within the hour, someone who is going sees a conversation card and can ask for another; someone not going sees none.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-17 — `community_batch_scenario.py` 23/23; conversation cards checked on screen. All rows removed.
+
+**Approval:** Principal QA — [ ] Approved — name, date
+
+## TS211 — FR122/FR123/FR124 (E2E, bigger than one circle)
+**Traces from:** FR122, FR123, FR124
+**Layer:** E2E
+**Status:** Draft (executed)
+**Confidence:** High
+
+**Scenario**
+Given an umbrella with a Hyderabad and a Mumbai chapter: the circle page says which umbrella it is part of and the other chapter is findable from it, while nothing else crosses between them. Priya opens a drive for the hall with a ₹5,00,000 target; Meera promises ₹2,000 and sees her own promise; every member sees the total and the "promises only for now" note; only the organizer can read who promised what, and a member reading that list gets nothing. Asha follows Priya's calendar, her person page shows it, and the .ics feed at `/public/hosts/{id}/calendar.ics` is a valid calendar file carrying Priya's public activity.
+
+**Covers**
+- [x] Success path
+- [x] Failure/edge path
+
+**Review history**
+- 2026-09-17 — `community_batch_scenario.py` 23/23. All rows removed.
 
 **Approval:** Principal QA — [ ] Approved — name, date
 

@@ -1,0 +1,27 @@
+{
+  "error": {
+    "notFound": "This workspace isn't available to you.",
+    "planRequired": "This needs an active Business Workspace plan.",
+    "roleNotAllowed": "Your role doesn't allow this action.",
+    "ownerOnly": "Only the business owner can buy or change the plan.",
+    "planExists": "This business already has a plan.",
+    "productNotFound": "That plan isn't available.",
+    "entitlementNotFound": "Plan not found.",
+    "invalidTransition": "This action isn't available in the plan's current state.",
+    "cannotInviteSelf": "You can't invite yourself.",
+    "cannotInviteOwner": "The owner already has full access.",
+    "alreadyInvited": "That number already has an invite or a role here.",
+    "inviteNotFound": "Invitation not found.",
+    "inviteExpired": "This invitation has expired.",
+    "memberNotFound": "Team member not found."
+  },
+  "role": {
+    "owner": "Owner",
+    "admin": "Admin",
+    "operator": "Operator"
+  },
+  "pausedReason": {
+    "renewalReminderUndelivered": "we couldn't deliver your renewal reminder, so nothing was charged",
+    "graceExpired": "the renewal wasn't completed within 7 days"
+  }
+}

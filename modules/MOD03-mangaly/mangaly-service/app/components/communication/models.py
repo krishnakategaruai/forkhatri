@@ -23,9 +23,9 @@ _SCHEMA = "mangaly_communication"
 
 
 class Conversation(Base):
-    """[TR049] One row per accepted connection, created lazily on the first
-    message send (not automatically at connection-accept time — see
-    `connection.interface.accept()`'s docstring for why)."""
+    """[TR049, migration 026] One row per accepted connection, opened when the
+    connection is accepted (and still created on a first send, for connections
+    accepted before that changed)."""
 
     __tablename__ = "conversation"
     __table_args__ = {"schema": _SCHEMA}
@@ -45,6 +45,8 @@ class Message(Base):
 
     id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True, default=uuid4)
     conversation_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True))
-    sender_account_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True))
+    # [Migration 026] NULL for a system line: the platform is speaking, not a person.
+    sender_account_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True), default=None)
     content: Mapped[str]
+    kind: Mapped[str] = mapped_column(default="member")
     sent_at: Mapped[datetime] = mapped_column(server_default=text("now()"))

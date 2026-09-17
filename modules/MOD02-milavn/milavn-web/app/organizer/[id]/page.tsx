@@ -13,16 +13,20 @@ import QrCode from '@/components/QrCode';
 import { Sheet } from '@/components/Sheet';
 import { ErrorState, Toast } from '@/components/States';
 import { api, ApiError, resolveMediaUrl, type Card, type Identity } from '@/lib/api';
-import { formatDateLong, formatRelative } from '@/lib/format';
+import { formatDateLong, formatInr, formatRelative } from '@/lib/format';
 
-type Attendee = { member_id: string; display_name: string; avatar: string | null; status: string; waitlist_position: number | null; checked_in_at: string | null };
+type Money = { paid_spots: number; collected_paise: number; refunds_paise: number; refunds_pending: number; holds_active: number; payouts_connected: boolean };
+type Attendee = { member_id: string; display_name: string; avatar: string | null; status: string; waitlist_position: number | null; checked_in_at: string | null; company?: string | null; first_time?: boolean; guests?: number };
+type After = { came: number; first_timers: number; come_again_yes: number; answered: number; thanks_count: number; thanks: { from: string; message: string }[] };
 type Detail = Card & { viewer_role: string; co_organizers: { member_id: string; display_name: string }[]; announcements: { id: string; message: string; created_at: string; by: string }[] };
 
 export default function OrganizerPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [d, setD] = useState<Detail | null>(null);
+  const [money, setMoney] = useState<Money | null>(null);
+  const [after, setAfter] = useState<After | null>(null);
   const [att, setAtt] = useState<Attendee[]>([]);
   const [error, setError] = useState(false);
   const [msg, setMsg] = useState('');
@@ -36,7 +40,11 @@ export default function OrganizerPage() {
 
   const load = useCallback(() => {
     setError(false);
-    Promise.all([api<Detail>(`/occurrences/${id}`), api<Attendee[]>(`/occurrences/${id}/attendees`)]).then(([dd, a]) => { setD(dd); setAtt(a); }).catch(() => setError(true));
+    Promise.all([api<Detail>(`/occurrences/${id}`), api<Attendee[]>(`/occurrences/${id}/attendees`)]).then(([dd, a]) => {
+      setD(dd); setAtt(a);
+      if (dd.price_paise != null) api<Money>(`/occurrences/${id}/money`).then(setMoney).catch(() => undefined);
+      if (new Date(dd.time_start).getTime() < Date.now()) api<After>(`/occurrences/${id}/after`).then(setAfter).catch(() => undefined);
+    }).catch(() => setError(true));
   }, [id]);
   useEffect(load, [load]);
 
@@ -77,6 +85,19 @@ export default function OrganizerPage() {
               <div className="stat"><b>{interested.length}</b><span>{t('detail.interested')}</span></div>
               {d.capacity !== null && <div className="stat"><b>{d.capacity}</b><span>{t('detail.capacity')}</span></div>}
             </div>
+            {d.price_paise != null && money && (
+              <section className="card stack" style={{ gap: 10 }}>
+                <span className="label">{t('pay.organizer.title')} · {formatInr(d.price_paise, i18n.language)}</span>
+                <div className="row">
+                  <div className="stat"><b>{formatInr(money.collected_paise - money.refunds_paise, i18n.language)}</b><span>{t('pay.organizer.net')}</span></div>
+                  <div className="stat"><b>{money.paid_spots}</b><span>{t('pay.organizer.paidSpots')}</span></div>
+                  <div className="stat"><b>{formatInr(money.refunds_paise, i18n.language)}</b><span>{t('pay.organizer.refunds')}</span></div>
+                </div>
+                {money.holds_active > 0 && <span className="caption">{t('pay.organizer.holds', { count: money.holds_active })}</span>}
+                <span className="caption">{t('pay.organizer.privacy')}</span>
+                {!money.payouts_connected && <span className="caption">{t('pay.organizer.payoutsPending')}</span>}
+              </section>
+            )}
             <div className="grid-2">
               <Link href={`/create?edit=${d.id}`} className="btn btn--secondary">{t('create.edit')}</Link>
               <Link href={`/a/${d.slug}`} className="btn btn--secondary">{t('create.view')}</Link>
@@ -107,7 +128,11 @@ export default function OrganizerPage() {
                 {[...going, ...wait, ...interested].map((a) => (
                   <div key={a.member_id} className="lrow" style={{ minHeight: 56 }}>
                     {a.avatar ? <img className="avatar avatar--lg" src={resolveMediaUrl(a.avatar) ?? ''} alt="" /> : <span className="avatar avatar--lg" />}
-                    <span className="grow"><Link href={`/p/${a.member_id}`}><b>{a.display_name}</b></Link><br /><span className="caption">{t(`card.youAre.${a.status}`, { defaultValue: a.status })}{a.waitlist_position ? ` #${a.waitlist_position}` : ''}</span></span>
+                    <span className="grow"><Link href={`/p/${a.member_id}`}><b>{a.display_name}</b></Link><br /><span className="caption">{t(`card.youAre.${a.status}`, { defaultValue: a.status })}{a.waitlist_position ? ` #${a.waitlist_position}` : ''}</span>
+                      {(a.guests ?? 0) > 0 && <span className="pill pill--neutral" style={{ marginLeft: 6 }}>{t('guest.plusN', { count: a.guests })}</span>}
+                      {a.first_time && <span className="pill pill--trust" style={{ marginLeft: 6 }}>{t('belong.firstTime')}</span>}
+                      {a.company === 'alone' && <span className="pill pill--neutral" style={{ marginLeft: 6 }}>{t('belong.onTheirOwn')}</span>}
+                    </span>
                     {['going', 'interested', 'waitlisted'].includes(a.status) && <button className="btn btn--secondary btn--sm" onClick={() => mark(a, 'checked_in')}>✓ In</button>}
                     {['checked_in', 'going'].includes(a.status) && past && <button className="btn btn--ghost btn--sm" onClick={() => mark(a, 'attended')}>Attended</button>}
                     {['going', 'interested'].includes(a.status) && past && <button className="btn btn--ghost btn--sm" onClick={() => mark(a, 'no_show')}>No-show</button>}
@@ -123,6 +148,19 @@ export default function OrganizerPage() {
               {d.co_organizers.map((c) => <div key={c.member_id} className="row row--between"><span>{c.display_name}</span>{d.viewer_role === 'organizer' && <button className="link" onClick={() => revoke(c.member_id)}>{t('detail.revoke')}</button>}</div>)}
             </section>
 
+            {past && after && (
+              <section className="card stack" style={{ gap: 10 }}>
+                <span className="label">{t('belong.after.title')}</span>
+                <div className="row">
+                  <div className="stat"><b>{after.came}</b><span>{t('belong.after.came')}</span></div>
+                  <div className="stat"><b>{after.first_timers}</b><span>{t('belong.after.firstTimers')}</span></div>
+                  <div className="stat"><b>{after.answered ? `${after.come_again_yes}/${after.answered}` : '—'}</b><span>{t('belong.after.comeAgain')}</span></div>
+                </div>
+                {after.thanks.length > 0
+                  ? after.thanks.map((n, i) => <div key={i} className="card" style={{ padding: 10 }}><p style={{ margin: 0 }}>“{n.message}”</p><span className="caption">{n.from}</span></div>)
+                  : <span className="caption">{t('belong.after.noThanks')}</span>}
+              </section>
+            )}
             {past && <button className="btn btn--secondary btn--block" onClick={complete}>{t('detail.markHeld')} ✓</button>}
           </>
         )}

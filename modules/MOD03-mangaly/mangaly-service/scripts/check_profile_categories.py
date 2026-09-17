@@ -1,212 +1,135 @@
-"""End-to-end check of FR002/FR003/FR005 against a RUNNING server.
+"""Live checks for FR002/FR003/FR005 (TR002/TR003/TR005) against RUNNING services.
 
-Signs up a fresh account, verifies it, creates an existence-tier profile,
-then exercises: per-category attribute upsert (set + decline + overwrite),
-the discoverability-tier gate, and the three-tier completeness read — all
-against the real `mangaly_profile.profile_attribute` table, never mocked.
+Signs in through ForKhatri as the automated-test member, creates a profile,
+exercises per-category attributes (set, decline, overwrite), the
+discoverability gate and three-tier completeness, then deletes everything it
+created.
 
-Run the API first, then: python -m scripts.check_profile_categories
+Run the Mangaly API and the ForKhatri identity service first, then:
+    python -m scripts.check_profile_categories
 """
 
 from __future__ import annotations
 
-import io
-import re
 import sys
-import time
-import urllib.error
-import urllib.request
-from http.cookiejar import CookieJar
-from json import dumps, loads
-from typing import Any
 
-BASE = "http://127.0.0.1:8000"
-LOG_PATH = r"C:\Users\krish\Krishna2025\startup2026\ForKhatri\modules\MOD03-mangaly\mangaly-service\.dev-api.log"
-
-passed: list[str] = []
-failed: list[str] = []
-_opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(CookieJar()))
-
-
-def call_json(method: str, path: str, body: dict[str, Any] | None) -> tuple[int, Any]:
-    data = dumps(body).encode() if body is not None else None
-    req = urllib.request.Request(
-        f"{BASE}{path}", data=data, method=method,
-        headers={"Content-Type": "application/json"},
-    )
-    try:
-        with _opener.open(req, timeout=30) as res:
-            raw = res.read().decode()
-            return res.status, (loads(raw) if raw else "")
-    except urllib.error.HTTPError as e:
-        raw = e.read().decode()
-        try:
-            return e.code, loads(raw)
-        except ValueError:
-            return e.code, raw
-
-
-def call_multipart(path: str, fields: dict[str, str], file_field: str, filename: str, content: bytes, content_type: str) -> tuple[int, Any]:
-    boundary = "----mangalycheck"
-    parts = []
-    for key, value in fields.items():
-        parts.append(f"--{boundary}\r\nContent-Disposition: form-data; name=\"{key}\"\r\n\r\n{value}\r\n")
-    body = "".join(parts).encode()
-    body += (
-        f"--{boundary}\r\nContent-Disposition: form-data; name=\"{file_field}\"; filename=\"{filename}\"\r\n"
-        f"Content-Type: {content_type}\r\n\r\n"
-    ).encode() + content + f"\r\n--{boundary}--\r\n".encode()
-
-    req = urllib.request.Request(
-        f"{BASE}{path}", data=body, method="POST",
-        headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
-    )
-    try:
-        with _opener.open(req, timeout=30) as res:
-            raw = res.read().decode()
-            return res.status, (loads(raw) if raw else "")
-    except urllib.error.HTTPError as e:
-        raw = e.read().decode()
-        try:
-            return e.code, loads(raw)
-        except ValueError:
-            return e.code, raw
-
-
-def check(label: str, ok: bool, detail: str = "") -> None:
-    (passed if ok else failed).append(label)
-    print(f"  {'PASS' if ok else 'FAIL'}  {label}{f' — {detail}' if detail else ''}")
-
-
-TINY_JPEG = bytes.fromhex(
-    "ffd8ffe000104a46494600010100000100010000ffdb004300"
-    + "10" * 63
-    + "ffc0000b080001000101011100ffc4001f0000010501010101010100000000000000000102030405060708090a0bffda"
-    + "0008010100003f00d2cf20ffd9"
+from scripts._check_support import (
+    API,
+    Results,
+    portrait,
+    refuse_if_profile_exists,
+    remove_profile,
+    services_up,
+    sign_in_test_member,
 )
 
-
-def latest_otp_for(identifier: str) -> str | None:
-    try:
-        with open(LOG_PATH, encoding="utf-8", errors="replace") as f:
-            lines = f.readlines()
-    except FileNotFoundError:
-        return None
-    pattern = re.compile(r"OTP for .*?: (\d+) \(dev/fallback log")
-    for line in reversed(lines):
-        m = pattern.search(line)
-        if m:
-            return m.group(1)
-    return None
+PROFILE = {
+    "name": "Kavya Menon",
+    "date_of_birth": "1994-06-20",
+    "gender": "female",
+    "looking_for": "groom",
+    "city_locality": "Bengaluru, Karnataka",
+}
 
 
 def main() -> int:
-    print("\nMangaly profile categories — live checks (FR002/FR003/FR005/TR002/TR003/TR005)\n")
-
-    try:
-        with urllib.request.urlopen(f"{BASE}/health", timeout=5) as res:
-            if res.status != 200:
-                raise RuntimeError
-    except Exception:
-        print(f"  API not reachable at {BASE}. Start it first.")
+    print("\nMangaly profile categories — live checks (FR002/FR003/FR005)\n")
+    if not services_up():
+        print("  The Mangaly API (8000) or the ForKhatri identity service (8100) is not running.")
         return 2
 
-    identifier = f"+9198{int(time.time()) % 10**8:08d}"
-    call_json("POST", "/auth/signup", {"identifier": identifier})
-    code = latest_otp_for(identifier)
-    check("prerequisite: signup issued an OTP", code is not None)
-    if code is None:
-        return 1
-    v_status, v_body = call_json(
-        "POST", "/auth/otp/verify", {"identifier": identifier, "code": code, "purpose": "signup"}
-    )
-    check("prerequisite: signup OTP verifies and opens a session", v_status == 200 and v_body.get("outcome") == "verified", f"{v_status} {v_body}")
+    client, account_id = sign_in_test_member()
+    refuse_if_profile_exists(account_id)
+    results = Results()
 
-    s, b = call_multipart(
-        "/profile",
-        {"name": "Anita Rao", "date_of_birth": "1994-06-20", "gender": "female", "city_locality": "Bengaluru, Karnataka"},
-        "photo", "photo.jpg", TINY_JPEG, "image/jpeg",
-    )
-    check("prerequisite: existence-tier profile saves", s == 201, f"{s} {b}")
+    def patch(category: str, body: dict) -> int:
+        status, _ = client.json("PATCH", f"{API}/profile/{category}", body)
+        return status
 
-    # -- PATCH against a profile-less account is rejected -----------------------
-    # (covered implicitly below since this account now HAS a profile; the
-    # ProfileNotFound path is exercised by the completeness-without-profile
-    # check further down using a brand-new, profile-less account instead.)
+    def completeness() -> dict:
+        status, body = client.json("GET", f"{API}/profile/completeness")
+        return body if status == 200 and isinstance(body, dict) else {}
 
-    # -- Category upsert: set two of the four required discoverability fields ---
-    s, b = call_json(
-        "PATCH", "/profile/education", {"highest_education_level": {"state": "value", "value": "masters"}}
-    )
-    check("PATCH /profile/education sets a value (204)", s == 204, f"{s} {b}")
+    try:
+        s, b = client.multipart(f"{API}/profile", PROFILE, "photo.jpg", portrait(), "image/jpeg")
+        results.check("Prerequisite: the profile saves (201)", s == 201, s)
 
-    s, b = call_json(
-        "PATCH", "/profile/profession", {"occupation": {"state": "value", "value": "software_engineer"}}
-    )
-    check("PATCH /profile/profession sets a value (204)", s == 204, f"{s} {b}")
+        results.check(
+            "Education can be set (204)",
+            patch("education", {"highest_education_level": {"state": "value", "value": "masters"}})
+            == 204,
+        )
+        results.check(
+            "Profession can be set (204)",
+            patch("profession", {"occupation": {"state": "value", "value": "Software Engineer"}})
+            == 204,
+        )
 
-    # -- Completeness: still incomplete (2 of 4 + partner-pref any-of missing) --
-    s, b = call_json("GET", "/profile/completeness", None)
-    check(
-        "GET /profile/completeness reflects partial discoverability tier",
-        s == 200 and b.get("discoverability_complete") is False and len(b.get("discoverability_missing", [])) == 3,
-        f"{s} {b}",
-    )
-    check("Completeness existence tier is already true", isinstance(b, dict) and b.get("existence_complete") is True, f"{b}")
+        report = completeness()
+        results.check(
+            "Completeness shows three discoverability items still missing",
+            report.get("discoverability_complete") is False
+            and len(report.get("discoverability_missing", [])) == 3,
+            report,
+        )
+        results.check("The existence tier is complete", report.get("existence_complete") is True)
 
-    # -- Decline a field: an active choice, distinct from unset -----------------
-    s, b = call_json(
-        "PATCH", "/profile/marital_history", {"marital_status": {"state": "declined"}}
-    )
-    check("PATCH can decline a field (204)", s == 204, f"{s} {b}")
+        results.check(
+            "A field can be declined (204)",
+            patch("marital_history", {"marital_status": {"state": "declined"}}) == 204,
+        )
+        missing = completeness().get("discoverability_missing", [])
+        results.check(
+            "A declined field still counts as missing for discoverability",
+            "marital_history.marital_status" in missing,
+            missing,
+        )
 
-    s, b = call_json("GET", "/profile/completeness", None)
-    still_missing = b.get("discoverability_missing", []) if isinstance(b, dict) else []
-    check(
-        "A declined field still counts as missing for discoverability (not satisfied by declining)",
-        "marital_history.marital_status" in still_missing,
-        f"{still_missing}",
-    )
+        results.check(
+            "Relocation can be set (204)",
+            patch("relocation", {"relocation_willingness": {"state": "value", "value": "yes"}})
+            == 204,
+        )
+        results.check(
+            "A declined field can be overwritten with a value (204)",
+            patch(
+                "marital_history", {"marital_status": {"state": "value", "value": "never_married"}}
+            )
+            == 204,
+        )
+        results.check(
+            "A partner age range satisfies the partner-preference requirement (204)",
+            patch(
+                "partner_preference",
+                {"age_range": {"state": "value", "value": {"min": 28, "max": 36}}},
+            )
+            == 204,
+        )
 
-    # -- Complete the remaining required fields + one partner-preference field --
-    s, b = call_json(
-        "PATCH", "/profile/relocation", {"relocation_willingness": {"state": "value", "value": "yes"}}
-    )
-    check("PATCH /profile/relocation sets a value (204)", s == 204, f"{s} {b}")
+        report = completeness()
+        results.check(
+            "The discoverability tier is now complete",
+            report.get("discoverability_complete") is True
+            and report.get("discoverability_missing") == [],
+            report,
+        )
 
-    s, b = call_json(
-        "PATCH", "/profile/marital_history", {"marital_status": {"state": "value", "value": "never_married"}}
-    )
-    check("Overwriting a previously-declined field to a value works (204)", s == 204, f"{s} {b}")
+        results.check(
+            "An enhanced-tier category can be set (204)",
+            patch("lifestyle", {"diet": {"state": "value", "value": "vegetarian"}}) == 204,
+        )
+        report = completeness()
+        results.check(
+            "The enhanced tier counts it without gating anything",
+            report.get("enhanced_filled_categories") == 1
+            and report.get("discoverability_complete") is True,
+            report,
+        )
+    finally:
+        remove_profile(account_id)
+        print("  cleanup: removed the profile, attributes, photos and Discovery row it created")
 
-    s, b = call_json(
-        "PATCH", "/profile/partner_preference", {"age_range": {"state": "value", "value": {"min": 28, "max": 36}}}
-    )
-    check("PATCH /profile/partner_preference sets the any-of field (204)", s == 204, f"{s} {b}")
-
-    # -- Discoverability tier now satisfied --------------------------------------
-    s, b = call_json("GET", "/profile/completeness", None)
-    check(
-        "GET /profile/completeness shows discoverability tier fully satisfied",
-        s == 200 and b.get("discoverability_complete") is True and b.get("discoverability_missing") == [],
-        f"{s} {b}",
-    )
-
-    # -- Enhanced-matching tier: touching one category is reflected, never gates -
-    s, b = call_json(
-        "PATCH", "/profile/lifestyle", {"diet": {"state": "value", "value": "vegetarian"}}
-    )
-    check("PATCH /profile/lifestyle (enhanced tier) sets a value (204)", s == 204, f"{s} {b}")
-
-    s, b = call_json("GET", "/profile/completeness", None)
-    check(
-        "Enhanced-matching tier reflects the touched category without gating anything",
-        s == 200 and b.get("enhanced_filled_categories") == 1 and b.get("discoverability_complete") is True,
-        f"{s} {b}",
-    )
-
-    print(f"\n  {len(passed)} passed, {len(failed)} failed\n")
-    return 1 if failed else 0
+    return results.finish()
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@
   "minutes": "{{n}} min",
   "hours": "{{n}} h",
   "days": "{{n}} days",
+  "oneDay": "1 day",
   "underReview": "{{count}} under review",
   "sectionTitle": "Reviews",
   "empty": "No reviews yet. Reviews come only from completed enquiries and partnerships.",

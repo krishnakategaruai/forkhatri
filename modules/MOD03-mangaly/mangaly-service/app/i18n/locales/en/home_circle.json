@@ -4,6 +4,9 @@
     "alreadyInvited": "There's already a pending invitation for that phone number or email.",
     "invitationNotFound": "That invitation isn't available anymore — it may have expired or already been used.",
     "notFound": "That couldn't be found.",
-    "rateLimited": "Too many invitations sent. Please try again later."
+    "rateLimited": "Too many invitations sent. Please try again later.",
+    "contactRequestNotFound": "That request is no longer waiting for you.",
+    "noteEmpty": "Write something before saving the note.",
+    "noteSubject": "A note must be about a match."
   }
 }

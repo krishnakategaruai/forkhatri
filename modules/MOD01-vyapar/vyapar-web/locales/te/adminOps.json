@@ -1,0 +1,47 @@
+{
+  "title": "కంటెంట్ కార్యకలాపాలు",
+  "notOperator": "ఈ విభాగం సరైన అనుమతి ఉన్న ఆపరేటర్ల కోసం మాత్రమే.",
+  "health": {
+    "title": "మార్కెట్‌ప్లేస్ ఆరోగ్యం",
+    "minGroupNote": "{{n}} కంటే తక్కువ ఉన్న గుంపు ఇక్కడ దాచబడుతుంది, అంచనా సంఖ్యగా చూపబడదు.",
+    "notEnoughData": "ఇంకా తగినంత డేటా లేదు",
+    "metric": {
+      "opportunity_coverage": "అవకాశ కవరేజ్",
+      "relevant_discovery_rate": "సంబంధిత శోధన రేటు",
+      "zero_result_rate": "సున్నా-ఫలిత రేటు",
+      "opportunity_action_rate": "అవకాశ చర్య రేటు",
+      "relevant_opportunity_connections": "సంబంధిత కనెక్షన్‌లు",
+      "successful_connection_rate": "విజయవంతమైన కనెక్షన్ రేటు",
+      "discovery_to_enquiry_rate_listings": "శోధన → విచారణ రేటు",
+      "freshness": "తాజాదనం",
+      "reports_per_1000_interactions": "ప్రతి 1,000 పరస్పర చర్యలకు నివేదికలు",
+      "notification_opt_out_rate": "నోటిఫికేషన్ ఆఫ్ రేటు",
+      "promotion_repeat_rate": "బూస్ట్ పునరావృత రేటు",
+      "revenue_paise": "ఆదాయం (పైసలు)",
+      "refunds_paise": "రీఫండ్‌లు (పైసలు)",
+      "time_to_first_relevant_opportunity_hours": "మొదటి సంబంధిత అవకాశానికి సమయం (గంటలు)"
+    }
+  },
+  "opportunitiesQueue": {
+    "title": "అవకాశ సమీక్ష క్యూ",
+    "empty": "సమీక్ష కోసం ఏమీ వేచి లేదు.",
+    "ageDays": "{{n}} రోజుల పాతది",
+    "approve": "ఆమోదించండి",
+    "return": "సమర్పకుడికి తిరిగి పంపండి",
+    "remove": "తొలగించండి",
+    "flag": {
+      "source_unreachable": "మూలం అందుబాటులో లేదు",
+      "unconfirmed_fields": "ఫీల్డ్‌లు నిర్ధారించబడలేదు"
+    }
+  },
+  "staleQueue": {
+    "title": "పాత / గడువు ముగిసిన క్యూ",
+    "empty": "ఇప్పుడు ఏదీ పాతది కాదు.",
+    "remind": "గుర్తు చేయండి ({{n}})",
+    "expire": "గడువు ముగించండి ({{n}})",
+    "done": "{{n}} అంశాలు అప్‌డేట్ చేయబడ్డాయి."
+  },
+  "taxonomy": {
+    "title": "వర్గీకరణ"
+  }
+}

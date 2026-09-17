@@ -40,6 +40,9 @@ class CardOut(BaseModel):
     is_recurring: bool
     lat: float | None
     lng: float | None
+    price_paise: int | None = None  # [FR102] None = free
+    audience_tags: list[str] = []  # [FR110]
+    food_tags: list[str] = []  # [FR110]
 
     @classmethod
     def from_card(cls, c: Card) -> CardOut:
@@ -74,4 +77,7 @@ class CardOut(BaseModel):
             is_recurring=c.is_recurring,
             lat=c.lat,
             lng=c.lng,
+            price_paise=c.price_paise,
+            audience_tags=list(c.audience_tags),
+            food_tags=list(c.food_tags),
         )

@@ -16,8 +16,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.db import close_pool, get_pool, init_pool
-from app.routers import commercial, dev, discovery, enquiries, feed, first_run, listings, member_settings, notifications, opportunities, partnerships, payments, reviews, trust_safety, verification
-from app.routers.commercial import run_promotion_lifecycle_pass
+from app.taxonomy_cache import refresh_taxonomy_cache
+from app.routers import admin_commercial, admin_ops, campaigns, commercial, dev, discovery, enquiries, events, feed, first_run, listings, member_settings, notifications, opportunities, partnerships, payments, privacy, reviews, trust_safety, verification, workspace
+from app.routers.commercial import run_commercial_lifecycle_pass
+from app.routers.privacy import run_preference_detection_pass
+from app.outbox import run_outbox_dispatch_pass
 from app.routers.trust_safety import run_moderation_escalation_pass
 from app.routers.listings import sync_credential_refs
 from app.routers.notifications import notification_loop
@@ -46,7 +49,10 @@ async def verification_cleanup_loop() -> None:
             await run_verification_image_cleanup(get_pool())
             await run_verification_expiry_pass(get_pool())  # [TR010]
             await run_moderation_escalation_pass(get_pool())  # [TR040/TR041]
-            await run_promotion_lifecycle_pass(get_pool())  # [TR030/TR031] 24h payment window, completion, pause + credit
+            await run_commercial_lifecycle_pass(get_pool())  # [TR030/TR031/TR033/TR035/TR054] boosts, entitlement renewal/grace, campaigns
+            await run_preference_detection_pass(get_pool())  # [TR038] derived-preference proposals
+            await run_outbox_dispatch_pass(get_pool())  # [TR052] Search Bridge stand-in dispatch
+            await refresh_taxonomy_cache(get_pool())  # keep the label cache current
         except Exception:
             import logging
 
@@ -56,6 +62,7 @@ async def verification_cleanup_loop() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_pool()
+    await refresh_taxonomy_cache(get_pool())  # [Coordinator bug #2 fix] warm the taxonomy label cache before serving
     # [TR021/TR006/TR008] Genuinely scheduled, not only dev-triggerable
     # endpoints — see each router's own header comment for why.
     notify_task = asyncio.create_task(notification_loop())
@@ -104,6 +111,14 @@ app.include_router(partnerships.router)
 app.include_router(commercial.router)
 app.include_router(commercial.admin_router)
 app.include_router(payments.router)
+app.include_router(workspace.router)
+app.include_router(campaigns.router)
+app.include_router(admin_commercial.router)
+app.include_router(admin_ops.router)
+app.include_router(admin_ops.internal_router)
+app.include_router(privacy.router)
+app.include_router(events.router)
+app.include_router(admin_commercial.audit_router)
 app.include_router(dev.router)
 
 

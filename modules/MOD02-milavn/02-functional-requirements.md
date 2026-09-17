@@ -16,6 +16,7 @@ items: "88 | approved: 88 | blockers: 0"
 | 2026-09-12 | Second, critical approver-perspective review pass (mirroring the same second pass already run on the BR file). Found and fixed a real, garbled error in this file's own Set-level quality gate "Prioritized" row (self-contradicting Must/Could counts, corrected). More substantively, cross-checked every FR's inherited Must priority against the source thesis's own explicit §58 MVP boundary rather than trusting each parent BR's Priority label as automatically transitive to every one of its FRs: found four FRs whose specific capability is absent from §58's curated MVP list even though their parent BR (Must) covers other, genuinely-MVP capability alongside them — FR024 (Community Memory stats, thesis itself calls this "a powerful **long-term** feature," §35), FR029 (a standalone public calendar view, distinct from BR11's per-item public pages), FR058 (capacity/waitlist automation) and FR059 (co-organizer delegation, both drawn from persona description §8.4/§8.5 rather than §58's terse "attendee list, event updates" Organizer MVP bullet). Refined all four from Must to Should — each BR's other, genuinely-MVP FRs remain Must and are fully functional without them, per the Priority field's own "inherited/refined from parent BR" convention (Step 2 agent definition). No FR was found duplicating another, contradicting its parent BR, or missing a failure/edge outcome. | Second, critical approver-perspective review pass — krishna kategaru, 2026-09-12. |
 | 2026-09-12 | Step 3 (UX) screen-inventory pass added 13 prerequisite-screen FRs (FR076–FR088) this file had no coverage for: Splash/Launch, Sign Up, Log In, Forgot Password, OTP Verification, Location and Notification permission priming, Main Navigation Shell, generic Empty/Offline/Error state handling, Account/Profile Settings, Notification Inbox, Help/Support, and Logout/Delete-Account confirmation. None trace to a Milavn business capability BR directly (the underlying identity/auth infrastructure is Common Platform per `modules.md` Shared Concerns, and this pipeline has no separate Common-Platform-tracked module) — each states this plainly in its own Intent per the Step 3 agent's explicit instruction, traced to the nearest sensible existing BR (mostly BR01) rather than left as a gap, consistent with "a mobile app without a login screen is not shippable." | Step 3 screen-inventory pass — krishna kategaru, 2026-09-12. |
 | 2026-09-13 | FR065's `Traced to:` moved from UX15 to UX20 — Step 5's test-scenario pass found no moderator-facing screen had ever been designed for FR065's own "basic review queue," traced to an error in BR14's own "Affected users and systems" line (now corrected in `01-business-requirements.md`), and Step 3 added UX20 to close it. No change to FR065's own requirement text. | Traceability update following the BR14 correction and new UX20 — krishna kategaru, 2026-09-13. |
+| 2026-09-14 | Post-seal correction: ForKhatri platform identity. Added dated correction notes under FR076, FR077, FR078, FR079, FR080 and FR088: sign-up, log-in, password reset, OTP and sessions are delivered by the ForKhatri Identity & Trust Service and entrance; Milavn renders no sign-in screens, and its development identity stand-in (`X-Milavn-Member-Id` header, `/welcome` member chooser) is being replaced by the platform session. Requirement bodies and approval lines unchanged. Not re-sealed; awaits the owner's review. | Product-owner instruction, 2026-09-14. See `docs/ParentApp/00c-identity-and-entrance-decisions.md` and `docs/ParentApp/07-tech-reqs.md` TR10–TR16. |
 
 ## Coverage check
 | Parent BR | FRs produced | Covered |
@@ -3661,6 +3662,7 @@ Conforming ✓
 ---
 
 ## FR076 — Splash/Launch Screen
+> **2026-09-14 correction:** the auth state is the ForKhatri session (`fk_session`) resolved by Milavn's Identity Bridge. No or expired session routes to the ForKhatri entrance with `return_to`, not to a Milavn Log In screen; the development `X-Milavn-Member-Id` header and `/welcome` chooser are disabled by default (TR15). First entry creates `milavn_profile.member_profile` and then onboarding (FR001). See docs/ParentApp/07-tech-reqs.md TR11, TR15–TR16.
 **Traces from:** BR01 (nearest existing BR — see Intent)
 **Traced to:** UX01 (Step 3 UX)
 **Priority:** Must
@@ -3714,6 +3716,7 @@ that state is known.
 ---
 
 ## FR077 — Sign Up
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module. See docs/ParentApp/07-tech-reqs.md TR12–TR16. Module screens for this flow redirect to the ForKhatri entrance. The platform flow never reveals whether an identifier is already registered (TR13), so the "offers Log In" duplicate path is replaced by one code flow for new and returning members.
 **Traces from:** BR01 (nearest existing BR — see Intent)
 **Traced to:** UX01 (Step 3 UX)
 **Priority:** Must
@@ -3767,6 +3770,7 @@ user-facing flow shape.
 ---
 
 ## FR078 — Log In
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module. See docs/ParentApp/07-tech-reqs.md TR12–TR16. Module screens for this flow redirect to the ForKhatri entrance.
 **Traces from:** BR01 (nearest existing BR — see Intent)
 **Traced to:** UX01 (Step 3 UX)
 **Priority:** Must
@@ -3815,6 +3819,7 @@ Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
 ---
 
 ## FR079 — Forgot/Reset Password
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module. See docs/ParentApp/07-tech-reqs.md TR12–TR16. Module screens for this flow redirect to the ForKhatri entrance. The current platform contract has no reset endpoint; members recover access with code sign-in (TR13).
 **Traces from:** BR01 (nearest existing BR — see Intent)
 **Traced to:** UX01 (Step 3 UX)
 **Priority:** Should
@@ -3865,6 +3870,7 @@ Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
 ---
 
 ## FR080 — OTP / Phone-Email Verification
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module. See docs/ParentApp/07-tech-reqs.md TR12–TR16, TR19. Module screens for this flow redirect to the ForKhatri entrance.
 **Traces from:** BR01 (nearest existing BR — see Intent)
 **Traced to:** UX01 (Step 3 UX)
 **Priority:** Must
@@ -4257,6 +4263,7 @@ Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
 ---
 
 ## FR088 — Logout and Delete-Account Confirmation
+> **2026-09-14 correction:** logout is ForKhatri sign-out (`POST /v1/auth/sign-out`, then the entrance), which ends the session for every module within 30 seconds (TR15–TR16). Deleting the ForKhatri account begins at the platform identity layer; Milavn deletes only its own data. The cross-module deletion contract is not yet specified in docs/ParentApp/07-tech-reqs.md.
 **Traces from:** BR01
 **Traced to:** UX17 (Step 3 UX)
 **Priority:** Must

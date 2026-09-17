@@ -16,6 +16,7 @@ items: "102 | approved: 102 | blockers: 0"
 | 2026-09-13 | Initial version. Looped over all 102 Sealed, impact-analyzed FRs (`06-impact-analysis.md`, IA001–IA102) one at a time, per this agent's own loop discipline: re-read each FR/IA pair, `modules/MOD03-mangaly/architecture.md`'s 14-component C4-L3 breakdown and its component→BR/FR traceability table, `/MODULE-ARCHITECTURE-STANDARD.md`'s generic patterns (schema-per-component + RLS, idempotent mutation endpoints, authorization chokepoint, in-process domain event bus), `v1-decisions.md`'s resolved V1 values, and `CODING-GUIDE.md`'s stated project structure and defect-prevention controls, before writing each item's technical requirement and any surfaced constraint. Tech reqs are written strictly against `architecture.md`'s already-fixed component/schema boundaries — no competing decomposition invented. Does not draft an ER diagram, schema DDL, or database migration — that is Step 7a's (`step7a-er-model-agent`) exclusive scope, invoked only after this file Seals. Two architecture-level gaps `06-impact-analysis.md` explicitly flagged as "owner: Step 7" are resolved here at the tech-req level: (1) FR098's Notification Bridge inbox-persistence schema ownership — already resolved one layer up in `architecture.md`'s own 2026-09-12 follow-up revision (Notification Bridge now owns `mangaly_notification`); TR098 below states the concrete endpoint/query shape against that resolved schema. (2) FR102's cross-cutting mutation-endpoint idempotency requirement — already named as a required generic pattern in `/MODULE-ARCHITECTURE-STANDARD.md` §4b and reflected in `CODING-GUIDE.md`'s `idempotency/` middleware module; TR102 below states which endpoints must honor it and TR049/TR042/TR002/etc. cross-reference it rather than re-deriving it per component. Every other IA-surfaced finding (shared tier-gate function for FR003/FR027; DB-backed rate-limit counter for FR037; on-call paging + CSAM reporting wiring for FR065/FR068/FR074; DB-access-control review for FR051/FR067/FR071; RLS non-owning-role + `SET LOCAL` requirement for every RLS-bearing item; anti-enumeration response-shape rule for FR093/FR094; Android `FLAG_SECURE`/iOS-asymmetry disclosure for FR056; SMS/OTP DLT-route + fallback-channel recommendation for FR095) is carried into its own item's Constraints-surfaced field as an explicit, named item, not smoothed over. | Tech Requirements (Step 7) — krishna kategaru (autonomous), 2026-09-13. |
 | 2026-09-13 | Critique-mindset review (explicit instruction: check folder structure, mutation correctness, data structures, loose coupling, correct system-design pattern usage, and — specifically — that utilities are genuinely common, not duplicated per call site). Found one real gap: TR037, TR093, and TR095 each described their rate-limiting as "the same pattern as" an earlier item rather than one shared implementation, spanning two different components (Identity Bridge, Trust & Verification) — exactly the divergence risk class `/MODULE-ARCHITECTURE-STANDARD.md` §4b's idempotency pattern already exists to prevent for a different concern. Added §4c to that file (one shared, parameterized rate-limiting utility), added a `rate_limiting/` module to `CODING-GUIDE.md`'s project structure, made TR037 the canonical statement (mirroring TR017's role for RLS) with TR093/TR095 now calling the same implementation rather than re-deriving it, and consolidated TR093/TR094's anti-enumeration response shape into one shared `generic_auth_error()` function both call. Everything else reviewed (folder structure/naming consistency, mutation-before-authorization ordering, structural-absence enforcement, event-bus/outbox usage, loose coupling via component interfaces rather than direct schema access) held up with no further correction needed. | Critique review — krishna kategaru (autonomous), 2026-09-13. |
 | 2026-09-13 | **Sealed.** Approver re-verified coverage (102/102 FR↔TR, 1:1), the corrected quality-gate row, and open blockers (none — all remaining items are named, owned external dependencies per `v1-decisions.md` convention, not blockers) before approving. All 102 items ticked Approved. Step 7a (ER Model & Database Implementation) is cleared to begin against this Sealed file. | Approved — krishna kategaru, 2026-09-13. |
+| 2026-09-14 | Post-seal correction: ForKhatri platform identity. Added dated correction notes under TR090, TR092, TR093, TR094, TR095 and TR101. Mangaly's `/auth/*` credential endpoints are superseded by the platform contract (`docs/ParentApp/07-tech-reqs.md` TR12–TR16): Identity Bridge resolves `fk_session` through the internal API, and the interim routes are disabled by default (kept only for automated tests). Requirement bodies and approvals unchanged. Not re-sealed; awaits the owner's review. | Product-owner instruction, 2026-09-14. See `docs/ParentApp/00c-identity-and-entrance-decisions.md`. |
 
 ## Coverage check
 
@@ -1557,6 +1558,7 @@ Per IA088: add this boundary explicitly to whatever product-roadmap review check
 ---
 
 ## TR090 — Splash/launch session bootstrap
+> **2026-09-14 correction:** "session/token validity via the Identity Bridge" means resolving the `fk_session` cookie through `POST /internal/v1/sessions/resolve` (cache ≤30 s, negative 5 s; unreachable → `503`); signed out or `401` → full-page navigation to the ForKhatri entrance with `return_to`, not Login. See docs/ParentApp/07-tech-reqs.md TR14–TR16.
 **Traces from:** FR090 (IA090)
 **Status:** Ready for Review | **Confidence:** High | **Priority:** Must
 
@@ -1587,6 +1589,7 @@ Onboarding content is client-side only (no backend business logic), fully skippa
 ---
 
 ## TR092 — Interim account sign-up (Identity Bridge-owned), named migration debt
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module. See docs/ParentApp/07-tech-reqs.md TR12–TR16. Module screens for this flow redirect to the ForKhatri entrance. `POST /auth/signup` is disabled by default and may be enabled only by an explicit development setting for automated tests (TR15). The named migration debt is addressed by TR23 (import with preserved ids and hashes); Identity Bridge instead ensures the `mangaly_identity.account` link row exists on first entry (TR11).
 **Traces from:** FR092 (IA092)
 **Status:** Ready for Review | **Confidence:** Medium — genuine, disclosed architectural interim. | **Priority:** Must
 
@@ -1604,6 +1607,7 @@ Per IA092/`v1-decisions.md`'s "Known technical debt": this interim system will r
 ---
 
 ## TR093 — Login with structural anti-enumeration and rate-limiting
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module. See docs/ParentApp/07-tech-reqs.md TR12–TR16. Module screens for this flow redirect to the ForKhatri entrance. `POST /auth/login` and the `mangaly_session` cookie are disabled by default (TR15); anti-enumeration and rate limits are the platform's (TR13, TR19, TR20).
 **Traces from:** FR093 (IA093)
 **Status:** Ready for Review | **Confidence:** High | **Priority:** Must
 
@@ -1619,6 +1623,7 @@ Per IA092/`v1-decisions.md`'s "Known technical debt": this interim system will r
 ---
 
 ## TR094 — Password reset with anti-enumeration and single-use, expiring tokens
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module. See docs/ParentApp/07-tech-reqs.md TR12–TR16. Module screens for this flow redirect to the ForKhatri entrance. `POST /auth/reset` is disabled by default; the platform contract has no reset endpoint yet (members use code sign-in).
 **Traces from:** FR094 (IA094)
 **Status:** Ready for Review | **Confidence:** High | **Priority:** Must
 
@@ -1634,6 +1639,7 @@ Per IA092/`v1-decisions.md`'s "Known technical debt": this interim system will r
 ---
 
 ## TR095 — OTP verification: correct DLT route, resend rate-limiting, fallback-channel budget
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module. See docs/ParentApp/07-tech-reqs.md TR12–TR16, TR19. Module screens for this flow redirect to the ForKhatri entrance. `POST /auth/otp/verify` is disabled by default. Trust & Verification's account-authenticity input becomes the session's `identity_level`; Home Circle identifier matching uses `phone_e164`/`email`, which the platform includes in session claims for Mangaly only (TR14).
 **Traces from:** FR095 (IA095)
 **Status:** Ready for Review | **Confidence:** Medium — SMS delivery is a real, measured external reliability constraint. | **Priority:** Must
 
@@ -1732,6 +1738,7 @@ Per IA100: given DEC-V1-006's legally-binding SLAs, a safety-urgent issue stuck 
 ---
 
 ## TR101 — Logout and account deletion with DPDP-gated disclosure
+> **2026-09-14 correction:** logout is `POST ${IDENTITY_API}/v1/auth/sign-out` followed by navigation to the entrance (TR16); `POST /auth/logout` is superseded. `POST /account/delete` remains Mangaly-data deletion; deleting the ForKhatri account begins at the platform, and that cross-module contract is not yet specified.
 **Traces from:** FR101 (IA101)
 **Status:** Ready for Review | **Confidence:** Medium — deletion-vs-retention boundary DPDP-gated. | **Priority:** Must
 

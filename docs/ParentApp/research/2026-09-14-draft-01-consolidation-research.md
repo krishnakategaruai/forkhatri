@@ -2,10 +2,12 @@
 project: ForKhatri
 title: Platform Consolidation — Single Source of Truth Research
 date: 2026-09-14
-status: Research Complete
+status: Superseded
 scope: All modules (Vyapar, Milavn, Mangaly, Counsel, Dashboard, Payment Services, Loans & Finance)
 approver: Chief Architect (Krishna Kategaru)
 ---
+
+> **Superseded draft.** Kept for history. Decisions and corrections: ../00c-identity-and-entrance-decisions.md. Contract: ../07-tech-reqs.md.
 
 # Platform Consolidation: Single Source of Truth — Research Report
 

@@ -42,10 +42,26 @@ class OccurrenceCancelled(Exception):
     pass
 
 
+class OccurrenceEnded(Exception):
+    """The activity is over: nobody can join, withdraw or change their answer any more."""
+
+
+class AlreadyAttended(Exception):
+    """A member who was there (checked in / attended) cannot withdraw; the attendance record stays."""
+
+
 class InvalidInput(Exception):
     def __init__(self, fields: list[str]) -> None:
         super().__init__(str(fields))
         self.fields = fields
+
+
+class NoRoomForGuests(Exception):
+    """[FR114] Already going, but there is not enough room for that many extra people."""
+
+
+class PaymentRequired(Exception):
+    """[FR102] A paid activity is joined by paying (ticketing), never by the free Going toggle."""
 
 
 class DuplicateAnnouncement(Exception):
@@ -76,14 +92,37 @@ class Occurrence:
     cancelled_at: datetime | None
     created_at: datetime
     recurrence_rule: dict | None
+    price_paise: int | None = None  # [FR102] None = free (the default and the norm)
+    refund_cutoff_hours: int = 24
+    audience_tags: tuple[str, ...] = ()  # [FR110]
+    food_tags: tuple[str, ...] = ()  # [FR110]
+    max_guests_per_member: int = 0  # [FR114] how many extra people each person may bring (0 = none)
 
 
 _OCC_COLS = """
     o.id, o.activity_id, o.creator_member_id, o.title, o.description, o.intent_category::text,
     o.time_start, o.time_end, o.locality_city, o.locality_zone, o.locality_locality, o.capacity,
     o.cover_image_media_id, o.high_risk, o.visibility_scope::text, o.circle_id, o.organization_scope_id,
-    o.canonical_url_slug, o.status::text, o.cancelled_at, o.created_at, a.recurrence_rule
+    o.canonical_url_slug, o.status::text, o.cancelled_at, o.created_at, a.recurrence_rule,
+    o.price_paise, o.refund_cutoff_hours, o.audience_tags, o.food_tags, o.max_guests_per_member
 """
+AUDIENCE_TAGS = ("family_friendly", "elder_friendly", "beginner_friendly")
+FOOD_TAGS = ("veg", "jain_options", "non_veg", "alcohol_free")
+
+
+def invalid_tags(audience_tags: list[str] | None, food_tags: list[str] | None) -> list[str]:
+    """[FR110] Who it's for, and food: known values only; vegetarian and non-vegetarian cannot both be claimed."""
+    bad: list[str] = []
+    if audience_tags is not None and any(t not in AUDIENCE_TAGS for t in audience_tags):
+        bad.append("audience_tags")
+    if food_tags is not None and (any(t not in FOOD_TAGS for t in food_tags) or {"veg", "non_veg"} <= set(food_tags)):
+        bad.append("food_tags")
+    return bad
+
+
+PRICE_MIN_PAISE = 100  # ₹1
+PRICE_MAX_PAISE = 10_000_000  # ₹1,00,000
+REFUND_CUTOFF_MAX_HOURS = 168
 _FROM = "FROM milavn_activity.occurrence o LEFT JOIN milavn_activity.activity a ON a.id = o.activity_id"
 
 
@@ -111,6 +150,11 @@ def _row_to_occurrence(r) -> Occurrence:  # noqa: ANN001
         cancelled_at=r[19],
         created_at=r[20],
         recurrence_rule=r[21],
+        price_paise=r[22],
+        refund_cutoff_hours=r[23],
+        audience_tags=tuple(r[24] or ()),
+        food_tags=tuple(r[25] or ()),
+        max_guests_per_member=int(r[26] or 0),
     )
 
 
@@ -188,8 +232,86 @@ async def list_visible(
 # --- Counts (definer-owned aggregate helpers, migration 002) -----------------
 
 
+MAX_GUESTS = 4  # [FR114] the most a host may allow; most will allow one or two
+
+
+async def follow_host(session: AsyncSession, *, member_id: UUID, host_member_id: UUID, follow: bool) -> bool:
+    """[FR122] Follow a host so their public activities land in your calendar (and in the feed you
+    can subscribe to from a phone calendar app). Following is private: the host is not told."""
+    if member_id == host_member_id:
+        return False
+    if follow:
+        await session.execute(
+            text("INSERT INTO milavn_activity.calendar_follow (member_id, host_member_id) VALUES (:m, :h) ON CONFLICT DO NOTHING"),
+            {"m": str(member_id), "h": str(host_member_id)},
+        )
+    else:
+        await session.execute(
+            text("DELETE FROM milavn_activity.calendar_follow WHERE member_id = :m AND host_member_id = :h"),
+            {"m": str(member_id), "h": str(host_member_id)},
+        )
+    return follow
+
+
+async def followed_host_ids(session: AsyncSession, *, member_id: UUID) -> list[UUID]:
+    ids = (await session.execute(text("SELECT milavn_activity.followed_host_ids(:m)"), {"m": str(member_id)})).scalar_one()
+    return list(ids or [])
+
+
+async def is_following(session: AsyncSession, *, member_id: UUID, host_member_id: UUID) -> bool:
+    return host_member_id in await followed_host_ids(session, member_id=member_id)
+
+
+async def public_activities_of(session: AsyncSession, *, host_member_id: UUID) -> list[dict]:
+    """[FR122] What goes into the .ics feed: this host's PUBLIC activities only, from a month back."""
+    rows = (
+        await session.execute(
+            text("SELECT id, title, description, time_start, time_end, locality, slug FROM milavn_activity.public_activities_of(:h)"),
+            {"h": str(host_member_id)},
+        )
+    ).all()
+    return [
+        {
+            "id": str(r[0]),
+            "title": r[1],
+            "description": r[2],
+            "time_start": r[3],
+            "time_end": r[4],
+            "locality": r[5],
+            "slug": r[6],
+        }
+        for r in rows
+    ]
+
+
+async def spots_taken(session: AsyncSession, occurrence_id: UUID) -> int:
+    """[FR114] What capacity is judged against: the people going plus the people they bring."""
+    return int((await session.execute(text("SELECT milavn_activity.spots_taken(:o)"), {"o": str(occurrence_id)})).scalar_one())
+
+
+async def my_guest_count(session: AsyncSession, *, occurrence_id: UUID, member_id: UUID) -> int:
+    """[FR114] How many people the member themselves is bringing (their own row only)."""
+    row = (
+        await session.execute(
+            text("SELECT guest_count FROM milavn_activity.participation WHERE occurrence_id = :o AND member_id = :m"),
+            {"o": str(occurrence_id), "m": str(member_id)},
+        )
+    ).first()
+    return int(row[0]) if row else 0
+
+
+async def guest_total(session: AsyncSession, occurrence_id: UUID) -> int:
+    """[FR114] How many guests altogether — shown next to the going count, never per person."""
+    return int((await session.execute(text("SELECT milavn_activity.guest_total(:o)"), {"o": str(occurrence_id)})).scalar_one())
+
+
 async def going_count(session: AsyncSession, occurrence_id: UUID) -> int:
     return int((await session.execute(text("SELECT milavn_activity.going_count(:o)"), {"o": str(occurrence_id)})).scalar_one())
+
+
+async def held_spot_count(session: AsyncSession, occurrence_id: UUID) -> int:
+    """[FR102] Spots held for people paying right now; they count against capacity (migration 017)."""
+    return int((await session.execute(text("SELECT milavn_activity.held_spot_count(:o)"), {"o": str(occurrence_id)})).scalar_one())
 
 
 async def interested_count(session: AsyncSession, occurrence_id: UUID) -> int:
@@ -250,6 +372,11 @@ async def create(
     cover_image_media_id: UUID | None = None,
     recurrence_rule: dict | None = None,
     activity_id: UUID | None = None,
+    price_paise: int | None = None,
+    refund_cutoff_hours: int = 24,
+    audience_tags: list[str] | None = None,
+    food_tags: list[str] | None = None,
+    max_guests_per_member: int = 0,
 ) -> Occurrence:
     missing = [
         f
@@ -264,6 +391,14 @@ async def create(
         missing.append("circle_id")
     if capacity is not None and capacity < 1:
         missing.append("capacity")
+    if price_paise is not None and not PRICE_MIN_PAISE <= price_paise <= PRICE_MAX_PAISE:
+        missing.append("price_paise")
+    if not 0 <= refund_cutoff_hours <= REFUND_CUTOFF_MAX_HOURS:
+        missing.append("refund_cutoff_hours")
+    missing += invalid_tags(audience_tags, food_tags)
+    # [FR114] Guests are for free activities: a paid spot is bought per person.
+    if not 0 <= max_guests_per_member <= MAX_GUESTS or (max_guests_per_member and price_paise is not None):
+        missing.append("max_guests_per_member")
     if missing:
         raise InvalidInput(sorted(set(missing)))
 
@@ -293,11 +428,13 @@ async def create(
             INSERT INTO milavn_activity.occurrence
               (id, activity_id, creator_member_id, title, description, intent_category, time_start, time_end,
                locality_city, locality_zone, locality_locality, capacity, cover_image_media_id, high_risk,
-               visibility_scope, circle_id, organization_scope_id, canonical_url_slug)
+               visibility_scope, circle_id, organization_scope_id, canonical_url_slug, price_paise, refund_cutoff_hours, audience_tags, food_tags,
+               max_guests_per_member)
             VALUES
               (:id, :activity_id, :creator, :title, NULLIF(:description, ''), CAST(:cat AS milavn_activity.intent_category),
                :time_start, :time_end, :city, :zone, :locality, :capacity, :cover, :high_risk,
-               CAST(:scope AS milavn_activity.visibility_scope), :circle_id, :org_id, :slug)
+               CAST(:scope AS milavn_activity.visibility_scope), :circle_id, :org_id, :slug, :price, :cutoff, :audience, :food,
+               :max_guests)
             """
         ),
         {
@@ -319,6 +456,11 @@ async def create(
             "circle_id": str(circle_id) if circle_id else None,
             "org_id": str(organization_scope_id) if organization_scope_id else None,
             "slug": _slug(occurrence_id),
+            "price": price_paise,
+            "cutoff": refund_cutoff_hours,
+            "audience": sorted(set(audience_tags or [])),
+            "food": sorted(set(food_tags or [])),
+            "max_guests": max_guests_per_member,
         },
     )
     # [FR030] Every item resolves to exactly one trust level from the moment it exists.
@@ -330,7 +472,7 @@ async def create(
         schema="milavn_activity",
         event_type="occurrence.created",
         aggregate_id=occurrence_id,
-        payload={"occurrence_id": occurrence_id, "creator_member_id": creator_member_id, "circle_id": circle_id},
+        payload={"occurrence_id": occurrence_id, "creator_member_id": creator_member_id, "circle_id": circle_id, "activity_id": activity_id},
     )
     return await get(session, occurrence_id=occurrence_id)
 
@@ -354,11 +496,31 @@ async def update(session: AsyncSession, *, occurrence_id: UUID, actor_member_id:
         "visibility_scope",
         "circle_id",
         "cover_image_media_id",
+        "price_paise",
+        "refund_cutoff_hours",
+        "audience_tags",
+        "food_tags",
+        "max_guests_per_member",
     }
+    bad_tags = invalid_tags(changes.get("audience_tags"), changes.get("food_tags"))
+    if bad_tags:
+        raise InvalidInput(bad_tags)
+    guests_allowed = changes.get("max_guests_per_member")
+    if guests_allowed is not None and not 0 <= int(guests_allowed) <= MAX_GUESTS:
+        raise InvalidInput(["max_guests_per_member"])
+    for key in ("audience_tags", "food_tags"):
+        if changes.get(key) is not None:
+            changes[key] = sorted(set(changes[key]))
+    price = changes.get("price_paise")
+    if price is not None and not PRICE_MIN_PAISE <= price <= PRICE_MAX_PAISE:
+        raise InvalidInput(["price_paise"])
+    cutoff = changes.get("refund_cutoff_hours")
+    if cutoff is not None and not 0 <= cutoff <= REFUND_CUTOFF_MAX_HOURS:
+        raise InvalidInput(["refund_cutoff_hours"])
     sets: list[str] = []
     params: dict = {"id": str(occurrence_id)}
     for key, value in changes.items():
-        if key not in allowed or value is None and key in ("title", "time_start", "locality_city"):
+        if key not in allowed or value is None and key in ("title", "time_start", "locality_city", "refund_cutoff_hours", "audience_tags", "food_tags"):
             continue
         enum_type = {"intent_category": "milavn_activity.intent_category", "visibility_scope": "milavn_activity.visibility_scope"}.get(key)
         if key in ("circle_id", "cover_image_media_id") and value is not None:
@@ -447,6 +609,7 @@ class ParticipationResult:
     going_count: int
     spots_left: int | None
     promoted_member_id: UUID | None
+    guests: int = 0  # [FR114] how many people this member is bringing
 
 
 async def _history(session: AsyncSession, participation_id: UUID, old: str | None, new: str, actor: UUID) -> None:
@@ -462,8 +625,21 @@ async def _history(session: AsyncSession, participation_id: UUID, old: str | Non
     )
 
 
-async def set_participation(session: AsyncSession, *, occurrence_id: UUID, member_id: UUID, desired: str) -> ParticipationResult:
-    """[FR015/FR016/FR058] One-tap toggle with a concurrency-safe capacity path."""
+async def set_participation(
+    session: AsyncSession,
+    *,
+    occurrence_id: UUID,
+    member_id: UUID,
+    desired: str,
+    via_ticket: bool = False,
+    checking_in: bool = False,
+    guests: int | None = None,
+) -> ParticipationResult:
+    """[FR015/FR016/FR058] One-tap toggle with a concurrency-safe capacity path.
+
+    [FR102] On a paid activity the free Going toggle is refused (PaymentRequired); ticketing calls in with
+    `via_ticket=True` to release a paid spot, and a freed paid spot is offered to the waitlist by ticketing
+    (the next person must pay) instead of being assigned outright."""
     if desired not in ("interested", "going", "cancelled"):
         raise InvalidInput(["status"])
     # [TR39] Serialise the whole capacity decision per occurrence. A row lock
@@ -473,7 +649,11 @@ async def set_participation(session: AsyncSession, *, occurrence_id: UUID, membe
     await session.execute(text("SELECT pg_advisory_xact_lock(hashtext(:id))"), {"id": str(occurrence_id)})
     occ_row = (
         await session.execute(
-            text("SELECT id, capacity, status::text, creator_member_id FROM milavn_activity.occurrence WHERE id = :id"),
+            text(
+                "SELECT id, capacity, status::text, creator_member_id, price_paise, "
+                "COALESCE(time_end, time_start + interval '3 hours') <= now() AS ended, max_guests_per_member "
+                "FROM milavn_activity.occurrence WHERE id = :id"
+            ),
             {"id": str(occurrence_id)},
         )
     ).first()
@@ -482,14 +662,35 @@ async def set_participation(session: AsyncSession, *, occurrence_id: UUID, membe
     if occ_row[2] == "cancelled" and desired != "cancelled":
         raise OccurrenceCancelled
     capacity: int | None = occ_row[1]
+    paid = occ_row[4] is not None
+    if paid and desired == "going" and not via_ticket:
+        raise PaymentRequired
 
     existing = (
         await session.execute(
-            text("SELECT id, status::text, waitlist_position FROM milavn_activity.participation WHERE occurrence_id = :o AND member_id = :m"),
+            text("SELECT id, status::text, waitlist_position, guest_count FROM milavn_activity.participation WHERE occurrence_id = :o AND member_id = :m"),
             {"o": str(occurrence_id), "m": str(member_id)},
         )
     ).first()
     old_status = existing[1] if existing else None
+    # [FR114] Who this answer is for: the member, plus anyone they are bringing.
+    allowed_guests = int(occ_row[6] or 0)
+    guest_count = int(existing[3]) if existing else 0
+    if guests is not None:
+        if not 0 <= guests <= allowed_guests or (guests and paid):
+            raise InvalidInput(["guests"])
+        guest_count = guests
+    if desired == "cancelled":
+        guest_count = 0
+    party = 1 + guest_count
+    # You can't step back from something you were at, or change your answer once it is over.
+    # Ticketing settles its own refunds (it checks time itself), so it is not bound by these rules.
+    if not via_ticket:
+        if old_status in ("checked_in", "attended") and desired != "going":
+            raise AlreadyAttended
+        # A walk-in scanning a still-valid check-in code is being there, not joining late.
+        if occ_row[5] and desired != old_status and not checking_in:
+            raise OccurrenceEnded
     promoted: UUID | None = None
 
     new_status = desired
@@ -498,8 +699,9 @@ async def set_participation(session: AsyncSession, *, occurrence_id: UUID, membe
         if old_status in ("going", "checked_in", "attended"):
             new_status = old_status
         elif capacity is not None:
-            going = await going_count(session, occurrence_id)
-            if going >= capacity:
+            # [FR114] The whole party has to fit, or the whole party waits together.
+            going = await spots_taken(session, occurrence_id) + await held_spot_count(session, occurrence_id)
+            if going + party > capacity:
                 new_status = "waitlisted"
                 waitlist_position = int(
                     (
@@ -510,16 +712,23 @@ async def set_participation(session: AsyncSession, *, occurrence_id: UUID, membe
                     ).scalar_one()
                 )
 
+    # [FR114] Already in, and now bringing more people: that has to fit — and someone who is
+    # already going is never pushed onto the waitlist because of it.
+    if new_status in ("going", "checked_in", "attended") and existing is not None and capacity is not None:
+        extra = guest_count - int(existing[3])
+        if extra > 0 and (await spots_taken(session, occurrence_id) + await held_spot_count(session, occurrence_id)) + extra > capacity:
+            raise NoRoomForGuests
+
     if existing is None:
         participation_id = uuid4()
         await session.execute(
             text(
                 """
-                INSERT INTO milavn_activity.participation (id, occurrence_id, member_id, status, waitlist_position)
-                VALUES (:id, :o, :m, CAST(:s AS milavn_activity.participation_status), :wp)
+                INSERT INTO milavn_activity.participation (id, occurrence_id, member_id, status, waitlist_position, guest_count)
+                VALUES (:id, :o, :m, CAST(:s AS milavn_activity.participation_status), :wp, :g)
                 """
             ),
-            {"id": str(participation_id), "o": str(occurrence_id), "m": str(member_id), "s": new_status, "wp": waitlist_position},
+            {"id": str(participation_id), "o": str(occurrence_id), "m": str(member_id), "s": new_status, "wp": waitlist_position, "g": guest_count},
         )
     else:
         participation_id = existing[0]
@@ -527,15 +736,24 @@ async def set_participation(session: AsyncSession, *, occurrence_id: UUID, membe
             await session.execute(
                 text(
                     "UPDATE milavn_activity.participation SET status = CAST(:s AS milavn_activity.participation_status), "
-                    "waitlist_position = :wp, updated_at = now() WHERE id = :id"
+                    "waitlist_position = :wp, guest_count = :g, updated_at = now() WHERE id = :id"
                 ),
-                {"s": new_status, "wp": waitlist_position, "id": str(participation_id)},
+                {"s": new_status, "wp": waitlist_position, "g": guest_count, "id": str(participation_id)},
+            )
+        elif guest_count != int(existing[3]):
+            # Same answer, a different party size: no status history, but the room changes.
+            await session.execute(
+                text("UPDATE milavn_activity.participation SET guest_count = :g, updated_at = now() WHERE id = :id"),
+                {"g": guest_count, "id": str(participation_id)},
             )
     if old_status != new_status:
         await _history(session, participation_id, old_status, new_status, member_id)
 
     # [TR39] A freed Going slot promotes the lowest waitlist position, under the lock held above.
-    if old_status == "going" and new_status in ("cancelled", "interested") and capacity is not None:
+    if old_status == "going" and new_status in ("cancelled", "interested") and capacity is not None and not paid:
+        promoted = await _promote_next(session, occurrence_id, member_id)
+    elif new_status == "going" and existing is not None and guest_count < int(existing[3]) and capacity is not None and not paid:
+        # [FR114] Bringing fewer people frees room, so someone who was waiting may now fit.
         promoted = await _promote_next(session, occurrence_id, member_id)
 
     if old_status != new_status:
@@ -554,8 +772,108 @@ async def set_participation(session: AsyncSession, *, occurrence_id: UUID, membe
             },
         )
     going_now = await going_count(session, occurrence_id)
-    spots_left = (capacity - going_now) if capacity is not None else None
-    return ParticipationResult(new_status, waitlist_position, going_now, spots_left, promoted)
+    taken = await spots_taken(session, occurrence_id)
+    spots_left = (capacity - taken - await held_spot_count(session, occurrence_id)) if capacity is not None else None
+    return ParticipationResult(new_status, waitlist_position, going_now, spots_left, promoted, guest_count)
+
+
+PLAN_TRAVEL = ("walk", "two_wheeler", "car", "cab_auto", "metro_bus")
+PLAN_COMPANY = ("alone", "friend", "family")
+
+
+class NotParticipating(Exception):
+    """The member is not going (or waitlisted) for this activity."""
+
+
+@dataclass(frozen=True, slots=True)
+class AttendancePlan:
+    travel: str | None
+    company: str | None
+    confirmed_at: datetime | None
+
+
+async def my_plan(session: AsyncSession, *, occurrence_id: UUID, member_id: UUID) -> AttendancePlan | None:
+    row = (
+        await session.execute(
+            text("SELECT plan_travel, plan_with, confirmed_at, status::text FROM milavn_activity.participation WHERE occurrence_id = :o AND member_id = :m"),
+            {"o": str(occurrence_id), "m": str(member_id)},
+        )
+    ).first()
+    if row is None or row[3] not in ("going", "waitlisted", "checked_in"):
+        return None
+    return AttendancePlan(row[0], row[1], row[2])
+
+
+async def set_plan(session: AsyncSession, *, occurrence_id: UUID, member_id: UUID, travel: str | None, company: str | None) -> AttendancePlan:
+    """[FR105] One tap each: how the member is getting there and who with. Optional, private to them and the host.
+    `updated_at` is deliberately left alone so answering does not postpone the "still coming?" check."""
+    if travel is not None and travel not in PLAN_TRAVEL:
+        raise InvalidInput(["travel"])
+    if company is not None and company not in PLAN_COMPANY:
+        raise InvalidInput(["company"])
+    row = (
+        await session.execute(
+            text(
+                "UPDATE milavn_activity.participation SET plan_travel = :t, plan_with = :c "
+                "WHERE occurrence_id = :o AND member_id = :m AND status IN ('going', 'waitlisted') RETURNING plan_travel, plan_with, confirmed_at"
+            ),
+            {"t": travel, "c": company, "o": str(occurrence_id), "m": str(member_id)},
+        )
+    ).first()
+    if row is None:
+        raise NotParticipating
+    return AttendancePlan(*row)
+
+
+async def confirm_attendance(session: AsyncSession, *, occurrence_id: UUID, member_id: UUID) -> datetime:
+    """[FR103] "Still coming": recorded once; asking again changes nothing."""
+    row = (
+        await session.execute(
+            text(
+                "UPDATE milavn_activity.participation SET confirmed_at = coalesce(confirmed_at, now()) "
+                "WHERE occurrence_id = :o AND member_id = :m AND status = 'going' RETURNING confirmed_at"
+            ),
+            {"o": str(occurrence_id), "m": str(member_id)},
+        )
+    ).first()
+    if row is None:
+        raise NotParticipating
+    return row[0]
+
+
+async def join_waitlist(session: AsyncSession, *, occurrence_id: UUID, member_id: UUID) -> int:
+    """[FR102] A full paid activity: take a waitlist place without paying. The caller holds the per-activity lock;
+    when a spot frees up, ticketing offers it (with a payment window) in waitlist order."""
+    existing = (
+        await session.execute(
+            text("SELECT id, status::text, waitlist_position FROM milavn_activity.participation WHERE occurrence_id = :o AND member_id = :m"),
+            {"o": str(occurrence_id), "m": str(member_id)},
+        )
+    ).first()
+    if existing is not None and existing[1] == "waitlisted":
+        return int(existing[2])
+    position = int(
+        (
+            await session.execute(
+                text("SELECT coalesce(max(waitlist_position), 0) + 1 FROM milavn_activity.participation WHERE occurrence_id = :o AND status = 'waitlisted'"),
+                {"o": str(occurrence_id)},
+            )
+        ).scalar_one()
+    )
+    if existing is None:
+        participation_id = uuid4()
+        await session.execute(
+            text("INSERT INTO milavn_activity.participation (id, occurrence_id, member_id, status, waitlist_position) VALUES (:id, :o, :m, 'waitlisted', :wp)"),
+            {"id": str(participation_id), "o": str(occurrence_id), "m": str(member_id), "wp": position},
+        )
+    else:
+        participation_id = existing[0]
+        await session.execute(
+            text("UPDATE milavn_activity.participation SET status = 'waitlisted', waitlist_position = :wp, updated_at = now() WHERE id = :id"),
+            {"wp": position, "id": str(participation_id)},
+        )
+    await _history(session, participation_id, existing[1] if existing else None, "waitlisted", member_id)
+    return position
 
 
 async def _promote_next(session: AsyncSession, occurrence_id: UUID, actor_member_id: UUID) -> UUID | None:
@@ -581,6 +899,21 @@ class Attendee:
     waitlist_position: int | None
     checked_in_at: datetime | None
     updated_at: datetime
+    company: str | None = None  # [FR105/FR108] "alone" lets the host welcome them
+    first_time: bool = False  # [FR108] never checked in to an earlier activity
+    guests: int = 0  # [FR114] extra people this member is bringing
+
+
+async def is_first_timer(session: AsyncSession, *, member_id: UUID, before: datetime) -> bool:
+    return bool((await session.execute(text("SELECT milavn_activity.is_first_timer(:m, :b)"), {"m": str(member_id), "b": before})).scalar_one())
+
+
+async def after_summary(session: AsyncSession, *, occurrence_id: UUID) -> dict:
+    """[FR107] Counts for the host after the activity (never who answered what)."""
+    row = (
+        await session.execute(text("SELECT came, first_timers, come_again_yes, answered, thanks_count FROM milavn_activity.after_summary(:o)"), {"o": str(occurrence_id)})
+    ).one()
+    return {"came": row[0], "first_timers": row[1], "come_again_yes": row[2], "answered": row[3], "thanks_count": row[4]}
 
 
 async def attendees(session: AsyncSession, *, occurrence_id: UUID, actor_member_id: UUID) -> list[Attendee]:
@@ -589,14 +922,15 @@ async def attendees(session: AsyncSession, *, occurrence_id: UUID, actor_member_
     rows = (
         await session.execute(
             text(
-                "SELECT member_id, status::text, waitlist_position, checked_in_at, updated_at "
+                "SELECT member_id, status::text, waitlist_position, checked_in_at, updated_at, plan_with, "
+                "milavn_activity.is_first_timer(member_id, (SELECT time_start FROM milavn_activity.occurrence WHERE id = :o)), guest_count "
                 "FROM milavn_activity.participation WHERE occurrence_id = :o "
                 "ORDER BY CASE status WHEN 'going' THEN 0 WHEN 'checked_in' THEN 0 WHEN 'attended' THEN 0 WHEN 'waitlisted' THEN 1 WHEN 'interested' THEN 2 ELSE 3 END, waitlist_position NULLS FIRST, updated_at"
             ),
             {"o": str(occurrence_id)},
         )
     ).all()
-    return [Attendee(r[0], r[1], r[2], r[3], r[4]) for r in rows]
+    return [Attendee(r[0], r[1], r[2], r[3], r[4], r[5], bool(r[6]), int(r[7] or 0)) for r in rows]
 
 
 async def co_organizers(session: AsyncSession, *, occurrence_id: UUID) -> list[UUID]:
@@ -704,7 +1038,7 @@ async def redeem_checkin_token(session: AsyncSession, *, occurrence_id: UUID, me
         )
     ).first()
     if p is None:
-        await set_participation(session, occurrence_id=occurrence_id, member_id=member_id, desired="going")
+        await set_participation(session, occurrence_id=occurrence_id, member_id=member_id, desired="going", checking_in=True)
         p = (
             await session.execute(
                 text("SELECT id, status::text FROM milavn_activity.participation WHERE occurrence_id = :o AND member_id = :m"),
@@ -754,6 +1088,39 @@ async def series_summary(session: AsyncSession, *, activity_id: UUID) -> dict:
         )
     ).first()
     return {"held": int(row[0] or 0), "upcoming": int(row[1] or 0), "first_at": row[2]}
+
+
+async def is_regular(session: AsyncSession, *, member_id: UUID, activity_id: UUID) -> bool:
+    row = (
+        await session.execute(
+            text("SELECT 1 FROM milavn_activity.series_regular WHERE member_id = :m AND activity_id = :a"), {"m": str(member_id), "a": str(activity_id)}
+        )
+    ).first()
+    return row is not None
+
+
+async def set_regular(session: AsyncSession, *, member_id: UUID, activity_id: UUID, keep: bool) -> int:
+    """[FR112] Opt in to keep a spot in every date of a free series (and in the dates already planned), or opt out.
+    Returns how many upcoming dates now hold a spot (or waitlist place) for the member."""
+    if not keep:
+        await session.execute(text("DELETE FROM milavn_activity.series_regular WHERE member_id = :m AND activity_id = :a"), {"m": str(member_id), "a": str(activity_id)})
+        return 0
+    await session.execute(
+        text("INSERT INTO milavn_activity.series_regular (member_id, activity_id) VALUES (:m, :a) ON CONFLICT DO NOTHING"), {"m": str(member_id), "a": str(activity_id)}
+    )
+    kept = 0
+    for occ in await upcoming_in_series(session, activity_id=activity_id, exclude=UUID(int=0)):
+        rows = (await session.execute(text("SELECT kept_member_id FROM milavn_activity.keep_regular_spots(:o)"), {"o": str(occ.id)})).all()
+        kept += sum(1 for r in rows if r[0] == member_id)
+    return kept
+
+
+async def recent_attendance(session: AsyncSession, *, member_id: UUID, activity_id: UUID) -> tuple[int, int]:
+    """[FR112] "You've been to X of the last Y" for the member themselves — a count, never a streak."""
+    row = (
+        await session.execute(text("SELECT attended, total FROM milavn_activity.series_recent_attendance(:m, :a)"), {"m": str(member_id), "a": str(activity_id)})
+    ).first()
+    return (int(row[0]), int(row[1])) if row else (0, 0)
 
 
 async def upcoming_in_series(session: AsyncSession, *, activity_id: UUID, exclude: UUID) -> list[Occurrence]:

@@ -30,6 +30,10 @@ import enTrustSafety from '@/locales/en/trustSafety.json';
 import enReviews from '@/locales/en/reviews.json';
 import enPartnerships from '@/locales/en/partnerships.json';
 import enCommercial from '@/locales/en/commercial.json';
+import enWorkspace from '@/locales/en/workspace.json';
+import enAdminCommercial from '@/locales/en/adminCommercial.json';
+import enPrivacy from '@/locales/en/privacy.json';
+import enAdminOps from '@/locales/en/adminOps.json';
 import enListings from '@/locales/en/listings.json';
 import enNotifications from '@/locales/en/notifications.json';
 import enOpportunities from '@/locales/en/opportunities.json';
@@ -45,6 +49,10 @@ import hiTrustSafety from '@/locales/hi/trustSafety.json';
 import hiReviews from '@/locales/hi/reviews.json';
 import hiPartnerships from '@/locales/hi/partnerships.json';
 import hiCommercial from '@/locales/hi/commercial.json';
+import hiWorkspace from '@/locales/hi/workspace.json';
+import hiAdminCommercial from '@/locales/hi/adminCommercial.json';
+import hiPrivacy from '@/locales/hi/privacy.json';
+import hiAdminOps from '@/locales/hi/adminOps.json';
 import hiListings from '@/locales/hi/listings.json';
 import hiNotifications from '@/locales/hi/notifications.json';
 import hiOpportunities from '@/locales/hi/opportunities.json';
@@ -60,6 +68,10 @@ import teTrustSafety from '@/locales/te/trustSafety.json';
 import teReviews from '@/locales/te/reviews.json';
 import tePartnerships from '@/locales/te/partnerships.json';
 import teCommercial from '@/locales/te/commercial.json';
+import teWorkspace from '@/locales/te/workspace.json';
+import teAdminCommercial from '@/locales/te/adminCommercial.json';
+import tePrivacy from '@/locales/te/privacy.json';
+import teAdminOps from '@/locales/te/adminOps.json';
 import teListings from '@/locales/te/listings.json';
 import teNotifications from '@/locales/te/notifications.json';
 import teOpportunities from '@/locales/te/opportunities.json';
@@ -88,6 +100,10 @@ export const NAMESPACES = [
   'reviews',
   'partnerships',
   'commercial',
+  'workspace',
+  'adminCommercial',
+  'privacy',
+  'adminOps',
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 
@@ -108,6 +124,10 @@ const resources = {
     reviews: enReviews,
     partnerships: enPartnerships,
     commercial: enCommercial,
+    workspace: enWorkspace,
+    adminCommercial: enAdminCommercial,
+    privacy: enPrivacy,
+    adminOps: enAdminOps,
   },
   hi: {
     common: hiCommon,
@@ -125,6 +145,10 @@ const resources = {
     reviews: hiReviews,
     partnerships: hiPartnerships,
     commercial: hiCommercial,
+    workspace: hiWorkspace,
+    adminCommercial: hiAdminCommercial,
+    privacy: hiPrivacy,
+    adminOps: hiAdminOps,
   },
   te: {
     common: teCommon,
@@ -142,6 +166,10 @@ const resources = {
     reviews: teReviews,
     partnerships: tePartnerships,
     commercial: teCommercial,
+    workspace: teWorkspace,
+    adminCommercial: teAdminCommercial,
+    privacy: tePrivacy,
+    adminOps: teAdminOps,
   },
 } as const;
 
@@ -166,6 +194,16 @@ export function getI18n(initialLanguage: Language = DEFAULT_LANGUAGE): I18nInsta
       escapeValue: false,
     },
     returnEmptyString: false,
+    // [TR042 gap-fix] a missing key falls back to English (already the
+    // default above) AND is logged as an operational analytics event
+    // instead of failing silently — the fallback itself is never hidden.
+    saveMissing: true,
+    missingKeyHandler: (_langs, ns, key) => {
+      if (typeof window === 'undefined') return;
+      void import('@/lib/api').then(({ api }) =>
+        api.post('/v1/events', { events: [{ event: 'i18n_fallback', level: 'operational', props: { ns, key } }] }).catch(() => undefined),
+      );
+    },
   });
 
   instance = i18n;

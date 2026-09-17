@@ -1,0 +1,12 @@
+# Build context is the repository root; admit only what the migration job needs.
+*
+!platform/identity-service/db/migrations/*.sql
+!platform/identity-service/scripts/import_module_identities.py
+!platform/identity-service/scripts/seed_dev_members.py
+!modules/MOD03-mangaly/07a-db-implementation/migrations/*.sql
+!modules/MOD02-milavn/07a-db-implementation/migrations/*.sql
+!modules/MOD02-milavn/07a-db-implementation/seeds.sql
+!modules/MOD02-milavn/07a-db-implementation/seeds-dev.sql
+!modules/MOD02-milavn/milavn-service/app/config/dev_identities.json
+!deploy/migrate/migrate.py
+!deploy/migrate/seeds/*.sql

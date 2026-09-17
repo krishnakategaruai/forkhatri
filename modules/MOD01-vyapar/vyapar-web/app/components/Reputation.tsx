@@ -54,12 +54,19 @@ export function useReputationText() {
     }
     if (rep.response_minutes != null) {
       const m = rep.response_minutes;
+      // [Grammar bug fix] "Responds in ~1 days" — English (and Hindi/Telugu
+      // day-count wording) needs the singular form at n=1; picking the key
+      // explicitly here avoids relying on i18next's plural-suffix machinery
+      // that this catalog was never wired for.
+      const days = Math.round(m / 1440);
       const time =
         m < 60
           ? t("reviews:minutes", { n: Math.max(1, m) })
           : m < 1440
             ? t("reviews:hours", { n: Math.round(m / 60) })
-            : t("reviews:days", { n: Math.round(m / 1440) });
+            : days === 1
+              ? t("reviews:oneDay")
+              : t("reviews:days", { n: days });
       parts.push(t("reviews:respondsIn", { time }));
     }
     if (rep.under_review > 0) parts.push(t("reviews:underReview", { count: rep.under_review }));

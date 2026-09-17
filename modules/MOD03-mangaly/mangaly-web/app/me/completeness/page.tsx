@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { getSession } from '@/lib/auth';
+import { requireSession } from '@/lib/auth';
 import { ENHANCED_CATEGORIES } from '@/lib/profileCategoryConfig';
 import { getAllAttributes, getCompleteness, type AttributeState, type CompletenessReport } from '@/lib/profile';
 
@@ -42,10 +42,10 @@ export default function CompletenessPage() {
   useEffect(() => {
     let active = true;
     (async () => {
-      const session = await getSession();
+      const session = await requireSession();
       if (!active) return;
       if (!session) {
-        router.replace('/login');
+        // requireSession() has already handed off to the ForKhatri entrance (TR16).
         return;
       }
       const [report, attrStates] = await Promise.all([getCompleteness(), getAllAttributes()]);

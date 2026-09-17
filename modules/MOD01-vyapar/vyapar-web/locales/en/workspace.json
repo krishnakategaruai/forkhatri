@@ -1,0 +1,79 @@
+{
+  "title": "Business Workspace",
+  "open": "Business Workspace",
+  "error": {
+    "notFound": "This workspace isn't available to you."
+  },
+  "role": {
+    "owner": "Owner",
+    "admin": "Admin",
+    "operator": "Operator",
+    "none": "No access"
+  },
+  "plan": {
+    "active": "Plan active",
+    "chooseTitle": "Choose a plan",
+    "choosePrompt": "Choose a plan to see the full price",
+    "billing": {
+      "monthly": "Monthly",
+      "annual": "Annual — two months free"
+    },
+    "renewsOn": "Renews {{date}}",
+    "included": "Included",
+    "includedText": "Team roles (Admin and Operator), campaigns, response tracking and provider reports.",
+    "notIncluded": "Never included",
+    "neverIncluded": "A plan never grants verification, reputation, ranking, eligibility or access to private member data.",
+    "renewalTerms": "Renews every {{days}} days. We remind you 3 days before and never charge without asking.",
+    "cancelTerms": "Cancel any time: the plan runs to the date you have paid for, then stops. No partial-period refund, and nothing is deleted.",
+    "cancelRenewal": "Stop renewing",
+    "cancelScheduled": "Renewal stopped — your plan runs to {{date}}.",
+    "resumeRenewal": "Renew again",
+    "completePayment": "Complete the payment",
+    "graceBanner": "Renewal payment pending — complete it by {{date}} to keep team roles and campaigns.",
+    "pausedHelp": "Team roles and campaigns are locked. All your data is kept and comes back the moment the plan is active again.",
+    "state": {
+      "awaiting_payment": "Awaiting payment",
+      "paused": "Plan paused",
+      "cancelled": "Plan cancelled",
+      "completed": "Plan ended",
+      "refunded": "Plan refunded"
+    }
+  },
+  "team": {
+    "title": "Team",
+    "empty": "No one else has a role yet.",
+    "roleHelp": "Admin can do everything except delete or transfer the business. Operator handles opportunities, enquiries and reports — never billing or the team.",
+    "invitePhone": "Invite by phone number",
+    "phonePlaceholder": "+91…",
+    "roleLabel": "Role",
+    "sendInvite": "Send invitation",
+    "inviteHelp": "They must accept before they can act. If they aren't on ForKhatri yet, the invite waits 30 days.",
+    "revoke": "Remove role",
+    "switchTo": "Change to {{role}}",
+    "expires": "expires {{date}}",
+    "state": {
+      "pending": "Invited",
+      "active": "Active",
+      "revoked": "Removed",
+      "expired": "Expired"
+    }
+  },
+  "campaigns": {
+    "title": "Campaigns",
+    "empty": "No campaigns yet.",
+    "newTitle": "New campaign",
+    "name": "Campaign name",
+    "package": "Package",
+    "packageOption": "{{days}} days · {{amount}}",
+    "items": "Items ({{n}} of {{max}})",
+    "itemsTitle": "Items ({{n}})",
+    "disclosure": "One payment covers the whole package. Each item runs as a Sponsored boost inside the audience it already fits; eligibility, verification and organic ranking are unchanged. If an item stops being active, its unused time is credited.",
+    "createAndPay": "Review and pay",
+    "budget": "Package {{amount}}",
+    "allocated": "Allocated {{spent}} of {{total}}",
+    "allocation": "Allocated {{amount}}",
+    "pause": "Pause all items",
+    "resume": "Resume items",
+    "notFound": "Campaign not found"
+  }
+}

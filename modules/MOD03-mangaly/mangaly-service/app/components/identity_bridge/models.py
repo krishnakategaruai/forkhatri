@@ -56,7 +56,11 @@ class Account(Base):
     id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True, default=uuid4)
     phone_identifier: Mapped[str | None] = mapped_column(default=None)
     email_identifier: Mapped[str | None] = mapped_column(default=None)
-    credential_hash: Mapped[str]
+    # [Migration 019] The member's ForKhatri display name, refreshed on sign-in.
+    display_name: Mapped[str | None] = mapped_column(default=None)
+    # [Migration 014] NULL for a ForKhatri platform member's link row: they
+    # authenticate to the platform, never to Mangaly.
+    credential_hash: Mapped[str | None] = mapped_column(default=None)
     status: Mapped[AccountStatus] = mapped_column(
         SqlEnum(
             AccountStatus,

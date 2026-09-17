@@ -1,0 +1,77 @@
+
+[1mForKhatri — development[0m
+            [2m|[0m [32mok[0m      Postgres is listening on 5433
+
+[1mProcesses[0m
+            [2m|[0m [32mstart  [0m mangaly-api :8000  [2mMOD03 Mangaly API[0m
+            [2m|[0m [33mrunning[0m mangaly-web :3000  [2malready listening — left untouched[0m
+
+[1mOpen[0m
+            [2m|[0m [1mhttp://localhost:3100[0m  [2mForKhatri entrance — sign in here, then enter a module[0m
+            [2m|[0m [1mhttp://localhost:3000[0m  [2mMOD03 Mangaly[0m
+            [2m|[0m 
+            [2m|[0m [2mSign in: avatar -> "Act as (development)", or the "Development: act as..." link when signed out.[0m
+            [2m|[0m [2mCtrl+C stops only the processes this launcher started.[0m
+
+[35mmangaly-api[0m [2m|[0m INFO:     Started server process [48376]
+[35mmangaly-api[0m [2m|[0m INFO:     Waiting for application startup.
+[35mmangaly-api[0m [2m|[0m INFO:app.db.engine:TR017 non-owning-role check passed: mangaly_app owns 0 mangaly tables
+[35mmangaly-api[0m [2m|[0m INFO:app.main:MangalyService started against localhost:5433/mangaly
+[35mmangaly-api[0m [2m|[0m INFO:     Application startup complete.
+[35mmangaly-api[0m [2m|[0m INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:65276 - "GET /health HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:65277 - "GET /openapi.json HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:httpx:HTTP Request: POST http://localhost:8100/internal/v1/sessions/resolve "HTTP/1.1 200 OK"
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:52835 - "GET /profile/voice-intro HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:52838 - "POST /profile/voice-intro HTTP/1.1" 201 Created
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:52839 - "GET /profile/voice-intro HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:52840 - "GET /media/d862da3a-449c-4a9d-a151-f8010c1bab5d/1b4c990a-5081-4a70-8444-74ca672879a4.webm HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:httpx:HTTP Request: POST http://localhost:8100/internal/v1/sessions/resolve "HTTP/1.1 200 OK"
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:52841 - "GET /media/d862da3a-449c-4a9d-a151-f8010c1bab5d/1b4c990a-5081-4a70-8444-74ca672879a4.webm HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:httpx:HTTP Request: POST http://localhost:8100/internal/v1/sessions/resolve "HTTP/1.1 200 OK"
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:52842 - "GET /media/d862da3a-449c-4a9d-a151-f8010c1bab5d/1b4c990a-5081-4a70-8444-74ca672879a4.webm HTTP/1.1" 404 Not Found
+[35mmangaly-api[0m [2m|[0m C:\Users\krish\Krishna2025\startup2026\ForKhatri\modules\MOD03-mangaly\mangaly-service\.venv\Lib\site-packages\fastapi\routing.py:352: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+[35mmangaly-api[0m [2m|[0m   return await dependant.call(**values)
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:52843 - "POST /profile/voice-intro HTTP/1.1" 422 Unprocessable Content
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:65048 - "DELETE /profile/voice-intro HTTP/1.1" 204 No Content
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:65050 - "GET /profile/voice-intro HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:52168 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:53348 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:httpx:HTTP Request: POST http://localhost:8100/internal/v1/sessions/resolve "HTTP/1.1 200 OK"
+[35mmangaly-api[0m [2m|[0m INFO:httpx:HTTP Request: POST http://localhost:8100/internal/v1/sessions/resolve "HTTP/1.1 200 OK"
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:63704 - "GET /auth/me HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:64259 - "GET /auth/me HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:53348 - "OPTIONS /profile/me HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:64259 - "GET /profile/me HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:53348 - "OPTIONS /profile/attributes/full HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:52168 - "OPTIONS /profile/photos HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:51270 - "OPTIONS /profile/voice-intro HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:50230 - "GET /profile/voice-intro HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:64259 - "GET /profile/attributes/full HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:63704 - "GET /profile/photos HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:63704 - "GET /media/aa0c2797-1dbb-4c8c-992c-2b95f585a4e7/bf815574-9bcc-4e8d-a79d-0fa9b969a274.jpg HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:64259 - "GET /media/aa0c2797-1dbb-4c8c-992c-2b95f585a4e7/4082fc75-cd4d-42e7-92b1-e009233062cb.jpg HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:50230 - "GET /media/aa0c2797-1dbb-4c8c-992c-2b95f585a4e7/41c539fd-bf2c-4df9-91c6-af16d3d3e637.jpg HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:63704 - "GET /media/aa0c2797-1dbb-4c8c-992c-2b95f585a4e7/a3346d38-5db5-455e-a393-12c215e95394.jpg HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:59050 - "OPTIONS /home-circle/contexts HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:54799 - "OPTIONS /home-circle/contexts HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:55724 - "GET /home-circle/contexts HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:55724 - "GET /home-circle/contexts HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:54799 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:55724 - "GET /auth/me HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:54799 - "OPTIONS /connections/incoming HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:59050 - "OPTIONS /discovery/search HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:55724 - "GET /connections/incoming HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:55724 - "GET /discovery/search HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:59050 - "OPTIONS /discovery/compatibility/a7e03e43-5d77-4edf-8a8e-7dc5d0010821 HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:54799 - "OPTIONS /discovery/compatibility/82888d81-5a16-4833-8e8a-8e52e4f52a8e HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:59050 - "OPTIONS /discovery/compatibility/c024b254-e792-4bda-8bc7-02be13a28829 HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:54799 - "OPTIONS /discovery/compatibility/f81b27d0-9010-4996-990c-8efddd086cfd HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:55724 - "GET /discovery/compatibility/a7e03e43-5d77-4edf-8a8e-7dc5d0010821 HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:55724 - "GET /discovery/compatibility/82888d81-5a16-4833-8e8a-8e52e4f52a8e HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:55724 - "GET /discovery/compatibility/c024b254-e792-4bda-8bc7-02be13a28829 HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:55724 - "GET /discovery/compatibility/f81b27d0-9010-4996-990c-8efddd086cfd HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:55724 - "GET /media/38cdb340-fb4a-4006-8ebc-459c11d028f1/c5109529-b298-47da-a3cd-87f2e6896c4c.jpg HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:55724 - "GET /media/fe4d79dc-b9aa-4d4b-a4c5-4c4cdf69ffc0/86298a1a-40d5-47ec-8bff-65c115ec6427.jpg HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:55724 - "GET /media/eeb4f587-221d-4505-85b3-750f54b2aafa/8defbdb0-ca65-4ae8-93a1-0d094645efc0.jpg HTTP/1.1" 200 OK
+[35mmangaly-api[0m [2m|[0m INFO:     127.0.0.1:55724 - "GET /media/2727b6ae-7317-48e5-b6fc-9f0259354cf5/65dc420d-0712-449d-a365-c8dab5887bc8.jpg HTTP/1.1" 200 OK

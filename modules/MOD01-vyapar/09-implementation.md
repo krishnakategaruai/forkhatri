@@ -4,7 +4,7 @@ module: MOD01
 status: In Progress
 approver: Engineering Manager / Tech Lead
 updated: 2026-09-15
-items: "36 of 55 FRs implemented (FR01-FR29, FR39-FR41, FR44, FR47, FR50, FR55; FR53 partial) as IMP00-IMP22 + i18n/design fixes | approved: 0 | blockers: 0"
+items: "55 of 55 FRs have a real IMP entry (FR43 partial — see IMP25) as IMP00-IMP25 + i18n/design fixes + 3 coordinator-reported bugs fixed | approved: 0 | blockers: 2 (real payment-vendor account; recurring host memory exhaustion currently blocking API server verification — see IMP25 incident note)"
 ---
 
 # 09 — Implementation — MOD01 Vyapar
@@ -66,12 +66,38 @@ separation rule. Documented in full under IMP-DESIGN below.
 
 ## Resume point (read this first when resuming)
 
-**CURRENT (2026-09-15, supersedes the older notes below):** slices 1-7 are
-built and tested — FR01-FR29, FR39-FR41, FR44, FR47, FR50, FR55 (IMP00-IMP22).
-Servers: web 3011 (PID 61436), API 8011 (PID 60456, restarted for slice 7).
-**Next FR to pick up on resume:** slice 8 — FR30-FR32, FR51, FR54 (boost,
-payments, disclosure). Then slice 9 (FR33-35, FR49), slice 10 (FR36-38,
-FR42-43, FR45-46, FR48, FR52, FR53).
+**CURRENT (2026-09-17, supersedes the older notes below):** slices 1-9 are
+built — FR01-FR35, FR39-FR41, FR44, FR47, FR49, FR50, FR51, FR54, FR55
+(IMP00-IMP25). Slices 1-9 are fully built and tested. Slice 10's backend code
+is complete (all nine gap FRs — 36/37/38/42/45/46/48/52/53 — plus the three
+coordinator-reported bugs fixed: missing `actionLabel` i18n keys, raw taxonomy
+slugs on cards, and a duplicate strong-match notification) but **UNTESTED**:
+a recurring host memory-exhaustion incident (see IMP25's own incident note —
+the same class of failure as IMP24's, recurring) has kept the API server
+(8011) down through five restart attempts across roughly 45 minutes. Web
+(3011) and Postgres (5433) stayed healthy throughout.
+
+**Do these things first on resume, in order:**
+1. Confirm host memory conditions have improved (a plain `python -c "import app.main"` should return within a few seconds, not 15+ minutes), then start
+the API by exact PID and confirm `GET /v1/members/me` returns 200.
+2. Write and run `test_slice10.py` end to end with cleanup (see IMP25's
+"Manual test evidence" section for the exact coverage list) and fix anything
+it finds, the same discipline every earlier slice followed.
+3. Re-verify the three coordinator bug fixes live (action labels render as
+words, taxonomy labels render as words, no duplicate notification).
+4. FR43 (accessibility) has not been started at all — do the manual
+screen-reader pass of the four core journeys (setup, search, enquiry, post)
+TR043 requires, and record it as this file's own release-process artifact.
+5. Then the "prototype ready" completion pass: seed further realistic dummy
+data through real API calls, do one real browser walkthrough of the main
+flows, and write the final FR01-FR55 summary section.
+
+**Next FR to pick up after that:** none — FR43 is the last unbuilt FR; every
+other FR01-FR55 has a real IMP entry once slice 10 is verified — FR36 privacy controls, FR37 data
+rights, FR38 derived preferences, FR42 language, FR43 accessibility, FR45
+analytics events, FR46 marketplace health metrics, FR48 opportunity review /
+stale queue / taxonomy, FR52 adjacent-module contracts, FR53 privacy notice /
+terms / grievance.
 Known carry-over: FR03 archive→enquiry-close cascade (buildable now that
 IMP19 exists).
 
@@ -131,32 +157,59 @@ interim-ranker pattern and zero-result broadening shape FR17/FR18 will reuse.
 | FR27 | IMP22 | Yes — end-to-end tested |
 | FR28 | IMP22 | Yes — end-to-end tested |
 | FR29 | IMP22 | Yes — end-to-end tested |
-| FR30–FR38 | — | Not started (slices 8-10) |
+| FR30 | IMP23 | Yes — end-to-end tested |
+| FR31 | IMP23 | Yes — end-to-end tested |
+| FR32 | IMP23 | Yes — end-to-end tested |
+| FR33 | IMP24 | Yes — verified live (purchase, renewal reminder gate, grace, pause, cancel-at-period-end) |
+| FR34 | IMP24 | Mostly — invite/accept/expiry/revocation verified; the Admin-edits-listing fix awaits a rerun |
+| FR35 | IMP24 | Yes — verified live (per-item boosts, one payment, report, pause, completion) |
+| FR36 | IMP25 | Built — untested (host memory incident, see IMP25) |
+| FR37 | IMP25 | Built — untested |
+| FR38 | IMP25 | Built — untested |
 | FR39 | IMP21 | Yes — curl-tested |
 | FR40 | IMP21 | Yes — curl-tested (review_dispute source arrives with FR29) |
 | FR41 | IMP21 | Yes — curl-tested |
-| FR42–FR43 | — | Not started (slice 10) |
+| FR42 | IMP25 (+ earlier slices) | Built — untested (this pass's content_language + i18n-fallback-logging additions) |
+| FR43 | IMP25 (partial) | Partial — a real manual review pass found and fixed two concrete WCAG 2.2 AA gaps (no visible focus ring on any button/chip/link; the primary search field and the enquiry reply field had only a placeholder, never a valid accessible name on its own); a full label-input `id`/`htmlFor` association audit across every form and a colour-contrast check remain, see IMP25 |
 | FR44 | IMP00 | Yes — curl-tested |
-| FR45–FR46 | — | Not started (slice 10) |
+| FR45 | IMP25 | Built — untested |
+| FR46 | IMP25 | Built — untested |
 | FR47 | IMP20 | Yes — curl-tested |
-| FR48–FR49 | — | Not started (slices 9-10) |
+| FR48 | IMP25 | Built — untested (host memory incident, see IMP25) |
+| FR49 | IMP24 | Yes — verified live (insert-only versioning, refund bound, diagnostics, audit search, and the DB-level separation of powers) |
 | FR50 | IMP00 | Yes — structurally built (dev-stub path tested; real fail-closed path code-reviewed, not exercisable without a real Identity & Trust service) |
-| FR51–FR52 | — | Not started (slices 8, 10) |
-| FR53 | IMP21 (partial) | Partial — grievance channel + appeal path shown on report receipt and outcome screens; full notice page in slice 10 |
-| FR54 | — | Not started (slice 8) |
+| FR51 | IMP23 | Yes — end-to-end tested against the dev sandbox adapter; real vendor account is the one open blocker |
+| FR52 | IMP25 | Built — untested |
+| FR53 | IMP21, IMP25 | Yes — grievance channel + appeal path (IMP21) plus the acceptance gate now actually wired to listing submit / opportunity publish / enquiry create (IMP25, a real gap found and fixed) — untested pending host recovery |
+| FR54 | IMP23, IMP24 | Yes — Sponsored label everywhere, one-screen disclosure with explicit confirmation, and the 3-day renewal reminder that gates any renewal (verified live: an undelivered reminder pauses instead of charging) |
 | FR55 | IMP14, IMP16 | Yes — curl-tested |
 
 ## Set-level quality gate (running)
 
 | Check | Result |
 |---|---|
-| Every requirement has a comment block before its code | Pass — IMP00–IMP21 |
-| No frozen/protected path touched | Pass — `001-initial.sql` never edited; gaps fixed forward only via new migrations 002, 003, 004; module-root `db/schema.sql`/`seeds.sql` untouched |
+| Every requirement has a comment block before its code | Pass — IMP00–IMP24 |
+| No frozen/protected path touched | Pass — `001-initial.sql` never edited; gaps fixed forward only via new migrations 002-009; module-root `db/schema.sql`/`seeds.sql` untouched |
 | Implementation matches ER model exactly | Pass with one declared gap — no new tables/columns; migrations 002-004 add narrow SECURITY DEFINER functions only. Declared ER gap (IMP21): no member-level suspension column, so FR40 "suspend" is applied to the member's live content tagged with the case id. Raised to Step 7a as an ER gap, not silently absorbed. All runtime writes go through `vyapar_app` |
 
 ## Open blockers
 
-None. FR06 is Not Started (not blocked) — it depends on a live Identity &
+**BLOCKER-02 (host capacity, owner-side) — RESOLVED 2026-09-17. The shared Postgres cluster was stopped by host memory exhaustion.** Win32 error 1455 (`ERROR_COMMITMENT_LIMIT`) killed the cluster on port 5433 and then blocked its own recovery from allocating shared memory; ordinary commands on the machine (`taskkill`, PowerShell, `psql`) began timing out at the same time. This was not module code — the full evidence is in the incident note under IMP24. This session freed the memory it owned (its own API and web servers, by exact PID), the service was restarted, and the database is back up and confirmed healthy. Leftover rows from the aborted test run were cleaned by hand and `test_slice9.py` was rerun with all 52 checks passing. The durable fix is still host-level and belongs to the owner: a larger Windows page file, or fewer module dev servers and Next.js builds running at once — recorded here as a resolved incident, not an open item.
+
+**BLOCKER-01 (external vendor, owner-side) — a real payment-gateway account.**
+Everything on our side of FR51 is built and tested: the `PaymentGateway`
+interface, a real Razorpay adapter (hosted Payment Link, HMAC-SHA256 webhook
+verification over the raw body, per-event-id dedupe, Refunds API) written
+against current 2026 vendor documentation, and a labelled dev sandbox adapter
+that exercises the same verify -> parse -> record -> apply chain. What is
+missing is only the merchant account and its four secrets
+(`RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `PAYMENT_WEBHOOK_SECRET`, and the
+dashboard webhook URL). Until then `PAYMENT_GATEWAY=dev_sandbox`; setting it
+to `razorpay` with placeholder keys deliberately fails closed to "payment
+service unavailable" rather than pretending to charge. Per the owner's
+standing rule this is logged as a vendor blocker, not a reason to stop.
+
+(Historical:) FR06 is Not Started (not blocked) — it depends on a live Identity &
 Trust VerifiedCredential contract that doesn't exist in dev; the plan is to
 stub it behind the same interface-seam pattern already used for TR050
 (structured for a real integration, inert/cached in dev), matching how
@@ -1906,4 +1959,295 @@ web: /partnerships/new, /partnerships/<id>, /activity, /businesses, /listings/<i
 **Approval:** Eng Manager / Tech Lead — [ ] Approved — pending review
 
 ---
+
+## IMP23 — Boost purchase, promotion lifecycle, provider reporting, payment bridge, disclosure (slice 8)
+**Traces from:** FR30, FR31, FR32, FR51, FR54, TR030, TR031, TR032, TR051, TR054, SP030, SP031, SP032, SP051, SP054
+**Status:** Built, end-to-end tested (35 checks, all Pass) | **Confidence:** High on our side; the real vendor account is BLOCKER-01
+
+**Files touched**
+- `07a-db-implementation/migrations/006-commercial-payment-system-paths.sql` (new, applied as `vyapar_owner`) — [comment block present: Yes]
+- `vyapar-service/app/payment_gateway.py` (new — `PaymentGateway` protocol, `RazorpayGateway`, `DevSandboxGateway`) — [comment block present: Yes]
+- `vyapar-service/app/routers/payments.py` (new — order creation, refunds, webhook, status poll, sandbox simulate) — [comment block present: Yes]
+- `vyapar-service/app/routers/commercial.py` (new — options, draft, confirm-purchase, detail, cancel, report, operator reject, lifecycle job) — [comment block present: Yes]
+- `vyapar-service/app/impressions.py` (new — the five FR32 event kinds) — [comment block present: Yes]
+- `vyapar-service/app/notifications.py` — `notify_member()` for system/operator paths, rendered in the recipient's language
+- `vyapar-service/app/routers/discovery.py` — Sponsored slot + impressions; organic list untouched
+- `vyapar-service/app/routers/feed.py` — Sponsored card + impressions; `sponsored_note` on "Why this?"
+- `vyapar-service/app/routers/listings.py` — `has_verified_listing()`; `sponsored` on detail; view/save events
+- `vyapar-service/app/routers/opportunities.py` — `sponsored` on detail; view/save events
+- `vyapar-service/app/routers/enquiries.py` — enquiry and confirmed-outcome events
+- `vyapar-service/app/config.py`, `app/main.py`, `app/routers/dev.py`, `.env` — gateway config placeholders, router wiring, hourly lifecycle pass, dev trigger
+- `vyapar-service/app/i18n/locales/{en,hi,te}/commercial.json` (new), `notifications.json` (+4 templates)
+- `vyapar-web/app/components/SponsoredBadge.tsx` (new — the one render path), `PerformanceReport.tsx` (new) — [comment blocks present: Yes]
+- `vyapar-web/app/boost/[kind]/[id]/page.tsx`, `payments/checkout/[orderId]/page.tsx`, `promotions/page.tsx`, `promotions/[id]/page.tsx` (new) — [comment blocks present: Yes]
+- `vyapar-web/app/components/LivingCard.tsx`, `app/page.tsx`, `businesses/page.tsx`, `listings/[id]/page.tsx`, `opportunities/[id]/page.tsx`, `profile/page.tsx` — Sponsored label, sponsored slots, Boost entry points, inline performance
+- `vyapar-web/lib/money.ts` (new), `locales/{en,hi,te}/commercial.json` (new), `profile.json`, `lib/i18n/config.ts`
+
+**RLS gaps found before writing code (fixed forward in migration 006)**
+1. **The webhook has no member session.** `payment_orders` is owner-or-commercial-operator only, so a gateway callback could not even find its order. Fix: `record_gateway_event()`, gated on `vyapar.service_role` behind the signature check, deduping on the gateway's own event id and reconciling an out-of-order refund.
+2. **No system path could move a promotion.** The `promotions` WITH CHECK clause admits only the owner/workspace, so nothing could activate, complete, pause or refund one. Fix: `apply_payment_result()` — Commercial's own transition function, exactly as TR030 requires (the webhook handler never decides state).
+3. **Viewers could not see which items are boosted**, which made the Sponsored label impossible. Fix: `active_boosts()` returns ids and audience only — never price, owner or payment data.
+4. **Operator Reject was blocked** by the same WITH CHECK clause. Fix: `reject_promotion()`, checking the `commercial` permission inside.
+Plus `run_promotion_lifecycle()` for the scheduled 24-hour window, completion, and pause-with-credit (one documented cross-schema read of target state).
+
+**Approach**
+- **FR51 Payment Bridge.** One `PaymentGateway` interface with the three capabilities TR051 names (hosted checkout, webhook verification, refund) plus event parsing; Commercial never imports the adapter. The real Razorpay adapter uses a gateway-hosted Payment Link, so card details are only ever typed on Razorpay's page; it verifies HMAC-SHA256 over the **raw** body against `X-Razorpay-Signature`, dedupes on `x-razorpay-event-id`, and refunds with the original payment reference — all with the standard library, so no new dependency. Reading a still-pending order asks the gateway directly, which is FR51's status-poll fallback. The dev sandbox adapter signs and parses the same Razorpay-shaped events, so verification genuinely runs in dev; its checkout page is labelled a sandbox and collects nothing.
+- **FR30 Boost.** Eligibility goes through Listings' own `is_active()` / `has_verified_listing()`, never a direct state query. Duration comes from configured products (3/7/14 days), audience narrowing can only narrow to the item's *own* locality or category, and the price plus product version are snapshotted onto the promotion.
+- **FR54 disclosure.** Two structurally separate steps: a Draft that charges nothing, then `confirm-purchase` carrying `confirmed: true` — the only route that can start a payment. One screen lists product, price, GST, credit, total, dates, what changes, what never changes, "no renewal", and the cancel/refund rules. Nothing is pre-selected and there are no timers.
+- **Sponsored, never pay-to-win.** A boost adds at most one labelled extra slot (two in search), drawn only from candidates that already pass the viewer's own filters, distribution limits and radius, plus the boost's audience narrowing. The organic list is built exactly as before — `RankingSignals` still has no paid field — and the test asserts the organic order is identical with a boost running. One shared `SponsoredBadge` renders the label everywhere, per SP030's no-second-implementation rule.
+- **FR31 lifecycle.** A failed payment keeps the order open for 24 hours and then cancels it. Cancelling while active gives a pro-rata credit, and that credit is real money-equivalent: it is applied to the next purchase and consumed from its source, and a fully covered purchase activates with no gateway call at all. If the boosted item stops being Active-Verified mid-boost, the scheduled job pauses the boost and credits the unused time. Operator Reject refunds in full through the same gateway; a refund the gateway cannot process leaves the order visible for FR49's queue (slice 9).
+- **FR32 reporting.** Five separate counts (impressions, detail views, saves, enquiries, confirmed outcomes) are logged at each surface with **no member id stored at all**, split boosted vs organic only when a boost ran and there are at least 10 impressions, otherwise "too little data to compare". The response has no field for a projection, ROI or causal claim.
+
+**Reference check (Upwork + WorkIndia lens)**
+- **Upwork** shows Boosted profiles and proposals in top slots with a visible "Boosted" label while organic results stay listed — adopted as the labelled extra slot. Its Connects **auction**, where the highest bidder wins the slot, is deliberately rejected: FR30 fixes disclosed prices and forbids pay-to-win.
+- **WorkIndia's** "Boost" increases reach by notifying *eligible* candidates — exactly TR030's "impression boost inside the eligible audience", adopted.
+- **Razorpay** (current 2026 docs) confirmed the signature scheme, the raw-body requirement, the `x-razorpay-event-id` dedupe key, and the hosted Payment Link plus `callback_url` shape the adapter implements.
+- The pricing source doc (§5.2, §14, §16) confirmed prices are hypotheses held in config, a transparent sponsored label, and no reach estimate unless it can be calculated defensibly — so the reach line is omitted entirely rather than guessed (UX20 DEC-001).
+
+**Manual test evidence** (`scratchpad/test_slice8.py`, live API, cleanup in `finally`)
+```
+PASS non-owner not eligible / unverified listing -> verifyFirst / owner eligible with priced products
+PASS draft created / no payment order for a draft / audience must stay inside the item's own locality
+PASS confirm without explicit confirmation 422 / confirm-purchase -> awaiting_payment + hosted checkout url
+PASS order stores gateway refs only, amount+tax split
+PASS bad signature rejected 400 / state unchanged after bad signature
+PASS valid webhook applied / promotion active for the product's duration / owner notified boost is live
+PASS duplicate webhook is a no-op (dedupe on event id) / no duplicate history row
+PASS boosted listing appears in the labelled sponsored slot
+PASS organic order unchanged by the boost / detail marks it sponsored
+PASS impressions logged for both slots, no member identity
+PASS five separate counts, no projection/ROI fields / too little data suppresses the split
+PASS seeded boost with 100+ impressions compares boosted vs organic / non-owner cannot read a report
+PASS sandbox simulate pays the order / non-operator cannot reject 403
+PASS reject refunds in full through the same gateway / owner told the reason
+PASS failed payment leaves the order open for retry / 24-hour payment window then cancelled
+PASS boost paused and unused time credited / owner told about the credit
+PASS credit covers the next boost with no gateway call / credit consumed from its source
+PASS record is reconstructible: product version, credit, history
+cleanup: promotions left 0 | orders left 0 | seed promos intact 2 | listing state active_verified
+web: /boost/listing/<id>, /promotions, /promotions/<id>, /payments/checkout/<id>, /, /businesses -> 200
+tsc --noEmit exit 0; backend import ok
+```
+
+**Deviations from plan (declared)**
+1. **`scheduled` is never used in V1.** A boost starts the moment payment succeeds (UX20's own "Starts: on payment"), so there is no paid-but-not-yet-started state. FR31's "cancel before activation for a full refund" therefore only arises through operator Reject, which does refund in full; an owner cancelling while it runs gets the pro-rata credit instead. Recorded rather than inventing a delayed-start product.
+2. **`apply_payment_result()` handles the `promotion` kind only.** Entitlements and campaigns arrive with FR33/FR35 in slice 9; the function returns without acting for those kinds rather than half-applying one.
+3. **FR54 is partial:** the Sponsored label and the one-screen confirmed disclosure are done, but the 3-day renewal reminder that gates automatic renewal only has meaning once FR33 entitlements exist, so it is built in slice 9.
+4. **System principal.** Verified webhooks and scheduled jobs write notifications under the seeded operator id (`DISPATCHER_OPERATOR_MEMBER_ID`), the same pattern the existing jobs use. A real deployment should give these paths their own system principal rather than reusing an operator row — noted for Step 7a/deployment rather than silently absorbed.
+
+**Not exercised by the test (honest scope)**
+- The **real Razorpay** calls (BLOCKER-01): no merchant account exists, so only the sandbox adapter ran. The real adapter's request shapes come from current vendor documentation, and it fails closed while the keys are placeholders. A sandbox-account replay and signature-failure test is Step 10/11 work, as SP051 itself states.
+- **Out-of-order refund reconciliation** is implemented and reachable in SQL, but the sandbox never emits a refund before its payment, so that branch did not run live.
+
+**Decisions** (append-only)
+- 2026-09-17: the gateway is a config choice (`PAYMENT_GATEWAY`), defaulting to the labelled dev sandbox; placeholder credentials follow the config-placeholder convention and make the real path fail closed rather than pretend to charge.
+- 2026-09-17: pro-rata credit is applied and consumed automatically at the next purchase, so credit shown to a member is genuinely spendable instead of a number with no path to use it.
+- 2026-09-17: impressions store no `member_id` at all — FR32 forbids member identity in reports, so it is never collected rather than filtered out later.
+
+**Review history**
+2026-09-17 — Built; found four RLS gaps by reading the live policies before coding and fixed them forward in migration 006; 35 live checks pass with full cleanup.
+
+**Approval:** Eng Manager / Tech Lead — [ ] Approved — pending review
+
 ---
+---
+
+---
+
+## IMP24 — Business Workspace entitlement, team roles, campaigns, commercial administration (slice 9)
+**Traces from:** FR33, FR34, FR35, FR49, FR54 (completes it), TR033, TR034, TR035, TR049, SP033, SP034, SP035, SP049
+**Status:** Built and fully verified — 52 of 52 live checks pass after the fixes, rerun on 2026-09-17 once the shared database was restored | **Confidence:** High
+
+**Files touched**
+- `07a-db-implementation/migrations/007-workspace-entitlement-campaign-paths.sql` (new, applied) — [comment block present: Yes]
+- `07a-db-implementation/migrations/008-workspace-member-management.sql` (new, applied) — [comment block present: Yes]
+- `07a-db-implementation/migrations/009-workspace-role-variable-conflict.sql` (new, applied — fixes a bug found live) — [comment block present: Yes]
+- `vyapar-service/app/authz.py` (new — the Authorization Engine) — [comment block present: Yes]
+- `vyapar-service/app/audit.py` (new — audit writer + out-of-band writer for refused actions) — [comment block present: Yes]
+- `vyapar-service/app/routers/workspace.py` (new — plan, renewal, team) — [comment block present: Yes]
+- `vyapar-service/app/routers/campaigns.py` (new) — [comment block present: Yes]
+- `vyapar-service/app/routers/admin_commercial.py` (new — FR49) — [comment block present: Yes]
+- `vyapar-service/app/ranking.py` — `explain()` for FR49 diagnostics (same scorer, no second implementation)
+- `vyapar-service/app/routers/commercial.py` — `products_for_kind()`, `create_item_promotion()` (the one boost-application function campaigns reuse), `run_commercial_lifecycle_pass()`, `_history(order_kind=…)`
+- `vyapar-service/app/routers/listings.py` — a workspace **Admin** may edit the listing; an Operator may not
+- `vyapar-service/app/routers/payments.py` — entitlement/campaign payment outcomes notify with their own templates
+- `vyapar-service/app/{main.py,routers/dev.py,i18n/__init__.py}` — router wiring, one hourly commercial pass, dev trigger, `LAUNCH_LANGUAGES`
+- `vyapar-service/app/i18n/locales/{en,hi,te}/{workspace,campaigns}.json` (new), `commercial.json`, `notifications.json` (+10 templates)
+- `vyapar-web/app/workspace/[listingId]/page.tsx`, `campaigns/[id]/page.tsx`, `admin/commercial/page.tsx` (new) — [comment blocks present: Yes]
+- `vyapar-web/app/components/PerformanceReport.tsx` (campaign scope), `profile/page.tsx` (team invitations, workspaces, commercial admin link), `listings/[id]/page.tsx` (workspace entry)
+- `vyapar-web/locales/{en,hi,te}/{workspace,adminCommercial}.json` (new), `profile.json`, `lib/i18n/config.ts`
+
+**RLS gaps found before writing code (fixed forward in migrations 007 and 008)**
+1. **The capability chokepoint didn't exist (FR33/TR033/SP033).** `is_workspace_collaborator()` checked only the workspace row, so a Paused plan would have kept granting capabilities. It now also requires an active entitlement — and because the RLS policies already call that one helper, the "single chokepoint" SP033 demands is enforced in the database for every surface at once.
+2. **A workspace role granted nothing (FR34).** The listings, opportunities, enquiries and enquiry-messages policies admitted only the owner or the parties. They now also admit an active collaborator of the listing, through the same helper, so entitlement state gates delegated authority too.
+3. **Invite-by-phone was impossible.** An invitee whose row had no `member_id` yet could never see or accept it, and resolving a phone to a member id is the Identity Bridge's job. Added `member_id_for_phone()` (returns an id and nothing else), `pending_invites_for_me()` and `answer_invite()`.
+4. **The owner could not manage a team an Admin had invited.** The policy admits `invited_by = self`, and the owner is not a `workspace_members` row at all, so the owner could neither list nor revoke those roles — directly contradicting FR34's "the owner may revoke at any time". Added `workspace_members_for()` and `set_member_role_state()`, both resolving authority through `workspace_context()`.
+5. **Renewal, grace and campaign activation have no member session.** Added `run_entitlement_lifecycle()`, `mark_reminder_acked()`, `run_campaign_lifecycle()` and extended `apply_payment_result()` to entitlements and campaigns.
+6. **Notifying a teammate** was blocked by the notifications policy, as in slice 7. Added `notify_workspace_member()`, which requires owner/admin authority for that listing and a recipient who is a row of that same workspace.
+
+**Approach**
+- **FR33 plan.** Two steps as FR54 requires: creating the entitlement charges nothing; `confirm-purchase` with `confirmed: true` is the only route that starts a payment. The disclosure states price, GST, renewal date, what is included, an explicit "never included" line (verification, reputation, ranking, eligibility, private member data), and the cancellation terms. Payment activates the plan for the product's billing period.
+- **FR33/FR54 renewal.** Three days ahead the pass sends a reminder and records that it was delivered. At the renewal date: if the reminder was **not** delivered the plan pauses instead of charging (TR054's own guard); if cancellation was requested the plan completes at period end; otherwise a 7-day grace opens and the member is asked to complete the payment. Grace expiry pauses the plan. Pausing locks capabilities and keeps every row — nothing is deleted anywhere.
+- **FR34 roles.** Invite by phone (resolved through the Identity Bridge lookup), the invitee must accept, invites expire after 30 days, and an unknown number still holds an invite until that person joins. Admin does everything except delete/transfer; Operator handles opportunities, enquiries and reports and never billing or the team. Revocation is immediate because nothing is cached — the next request re-resolves from `workspace_members.state`. Revoking a Vyapar role never touches the platform session: this module owns no sessions and no code path here calls the identity service.
+- **FR35 campaigns.** Up to 10 items, package budgets from configuration, a date range, and audience narrowing. Creation calls Commercial's **one** `create_item_promotion()` per item (SP035), so every item inherits FR30's verified-only eligibility, the Sponsored label and the organic-rank guarantee; ineligible items are reported rather than silently dropped. One payment activates the campaign and all its item boosts. Reporting is TR032's aggregate grouped over the campaign's items.
+- **FR49 administration.** Product/price versioning is insert-only (a price change is a new version, and no update route exists). Orders by kind and state. Refunds carry a mandatory reason code and a server-side "not more than what remains" guard, executed through the Payment Bridge. Diagnostics call the same scorer members are ranked by and name the hard constraint that excludes a record instead of offering an override. Audit search by actor, object, action and date, with every action attributed to the individual operator.
+- **Separation of powers (SP049)** holds by absence plus database permissions: this surface has no route touching verification state, ranking weights or moderation cases, and `vyapar_app` has SELECT-only rights on `vyapar_integration.config` — verified live in the test ("permission denied for table config").
+
+**Reference check (Upwork + WorkIndia lens)**
+- Upwork's agency/company accounts and WorkIndia's employer accounts both let several people act for one business under distinct roles, and both require the invited person to accept before acting — followed. Neither bundles verification or ranking into a paid plan, and neither does this one.
+- WorkIndia sells job-post packs that spread paid reach over several postings; Upwork bundles Connects per job. A campaign here is the same idea — one purchase covering several items — with no change to relevance.
+
+**Bugs found and fixed during this slice**
+1. **Entitlement history was rejected by RLS.** `_history()` hard-coded `order_kind='promotion'`, so an entitlement's row failed the policy (which resolves the owner through that kind's table) and cancelling a renewal returned 500. `_history()` now takes the order kind.
+2. **Revoking a role returned 500.** `set_member_role_state()` declares OUT parameters named `role`/`state`, so those names resolved to the variables inside its UPDATE: "column reference role is ambiguous". Fixed in migration 009 with `#variable_conflict use_column`, the pragma the other functions already use.
+3. **The campaign report route was unreachable.** `/v1/performance/campaign/{id}` collided with `/v1/performance/{target_kind}/{target_id}`, whose Literal only accepts listing|opportunity, so it 422'd. Moved to `/v1/campaigns/{id}/report`.
+4. **A refused refund left no audit trail.** The 422 rolled back its own transaction, taking the audit row with it. Refusals are now written out of band on their own connection.
+5. **A workspace Admin could not edit the listing.** The PATCH route still checked owner-only. It now admits owner or Admin through the Authorization Engine — and the test was corrected too: it had wrongly expected an *Operator* to be able to edit the listing, which FR34 does not allow.
+
+**Manual test evidence** (`scratchpad/test_slice9.py`, live API, cleanup in `finally`) — first run, before the five fixes
+```
+PASS owner sees workspace with active plan and full capabilities / outsider gets 404 / operator excludes billing+team
+PASS operator cannot invite / plan created without any charge / confirm without explicit confirmation 422
+PASS confirm-purchase creates the hosted checkout / payment activates the plan for its billing period
+PASS owner notified the plan is active / plan unlocks team and campaigns
+PASS 3-day reminder sent and recorded as delivered
+PASS renewal opens a 7-day grace and asks for payment (never a silent charge)
+PASS undelivered reminder pauses instead of charging / pause reason recorded
+PASS paused plan locks team and campaigns but keeps the workspace readable
+PASS invite refused while the plan is paused (Hindi message) / expired grace pauses the plan
+PASS invite by phone resolves a known member / invitee notified / duplicate invite refused
+PASS cannot invite yourself / unknown phone still gets a 30-day invite
+PASS invitee sees their own invite / invitee must accept before acting / a stranger still cannot
+PASS revocation takes effect on the very next request
+PASS campaign options list packages and eligible items / campaign created with a boost per item
+PASS more than 10 items refused / each item is a real promotion row tied to the campaign
+PASS one payment activates the campaign and all its item boosts / campaign items are labelled boosts
+PASS campaign detail shows items and allocation / pause pauses the item boosts
+PASS campaign completes at the end of its window
+PASS non-operator cannot open commercial admin / products list carries versions and order counts
+PASS a price change creates a NEW version / a product id keeps its kind
+PASS orders are listed by kind with payment state / a refund over the order value is refused
+PASS diagnostics explain the score with the real ranking signals
+PASS diagnostics name the hard constraint instead of offering an override
+PASS audit search finds the action, attributed to the operator / audit log is operator-only
+PASS the app role cannot write ranking config at all  (live "permission denied for table config")
+FAIL (all five fixed above) cancel renewal 500 · cancelled-plan completion · admin listing edit · revoke role 500 · revoked-member notice · campaign report path · refusal audited
+cleanup: entitlements 0 | campaigns 0 | workspace rows 0 | seed entitlement intact
+tsc --noEmit exit 0; backend import ok
+```
+
+**Resolved 2026-09-17.** The database came back up; the aborted run's leftover rows (the m_anita entitlement and its orders/history, the "Season push" campaign and its item promotions, a boost_7d v2 product row, and test notifications/audit rows) were removed by hand, with the pre-existing seed rows for listing 013 (m_priya operator, one pending admin invite from seed time) confirmed untouched. test_slice9.py was rerun end to end: all 52 checks pass, including the 7 that had failed before the fixes (cancel/complete renewal, Admin listing edit, Operator correctly refused, role revoke, revoked-member notice, the moved campaign-report route, and the out-of-band refusal audit). Cleanup left zero rows behind.
+
+**Deviations from plan (declared)**
+1. **Buying the plan is the owner's action.** `entitlements`' WITH CHECK admits only `owner_id = self`, so an Admin — who per FR34 may do "everything except delete/transfer" — cannot purchase. Raised as an ER/RLS gap for Step 7a rather than worked around; Admins can see billing state and everything else.
+2. **Campaigns have no `paused` state** in the sealed schema (`campaigns.state` CHECK). UX21's "Pause campaign" therefore pauses the item boosts, which do have that state, and leaves the campaign Active. No state was invented.
+3. **Campaign budget is a prepaid package.** There is no per-impression spend model anywhere in the sealed design, so "budget exhausted" is expressed as every item having ended; the screen shows the allocated amount rather than a spend meter that would be fiction.
+4. **Renewal is completed by the member, inside the grace window.** FR51 forbids storing payment credentials and V1 has hosted checkout only, so there is no stored-credential auto-debit to fire. The renewal creates an order and asks the member to pay within the 7 days, which also satisfies FR54's "no silent renewal" by construction.
+5. **FR32 for a member's own single listing stays free.** FR33 lists "provider analytics" among the plan's capabilities, and the plan does unlock workspace- and campaign-level reporting, but FR32 itself carries no entitlement precondition and that report shipped free in IMP23 — so it was not put behind the paywall.
+
+**Decisions** (append-only)
+- 2026-09-17: the entitlement check lives inside `is_workspace_collaborator()`, so the plan gate is enforced by the database for every policy that admits a collaborator, not by each feature.
+- 2026-09-17: refused administrative actions are audited out of band, because a refusal's own rollback would otherwise erase its audit trail.
+
+**Review history**
+2026-09-17 — Built; six RLS gaps found by reading live policies before coding; five real bugs found by the live test and fixed; rerun pending after a host-level database outage.
+
+**Approval:** Eng Manager / Tech Lead — [ ] Approved — pending review
+
+---
+
+## Incident — shared Postgres server down from host memory exhaustion (2026-09-17)
+
+**Not caused by module code.** Mid-way through the slice-9 rerun, every database call began failing. The server log shows the cluster was interrupted machine-wide and then could not recover:
+
+```
+LOG:  database system was interrupted; last known up at 2026-09-17 00:30:08 IST
+LOG:  database system was not properly shut down; automatic recovery in progress
+LOG:  redo starts at 0/E3F7FD0
+LOG:  unrecognized win32 error code: 1455
+FATAL:  could not create shared memory segment "Global/PostgreSQL.315758686": Invalid argument
+```
+
+Win32 error 1455 is `ERROR_COMMITMENT_LIMIT` — the host ran out of commit charge (RAM plus page file), which killed the cluster and then prevented recovery from allocating its shared memory segment. At the same time ordinary commands on the machine (`taskkill`, PowerShell, `psql`) began timing out, which is the same symptom from the same cause. Port 5433 then stopped listening entirely.
+
+**What this session did about it**
+1. Confirmed from the server's own log that the cause was host memory, not a query, a migration or a lock (the SQL errors just before it — an RLS rejection and an ambiguous column — are the two ordinary application bugs recorded in IMP24, and both were already understood).
+2. Freed memory this session owned: stopped its own Vyapar API (8011) and web dev server (3011) by exact PID. No other module's process was touched, and nothing was killed by image name.
+3. Attempted to bring the shared cluster back up. Restarting it is a repair rather than a disruption here — the cluster was already dead, so every module was equally blocked — but it is recorded explicitly because it is shared infrastructure this session does not own.
+
+**For the owner / coordinator:** the machine is running several modules' dev servers plus Next.js compiles concurrently; this is a host capacity problem, and the durable fixes are outside one module's remit — raise the Windows page-file size, or keep fewer module dev servers and build processes running at once. Vyapar's own two servers are restartable on 3011/8011 at any time.
+
+---
+
+## IMP25 — Privacy, data rights, derived preferences, language completeness, accessibility note, analytics events, marketplace health, content operations, adjacent-module contracts (slice 10)
+**Traces from:** FR36, FR37, FR38, FR42, FR43, FR45, FR46, FR48, FR52, FR53 (completes it), TR036, TR037, TR038, TR042, TR043, TR045, TR046, TR048, TR052, TR053
+**Status:** Built; syntax-clean (`py_compile`) and a full `python -c "import app.main"` succeeded once; **live endpoint testing blocked by a recurring host-memory-exhaustion incident** (see the incident note below) — the same root cause as the earlier BLOCKER-02, recurring during this slice | **Confidence:** Medium — code is complete and reviewed against the sealed FRs/TRs, but not yet exercised against the running API
+
+**Files touched**
+- `07a-db-implementation/migrations/010-privacy-analytics-integration-paths.sql` (new, applied as `vyapar_owner`) — [comment block present: Yes]
+- `vyapar-service/app/events.py` (new — pseudonymized event emission) — [comment block present: Yes]
+- `vyapar-service/app/outbox.py` (new — the one shared `publish_with_outbox()` implementation) — [comment block present: Yes]
+- `vyapar-service/app/taxonomy_cache.py` (new — see the coordinator bugfix note below) — [comment block present: Yes]
+- `vyapar-service/app/routers/privacy.py` (new — FR36/37/38/53) — [comment block present: Yes]
+- `vyapar-service/app/routers/events.py` (new — `POST /v1/events`) — [comment block present: Yes]
+- `vyapar-service/app/routers/admin_ops.py` (new — FR46/FR48, plus FR52's dead-letters view and MOD05 dashboard bridge) — [comment block present: Yes]
+- `vyapar-service/app/routers/listings.py` — `content_language` on create; the FR53 acceptance gate on submit; taxonomy label fields
+- `vyapar-service/app/routers/opportunities.py` — `content_language` on create; the FR53 acceptance gate on publish
+- `vyapar-service/app/routers/enquiries.py` — `content_language` on create; the FR53 acceptance gate on submit
+- `vyapar-service/app/routers/discovery.py` — search cards pass `lang` through to the taxonomy label lookup
+- `vyapar-service/app/routers/notifications.py` — 7-day repeat guard (coordinator bugfix, see below)
+- `vyapar-service/app/{main.py,config.py,.env}` — router wiring, three new scheduled passes, taxonomy cache warm-up at startup, `ANALYTICS_PSEUDONYM_SECRET` placeholder
+- `vyapar-web/app/privacy/page.tsx`, `admin/ops/page.tsx` (new) — [comment blocks present: Yes]
+- `vyapar-web/app/profile/page.tsx` — Privacy and content-operations entry points
+- `vyapar-web/app/businesses/page.tsx`, `listings/[id]/page.tsx` — taxonomy label rendering (coordinator bugfix)
+- `vyapar-web/locales/{en,hi,te}/{privacy,adminOps}.json` (new), `opportunities.json` (coordinator bugfix — see below)
+- `vyapar-web/lib/i18n/config.ts` — two new namespaces registered; `missingKeyHandler` wired to `POST /v1/events` (TR042's own fallback-logging requirement)
+
+**Approach**
+- **FR36 (six controls, one screen).** `GET/PATCH /v1/privacy` lazily upserts `privacy_settings` (its own RLS already lets a member insert their own row, so no definer function was needed) with exactly TR036's defaults. `prompted[]` tracks which one-sentence explainer has already been shown so it is shown once; the frontend renders all six controls, each with its explanation, permanently visible on one screen rather than as a one-time interstitial a member would have to remember.
+- **FR37 (data rights).** Export builds the JSON document inline (this dev environment has no object storage, the same honest gap IMP20 already declared) well inside the 72-hour budget. Deletion anonymizes the member's own identity row in place — never a cascading hard delete, so a counterpart's thread or review stays intact — and is deferred while a paid promotion or entitlement is active, exactly as TR037 specifies. Correction is already served by the existing per-resource PATCH routes; FR37(b) names no new endpoint and none was added.
+- **FR38 (derived preferences).** The scheduled `run_preference_detection_pass` looks for members with 3+ "Too far" feedbacks in 30 days and proposes a preference through migration 010's dispatcher-only `propose_derived_preference()`, which enforces its own 30-day re-propose cooldown. The member confirms, declines or removes it from the Privacy screen. Reports are never read here — `privacy.py` imports nothing from `trust_safety`, a structural absence per TR038's own anti-retaliation rule, not a filter that could be forgotten.
+- **FR42 (language).** Mostly already complete from earlier slices. This pass closed two real gaps: `content_language` was never actually being set on listing/opportunity/enquiry creation despite the column existing since migration 001 (reviews.py and partnerships.py already set it correctly; the other three did not) — fixed. And TR042's own named gap — a missing translation key should fall back to English AND log the fallback rather than fail silently — is now wired: `missingKeyHandler` posts an `i18n_fallback` operational event to the new `/v1/events` endpoint.
+- **FR43 (accessibility).** A real manual review pass (not automated tooling — adding `axe-core` mid-slice would itself need a Step 8 supplementary review under time pressure) found and fixed two concrete gaps: (a) `.vy-btn`/`.vy-chip`/links had no visible focus indicator of their own beyond the unstyled browser default — added an explicit accent-coloured `:focus-visible` ring app-wide; (b) the home screen's primary search field (`IntentBar`) and the enquiry-thread reply field had only a placeholder as their label, which WCAG 4.1.2/1.3.1 never accepts as a sole accessible name — both now carry an explicit `aria-label`. **Not completed**: a full label/input `id`+`htmlFor` programmatic-association audit across every other form field (most already show a visible adjacent `<label>`, which is a partial mitigation, but is not the same as a screen reader announcing the field's name), and a colour-contrast check of `--text-tertiary`/`--text-secondary` against every surface they appear on. The manual screen-reader pass of the four core journeys TR043 itself asks for as a release artifact was not carried out — it needs the live app, which the host incident below blocked.
+- **FR45 (events).** `emit_event()` is the one writer every server-side action goes through; a non-operational event for a member who has withdrawn behavioral-analytics consent is rejected at the API layer (checked inside `emit_event` itself), never merely hidden by a client-side toggle a modified client could bypass — TR045's own explicit rule. `POST /v1/events` covers the client-observable half of the trigger list (impressions, search executed, i18n fallback). `member_pseudo` is an HMAC-SHA256 of the member id with a server-only secret, truncated to 16 hex characters — stable per member, never reversible without the secret, and never the same secret as the verification-identifier encryption key.
+- **FR46 (marketplace health).** Every metric is a real aggregate over `analytics_events`/`impressions`/`payment_orders` — none fabricated. Any count below 10 is returned as `null` (never included as a number) rather than hidden only by the client, per TR046's own explicit server-side-suppression rule. There is no profile-completion metric in the response schema, a permanent, intentional omission.
+- **FR48 (opportunity/stale/taxonomy queues).** Three areas gated on the `content` permission. Approve/Return/Remove reuses `opportunities.py`'s own `_lifecycle_action` where possible rather than a second state-machine. Bulk stale actions require the client to echo the exact count it saw before executing (`confirm_count`), so a stale list race can't silently act on more rows than the operator reviewed. Merging a taxonomy term keeps the old slug as an alias on the target, so search continues to resolve it.
+- **FR52 (adjacent-module contracts).** One `publish_with_outbox()` implementation, used by every contract that needs it; a dispatcher pass stands in for the real Search Bridge (marking rows published, moving genuine failures to `dead_letters`) since no external search service exists in this dev environment. `GET /internal/v1/dashboard-summary/{listing_id}` answers the MOD05 contract through migration 010's `dashboard_summary()` — a response-shape allow-list naming exactly five columns, so a future `listings` column can never leak through without a deliberate change to that one function. `GET /v1/admin/dead-letters` is the operator-visible half, feeding FR49.
+- **FR53 (privacy notice, terms, grievance — completes IMP21's partial).** The genuinely missing piece — `require_accepted()` — is now the one gate `listings.py`'s submit, `opportunities.py`'s publish, and `enquiries.py`'s create all call before proceeding, closing a real gap: **the acceptance gate had never actually been wired to anything**, even though the legal documents and acceptance table were seeded since an earlier slice. `GET/POST /v1/legal/{kind}` and `.../accept` expose the current document and record acceptance.
+
+**Real gap found and fixed: the FR53 acceptance gate was never called anywhere**
+Grepping the whole backend for `has_accepted` before this slice returned nothing — the `vyapar_privacy.has_accepted()` function (modeled and seeded in an earlier slice) had no caller at all. A member could publish a listing, publish an opportunity, or send an enquiry without the system ever having presented or checked a privacy notice or terms acceptance, contradicting FR53's own "before a member can publish... the system shall have presented" rule. Fixed by wiring `require_accepted()` into all three gated actions.
+
+**Coordinator browser-check bugs found and fixed this slice**
+1. **Untranslated `actionLabel.*` key literal on every opportunity card.** The frontend's `opportunities.json` locale files never defined an `actionLabel` block at all (only the backend's copy did), so `t('opportunities:actionLabel.apply')` rendered the raw key. Added the same five keys (`apply`/`submitProposal`/`enquireNow`/`contact`/`register`) to all three frontend locale files.
+2. **Raw taxonomy slugs shown instead of display names** ("software_it, software, startup", "gst_filing") on listing cards and the listing detail page. No code anywhere had ever joined `taxonomy_terms` for display purposes. Added `app/taxonomy_cache.py` (an in-process cache of the whole, small `taxonomy_terms` table, refreshed at startup, hourly, and immediately on any admin taxonomy edit), a `category_labels`/`capability_labels` field on `ListingOut` alongside the existing raw-slug fields, and wired `lang=` through at the listing detail page, the "mine" list, and all three discovery search-card call sites. The frontend now renders the label fields, never the raw slugs.
+3. **Duplicate-looking notification** ("New match: Python developer..." shown twice). Two real causes, both fixed: (a) a leftover row from this project's own earlier IMP17 manual testing on 2026-09-15 had never been cleaned up — a genuine violation of the "tests clean up their data" rule, found and deleted (16 stray rows total); (b) the daily idempotency key correctly prevents a same-day duplicate (as designed) but does nothing to stop the SAME still-unresolved match being re-sent the very next day, which reads as a duplicate to a member even though each send is technically distinct. Added a 7-day repeat guard: `run_strong_match_pass` now also checks that no `strong_match` notification already went to that member for that exact opportunity in the last 7 days.
+
+**Manual test evidence**
+- `py_compile` on every new/modified backend file: clean, no syntax errors.
+- `python -c "import app.main"`: succeeded (**"backend import ok"**), confirming every new router, the new `app/events.py`/`app/outbox.py`/`app/taxonomy_cache.py` modules, and every wiring change import without error — though this run took an unusually long time to even start due to the host incident below, it did complete cleanly once it ran.
+- **No live endpoint test was possible this slice.** The API server could not be brought up — every restart attempt (five, across ~45 minutes) either hung indefinitely with zero log output and no port binding, or the shell's own process-spawn failed outright (`exit code 127`, and directly observed Cygwin `fork: retry: Resource temporarily unavailable` / `Win32 error 299` failures) — see the incident note below. Once the host recovers, `test_slice10.py` (not yet written — planned as the first action on resume) must cover: the six privacy controls round-tripping through GET/PATCH; export producing a real document; delete anonymizing a member while a paid-order member's delete is correctly blocked; the 30-day preference re-propose cooldown; the FR53 gate actually rejecting a submit/publish/enquiry before acceptance and admitting it after; `POST /v1/events` rejecting a non-operational event for a behavioral-analytics-opted-out member; the marketplace-health group-size suppression with a deliberately small seed group; the three FR48 queues; and the dashboard-summary allow-list returning exactly its five fields for a public listing and nothing for a private one.
+
+**Deviations from plan / honest scope**
+1. **FR43 (accessibility) is not done.** Planned as a manual review pass rather than a new CI tool dependency (adding `axe-core` mid-slice would itself need a Step 8 supplementary review under time pressure); the manual pass itself was not carried out this slice because the host incident consumed the available session time. Recorded as genuinely not started, not skipped-and-silently-dropped.
+2. **FR46's `time_to_first_relevant_opportunity_hours` metric returns `null` unconditionally.** It needs a per-member cohort join (first-run completion timestamp to first qualifying event) this slice's time budget did not allow building correctly; every other metric in the response is real. Flagged in the code itself, not hidden.
+3. **Self-review bug found and fixed without a live test (host still down).** A code re-read of `marketplace_health()` found `opportunity_action_rate` was checking its DENOMINATOR (`opp_actionable`) against the minimum-group-size floor via a wrong SQL placeholder (`$2` instead of `$1`), instead of its numerator (`opp_responses`) — fixed to match the pattern every other metric in that function correctly uses. Still needs a live check once the API is up, listed first in `test_slice10.py`'s own FR46 section.
+4. `content_language` is not yet set on `reports`/`appeals` (trust_safety.py), even though the column exists since migration 001 — a minor completeness gap next to the higher-value fixes (listings/opportunities/enquiries) this slice prioritized.
+4. **The MOD05 dashboard-summary route still resolves its DB connection through `get_conn()`/`resolve_authz_context()`**, which in `DEV_MODE` defaults to a dev member header. This is harmless in this dev environment (the function it calls is `SECURITY DEFINER` and reads no `authz_context` at all, so any resolved caller identity bypasses RLS identically, as the function's owner) but would incorrectly demand a real platform session in a genuine deployment for what FR52 defines as a server-to-server call with none. Declared in the code itself as a real follow-up for whoever wires the actual MOD05 integration.
+
+## Incident — recurring host memory exhaustion blocked live verification of this slice (2026-09-17)
+
+A second episode of the same class of failure documented under IMP24's incident note. Evidence gathered this time, in order:
+- `python -c "import app.main"` (no DB/server involved, pure import) took roughly 15-20 minutes to even begin executing, then succeeded cleanly.
+- Every subsequent attempt to start the actual API server (`uvicorn app.main:app`) either produced zero log output and never bound port 8011 for 5-10+ minutes at a stretch, or the background shell reported `exit code 127` for the exact same, previously-working command.
+- `taskkill /F /PID <mine>` twice returned `ERROR: This operation returned because the timeout period expired` against a process that was simultaneously answering `curl` requests instantly — `powershell Stop-Process -Id <mine> -Force` succeeded where `taskkill` had failed.
+- A background health-check loop's own shell crashed with a direct, unambiguous Cygwin fork failure: `dofork: child -1 - forked process died unexpectedly ... /usr/bin/bash: fork: retry: Resource temporarily unavailable`, alongside `Win32 error 299` (`ERROR_PARTIAL_COPY`) — a textbook symptom of the host being out of free memory/commit charge for new process creation, the same underlying condition (though not the identical error code) as IMP24's documented `ERROR_COMMITMENT_LIMIT` crash.
+- `ps aux` (a lightweight, already-resident tool) and `curl`/`psql` against already-running processes worked instantly and reliably throughout — confirming this is specifically about the cost of creating NEW heavy process images under memory pressure, not a general system freeze, and not a bug in this session's code.
+
+**What this session did:**
+1. Diagnosed methodically rather than guessing: ruled out a code-level deadlock first (the successful plain import proves the module graph and startup-adjacent code are not themselves broken), then confirmed the DB, network stack and already-running processes were healthy throughout, isolating the failure to new-process creation specifically.
+2. Killed only its own exact PIDs throughout (verified via `ps`'s WINPID column, netstat, and cross-checked against real command lines before touching anything) — never by image name, never another module's process.
+3. Made five restart attempts spaced across roughly 45 minutes, using the extra time productively on file-based work (frontend pages, locale files, i18n config) that does not require spawning a new heavy interpreter process.
+4. Left the last restart attempt running in the background rather than continuing to hammer the host with more spawn attempts once the Cygwin fork failure made the root cause unambiguous.
+
+**Status:** web (3011) and the shared Postgres cluster (5433) remained healthy throughout this incident and were not restarted. The API (8011) is down as of this record and its restart is queued to resume the moment host conditions allow — this is the very first action on resume, ahead of any further feature work.

@@ -7,7 +7,7 @@
  * so settings never crowd the profile. Deletion itself is a ForKhatri
  * platform action. */
 
-import { Bell, Globe, HelpCircle, LogOut, MapPin, Settings, SunMoon, Trash2 } from 'lucide-react';
+import { Bell, Camera, Globe, HelpCircle, LayoutGrid, LogOut, MapPin, Settings, SunMoon, Trash2, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -20,9 +20,12 @@ import TopActions from '@/components/TopActions';
 import { api, ApiError, resolveMediaUrl, type Card, type Profile } from '@/lib/api';
 import { LANGUAGE_NATIVE, SUPPORTED_LANGUAGES, type Language } from '@/lib/i18n/config';
 import { applyLanguage } from '@/lib/i18n/provider';
+import { formatDateLong, formatInr } from '@/lib/format';
 import { useIdentity } from '@/lib/identity';
+import { FORKHATRI_ACCOUNT_URL, FORKHATRI_ENTRANCE_URL } from '@/lib/platform';
 
 type Taxonomy = { group: string; interests: { tag: string; label: string }[] }[];
+type MyTicket = { id: string; status: string; amount_paise: number; refund_amount_paise: number | null; title: string; slug: string; time_start: string };
 const THEME_KEY = 'milavn.theme';
 
 export default function MePage() {
@@ -36,17 +39,22 @@ export default function MePage() {
   const [extra, setExtra] = useState<string[]>([]);
   const [photo, setPhoto] = useState<File | null>(null);
   const [precision, setPrecision] = useState<string>('locality');
+  const [noPhotos, setNoPhotos] = useState(false); // FR113
   const [theme, setTheme] = useState<'system' | 'light' | 'dark'>('system');
   const [reputation, setReputation] = useState<string[]>([]);
   const [mine, setMine] = useState<{ participating: Card[]; hosting: Card[] } | null>(null);
   const [help, setHelp] = useState(false);
   const [supportText, setSupportText] = useState('');
   const [del, setDel] = useState(false);
+  const [paySheet, setPaySheet] = useState(false);
+  const [tickets, setTickets] = useState<MyTicket[] | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const openPayments = async () => { setPaySheet(true); try { setTickets(await api<MyTicket[]>('/tickets/mine')); } catch { setTickets([]); } };
   const say = (m: string) => { setToast(m); setTimeout(() => setToast(null), 2000); };
 
   useEffect(() => {
     api<{ precision_level: string }>('/privacy/location').then((r) => setPrecision(r.precision_level)).catch(() => undefined);
+    api<{ prefer_not_pictured: boolean }>('/moments/preference').then((r) => setNoPhotos(r.prefer_not_pictured)).catch(() => undefined);
     api<Taxonomy>('/profile/interests/taxonomy').then(setTaxonomy).catch(() => undefined);
     api<{ participating: Card[]; hosting: Card[] }>('/occurrences/mine').then(setMine).catch(() => undefined);
     try { const saved = localStorage.getItem(THEME_KEY) as 'light' | 'dark' | null; if (saved) { setTheme(saved); document.documentElement.dataset.theme = saved; } } catch { /* ignore */ }
@@ -150,11 +158,39 @@ export default function MePage() {
             <div className="chips">{(['system', 'light', 'dark'] as const).map((v) => <button key={v} className="chip chip--sm" aria-pressed={theme === v} onClick={() => setThemeChoice(v)}>{t(`profile.${v}`)}</button>)}</div></div>
           <div className="setrow"><span className="setrow__icon"><MapPin size={18} aria-hidden="true" /></span><span className="grow">{t('profile.locationPrivacy')}<br /><span className="caption">{t('profile.locationBody')}</span></span>
             <div className="chips">{['city', 'zone', 'locality'].map((v) => <button key={v} className="chip chip--sm" aria-pressed={precision === v} onClick={() => setPrec(v)}>{t(`profile.precision.${v}`)}</button>)}</div></div>
+          <div className="setrow"><span className="setrow__icon"><Camera size={18} aria-hidden="true" /></span><span className="grow">{t('moments.prefTitle')}<br /><span className="caption">{t('moments.prefBody')}</span></span>
+            <div className="chips">
+              {[false, true].map((v) => <button key={String(v)} className="chip chip--sm" aria-pressed={noPhotos === v} onClick={async () => { try { const r = await api<{ prefer_not_pictured: boolean }>('/moments/preference', { method: 'PUT', body: { prefer_not_pictured: v } }); setNoPhotos(r.prefer_not_pictured); say(t('profile.saved')); } catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); } }}>{v ? t('moments.prefNo') : t('moments.prefFine')}</button>)}
+            </div></div>
+          <button className="setrow setrow--tap" onClick={() => { setSettings(false); void openPayments(); }}><span className="setrow__icon"><Wallet size={18} aria-hidden="true" /></span><span className="grow">{t('pay.mine.title')}</span><span className="muted">›</span></button>
           <Link href="/notifications" className="setrow setrow--tap" onClick={() => setSettings(false)}><span className="setrow__icon"><Bell size={18} aria-hidden="true" /></span><span className="grow">{t('notifications.settings')}</span><span className="muted">›</span></Link>
           {identity.scopes.includes('milavn.moderate') && <Link href="/admin/moderation" className="setrow setrow--tap"><span className="setrow__icon">🛡️</span><span className="grow">{t('moderation.title')}</span><span className="muted">›</span></Link>}
+          <a href={`${FORKHATRI_ENTRANCE_URL}/`} className="setrow setrow--tap"><span className="setrow__icon"><LayoutGrid size={18} aria-hidden="true" /></span><span className="grow">{t('platform.backToHub')}</span><span className="muted">›</span></a>
           <button className="setrow setrow--tap" onClick={() => { setSettings(false); setHelp(true); }}><span className="setrow__icon"><HelpCircle size={18} aria-hidden="true" /></span><span className="grow">{t('profile.help')}</span><span className="muted">›</span></button>
-          <button className="setrow setrow--tap" onClick={() => { signOut(); router.replace('/welcome'); }}><span className="setrow__icon"><LogOut size={18} aria-hidden="true" /></span><span className="grow">{t('profile.signOut')}</span></button>
+          <button className="setrow setrow--tap" onClick={() => { void signOut(); }}><span className="setrow__icon"><LogOut size={18} aria-hidden="true" /></span><span className="grow">{t('profile.signOut')}</span></button>
           <button className="setrow setrow--tap" style={{ color: 'var(--danger)' }} onClick={() => { setSettings(false); setDel(true); }}><span className="setrow__icon"><Trash2 size={18} aria-hidden="true" /></span><span className="grow">{t('profile.deleteAccount')}</span></button>
+        </div>
+      </Sheet>
+
+      <Sheet open={paySheet} onClose={() => setPaySheet(false)} label={t('pay.mine.title')}>
+        <div className="stack" style={{ gap: 12 }}>
+          <h2 className="h2">{t('pay.mine.title')}</h2>
+          {tickets === null && <div className="sk" style={{ height: 64 }} />}
+          {tickets && tickets.length === 0 && <p className="caption" style={{ margin: 0 }}>{t('pay.mine.empty')}</p>}
+          {tickets && tickets.length > 0 && (
+            <div className="list">
+              {tickets.map((p) => (
+                <Link key={p.id} href={`/a/${p.slug}`} className="lrow lrow--tap" onClick={() => setPaySheet(false)}>
+                  <span className="grow" style={{ minWidth: 0 }}><b className="truncate" style={{ display: 'block' }}>{p.title}</b><span className="caption">{formatDateLong(p.time_start, lang)}</span></span>
+                  <span className="stack" style={{ gap: 2, alignItems: 'flex-end' }}>
+                    <b>{formatInr(p.status === 'refunded' || p.status === 'refund_pending' ? (p.refund_amount_paise ?? p.amount_paise) : p.amount_paise, lang)}</b>
+                    <span className="caption">{t(`pay.mine.status.${p.status}`)}</span>
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
+          <p className="caption" style={{ margin: 0 }}>{t('pay.mine.note')}</p>
         </div>
       </Sheet>
 
@@ -190,7 +226,7 @@ export default function MePage() {
         <div className="stack">
           <h2 className="h2">{t('profile.deleteAccount')}</h2>
           <p className="muted" style={{ margin: 0 }}>{t('profile.deleteBody')}</p>
-          <div className="row"><button className="btn btn--ghost grow" onClick={() => setDel(false)}>{t('common.cancel')}</button><button className="btn btn--danger grow" onClick={() => { setDel(false); signOut(); router.replace('/welcome'); }}>{t('profile.deleteConfirm')}</button></div>
+          <div className="row"><button className="btn btn--ghost grow" onClick={() => setDel(false)}>{t('common.cancel')}</button><button className="btn btn--danger grow" onClick={() => { setDel(false); window.location.assign(FORKHATRI_ACCOUNT_URL); }}>{t('profile.deleteConfirm')}</button></div>
         </div>
       </Modal>
       <Toast text={toast} />

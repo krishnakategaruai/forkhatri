@@ -104,7 +104,7 @@ async def list_messages(session: AsyncSession, *, occurrence_id: UUID, viewer_me
         )
     ).all()
     hidden = await _blocked_filter(session, viewer_member_id, [r[1] for r in rows])
-    names = identity.display_names_for([r[1] for r in rows])
+    names = await identity.display_names_for([r[1] for r in rows])
     return [Message(r[0], r[1], names[r[1]].display_name, names[r[1]].avatar, r[2], r[3], r[1] == viewer_member_id) for r in rows if r[1] not in hidden]
 
 
@@ -139,13 +139,14 @@ async def list_photos(session: AsyncSession, *, occurrence_id: UUID, viewer_memb
     rows = (
         await session.execute(
             text(
-                "SELECT id, member_id, storage_ref, caption, created_at FROM milavn_activity.occurrence_photo WHERE occurrence_id = :o ORDER BY created_at DESC LIMIT 60"
+                "SELECT id, member_id, storage_ref, caption, created_at FROM milavn_activity.occurrence_photo "
+                "WHERE occurrence_id = :o AND removed_at IS NULL ORDER BY created_at DESC LIMIT 60"
             ),
             {"o": str(occurrence_id)},
         )
     ).all()
     hidden = await _blocked_filter(session, viewer_member_id, [r[1] for r in rows])
-    names = identity.display_names_for([r[1] for r in rows])
+    names = await identity.display_names_for([r[1] for r in rows])
     return [Photo(r[0], r[1], names[r[1]].display_name, f"/media/{r[2]}", r[3], r[4], r[1] == viewer_member_id) for r in rows if r[1] not in hidden]
 
 
@@ -167,12 +168,62 @@ async def add_photo(session: AsyncSession, *, occurrence_id: UUID, member_id: UU
         text("INSERT INTO milavn_activity.occurrence_photo (id, occurrence_id, member_id, storage_ref, caption) VALUES (:id, :o, :m, :r, :c)"),
         {"id": str(photo_id), "o": str(occurrence_id), "m": str(member_id), "r": ref, "c": cap},
     )
-    me = identity.display_names_for([member_id])[member_id]
+    me = (await identity.display_names_for([member_id]))[member_id]
     return Photo(photo_id, member_id, me.display_name, f"/media/{ref}", cap, datetime.now().astimezone(), True)
 
 
 async def delete_photo(session: AsyncSession, *, photo_id: UUID, member_id: UUID) -> None:
     await session.execute(text("DELETE FROM milavn_activity.occurrence_photo WHERE id = :id AND member_id = :m"), {"id": str(photo_id), "m": str(member_id)})
+
+
+# --- Photo privacy (FR113) ------------------------------------------------------
+
+
+def short_name(full: str) -> str:
+    """First name and last initial: enough to recognise someone you just met, no more."""
+    parts = full.split()
+    return parts[0] if len(parts) < 2 else f"{parts[0]} {parts[-1][0]}."
+
+
+async def photo_preference(session: AsyncSession, *, member_id: UUID) -> bool:
+    row = (await session.execute(text("SELECT prefer_not_pictured FROM milavn_activity.photo_preference WHERE member_id = :m"), {"m": str(member_id)})).first()
+    return bool(row and row[0])
+
+
+async def set_photo_preference(session: AsyncSession, *, member_id: UUID, prefer_not_pictured: bool) -> bool:
+    await session.execute(
+        text(
+            "INSERT INTO milavn_activity.photo_preference (member_id, prefer_not_pictured) VALUES (:m, :p) "
+            "ON CONFLICT (member_id) DO UPDATE SET prefer_not_pictured = EXCLUDED.prefer_not_pictured, updated_at = now()"
+        ),
+        {"m": str(member_id), "p": prefer_not_pictured},
+    )
+    return prefer_not_pictured
+
+
+async def photo_opt_outs(session: AsyncSession, *, occurrence_id: UUID, viewer_member_id: UUID) -> list[str]:
+    """Names of people who were there and asked not to be in photos — shown before someone who was there shares one."""
+    rows = (await session.execute(text("SELECT member_id FROM milavn_activity.photo_opt_outs(:o, :v)"), {"o": str(occurrence_id), "v": str(viewer_member_id)})).all()
+    names = await identity.display_names_for([r[0] for r in rows])
+    return sorted(short_name(names[r[0]].display_name) for r in rows)
+
+
+async def request_photo_removal(session: AsyncSession, *, occurrence_id: UUID, photo_id: UUID, member_id: UUID) -> bool:
+    """Take a photo down at once (consent to take is not consent to publish). The uploader is told, never who asked."""
+    uploader = (await session.execute(text("SELECT milavn_activity.request_photo_removal(:p, :m)"), {"p": str(photo_id), "m": str(member_id)})).scalar_one_or_none()
+    if uploader is None:
+        return False
+    if uploader != member_id:
+        from app.events import bus
+
+        await bus.publish(
+            session,
+            schema="milavn_activity",
+            event_type="photo.removed",
+            aggregate_id=occurrence_id,
+            payload={"occurrence_id": occurrence_id, "uploader_member_id": uploader},
+        )
+    return True
 
 
 # --- Circle board -------------------------------------------------------------
@@ -187,7 +238,7 @@ async def list_posts(session: AsyncSession, *, circle_id: UUID, viewer_member_id
         )
     ).all()
     hidden = await _blocked_filter(session, viewer_member_id, [r[1] for r in rows])
-    names = identity.display_names_for([r[1] for r in rows])
+    names = await identity.display_names_for([r[1] for r in rows])
     return [Message(r[0], r[1], names[r[1]].display_name, names[r[1]].avatar, r[2], r[3], r[1] == viewer_member_id) for r in rows if r[1] not in hidden]
 
 
@@ -220,5 +271,5 @@ async def circle_peers(session: AsyncSession, *, occurrence_id: UUID, viewer_mem
     rows = (await session.execute(text("SELECT milavn_activity.circle_peer_ids(:o, :m)"), {"o": str(occurrence_id), "m": str(viewer_member_id)})).all()
     ids = [r[0] for r in rows]
     hidden = await _blocked_filter(session, viewer_member_id, ids)
-    names = identity.display_names_for(ids)
+    names = await identity.display_names_for(ids)
     return [{"member_id": str(i), "display_name": names[i].display_name, "avatar": names[i].avatar} for i in ids if i not in hidden]

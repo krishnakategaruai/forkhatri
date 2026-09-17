@@ -178,7 +178,11 @@
     "circleMates": "From your circles",
     "circleMatesGoing": "going",
     "posterShare": "Poster for WhatsApp status",
-    "posterSaved": "Poster saved"
+    "posterSaved": "Poster saved",
+    "ended": "This activity has ended",
+    "wentCount": "{{count}} went",
+    "attendeesPrivatePast": "Who went is private — only the organizer sees the list.",
+    "circleMatesWent": "went"
   },
   "create": {
     "title": "Make something happen",
@@ -433,13 +437,26 @@
     "count": "{{count}} photos",
     "add": "Add photo",
     "empty": "You were there — add a photo for everyone who came.",
-    "remove": "Remove"
+    "remove": "Remove",
+    "beforeSharing": "Before you share",
+    "optOuts": "{{names}} asked not to be in photos.",
+    "okPeople": "Everyone clearly in this photo is fine with it being shared",
+    "okChildren": "No children in it, or their parents agreed",
+    "share": "Share photo",
+    "removeMe": "I'm in this photo · remove it",
+    "removed": "Photo removed. The person who shared it has been told.",
+    "prefTitle": "Photos of me",
+    "prefFine": "Fine to include me",
+    "prefNo": "Please don't include me",
+    "prefBody": "Shown to people sharing photos from activities you went to."
   },
   "person": {
     "reputation": "How the community sees them",
     "sharedCircles": "Circles you share",
     "hosting": "Hosting soon",
-    "noHosting": "Nothing scheduled right now."
+    "noHosting": "Nothing scheduled right now.",
+    "familiar_one": "You have both been to 1 activity",
+    "familiar_other": "You have both been to {{count}} activities"
   },
   "digest": {
     "label": "Your week"
@@ -491,6 +508,287 @@
       "neutral": "Neutral"
     },
     "stage": "Who’s here",
-    "you": "You"
+    "you": "You",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "hereNow": "Here now",
+    "seenJustNow": "Active just now",
+    "seenMin": "Active {{count}} min ago",
+    "seenHour": "Active {{count}} h ago",
+    "seenDay": "Active {{count}} d ago",
+    "members": "{{count}} people",
+    "hereCount": "{{count}} here",
+    "nextTogether": "Next together",
+    "sharedCircle": "Your circle",
+    "unsend": "Unsend",
+    "trayTitle": "Your avatar, your mood",
+    "trayHint": "Tap to show how you feel. Tap again to send it.",
+    "sendIt": "Send it",
+    "mirror": "Mirror my face",
+    "mirrorOn": "Mirroring your face · tap to stop",
+    "quickLabel": "Quick replies",
+    "quick": {
+      "onMyWay": "On my way 🚶",
+      "seeYouThere": "See you there 👋",
+      "late": "Running 5 min late",
+      "soundsGood": "Sounds good 👍",
+      "countMeIn": "Count me in 🙌",
+      "thanks": "Thanks! 🙏"
+    }
+  },
+  "platform": {
+    "hub": "ForKhatri",
+    "backToHub": "Back to ForKhatri",
+    "redirecting": "Taking you to ForKhatri to sign in…",
+    "unavailable": "Milavn can’t reach ForKhatri sign-in right now. Please try again in a moment.",
+    "signIn": "Sign in with ForKhatri"
+  },
+  "pay": {
+    "entry": "Entry",
+    "free": "Free",
+    "paid": "Paid",
+    "pricePerPerson": "Price per person",
+    "refundWindow": "Full refund if someone withdraws",
+    "cutoff": {
+      "h0": "Until it starts",
+      "h24": "Until 1 day before",
+      "h48": "Until 2 days before",
+      "h168": "Until 1 week before"
+    },
+    "organizerNote": "Free is the Milavn way. Charge only to cover real costs, like a court booking or food. Money goes through ForKhatri Payments, and nobody sees who has paid.",
+    "join": "Join · {{amount}}",
+    "completePayment": "Complete payment · {{amount}}",
+    "claimSpot": "A spot opened · Pay {{amount}}",
+    "release": "Release",
+    "youPaid": "Paid {{amount}}",
+    "pricePerPersonValue": "{{amount}} per person",
+    "refundUntil": "Full refund if you withdraw by {{time}}",
+    "refundUntilStart": "Full refund if you withdraw before it starts",
+    "heldUntil": "Your spot is held until {{time}}",
+    "refundPending": "Refund of {{amount}} on its way",
+    "refunded": "{{amount}} refunded",
+    "notOpenYet": "Paid spots open once ForKhatri Payments is connected. Nothing is charged until then.",
+    "waitlisted": "It's full, so you're on the waitlist. If a spot opens, it's offered to you in order.",
+    "refundStarted": "Spot released. A refund of {{amount}} has started.",
+    "withdrawn": "Spot released.",
+    "withdrawTitle": "Give back your spot?",
+    "withdrawRefund": "You'll get a full refund of {{amount}}.",
+    "withdrawNoRefund": "The refund window has passed, so this spot will not be refunded.",
+    "withdrawConfirm": "Give it back",
+    "confirmed": "Payment received. You're in!",
+    "failed": "The payment didn't go through. Nothing was charged.",
+    "pending": "We're waiting for the payment to be confirmed. You'll get a notification.",
+    "sandbox": {
+      "banner": "TEST CHECKOUT · NO REAL MONEY MOVES",
+      "payingFor": "You're paying for",
+      "explain": "This is Milavn's development checkout. In the real app, ForKhatri Payments handles this step (UPI, cards).",
+      "pay": "Pay {{amount}} (test)",
+      "fail": "Simulate a failed payment",
+      "done": "This payment is already complete."
+    },
+    "organizer": {
+      "title": "Paid spots",
+      "net": "Collected",
+      "paidSpots": "Paid spots",
+      "refunds": "Refunded",
+      "holds": "{{count}} people are paying right now",
+      "privacy": "Totals only. Milavn never shows who paid or who didn't.",
+      "payoutsPending": "Payouts to you are handled by ForKhatri Payments, which isn't connected yet."
+    },
+    "mine": {
+      "title": "Payments & refunds",
+      "empty": "No payments yet. Most activities on Milavn are free.",
+      "note": "Payments are processed by ForKhatri Payments. Milavn keeps only a reference, never your card or UPI details.",
+      "status": {
+        "awaiting_payment": "Payment pending",
+        "paid": "Paid",
+        "refund_pending": "Refund on its way",
+        "refunded": "Refunded",
+        "void": "Paid · not refunded"
+      }
+    }
+  },
+  "show": {
+    "stillComingTitle": "Still coming?",
+    "stillComingBody": "If you can't make it, freeing your spot lets someone on the waitlist join. No hard feelings.",
+    "stillComing": "Yes, I'm coming",
+    "freeSpot": "Can't make it · free my spot",
+    "thanksComing": "Great, see you there.",
+    "howGetting": "How are you getting there?",
+    "comingWith": "Coming with",
+    "travel": {
+      "walk": "On foot",
+      "two_wheeler": "Two-wheeler",
+      "car": "Car",
+      "cab_auto": "Cab / auto",
+      "metro_bus": "Metro / bus"
+    },
+    "company": {
+      "alone": "On my own",
+      "friend": "A friend",
+      "family": "Family"
+    },
+    "yourPlan": "Your plan",
+    "change": "Change",
+    "planPrivacy": "Only you and the host see this. We'll remind you of it before it starts."
+  },
+  "belong": {
+    "firstTime": "First time",
+    "onTheirOwn": "On their own",
+    "firstTitle": "Your first Milavn activity",
+    "firstBody": "{{host}} will look out for you. Look for the group in {{place}} a few minutes early. Coming on your own is completely normal here.",
+    "sharePlan": "Share my plan with family",
+    "planMessage": "I'm going to {{title}} on {{when}} in {{place}}, hosted by {{host}} on Milavn. I'll message you when I'm back.",
+    "tsafe": "For an evening ride in Telangana, Police T-Safe can watch over the trip: dial 100 and choose option 8.",
+    "thanksTitle": "Say thanks to {{name}}",
+    "thanksBody": "A short thank-you means more to hosts than people expect.",
+    "presets": {
+      "organizing": "Thank you for organizing!",
+      "loved": "Loved it, thank you!",
+      "group": "Such a warm group.",
+      "next": "See you next time!"
+    },
+    "thanksOwn": "Or write your own…",
+    "thanksSend": "Send",
+    "thanksSent": "Thanks sent to {{name}}.",
+    "comeAgainTitle": "Would you come again?",
+    "comeAgain": {
+      "yes": "Yes",
+      "maybe": "Maybe",
+      "no": "No"
+    },
+    "betterPlaceholder": "One thing that would make it better? (optional)",
+    "privateNote": "Only the organizer sees totals, never who answered what.",
+    "after": {
+      "title": "After the activity",
+      "came": "Came",
+      "firstTimers": "First-timers",
+      "comeAgain": "Would come again",
+      "noThanks": "No thank-you notes yet."
+    }
+  },
+  "fit": {
+    "whoFor": "Who it's for",
+    "foodDrink": "Food & drink",
+    "audience": {
+      "family_friendly": "Family & kids",
+      "elder_friendly": "Elder-friendly",
+      "beginner_friendly": "Beginners welcome"
+    },
+    "food": {
+      "veg": "Veg",
+      "jain_options": "Jain options",
+      "non_veg": "Non-veg served",
+      "alcohol_free": "Alcohol-free"
+    },
+    "foodDefaultNote": "Community activities start as vegetarian and alcohol-free. Change it if yours is different.",
+    "notInterested": "Not interested",
+    "notInterestedWhy": "Tell us why, so Milavn shows you better things:",
+    "reasons": {
+      "not_my_thing": "Not my thing",
+      "too_far": "Too far",
+      "bad_time": "Bad time",
+      "not_this_host": "Not this host"
+    },
+    "hidden": "Got it. You won't see this again."
+  },
+  "regular": {
+    "recent": "You've been to {{attended}} of the last {{total}}",
+    "keep": "Keep a spot for me each time",
+    "on": "You're a regular: your spot is kept whenever a new date is added. Free it any time.",
+    "stop": "Stop keeping my spot",
+    "kept": "Done. Your spot is kept for {{count}} upcoming dates.",
+    "stopped": "Okay, we'll stop keeping your spot."
+  },
+  "meet": {
+    "title": "Would you meet anyone again?",
+    "body": "Private. They only find out if they pick you too.",
+    "mutual": "You and {{name}} would both meet again",
+    "connectionsTitle": "You'd both meet again",
+    "after": "You both picked each other after {{title}}"
+  },
+  "guest": {
+    "canBring": "Can people bring someone?",
+    "none": "Just them",
+    "upTo": "Up to {{count}} each",
+    "countsNote": "Guests take spots, so the count stays honest.",
+    "bringingTitle": "Bringing someone?",
+    "bringingBody": "They take spots too, so the host knows how many to expect.",
+    "justMe": "Just me",
+    "plusN": "+{{count}}",
+    "total_one": "{{count}} guest",
+    "total_other": "{{count}} guests"
+  },
+  "join": {
+    "whoCanJoin": "Who can join?",
+    "anyone": "Anyone",
+    "askFirst": "Ask me first",
+    "questionsHint": "Ask up to two short questions. Nobody has to answer.",
+    "questionPlaceholder0": "How do you know our community?",
+    "questionPlaceholder1": "What would you like to do with us?",
+    "ask": "Ask to join",
+    "send": "Send request",
+    "answerHint": "The organizer reads this before letting you in.",
+    "asked": "Asked to join. The organizer will see it.",
+    "waiting": "Waiting to be let in",
+    "waitingTitle": "Waiting to join ({{count}})",
+    "letThemIn": "Let them in",
+    "notNow": "Not now",
+    "letIn": "{{name}} is in",
+    "declined": "Left for now"
+  },
+  "cards": {
+    "title": "Something to talk about",
+    "another": "Another one"
+  },
+  "free": {
+    "title": "Free right now",
+    "iAm": "I'm free",
+    "stop": "Never mind",
+    "nobody": "Nobody from your circles has said so in the last few hours."
+  },
+  "poll": {
+    "title": "Ask the circle",
+    "ask": "Ask a question",
+    "questionPlaceholder": "Which day suits everyone?",
+    "addOption": "Add another time",
+    "send": "Ask",
+    "none": "Nothing to decide right now.",
+    "needTwo": "A question and at least two times.",
+    "askedBy": "Asked by {{name}}",
+    "closed": "settled",
+    "settle": "That's settled",
+    "noneYet": "Nobody yet",
+    "createActivity": "Create the activity"
+  },
+  "role": {
+    "assistant": "Helps run it",
+    "makeAssistant": "Ask to help",
+    "stepDown": "Step back",
+    "nowAssistant": "They can help run the circle now",
+    "nowMember": "Back to a member"
+  },
+  "follow": {
+    "follow": "Follow their activities",
+    "following": "✓ Following",
+    "subscribe": "Add to my calendar app"
+  },
+  "chapter": {
+    "partOf": "Part of {{name}}",
+    "onlyOne": "The first chapter. Others can be added under the same name.",
+    "members_one": "{{count}} member",
+    "members_other": "{{count}} members"
+  },
+  "drive": {
+    "title": "Drives",
+    "progress": "₹{{promised}} promised of ₹{{target}}",
+    "promisedOnly": "₹{{promised}} promised",
+    "noPaymentsYet": "Promises only for now — payments are not switched on yet.",
+    "iWillGive": "I'll give",
+    "promise": "Promise",
+    "youPromised": "You promised ₹{{amount}}",
+    "takeBack": "Take it back",
+    "people_one": "by 1 person",
+    "people_other": "by {{count}} people"
   }
 }

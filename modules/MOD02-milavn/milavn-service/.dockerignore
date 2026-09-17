@@ -1,0 +1,15 @@
+.venv
+.env
+.env.*
+!.env.example
+**/__pycache__
+.pytest_cache
+.ruff_cache
+.mypy_cache
+.logs
+.local-media
+*.egg-info
+*.log
+tests
+Dockerfile
+.dockerignore

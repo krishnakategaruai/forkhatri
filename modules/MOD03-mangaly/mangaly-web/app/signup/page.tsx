@@ -1,5 +1,6 @@
 'use client';
 
+import EntranceRedirect from '@/components/EntranceRedirect';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -27,7 +28,15 @@ import { authErrorText } from '@/lib/authErrorText';
 
 type Mode = 'phone' | 'email';
 
+/* [ForKhatri TR16, 2026-09-14] Sign-in, sign-up, one-time codes and password
+ * reset belong to the ForKhatri entrance. This route only hands off to it; the
+ * interim screen below is retained (not rendered) rather than deleted. */
 export default function SignUpPage() {
+  return <EntranceRedirect />;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function LegacySignUpPage() {
   const { t } = useTranslation(['auth', 'common']);
   const router = useRouter();
 

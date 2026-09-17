@@ -20,13 +20,19 @@ from __future__ import annotations
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 
-from app.api.routes import auth, communication, connection, discovery, home_circle, profile
+from app.api.routes import (
+    auth,
+    communication,
+    connection,
+    discovery,
+    home_circle,
+    media,
+    profile,
+)
 from app.config.settings import get_settings
 from app.db.engine import (
     assert_non_owning_role,
@@ -64,11 +70,20 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.engine = engine
     app.state.session_factory = create_session_factory(engine)
     set_process_session_factory(app.state.session_factory)
-    logger.info("MangalyService started against %s:%s/%s",
-                settings.db_host, settings.db_port, settings.db_name)
+    logger.info(
+        "MangalyService started against %s:%s/%s",
+        settings.db_host,
+        settings.db_port,
+        settings.db_name,
+    )
     try:
         yield
     finally:
+        # [ForKhatri TR15] The Identity Bridge's shared HTTP client to the
+        # platform Identity & Trust Service.
+        from app.components.identity_bridge import interface as identity
+
+        await identity.aclose_platform_client()
         await engine.dispose()
 
 
@@ -107,14 +122,7 @@ def create_app() -> FastAPI:
     app.include_router(discovery.router)
     app.include_router(connection.router)
     app.include_router(communication.router)
-
-    # [components/profile/storage.py] Local-disk stand-in for Object Storage —
-    # serves what `resolve_url()` returns. No expiry, no scoping: explicitly
-    # NOT TR006's signed-URL requirement, which is a future real-backend
-    # concern; fine for local development only.
-    media_root = Path(__file__).resolve().parents[1] / ".local-media"
-    media_root.mkdir(exist_ok=True)
-    app.mount("/media", StaticFiles(directory=media_root), name="media")
+    app.include_router(media.router)
 
     return app
 

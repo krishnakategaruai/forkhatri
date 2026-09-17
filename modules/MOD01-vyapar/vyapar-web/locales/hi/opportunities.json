@@ -1,4 +1,17 @@
 {
+  "actionLabel": {
+    "apply": "आवेदन करें",
+    "submitProposal": "प्रस्ताव भेजें",
+    "enquireNow": "पूछताछ करें",
+    "contact": "संपर्क करें",
+    "register": "रजिस्टर करें",
+    "applyOnSource": "स्रोत वेबसाइट पर आवेदन करें"
+  },
+  "workMode": {
+    "on_site": "ऑन-साइट",
+    "remote": "रिमोट",
+    "both": "ऑन-साइट या रिमोट"
+  },
   "new": {
     "chooseModeTitle": "एक अवसर साझा करें",
     "modeCreate": "स्वयं लिखें",

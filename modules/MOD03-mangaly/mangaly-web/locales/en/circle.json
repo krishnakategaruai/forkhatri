@@ -5,7 +5,11 @@
     "title": "Invite a family member",
     "identifier": "Their phone number or email",
     "relationship": "Relationship",
-    "relationshipOption": { "parent": "Parent", "sibling": "Sibling", "relative": "Relative" },
+    "relationshipOption": {
+      "parent": "Parent",
+      "sibling": "Sibling",
+      "relative": "Relative"
+    },
     "submit": "Send invitation",
     "sending": "Sending…",
     "success": "Invitation sent."
@@ -16,8 +20,26 @@
     "accept": "Accept",
     "decline": "Decline"
   },
+  "lookingFor": {
+    "chip": "Looking for {{value}}",
+    "unset": "Looking for — not answered yet"
+  },
+  "sent": {
+    "title": "Requests sent for {{name}}",
+    "empty": "No requests have gone out for {{name}} yet.",
+    "byYou": "sent by you",
+    "byFamily": "sent by family",
+    "byCandidate": "sent by {{name}}",
+    "status": {
+      "pending": "Waiting for a reply",
+      "accepted": "Accepted",
+      "declined": "Declined",
+      "withdrawn": "Withdrawn"
+    }
+  },
   "suggestions": {
     "title": "Suggestions from your circle",
+    "titleFamily": "Suggested to {{name}}",
     "from": "Suggested by your {{relationship}}",
     "noActionTaken": "Suggestion — no action has been taken on your behalf.",
     "unknownProfile": "A profile"
@@ -25,18 +47,40 @@
   "members": {
     "title": "Members",
     "empty": "No one has joined this Home Circle yet — invite a family member above.",
-    "remove": "Remove"
+    "emptyFamily": "You're the only one in {{name}}'s Home Circle so far.",
+    "you": "You",
+    "remove": "Remove",
+    "joined": "Joined {{date}}"
   },
   "notes": {
-    "title": "Family notes",
-    "pendingCount": "{{count}} note waiting for your approval",
-    "pendingCount_other": "{{count}} notes waiting for your approval",
-    "approve": "Read & approve",
-    "empty": "No notes yet."
+    "title": "Notes from family",
+    "request": "{{name}} wants you to read a note about this match",
+    "requestExplain": "You see the words only if you choose to read. Not now shares nothing, and no reason is asked.",
+    "read": "Read note",
+    "notNow": "Not now",
+    "from": "From {{name}} · {{date}}",
+    "author": "{{name}} ({{relationship}})",
+    "match": "A match"
   },
   "error": {
     "network": "We couldn't reach Mangaly. Check your connection and try again.",
     "inviteSelf": "You can't invite yourself.",
     "alreadyInvited": "There's already a pending invitation for that phone number or email."
+  },
+  "contactRequests": {
+    "title": "Contact requests",
+    "ask": "{{name}} wants to share your phone number with a match",
+    "someone": "Someone in your circle",
+    "explain": "Only your phone number is shared, and only with this one match. Nothing is shared unless you approve.",
+    "approve": "Approve",
+    "decline": "Decline"
+  },
+  "family": {
+    "title": "Helping {{name}}",
+    "role": "In {{name}}'s Home Circle as {{relationship}}",
+    "about": "You can look for matches and send requests for {{name}}. A request goes out as {{name}}'s, with your name on it so everyone knows who sent it.",
+    "memberCount_one": "{{count}} person helping",
+    "memberCount_other": "{{count}} people helping",
+    "findMatches": "Find matches for {{name}}"
   }
 }

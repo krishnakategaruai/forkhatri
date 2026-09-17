@@ -1,0 +1,59 @@
+{
+  "title": "Privacy",
+  "controlsTitle": "Who sees what",
+  "control": {
+    "discoverable": "Show me in search",
+    "discoverableHelp": "Off hides your listing from Businesses & Professionals results; direct links still work.",
+    "capabilityVisible": "Show my capabilities",
+    "capabilityVisibleHelp": "Anyone can see the skills or services you offer.",
+    "seekingVisible": "Show that I'm looking",
+    "seekingVisibleHelp": "Off by default. When on, others can see you're open to work or customers.",
+    "contactDisclosure": "Contact details",
+    "contactDisclosureHelp": "Choose when your phone or other contact channels are shown to others.",
+    "notificationsEnabled": "Notifications",
+    "notificationsEnabledHelp": "In-app alerts for strong matches and updates on things you're part of.",
+    "commercialComms": "Promotional messages",
+    "commercialCommsHelp": "Off by default. When on, we may tell you about boosts, plans and offers."
+  },
+  "contactOption": {
+    "public": "Always visible",
+    "after_accept": "After I accept an enquiry",
+    "hidden": "Never shown"
+  },
+  "analyticsTitle": "Analytics",
+  "control2": {},
+  "dataRights": {
+    "title": "Your data",
+    "export": "Download my data",
+    "delete": "Delete my account",
+    "confirmDelete": "Yes, delete my account",
+    "deleteWarning": "This anonymizes your profile everywhere on Vyapar. Your own listings, enquiries and reviews are kept but no longer show your name.",
+    "exportReady": "Your data is ready — tap to view",
+    "blocked": "Deletion is on hold until an active paid order finishes.",
+    "done": "Your account has been anonymized."
+  },
+  "requestKind": {
+    "export": "Data export",
+    "delete": "Account deletion",
+    "withdraw": "Consent withdrawn",
+    "correct": "Correction"
+  },
+  "requestState": {
+    "received": "Received",
+    "in_progress": "In progress",
+    "ready": "Ready",
+    "completed": "Completed",
+    "failed": "Failed",
+    "blocked": "On hold"
+  },
+  "preferences": {
+    "title": "Learned preferences",
+    "confirm": "Yes, use this",
+    "decline": "No, not this",
+    "remove": "Remove",
+    "active": "Applied",
+    "key": {
+      "max_distance_km": "Show closer opportunities"
+    }
+  }
+}

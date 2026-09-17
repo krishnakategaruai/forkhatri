@@ -44,6 +44,8 @@ interface Listing {
   categories: string[];
   capabilities: string[];
   unmapped_labels: string[];
+  category_labels: string[];
+  capability_labels: string[];
   primary_phone: string | null;
   contact_verified: boolean;
   discoverable: boolean;
@@ -91,7 +93,7 @@ const REASON_KEY: Record<string, string> = {
 
 export default function ListingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = useParamsPromise(params);
-  const { t } = useTranslation(["listings", "common", "partnerships", "commercial"]);
+  const { t } = useTranslation(["listings", "common", "partnerships", "commercial", "workspace"]);
   const [listing, setListing] = useState<Listing | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -176,7 +178,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       <div className="vy-card">
-        <p><strong>{listing.locality}</strong> · {listing.categories.concat(listing.capabilities).join(", ") || t("listings:detail.noCategoriesYet")}</p>
+        <p><strong>{listing.locality}</strong> · {listing.category_labels.concat(listing.capability_labels).join(", ") || t("listings:detail.noCategoriesYet")}</p>
         {listing.description && <p style={{ marginTop: 8 }}>{listing.description}</p>}
         {listing.verification_state !== "verified" && (
           <p className="vy-muted" style={{ marginTop: 8 }}>
@@ -365,6 +367,10 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                 {t("commercial:action.boost")}
               </a>
             )}
+            {/* [FR33/FR34] plan, team and campaigns for this business */}
+            <a className="vy-btn vy-btn-ghost" href={`/workspace/${id}`} style={{ textDecoration: "none" }}>
+              {t("workspace:open")}
+            </a>
             {listing.state === "draft" && (
               <button className="vy-btn vy-btn-primary" disabled={busy} onClick={() => act(() => api.post(`/v1/listings/${id}/submit`))}>
                 {t("listings:detail.submit")}

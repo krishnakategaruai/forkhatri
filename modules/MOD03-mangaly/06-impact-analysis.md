@@ -25,6 +25,7 @@ that Step 8 should pick up directly rather than re-discover.
 |---|---|---|
 | 2026-09-12 | Initial version. Looped over all 102 Sealed FRs from `02-functional-requirements.md` one at a time, per this agent's own loop discipline: re-read each FR, `/ARCHITECTURE.md`'s resolved container/edge/shared-concern tables, `modules/MOD03-mangaly/architecture.md`'s 13-component C4-L3 breakdown, `v1-decisions.md`'s resolved values, `/MODULE-ARCHITECTURE-STANDARD.md`'s generic patterns (schema-per-component, authorization chokepoint, in-process event bus), and `CODING-GUIDE.md`'s stated defect-prevention controls, before writing each item's dependency table, risk table, and worth check. Live web research performed for the two dependencies this codebase has not exercised before and that a named FR's own SLA/behavior depends on: (a) India SMS/OTP delivery reliability (route selection, DLT template mismatch, ~5–8% single-channel non-delivery rate even when compliant — feeds IA095's risk assessment); (b) Postgres RLS performance/pitfalls at scale (5–15% overhead on simple queries, worse on joins; the `SET` vs `SET LOCAL` PgBouncer pitfall; policies silently no-op if the connecting role owns the table — feeds every item touching the Authorization Engine's RLS layer, most directly IA017/IA018); (c) mobile screenshot-prevention limits (Android `FLAG_SECURE` is a real OS-level block; iOS has no equivalent, only after-the-fact detection — feeds IA056, directly grounding FR056's own "risk-reduction, not guarantee" disclosure requirement rather than treating it as a hypothetical caveat). No FR was found requiring a dependency `/ARCHITECTURE.md` doesn't already resolve. Three genuine architecture-level gaps were surfaced and are flagged (not treated as blockers, since each has a concrete next owner) rather than smoothed over: (1) the Notification Bridge is documented as a "thin, no-schema" bridge in `architecture.md` §2.1, but FR098 requires a *persistent* in-app inbox, which needs somewhere to live — flagged for Step 7 to resolve which component/schema owns inbox persistence; (2) FR102's offline/queued-write resilience requires every mutation endpoint the client can queue to be idempotent, a cross-cutting API contract requirement no single component's traceability currently names — flagged for Step 7; (3) FR033's personality-assessment instrument is a genuinely unselected, vendor/IP-shaped open item structurally identical to the BR08 verification-vendor and BR07 horoscope-mechanism categories `v1-decisions.md` already tracks as external-gated, but it was not captured in that file's "What stays open" table — flagged here rather than silently treated as resolved. | Impact Analysis (Step 6) — krishna kategaru (autonomous), 2026-09-12. |
 | 2026-09-12 | **Follow-up: every finding this file raised has been addressed, ahead of Step 7, per explicit instruction to resolve everything correctly before implementation begins.** IA033 → `v1-decisions.md`'s "What stays open" table now names the personality-assessment instrument. IA065/IA068/IA074 → `v1-decisions.md` DEC-V1-009 names a concrete on-call paging mechanism and the actual, verified legal CSAM reporting channel (POCSO Rules 2020 Rule 11: SJPU/local police/cybercrime.gov.in, including the Rule 11(2) source-material handover obligation) — both now recorded as real edges in `architecture.md` §1, not policy commitments with no built mechanism. IA098 → `architecture.md` §2.1/§2.2/§3 now makes the Notification Bridge schema-owning for its in-app inbox record specifically, resolving the "thin, no-schema" vs. "requires persistence" contradiction directly (this also surfaced and fixed a pre-existing, unrelated inconsistency: Operations was mislabeled "thin bridge" in one place while already correctly called "Business logic" elsewhere in the same file — corrected, and the component count corrected from a stale 13 to the accurate 14). IA102 → `/MODULE-ARCHITECTURE-STANDARD.md` §4b names idempotent mutation endpoints as a required generic pattern for any offline-capable module, applied concretely in `architecture.md` §3 and `CODING-GUIDE.md` §7. IA017's RLS pooling-safety findings (non-owning DB role; `SET LOCAL` under transaction pooling) are now binding requirements in `/MODULE-ARCHITECTURE-STANDARD.md` §4 and `CODING-GUIDE.md` §7, not left as a risk-table note. IA092's interim-account-migration risk is now recorded in `v1-decisions.md`'s new "Known technical debt" section. No finding in this file was left unaddressed. | Impact Analysis follow-up, addressing every raised finding — krishna kategaru (autonomous), 2026-09-12. |
+| 2026-09-14 | Post-seal correction: ForKhatri platform identity. Added dated correction notes under IA090, IA092, IA093, IA094, IA095 and IA101. IA092's named migration debt is now being retired by the platform Identity & Trust Service (PA-DEC-08, TR23): active accounts imported with ids and Argon2id hashes, pending accounts not imported, interim credential routes switched off by a setting. Retirement work is in progress and is not claimed complete here. Not re-sealed; awaits the owner's review. | Product-owner instruction, 2026-09-14. See `docs/ParentApp/00c-identity-and-entrance-decisions.md` and `docs/ParentApp/07-tech-reqs.md`. |
 
 ## Coverage check
 
@@ -2888,6 +2889,7 @@ Yes, proceed as specified.
 
 ---
 ## IA090 — Splash / Launch and Session Bootstrap
+> **2026-09-14 correction:** the dependency is now Identity Bridge → `POST /internal/v1/sessions/resolve` (service key, ≤30 s cache, fail closed `503`), not a JWT check; fallback is the ForKhatri entrance, not Mangaly Login. See docs/ParentApp/07-tech-reqs.md TR14–TR16.
 **Traces from:** FR090
 **Status:** Ready for Review
 **Confidence:** High
@@ -2947,6 +2949,7 @@ Yes, proceed as specified. Lowest-risk item in the prerequisite-screen set.
 ---
 
 ## IA092 — Account Sign-Up (Candidate or Family-Member Entry Point)
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module. See docs/ParentApp/07-tech-reqs.md TR12–TR16. Module screens for this flow redirect to the ForKhatri entrance. The "interim account-system duplication" risk above is the migration now planned in PA-DEC-08/TR23: active `mangaly_identity.account` rows move with ids, identifiers and Argon2id hashes; pending rows are not imported; the stale pending row is retired if that identifier later signs up through ForKhatri.
 **Traces from:** FR092
 **Status:** Ready for Review
 **Confidence:** Medium — the FR's own Intent already names a genuine architectural interim: Mangaly is building its own minimal account-entry surface because no Common Platform Identity module exists yet, ahead of Mangaly in build order.
@@ -2978,6 +2981,7 @@ Yes, proceed — there is no viable alternative given Mangaly's build-order posi
 ---
 
 ## IA093 — Login (Returning User)
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module. See docs/ParentApp/07-tech-reqs.md TR12–TR16. Module screens for this flow redirect to the ForKhatri entrance. Anti-enumeration and rate limiting move to the platform (TR13, TR19, TR20).
 **Traces from:** FR093
 **Status:** Ready for Review
 **Confidence:** High
@@ -3008,6 +3012,7 @@ Yes, proceed. The anti-enumeration control is already specified precisely enough
 ---
 
 ## IA094 — Forgot / Reset Password
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module. See docs/ParentApp/07-tech-reqs.md TR12–TR16. Module screens for this flow redirect to the ForKhatri entrance. The platform contract currently offers code sign-in instead of a reset endpoint.
 **Traces from:** FR094
 **Status:** Ready for Review
 **Confidence:** High
@@ -3039,6 +3044,7 @@ Yes, proceed as specified.
 ---
 
 ## IA095 — Phone/Email OTP Verification
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module. See docs/ParentApp/07-tech-reqs.md TR12–TR16, TR19. Module screens for this flow redirect to the ForKhatri entrance. The SMS/DLT delivery-reliability finding above still applies, now to the platform's delivery provider (placeholders until chosen).
 **Traces from:** FR095
 **Status:** Ready for Review
 **Confidence:** Medium — the underlying SMS/OTP delivery channel is a real-world reliability dependency, grounded by this pass's own research rather than assumed reliable.
@@ -3224,6 +3230,7 @@ Yes, proceed as specified — but given the legal-SLA stakes now established by 
 ---
 
 ## IA101 — Logout and Delete Account
+> **2026-09-14 correction:** logout is ForKhatri sign-out (TR13, TR16), propagating to Mangaly within 30 seconds (TR15). Account deletion begins at the ForKhatri identity layer; the cross-module deletion contract is not yet specified.
 **Traces from:** FR101
 **Status:** Ready for Review
 **Confidence:** Medium — carries forward the FR's own Medium confidence; the deletion-vs-retention boundary is gated on the same DPDP sign-off as FR050/FR053/FR054.

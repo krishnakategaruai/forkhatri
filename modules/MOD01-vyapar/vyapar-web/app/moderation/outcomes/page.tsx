@@ -87,7 +87,7 @@ export default function OutcomesPage() {
     <main className="vy-shell">
       <h1>{t("trustSafety:outcomes.title")}</h1>
       <p className="vy-muted">{t("trustSafety:outcomes.process")}</p>
-      <p className="vy-muted">{t("trustSafety:report.grievance")}</p>
+      <p id="grievance" className="vy-muted">{t("trustSafety:report.grievance")}</p>
       {items === null && <p className="vy-muted">{t("common:state.loading")}</p>}
       {items?.length === 0 && <p className="vy-muted">{t("trustSafety:outcomes.empty")}</p>}
       <div className="vy-stack">

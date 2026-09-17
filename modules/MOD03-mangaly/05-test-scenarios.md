@@ -15,6 +15,7 @@ items: "229 | approved: 229 | blockers: 0"
 | 2026-09-12 | Full pass. Read `02-functional-requirements.md` (Sealed, 102 FRs), `03-ux.md` (Sealed, 30 UX items), and `04-ui.md` (Sealed, 30 UI items, incl. its two resolved Fidelity flags — FR094 anti-enumeration, FR040 document non-exposure) in full. Looped FR001→FR102 in FR-file order, writing given/when/then scenarios covering each FR's explicit success outcome, explicit failure/edge outcome, and named UX/UI states, tagging every scenario Unit/Integration/E2E per the test-pyramid discipline. For FRs carrying Medium/Low Confidence (open ranking weights, retention duration, severity taxonomy, anti-abuse mechanics, etc.), wrote scenarios asserting the fixed business rule while explicitly noting in Assumptions/Decisions that the open parameter itself is not asserted — no FR was skipped for carrying an open item. Produced 229 scenarios (TS001–TS229). Ran the Definition of Done checklist (Coverage check, distribution ratio, no open blockers) and sealed. | Principal QA — krishna kategaru (autonomous), 2026-09-12. |
 | 2026-09-12 | Follow-up: backfilled `02-functional-requirements.md`'s per-FR `Traced to:` field with each FR's owning TS range from this file's Coverage check table (applied programmatically against the mapping above, not by hand, given the target file's size), completing the FR↔TS traceability this file's original pass had flagged as deferred for lack of an Edit-capable tool at the time. No content in either Sealed file changed beyond that cross-reference. | Traceability backfill — krishna kategaru (autonomous), 2026-09-12. |
 | 2026-09-12 | QA & Product Manager cross-check: read the large majority of all 229 scenarios in full against testability/layer-correctness (QA) and business-invariant coverage/module-boundary correctness (PM), including verifying the three carried-forward open items are genuinely open in their source documents rather than resolvable gaps. No corrections required — this pass found the file already meets the bar. Added the Cross-check section above recording this review. | QA & Product Manager reviewer — krishna kategaru (autonomous), 2026-09-12. |
+| 2026-09-14 | Post-seal correction: ForKhatri platform identity. Added dated correction notes under TS200, TS203–TS213 and TS225: sign-up, login, reset and OTP behaviour is tested against the ForKhatri Identity & Trust Service (`docs/ParentApp/05-test-scenarios.md` TS16–TS36); for Mangaly the check becomes that these routes redirect to the entrance and that Mangaly accepts the platform session. Scenario bodies and approvals unchanged. Not re-sealed; awaits the owner's review. | Product-owner instruction, 2026-09-14. See `docs/ParentApp/07-tech-reqs.md` TR12–TR16. |
 
 ## Coverage check
 | Parent FR | Scenarios produced | Covered |
@@ -1938,6 +1939,7 @@ No open blockers. Three FR-level open design items are carried forward honestly 
 ---
 
 ## TS200 — Session-check failure routes to Login with a clear, non-alarming reason, never an indefinite blank screen
+> **2026-09-14 correction:** expected route is the ForKhatri entrance with `return_to`, not Mangaly Login; identity service unreachable → Mangaly API `503`, never a default member. See docs/ParentApp/05-test-scenarios.md TS32–TS33 and 07-tech-reqs.md TR15–TR16.
 **Traces from:** FR090 · **Layer:** Unit · **Status:** Approved · **Confidence:** High
 **Scenario:** Given the session check cannot complete within the bounded wait (network failure or expired/invalid token), when the timeout is reached, then the app routes to Login with a plain-language reason ("Please sign in again") rather than remaining on an indefinite blank/frozen screen.
 **Covers:** Failure/edge path · UX01/UI01 — Splash, Error/failure state
@@ -1965,6 +1967,7 @@ No open blockers. Three FR-level open design items are carried forward honestly 
 ---
 
 ## TS203 — New user creates an account, verifies identifier, and reaches Onboarding
+> **2026-09-14 correction:** sign-up is delivered by the ForKhatri platform identity, not by this module; covered by docs/ParentApp/05-test-scenarios.md TS16–TS17. For Mangaly, assert that first entry after ForKhatri sign-in creates the member-link row and shows Onboarding (TS36).
 **Traces from:** FR092 (BR01) · **Layer:** E2E · **Status:** Approved · **Confidence:** High
 **Scenario:** Given a brand-new user enters a phone number, name, and password on Sign-Up, when they complete OTP verification (FR095), then their account is created with a verified identifier and they land on First-Run Onboarding.
 **Covers:** Success path · UX03/UI03 — Sign-Up; UX04/UI04 — OTP
@@ -1974,6 +1977,7 @@ No open blockers. Three FR-level open design items are carried forward honestly 
 ---
 
 ## TS204 — Duplicate-identifier sign-up rejected with a specific reason and a path to Login
+> **2026-09-14 correction:** superseded by the platform's single code flow, which never reveals account existence (docs/ParentApp/05-test-scenarios.md TS21). Mangaly sign-up routes redirect to the entrance (TS34).
 **Traces from:** FR092 (BR01) · **Layer:** Unit · **Status:** Approved · **Confidence:** High
 **Scenario:** Given a phone number is already registered, when a new Sign-Up is submitted with that number, then it is rejected with "This phone is already registered. Log in instead?" and a tappable link to Login.
 **Covers:** Failure/edge path · UX03/UI03 — Sign-Up, Error — duplicate identifier
@@ -1983,6 +1987,7 @@ No open blockers. Three FR-level open design items are carried forward honestly 
 ---
 
 ## TS205 — Interrupted sign-up is resumable without re-entering already-provided data
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module (docs/ParentApp/07-tech-reqs.md TR13, TR21). Not a Mangaly test.
 **Traces from:** FR092 (BR01) · **Layer:** Integration · **Status:** Approved · **Confidence:** High
 **Scenario:** Given a user closes the app mid-OTP during Sign-Up, when they reopen the app, then the in-flight sign-up resumes from the OTP step without requiring them to re-enter name/identifier/password.
 **Covers:** Failure/edge path (graceful recovery) · UX03/UI03; UX04/UI04
@@ -1992,6 +1997,7 @@ No open blockers. Three FR-level open design items are carried forward honestly 
 ---
 
 ## TS206 — Returning user authenticates and reaches the Main Shell with session state intact
+> **2026-09-14 correction:** authentication happens at the ForKhatri entrance (docs/ParentApp/05-test-scenarios.md TS16, TS19); for Mangaly, assert that a valid `fk_session` reaches the Main Shell with no Mangaly login (TS04, TS06).
 **Traces from:** FR093 (BR01) · **Layer:** E2E · **Status:** Approved · **Confidence:** High
 **Scenario:** Given a returning user has a valid account, when they submit their correct identifier and credential on Login, then they are authenticated and routed to the Main Navigation Shell with their existing profile/session state intact.
 **Covers:** Success path · UX03/UI03 — Login
@@ -2001,6 +2007,7 @@ No open blockers. Three FR-level open design items are carried forward honestly 
 ---
 
 ## TS207 — Failed login never distinguishes "identifier not found" from "wrong credential"
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module; covered by docs/ParentApp/05-test-scenarios.md TS20.
 **Traces from:** FR093 (BR01) · **Layer:** Unit · **Status:** Approved · **Confidence:** High
 **Scenario:** Given a login attempt fails because the identifier doesn't exist, and a separate attempt fails because the password is wrong for a real identifier, when each error is shown, then both display the identical generic message "That phone/email or password isn't right."
 **Covers:** Failure/edge path (anti-enumeration) · UX03/UI03 — Login, Error — invalid credential
@@ -2010,6 +2017,7 @@ No open blockers. Three FR-level open design items are carried forward honestly 
 ---
 
 ## TS208 — Repeated failed login attempts are rate-limited
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module; covered by docs/ParentApp/07-tech-reqs.md TR20 and 05-test-scenarios.md TS24.
 **Traces from:** FR093 (BR01) · **Layer:** Unit · **Status:** Approved · **Confidence:** High
 **Scenario:** Given a login identifier has failed several attempts in quick succession, when another attempt is made, then the Login button is disabled for a cooldown window with the message "Too many attempts — please try again in [n] minutes."
 **Covers:** Failure/edge path · UX03/UI03 — Login, Error — rate-limited
@@ -2019,6 +2027,7 @@ No open blockers. Three FR-level open design items are carried forward honestly 
 ---
 
 ## TS209 — Legitimate account owner regains access via the reset flow without support intervention
+> **2026-09-14 correction:** account recovery belongs to the ForKhatri platform identity; the current contract recovers access by code sign-in (docs/ParentApp/05-test-scenarios.md TS16) and has no reset endpoint yet. Mangaly reset routes redirect to the entrance (TS34).
 **Traces from:** FR094 (BR01) · **Layer:** E2E · **Status:** Approved · **Confidence:** High
 **Scenario:** Given a user has forgotten their password, when they request a reset via their verified identifier, complete OTP verification, and set a new password, then they can log in with the new credential with no support-team involvement.
 **Covers:** Success path · UX03/UI03 — Request-reset, Set-new-password
@@ -2028,6 +2037,7 @@ No open blockers. Three FR-level open design items are carried forward honestly 
 ---
 
 ## TS210 — Expired or already-used reset token is rejected with a "request a new one" path
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module; no Mangaly reset token is issued for platform members. Expired/exhausted codes are covered by docs/ParentApp/05-test-scenarios.md TS25–TS26.
 **Traces from:** FR094 (BR01) · **Layer:** Unit · **Status:** Approved · **Confidence:** High
 **Scenario:** Given a password-reset OTP/link has expired or was already used, when the user attempts Set-new-password with it, then the screen shows "This reset link has expired" with a "Send a new one" button rather than a generic error.
 **Covers:** Failure/edge path · UX03/UI03 — Set-new-password, Error — expired/used token
@@ -2037,6 +2047,7 @@ No open blockers. Three FR-level open design items are carried forward honestly 
 ---
 
 ## TS211 — Reset request for a non-existent identifier produces the identical message as for an existing one (anti-enumeration; resolves the FR094 Fidelity flag)
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module; anti-enumeration is covered by docs/ParentApp/05-test-scenarios.md TS20–TS21.
 **Traces from:** FR094 (BR01) · **Layer:** Unit · **Status:** Approved · **Confidence:** High
 **Scenario:** Given one reset request targets a registered identifier and another targets an identifier that has never been registered, when each is submitted, then both produce the exact same response: "If an account exists for that phone or email, we've sent a code to it" — with no differing error state ever shown pre-OTP for either case.
 **Covers:** Failure/edge path (anti-enumeration) · UX03/UI03 — Request-reset, Success state
@@ -2046,6 +2057,7 @@ No open blockers. Three FR-level open design items are carried forward honestly 
 ---
 
 ## TS212 — Correct code within validity confirms identifier control and produces a BR08 authenticity evidence record
+> **2026-09-14 correction:** code verification is delivered by the ForKhatri platform identity (docs/ParentApp/05-test-scenarios.md TS16). For Mangaly, the BR08 account-authenticity layer reads `identity_level` from the resolved session; assert that mapping instead.
 **Traces from:** FR095 (BR08) · **Layer:** Integration · **Status:** Approved · **Confidence:** High
 **Scenario:** Given a user enters the correct 6-digit OTP within its validity window, when verification completes, then the identifier is confirmed and a BR08 account-authenticity evidence event is recorded.
 **Covers:** Success path · UX04/UI04 — OTP entry, Success state
@@ -2055,6 +2067,7 @@ No open blockers. Three FR-level open design items are carried forward honestly 
 ---
 
 ## TS213 — Expired/incorrect code is rejected with a clear reason; resend is rate-limited
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module; covered by docs/ParentApp/05-test-scenarios.md TS23–TS26.
 **Traces from:** FR095 (BR08) · **Layer:** Unit · **Status:** Approved · **Confidence:** High
 **Scenario:** Given a user submits an incorrect or expired 6-digit code, when the submission is evaluated, then it is rejected with a specific reason ("That code isn't right" / "This code expired"), and repeated "Resend code" taps within a short window are rate-limited.
 **Covers:** Failure/edge path · UX04/UI04 — OTP entry, Error states
@@ -2163,6 +2176,7 @@ No open blockers. Three FR-level open design items are carried forward honestly 
 ---
 
 ## TS225 — Logout ends the session without affecting account or data
+> **2026-09-14 correction:** logout is ForKhatri sign-out; expected result also includes that Mangaly stops accepting the old cookie within 30 seconds and the member lands on the entrance (docs/ParentApp/05-test-scenarios.md TS32).
 **Traces from:** FR101 (BR11, BR15) · **Layer:** Unit · **Status:** Approved · **Confidence:** Medium (inherits FR101's own Medium confidence on the retention boundary; this scenario tests logout, not deletion)
 **Scenario:** Given a user confirms "Log out," when the session ends, then their account and all data are completely unaffected, and logging back in restores full access immediately.
 **Covers:** Success path · UX08/UI08 — Logout confirmation

@@ -40,6 +40,7 @@
 # Traces to: FR30, FR31, FR32, FR54, TR030, TR031, TR032, TR054, SP030, SP031, SP032, SP054
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Literal
 
@@ -106,19 +107,30 @@ async def _eligible_target(conn: asyncpg.Connection, kind: str, target_id: str, 
     return target, None
 
 
-async def _boost_products(conn: asyncpg.Connection) -> list[dict]:
+async def products_for_kind(conn: asyncpg.Connection, kind: str) -> list[dict]:
+    """[TR031/TR049] The latest ACTIVE version of each product of a kind.
+    `products` is insert-only, so "latest version" is how a new price reaches
+    buyers while every historical order still resolves to the exact version it
+    was bought at. Shared by boosts (FR30), workspace plans (FR33) and
+    campaign packages (FR35) — one price/tax computation, not three."""
     rows = await conn.fetch(
-        "SELECT DISTINCT ON (id) * FROM vyapar_commercial.products WHERE kind = 'boost' AND active ORDER BY id, version DESC"
+        "SELECT DISTINCT ON (id) * FROM vyapar_commercial.products WHERE kind = $1 AND active ORDER BY id, version DESC", kind
     )
     products = [
         {
             "id": r["id"], "version": r["version"], "duration_days": r["duration_days"], "price_paise": r["price_paise"],
             "tax_paise": _tax(r["price_paise"], r["tax_rate_bp"]),
             "total_paise": r["price_paise"] + _tax(r["price_paise"], r["tax_rate_bp"]),
+            "billing": r["billing"],
+            "capabilities": list(r["capabilities"]),
         }
         for r in rows
     ]
     return sorted(products, key=lambda p: p["duration_days"] or 0)
+
+
+async def _boost_products(conn: asyncpg.Connection) -> list[dict]:
+    return await products_for_kind(conn, "boost")
 
 
 async def _available_credit(conn: asyncpg.Connection, member_id: str, exclude_id=None) -> int:
@@ -128,10 +140,17 @@ async def _available_credit(conn: asyncpg.Connection, member_id: str, exclude_id
     )
 
 
-async def _history(conn: asyncpg.Connection, promotion_id, from_state: str | None, to_state: str, reason: str) -> None:
+async def _history(
+    conn: asyncpg.Connection, order_id, from_state: str | None, to_state: str, reason: str, order_kind: str = "promotion"
+) -> None:
+    """[FR31] One state-history writer for every commercial order kind. The
+    `order_kind` is not cosmetic: `commercial_order_history`'s RLS policy
+    resolves the owner through THAT kind's table, so a mislabelled row is
+    rejected outright (found live — an entitlement row written as 'promotion'
+    failed the policy)."""
     await conn.execute(
-        "INSERT INTO vyapar_commercial.commercial_order_history (order_kind, order_id, from_state, to_state, reason) VALUES ('promotion', $1, $2, $3, $4)",
-        promotion_id, from_state, to_state, reason,
+        "INSERT INTO vyapar_commercial.commercial_order_history (order_kind, order_id, from_state, to_state, reason) VALUES ($5, $1, $2, $3, $4)",
+        order_id, from_state, to_state, reason, order_kind,
     )
 
 
@@ -489,4 +508,123 @@ async def run_promotion_lifecycle_pass(pool: asyncpg.Pool) -> dict:
                         conn, member_id=r["owner_id"], template="promotionPaused", link=f"/promotions/{r['promotion_id']}",
                         idempotency_key=f"promotion_paused:{r['promotion_id']}", params={"amount": f"₹{r['credit_paise'] / 100:.2f}"},
                     )
+    return counts
+
+
+# ---------------------------------------------------------------------------
+# [TR035/SP035] The ONE boost-application function. Campaigns call this once
+# per item rather than re-implementing boost mechanics — which is exactly the
+# divergence IA035/SP035 name: a campaign path that quietly skips FR30's
+# verified-only rule or its organic-rank guarantee. Everything that creates a
+# promotion goes through here, so those guarantees hold uniformly.
+# Traces to: FR30, FR35, TR030, TR035, SP035
+# ---------------------------------------------------------------------------
+async def create_item_promotion(
+    conn: asyncpg.Connection,
+    *,
+    owner_id: str,
+    target_kind: str,
+    target_id: str,
+    product_id: str,
+    product_version: int,
+    price_paise: int,
+    tax_paise: int,
+    audience: dict | None = None,
+    campaign_id=None,
+    state: str = "draft",
+) -> asyncpg.Record | None:
+    """Returns the new promotion row, or None when the item fails FR30
+    eligibility (the caller reports which items were rejected and why)."""
+    import json
+
+    target, reason = await _eligible_target(conn, target_kind, str(target_id), owner_id)
+    if target is None or reason:
+        return None
+    row = await conn.fetchrow(
+        """INSERT INTO vyapar_commercial.promotions
+             (owner_id, target_kind, target_id, product_id, product_version, price_paise, tax_paise, audience, state, campaign_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10) RETURNING *""",
+        owner_id, target_kind, target_id, product_id, product_version, price_paise, tax_paise,
+        json.dumps(audience or {}), state, campaign_id,
+    )
+    await _history(conn, row["id"], None, state, "created" if campaign_id is None else "campaign_item")
+    return row
+
+
+async def run_commercial_lifecycle_pass(pool: asyncpg.Pool) -> dict:
+    """[FR30/FR31/FR33/FR35/FR54] One scheduled pass over every commercial
+    lifecycle: boosts (payment window, completion, pause + credit),
+    entitlements (3-day reminder, renewal, 7-day grace, pause) and campaigns
+    (completion). The renewal reminder GATES the renewal: a renewal charge is
+    only ever raised for an entitlement whose reminder was actually delivered,
+    and the delivery is recorded before the charge exists (TR054)."""
+    counts = await run_promotion_lifecycle_pass(pool)
+    counts.update({"reminders_sent": 0, "renewal_charges": 0, "entitlements_paused": 0, "entitlements_completed": 0, "campaigns_completed": 0})
+    settings = get_settings()
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            await conn.execute("SELECT set_config('vyapar.service_role', 'dispatcher', true)")
+            await conn.execute("SELECT set_config('vyapar.authz_context', $1, true)", settings.dispatcher_operator_member_id)
+
+            for r in await conn.fetch("SELECT * FROM vyapar_commercial.run_entitlement_lifecycle()"):
+                link = f"/workspace/{r['listing_id']}"
+                renews = r["renews_at"].date().isoformat() if r["renews_at"] else ""
+                if r["action"] == "reminder_due":
+                    sent = await notify_member(
+                        conn, member_id=r["owner_id"], template="entitlementRenewalReminder", link=link,
+                        idempotency_key=f"renewal_reminder:{r['entitlement_id']}:{renews}", params={"date": renews},
+                    )
+                    if sent:
+                        # only now may the renewal proceed (TR054's own guard)
+                        await conn.execute("SELECT vyapar_commercial.mark_reminder_acked($1)", r["entitlement_id"])
+                        counts["reminders_sent"] += 1
+                elif r["action"] == "charge_due":
+                    ent = await conn.fetchrow(
+                        "SELECT price_paise, tax_paise, product_id, product_version, grace_until FROM vyapar_commercial.entitlements WHERE id = $1",
+                        r["entitlement_id"],
+                    )
+                    # [FR51] Vyapar stores no payment credentials, so a renewal
+                    # is completed by the member on the gateway's hosted page
+                    # within the 7-day grace window — a renewal can never be
+                    # charged silently, which is also FR54's intent.
+                    try:
+                        order = await create_payment_order(
+                            conn, kind="entitlement", ref_id=r["entitlement_id"], member_id=r["owner_id"],
+                            amount_paise=ent["price_paise"], tax_paise=ent["tax_paise"],
+                            description=f"Vyapar Business Workspace renewal {ent['product_id']} v{ent['product_version']}",
+                            return_path=link, idempotency_key=f"entitlement_renewal:{r['entitlement_id']}:{renews}",
+                        )
+                        checkout = order["checkout_url"]
+                    except GatewayUnavailable:
+                        checkout = None
+                    await notify_member(
+                        conn, member_id=r["owner_id"], template="entitlementRenewalDue", link=link,
+                        idempotency_key=f"renewal_due:{r['entitlement_id']}:{renews}",
+                        params={"date": (ent["grace_until"].date().isoformat() if ent["grace_until"] else "")},
+                    )
+                    counts["renewal_charges"] += 1
+                    if checkout is None:
+                        logging.getLogger(__name__).warning("renewal checkout unavailable for entitlement %s", r["entitlement_id"])
+                elif r["action"].startswith("paused"):
+                    reason = "renewalReminderUndelivered" if r["action"] == "paused_no_reminder" else "graceExpired"
+                    await notify_member(
+                        conn, member_id=r["owner_id"], template="entitlementPaused", link=link,
+                        idempotency_key=f"entitlement_paused:{r['entitlement_id']}:{reason}",
+                        key_params={"reason": f"workspace.pausedReason.{reason}"},
+                    )
+                    counts["entitlements_paused"] += 1
+                elif r["action"] == "completed_cancelled":
+                    await notify_member(
+                        conn, member_id=r["owner_id"], template="entitlementEnded", link=link,
+                        idempotency_key=f"entitlement_ended:{r['entitlement_id']}", params={"date": renews},
+                    )
+                    counts["entitlements_completed"] += 1
+
+            for c in await conn.fetch("SELECT * FROM vyapar_commercial.run_campaign_lifecycle()"):
+                name = await conn.fetchval("SELECT name FROM vyapar_commercial.campaigns WHERE id = $1", c["campaign_id"])
+                await notify_member(
+                    conn, member_id=c["owner_id"], template="campaignCompleted", link=f"/campaigns/{c['campaign_id']}",
+                    idempotency_key=f"campaign_completed:{c['campaign_id']}", params={"name": name or ""},
+                )
+                counts["campaigns_completed"] += 1
     return counts

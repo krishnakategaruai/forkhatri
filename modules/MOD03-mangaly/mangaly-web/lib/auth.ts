@@ -15,6 +15,8 @@
  */
 
 import { API_BASE } from './api';
+import { reportOutage } from './outage';
+import { redirectToEntrance, signOutOfForKhatri } from './platform';
 import { getI18n } from './i18n/config';
 
 function currentLanguageHeader(): Record<string, string> {
@@ -81,7 +83,14 @@ export function signUp(identifier: string) {
   });
 }
 
-export function logOut() {
+/** [ForKhatri TR16, 2026-09-14] Log out = sign out of ForKhatri, then the
+ *  entrance. Mangaly has no module-only session left to end. */
+export async function logOut(): Promise<void> {
+  await signOutOfForKhatri();
+}
+
+/** Retained interim logout (`mangaly_session`). No rendered screen calls it. */
+export function logOutInterim() {
   return post<null>('/auth/logout', {});
 }
 
@@ -123,17 +132,40 @@ export function confirmPasswordReset(identifier: string, code: string, newCreden
   });
 }
 
-/** [FR090/TR090] Resolve the current session, or null when not signed in. */
+/** Mangaly or the ForKhatri identity service cannot answer right now. */
+export class SessionUnavailableError extends Error {}
+
+/** [FR090/TR090 → ForKhatri TR15/TR16] The signed-in ForKhatri member as
+ *  MangalyService sees them. `null` means signed out (401) and nothing else.
+ *  Unreachable/503/403 throw `SessionUnavailableError`: reporting those as
+ *  "signed out" would send a signed-in member to the entrance, which would
+ *  send them straight back — a redirect loop. */
 export async function getSession(): Promise<Session | null> {
+  let res: Response;
   try {
-    const res = await fetch(`${API_BASE}/auth/me`, {
+    res = await fetch(`${API_BASE}/auth/me`, {
       credentials: 'include',
       cache: 'no-store',
       headers: currentLanguageHeader(),
     });
-    if (!res.ok) return null;
-    return (await res.json()) as Session;
   } catch {
+    throw new SessionUnavailableError('network');
+  }
+  if (res.status === 401) return null;
+  if (!res.ok) throw new SessionUnavailableError(`HTTP ${res.status}`);
+  return (await res.json()) as Session;
+}
+
+/** For signed-in screens. Returns the session; or starts the hand-off to the
+ *  ForKhatri entrance and returns null (signed out); or reports an outage —
+ *  the shared retry state replaces the screen — and returns null. */
+export async function requireSession(): Promise<Session | null> {
+  try {
+    const session = await getSession();
+    if (!session) redirectToEntrance();
+    return session;
+  } catch {
+    reportOutage();
     return null;
   }
 }

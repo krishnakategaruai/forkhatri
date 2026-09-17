@@ -57,8 +57,9 @@ async def list_conversations(
 
 class MessageResponse(BaseModel):
     id: str
-    sender_account_id: str
+    sender_account_id: str | None
     content: str
+    kind: str
     sent_at: str
 
 
@@ -70,11 +71,32 @@ async def list_messages(
     rows = await communication.list_messages(session, connection_id=connection_id)
     return [
         MessageResponse(
-            id=str(m.id), sender_account_id=str(m.sender_account_id), content=m.content,
+            id=str(m.id),
+            sender_account_id=str(m.sender_account_id) if m.sender_account_id else None,
+            content=m.content,
+            kind=m.kind,
             sent_at=m.sent_at.isoformat(),
         )
         for m in rows
     ]
+
+
+@router.post("/{connection_id}/close", status_code=status.HTTP_204_NO_CONTENT)
+async def close_conversation(
+    connection_id: UUID, session: DbSession, account_id: AuthenticatedAccount, lang: Locale
+) -> None:
+    """[FR050/DEC-V1-021] End the session: everything the two wrote is deleted
+    for both of them. Sent when either person leaves the thread, and by the
+    explicit "End chat" button."""
+    try:
+        await communication.close_conversation(
+            session, connection_id=connection_id, account_id=account_id
+        )
+    except communication.ConversationNotAvailable as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=translate("messages.error.notAvailable", lang),
+        ) from exc
 
 
 class SendMessageRequest(BaseModel):
@@ -113,7 +135,8 @@ async def send_message(
     sent = next(m for m in rows if m.id == message_id)
     return MessageResponse(
         id=str(sent.id),
-        sender_account_id=str(sent.sender_account_id),
+        sender_account_id=str(sent.sender_account_id) if sent.sender_account_id else None,
         content=sent.content,
+        kind=sent.kind,
         sent_at=sent.sent_at.isoformat(),
     )

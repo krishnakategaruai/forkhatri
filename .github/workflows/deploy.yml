@@ -1,0 +1,81 @@
+# ForKhatri push-to-deploy (optional). Ships the pushed commit to the Oracle VM,
+# which builds the images, runs migrations and restarts with `docker compose up -d`.
+# Fails when any service's health check fails (remote-release.sh restores the
+# previous release in that case). Setup: deploy/README.md "Push-to-deploy".
+#
+# Required repository secrets: SERVER_IP, SERVER_USER, SSH_PRIVATE_KEY.
+# Optional: SSH_KNOWN_HOSTS (output of `ssh-keyscan -t ed25519 <SERVER_IP>`), strongly recommended.
+# Application secrets never live in GitHub: they stay in /opt/forkhatri/shared on the VM.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "platform/**"
+      - "modules/MOD02-milavn/**"
+      - "modules/MOD03-mangaly/**"
+      - "deploy/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+    inputs:
+      seed_dev:
+        description: "Also load DEVELOPMENT members and data (never on a real launch)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Only this repository's own main branch or a manual run; never pull requests or forks.
+    if: >-
+      github.event_name != 'pull_request' &&
+      !github.event.repository.fork &&
+      (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    environment: production
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+        run: |
+          set -euo pipefail
+          test -n "$SERVER_IP" && test -n "$SSH_PRIVATE_KEY" || { echo "::error::SERVER_IP and SSH_PRIVATE_KEY secrets are required"; exit 1; }
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          if [ -n "${SSH_KNOWN_HOSTS:-}" ]; then
+            printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            echo "::warning::SSH_KNOWN_HOSTS is not set; trusting the host key seen now."
+            ssh-keyscan -T 15 -t ed25519 "$SERVER_IP" > ~/.ssh/known_hosts
+          fi
+          printf 'Host forkhatri-vm\n  HostName %s\n  IdentityFile ~/.ssh/deploy_key\n  IdentitiesOnly yes\n' "$SERVER_IP" > ~/.ssh/config
+
+      - name: Deploy, migrate and health-check
+        env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          FORKHATRI_SSH_KEY: /home/runner/.ssh/deploy_key
+          SEED_FLAG: ${{ inputs.seed_dev && '--seed-dev' || '' }}
+        run: |
+          set -euo pipefail
+          eval "$(ssh-agent -s)" > /dev/null
+          ssh-add -q ~/.ssh/deploy_key
+          bash deploy/scripts/deploy.sh --ci $SEED_FLAG
+
+      - name: Remove key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

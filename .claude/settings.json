@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Stop-Process -Id 74080 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Id 16300 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Job -Name \"identity-service\")",
+      "PowerShell(Receive-Job)",
+      "PowerShell(Get-Job -Name \"forkhatri-web\")",
+      "PowerShell(Get-Job)",
+      "Bash(tasklist)",
+      "Bash(netstat -ano)",
+      "Bash(timeout 10 .venv/Scripts/python -m uvicorn app.main:app --host 127.0.0.1 --port 8011)",
+      "Bash(cat /tmp/vyapar.log | head -50)",
+      "Read(//tmp/**)",
+      "Bash(psql -h localhost -p 5433 -U postgres -lqt)",
+      "Bash(timeout 15 .venv/Scripts/python -m uvicorn app.main:app --host 127.0.0.1 --port 8011)",
+      "Bash(timeout 10 .venv/Scripts/python -c \"from app.main import app; print\\('Import successful'\\)\")",
+      "Bash(PYTHONUNBUFFERED=1 timeout 10 .venv/Scripts/python -u -m uvicorn app.main:app --host 127.0.0.1 --port 8011)",
+      "Bash(curl -s -o /dev/null -w \"api:%{http_code}\\\\n\" --max-time 20 http://127.0.0.1:8001/health)",
+      "Bash(curl -s -o /dev/null -w \"web:%{http_code}\\\\n\" --max-time 20 http://127.0.0.1:3001/)",
+      "Bash(curl -s -o /dev/null -w \"identity:%{http_code}\\\\n\" --max-time 20 http://127.0.0.1:8100/health)",
+      "mcp__chrome-devtools-milavn__navigate_page"
+    ]
+  }
+}

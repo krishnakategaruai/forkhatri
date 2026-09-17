@@ -12,13 +12,23 @@ import { EmptyState, ErrorState, Toast } from '@/components/States';
 import { api, ApiError, resolveMediaUrl } from '@/lib/api';
 
 type Person = { member_id: string; display_name: string; avatar: string | null; reason: string; reason_kind: string; location_label: string | null; reputation: string[] };
+type Connection = { member_id: string; display_name: string; avatar: string | null; title: string };
+type FreeNow = { member_id: string; display_name: string; avatar: string | null; until: string; locality: string | null; note: string | null };
 
 export default function PeoplePage() {
   const { t } = useTranslation();
   const [people, setPeople] = useState<Person[] | null>(null);
+  const [connections, setConnections] = useState<Connection[]>([]); // FR106 — mutual only, private to the two
+  // [FR119] Who from my circles is free at the moment, and whether I am.
+  const [freeNow, setFreeNow] = useState<{ mine: { until: string } | null; people: FreeNow[] }>({ mine: null, people: [] });
   const [error, setError] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const load = useCallback(() => { setError(false); api<Person[]>('/people/suggestions').then(setPeople).catch(() => setError(true)); }, []);
+  const load = useCallback(() => {
+    setError(false);
+    api<Person[]>('/people/suggestions').then(setPeople).catch(() => setError(true));
+    api<Connection[]>('/people/connections').then(setConnections).catch(() => setConnections([]));
+    api<{ mine: { until: string } | null; people: FreeNow[] }>('/people/free-now').then(setFreeNow).catch(() => setFreeNow({ mine: null, people: [] }));
+  }, []);
   useEffect(load, [load]);
 
   const block = async (p: Person) => {
@@ -26,11 +36,54 @@ export default function PeoplePage() {
     catch (e) { setToast(e instanceof ApiError ? e.message : t('state.error')); }
   };
 
+  const setFree = async (minutes: number | null) => {
+    try {
+      if (minutes === null) await api('/people/free-now', { method: 'DELETE' });
+      else await api('/people/free-now', { body: { minutes } });
+      load();
+    } catch (e) { setToast(e instanceof ApiError ? e.message : t('state.error')); }
+  };
+
   return (
     <>
       <header className="topbar"><h1>{t('people.title')}</h1></header>
       <main className="screen">
         <p className="caption" style={{ margin: 0 }}>{t('people.body')}</p>
+        <section className="card stack" style={{ gap: 8 }}>
+          <div className="row row--between">
+            <b>{t('free.title')}</b>
+            {freeNow.mine ? (
+              <button className="link" onClick={() => setFree(null)}>{t('free.stop')}</button>
+            ) : (
+              <button className="btn btn--secondary btn--sm" onClick={() => setFree(120)}>{t('free.iAm')}</button>
+            )}
+          </div>
+          {freeNow.people.length === 0 ? (
+            <span className="caption">{t('free.nobody')}</span>
+          ) : (
+            freeNow.people.map((f) => (
+              <Link key={f.member_id} href={`/p/${f.member_id}`} className="row" style={{ gap: 10 }}>
+                {f.avatar ? <img className="avatar" src={resolveMediaUrl(f.avatar) ?? ''} alt="" /> : <span className="avatar" />}
+                <span className="grow"><b>{f.display_name}</b><br /><span className="caption">{[f.locality, f.note].filter(Boolean).join(' · ')}</span></span>
+              </Link>
+            ))
+          )}
+        </section>
+
+        {connections.length > 0 && (
+          <section className="stack" style={{ gap: 8 }}>
+            <span className="label">{t('meet.connectionsTitle')}</span>
+            {connections.map((c) => (
+              <Link key={c.member_id} href={`/p/${c.member_id}`} className="lrow fade-in" style={{ gap: 12 }}>
+                {c.avatar ? <img className="avatar avatar--lg" src={resolveMediaUrl(c.avatar) ?? ''} alt="" /> : <span className="avatar avatar--lg" />}
+                <div className="grow">
+                  <div className="title">{c.display_name}</div>
+                  <div className="whyline">✦ {t('meet.after', { title: c.title })}</div>
+                </div>
+              </Link>
+            ))}
+          </section>
+        )}
         {error && <ErrorState onRetry={load} />}
         {!people && !error && <div className="stack">{[0, 1, 2].map((i) => <div key={i} className="sk" style={{ height: 72 }} />)}</div>}
         {people && people.length === 0 && <EmptyState message={t('people.empty')} />}

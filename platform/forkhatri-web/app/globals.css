@@ -1,0 +1,198 @@
+/* =============================================================================
+   ForKhatri entrance: shared base.
+   Two scoped looks sit on top of this and never leak into each other:
+   - app/arrival.css  `.app[data-look="arrival"]`  signed-out screens (owner-approved luminous look)
+   - app/hub.css      `.app[data-look="hub"]`      signed-in hub, header and sheets (minimalist, DESIGN-NOTES.md)
+   ============================================================================= */
+
+/* Light values on :root; [data-theme="dark"] overrides them. data-theme is set before first
+   paint by lib/theme-script.ts from the device choice (System follows prefers-color-scheme). */
+:root {
+  color-scheme: light;
+  --bg: #fafaf8;
+  --surface: #ffffff;
+  --surface-2: #f3f2ef;
+  --line: #e8e6e1;
+  --line-strong: #d8d6d0;
+  --ink: #18181a;
+  --ink-2: #55555c;
+  --ink-3: #6b6b72;
+  --accent: #d97706;
+  --accent-ink: #a15800;
+  --accent-soft: rgba(217, 119, 6, 0.1);
+  --on-ink: #fafaf8;
+  --success: #15803d;
+  --danger: #b42318;
+  --shadow: 0 12px 40px -20px rgba(40, 30, 10, 0.25);
+  --radius: 16px;
+  --radius-sm: 12px;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --header-h: 60px;
+  --font-ui: var(--font-geist), var(--font-deva), var(--font-telugu), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-sora), var(--font-deva), var(--font-telugu), ui-sans-serif, system-ui, sans-serif;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0c0c0d;
+  --surface: #141415;
+  --surface-2: #1b1b1d;
+  --line: #242426;
+  --line-strong: #313134;
+  --ink: #f1f1f0;
+  --ink-2: #a9a9ad;
+  --ink-3: #85858b;
+  --accent: #f5a524;
+  --accent-ink: #f7b64c;
+  --accent-soft: rgba(245, 165, 36, 0.12);
+  --on-ink: #0c0c0d;
+  --success: #45c98b;
+  --danger: #ff7b72;
+  --shadow: 0 12px 40px -18px rgba(0, 0, 0, 0.7);
+}
+
+@media (min-width: 720px) {
+  :root {
+    --header-h: 68px;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  background: var(--bg);
+  scroll-padding-top: calc(var(--header-h) + 12px);
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: fixed;
+  left: 16px;
+  top: -80px;
+  z-index: 200;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: var(--ink);
+  color: var(--bg);
+  font-weight: 600;
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 10px;
+}
+
+/* ------------------------------------------------------- view transitions -- */
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.22s;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* -------------------------------------------------------------- keyframes -- */
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes shimmer {
+  from {
+    background-position: 120% 0;
+  }
+  to {
+    background-position: -120% 0;
+  }
+}
+@keyframes blink {
+  to {
+    visibility: hidden;
+  }
+}
+@keyframes sweep {
+  from {
+    background-position: -60% 0;
+  }
+  to {
+    background-position: 160% 0;
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(9vmax, 7vmax, 0) scale(1.14);
+  }
+  100% {
+    transform: translate3d(-7vmax, 11vmax, 0) scale(0.94);
+  }
+}
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .code-cell.is-active:empty::after {
+    visibility: visible;
+  }
+}

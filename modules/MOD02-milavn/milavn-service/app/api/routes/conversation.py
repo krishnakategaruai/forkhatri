@@ -91,7 +91,31 @@ async def delete_message(occurrence_id: UUID, message_id: UUID, session: DbSessi
 async def list_photos(occurrence_id: UUID, session: DbSession, member: CurrentMember) -> dict:
     photos = await conversation.list_photos(session, occurrence_id=occurrence_id, viewer_member_id=member.member_id)
     can_add = await conversation.was_there(session, occurrence_id=occurrence_id, member_id=member.member_id)
-    return {"photos": [_photo(p) for p in photos], "can_add": can_add}
+    # [FR113] Before sharing, people who were there see who asked not to be in photos.
+    opt_outs = await conversation.photo_opt_outs(session, occurrence_id=occurrence_id, viewer_member_id=member.member_id) if can_add else []
+    return {"photos": [_photo(p) for p in photos], "can_add": can_add, "opt_outs": opt_outs}
+
+
+class PhotoPreference(BaseModel):
+    prefer_not_pictured: bool
+
+
+@router.post("/occurrences/{occurrence_id}/photos/{photo_id}/remove", status_code=204)
+async def remove_photo_of_me(occurrence_id: UUID, photo_id: UUID, session: DbSession, member: CurrentMember, lang: Locale) -> None:
+    """[FR113] "I'm in this photo — remove it": taken down at once for everyone; the uploader is told."""
+    if not await conversation.request_photo_removal(session, occurrence_id=occurrence_id, photo_id=photo_id, member_id=member.member_id):
+        raise HTTPException(status_code=404, detail=translate("moments.notFound", lang))
+
+
+@router.get("/moments/preference")
+async def get_photo_preference(session: DbSession, member: CurrentMember) -> dict:
+    return {"prefer_not_pictured": await conversation.photo_preference(session, member_id=member.member_id)}
+
+
+@router.put("/moments/preference")
+async def put_photo_preference(body: PhotoPreference, session: DbSession, member: CurrentMember) -> dict:
+    """[FR113] "Please don't include me in photos" — shown to people sharing photos from activities you went to."""
+    return {"prefer_not_pictured": await conversation.set_photo_preference(session, member_id=member.member_id, prefer_not_pictured=body.prefer_not_pictured)}
 
 
 @router.post("/occurrences/{occurrence_id}/photos", status_code=status.HTTP_201_CREATED)

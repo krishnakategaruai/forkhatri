@@ -1,11 +1,18 @@
 {
   "title": "ప్రొఫైల్",
-  "notBuiltYet": "టీమ్ యాక్సెస్ మరియు గోప్యతా సెట్టింగ్‌లు త్వరలో వస్తాయి.",
+  "help": "సహాయం & ఫిర్యాదు",
+  "helpText": "పెంచాలా? grievance@forkhatri.example కు రాయండి — మేము 7 రోజుల్లో స్పందిస్తాము.",
+  "backToForKhatri": "ForKhatriకి తిరిగి వెళ్ళండి",
   "myListings": "నా లిస్టింగ్‌లు",
   "enquiries": "విచారణలు",
   "moderationOutcomes": "నా మోడరేషన్ ఫలితాలు",
   "operatorTools": "ఆపరేటర్ సాధనాలు",
   "verificationQueue": "వెరిఫికేషన్ క్యూ",
   "moderationQueue": "మోడరేషన్ క్యూ",
-  "myBoosts": "నా బూస్ట్‌లు"
+  "myBoosts": "నా బూస్ట్‌లు",
+  "workspaces": "బిజినెస్ వర్క్‌స్పేస్",
+  "pendingInvites": "టీమ్ ఆహ్వానాలు",
+  "accept": "ఆమోదించండి",
+  "decline": "తిరస్కరించండి",
+  "inviteRole": "పాత్ర: {{role}}"
 }

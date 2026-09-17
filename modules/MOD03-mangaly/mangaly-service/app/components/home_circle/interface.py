@@ -11,7 +11,8 @@ Implements:
     rather than two near-duplicates).
   * FR010 / TR010 — remove a member, or leave voluntarily.
   * FR014 / TR014 — suggest a discovered profile to the candidate.
-  * FR016 / TR016 — private family notes, forwarded only with approval.
+  * FR016 / TR016 — private family notes about a match, readable only by
+    their author until the author asks and the candidate agrees.
 
 Security findings this module implements as code:
   * [Third RLS failure mode, same class as BLK-09-01/BLK-09-02] A pending
@@ -46,6 +47,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID, uuid4
 
 from sqlalchemy import select, text
@@ -54,7 +56,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.components.authorization import interface as authz
 from app.components.authorization.context import Action, GrantScope, GrantType
 from app.components.home_circle.models import (
-    HomeCircleNote,
     Invitation,
     InvitationStatus,
     Membership,
@@ -73,23 +74,35 @@ __all__ = [
     "MemberSummary",
     "NotFound",
     "PendingInvitationSummary",
-    "PendingNoteSummary",
+    "FamilyNote",
+    "InvalidNoteSubject",
+    "NoteForwardRequest",
+    "SharedNote",
+    "NOTE_MAX_LENGTH",
     "RateLimited",
     "accept_invitation",
     "decline_invitation",
-    "forward_note",
+    "add_note",
+    "decide_note_request",
+    "delete_note",
+    "edit_note",
     "get_membership_candidate",
     "invite",
     "leave",
     "SuggestionSummary",
     "list_home_circle",
-    "list_notes",
+    "list_circle_members",
+    "CircleMember",
+    "list_member_contexts",
+    "MemberContext",
+    "list_my_notes",
+    "list_note_requests",
+    "list_shared_notes",
     "list_pending_invitations",
-    "list_pending_notes",
     "list_suggestions",
     "remove_member",
     "suggest",
-    "write_note",
+    "request_note_forward",
 ]
 
 _SOURCE = "home_circle"
@@ -426,6 +439,12 @@ async def _end_membership(
         grant_type=GrantType.HOME_CIRCLE_MEMBERSHIP,
         source_component=_SOURCE,
     )
+    # [FR048] A former member's phone must not stay shared with, or requested
+    # for, any connection (migration 021).
+    await session.execute(
+        text("SELECT mangaly_connection.end_family_contact_for_member(:candidate_id, :member_id)"),
+        {"candidate_id": row.candidate_profile_id, "member_id": row.member_account_id},
+    )
 
     removed = new_status is MembershipStatus.REMOVED
     event_type = "HomeCircleMemberRemoved" if removed else "HomeCircleMemberLeft"
@@ -582,21 +601,92 @@ async def list_suggestions(
     ]
 
 
-async def write_note(
+NOTE_MAX_LENGTH = 1000
+
+_NOTE_COLUMNS = (
+    "id, subject_account_id, content, forwarded_at, forward_requested_at, "
+    "forward_declined_at, created_at, updated_at"
+)
+
+
+class InvalidNoteSubject(Exception):
+    """[FR016] A note is about a match — never about the candidate or the author."""
+
+
+@dataclass(frozen=True, slots=True)
+class FamilyNote:
+    """[FR016] One of the author's own private notes about one match.
+
+    `status` is `private` (only the author has ever seen it), `requested`
+    (the author asked the candidate to read it), `shared` (the candidate
+    agreed and can read it) or `declined` (the candidate said not now; no
+    reason is ever recorded or shown)."""
+
+    id: UUID
+    subject_account_id: UUID
+    content: str
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+
+def _family_note(row: Any) -> FamilyNote:
+    if row.forwarded_at is not None:
+        note_status = "shared"
+    elif row.forward_declined_at is not None:
+        note_status = "declined"
+    elif row.forward_requested_at is not None:
+        note_status = "requested"
+    else:
+        note_status = "private"
+    return FamilyNote(
+        id=row.id,
+        subject_account_id=row.subject_account_id,
+        content=row.content,
+        status=note_status,
+        created_at=row.created_at,
+        updated_at=row.updated_at,
+    )
+
+
+async def _own_active_membership_candidate(
+    session: AsyncSession, *, membership_id: UUID, member_account_id: UUID
+) -> UUID | None:
+    """The candidate whose circle `membership_id` is, but only when the caller
+    is that membership's own active member — a candidate passing an id from
+    their own circle gets nothing."""
+    return (
+        await session.execute(
+            select(Membership.candidate_profile_id).where(
+                Membership.id == membership_id,
+                Membership.member_account_id == member_account_id,
+                Membership.status == MembershipStatus.ACTIVE,
+            )
+        )
+    ).scalar_one_or_none()
+
+
+async def add_note(
     session: AsyncSession,
     *,
     member_account_id: UUID,
     membership_id: UUID,
-    candidate_account_id: UUID,
+    subject_account_id: UUID,
     content: str,
-) -> UUID:
-    """[FR016] Family-only by default — `forwarded_at` stays NULL until the
-    candidate explicitly approves forwarding this exact note.
+) -> FamilyNote:
+    """[FR016/TR016] A Home Circle member writes a private working note about
+    one match. Only its author can read it (`hc_note_author`, migration 022);
+    the candidate and every other member of the circle cannot (TS035).
 
-    [TR017] Same chokepoint-binding requirement as `suggest()` — see its
-    docstring; `hc_note_family_or_forwarded`'s family-side clause is gated
-    on the same `has_scope()` call.
-    """
+    [TR017] Binds the authorization chokepoint for the candidate's circle, the
+    same way `suggest()` does."""
+    candidate_account_id = await _own_active_membership_candidate(
+        session, membership_id=membership_id, member_account_id=member_account_id
+    )
+    if candidate_account_id is None:
+        raise NotFound
+    if subject_account_id in (candidate_account_id, member_account_id):
+        raise InvalidNoteSubject
     await authz.resolve(
         session,
         subject_id=member_account_id,
@@ -604,41 +694,278 @@ async def write_note(
         target_profile_id=candidate_account_id,
         action=Action.WRITE,
     )
+    row = (
+        await session.execute(
+            text(
+                "INSERT INTO mangaly_home_circle.home_circle_note "
+                "(candidate_profile_id, author_membership_id, subject_account_id, content) "
+                "VALUES (:candidate, :membership, :subject, :content) "
+                f"RETURNING {_NOTE_COLUMNS}"
+            ),
+            {
+                "candidate": candidate_account_id,
+                "membership": membership_id,
+                "subject": subject_account_id,
+                "content": content,
+            },
+        )
+    ).one()
+    return _family_note(row)
 
-    note_id = uuid4()
-    await session.execute(
+
+async def list_my_notes(
+    session: AsyncSession,
+    *,
+    member_account_id: UUID,
+    membership_id: UUID,
+    subject_account_id: UUID,
+) -> list[FamilyNote]:
+    """[FR016] The caller's own notes about one match, newest first."""
+    if (
+        await _own_active_membership_candidate(
+            session, membership_id=membership_id, member_account_id=member_account_id
+        )
+        is None
+    ):
+        raise NotFound
+    rows = await session.execute(
         text(
-            """
-            INSERT INTO mangaly_home_circle.home_circle_note
-                (id, candidate_profile_id, author_membership_id, content)
-            VALUES (:id, :candidate, :membership, :content)
-            """
+            f"SELECT {_NOTE_COLUMNS} FROM mangaly_home_circle.home_circle_note "
+            "WHERE author_membership_id = :membership AND subject_account_id = :subject "
+            "ORDER BY created_at DESC"
         ),
-        {
-            "id": note_id,
-            "candidate": candidate_account_id,
-            "membership": membership_id,
-            "content": content,
-        },
+        {"membership": membership_id, "subject": subject_account_id},
     )
-    return note_id
+    return [_family_note(r) for r in rows]
 
 
-async def list_notes(
+async def edit_note(session: AsyncSession, *, note_id: UUID, content: str) -> FamilyNote:
+    """[FR016] The author rewrites a note that has not been shared. Editing
+    takes it back to private: the candidate is only ever asked about the exact
+    words they would read. A shared note is fixed — the author may delete it,
+    but never change what the candidate agreed to read."""
+    row = (
+        await session.execute(
+            text(
+                "UPDATE mangaly_home_circle.home_circle_note "
+                "SET content = :content, updated_at = now(), "
+                "forward_requested_at = NULL, forward_declined_at = NULL "
+                "WHERE id = :id AND forwarded_at IS NULL "
+                f"RETURNING {_NOTE_COLUMNS}"
+            ),
+            {"id": note_id, "content": content},
+        )
+    ).one_or_none()
+    if row is None:
+        raise NotFound
+    return _family_note(row)
+
+
+async def delete_note(session: AsyncSession, *, note_id: UUID) -> None:
+    """[FR016] The author deletes one of their notes (RLS: author only)."""
+    deleted = (
+        await session.execute(
+            text("DELETE FROM mangaly_home_circle.home_circle_note WHERE id = :id RETURNING id"),
+            {"id": note_id},
+        )
+    ).one_or_none()
+    if deleted is None:
+        raise NotFound
+
+
+async def request_note_forward(session: AsyncSession, *, note_id: UUID) -> FamilyNote:
+    """[FR016/UX13] The author asks the candidate to read this one note. Asking
+    again after "not now" needs a changed note, so a "no" is never answered
+    with the same request."""
+    row = (
+        await session.execute(
+            text(
+                "UPDATE mangaly_home_circle.home_circle_note "
+                "SET forward_requested_at = now() "
+                "WHERE id = :id AND forwarded_at IS NULL AND forward_requested_at IS NULL "
+                f"RETURNING candidate_profile_id, {_NOTE_COLUMNS}"
+            ),
+            {"id": note_id},
+        )
+    ).one_or_none()
+    if row is None:
+        raise NotFound
+    await bus.publish(
+        session,
+        schema="mangaly_home_circle",
+        aggregate_id=note_id,
+        event_type="FamilyNoteReadRequested",
+        payload={"note_id": str(note_id), "candidate_account_id": str(row.candidate_profile_id)},
+    )
+    return _family_note(row)
+
+
+@dataclass(frozen=True, slots=True)
+class NoteForwardRequest:
+    """[FR016] What the candidate sees before choosing: who asks and which
+    match the note is about — never the note's words."""
+
+    note_id: UUID
+    author_name: str | None
+    relationship_type: str
+    subject_account_id: UUID
+    requested_at: datetime
+
+
+async def list_note_requests(
+    session: AsyncSession, *, account_id: UUID
+) -> list[NoteForwardRequest]:
+    rows = await session.execute(
+        text("SELECT * FROM mangaly_home_circle.list_note_forward_requests(:account_id)"),
+        {"account_id": account_id},
+    )
+    return [
+        NoteForwardRequest(
+            note_id=r.note_id,
+            author_name=r.author_name,
+            relationship_type=r.relationship_type,
+            subject_account_id=r.subject_account_id,
+            requested_at=r.requested_at,
+        )
+        for r in rows
+    ]
+
+
+async def decide_note_request(
+    session: AsyncSession, *, account_id: UUID, note_id: UUID, approve: bool
+) -> str | None:
+    """[FR016/TS036] The candidate reads one note, or says not now. Agreeing
+    shares only that note; returns its words so they appear in place."""
+    decided = (
+        await session.execute(
+            text("SELECT mangaly_home_circle.decide_note_forward(:note_id, :account_id, :approve)"),
+            {"note_id": note_id, "account_id": account_id, "approve": approve},
+        )
+    ).scalar_one()
+    if not decided:
+        raise NotFound
+    await bus.publish(
+        session,
+        schema="mangaly_home_circle",
+        aggregate_id=note_id,
+        event_type="FamilyNoteRead" if approve else "FamilyNoteDeclined",
+        payload={"note_id": str(note_id)},
+    )
+    if not approve:
+        return None
+    return (
+        await session.execute(
+            text("SELECT content FROM mangaly_home_circle.home_circle_note WHERE id = :id"),
+            {"id": note_id},
+        )
+    ).scalar_one()
+
+
+@dataclass(frozen=True, slots=True)
+class SharedNote:
+    note_id: UUID
+    content: str
+    author_name: str | None
+    relationship_type: str
+    subject_account_id: UUID
+    forwarded_at: datetime
+
+
+async def list_shared_notes(session: AsyncSession, *, account_id: UUID) -> list[SharedNote]:
+    """[FR016] Notes the candidate chose to read, newest first."""
+    rows = await session.execute(
+        text("SELECT * FROM mangaly_home_circle.list_shared_notes(:account_id)"),
+        {"account_id": account_id},
+    )
+    return [
+        SharedNote(
+            note_id=r.note_id,
+            content=r.content,
+            author_name=r.author_name,
+            relationship_type=r.relationship_type,
+            subject_account_id=r.subject_account_id,
+            forwarded_at=r.forwarded_at,
+        )
+        for r in rows
+    ]
+
+
+@dataclass(frozen=True, slots=True)
+class MemberContext:
+    membership_id: UUID
+    candidate_account_id: UUID
+    candidate_name: str
+    relationship_type: RelationshipType
+    joined_at: datetime
+
+
+async def list_member_contexts(session: AsyncSession, *, account_id: UUID) -> list[MemberContext]:
+    """[FR097] The candidates whose Home Circle the caller actively belongs to:
+    the searches they may act in besides their own. Names come through
+    `list_member_contexts()` (migration 017), because a family grant does not
+    unlock the candidate's profile row."""
+    rows = await session.execute(
+        text("SELECT * FROM mangaly_home_circle.list_member_contexts(:account_id)"),
+        {"account_id": account_id},
+    )
+    return [
+        MemberContext(
+            membership_id=r["membership_id"],
+            candidate_account_id=r["candidate_account_id"],
+            candidate_name=r["candidate_name"],
+            relationship_type=RelationshipType(r["relationship_type"]),
+            joined_at=r["joined_at"],
+        )
+        for r in rows.mappings()
+    ]
+
+
+@dataclass(frozen=True, slots=True)
+class CircleMember:
+    membership_id: UUID
+    member_account_id: UUID
+    member_name: str | None
+    relationship_type: RelationshipType
+    joined_at: datetime
+
+
+async def list_circle_members(
+    session: AsyncSession, *, candidate_account_id: UUID
+) -> list[CircleMember]:
+    """The candidate's own active members with their names. Names come through
+    `list_circle_members()` (migration 019), since member link rows are
+    otherwise readable only by the member themselves."""
+    rows = await session.execute(
+        text("SELECT * FROM mangaly_home_circle.list_circle_members(:candidate)"),
+        {"candidate": candidate_account_id},
+    )
+    return [
+        CircleMember(
+            membership_id=r["membership_id"],
+            member_account_id=r["member_account_id"],
+            member_name=r["member_name"],
+            relationship_type=RelationshipType(r["relationship_type"]),
+            joined_at=r["joined_at"],
+        )
+        for r in rows.mappings()
+    ]
+
+
+async def list_circle_for(
     session: AsyncSession, *, caller_account_id: UUID, candidate_account_id: UUID
-) -> list[HomeCircleNote]:
-    """Every note visible to the caller under RLS — family members see all
-    of a candidate's notes (their own and siblings'/parents'), the candidate
-    sees only notes already forwarded to them. The distinction is entirely
-    the database policy's; this function does not re-derive it. A
-    candidate's still-pending notes are NOT returned here at all — see
-    `list_pending_notes()`, which surfaces only their existence, never their
-    content, ahead of approval.
+) -> list[CircleMember]:
+    """[FR012 read, 2026-09-17] One candidate's Home Circle, read either by the
+    candidate themselves or by a family member of that same circle.
 
-    [TR017] Binds the chokepoint the same way `suggest()`/`write_note()` do
-    — needed whenever the caller is reading as family (`has_scope()`), a
-    no-op in effect (but still the correct, single code path) when the
-    caller is the candidate reading their own forwarded notes."""
+    A parent's Circle screen has to show the same people the candidate's own
+    screen shows — the owner's words were "that contains home circle people
+    always" — so the family capacity needs the identical read, not a reduced
+    one. Same chokepoint shape as `list_suggestions()`: `authz.resolve()` is a
+    no-op self-bypass when the caller IS the candidate and a real `family_info`
+    check otherwise, and migration 025 widened
+    `mangaly_home_circle.list_circle_members()`'s own predicate to match the
+    membership rows' existing RLS policy so the name projection is no longer
+    narrower than the rows it reads."""
     await authz.resolve(
         session,
         subject_id=caller_account_id,
@@ -646,54 +973,4 @@ async def list_notes(
         target_profile_id=candidate_account_id,
         action=Action.READ,
     )
-    rows = (
-        await session.execute(
-            select(HomeCircleNote)
-            .where(HomeCircleNote.candidate_profile_id == candidate_account_id)
-            .order_by(HomeCircleNote.created_at.desc())
-        )
-    ).scalars()
-    return list(rows)
-
-
-@dataclass(frozen=True, slots=True)
-class PendingNoteSummary:
-    id: UUID
-    created_at: datetime
-
-
-async def list_pending_notes(session: AsyncSession) -> list[PendingNoteSummary]:
-    """[FR016] The calling candidate's own not-yet-forwarded notes — id and
-    timestamp only, never content or author, so approving one is a genuinely
-    blind trust decision rather than a preview that defeats the approval
-    gate. Goes through `list_own_pending_notes()` (migration 007): a plain
-    SELECT here returns nothing at all for the candidate, since
-    `hc_note_family_or_forwarded` hides an unforwarded note from everyone
-    except the family members who authored it."""
-    rows = await session.execute(
-        text("SELECT id, created_at FROM mangaly_home_circle.list_own_pending_notes()")
-    )
-    return [PendingNoteSummary(id=row.id, created_at=row.created_at) for row in rows]
-
-
-async def forward_note(session: AsyncSession, *, note_id: UUID) -> None:
-    """[FR016] The calling candidate approves forwarding ONE specific note
-    to themselves — never the author, and never any other family member.
-
-    Goes through `approve_note_forward()` (migration 008): a plain UPDATE
-    here would be authorized by `hc_note_family_or_forwarded`'s
-    `has_scope(candidate,'family_info')` clause for any family member too
-    (Postgres derives `FOR ALL`'s `WITH CHECK` from `USING` when none is
-    given), so the database's own RLS is not narrow enough by itself — the
-    SECURITY DEFINER function re-checks `candidate_profile_id` against the
-    caller's own `mangaly.account_id` internally, which is what actually
-    makes this candidate-only.
-    """
-    approved = (
-        await session.execute(
-            text("SELECT mangaly_home_circle.approve_note_forward(:note_id)"),
-            {"note_id": note_id},
-        )
-    ).scalar_one_or_none()
-    if not approved:
-        raise NotFound
+    return await list_circle_members(session, candidate_account_id=candidate_account_id)

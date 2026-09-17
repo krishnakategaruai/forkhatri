@@ -98,6 +98,6 @@ async def run_moderation_jobs() -> dict:
 # [TR030/TR031 — dev-only trigger] promotion lifecycle pass (payment window, completion, pause + credit).
 @router.post("/run-commercial-jobs")
 async def run_commercial_jobs() -> dict:
-    from app.routers.commercial import run_promotion_lifecycle_pass
+    from app.routers.commercial import run_commercial_lifecycle_pass
 
-    return await run_promotion_lifecycle_pass(get_pool())
+    return await run_commercial_lifecycle_pass(get_pool())

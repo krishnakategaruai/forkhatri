@@ -14,6 +14,7 @@ items: "175 | approved: 175 | blockers: 0"
 |---|---|---|
 | 2026-09-13 | Initial draft: 175 test scenarios covering all 88 Sealed FRs in `02-functional-requirements.md`, cross-referencing their parent UX flows (`03-ux.md`) and UI specs (`04-ui.md`) for interaction-state coverage. Deferred FRs (FR070–FR075, BR16–BR18) each get one minimal "not yet testable" scenario rather than fabricated coverage for unbuilt capability. Researched current QA practice for the one genuinely novel-risk area this module introduces (OTP/authentication rate-limiting, lockout, and expiry edge cases) rather than relying on the FR text alone, and researched the current "testing trophy" vs. classic pyramid debate directly, confirming that for a frontend-heavy mobile web app the credible shape biases toward Integration as the largest layer (not Unit), with E2E kept deliberately thin and reserved for genuine critical cross-screen journeys. Status intentionally left at Ready for Review with every scenario's approval line unticked, per this project's standing approval-gate rule. | First Step 5 run for MOD02, one pass over all 88 FRs per the Loop discipline. |
 | 2026-09-13 | Corrected a garbled Set-level quality gate/Test distribution summary error (claimed 46 Unit/121 Integration/8 E2E; actual tagged counts were 31/140/4) — fixed to match reality. Also closed the real gap TS129 had flagged (no moderator-facing screen existed for FR065): root-caused to an error in BR14's own "Affected users and systems" line, now corrected in `01-business-requirements.md`, with Steps 3/4 adding UX20/UI20 to close it. Updated TS129 to trace to that real screen instead of a flagged absence. User approved the file; all 175 scenarios' approval lines ticked and file Sealed. | User approval, with the flagged gap closed first, per explicit request — krishna kategaru, 2026-09-13. |
+| 2026-09-14 | Post-seal correction: ForKhatri platform identity. Added dated correction notes under TS148–TS158: these sign-up, log-in, reset and OTP behaviours are tested against the ForKhatri Identity & Trust Service (`docs/ParentApp/05-test-scenarios.md` TS16–TS36). For Milavn, the tests become redirect-to-entrance, platform-session acceptance, and the development header being disabled by default. Scenario bodies and approvals unchanged. Not re-sealed; awaits the owner's review. | Product-owner instruction, 2026-09-14. See `docs/ParentApp/07-tech-reqs.md` TR12–TR16. |
 
 ## Coverage check
 | Parent FR | Scenarios produced | Covered |
@@ -3980,6 +3981,7 @@ auto-resolves.
 ---
 
 ## TS148 — Sign-up with a new email/phone completes and reaches OTP verification
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module; covered by docs/ParentApp/05-test-scenarios.md TS16–TS17. For Milavn, assert that first entry with a valid `fk_session` creates the member profile row and reaches Onboarding (TS36), and that `X-Milavn-Member-Id` is ignored with default settings (TS34).
 **Traces from:** FR077
 **Layer:** E2E
 **Status:** Approved
@@ -4007,6 +4009,7 @@ critical new-user journey.
 ---
 
 ## TS149 — Sign-up with an already-registered email/phone offers Log In instead of a generic error
+> **2026-09-14 correction:** superseded by the platform's single code flow, which never reveals whether an identifier is registered (docs/ParentApp/05-test-scenarios.md TS21).
 **Traces from:** FR077
 **Layer:** Integration
 **Status:** Approved
@@ -4033,6 +4036,7 @@ with it, then the response offers a Log In path rather than a bare
 ---
 
 ## TS150 — OTP request rate-limiting prevents flooding
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module; covered by docs/ParentApp/05-test-scenarios.md TS23–TS24 (5 code requests per identifier per 15 minutes, TR20).
 **Traces from:** FR077
 **Layer:** Integration
 **Status:** Approved
@@ -4063,6 +4067,7 @@ number.
 ---
 
 ## TS151 — Correct credentials log a returning user in and route to Home
+> **2026-09-14 correction:** sign-in happens at the ForKhatri entrance (docs/ParentApp/05-test-scenarios.md TS16, TS19); for Milavn, assert that a valid `fk_session` reaches Home with no Milavn log-in (TS04, TS06).
 **Traces from:** FR078
 **Layer:** Integration
 **Status:** Approved
@@ -4088,6 +4093,7 @@ submit Log In, then they reach Home directly.
 ---
 
 ## TS152 — Incorrect credentials are rejected with a clear retry path
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module; covered by docs/ParentApp/05-test-scenarios.md TS20.
 **Traces from:** FR078
 **Layer:** Integration
 **Status:** Approved
@@ -4115,6 +4121,7 @@ wrong (standard account-enumeration protection).
 ---
 
 ## TS153 — A password-reset request never reveals whether an account exists
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module; the platform contract has no reset endpoint yet, and anti-enumeration is covered by docs/ParentApp/05-test-scenarios.md TS20–TS21.
 **Traces from:** FR079
 **Layer:** Integration
 **Status:** Approved
@@ -4141,6 +4148,7 @@ neutral response.
 ---
 
 ## TS154 — A completed reset allows immediate log-in with the new password
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module; no reset flow exists in the current platform contract (docs/ParentApp/07-tech-reqs.md TR13). Not a Milavn test.
 **Traces from:** FR079
 **Layer:** Integration
 **Status:** Approved
@@ -4166,6 +4174,7 @@ subsequently log in with it, then access succeeds immediately.
 ---
 
 ## TS155 — A correctly-entered OTP completes verification
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module; covered by docs/ParentApp/05-test-scenarios.md TS16.
 **Traces from:** FR080
 **Layer:** Integration
 **Status:** Approved
@@ -4191,6 +4200,7 @@ autofill), then verification completes and the user proceeds.
 ---
 
 ## TS156 — An expired OTP is rejected with a clear resend option
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module; covered by docs/ParentApp/05-test-scenarios.md TS26.
 **Traces from:** FR080
 **Layer:** Integration
 **Status:** Approved
@@ -4217,6 +4227,7 @@ failure.
 ---
 
 ## TS157 — Requesting a new OTP invalidates all previously-issued codes
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module. Whether a new code request invalidates earlier challenges is not stated in docs/ParentApp/07-tech-reqs.md TR19; confirm against the identity service before carrying this scenario over.
 **Traces from:** FR080
 **Layer:** Integration
 **Status:** Approved
@@ -4244,6 +4255,7 @@ most recent code should ever be valid).
 ---
 
 ## TS158 — Repeated failed OTP attempts trigger a temporary lockout
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module; covered by docs/ParentApp/05-test-scenarios.md TS25 (5 attempts per challenge, then `code_attempts_exhausted`).
 **Traces from:** FR080
 **Layer:** Integration
 **Status:** Approved

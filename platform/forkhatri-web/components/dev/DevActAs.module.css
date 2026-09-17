@@ -1,0 +1,128 @@
+/* DEVELOPMENT ONLY: styles for DevActAs.tsx. Scoped to this module so no global
+   stylesheet (and no production bundle) changes. */
+
+.section {
+  display: grid;
+  gap: 10px;
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--line-strong, rgba(127, 127, 127, 0.35));
+}
+
+.panel {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--line-strong, rgba(127, 127, 127, 0.35));
+  background: var(--surface, #111114);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+  text-align: start;
+}
+
+.heading {
+  margin: 0;
+  color: var(--ink-3, #85858b);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.persona {
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  min-height: 52px;
+  padding: 8px 12px;
+  border: 1px solid var(--line-strong, rgba(127, 127, 127, 0.35));
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.persona:hover:not(:disabled) {
+  border-color: var(--ink-3, #85858b);
+}
+
+.persona[aria-pressed="true"] {
+  border-color: var(--saffron, #f2a33a);
+  cursor: default;
+}
+
+.persona:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.persona:focus-visible,
+.link:focus-visible {
+  outline: 2px solid var(--saffron, #f2a33a);
+  outline-offset: 2px;
+}
+
+.name {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.current {
+  color: var(--saffron-ink, var(--saffron, #f2a33a));
+  font-weight: 600;
+}
+
+.desc,
+.note {
+  color: var(--ink-3, #85858b);
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.note,
+.error {
+  margin: 0;
+}
+
+.error {
+  color: var(--danger, #e5484d);
+  font-size: 0.8rem;
+}
+
+/* Arrival: pinned to the bottom edge so the sign-in screen's own layout does not move. */
+.dock {
+  position: fixed;
+  left: 50%;
+  bottom: calc(4px + env(safe-area-inset-bottom));
+  z-index: 40;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  width: min(560px, calc(100vw - 32px));
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.link {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-3, #85858b);
+  font: inherit;
+  font-size: 0.76rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  opacity: 0.85;
+  cursor: pointer;
+  pointer-events: auto;
+}

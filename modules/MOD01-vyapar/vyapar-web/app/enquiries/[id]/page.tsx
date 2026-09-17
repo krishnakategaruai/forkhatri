@@ -107,7 +107,8 @@ export default function EnquiryDetailPage({ params }: { params: Promise<{ id: st
 
       {!["closed", "withdrawn"].includes(enquiry.state) && (
         <div className="vy-row">
-          <input className="vy-input" value={reply} onChange={(e) => setReply(e.target.value)} placeholder={t("enquiries:detail.replyPlaceholder")} />
+          {/* [FR43/TR043] a placeholder alone is never a valid accessible name */}
+          <input className="vy-input" value={reply} onChange={(e) => setReply(e.target.value)} placeholder={t("enquiries:detail.replyPlaceholder")} aria-label={t("enquiries:detail.replyPlaceholder")} />
           <button
             className="vy-btn vy-btn-primary"
             disabled={!reply || busy || enquiry.state === "restricted"}

@@ -55,14 +55,21 @@ from app.events import bus
 from app.rate_limiting import limiter
 
 __all__ = [
+    "SYSTEM_CONNECTED",
     "ConversationNotAvailable",
     "ConversationSummary",
     "MessageSummary",
     "RateLimited",
     "list_conversations",
+    "close_conversation",
     "list_messages",
+    "open_conversation_on_accept",
     "send_message",
 ]
+
+# The system line added when a connection is accepted. A key, not prose: the
+# thread renders it in whichever language the reader is using.
+SYSTEM_CONNECTED = "system.connected"
 
 
 class ConversationNotAvailable(Exception):
@@ -80,9 +87,14 @@ class RateLimited(Exception):
 
 @dataclass(frozen=True, slots=True)
 class MessageSummary:
+    """`kind` is "member" for something a person wrote, or "system" for a line
+    the platform added (migration 026), which has no sender and whose
+    `content` is a key the reader's own language is rendered from."""
+
     id: UUID
-    sender_account_id: UUID
+    sender_account_id: UUID | None
     content: str
+    kind: str
     sent_at: datetime
 
 
@@ -131,7 +143,9 @@ async def send_message(
     conn = await connection_module.get_request(session, connection_id=connection_id)
     if conn is None or conn.status is not ConnectionStatus.ACCEPTED:
         raise ConversationNotAvailable
-    if sender_account_id not in (conn.acting_account_id, conn.target_account_id):
+    # [2026-09-17] The subject, not whoever pressed send: a family member who sent
+    # the request for the candidate is not a party to their private conversation.
+    if sender_account_id not in (conn.subject_account_id, conn.target_account_id):
         raise ConversationNotAvailable
 
     settings = get_settings()
@@ -210,10 +224,75 @@ async def list_messages(session: AsyncSession, *, connection_id: UUID) -> list[M
     ).scalars()
     return [
         MessageSummary(
-            id=m.id, sender_account_id=m.sender_account_id, content=m.content, sent_at=m.sent_at
+            id=m.id,
+            sender_account_id=m.sender_account_id,
+            content=m.content,
+            kind=m.kind,
+            sent_at=m.sent_at,
         )
         for m in rows
     ]
+
+
+async def open_conversation_on_accept(
+    session: AsyncSession, *, connection_id: UUID, account_id: UUID
+) -> None:
+    """[FR044/FR049, migration 026] Acceptance opens the private conversation
+    and puts one system line in it, so both people — the candidate above all —
+    learn the request succeeded in the place they will actually talk, instead
+    of having to notice a status word on another screen. Called by
+    `connection.interface.accept()`; doing nothing when the caller is not a
+    party is the function's own decision, not this caller's."""
+    await session.execute(
+        text("SELECT mangaly_communication.open_conversation(:connection_id, :account_id, :key)"),
+        {"connection_id": connection_id, "account_id": account_id, "key": SYSTEM_CONNECTED},
+    )
+
+
+async def close_conversation(
+    session: AsyncSession, *, connection_id: UUID, account_id: UUID
+) -> None:
+    """[FR050/DEC-V1-021] Either person ending the session ends it for both:
+    every message they wrote to each other is deleted, immediately, and the
+    thread reopens empty. The conversation itself stays (the connection is
+    still accepted) with its system line, so the two can start again.
+
+    This is the product owner's "session based and no memory" rule, and it is
+    the only retention promise this app can actually keep. What it does NOT do
+    is stop the other person capturing the screen first: a browser cannot
+    prevent a screenshot, a screen recording or a second phone pointed at the
+    display, and the thread says so rather than implying a protection that
+    does not exist."""
+    from app.components.connection import interface as connection_module
+
+    conn = await connection_module.get_request(session, connection_id=connection_id)
+    if conn is None or conn.status is not ConnectionStatus.ACCEPTED:
+        raise ConversationNotAvailable
+    if account_id not in (conn.subject_account_id, conn.target_account_id):
+        raise ConversationNotAvailable
+
+    conversation_id = await _find_conversation_id(session, connection_id=connection_id)
+    if conversation_id is None:
+        return
+
+    await session.execute(
+        text(
+            "DELETE FROM mangaly_communication.message "
+            "WHERE conversation_id = :conversation_id AND kind = 'member'"
+        ),
+        {"conversation_id": conversation_id},
+    )
+    await bus.publish(
+        session,
+        schema="mangaly_communication",
+        aggregate_id=conversation_id,
+        event_type="ConversationSessionEnded",
+        payload={
+            "conversation_id": str(conversation_id),
+            "connection_id": str(connection_id),
+            "ended_by_account_id": str(account_id),
+        },
+    )
 
 
 async def list_conversations(
@@ -227,14 +306,14 @@ async def list_conversations(
             """
             SELECT
                 cr.id AS connection_id,
-                CASE WHEN cr.acting_account_id = :account_id
-                     THEN cr.target_profile_id ELSE cr.acting_account_id END AS other_account_id,
+                CASE WHEN cr.subject_account_id = :account_id
+                     THEN cr.target_profile_id ELSE cr.subject_account_id END AS other_account_id,
                 (SELECT max(m.sent_at) FROM mangaly_communication.message m
                  WHERE m.conversation_id = c.id) AS last_message_at
             FROM mangaly_connection.connection_request cr
             JOIN mangaly_communication.conversation c ON c.connection_id = cr.id
             WHERE cr.status = 'accepted'
-              AND (cr.acting_account_id = :account_id OR cr.target_profile_id = :account_id)
+              AND (cr.subject_account_id = :account_id OR cr.target_profile_id = :account_id)
             ORDER BY last_message_at DESC NULLS LAST
             """
         ),

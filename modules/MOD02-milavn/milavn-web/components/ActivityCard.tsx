@@ -13,7 +13,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { resolveMediaUrl, type Card } from '@/lib/api';
-import { formatWhen } from '@/lib/format';
+import { formatInr, formatWhen } from '@/lib/format';
 
 const CATEGORY_ICON: Record<string, string> = { play: '🏸', meet: '☕', eat: '🍛', learn: '📚', work: '💼', explore: '🥾', celebrate: '🎉', help: '🤝' };
 const DEFAULT_DURATION_MS = 2 * 60 * 60 * 1000;
@@ -72,6 +72,7 @@ export default function ActivityCard({ card, compact = false, hero = false }: { 
         <h3 className="poster__title">{card.title}</h3>
         <div className="poster__meta">
           <span className="datepill">{live.state === 'live' ? t('card.now') : when}</span>
+          {card.price_paise != null && <span className="datepill datepill--price">{formatInr(card.price_paise, i18n.language)}</span>}
           <span className="poster__place">{card.location_label}{card.distance_label ? ` · ${card.distance_label}` : ''}</span>
         </div>
         <div className="poster__foot">

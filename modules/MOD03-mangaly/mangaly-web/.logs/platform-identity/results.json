@@ -1,0 +1,64 @@
+{
+  "results": [
+    {
+      "name": "signed-out /me → entrance with return_to",
+      "ok": true,
+      "detail": "http://localhost:3100/?return_to=http%3A%2F%2Flocalhost%3A3000%2Fme"
+    },
+    {
+      "name": "/login → entrance (return_to = Mangaly home)",
+      "ok": true,
+      "detail": "http://localhost:3100/?return_to=http%3A%2F%2Flocalhost%3A3000%2F"
+    },
+    {
+      "name": "existing member sees Mangaly home",
+      "ok": true,
+      "detail": "http://localhost:3000/"
+    },
+    {
+      "name": "home top bar has ForKhatri hub link",
+      "ok": true,
+      "detail": "http://localhost:3100/"
+    },
+    {
+      "name": "hub link navigates to ForKhatri entrance",
+      "ok": true,
+      "detail": "http://localhost:3100/"
+    },
+    {
+      "name": "new member lands in profile-create wizard",
+      "ok": true,
+      "detail": "http://localhost:3000/profile/create"
+    },
+    {
+      "name": "new member saved profile and reached Mangaly home",
+      "ok": true,
+      "detail": "http://localhost:3000/"
+    },
+    {
+      "name": "log out → ForKhatri entrance",
+      "ok": true,
+      "detail": "http://localhost:3100/"
+    },
+    {
+      "name": "fk_session cookie cleared in browser",
+      "ok": true
+    },
+    {
+      "name": "revoked token → Mangaly API 401 within ~30 s",
+      "ok": true,
+      "detail": "401 after 20.4s"
+    },
+    {
+      "name": "after log out, Mangaly screen → entrance",
+      "ok": true,
+      "detail": "http://localhost:3100/?return_to=http%3A%2F%2Flocalhost%3A3000%2Fdiscover"
+    }
+  ],
+  "consoleErrors": [
+    "signed-out: Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "signed-out: Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "member-1-logout: Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "member-1-logout: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ]
+}

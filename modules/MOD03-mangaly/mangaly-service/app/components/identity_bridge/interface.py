@@ -36,10 +36,12 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 from sqlalchemy import insert, text, update
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.components.identity_bridge import delivery
 from app.components.identity_bridge import otp as otp_module
+from app.components.identity_bridge import platform as platform_client
 from app.components.identity_bridge.credentials import (
     CredentialTooWeak,
     get_credential_hasher,
@@ -58,11 +60,16 @@ __all__ = [
     "OtpOutcome",
     "OtpPurpose",
     "OtpVerifyResult",
+    "PlatformIdentityUnavailable",
+    "PlatformLinkRefused",
+    "PlatformSession",
+    "PlatformSessionInvalid",
     "RateLimited",
     "ResendRateLimited",
     "SessionToken",
     "SignUpResult",
     "WeakCredential",
+    "aclose_platform_client",
     "confirm_password_reset",
     "get_own_identifiers",
     "log_in",
@@ -70,6 +77,7 @@ __all__ = [
     "request_login_otp",
     "request_otp_resend",
     "request_password_reset",
+    "resolve_platform_session",
     "revoke_all_sessions",
     "sign_up",
     "validate_session",
@@ -77,6 +85,9 @@ __all__ = [
 ]
 
 ResendRateLimited = otp_module.ResendRateLimited
+PlatformIdentityUnavailable = platform_client.PlatformIdentityUnavailable
+PlatformSessionInvalid = platform_client.PlatformSessionInvalid
+aclose_platform_client = platform_client.aclose_client
 
 SESSION_TTL = timedelta(days=get_settings().session_ttl_days)
 
@@ -331,8 +342,105 @@ async def _open_session(session: AsyncSession, account_id: UUID) -> SessionToken
     return SessionToken(token=str(row.id), account_id=account_id, expires_at=expires_at)
 
 
+class PlatformLinkRefused(Exception):
+    """The member is signed in to ForKhatri but may not enter Mangaly as-is.
+
+    `code` is `platform_identity_conflict` (another proven Mangaly account holds
+    one of the member's identifiers) or `platform_account_not_active` (the
+    member's own Mangaly account is locked or deleted). Both need a human; the
+    request fails closed rather than guessing.
+    """
+
+    def __init__(self, code: str) -> None:
+        super().__init__(code)
+        self.code = code
+
+
+@dataclass(frozen=True, slots=True)
+class PlatformSession:
+    """A resolved ForKhatri session as Mangaly sees it."""
+
+    account_id: UUID
+    expires_at: datetime | None
+
+
+_LINK_REFUSAL_SQLSTATES = {
+    "MGL09": "platform_identity_conflict",
+    "MGL03": "platform_account_not_active",
+}
+
+
+def _link_refusal_code(exc: DBAPIError) -> str | None:
+    orig = exc.orig
+    sqlstate = getattr(orig, "sqlstate", None) or getattr(orig, "pgcode", None)
+    if sqlstate in _LINK_REFUSAL_SQLSTATES:
+        return _LINK_REFUSAL_SQLSTATES[str(sqlstate)]
+    message = str(orig)
+    for code in _LINK_REFUSAL_SQLSTATES.values():
+        if code in message:
+            return code
+    return None
+
+
+async def resolve_platform_session(session: AsyncSession, token: str) -> PlatformSession:
+    """[ForKhatri TR15] Resolve an `fk_session` token to Mangaly's account id.
+
+    1. Claims come from the Identity & Trust Service (cached ≤30 s / 5 s,
+       `platform.py`).
+    2. `mangaly_identity.ensure_platform_account()` (migration 014) creates the
+       member-link row just-in-time, or syncs its phone/email to the platform's
+       verified identifiers — Home Circle matches invitations against exactly
+       those columns (`get_own_identifiers`). It runs on every request, not only
+       on a cache miss: the row write belongs to this request's transaction, and
+       a cached "already ensured" could outlive a rolled-back first request.
+    3. `mangaly.account_id` is bound with SET LOCAL, exactly as the interim
+       `validate_session` did, so every RLS policy downstream is unchanged.
+
+    `member_id == account_id` by construction (TR10/TR23).
+
+    Raises `PlatformSessionInvalid` (→ 401), `PlatformIdentityUnavailable`
+    (→ 503, never a default account) or `PlatformLinkRefused` (→ 403).
+    """
+    claims = await platform_client.resolve_token(token)
+    if claims.status != "active":
+        raise PlatformSessionInvalid
+
+    try:
+        result = await session.execute(
+            text(
+                "SELECT mangaly_identity.ensure_platform_account(:member_id, :phone, :email)"
+            ).bindparams(member_id=claims.member_id, phone=claims.phone_e164, email=claims.email)
+        )
+    except DBAPIError as exc:
+        code = _link_refusal_code(exc)
+        if code is not None:
+            raise PlatformLinkRefused(code) from exc
+        if "platform_identity_invalid" in str(exc.orig):
+            # Claims without identifiers: the platform is not sending Mangaly
+            # what TR14 says it must. A configuration fault — fail closed.
+            raise PlatformIdentityUnavailable from exc
+        raise
+
+    account_id: UUID = result.scalar_one()
+    await set_account_context(session, account_id)
+    if claims.display_name:
+        # Keeps the member's own link row in step with their ForKhatri name
+        # (migration 019). Allowed by `account_self_only`; writes only on change.
+        await session.execute(
+            text(
+                "UPDATE mangaly_identity.account SET display_name = :name, updated_at = now() "
+                "WHERE id = :account_id AND display_name IS DISTINCT FROM :name"
+            ).bindparams(name=claims.display_name, account_id=account_id)
+        )
+    return PlatformSession(account_id=account_id, expires_at=claims.session_expires_at)
+
+
 async def validate_session(session: AsyncSession, token: str) -> UUID | None:
     """[FR090/TR090] Resolve a bearer token to a live account id, or None.
+
+    [2026-09-14] INTERIM path only — reached solely when
+    `interim_identity_enabled` is true (automated tests). Platform sessions go
+    through `resolve_platform_session`.
 
     Returns None for anything not currently valid — malformed, unknown,
     expired, or revoked — so a caller cannot distinguish those cases either.

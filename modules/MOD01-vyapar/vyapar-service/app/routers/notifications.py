@@ -164,6 +164,18 @@ async def run_strong_match_pass(pool: asyncpg.Pool) -> int:
                 )
                 if not allowed:
                     continue
+                # [Coordinator bug #3 fix] never re-alert the same still-open
+                # match within 7 days — the daily idempotency key alone only
+                # guarantees no same-DAY duplicate, not "not effectively the
+                # same notification again tomorrow".
+                already_recent = await conn.fetchval(
+                    """SELECT EXISTS (SELECT 1 FROM vyapar_integration.notifications
+                         WHERE member_id = $1 AND template_id = 'strong_match'
+                           AND params->>'opportunity_id' = $2 AND created_at > now() - interval '7 days')""",
+                    member["id"], str(best_opp["id"]),
+                )
+                if already_recent:
+                    continue
                 idem_key = f"strong_match:{member['id']}:{best_opp['id']}:{date.today().isoformat()}"
                 title = translate("notifications.strongMatch.title", member["language"], title=best_opp["title"])
                 body = translate("notifications.strongMatch.body", member["language"])

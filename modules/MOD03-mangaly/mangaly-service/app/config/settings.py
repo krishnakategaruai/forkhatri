@@ -136,6 +136,22 @@ class Settings(BaseSettings):
         default_factory=lambda: ["http://localhost:3000", "http://127.0.0.1:3000"]
     )
 
+    # --- ForKhatri platform identity (docs/ParentApp/07-tech-reqs.md TR14-TR16, TR24)
+    # [2026-09-14] Sign-in belongs to the ForKhatri Identity & Trust Service.
+    # Mangaly resolves the browser's `fk_session` cookie over the internal API
+    # and never issues credentials of its own. No value here is hardcoded at a
+    # call site (TR24); real values live in `mangaly-service/.env`.
+    platform_identity_url: str = "http://localhost:8100"
+    platform_service_name: str = "mangaly"
+    platform_service_key: str = "CHANGE_ME"
+    platform_session_cookie_name: str = "fk_session"
+    platform_identity_timeout_seconds: float = 2.0
+    forkhatri_entrance_url: str = "http://localhost:3100"
+    # [TR15 step 5] The interim `mangaly_session` credential system (sign-up,
+    # login, OTP, reset) is retired. Off by default; only automated tests or
+    # an explicit development override may turn it back on.
+    interim_identity_enabled: bool = False
+
     api_debug: bool = Field(default=False)
 
     @property

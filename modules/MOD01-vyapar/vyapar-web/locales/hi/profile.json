@@ -1,11 +1,18 @@
 {
   "title": "प्रोफ़ाइल",
-  "notBuiltYet": "टीम एक्सेस और गोपनीयता सेटिंग्स जल्द आ रही हैं।",
+  "help": "सहायता और शिकायत",
+  "helpText": "आगे बढ़ाना है? grievance@forkhatri.example पर लिखें — हम 7 दिनों में जवाब देंगे।",
+  "backToForKhatri": "ForKhatri पर वापस जाएँ",
   "myListings": "मेरी लिस्टिंग",
   "enquiries": "पूछताछ",
   "moderationOutcomes": "मेरे मॉडरेशन परिणाम",
   "operatorTools": "ऑपरेटर टूल",
   "verificationQueue": "सत्यापन कतार",
   "moderationQueue": "मॉडरेशन कतार",
-  "myBoosts": "मेरे बूस्ट"
+  "myBoosts": "मेरे बूस्ट",
+  "workspaces": "बिज़नेस वर्कस्पेस",
+  "pendingInvites": "टीम आमंत्रण",
+  "accept": "स्वीकार करें",
+  "decline": "अस्वीकार करें",
+  "inviteRole": "भूमिका: {{role}}"
 }

@@ -139,7 +139,7 @@ async def search_listings(
         )
         return SearchResponse(
             results=[
-                SearchResult(listing=_row_to_out(r, [], ctx.member_id), relevance_reason="recentlyAdded")
+                SearchResult(listing=_row_to_out(r, [], ctx.member_id, lang=lang), relevance_reason="recentlyAdded")
                 for r in rows[:limit]
             ],
             total_considered=len(rows),
@@ -163,7 +163,7 @@ async def search_listings(
 
     results = []
     for _, reason, row in scored[:limit]:
-        card = _row_to_out(row, [], ctx.member_id)
+        card = _row_to_out(row, [], ctx.member_id, lang=lang)
         card.reputation = reps.get(str(row["id"]))  # [FR28] reputation line on every result card
         results.append(SearchResult(listing=card, relevance_reason=reason))
 
@@ -184,7 +184,7 @@ async def search_listings(
                 if audience.get("category") and audience["category"] != category:
                     continue
                 row = row_by_id[str(boost["target_id"])]
-                card = _row_to_out(row, [], ctx.member_id)
+                card = _row_to_out(row, [], ctx.member_id, lang=lang)
                 card.reputation = reps.get(str(row["id"]))
                 card.sponsored = True
                 sponsored.append(SearchResult(listing=card, relevance_reason="sponsored"))

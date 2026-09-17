@@ -32,7 +32,9 @@ from app.db import get_conn
 from app.deps import Locale
 from app.i18n import translate
 from app.identity import AuthzContext, resolve_authz_context
+from app.routers.privacy import require_accepted
 from app.impressions import boosted_ids, log_events
+from app.taxonomy_cache import labels_for
 from app.reputation import reputation_for_listings
 
 router = APIRouter(prefix="/v1/listings", tags=["listings"])
@@ -155,6 +157,10 @@ class ListingOut(BaseModel):
     categories: list[str]
     capabilities: list[str]
     unmapped_labels: list[str]
+    # [Coordinator bug #2 fix] localized display names for the raw slugs
+    # above — always populated, never the raw slug.
+    category_labels: list[str] = []
+    capability_labels: list[str] = []
     locality: str
     service_mode: str
     service_radius_km: int
@@ -218,7 +224,7 @@ async def has_verified_listing(conn: asyncpg.Connection, member_id: str) -> bool
 
 
 def _row_to_out(
-    row: asyncpg.Record, contacts: list[asyncpg.Record], caller_id: str, saved: bool = False
+    row: asyncpg.Record, contacts: list[asyncpg.Record], caller_id: str, saved: bool = False, lang: str = "en"
 ) -> ListingOut:
     is_owner = row["owner_id"] == caller_id
     credential_ref = row["credential_ref"]
@@ -240,6 +246,8 @@ def _row_to_out(
         categories=list(row["categories"]),
         capabilities=list(row["capabilities"]),
         unmapped_labels=list(row["unmapped_labels"]),
+        category_labels=labels_for(list(row["categories"]), lang),
+        capability_labels=labels_for(list(row["capabilities"]), lang),
         locality=row["locality"],
         service_mode=row["service_mode"],
         service_radius_km=row["service_radius_km"],
@@ -298,14 +306,14 @@ async def create_listing(
         """INSERT INTO vyapar_listings.listings
              (owner_id, kind, name, headline, description, categories, capabilities, unmapped_labels,
               locality, lat, lng, service_mode, service_radius_km, primary_phone,
-              opportunity_participation, setup_step)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+              opportunity_participation, setup_step, content_language)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
            RETURNING *""",
         ctx.member_id, body.kind, body.name, body.headline, body.description,
         cat_matched, cap_matched, cat_unmapped + cap_unmapped,
         body.locality, body.lat, body.lng, body.service_mode, body.service_radius_km,
         body.primary_phone, body.opportunity_participation,
-        1 if body.kind == "professional" else 0,
+        1 if body.kind == "professional" else 0, lang,
     )
     for c in body.contacts:
         await conn.execute(
@@ -331,7 +339,7 @@ async def list_my_listings(
         contacts = await conn.fetch(
             "SELECT channel, value, disclosure FROM vyapar_listings.listing_contacts WHERE listing_id = $1", row["id"]
         )
-        out.append(_row_to_out(row, contacts, ctx.member_id))
+        out.append(_row_to_out(row, contacts, ctx.member_id, lang=lang))
     return out
 
 
@@ -361,7 +369,7 @@ async def get_listing(
            RETURNING saved_at""",
         ctx.member_id, listing_id,
     )
-    out = _row_to_out(row, contacts, ctx.member_id, saved=saved_row["saved_at"] is not None)
+    out = _row_to_out(row, contacts, ctx.member_id, saved=saved_row["saved_at"] is not None, lang=lang)
     # [FR28/TR016] trust context composed on the detail read
     out.reputation = (await reputation_for_listings(conn, [row])).get(str(row["id"]))
     out.sponsored = str(row["id"]) in await boosted_ids(conn, "listing", [row["id"]])
@@ -434,7 +442,17 @@ async def patch_listing(
     conn: asyncpg.Connection = Depends(get_conn),
 ) -> ListingOut:
     current = await conn.fetchrow("SELECT * FROM vyapar_listings.listings WHERE id = $1", listing_id)
-    if current is None or current["owner_id"] != ctx.member_id:
+    # [FR34] the owner, or a workspace ADMIN acting for the business. An
+    # Operator handles opportunities, enquiries and reports — never the
+    # listing itself — so the role check lives here, through the one
+    # Authorization Engine, not in a second copy of the rule.
+    if current is not None and current["owner_id"] != ctx.member_id:
+        from app import authz
+
+        wctx = await authz.workspace_context(conn, listing_id)
+        if wctx is None or wctx.role not in ("owner", "admin") or not wctx.entitlement_active:
+            current = None
+    if current is None:
         raise HTTPException(status_code=404, detail=translate("common.error.listingNotFound", lang))
 
     cat_matched, cat_unmapped, cap_matched, cap_unmapped = None, [], None, []
@@ -603,6 +621,9 @@ async def submit_listing(
     current = await conn.fetchrow("SELECT * FROM vyapar_listings.listings WHERE id = $1", listing_id)
     if current is None or current["owner_id"] != ctx.member_id:
         raise HTTPException(status_code=404, detail=translate("common.error.listingNotFound", lang))
+    # [FR53/TR053] the gate every publish path calls before proceeding.
+    await require_accepted(conn, ctx.member_id, "privacy", lang)
+    await require_accepted(conn, ctx.member_id, "terms", lang)
     if current["state"] != "draft":
         # [Plain-language member-facing message — never the raw internal
         # state enum value, e.g. 'active_unverified'.]

@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date
+from pathlib import Path
 from uuid import UUID, uuid4
 
 from fastapi import UploadFile
@@ -53,6 +54,7 @@ __all__ = [
     "PhotoNotFound",
     "PhotoOrderMismatch",
     "PhotoSummary",
+    "ProfileView",
     "ProfileNotFound",
     "TooYoung",
     "add_photo",
@@ -63,14 +65,21 @@ __all__ = [
     "get_all_attributes",
     "list_own_photos",
     "reorder_photos",
+    "resolve_photo_url",
     "set_primary_photo",
     "get_category",
     "get_own_profile",
     "is_discoverable",
     "lookup_account_by_profile_id",
     "lookup_profile_id_by_account",
+    "media_path_for_viewer",
     "update_category",
+    "delete_voice_intro",
+    "public_biodata",
+    "save_voice_intro",
+    "voice_intro_url",
     "view_profile",
+    "view_profile_full",
 ]
 
 
@@ -134,6 +143,7 @@ async def create_profile(
     gender: str,
     city_locality: str,
     photo: UploadFile,
+    looking_for: str,
 ) -> ProfileSummary:
     """[FR001/TR001] Create the existence-tier profile row plus its one
     required photo, in one transaction, publishing `ProfileCreated`.
@@ -151,6 +161,8 @@ async def create_profile(
         )
         if not value
     ]
+    if looking_for not in LOOKING_FOR_OPTIONS:
+        missing.append("looking_for")
     if missing:
         raise MissingRequiredFields(missing)
 
@@ -195,6 +207,19 @@ async def create_profile(
             storage_ref=storage_ref,
             is_primary=True,
             upload_status=MediaUploadStatus.COMPLETE,
+        )
+    )
+
+    # Who the member is looking for is asked while creating the profile;
+    # Discovery matches only people who are looking for each other.
+    await session.execute(
+        insert(ProfileAttribute).values(
+            id=uuid4(),
+            profile_id=profile_id,
+            category="partner_preference",
+            attribute_key="looking_for",
+            state=FieldState.VALUE,
+            value=looking_for,
         )
     )
 
@@ -260,6 +285,12 @@ async def get_own_profile(session: AsyncSession, *, account_id: UUID) -> Profile
 
 
 MAX_PHOTOS = 6
+
+# A voice introduction is one clip, replaced rather than collected.
+VOICE_INTRO_MAX_SECONDS = 60
+
+# "Looking for" answers, collected at profile creation.
+LOOKING_FOR_OPTIONS = ("bride", "groom")
 
 
 class PhotoLimitReached(Exception):
@@ -451,6 +482,11 @@ async def view_profile(
     function is the one used wherever the viewer and target can genuinely
     differ.
     """
+    await _bind_viewer(session, viewer_account_id)
+    return await get_own_profile(session, account_id=target_account_id)
+
+
+async def _bind_viewer(session: AsyncSession, viewer_account_id: UUID) -> None:
     from app.components.authorization import interface as authz
     from app.components.authorization.context import Action
 
@@ -461,7 +497,188 @@ async def view_profile(
         target_profile_id=None,
         action=Action.READ,
     )
-    return await get_own_profile(session, account_id=target_account_id)
+
+
+@dataclass(frozen=True, slots=True)
+class ProfileView:
+    profile: ProfileSummary
+    photos: list[PhotoSummary]
+    attributes: dict[str, dict[str, object]]
+
+
+# Partner preferences are private matching filters, never shown to anyone else.
+_PRIVATE_CATEGORIES = ("partner_preference",)
+
+
+async def public_biodata(session: AsyncSession, *, account_id: UUID) -> dict[str, dict]:
+    """[DEC-V1-020, migration 027] The matrimonial facts a searchable candidate
+    has filled in — what an Indian matrimony biodata leads with — readable by
+    any signed-in member. Never the name, never phone or email, never a
+    non-primary photo: identity still moves only when a connection is accepted
+    (FR021). A declined or unset field is simply absent.
+
+    Returns `{category: {attribute_key: value}}`; `{}` when the subject is not
+    searchable, which a caller should treat as "nothing to show".
+    """
+    rows = await session.execute(
+        text("SELECT * FROM mangaly_profile.public_biodata(:account_id)"),
+        {"account_id": account_id},
+    )
+    biodata: dict[str, dict] = {}
+    for row in rows:
+        biodata.setdefault(row.category, {})[row.attribute_key] = row.value
+    return biodata
+
+
+async def view_profile_full(
+    session: AsyncSession, *, viewer_account_id: UUID, target_account_id: UUID
+) -> ProfileView | None:
+    """[FR020/FR021] Everything an authorized viewer may see, in one response,
+    with no teaser shape or second unlock step. RLS decides who is authorized
+    (self, or a `candidate_info` grantee); anyone else gets None."""
+    await _bind_viewer(session, viewer_account_id)
+    summary = await get_own_profile(session, account_id=target_account_id)
+    if summary is None:
+        return None
+
+    photos = [
+        PhotoSummary(id=row.id, url=storage.resolve_url(row.storage_ref), is_primary=row.is_primary)
+        for row in await _own_photo_rows(session, summary.id)
+    ]
+    if viewer_account_id != target_account_id and len(photos) > 1:
+        from app.components.connection import interface as connection
+
+        # [FR046] Acceptance unlocks the main photo; the rest are "additional
+        # photos", visible only while their owner shares them.
+        if not await connection.has_active_share(
+            session,
+            owner_account_id=target_account_id,
+            viewer_account_id=viewer_account_id,
+            category="additional_photos",
+        ):
+            photos = photos[:1]
+    rows = (
+        await session.execute(
+            select(
+                ProfileAttribute.category, ProfileAttribute.attribute_key, ProfileAttribute.value
+            ).where(
+                ProfileAttribute.profile_id == summary.id,
+                ProfileAttribute.state == FieldState.VALUE,
+                ProfileAttribute.category.not_in(_PRIVATE_CATEGORIES),
+            )
+        )
+    ).all()
+    attributes: dict[str, dict[str, object]] = {}
+    for category, key, value in rows:
+        attributes.setdefault(category, {})[key] = value
+    return ProfileView(profile=summary, photos=photos, attributes=attributes)
+
+
+async def save_voice_intro(session: AsyncSession, *, account_id: UUID, clip: UploadFile) -> str:
+    """[Product owner 2026-09-17] Record or replace the profile's spoken
+    introduction. One clip per profile: a new recording replaces the old row,
+    so there is never a list of takes to manage."""
+    profile_id = await _own_profile_id(session, account_id=account_id)
+    if profile_id is None:
+        raise ProfileNotFound
+
+    storage_ref = await storage.save_voice(profile_id, clip)
+    await session.execute(
+        delete(ProfileMedia).where(
+            ProfileMedia.profile_id == profile_id,
+            ProfileMedia.media_type == MediaType.AUDIO,
+        )
+    )
+    media_id = uuid4()
+    await session.execute(
+        insert(ProfileMedia).values(
+            id=media_id,
+            profile_id=profile_id,
+            media_type=MediaType.AUDIO,
+            storage_ref=storage_ref,
+            is_primary=False,
+            sort_order=0,
+            upload_status=MediaUploadStatus.COMPLETE,
+        )
+    )
+    await bus.publish(
+        session,
+        schema="mangaly_profile",
+        aggregate_id=profile_id,
+        event_type="ProfileVoiceIntroRecorded",
+        payload={"profile_id": str(profile_id), "media_id": str(media_id)},
+    )
+    return storage.resolve_url(storage_ref)
+
+
+async def voice_intro_url(session: AsyncSession, *, profile_id: UUID) -> str | None:
+    """The profile's voice introduction, or None. RLS decides whether the
+    caller may see the row at all — the owner, or an accepted connection."""
+    ref = (
+        await session.execute(
+            select(ProfileMedia.storage_ref).where(
+                ProfileMedia.profile_id == profile_id,
+                ProfileMedia.media_type == MediaType.AUDIO,
+            )
+        )
+    ).scalar_one_or_none()
+    return storage.resolve_url(ref) if ref else None
+
+
+async def delete_voice_intro(session: AsyncSession, *, account_id: UUID) -> None:
+    """Remove the profile's voice introduction. The file itself is left on the
+    local-disk stand-in, the same as a deleted photo (TR006's lifecycle)."""
+    profile_id = await _own_profile_id(session, account_id=account_id)
+    if profile_id is None:
+        raise ProfileNotFound
+    await session.execute(
+        delete(ProfileMedia).where(
+            ProfileMedia.profile_id == profile_id,
+            ProfileMedia.media_type == MediaType.AUDIO,
+        )
+    )
+
+
+async def media_path_for_viewer(
+    session: AsyncSession, *, viewer_account_id: UUID, storage_ref: str
+) -> Path | None:
+    """[FR006] A photo file only for viewers RLS lets read its media row: the
+    owner or a `candidate_info` grantee. Everyone else gets None, the same
+    answer as a file that does not exist."""
+    await _bind_viewer(session, viewer_account_id)
+    row = (
+        await session.execute(
+            select(ProfileMedia.is_primary, ProfileMedia.media_type, Profile.account_id)
+            .join(Profile, Profile.id == ProfileMedia.profile_id)
+            .where(ProfileMedia.storage_ref == storage_ref)
+            .limit(1)
+        )
+    ).first()
+    if row is None:
+        # [DEC-V1-016] A searchable candidate's main photo is shown on Discover.
+        discoverable = (
+            await session.execute(
+                text("SELECT mangaly_profile.is_discoverable_primary_photo(:ref)"),
+                {"ref": storage_ref},
+            )
+        ).scalar_one()
+        return storage.local_path(storage_ref) if discoverable else None
+    if row.media_type is MediaType.AUDIO:
+        # Hearing someone speak is identity-revealing, so a voice introduction
+        # is never part of the pre-connection card: RLS admitting this row
+        # already means the viewer is the owner or an accepted connection.
+        return storage.local_path(storage_ref)
+    if not row.is_primary and row.account_id != viewer_account_id:
+        from app.components.connection import interface as connection
+
+        if not await connection.has_active_share(
+            session,
+            owner_account_id=row.account_id,
+            viewer_account_id=viewer_account_id,
+            category="additional_photos",
+        ):
+            return None
+    return storage.local_path(storage_ref)
 
 
 async def lookup_profile_id_by_account(session: AsyncSession, *, account_id: UUID) -> UUID | None:
@@ -733,3 +950,8 @@ async def completeness(session: AsyncSession, *, account_id: UUID) -> Completene
         enhanced_filled_categories=len(touched_enhanced),
         enhanced_total_categories=len(ENHANCED_MATCHING_CATEGORIES),
     )
+
+
+def resolve_photo_url(storage_ref: str) -> str:
+    """The client-loadable URL for a stored photo (served by the authorized media route)."""
+    return storage.resolve_url(storage_ref)

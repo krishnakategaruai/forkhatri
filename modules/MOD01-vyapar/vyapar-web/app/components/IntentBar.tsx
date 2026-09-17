@@ -57,6 +57,10 @@ export default function IntentBar({ onSearch, placeholder }: IntentBarProps) {
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && onSearch(parsed)}
         placeholder={placeholder ?? t("businesses.searchPlaceholder")}
+        // [FR43/TR043 — WCAG 1.3.1/4.1.2, found in the manual review pass] a
+        // placeholder alone is never a valid accessible name — this is the
+        // app's own primary search field, so it gets an explicit one.
+        aria-label={placeholder ?? t("businesses.searchPlaceholder")}
       />
       {(parsed.category || parsed.locality) && (
         <div className="vy-row" style={{ flexWrap: "wrap" }}>

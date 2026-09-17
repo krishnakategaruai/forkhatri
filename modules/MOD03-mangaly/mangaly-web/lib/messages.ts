@@ -1,6 +1,6 @@
 /* Messaging calls against MangalyService — FR049. */
 
-import { API_BASE } from './api';
+import { API_BASE, apiFetch } from './api';
 import { getI18n } from './i18n/config';
 
 function currentLanguageHeader(): Record<string, string> {
@@ -13,7 +13,7 @@ function currentLanguageHeader(): Record<string, string> {
 
 async function getJson<T>(path: string): Promise<T | null> {
   try {
-    const res = await fetch(`${API_BASE}${path}`, {
+    const res = await apiFetch(`${API_BASE}${path}`, {
       credentials: 'include',
       cache: 'no-store',
       headers: currentLanguageHeader(),
@@ -31,7 +31,7 @@ type Outcome<T> = { ok: true; data: T } | { ok: false; status: number; message?:
 async function postJson<T>(path: string, body?: unknown): Promise<Outcome<T>> {
   let res: Response;
   try {
-    res = await fetch(`${API_BASE}${path}`, {
+    res = await apiFetch(`${API_BASE}${path}`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json', ...currentLanguageHeader() },
@@ -62,7 +62,12 @@ export type ConversationSummary = {
 
 export type Message = {
   id: string;
-  sender_account_id: string;
+  /* null for a system line: the platform is speaking, not either person. */
+  sender_account_id: string | null;
+  /* 'member' for something a person wrote, 'system' for a line the platform
+     added — a system line's `content` is a key, rendered in the reader's own
+     language rather than frozen in the sender's. */
+  kind: 'member' | 'system';
   content: string;
   sent_at: string;
 };
@@ -77,4 +82,20 @@ export async function listMessages(connectionId: string): Promise<Message[]> {
 
 export async function sendMessage(connectionId: string, content: string): Promise<Outcome<Message>> {
   return postJson(`/messages/${connectionId}`, { content });
+}
+
+/** [DEC-V1-021] End the session: everything the two wrote is deleted for both.
+ * `keepalive` so the browser still sends it while the page is being closed —
+ * leaving the thread is itself the end of the session. */
+export async function closeConversation(connectionId: string): Promise<void> {
+  try {
+    await apiFetch(`${API_BASE}/messages/${connectionId}/close`, {
+      method: 'POST',
+      credentials: 'include',
+      keepalive: true,
+      headers: currentLanguageHeader(),
+    });
+  } catch {
+    /* Leaving is not a moment to show an error; the next open purges anyway. */
+  }
 }

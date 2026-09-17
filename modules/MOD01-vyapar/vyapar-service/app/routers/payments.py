@@ -120,12 +120,18 @@ async def _apply_event(conn: asyncpg.Connection, event: GatewayEvent) -> dict:
             order["kind"], order["ref_id"], order["order_id"], outcome,
         )
         for res in results:
-            link = f"/promotions/{order['ref_id']}"
+            kind = order["kind"]
+            link = {
+                "promotion": f"/promotions/{order['ref_id']}",
+                "entitlement": "/profile",
+                "campaign": f"/campaigns/{order['ref_id']}",
+            }.get(kind, "/profile")
+            active_template = {"promotion": "promotionActive", "entitlement": "entitlementActive", "campaign": "campaignActive"}[kind]
             if res["to_state"] == "active":
                 await notify_member(
-                    conn, member_id=res["owner_id"], template="promotionActive", link=link,
-                    idempotency_key=f"promotion_active:{order['ref_id']}",
-                    params={"date": res["ends_at"].date().isoformat() if res["ends_at"] else ""},
+                    conn, member_id=res["owner_id"], template=active_template, link=link,
+                    idempotency_key=f"{kind}_active:{order['ref_id']}",
+                    params={"date": res["ends_at"].date().isoformat() if res["ends_at"] else "", "name": ""},
                 )
             elif outcome == "failed":
                 await notify_member(

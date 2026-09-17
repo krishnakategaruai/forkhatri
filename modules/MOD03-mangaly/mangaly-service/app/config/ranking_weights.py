@@ -30,4 +30,12 @@ assert (
     < 1e-9
 ), "DEC-V1-002 weights must sum to 1.0"
 
-RANKING_WEIGHTS_VERSION: Final[str] = "DEC-V1-002.v1"
+# DEC-V1-002's diversity re-rank: after the weighted sort, no more than
+# MAX_SAME_BRACKET_RUN results in a row may share one of SCORE_BRACKETS equal
+# bands of the 0-1 score.
+SCORE_BRACKETS: Final[int] = 10
+MAX_SAME_BRACKET_RUN: Final[int] = 3
+
+# v2: the partner-preference term counts both people's stated preferences
+# (a two-way match), and the diversity re-rank runs after the weighted sort.
+RANKING_WEIGHTS_VERSION: Final[str] = "DEC-V1-002.v2"

@@ -45,6 +45,8 @@ class MediaType(StrEnum):
 
     PHOTO = "photo"
     VIDEO = "video"
+    # [Migration 029] A spoken introduction the candidate records themselves.
+    AUDIO = "audio"
 
 
 class MediaUploadStatus(StrEnum):

@@ -3,7 +3,7 @@ module: MOD03
 step: v1-design-decisions
 status: Sealed
 approver: Product Manager / Chief Architect (joint)
-updated: 2026-09-13
+updated: 2026-09-14
 ---
 
 # V1 Design Decisions — MOD03 Mangaly
@@ -16,6 +16,7 @@ updated: 2026-09-13
 | 2026-09-12 | Correction pass: re-read every Mangaly `.docx` source in full to confirm no SLA/severity numbers were already decided there (confirmed — the sources explicitly flag these as needing "abuse taxonomy, severity matrix, operational staffing and legal review," never a number). Replaced every previously-invented SLA figure (verifier/evidence review, safety-severity response times, admin staffing model) with values grounded in either a named real competitor's published practice (BharatMatrimony's 1-hour photo-verification turnaround, DEC-V1-004) or an actual legally-binding ceiling for an India-based platform (the IT Rules 2021, as amended February 2026: 24h grievance acknowledgment, 2h removal for nudity/impersonation content, 36h resolution ceiling; India's POCSO Act mandatory CSAM reporting obligation, analogous to the US NCMEC/REPORT Act's 24-hour requirement) — per the standing instruction that SLA and legality decisions must follow real, verified existing rules and named applications, not invented round numbers. See DEC-V1-004, DEC-V1-006, DEC-V1-007 for the corrected text. | Legal/competitor grounding correction — krishna kategaru (autonomous), 2026-09-12. |
 | 2026-09-12 | Impact Analysis follow-up: addressed every actionable finding `06-impact-analysis.md` (Step 6) raised against this file's own decisions before Step 7/implementation begins. Added the personality-assessment instrument (IA033) to "What stays open," which had been a genuine omission. Added DEC-V1-009, resolving IA065/IA068/IA074's finding that DEC-V1-006's severity taxonomy had no actual mechanism to reach its Tier 3/4 exits — named a concrete on-call paging category and, via live research, the actual legally-specified CSAM reporting channel (POCSO Rules 2020 Rule 11: SJPU/local police/cybercrime.gov.in, including the Rule 11(2) source-material handover obligation). Added a "Known technical debt" section recording IA092's interim-account-system migration risk explicitly rather than leaving it as a floating Impact Analysis note. | Impact Analysis follow-up — krishna kategaru (autonomous), 2026-09-12. |
 | 2026-09-13 | **Step 8 (Security & Performance) follow-up.** Step 8's own review found two items this file had left as "genuinely external, not resolved here" (message/evidence retention window; the CSAM packet schema/paging vendor's remaining implementation-stage detail) were actually resolvable now, per this file's own established convention (DEC-V1-005's marriageable-age research, DEC-V1-006's safety-severity SLA table) of deriving V1 values from real law and named-competitor precedent rather than waiting on an external actor this pipeline has no seat for ("legal counsel," an unselected procurement vendor). Added **DEC-V1-010** (message/profile data retention and erasure windows, grounded in the DPDP Act 2023 + DPDP Rules 2025's actual retention/erasure provisions — Rule 8's purpose-fulfilled erasure test, the Seventh Schedule's 1-year log-retention floor, the Third Schedule's 3-year large-platform inactivity ceiling with its mandatory 48-hour pre-erasure notice — cross-checked against BharatMatrimony's and Shaadi.com's own published privacy-policy retention practice) and **DEC-V1-011** (CSAM report packet field schema, modeled on NCMEC's real CyberTipline ESP reporting-schema field categories per POCSO Rule 11(2)'s own source-material handover requirement, plus naming PagerDuty concretely as the on-call paging vendor, per this project's config-placeholder convention). Removed the message/evidence-retention row from "What stays open" (resolved) — legal-hold *duration* itself remains inherently case-specific (a legal hold lasts as long as the actual legal matter requires, in any jurisdiction; that is a structural property of what a legal hold is, not an unresolved external dependency), recorded explicitly rather than left ambiguous. The verification-vendor selection and personality-assessment-instrument rows remain genuinely open — both require an actual third-party contracting decision this pipeline has no mechanism to make, unlike retention windows and packet schema, which required only research this pass performed. | Step 8 Security & Performance follow-up — krishna kategaru (autonomous), 2026-09-13. |
+| 2026-09-14 | **DEC-V1-015 added: the interim identity system is retired into the ForKhatri platform identity.** The product owner decided ForKhatri is one app with one sign-in and one member identity; the platform Identity & Trust Service (`platform/identity-service`) now exists, so the IA092 technical debt recorded under "Known technical debt" is paid down rather than carried. `mangaly_identity.account` becomes Mangaly's member-link table (migration 014), the interim credential routes answer `410 moved_to_forkhatri` behind `INTERIM_IDENTITY_ENABLED=false`, and the web client hands sign-in/sign-out to the ForKhatri entrance. BR/FR files untouched (documentation corrections are a separate pass). | Product owner decision (one ForKhatri sign-in); binding contract `docs/ParentApp/07-tech-reqs.md` TR10–TR17, TR23 — krishna kategaru (autonomous), 2026-09-14. |
 
 ## Purpose
 
@@ -489,9 +490,73 @@ Step 9 implementation-time confirmations — narrower, genuinely
 implementation-stage details, not the same open-endedness this item started
 with.
 
+### DEC-V1-015 — Interim identity retired into the ForKhatri platform identity (pays down the IA092 technical debt)
+
+**Date:** 2026-09-14. **Binding contract:** `docs/ParentApp/07-tech-reqs.md`
+TR10–TR17, TR23; `docs/ForKhatri-Unified-Umbrella-App-Interpretation.md`
+("Mangaly's interim credentials are migration debt, not a final identity
+decision").
+
+In the context of the product owner's decision that ForKhatri is one
+mobile-first app with one sign-in and one member identity — members sign in
+once, then choose a module — and of the platform Identity & Trust Service now
+existing (`platform/identity-service`, database `forkhatri_identity`), facing
+Mangaly's interim account/OTP/password/session system (FR092–FR095, FR101,
+DEC-V1-012) being exactly the "second login" that decision rules out, we
+decided:
+
+1. **Sign-in leaves Mangaly.** MangalyService accepts one credential: the
+   ForKhatri `fk_session` cookie. Its Identity Bridge resolves the token over
+   the internal API (TR14) with a per-token in-process cache (≤30 s positive,
+   5 s negative; keyed by SHA-256 of the token), fails closed with `503` when
+   the identity service cannot answer, and binds `mangaly.account_id` with
+   `SET LOCAL` exactly as before — every RLS policy is unchanged.
+2. **Link-table approach: reuse `mangaly_identity.account`.** Its `id` is the
+   platform `member_id` (TR10). TR23 imported every active Mangaly account into
+   the platform with its id unchanged, so no foreign key in any of the 14
+   schemas is rewritten. Migration `014-platform-identity-link.sql` makes
+   `credential_hash` nullable, keeps "must have a phone or email" except for a
+   `deleted` row, and adds the SECURITY DEFINER
+   `ensure_platform_account(member_id, phone, email)`, called on every
+   platform-authenticated request: it creates the row just-in-time for a new
+   member (TR11) and syncs phone/email to the platform's verified values, which
+   Home Circle's invitation matching reads. A different `pending_verification`
+   account holding the identifier (an abandoned, never-proven interim sign-up)
+   is retired; a different `active`/`locked` account holding it is refused
+   (`403 platform_identity_conflict`) for operations to reconcile, never merged
+   silently. An own `locked`/`deleted` row is refused too
+   (`403 platform_account_not_active`) — platform sign-in must not undo a
+   Mangaly lock or deletion.
+3. **Flag default off.** `INTERIM_IDENTITY_ENABLED=false`. The interim
+   credential routes (sign-up, login, login OTP, OTP verify/resend, reset
+   request/confirm) answer `410 {"detail": {"code": "moved_to_forkhatri",
+   "message", "entrance_url"}}`; the legacy `mangaly_session`/bearer path is
+   ignored. The code is retained, not deleted, and automated tests enable the
+   flag explicitly (TR15 step 5). `/auth/me` answers for the platform session.
+4. **Web client.** `/login`, `/signup`, `/otp`, `/reset` hand off to the
+   ForKhatri entrance; any `401` navigates to
+   `${ENTRANCE}/?return_to=<current URL>`; log out calls the platform
+   `POST /v1/auth/sign-out` then goes to the entrance; Mangaly's top bar
+   carries a persistent "ForKhatri" link back to the hub in Mangaly's own
+   button style.
+
+We chose reusing `mangaly_identity.account` over introducing a new member-link
+table, to achieve zero foreign-key rewrites and zero RLS policy changes on a
+live, sensitive schema, accepting that the table and its sibling tables
+(`otp_challenge`, `password_reset_token`, `session`) keep dormant interim
+credential data until a later, separately-reviewed cleanup migration; and we
+chose a ≤30-second resolution cache over a call per request, accepting that a
+sign-out takes up to 30 seconds to reach Mangaly (the contract's own bound).
+
+**Supersedes:** DEC-V1-012 as a *Mangaly* mechanism — passwordless-primary
+sign-in with an optional password now lives in the platform (TR13/TR19), not
+here.
+
 ## Known technical debt (tracked, not blocking V1)
 
 Per `06-impact-analysis.md` IA092: Mangaly is building its own interim account/credential system (FR092-FR095) because no Common Platform Identity & Trust Service exists yet, ahead of Mangaly in build order (ADR-016/017) — a fact FR092 itself already discloses honestly rather than silently. This is the correct and only viable choice given Mangaly's build-order position, not a mistake, but it creates a real, high-likelihood future obligation: whenever a platform-wide Identity module is eventually built, Mangaly's live candidate credentials and sessions will need migrating into it, and live credential/session migration is a genuinely high-risk operation class. Recording this now, explicitly, as a planned future migration rather than a surprise discovered later, is the entire value of naming it here — no action is required of V1 itself beyond building FR092-FR095 exactly as specified. **Credential hashing (2026-09-13, Step 8 note):** the interim `mangaly_identity.account.credential_hash` column names no algorithm in `schema.sql` — Step 9 must implement this using **Argon2id** (current OWASP-recommended default) or bcrypt with a work factor tuned to ~250–500ms verification cost, never an unsalted or fast general-purpose hash; this is a plain implementation instruction, not an open design question.
+
+**Paid down 2026-09-14 (DEC-V1-015).** The platform Identity & Trust Service now owns credentials and sessions. Active Mangaly accounts were imported with their ids and Argon2id hashes (ForKhatri TR23), and Mangaly resolves the ForKhatri session instead of its own. The interim tables remain as dormant history (see DEC-V1-015's accepted trade-off); the interim routes answer `410`.
 
 ## Updates this file makes to already-Sealed files
 

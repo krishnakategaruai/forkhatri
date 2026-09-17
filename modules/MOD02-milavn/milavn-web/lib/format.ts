@@ -17,6 +17,12 @@ export function formatDateLong(iso: string, lang = 'en'): string {
   return new Intl.DateTimeFormat(LOCALE[lang] ?? 'en-IN', { timeZone: IST, weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
 }
 
+// FR102: rupees in the person's language, whole rupees without decimals (₹200, ₹1,250.50).
+export function formatInr(paise: number, lang = 'en'): string {
+  const digits = paise % 100 === 0 ? 0 : 2;
+  return new Intl.NumberFormat(LOCALE[lang] ?? 'en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: digits, maximumFractionDigits: digits }).format(paise / 100);
+}
+
 export function formatRelative(iso: string): string {
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
   if (diff < 60) return 'just now';

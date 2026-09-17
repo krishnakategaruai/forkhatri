@@ -1,0 +1,47 @@
+{
+  "title": "Content operations",
+  "notOperator": "This area is only for operators with the right permission.",
+  "health": {
+    "title": "Marketplace health",
+    "minGroupNote": "Any group smaller than {{n}} is hidden here, not shown as a rough number.",
+    "notEnoughData": "Not enough data yet",
+    "metric": {
+      "opportunity_coverage": "Opportunity coverage",
+      "relevant_discovery_rate": "Relevant discovery rate",
+      "zero_result_rate": "Zero-result rate",
+      "opportunity_action_rate": "Opportunity action rate",
+      "relevant_opportunity_connections": "Relevant connections",
+      "successful_connection_rate": "Successful connection rate",
+      "discovery_to_enquiry_rate_listings": "Discovery → enquiry rate",
+      "freshness": "Freshness",
+      "reports_per_1000_interactions": "Reports per 1,000 interactions",
+      "notification_opt_out_rate": "Notification opt-out rate",
+      "promotion_repeat_rate": "Boost repeat rate",
+      "revenue_paise": "Revenue (paise)",
+      "refunds_paise": "Refunds (paise)",
+      "time_to_first_relevant_opportunity_hours": "Time to first relevant opportunity (hours)"
+    }
+  },
+  "opportunitiesQueue": {
+    "title": "Opportunity review queue",
+    "empty": "Nothing waiting for review.",
+    "ageDays": "{{n}} days old",
+    "approve": "Approve",
+    "return": "Return to contributor",
+    "remove": "Remove",
+    "flag": {
+      "source_unreachable": "Source unreachable",
+      "unconfirmed_fields": "Fields unconfirmed"
+    }
+  },
+  "staleQueue": {
+    "title": "Stale / expired queue",
+    "empty": "Nothing is stale right now.",
+    "remind": "Remind ({{n}})",
+    "expire": "Expire ({{n}})",
+    "done": "{{n}} items updated."
+  },
+  "taxonomy": {
+    "title": "Taxonomy"
+  }
+}

@@ -22,6 +22,7 @@ items: "102 | approved: 102 | blockers: 0"
 | 2026-09-11 | Backfilled the `Traced to:` field on all 102 FRs (the 89 original plus FR090–FR102) with their owning UX item from the now-Sealed `03-ux.md`, per Step 3's own closing process step. Each FR now names the specific UXnn flow that designed its screen(s), completing the FR-to-UX traceability chain this file left as a placeholder pending that step. No other FR content changed. | UX traceability backfill — krishna kategaru (autonomous), 2026-09-11. |
 | 2026-09-12 | Backfilled the `Traced to:` field on all 102 FRs a second time, appending each FR's owning TS (Test Scenario) range from the now-Sealed `05-test-scenarios.md`'s Coverage check table, e.g. `**Traced to:** UX11 (Step 3 UX); TS001–TS002 (Step 5 Test Scenarios)`. Applied programmatically against that file's Coverage check mapping to avoid transcription error at this file's size. No other FR content changed. | TS traceability backfill — krishna kategaru (autonomous), 2026-09-12. |
 | 2026-09-12 | V1 design-decisions pass: `v1-decisions.md` resolves FR003/FR005 (tier field mapping), FR026/FR028/FR029 (ranking weights, fairness methodology, hint mechanics), FR037 (verifier anti-abuse mechanics), FR041 (marriageable-age threshold, confirmed 21/18 via live legal research and implemented as an admin-configurable setting, not a hardcoded literal), FR064/FR068 (severity taxonomy and detection-scope boundaries), FR072–FR074 (admin workflow/staffing model), and FR085 (safety-guidance content) with concrete decisions. FR050/FR053/FR054 (retention/legal-hold) and the verification-vendor-selection half of FR035/FR037 remain open, genuinely gated on external DPDP legal sign-off and vendor procurement respectively — not resolved here, and not silently dropped. No FR content in this file changed — see `v1-decisions.md` for the resolutions. | V1 decisions pass — krishna kategaru (autonomous), 2026-09-12. |
+| 2026-09-14 | Post-seal correction: ForKhatri platform identity. Added dated correction notes under FR090, FR091, FR092, FR093, FR094, FR095, FR099 and FR101: sign-up, login, password reset, OTP and sessions are delivered by the ForKhatri Identity & Trust Service and entrance, and Mangaly's screens for them redirect to the entrance. Requirement bodies, acceptance criteria and approvals unchanged. Not re-sealed; awaits the owner's review. | Product-owner instruction, 2026-09-14. See `docs/ParentApp/00c-identity-and-entrance-decisions.md` and `docs/ParentApp/07-tech-reqs.md` TR10–TR16. |
 
 ## Coverage check
 | Parent BR | FRs produced | Covered |
@@ -3886,6 +3887,7 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 ---
 
 ## FR090 — Splash / Launch and Session Bootstrap
+> **2026-09-14 correction:** the session checked is the ForKhatri platform session (`fk_session`), resolved by Mangaly's Identity Bridge. No or expired session routes to the ForKhatri entrance with `return_to`, not to a Mangaly Login screen. See docs/ParentApp/07-tech-reqs.md TR12–TR16.
 **Traces from:** (none — pure technical necessity; no BR describes app launch itself, consistent with the instruction to record this rationale plainly rather than invent a parent BR)
 **Traced to:** UX01 (Step 3 UX); TS198–TS200 (Step 5 Test Scenarios)
 **Priority:** Must
@@ -3929,6 +3931,7 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 ---
 
 ## FR091 — First-Run Onboarding
+> **2026-09-14 correction:** the trigger is the member's first entry into Mangaly after ForKhatri sign-in (when Mangaly creates its member-link row, TR11), not completion of a Mangaly sign-up. See docs/ParentApp/07-tech-reqs.md TR11, TR16.
 **Traces from:** BR01, BR03 (introduces the profile-building and family-collaboration concepts a new user needs before either makes sense)
 **Traced to:** UX02 (Step 3 UX); TS201–TS202 (Step 5 Test Scenarios)
 **Priority:** Must
@@ -3973,6 +3976,7 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 ---
 
 ## FR092 — Account Sign-Up (Candidate or Family-Member Entry Point)
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module. See docs/ParentApp/07-tech-reqs.md TR12–TR16. Module screens for this flow redirect to the ForKhatri entrance. Candidates and family members alike sign up once at ForKhatri; Mangaly creates `mangaly_identity.account` as its member-link row on first entry. The interim reconciliation this FR's Intent anticipated is PA-DEC-08 (active accounts imported with ids and password hashes).
 **Traces from:** BR01 (a profile requires an authenticated account to attach to)
 **Traced to:** UX03 (Step 3 UX); TS203–TS205 (Step 5 Test Scenarios)
 **Priority:** Must
@@ -4017,6 +4021,7 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 ---
 
 ## FR093 — Login (Returning User)
+> **2026-09-14 correction:** delivered by the ForKhatri platform identity, not by this module. See docs/ParentApp/07-tech-reqs.md TR12–TR16. Module screens for this flow redirect to the ForKhatri entrance. The anti-enumeration and rate-limit criteria are met by the platform (TR13, TR19, TR20).
 **Traces from:** BR01 (a returning candidate needs access to their existing account/profile)
 **Traced to:** UX03 (Step 3 UX); TS206–TS208 (Step 5 Test Scenarios)
 **Priority:** Must
@@ -4060,6 +4065,7 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 ---
 
 ## FR094 — Forgot / Reset Password
+> **2026-09-14 correction:** account recovery belongs to the ForKhatri platform identity, not this module. See docs/ParentApp/07-tech-reqs.md TR12–TR16. Module screens for this flow redirect to the ForKhatri entrance. The current platform contract has no password-reset endpoint; a member who forgot a password signs in with a one-time code (TR13). A platform password-reset/change flow is not yet specified.
 **Traces from:** BR01 (account-access recovery, same boundary note as FR092)
 **Traced to:** UX03 (Step 3 UX); TS209–TS211 (Step 5 Test Scenarios)
 **Priority:** Must
@@ -4103,6 +4109,7 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 ---
 
 ## FR095 — Phone/Email OTP Verification
+> **2026-09-14 correction:** one-time codes are issued and verified by the ForKhatri platform identity (TR13, TR19), not by this module. See docs/ParentApp/07-tech-reqs.md TR12–TR16. Module screens for this flow redirect to the ForKhatri entrance. BR08's account-authenticity input is the platform `identity_level` in the resolved session. Changing a verified phone/email is a platform account capability that the current contract does not yet specify.
 **Traces from:** BR08 (account authenticity is BR08's first verification layer; this FR is the input mechanism for it)
 **Traced to:** UX04 (Step 3 UX); TS212–TS213 (Step 5 Test Scenarios)
 **Priority:** Must
@@ -4277,6 +4284,7 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 ---
 
 ## FR099 — Account & App Settings
+> **2026-09-14 correction:** the "account/security options" (credentials, identifiers, sessions) are ForKhatri account capabilities, not Mangaly's; Mangaly Settings keeps its Mangaly preferences and links to the ForKhatri account. See docs/ParentApp/07-tech-reqs.md TR13, TR16. How FR089's person-level Mangaly language preference relates to the platform `preferred_language` is not yet decided.
 **Traces from:** BR01 (language preference, FR089, needs a persistent access point beyond profile editing), BR05 (privacy quick-controls, e.g. pause, need a home)
 **Traced to:** UX08 (Step 3 UX); TS220–TS222 (Step 5 Test Scenarios)
 **Priority:** Must
@@ -4363,6 +4371,7 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 ---
 
 ## FR101 — Logout and Delete Account
+> **2026-09-14 correction:** logout is ForKhatri sign-out (`POST /v1/auth/sign-out`), which ends the session for every module within 30 seconds, then returns to the entrance (TR15, TR16). Deleting the ForKhatri account begins at the platform identity layer (`docs/ForKhatri-Unified-Umbrella-App-Interpretation.md`, Account lifecycle); leaving Mangaly only is a Mangaly action. The cross-module deletion contract is not yet specified.
 **Traces from:** BR11 (deletion must respect the same retention/legal-hold rules as communication data), BR15 (accountability records must survive account deletion where legally required)
 **Traced to:** UX08 (Step 3 UX); TS225–TS227 (Step 5 Test Scenarios)
 **Priority:** Must

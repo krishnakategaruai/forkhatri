@@ -8,7 +8,7 @@ builder. Every client-queueable mutation here honours `Idempotency-Key`
 from __future__ import annotations
 
 import shutil
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import UUID, uuid4
 
@@ -23,7 +23,9 @@ from app.components.authorization import interface as authz
 from app.components.conversation import interface as conversation
 from app.components.discovery import interface as discovery
 from app.components.identity_bridge import interface as identity
+from app.components.ticketing import interface as ticketing
 from app.components.trust import interface as trust
+from app.config import icebreakers
 from app.i18n import translate
 from app.idempotency import idempotent
 from app.rate_limiting import RateLimitScope, enforce
@@ -54,6 +56,11 @@ class CreateOccurrenceRequest(BaseModel):
     high_risk: bool = False
     recurrence_rule: dict | None = None
     cover_image_media_id: UUID | None = None
+    price_paise: int | None = None  # [FR102] None = free
+    refund_cutoff_hours: int = 24
+    audience_tags: list[str] = Field(default_factory=list)  # [FR110] family_friendly | elder_friendly | beginner_friendly
+    food_tags: list[str] = Field(default_factory=list)  # [FR110] veg | jain_options | non_veg | alcohol_free
+    max_guests_per_member: int = 0  # [FR114] how many people each person may bring (free activities only)
 
 
 class UpdateOccurrenceRequest(BaseModel):
@@ -70,10 +77,25 @@ class UpdateOccurrenceRequest(BaseModel):
     visibility_scope: str | None = None
     circle_id: UUID | None = None
     cover_image_media_id: UUID | None = None
+    price_paise: int | None = None
+    refund_cutoff_hours: int | None = None
+    audience_tags: list[str] | None = None
+    food_tags: list[str] | None = None
+    max_guests_per_member: int | None = None
 
 
 class ParticipationRequest(BaseModel):
     status: str  # interested | going | cancelled
+    guests: int | None = None  # [FR114] how many people they are bringing
+
+
+class PlanRequest(BaseModel):
+    travel: str | None = None  # walk | two_wheeler | car | cab_auto | metro_bus
+    company: str | None = None  # alone | friend | family
+
+
+class RegularRequest(BaseModel):
+    keep: bool
 
 
 class AnnouncementRequest(BaseModel):
@@ -130,12 +152,11 @@ async def create_occurrence(
         session, actor_member_id=member.member_id, idempotency_key=idem, endpoint="POST /occurrences", request_payload=body.model_dump(mode="json")
     ) as outcome:
         if not outcome.replayed:
-            ident = identity.resolve(member.member_id)
             try:
                 occ = await activity.create(
                     session,
                     creator_member_id=member.member_id,
-                    creator_identity_level=ident.identity_level if ident else 0,
+                    creator_identity_level=member.identity_level,
                     title=body.title,
                     intent_category=body.intent_category,
                     time_start=body.time_start,
@@ -151,6 +172,11 @@ async def create_occurrence(
                     high_risk=body.high_risk,
                     cover_image_media_id=body.cover_image_media_id,
                     recurrence_rule=body.recurrence_rule,
+                    price_paise=body.price_paise,
+                    refund_cutoff_hours=body.refund_cutoff_hours,
+                    audience_tags=body.audience_tags,
+                    food_tags=body.food_tags,
+                    max_guests_per_member=body.max_guests_per_member,
                 )
             except activity.InvalidInput as exc:
                 raise HTTPException(status_code=422, detail={"fields": exc.fields}) from exc
@@ -177,11 +203,10 @@ async def add_series_occurrence(
         raise HTTPException(status_code=403, detail=translate("occurrence.notOrganizer", lang)) from exc
     if parent.activity_id is None:
         raise HTTPException(status_code=409, detail="not a recurring activity")
-    ident = identity.resolve(member.member_id)
     occ = await activity.create(
         session,
         creator_member_id=member.member_id,
-        creator_identity_level=ident.identity_level if ident else 0,
+        creator_identity_level=member.identity_level,
         title=body.title or parent.title,
         intent_category=body.intent_category or parent.intent_category,
         time_start=body.time_start,
@@ -195,6 +220,8 @@ async def add_series_occurrence(
         circle_id=body.circle_id or parent.circle_id,
         high_risk=body.high_risk or parent.high_risk,
         activity_id=parent.activity_id,
+        price_paise=body.price_paise if body.price_paise is not None else parent.price_paise,
+        refund_cutoff_hours=body.refund_cutoff_hours if "refund_cutoff_hours" in body.model_fields_set else parent.refund_cutoff_hours,
     )
     return (await _card(session, occ, member)).model_dump(mode="json")
 
@@ -242,19 +269,27 @@ async def get_occurrence(occurrence_id: UUID, session: DbSession, member: Curren
     card = await _card(session, occ, member)
     role = await authz.occurrence_role(session, occurrence_id=occurrence_id, member_id=member.member_id)
     is_organizer = role in (authz.OccurrenceRole.ORGANIZER, authz.OccurrenceRole.CO_ORGANIZER)
-    host_ident = identity.display_names_for([occ.creator_member_id])[occ.creator_member_id]
+    host_ident = (await identity.display_names_for([occ.creator_member_id]))[occ.creator_member_id]
     org_trust = await trust.trust_for(session, subject_type="organizer", subject_id=occ.creator_member_id)
     org_labels = trust.label_text(await trust.reputation_labels(session, member_id=occ.creator_member_id))
     cos = await activity.co_organizers(session, occurrence_id=occurrence_id) if is_organizer else []
-    co_names = identity.display_names_for(cos)
+    co_names = await identity.display_names_for(cos)
     series = None
     if occ.activity_id:
         series = await activity.series_summary(session, activity_id=occ.activity_id)
         upcoming = await activity.upcoming_in_series(session, activity_id=occ.activity_id, exclude=occ.id)
         series["upcoming_list"] = [{"id": str(u.id), "slug": u.canonical_url_slug, "time_start": u.time_start.isoformat()} for u in upcoming]
         series["recurrence_rule"] = occ.recurrence_rule
+        # [FR112] The member's own recent attendance and whether their spot is kept each time.
+        series["regular"] = await activity.is_regular(session, member_id=member.member_id, activity_id=occ.activity_id)
+        attended, total = await activity.recent_attendance(session, member_id=member.member_id, activity_id=occ.activity_id)
+        series["my_recent"] = {"attended": attended, "total": total}
     # [FR063] identity/location/capacity visible to RSVP'd participants (and organizers).
     rsvpd = role != authz.OccurrenceRole.VIEWER
+    plan = await activity.my_plan(session, occurrence_id=occurrence_id, member_id=member.member_id)
+    now = datetime.now(UTC)
+    # [FR103] Ask "still coming?" in place during the last 28 hours, until answered.
+    still_coming_due = bool(plan and plan.confirmed_at is None and card.viewer_status == "going" and now < occ.time_start <= now + timedelta(hours=28))
     return {
         **card.model_dump(mode="json"),
         "description": occ.description,
@@ -275,7 +310,7 @@ async def get_occurrence(occurrence_id: UUID, session: DbSession, member: Curren
                 "id": str(a["id"]),
                 "message": a["message"],
                 "created_at": a["created_at"].isoformat(),
-                "by": identity.display_names_for([a["organizer_member_id"]])[a["organizer_member_id"]].display_name,
+                "by": (await identity.display_names_for([a["organizer_member_id"]]))[a["organizer_member_id"]].display_name,
             }
             for a in await activity.list_announcements(session, occurrence_id=occurrence_id)
         ],
@@ -286,14 +321,39 @@ async def get_occurrence(occurrence_id: UUID, session: DbSession, member: Curren
         "series": series,
         "cancelled_at": occ.cancelled_at.isoformat() if occ.cancelled_at else None,
         "time_zone": "Asia/Kolkata",
+        "refund_cutoff_hours": occ.refund_cutoff_hours,
+        "my_plan": {"travel": plan.travel, "company": plan.company, "confirmed_at": plan.confirmed_at.isoformat() if plan.confirmed_at else None} if plan else None,
+        "still_coming_due": still_coming_due,
+        # [FR114] What the host allows, what this member is bringing, and how many guests in total.
+        "max_guests_per_member": occ.max_guests_per_member,
+        "my_guests": await activity.my_guest_count(session, occurrence_id=occurrence_id, member_id=member.member_id),
+        "guest_total": await activity.guest_total(session, occurrence_id),
+        # [FR108] Someone going to their first activity gets a "what to expect" card (never shown to the host).
+        "first_time": bool(plan and not is_organizer and await activity.is_first_timer(session, member_id=member.member_id, before=occ.time_start)),
+        # [FR107] Whether this attendee has already thanked the host.
+        "thanked": await trust.has_thanked(session, occurrence_id=occurrence_id, member_id=member.member_id),
     }
 
 
 @router.patch("/{occurrence_id}")
 async def update_occurrence(occurrence_id: UUID, body: UpdateOccurrenceRequest, session: DbSession, member: CurrentMember, lang: Locale) -> dict:
-    """[FR012] Edit; material time/place changes notify participants (FR017)."""
+    """[FR012] Edit; material time/place changes notify participants (FR017).
+    [FR102] Price and refund window lock once anyone is paying or has paid, so nobody's terms change under them."""
+    changes = body.model_dump(exclude_unset=True)
+    if "price_paise" in changes or "refund_cutoff_hours" in changes:
+        try:
+            current = await activity.get(session, occurrence_id=occurrence_id)
+        except activity.OccurrenceNotFound as exc:
+            raise _404(lang) from exc
+        changed = ("price_paise" in changes and changes["price_paise"] != current.price_paise) or (
+            changes.get("refund_cutoff_hours") is not None and changes["refund_cutoff_hours"] != current.refund_cutoff_hours
+        )
+        if changed and await ticketing.open_ticket_count(session, occurrence_id) > 0:
+            raise HTTPException(status_code=409, detail=translate("payments.priceLocked", lang))
     try:
-        occ, material = await activity.update(session, occurrence_id=occurrence_id, actor_member_id=member.member_id, changes=body.model_dump(exclude_unset=True))
+        occ, material = await activity.update(session, occurrence_id=occurrence_id, actor_member_id=member.member_id, changes=changes)
+    except activity.InvalidInput as exc:
+        raise HTTPException(status_code=422, detail={"fields": exc.fields}) from exc
     except (activity.OccurrenceNotFound, authz.NotFound) as exc:
         raise _404(lang) from exc
     except authz.NotAuthorized as exc:
@@ -337,8 +397,19 @@ async def set_participation(
         session, actor_member_id=member.member_id, idempotency_key=idem, endpoint=f"POST /occurrences/{occurrence_id}/participation", request_payload=body.model_dump()
     ) as outcome:
         if not outcome.replayed:
+            # [FR102] A paid spot is given back through /ticket/withdraw, where the refund rule applies.
+            if body.status in ("cancelled", "interested") and await ticketing.has_paid_spot(session, occurrence_id=occurrence_id, member_id=member.member_id):
+                raise HTTPException(status_code=409, detail=translate("payments.useWithdraw", lang))
             try:
-                res = await activity.set_participation(session, occurrence_id=occurrence_id, member_id=member.member_id, desired=body.status)
+                res = await activity.set_participation(session, occurrence_id=occurrence_id, member_id=member.member_id, desired=body.status, guests=body.guests)
+            except activity.PaymentRequired as exc:
+                raise HTTPException(status_code=409, detail=translate("payments.required", lang)) from exc
+            except activity.NoRoomForGuests as exc:
+                raise HTTPException(status_code=409, detail=translate("guest.noRoom", lang)) from exc
+            except activity.OccurrenceEnded as exc:
+                raise HTTPException(status_code=409, detail=translate("occurrence.ended", lang)) from exc
+            except activity.AlreadyAttended as exc:
+                raise HTTPException(status_code=409, detail=translate("occurrence.alreadyAttended", lang)) from exc
             except activity.OccurrenceNotFound as exc:
                 raise _404(lang) from exc
             except activity.OccurrenceCancelled as exc:
@@ -351,11 +422,72 @@ async def set_participation(
                     "status": res.status,
                     "waitlist_position": res.waitlist_position,
                     "going_count": res.going_count,
+                    "guests": res.guests,
                     "spots_left": res.spots_left,
                     "message": translate("occurrence.full", lang) if res.status == "waitlisted" else None,
                 },
             )
     return JSONResponse(outcome.response, status_code=outcome.status_code)
+
+
+@router.get("/{occurrence_id}/conversation-cards")
+async def conversation_cards(occurrence_id: UUID, session: DbSession, member: CurrentMember, lang: Locale) -> dict:
+    """[FR118] A few prompts for the people who are actually there, from about an hour before it
+    starts until it ends. Not shown to someone who is only looking at the page."""
+    try:
+        occ = await activity.get(session, occurrence_id=occurrence_id)
+    except activity.OccurrenceNotFound as exc:
+        raise _404(lang) from exc
+    status_now = await activity.viewer_status(session, occurrence_id, member.member_id)
+    is_organizer = occ.creator_member_id == member.member_id
+    if not is_organizer and status_now not in ("going", "checked_in", "attended"):
+        return {"cards": [], "active": False}
+    now = datetime.now(UTC)
+    ends = occ.time_end or (occ.time_start + timedelta(hours=3))
+    active = occ.time_start - timedelta(hours=1) <= now <= ends
+    return {"cards": icebreakers.cards_for(intent_category=occ.intent_category, seed=str(occ.id)), "active": active}
+
+
+@router.post("/{occurrence_id}/regular")
+async def keep_my_spot(occurrence_id: UUID, body: RegularRequest, session: DbSession, member: CurrentMember, lang: Locale) -> dict:
+    """[FR112] "Keep a spot for me each time" for a free series — opt in or out; nothing happens without this tap."""
+    try:
+        occ = await activity.get(session, occurrence_id=occurrence_id)
+    except activity.OccurrenceNotFound as exc:
+        raise _404(lang) from exc
+    if occ.activity_id is None:
+        raise HTTPException(status_code=409, detail=translate("regular.notSeries", lang))
+    if body.keep and occ.price_paise is not None:
+        raise HTTPException(status_code=409, detail=translate("regular.paid", lang))
+    if body.keep and occ.creator_member_id == member.member_id:
+        raise HTTPException(status_code=409, detail=translate("regular.notSeries", lang))
+    # A spot is kept only for someone who has actually come before, so newcomers are never crowded out by strangers' holds.
+    if body.keep and (await activity.recent_attendance(session, member_id=member.member_id, activity_id=occ.activity_id))[0] < 1:
+        raise HTTPException(status_code=409, detail=translate("regular.notYet", lang))
+    kept = await activity.set_regular(session, member_id=member.member_id, activity_id=occ.activity_id, keep=body.keep)
+    return {"regular": body.keep, "kept": kept}
+
+
+@router.put("/{occurrence_id}/plan")
+async def set_attendance_plan(occurrence_id: UUID, body: PlanRequest, session: DbSession, member: CurrentMember, lang: Locale) -> dict:
+    """[FR105] How I'm getting there and who with — one tap, optional, repeated back in the reminder before it starts."""
+    try:
+        plan = await activity.set_plan(session, occurrence_id=occurrence_id, member_id=member.member_id, travel=body.travel, company=body.company)
+    except activity.InvalidInput as exc:
+        raise HTTPException(status_code=422, detail={"fields": exc.fields}) from exc
+    except activity.NotParticipating as exc:
+        raise HTTPException(status_code=409, detail=translate("plan.notGoing", lang)) from exc
+    return {"travel": plan.travel, "company": plan.company, "confirmed_at": plan.confirmed_at.isoformat() if plan.confirmed_at else None}
+
+
+@router.post("/{occurrence_id}/confirm")
+async def confirm_still_coming(occurrence_id: UUID, session: DbSession, member: CurrentMember, lang: Locale) -> dict:
+    """[FR103] "Still coming" — the kind counterpart to freeing a spot."""
+    try:
+        at = await activity.confirm_attendance(session, occurrence_id=occurrence_id, member_id=member.member_id)
+    except activity.NotParticipating as exc:
+        raise HTTPException(status_code=409, detail=translate("plan.notGoing", lang)) from exc
+    return {"confirmed_at": at.isoformat()}
 
 
 @router.get("/{occurrence_id}/attendees")
@@ -367,7 +499,7 @@ async def attendees(occurrence_id: UUID, session: DbSession, member: CurrentMemb
         raise _404(lang) from exc
     except authz.NotAuthorized as exc:
         raise HTTPException(status_code=403, detail=translate("occurrence.notOrganizer", lang)) from exc
-    names = identity.display_names_for([a.member_id for a in rows])
+    names = await identity.display_names_for([a.member_id for a in rows])
     return [
         {
             "member_id": str(a.member_id),
@@ -376,9 +508,29 @@ async def attendees(occurrence_id: UUID, session: DbSession, member: CurrentMemb
             "status": a.status,
             "waitlist_position": a.waitlist_position,
             "checked_in_at": a.checked_in_at.isoformat() if a.checked_in_at else None,
+            "company": a.company,
+            "first_time": a.first_time,
+            "guests": a.guests,
         }
         for a in rows
     ]
+
+
+@router.get("/{occurrence_id}/after")
+async def after_the_activity(occurrence_id: UUID, session: DbSession, member: CurrentMember, lang: Locale) -> dict:
+    """[FR107] Host only: how many came, first-timers, "would come again", and the thank-you notes sent to them."""
+    try:
+        await authz.require_organizer(session, occurrence_id=occurrence_id, member_id=member.member_id)
+    except authz.NotFound as exc:
+        raise _404(lang) from exc
+    except authz.NotAuthorized as exc:
+        raise HTTPException(status_code=403, detail=translate("occurrence.notOrganizer", lang)) from exc
+    notes = await trust.thanks_received(session, occurrence_id=occurrence_id)
+    names = await identity.display_names_for([m for m, _ in notes])
+    return {
+        **(await activity.after_summary(session, occurrence_id=occurrence_id)),
+        "thanks": [{"from": names[m].display_name, "message": msg} for m, msg in notes],
+    }
 
 
 @router.post("/{occurrence_id}/announcements", status_code=201)

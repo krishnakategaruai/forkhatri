@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
+from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel
@@ -75,8 +77,12 @@ async def search(
     when: str | None = Query(default=None, pattern="^(today|tomorrow|weekend|week)$"),
     distance: str | None = Query(default=None, pattern="^(locality|zone|city)$"),
     safe_only: bool | None = None,
+    free: bool | None = None,
+    audience: str | None = Query(default=None, pattern="^(family_friendly|elder_friendly|beginner_friendly)$"),
+    food: str | None = Query(default=None, pattern="^(veg|jain_options|alcohol_free)$"),
 ) -> list[CardOut]:
-    """[FR005/FR009] Search mode with common filters by default; advanced filters on request."""
+    """[FR005/FR009] Search mode with common filters by default; advanced filters on request.
+    [FR102/FR110] Free only; who it's for; food."""
     v = await _viewer(session, member, lang)
     cards = await discovery.search(
         session,
@@ -87,8 +93,23 @@ async def search(
         when=when,
         distance=distance,
         high_risk=(False if safe_only else None),
+        free=free,
+        audience=audience,
+        food=food,
     )
     return [CardOut.from_card(c) for c in cards]
+
+
+class HideRequest(BaseModel):
+    occurrence_id: UUID
+    reason: Literal["not_my_thing", "too_far", "bad_time", "not_this_host"]
+
+
+@router.post("/hide", status_code=204)
+async def hide(body: HideRequest, session: DbSession, member: CurrentMember) -> None:
+    """[FR111] "Not interested", with a reason: the activity leaves this member's discovery; "not this host" hides
+    that host's activities for 60 days. Stored so ranking can learn what "too far" and "bad time" mean for them."""
+    await discovery.hide(session, member_id=member.member_id, occurrence_id=body.occurrence_id, reason=body.reason)
 
 
 @router.get("/understand")

@@ -1,4 +1,17 @@
 {
+  "actionLabel": {
+    "apply": "Apply",
+    "submitProposal": "Submit a Proposal",
+    "enquireNow": "Enquire Now",
+    "contact": "Contact",
+    "register": "Register",
+    "applyOnSource": "Apply on source website"
+  },
+  "workMode": {
+    "on_site": "On-site",
+    "remote": "Remote",
+    "both": "On-site or remote"
+  },
   "new": {
     "chooseModeTitle": "Share an opportunity",
     "modeCreate": "Write it myself",

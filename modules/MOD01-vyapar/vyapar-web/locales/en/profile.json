@@ -1,11 +1,18 @@
 {
   "title": "Profile",
-  "notBuiltYet": "Team access and privacy settings are coming soon.",
+  "help": "Help & grievance",
+  "helpText": "Need to escalate? Write to grievance@forkhatri.example — we reply within 7 days.",
+  "backToForKhatri": "Back to ForKhatri",
   "myListings": "My listings",
   "enquiries": "Enquiries",
   "moderationOutcomes": "My moderation outcomes",
   "operatorTools": "Operator tools",
   "verificationQueue": "Verification queue",
   "moderationQueue": "Moderation queue",
-  "myBoosts": "My boosts"
+  "myBoosts": "My boosts",
+  "workspaces": "Business Workspace",
+  "pendingInvites": "Team invitations",
+  "accept": "Accept",
+  "decline": "Decline",
+  "inviteRole": "Role: {{role}}"
 }

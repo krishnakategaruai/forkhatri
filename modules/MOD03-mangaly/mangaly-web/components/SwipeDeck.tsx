@@ -24,6 +24,7 @@ export function SwipeDeck<T>({
   onSwipeLeft,
   rightLabel,
   leftLabel,
+  rightText,
   emptyState,
 }: {
   items: T[];
@@ -33,6 +34,8 @@ export function SwipeDeck<T>({
   onSwipeLeft: (item: T) => void;
   rightLabel: string;
   leftLabel: string;
+  /** Visible text instead of the heart, when the action is not "connect". */
+  rightText?: string;
   emptyState: React.ReactNode;
 }) {
   const [index, setIndex] = useState(0);
@@ -134,11 +137,11 @@ export function SwipeDeck<T>({
         </button>
         <button
           type="button"
-          className="swipe-deck__action swipe-deck__action--connect"
+          className={`swipe-deck__action swipe-deck__action--connect${rightText ? ' swipe-deck__action--text' : ''}`}
           aria-label={rightLabel}
           onClick={() => advance('right')}
         >
-          ♥
+          {rightText ?? '♥'}
         </button>
       </div>
     </div>

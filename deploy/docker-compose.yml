@@ -1,0 +1,275 @@
+# ForKhatri production stack for ONE Oracle Cloud Always Free Ampere VM
+# (2 OCPU / 12 GB, Ubuntu 24.04 aarch64), fronted by a Cloudflare Tunnel.
+#
+# Always run through deploy/scripts/compose.sh on the server (it passes the
+# secrets file); see deploy/README.md. Values come from deploy/secrets/.env.production.
+#
+# Memory budget (limits, total ~5.3 GB of 12 GB): leaves room for the OS page
+# cache, image builds (Next.js ~2 GB each, built one at a time) and the swap file.
+#   postgres 2048M · identity 384M · mangaly 512M · milavn 512M
+#   3 web zones × 384M · caddy 128M · cloudflared 128M · migrate job 256M (one-shot)
+
+name: forkhatri
+
+x-hardening: &hardening
+  restart: unless-stopped
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: ["ALL"]
+  logging:
+    driver: local
+    options: { max-size: "10m", max-file: "5" }
+
+x-python-service: &python-service
+  <<: *hardening
+  read_only: true
+  tmpfs: ["/tmp"]
+  networks: [app]
+  depends_on:
+    postgres: { condition: service_healthy }
+
+x-web: &web
+  <<: *hardening
+  read_only: true
+  tmpfs: ["/tmp", "/app/.next/cache"]
+  networks: [app]
+  mem_limit: 384m
+  environment: &web-env
+    NODE_OPTIONS: --max-old-space-size=256
+
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:18-bookworm}
+    <<: *hardening
+    # The official entrypoint starts as root and drops to the postgres user; it needs these capabilities.
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run deploy/scripts/generate-secrets.sh}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=trust --encoding=UTF8"
+    command:
+      - postgres
+      - -c
+      - shared_buffers=512MB
+      - -c
+      - effective_cache_size=1536MB
+      - -c
+      - work_mem=8MB
+      - -c
+      - maintenance_work_mem=128MB
+      - -c
+      - max_connections=100
+      - -c
+      - password_encryption=scram-sha-256
+      - -c
+      - log_min_duration_statement=1000
+    # Postgres 18 images keep data under /var/lib/postgresql/18/docker; mount the parent.
+    volumes: ["pgdata:/var/lib/postgresql"]
+    shm_size: 256m
+    mem_limit: 2048m
+    networks: [app]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # One-shot: provisioning, migrations and (only when asked) development seed.
+  #   deploy/scripts/compose.sh --profile ops run --rm migrate
+  migrate:
+    build:
+      context: ..
+      dockerfile: deploy/migrate/Dockerfile
+    image: forkhatri/migrate:${RELEASE_ID:-manual}
+    profiles: [ops]
+    restart: "no"
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    mem_limit: 256m
+    networks: [app]
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      DATABASE_ADMIN_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/postgres
+      IDENTITY_OWNER_PASSWORD: ${IDENTITY_OWNER_PASSWORD}
+      IDENTITY_APP_PASSWORD: ${IDENTITY_APP_PASSWORD}
+      MANGALY_OWNER_PASSWORD: ${MANGALY_OWNER_PASSWORD}
+      MANGALY_APP_PASSWORD: ${MANGALY_APP_PASSWORD}
+      MILAVN_OWNER_PASSWORD: ${MILAVN_OWNER_PASSWORD}
+      MILAVN_APP_PASSWORD: ${MILAVN_APP_PASSWORD}
+
+  identity-service:
+    <<: *python-service
+    build: { context: ../platform/identity-service }
+    image: forkhatri/identity-service:${RELEASE_ID:-manual}
+    mem_limit: 384m
+    environment:
+      PORT: "8100"
+      ROOT_PATH: /api/identity
+      FORWARDED_ALLOW_IPS: 172.28.10.0/24
+      ENVIRONMENT: production
+      LOCAL_HTTP_TEST: ${LOCAL_HTTP_TEST:-false}
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: forkhatri_identity
+      DB_APP_USER: identity_app
+      DB_APP_PASSWORD: ${IDENTITY_APP_PASSWORD}
+      DB_POOL_SIZE: "5"
+      CORS_ALLOWED_ORIGINS: '["${PUBLIC_ORIGIN}"]'
+      SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-__Host-fk_session}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
+      OTP_PEPPER: ${OTP_PEPPER}
+      DEV_EXPOSE_OTP: "false"
+      SMS_PROVIDER: ${SMS_PROVIDER:-disabled}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-resend}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      EMAIL_FROM: ${EMAIL_FROM}
+      # Contract defaults (TR20), stated explicitly.
+      RATE_LIMIT_WINDOW_SECONDS: "900"
+      RATE_LIMIT_CODE_PER_IDENTIFIER: "5"
+      RATE_LIMIT_CODE_PER_IP: "30"
+      RATE_LIMIT_VERIFY_PER_CHALLENGE: "10"
+      RATE_LIMIT_PASSWORD_PER_IDENTIFIER: "10"
+      RATE_LIMIT_PASSWORD_PER_IP: "30"
+      SERVICE_KEYS: '{"mangaly":"${MANGALY_SERVICE_KEY}","milavn":"${MILAVN_SERVICE_KEY}"}'
+      SERVICES_RECEIVING_IDENTIFIERS: '["mangaly"]'
+      MODULE_ENTRY_URLS: '{"mangaly":"${PUBLIC_ORIGIN}/mangaly","milavn":"${PUBLIC_ORIGIN}/milavn"}'
+
+  mangaly-service:
+    <<: *python-service
+    build: { context: ../modules/MOD03-mangaly/mangaly-service }
+    image: forkhatri/mangaly-service:${RELEASE_ID:-manual}
+    mem_limit: 512m
+    volumes: ["mangaly-media:/srv/mangaly/mangaly-service/.local-media"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      identity-service: { condition: service_started }
+    environment:
+      PORT: "8000"
+      ROOT_PATH: /api/mangaly
+      FORWARDED_ALLOW_IPS: 172.28.10.0/24
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: mangaly
+      DB_APP_USER: mangaly_app
+      DB_APP_PASSWORD: ${MANGALY_APP_PASSWORD}
+      DB_POOL_MODE: session
+      DB_POOL_MAX_CONNECTIONS: "10"
+      CORS_ALLOWED_ORIGINS: '["${PUBLIC_ORIGIN}"]'
+      PLATFORM_IDENTITY_URL: http://identity-service:8100
+      PLATFORM_SERVICE_NAME: mangaly
+      PLATFORM_SERVICE_KEY: ${MANGALY_SERVICE_KEY}
+      PLATFORM_SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-__Host-fk_session}
+      FORKHATRI_ENTRANCE_URL: ${PUBLIC_ORIGIN}
+      INTERIM_IDENTITY_ENABLED: "false"
+      API_DEBUG: "false"
+
+  milavn-service:
+    <<: *python-service
+    build: { context: ../modules/MOD02-milavn/milavn-service }
+    image: forkhatri/milavn-service:${RELEASE_ID:-manual}
+    mem_limit: 512m
+    volumes: ["milavn-media:/srv/milavn/milavn-service/.local-media"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      identity-service: { condition: service_started }
+    environment:
+      PORT: "8001"
+      ROOT_PATH: /api/milavn
+      FORWARDED_ALLOW_IPS: 172.28.10.0/24
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: forkhatridb
+      DB_APP_USER: milavn_app
+      DB_APP_PASSWORD: ${MILAVN_APP_PASSWORD}
+      DB_POOL_MAX_CONNECTIONS: "10"
+      CORS_ALLOWED_ORIGINS: '["${PUBLIC_ORIGIN}"]'
+      WEB_BASE_URL: ${PUBLIC_ORIGIN}/milavn
+      PLATFORM_IDENTITY_URL: http://identity-service:8100
+      PLATFORM_SERVICE_NAME: milavn
+      PLATFORM_SERVICE_KEY: ${MILAVN_SERVICE_KEY}
+      PLATFORM_SESSION_COOKIE: ${SESSION_COOKIE_NAME:-__Host-fk_session}
+      FORKHATRI_ENTRANCE_URL: ${PUBLIC_ORIGIN}
+      DEV_IDENTITY_ENABLED: "false"
+      API_DEBUG: "false"
+
+  forkhatri-web:
+    <<: *web
+    build:
+      context: ../platform/forkhatri-web
+      args:
+        NEXT_PUBLIC_IDENTITY_API: ${PUBLIC_ORIGIN}/api/identity
+    image: forkhatri/forkhatri-web:${RELEASE_ID:-manual}
+    environment:
+      <<: *web-env
+      PORT: "3100"
+
+  mangaly-web:
+    <<: *web
+    build:
+      context: ../modules/MOD03-mangaly/mangaly-web
+      args:
+        NEXT_PUBLIC_BASE_PATH: /mangaly
+        NEXT_PUBLIC_API_BASE: ${PUBLIC_ORIGIN}/api/mangaly
+        NEXT_PUBLIC_IDENTITY_API: ${PUBLIC_ORIGIN}/api/identity
+        NEXT_PUBLIC_FORKHATRI_ENTRANCE_URL: ${PUBLIC_ORIGIN}
+    image: forkhatri/mangaly-web:${RELEASE_ID:-manual}
+    environment:
+      <<: *web-env
+      PORT: "3000"
+
+  milavn-web:
+    <<: *web
+    build:
+      context: ../modules/MOD02-milavn/milavn-web
+      args:
+        NEXT_PUBLIC_BASE_PATH: /milavn
+        NEXT_PUBLIC_API_BASE: ${PUBLIC_ORIGIN}/api/milavn
+        NEXT_PUBLIC_IDENTITY_API: ${PUBLIC_ORIGIN}/api/identity
+        NEXT_PUBLIC_FORKHATRI_ENTRANCE_URL: ${PUBLIC_ORIGIN}
+        MILAVN_API_INTERNAL_URL: http://milavn-service:8001
+    image: forkhatri/milavn-web:${RELEASE_ID:-manual}
+    environment:
+      <<: *web-env
+      PORT: "3001"
+
+  caddy:
+    image: ${CADDY_IMAGE:-caddy:2.11-alpine}
+    <<: *hardening
+    cap_add: [NET_BIND_SERVICE]
+    user: "65534:65534"
+    read_only: true
+    # admin is off and TLS is Cloudflare's, so Caddy keeps no state worth persisting.
+    tmpfs: ["/data:mode=1777", "/config:mode=1777", "/tmp"]
+    sysctls: { net.ipv4.ip_unprivileged_port_start: "0" }
+    environment:
+      PUBLIC_SCHEME: ${PUBLIC_SCHEME:-https}
+    volumes: ["./Caddyfile:/etc/caddy/Caddyfile:ro"]
+    mem_limit: 128m
+    networks:
+      app: { ipv4_address: 172.28.10.10 }
+      edge: {}
+    depends_on: [identity-service, mangaly-service, milavn-service, forkhatri-web, mangaly-web, milavn-web]
+
+  # Outbound-only tunnel to Cloudflare. Public hostname -> http://caddy:80.
+  cloudflared:
+    image: ${CLOUDFLARED_IMAGE:-cloudflare/cloudflared:latest}
+    <<: *hardening
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?set CLOUDFLARE_TUNNEL_TOKEN in deploy/secrets/owner-inputs.env}
+    mem_limit: 128m
+    networks: [edge]
+    depends_on: [caddy]
+
+networks:
+  # Apps, database and the edge proxy. The fixed subnet lets the Python services
+  # trust X-Forwarded-For only from inside it (FORWARDED_ALLOW_IPS).
+  app:
+    ipam:
+      config: [{ subnet: 172.28.10.0/24 }]
+  edge: {}
+
+volumes:
+  pgdata:
+  mangaly-media:
+  milavn-media:

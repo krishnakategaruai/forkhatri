@@ -6,7 +6,8 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Avatar } from '@/components/Avatar';
-import { getSession } from '@/lib/auth';
+import ForKhatriHubLink from '@/components/ForKhatriHubLink';
+import { requireSession } from '@/lib/auth';
 import { listConversations, type ConversationSummary } from '@/lib/messages';
 
 /* FR049 · UX21 — Conversation list, pure recency order, no seriousness/
@@ -24,10 +25,10 @@ export default function MessagesPage() {
   useEffect(() => {
     let active = true;
     (async () => {
-      const session = await getSession();
+      const session = await requireSession();
       if (!active) return;
       if (!session) {
-        router.replace('/login');
+        // requireSession() has already handed off to the ForKhatri entrance (TR16).
         return;
       }
       const rows = await listConversations();
@@ -52,6 +53,7 @@ export default function MessagesPage() {
     <>
       <header className="topbar">
         <h1>{t('messages:title')}</h1>
+        <ForKhatriHubLink />
       </header>
       <main className="screen">
         {conversations.length === 0 ? (

@@ -34,6 +34,10 @@ function DiscoverInner() {
   const [category, setCategory] = useState<string | null>(null);
   const [scope, setScope] = useState<string | null>(null);
   const [safeOnly, setSafeOnly] = useState(false);
+  // FR102/FR110: free only, who it's for, food.
+  const [free, setFree] = useState(false);
+  const [audience, setAudience] = useState<string | null>(null);
+  const [food, setFood] = useState<string | null>(null);
   const [more, setMore] = useState(false);
   const [preview, setPreview] = useState<Card | null>(null);
   const [mapList, setMapList] = useState(false);
@@ -61,6 +65,7 @@ function DiscoverInner() {
       const qs = new URLSearchParams();
       if (q) qs.set('q', q); if (when) qs.set('when', when); if (distance) qs.set('distance', distance);
       if (category) qs.set('category', category); if (scope) qs.set('scope', scope); if (safeOnly) qs.set('safe_only', 'true');
+      if (free) qs.set('free', 'true'); if (audience) qs.set('audience', audience); if (food) qs.set('food', food);
       p = api<Card[]>(`/discovery/search?${qs}`);
     }
     p.then(async (list) => {
@@ -71,6 +76,7 @@ function DiscoverInner() {
           const qs2 = new URLSearchParams();
           if (q) qs2.set('q', q); if (when && drop !== 'when') qs2.set('when', when); if (distance && drop === 'when') qs2.set('distance', distance);
           if (category) qs2.set('category', category); if (scope) qs2.set('scope', scope); if (safeOnly) qs2.set('safe_only', 'true');
+          if (free) qs2.set('free', 'true'); if (audience) qs2.set('audience', audience); if (food) qs2.set('food', food);
           return api<Card[]>(`/discovery/search?${qs2}`);
         };
         if (distance) { const r = await retry('distance'); if (r.length) { setWidened(t('ask.widenedDistance')); setCards(r); return; } }
@@ -78,7 +84,7 @@ function DiscoverInner() {
       }
       setCards(list);
     }).catch(() => setError(true));
-  }, [mode, day, q, when, distance, category, scope, safeOnly, t]);
+  }, [mode, day, q, when, distance, category, scope, safeOnly, free, audience, food, t]);
 
   useEffect(() => { const id = setTimeout(load, mode === 'search' ? 250 : 0); return () => clearTimeout(id); }, [load, mode]);
 
@@ -115,7 +121,8 @@ function DiscoverInner() {
               <button className="chip chip--sm" aria-pressed={when === 'weekend'} onClick={() => setWhen(when === 'weekend' ? null : 'weekend')}>{t('discover.filters.weekend')}</button>
               <button className="chip chip--sm" aria-pressed={distance === 'zone'} onClick={() => setDistance(distance === 'zone' ? null : 'zone')}>{t('discover.filters.nearby')}</button>
               <button className="chip chip--sm" aria-pressed={category !== null} onClick={() => setMore(true)}>{category ? t(`create.categories.${category}`) : t('discover.filters.category')}</button>
-              <button className="chip chip--sm" aria-pressed={true} disabled title="Everything on Milavn is free right now">{t('discover.filters.free')}</button>
+              <button className="chip chip--sm" aria-pressed={free} onClick={() => setFree((v) => !v)}>{t('discover.filters.free')}</button>
+              <button className="chip chip--sm" aria-pressed={audience === 'family_friendly'} onClick={() => setAudience(audience === 'family_friendly' ? null : 'family_friendly')}>{t('fit.audience.family_friendly')}</button>
               <button className="chip chip--sm" onClick={() => setMore(true)}>{t('discover.filters.more')} ›</button>
             </div>
           </>
@@ -173,6 +180,18 @@ function DiscoverInner() {
             <span className="label">{t('discover.filters.scope')}</span>
             <div className="chips">
               {['public', 'community', 'circle'].map((s) => <button key={s} className="chip chip--sm" aria-pressed={scope === s} onClick={() => setScope(scope === s ? null : s)}>{t(`discover.scopes.${s}`)}</button>)}
+            </div>
+          </div>
+          <div className="stack" style={{ gap: 8 }}>
+            <span className="label">{t('fit.whoFor')}</span>
+            <div className="chips">
+              {['family_friendly', 'elder_friendly', 'beginner_friendly'].map((a) => <button key={a} className="chip chip--sm" aria-pressed={audience === a} onClick={() => setAudience(audience === a ? null : a)}>{t(`fit.audience.${a}`)}</button>)}
+            </div>
+          </div>
+          <div className="stack" style={{ gap: 8 }}>
+            <span className="label">{t('fit.foodDrink')}</span>
+            <div className="chips">
+              {['veg', 'jain_options', 'alcohol_free'].map((f) => <button key={f} className="chip chip--sm" aria-pressed={food === f} onClick={() => setFood(food === f ? null : f)}>{t(`fit.food.${f}`)}</button>)}
             </div>
           </div>
           <div className="row row--between">

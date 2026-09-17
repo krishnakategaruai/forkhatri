@@ -23,6 +23,8 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
+from dataclasses import dataclass
+from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
@@ -68,7 +70,11 @@ def get_current_session_token(
     request: Request,
     authorization: Annotated[str | None, Header()] = None,
 ) -> str | None:
-    """Read the session token from the HttpOnly cookie, or a bearer header.
+    """Read the INTERIM session token from the HttpOnly cookie, or a bearer header.
+
+    [2026-09-14] Legacy only: honoured solely when `interim_identity_enabled`
+    is true. The ForKhatri `fk_session` cookie is read in
+    `get_authenticated_account`.
 
     [SP090] The cookie is the real transport for browsers — it is HttpOnly so
     page JS cannot read it. The bearer header is accepted too so that tests and
@@ -82,40 +88,89 @@ def get_current_session_token(
     return None
 
 
-async def get_authenticated_account(
+def _not_authenticated() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Not authenticated",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class AuthenticatedSessionInfo:
+    """The caller's account plus, for a ForKhatri session, when it expires."""
+
+    account_id: UUID
+    expires_at: datetime | None
+
+
+async def get_authenticated_session(
+    request: Request,
     session: DbSession,
-    token: Annotated[str | None, Depends(get_current_session_token)],
-) -> UUID:
+    settings: AppSettings,
+    legacy_token: Annotated[str | None, Depends(get_current_session_token)],
+) -> AuthenticatedSessionInfo:
     """Resolve the caller's account and bind `mangaly.account_id` for this transaction.
 
-    [TR090/TR101] Validation is a real lookup against `mangaly_identity.session`
-    (not revoked, not expired). [TR017/SP017] On success the Identity Bridge
-    binds the context with SET LOCAL inside THIS transaction, which is the only
-    scope where it is meaningful and the only thing that stops a pooled
-    connection inheriting it.
+    [ForKhatri TR15, 2026-09-14] The ForKhatri session cookie is read FIRST and
+    is the only credential in normal operation: the Identity Bridge resolves it
+    against the platform Identity & Trust Service, ensures the member-link row
+    and binds the RLS context with SET LOCAL inside THIS transaction
+    [TR017/SP017]. When the cookie is present, its answer is final — a legacy
+    token cannot rescue an invalid platform session.
 
-    Fails closed: every failure mode returns the same 401.
+    The interim `mangaly_session`/bearer path is reachable only when
+    `interim_identity_enabled` is true (automated tests; TR15 step 5).
+
+    Fails closed: 401 when not signed in, 503 when the identity service cannot
+    answer (never a default account), 403 when the link row cannot be made.
     """
     # Imported here rather than at module scope: `deps` is imported by every
     # router, and a top-level import would make this low-level wiring module
     # depend on a component package at import time.
     from app.components.identity_bridge import interface as identity
 
-    if not token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    platform_token = request.cookies.get(settings.platform_session_cookie_name)
+    if platform_token:
+        try:
+            resolved = await identity.resolve_platform_session(session, platform_token)
+            return AuthenticatedSessionInfo(resolved.account_id, resolved.expires_at)
+        except identity.PlatformSessionInvalid:
+            raise _not_authenticated() from None
+        except identity.PlatformIdentityUnavailable:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "code": "identity_unavailable",
+                    "message": "ForKhatri sign-in is temporarily unavailable. Please try again.",
+                },
+                headers={"Retry-After": "5"},
+            ) from None
+        except identity.PlatformLinkRefused as exc:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "code": exc.code,
+                    "message": "This ForKhatri account cannot open Mangaly right now. "
+                    "Please contact support.",
+                },
+            ) from None
 
-    account_id = await identity.validate_session(session, token)
-    if account_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    return account_id
+    if settings.interim_identity_enabled and legacy_token:
+        account_id = await identity.validate_session(session, legacy_token)
+        if account_id is not None:
+            return AuthenticatedSessionInfo(account_id, None)
+
+    raise _not_authenticated()
+
+
+AuthenticatedSession = Annotated[AuthenticatedSessionInfo, Depends(get_authenticated_session)]
+
+
+async def get_authenticated_account(caller: AuthenticatedSession) -> UUID:
+    """The caller's account id. FastAPI caches `get_authenticated_session` per
+    request, so a route using both resolves the session once."""
+    return caller.account_id
 
 
 AuthenticatedAccount = Annotated[UUID, Depends(get_authenticated_account)]

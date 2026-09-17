@@ -18,6 +18,11 @@ items: "88 | approved: 88 | blockers: 0"
 | 2026-09-13 | FR065's `Traced to:` moved from UX15 to UX20 — Step 5's test-scenario pass found no moderator-facing screen had ever been designed for FR065's own "basic review queue," traced to an error in BR14's own "Affected users and systems" line (now corrected in `01-business-requirements.md`), and Step 3 added UX20 to close it. No change to FR065's own requirement text. | Traceability update following the BR14 correction and new UX20 — krishna kategaru, 2026-09-13. |
 | 2026-09-13 | Authentication ownership corrected: login/auth is owned solely by the parent ForKhatri platform (one source of truth); FR076–FR080 and FR088 are marked platform-owned (hand-off briefs, not Milavn build scope); Milavn keeps only its post-login routing, onboarding (FR001–FR003) and profile settings (FR085). Nothing was deleted — the original text stays for traceability. | User correction "User login, authentication will be done by one source of truth, the parent ForKhatri" — krishna kategaru. |
 | 2026-09-14 | **FR089–FR101 added** for the capabilities the owner asked for during Step 9 beyond the sealed MVP: ask-first discovery, smart fill, activity thread, moments, circle board, person page, circle locality, trust-scoped messaging, live expressions with expressive avatars, weekly digest, poster share, use-where-I-am, notification de-duplication/live status. Each entry carries the requirement, the *why*, the owner decision that sourced it and acceptance criteria; nothing sealed was changed. | Owner: "are you also updating .md files on what you're doing for that FR and why — I want each agent responsible and accounted" — krishna kategaru (autonomous). |
+| 2026-09-15 | **FR102 added — Paid spots.** Milavn's full side of paid activities (price, hold, waitlist offers, refund rule, organizer totals, payment history) behind a provider-agnostic Payment Services port; the payment vendor and MOD06 are recorded as an external blocker. | Owner: "payments section and everything you can implement, but skip the payment vendor — keep it as a blocker" — krishna kategaru (autonomous). |
+| 2026-09-15 | **FR112–FR113 added — regulars and photo privacy** (research roadmap items 11–12): keep my spot each time in a free series, own "X of the last Y", welcome back after a miss; "don't include me", ask before sharing, instant removal of a photo of me. | Owner: "do rigorous research … make Milavn much better in behaviour" — krishna kategaru (autonomous). |
+| 2026-09-17 | **FR115–FR124 added** — the remaining twelve capabilities the owner picked: circle join questions and approval, assistants, circle polls (which day / which one), free right now, conversation cards, familiar faces, the steady-host label, followed calendars with an .ics feed, chapters under an umbrella, and community drives. | Owner's selection from the 2026-09-17 research — krishna kategaru (autonomous). |
+| 2026-09-17 | **FR114 added — bringing someone with you.** The owner reviewed a capability study of Meetup, Luma, Partiful, Eventbrite, Posh, Dice, WhatsApp Communities, Bumble BFF, Timeleft, 222, Peanut, Geneva, Heylo, BAND, Nextdoor, Strava, Discord, Couchsurfing, Kutumb and Mera Samaj, and picked 14 capabilities to add. This is the first of them. | Owner's selection from the 2026-09-17 research — krishna kategaru (autonomous). |
+| 2026-09-15 | **FR106 added — would meet again** (research roadmap item 5): private picks among people who were there; both told once only when mutual; "You'd both meet again" on People. | Same owner instruction — krishna kategaru (autonomous). |
 
 ## Coverage check
 | Parent BR | FRs produced | Covered |
@@ -42,6 +47,14 @@ items: "88 | approved: 88 | blockers: 0"
 | BR18 — Future Local Commerce Layer (Could, deferred) | FR074–FR075 | Yes |
 | (prerequisite screens, added by Step 3 — see Revision history) | FR076–FR088 | Yes |
 | (Step 9 additions on owner decisions, 2026-09-14 — see Revision history and `DESIGN-DIRECTION-2030.md`) | FR089–FR101 | Yes |
+| (Step 9 addition on owner instruction, 2026-09-15 — paid spots; see `RESEARCH-BEHAVIOUR-2026.md` for the behaviour roadmap FR103+) | FR102 | Yes |
+| (Step 9 research roadmap, 2026-09-15 — showing up) | FR103–FR105 | Yes |
+| (Step 9 research roadmap, 2026-09-15 — belonging and safety) | FR107–FR109 | Yes |
+| (Step 9 research roadmap, 2026-09-15 — discovery that fits) | FR110–FR111 | Yes |
+| (Step 9 research roadmap, 2026-09-15 — regulars and photo privacy) | FR112–FR113 | Yes |
+| (Step 9 research roadmap, 2026-09-15 — would meet again) | FR106 | Yes |
+| (Step 9, competitor research picks, 2026-09-17) | FR114 | Yes |
+| (Step 9, competitor research picks, 2026-09-17 — the rest of the batch) | FR115–FR124 | Yes |
 
 ## Set-level quality gate
 | Check | Result |
@@ -4526,6 +4539,8 @@ Owner decision 2026-09-14 ("i want messaging system like snapchat"; "yes i agree
 - [x] A non-member of a conversation receives 404 on read.
 - [x] Events (message, reaction, retract, typing, presence) arrive over the socket within a second; polling covers a lost socket.
 - [x] No read receipts, no forwarding chains, no broadcast lists.
+- [x] The chat shows why the two people can talk: the next activity they share (date and time), otherwise the circle they share, linked; approximate place only. *(Added 2026-09-14 with chat room v3, IMP26: the trust scope is made visible instead of implied.)*
+- [x] Presence is honest: **Here now** only while the person has this conversation open; **Active now** when they used Milavn in the last two minutes; otherwise **Active N min / h / d ago**. *(IMP26 — added after the owner saw "Here now" for someone who had already left.)*
 
 **Quality gate (ISO 29148)**
 Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
@@ -4552,7 +4567,8 @@ Owner decision 2026-09-14 (video skipped for now).
 - [x] Expressions are one of: smile, laugh, surprised, wink, thinking, love, neutral.
 - [x] No frame is uploaded; the API only ever receives the word.
 - [x] Camera is opt-in per chat and visibly indicated; the mood row works without a camera.
-- [x] Avatars on the stage and beside messages animate within a second of a change.
+- [x] The other person's avatar rises above the composer while they are in the chat (Snapchat's *Friends in Chat* pattern) and, with the header avatar, animates within a second of a change; in group chats avatars also sit beside messages. *(Chat room v3, IMP26: the v2 always-on "stage" panel was removed.)*
+- [x] Your own avatar is the mood control: a tray shows you in all seven expressions; a tap shares your live mood, tapping the chosen one again sends it as a sticker message.
 
 **Quality gate (ISO 29148)**
 Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
@@ -4655,6 +4671,557 @@ Owner instruction 2026-09-14; migration 011.
 - [x] Join/withdraw/join produces one alert for the organizer.
 - [x] The second identical announcement inside an hour returns 409.
 - [x] Live and countdown states refresh at least every minute.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+
+## FR102 — Paid Spots
+> **Added in Step 9 on an explicit owner instruction (2026-09-15).** Recorded here so the requirement, its reason and its source are owned by a number, tested in `05-test-scenarios.md` (TS193–TS195), and accounted for in `09-implementation.md` (IMP27).
+
+**Traces from:** BR18 (paid and sponsored activity boundary: capture stays with MOD06), thesis §38 (no-shows), §53–§55 (revenue values)
+**Traced to:** `09-implementation.md` IMP27; TS193–TS195
+**Priority:** Must
+**Status:** Implemented (Step 9) on Milavn's side; the payment vendor and MOD06 Payment Services are an external blocker
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When an organizer sets a price for an activity, the system shall let a member take a spot only by paying through Payment Services; hold the spot for 15 minutes while the payment is in progress so no two people pay for one spot; place members on a free waitlist when the activity is full and offer a freed spot to the next person in order with a payment window; refund in full when a member withdraws before the organizer's refund cutoff and always when the organizer cancels or a lapsed payment finds the activity full; show the organizer totals only; lock the price and refund window once anyone is paying or has paid; and never store card or UPI data or let payment data influence trust or ranking.
+
+**Intent (why)**
+Some activities have real costs (a court booking, a food crawl). The thesis says to "monetise value creation, not community belonging" (§53) and never to make trust purchasable (§55), so free stays the default and nothing about a free activity changes. Research on deposits shows that charging to commit pushes most people away (Halpern et al. 2015, *NEJM*: 14% vs 90% acceptance), so a price is for real costs only, and the refund rule is one clear sentence the member reads before paying.
+
+**Source / decision**
+Owner, 2026-09-15: "payments section and everything you can implement, but you can skip adding the payment vendor; this is an external dependency which I will take care of; keep this as a blocker, but implementation-wise complete what all you could."
+
+**Acceptance criteria**
+- [x] A price is optional on create and edit (₹1 to ₹1,00,000) with a refund window of until the start, 1 day, 2 days or 1 week before.
+- [x] The free Going toggle is refused on a paid activity; joining returns a hold and a checkout, or a free waitlist place when full.
+- [x] A held spot counts as taken for everyone; a hold that lapses gives the spot back and it is offered to the waitlist.
+- [x] Withdrawing before the cutoff refunds in full; after the cutoff the member is told before confirming that there is no refund.
+- [x] An organizer cancellation refunds every paid spot automatically; members are notified at every money moment.
+- [x] The organizer sees totals only (paid spots, collected, refunded, people paying now) and never who paid.
+- [x] The price and refund window cannot change once anyone is paying or has paid.
+- [x] Payment events are accepted only from Payment Services with its key; a redelivered event changes nothing.
+- [x] Trust and discovery code never reads payment data (FR036).
+- [ ] Money actually moves through the payment vendor via MOD06 Payment Services — **blocked (external dependency)**.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR103 — Still Coming? (Free the Spot Kindly)
+> **Added in Step 9 from the owner's research instruction (2026-09-15)** — `RESEARCH-BEHAVIOUR-2026.md` roadmap item 2. Tested in TS196; built in IMP28.
+
+**Traces from:** BR05 (showing up), thesis §38 (no-shows: "confirmation requests", "still coming? prompts", "do not punish users")
+**Traced to:** `09-implementation.md` IMP28; TS196
+**Priority:** Must
+**Status:** Implemented (Step 9)
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When a member is going to an activity that starts within the next day, the system shall ask once whether they are still coming, in the app and on the activity page, offering "Yes, I'm coming" and "Can't make it · free my spot"; freeing a spot shall immediately promote the next person on the waitlist (or, for a paid spot, follow the refund rule); the question shall never mention penalties, and it shall not be asked of the host or of someone who joined in the last three hours.
+
+**Intent (why)**
+A reminder that says a missed spot affects someone else cut missed appointments from 21.1% to 14.2% and raised early cancellations from 17.2% to 26.3% (Berliner Senderey et al. 2020, 161,587 appointments). Early cancellation is the real win for organizers: the spot goes to someone who will come.
+
+**Acceptance criteria**
+- [x] Sent 20–28 hours before the start to people going who have not confirmed, at most once each.
+- [x] The words name the waitlist when people are waiting ("so the person on the waitlist can join"), and point paid spots to the refund rule.
+- [x] "Yes, I'm coming" is recorded once and the question disappears; "free my spot" promotes the waitlist.
+- [x] No penalty, score or label is ever attached to an answer.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR104 — Two Reminders That Repeat the Member's Plan
+> **Added in Step 9 from the owner's research instruction (2026-09-15)** — roadmap item 3. Tested in TS197; built in IMP28.
+
+**Traces from:** FR052 (reminders), BR05
+**Traced to:** IMP28; TS197
+**Priority:** Must
+**Status:** Implemented (Step 9)
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+The system shall remind a member who is going three days before an activity (day, time, locality, "put it in your calendar") and two hours before it (time, locality and, when given, the member's own travel plan, with a welcome line for someone coming alone); members who are only interested shall get one nudge the day before; no reminder shall be sent twice.
+
+**Intent (why)**
+Two reminders beat one (Steiner et al. 2018: missed visits 4.4% with reminders 3 days and 1 day before, versus 5.3–5.8% with one). Repeating a person's own plan is what makes planning prompts work (Nickerson & Rogers 2010).
+
+**Acceptance criteria**
+- [x] 66–78 hours and 90–150 minutes windows; each reminder claimed in the database before sending, so overlapping runs never duplicate.
+- [x] The two-hour reminder repeats the travel plan and, for "on my own", suggests saying hello to the host.
+- [x] The host is never sent attendee reminders.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR105 — One-Tap Plan: How and With Whom
+> **Added in Step 9 from the owner's research instruction (2026-09-15)** — roadmap item 4. Tested in TS198; built in IMP28.
+
+**Traces from:** BR05, FR015
+**Traced to:** IMP28; TS198
+**Priority:** Should
+**Status:** Implemented (Step 9)
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When a member is going or waitlisted, the activity page shall ask, optionally and in place, how they are getting there (on foot, two-wheeler, car, cab or auto, metro or bus) and who they are coming with (on my own, a friend, family); the answer shall be visible only to the member and the host, changeable at any time, and repeated back in the two-hour reminder.
+
+**Intent (why)**
+Asking when and how raised follow-through in large field experiments (Milkman et al. 2011: 33.1% → 37.3%; Nickerson & Rogers 2010: +4.1 points, +9.1 for people living alone). "On my own" also lets a host welcome a newcomer (FR108, planned).
+
+**Acceptance criteria**
+- [x] Two chip rows, saved on tap, collapsing to "Your plan: … · Change" once both are answered.
+- [x] Unknown values are refused; only people going or waitlisted can set a plan.
+- [x] Setting a plan does not postpone the "still coming?" check.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR107 — Thank the Host, and One Private Question Afterwards
+> **Added in Step 9 from the owner's research instruction (2026-09-15)** — `RESEARCH-BEHAVIOUR-2026.md` roadmap item 6. Tested in TS199; built in IMP29.
+
+**Traces from:** BR08 (reputation and feedback), FR066–FR069, owner decision "no public star ratings"
+**Traced to:** `09-implementation.md` IMP29; TS199
+**Priority:** Must
+**Status:** Implemented (Step 9)
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+After a member has attended an activity, the system shall let them thank the host once (a one-tap preset or their own words, up to 140 characters, rewordable) and answer one private question, "Would you come again? Yes / Maybe / No", with an optional line; the host shall be notified of a thank-you once, in the attendee's words, and shall see only counts (came, first-timers, would come again) plus the notes sent to them; a host thanked three times shall earn the qualitative label "Appreciated host"; no individual answer is shown to anyone.
+
+**Intent (why)**
+People undervalue how much thanks means to the person thanked (Kumar & Epley 2018) and a short, specific thank-you keeps volunteers going (Grant & Gino 2010). One tap-scale question beats long surveys (Galesic & Bosnjak 2009) and star ratings inflate until they carry no information (Zervas et al. 2021), which the owner already ruled out.
+
+**Acceptance criteria**
+- [x] Only people who checked in or attended can thank or answer; the host cannot thank themselves.
+- [x] A reworded thank-you does not notify the host again.
+- [x] Unknown answers are refused as invalid input.
+- [x] "After the activity" is visible to the host only.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR108 — Welcome Newcomers
+> **Added in Step 9 from the owner's research instruction (2026-09-15)** — roadmap item 7. Tested in TS200; built in IMP29.
+
+**Traces from:** BR05, FR056 (attendee list), FR105
+**Traced to:** IMP29; TS200
+**Priority:** Must
+**Status:** Implemented (Step 9)
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When a member joins an activity and has never checked in to an earlier one, the system shall tell the host "{name} is going · first time" with a suggestion to say hello, mark them "First time" (and "On their own" when their plan says so) on the host's attendee list, and show the member a "Your first Milavn activity" card saying the host will look out for them and that coming alone is normal; the card is never shown to the host.
+
+**Intent (why)**
+Newcomers stay when someone welcomes them early (Choi et al. 2010; the Wikipedia Teahouse experiment, Morgan & Halfaker 2018), and adjustment depends on knowing what to expect and feeling accepted (Bauer et al. 2007).
+
+**Acceptance criteria**
+- [x] First-timer is computed from real check-ins before the activity's start, not from account age.
+- [x] Host notification, attendee chips and the member card behave as stated; a returning member is not marked.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR109 — Share My Plan With Family
+> **Added in Step 9 from the owner's research instruction (2026-09-15)** — roadmap item 8. Tested in TS201; built in IMP29.
+
+**Traces from:** BR12 (safety), FR063, FR064, owner decision "locality only, never exact locations"
+**Traced to:** IMP29; TS201
+**Priority:** Should
+**Status:** Implemented (Step 9)
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When a member is going to an activity, the activity page shall offer "Share my plan with family", which opens WhatsApp with the activity title, date and time, locality, the host's first name, the activity link and "I'll message you when I'm back"; for activities starting between 6 pm and 6 am for members in Telangana, it shall add the Telangana Police T-Safe instruction (dial 100, option 8); it shall never share a live or exact location.
+
+**Intent (why)**
+Safety built into the format is what the best IRL products do (Timeleft, 222, Bumble "Share Date", Snap Map) and matters more in India, where women's evening mobility is constrained and phones are often shared (Time Use Survey 2019; Sambasivan et al. 2018). WhatsApp is how families already coordinate; T-Safe is a real, free state service.
+
+**Acceptance criteria**
+- [x] Opens a WhatsApp share with the stated content in the member's language; no location beyond the locality.
+- [x] T-Safe line only for evening activities and members in Telangana cities.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR110 — Who It's For, and Food and Drink
+> **Added in Step 9 from the owner's research instruction (2026-09-15)** — `RESEARCH-BEHAVIOUR-2026.md` roadmap item 9. Tested in TS202; built in IMP30.
+
+**Traces from:** BR02 (discovery), FR005, FR009, FR010
+**Traced to:** `09-implementation.md` IMP30; TS202
+**Priority:** Must
+**Status:** Implemented (Step 9); "women only" deferred (see Open items)
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+An organizer shall be able to mark who an activity is for (Family & kids, Elder-friendly, Beginners welcome) and, for food and celebration activities, what food and drink to expect (Veg, Jain options, Non-veg served, Alcohol-free), with vegetarian and alcohol-free pre-selected for Eat and Celebrate activities until the organizer changes them; vegetarian and non-vegetarian cannot both be claimed; members shall see these on the activity page and filter discovery by them and by "Free".
+
+**Intent (why)**
+Whether a member can come at all often depends on family, elders, first-timers and food: 81% of Indians limit meat and 39% are vegetarian (Pew 2021), and community events default to vegetarian and alcohol-free (India research track). The Discover "Free" chip was a disabled placeholder saying "everything is free"; with paid spots (FR102) it must be a real filter.
+
+**Acceptance criteria**
+- [x] Tags stored and returned on cards; unknown tags and veg + non-veg together refused.
+- [x] Veg and alcohol-free pre-selected for Eat and Celebrate until the organizer touches the food row.
+- [x] Discover filters: Free, Family & kids (main row); who it's for and food in More filters.
+- [ ] "Women only" — **deferred:** enforcing it needs a gender attribute the platform identity does not hold (basic identity only); logged as an open item rather than shipped as an unenforceable label.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR111 — Honest Discovery: Returning Hosts, Fair Start, Variety and "Not Interested"
+> **Added in Step 9 from the owner's research instruction (2026-09-15)** — roadmap item 10. Tested in TS203; built in IMP30.
+
+**Traces from:** BR02, FR007 (ranking), FR008 (why this)
+**Traced to:** IMP30; TS203
+**Priority:** Must
+**Status:** Implemented (Step 9)
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+Discovery ranking shall (a) raise activities by hosts at whose activities the member has checked in before and say so ("You've been to Priya's activities before"); (b) give a host who has never held an activity a small boost when the activity is nearby and, when that decides the reason, say "New host nearby, giving them a fair start"; (c) show no host more than twice in the first ten results; and (d) let a member mark an activity "Not interested" with a reason (not my thing, too far, bad time, not this host), removing it from their discovery and, for "not this host", that host's activities for 60 days — never removing an activity the member has already joined.
+
+**Intent (why)**
+For brand-new events the organizer is the strongest signal (Zhang & Wang 2015); simple, checkable explanations earn trust (Herlocker et al. 2000); recommenders starve new hosts unless they get a fair share (Abdollahpouri et al. 2019); variety keeps discovery useful (Kaminskas & Bridge 2016); user control with a reason raises satisfaction (Harper et al. 2015).
+
+**Acceptance criteria**
+- [x] Returning-host reason appears only from the member's own check-ins; the helper answers only for the member bound to the request.
+- [x] Fair-start boost only when nearby and only for hosts with no held activity.
+- [x] Per-host cap in the top ten; nothing is hidden by the cap.
+- [x] "Not interested" reasons validated; joined activities stay visible.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR112 — Regulars: Keep My Spot Each Time, Own Attendance Count, Welcome Back
+> **Added in Step 9 from the owner's research instruction (2026-09-15)** — `RESEARCH-BEHAVIOUR-2026.md` roadmap item 11. Tested in TS204; built in IMP31.
+
+**Traces from:** BR03 (recurrence), BR04 (participation), BR12 (notifications), FR012 (series), FR103–FR104 (reminders)
+**Traced to:** IMP31; TS204
+**Priority:** Should
+**Status:** Implemented (Step 9)
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+On a free activity in a series, a member who has checked in at least once in that series shall be able to tap "Keep a spot for me each time". The system shall then (a) give them a spot (or a waitlist place when full) on every upcoming date at once, (b) do the same whenever the host adds a new date and tell them "Your spot is kept… Can't make it? Free it in one tap", and (c) let them stop at any time. The series section shall show the member their own "You've been to X of the last Y" (last four held dates), never a streak, and never to anyone else. When a member's previous date in the series ended as no-show or cancelled, the three-day reminder shall begin "We missed you last time; glad you're coming." Paid series and the host are refused; a member blocked either way with the host is never added.
+
+**Intent (why)**
+Friendships come from repeated time together (Hall 2019), and habits form in a stable context (Wood & Neal 2007), so returning should cost nothing. A warm message after a miss was the most effective of 54 gym interventions (Milkman et al. 2021) while a broken streak makes people quit (Silverman & Barasch 2023) — so a count and a welcome, never a streak. Requiring one past check-in keeps newcomers from being crowded out by holds from strangers; paid spots are never taken on anyone's behalf.
+
+**Acceptance criteria**
+- [x] Opt-in only, one tap, reversible; upcoming dates kept at once; new dates kept automatically with a notification.
+- [x] Refused for paid series, for the host, and for someone who has not come yet (409, localised).
+- [x] "X of the last Y" is answered only for the member bound to the request.
+- [x] Welcome-back wording only after a missed previous date; no streak language anywhere.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR113 — Photo Privacy: Ask Before Sharing, "Don't Include Me", Remove a Photo of Me
+> **Added in Step 9 from the owner's research instruction (2026-09-15)** — roadmap item 12. Tested in TS205; built in IMP31.
+
+**Traces from:** BR09 (privacy), BR14 (safety), FR092 (moments)
+**Traced to:** IMP31; TS205
+**Priority:** Must
+**Status:** Implemented (Step 9)
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+A member shall be able to set "Photos of me: Please don't include me" in Profile settings. Before someone who was at an activity shares a photo from it, the system shall show the names (first name and last initial) of people who were there and asked not to be pictured, and require two confirmations — everyone clearly in the photo is fine with it being shared; no children in it, or their parents agreed — before the Share button works. Anyone who can see a photo and did not share it shall be able to tap "I'm in this photo · remove it"; the photo is hidden for everyone at once and the person who shared it is told it was taken down, without being told who asked. People who cannot see the thread cannot remove anything.
+
+**Intent (why)**
+An identifiable photo is personal data under India's DPDP Act and Rules 2025, and consent to take a photo is not consent to publish it. Online photo abuse is a documented harm for women in South Asia (Sambasivan et al. 2018/2019). Removal must be instant and blame-free so nobody has to argue to get a photo of themselves taken down.
+
+**Acceptance criteria**
+- [x] The opt-out list is shown only to people who were there, and only lists people who were there.
+- [x] Share is disabled until both confirmations are ticked.
+- [x] Removal is immediate, hides the photo for everyone, notifies the uploader without the requester's name.
+- [x] A member who cannot view the thread gets 404.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR106 — Would Meet Again (Private, Mutual Only)
+> **Added in Step 9 from the owner's research instruction (2026-09-15)** — `RESEARCH-BEHAVIOUR-2026.md` roadmap item 5. Tested in TS206; built in IMP32. (Numbered in roadmap order, written after FR113.)
+
+**Traces from:** BR10 (people discovery, distinct from dating), BR15 (post-event signals), FR042–FR045
+**Traced to:** IMP32; TS206
+**Priority:** Should
+**Status:** Implemented (Step 9)
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+Once an activity has started, a member who was there (checked in, or the host/co-host) shall see "Would you meet anyone again?" with the other people who were there, and may privately pick or un-pick any of them. A pick shall never be shown to the person picked, and there shall be no counts anywhere. When two people have picked each other, both shall be told once — "You and {name} would both meet again" — and each shall appear on the other's People page under "You'd both meet again". Un-picking removes the connection silently for both; picking again never re-notifies. People who were not there see no one and cannot pick; blocked pairs never appear.
+
+**Intent (why)**
+After a first conversation people underestimate how much the other person liked them (Boothby et al. 2018, "the liking gap"), so they rarely follow up and one-off meetings do not become friendships (Hall 2019). A mutual, private choice removes the risk of rejection; Meetup's Connections uses the same idea. Keeping it mutual only, count-free and activity-framed keeps Milavn distinct from dating (FR044–FR045).
+
+**Acceptance criteria**
+- [x] Candidates only for someone who was there, only after the start, never themselves or a blocked person.
+- [x] One-sided picks invisible to the other person, never notified.
+- [x] Mutual: both told exactly once; listed for both; un-pick removes it for both.
+- [x] Someone who was not there gets 404 when picking.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR115 — Joining a Circle: A Question or Two, and the Organizer's Yes
+> **Added in Step 9 from the owner's picks of the competitor research (2026-09-17)** — picks 2 and 3 (Meetup membership questions and approval; Luma, Geneva, Heylo).
+
+**Traces from:** BR05 (circles), FR020–FR021 (join/leave), BR14 (safety)
+**Traced to:** IMP35–IMP37; TS209–TS211
+**Priority:** Must
+**Status:** Implemented (Step 9)
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+A circle shall be either open (join at once, unchanged) or ask-first. An ask-first circle may carry up to three short questions; someone asking to join answers them and the request waits. An organizer or assistant shall see who is waiting and what they answered, and may let them in or not, once. The person asking shall see that they are waiting, and shall be told when they are let in; a decline shall never be announced to them. Someone outside the circle shall be able to read the questions without being able to read anything else about the circle.
+
+**Intent (why)**
+Every product that runs real communities screens the door: Meetup asks up to five questions and holds each request as pending, Luma has approval-required registration, and Heylo reports that admission friction is exactly what makes members trust a group. For a women-only walking circle or a neighbourhood group, "how do you know us?" is the difference between a community and a public square. The decline is deliberately silent: being turned down by name helps nobody, and the person can see the state themselves.
+
+**Acceptance criteria**
+- [x] Open circles behave exactly as before.
+- [x] Questions are readable to a non-member (name, policy, questions only — migration 026).
+- [x] One pending request per person; asking twice changes nothing.
+- [x] Only an organizer or assistant sees the answers or decides; everyone else gets an empty list and a 403.
+- [x] Being let in is notified; a decline is not.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR116 — Familiar Faces
+> **Added in Step 9 from the owner's picks of the competitor research (2026-09-17)** — pick 27 (Meetup's Familiar Faces).
+
+**Traces from:** BR10 (people discovery), FR042–FR045, BR09 (privacy)
+**Traced to:** IMP35–IMP37; TS209–TS211
+**Priority:** Should
+**Status:** Implemented (Step 9)
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+A member's page for another member shall show how many past activities the two of them were both at, counted only from activities where both were checked in or attended, answered only for the member making the request, and never for a blocked pair.
+
+**Intent (why)**
+Friendship comes from repeated time together (Hall 2019; Reis et al. 2011) — the second and third meeting is where an acquaintance becomes a friend. Telling someone "you have both been to three of these" is worth more than any new-people suggestion, and it is a fact they already know from having been there.
+
+**Acceptance criteria**
+- [x] Counted from both people's own attendance only.
+- [x] Answers only for the viewer bound to the request (definer, migration 027).
+- [x] Zero for a stranger; never shown for a blocked pair.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR117 — The Host Who Keeps Showing Up
+> **Added in Step 9 from the owner's picks of the competitor research (2026-09-17)** — pick 20 (Meetup's 2026 "Super Organizer" badge).
+
+**Traces from:** BR08 (earned reputation), FR034–FR037
+**Traced to:** IMP35–IMP37; TS209–TS211
+**Priority:** Should
+**Status:** Implemented (Step 9)
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+The reputation labels shall include "Hosts regularly, rarely cancels" for a member who has held five or more activities with at most one cancellation. It shall remain a qualitative label like every other, shall never be a score, rank or streak, and shall disappear again if the member starts cancelling.
+
+**Intent (why)**
+Meetup is adding a Super Organizer badge for hosts who run consistently good groups. Milavn already earns "appreciated host" from real thank-yous; this is the other half a community notices by itself — the person whose activity actually happens, month after month. Keeping it reversible is what stops it becoming a status symbol.
+
+**Acceptance criteria**
+- [x] Five held activities and at most one cancellation.
+- [x] Replaces the weaker host labels rather than stacking with them.
+- [x] No number is exposed anywhere.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR118 — Conversation Cards
+> **Added in Step 9 from the owner's picks of the competitor research (2026-09-17)** — pick 9 (Timeleft's table cards; 222's written intro).
+
+**Traces from:** BR15 (post-event and belonging), FR108 (welcoming newcomers)
+**Traced to:** IMP35–IMP37; TS209–TS211
+**Priority:** Should
+**Status:** Implemented (Step 9)
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+From about an hour before an activity starts until it ends, a member who is going (or its host) shall be offered a few conversation prompts chosen by the activity's category, in a stable order for everyone at that activity, with one tap to see another. The prompts shall not be shown to anyone who is not going.
+
+**Intent (why)**
+Timeleft puts printed prompt cards on every table and 222 sends a written introduction before the event, both because the hardest part of meeting strangers is the first two minutes. The prompts are written for this community: answerable by an eighteen-year-old and by a grandmother, and never about money, marriage, caste or politics.
+
+**Acceptance criteria**
+- [x] Only for people who are going, only around the time it happens.
+- [x] Same cards, same order, for everyone at that activity.
+- [x] No storage, no moderation surface — they are content in the codebase.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR119 — Free Right Now
+> **Added in Step 9 from the owner's picks of the competitor research (2026-09-17)** — pick 8 (Couchsurfing Hangouts).
+
+**Traces from:** BR10 (people), BR09 (privacy), FR038/FR041 (locality only)
+**Traced to:** IMP35–IMP37; TS209–TS211
+**Priority:** Should
+**Status:** Implemented (Step 9)
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+A member shall be able to say they are free for the next fifteen minutes to four hours, with a locality they type and a short note, and to take it back at any time. It shall be visible only to members who share a circle with them, never to a blocked member, and it shall expire by itself. No location shall ever be read from the device.
+
+**Intent (why)**
+Most meeting up is not planned a week ahead — someone is free this evening and would rather not spend it alone, which is the whole reason Couchsurfing's Hangouts exist. Restricting it to shared circles keeps it a message to people you already know, not a broadcast to strangers.
+
+**Acceptance criteria**
+- [x] Shared-circle only; blocked pairs never see each other.
+- [x] Expires without anyone acting; the window is capped at four hours.
+- [x] Locality is typed, never sensed.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR120 — Asking the Circle: Which Day, or Which One
+> **Added in Step 9 from the owner's picks of the competitor research (2026-09-17)** — picks 6 and 7 (Partiful date polls; Dice Groups).
+
+**Traces from:** BR05 (circles), BR03 (creation), FR024 (circle board)
+**Traced to:** IMP35–IMP37; TS209–TS211
+**Priority:** Must
+**Status:** Implemented (Step 9)
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+A member of a circle shall be able to ask one question with two to six answers, either times ("which morning suits everyone?") or activities already posted ("which one shall we go to?"). Any member may pick several answers and change their mind until it is settled; who picked what shall be visible by name inside the circle. Only the person who asked may settle it, after which a date question offers to create the activity at the most-picked time.
+
+**Intent (why)**
+Partiful polls guests for a date before the event exists, which is how a family or a badminton group actually decides; Dice added Groups so friends can vote on which show to attend before anyone commits. Both are the same small primitive. Names are shown because inside a circle "Meera and Ravi can do Sunday" is the useful part — the same thing a WhatsApp poll shows.
+
+**Acceptance criteria**
+- [x] Two to six options; a question of up to 160 characters.
+- [x] Several picks allowed; changeable until settled.
+- [x] Voters visible by name to circle members only (RLS).
+- [x] Only the asker settles it; settling offers the activity at the most-picked time.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR121 — Assistants: An Organizer Should Not Be Alone
+> **Added in Step 9 from the owner's picks of the competitor research (2026-09-17)** — pick 17 (Meetup's leadership roles).
+
+**Traces from:** BR05 (circles), BR13 (organizer tooling), FR059 (delegation)
+**Traced to:** IMP35–IMP37; TS209–TS211
+**Priority:** Must
+**Status:** Implemented (Step 9)
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+A circle's organizer shall be able to ask any member to help run it, and to step them back down. An assistant shall see and decide join requests and be told when someone is waiting; an assistant shall not appoint other assistants, change the organizer, or delete the circle. Nobody shall be able to give themselves a role.
+
+**Intent (why)**
+Meetup gives a group co-organizers, assistant organizers and event organizers, and its own guidance — with the research this module already cites (Liu & Suel on thousands of Meetup groups) — says groups survive when the organizer is not carrying everything alone. Milavn circles had exactly two states: the person who created it, and everyone else.
+
+**Acceptance criteria**
+- [x] Only an organizer sets roles; self-service is refused.
+- [x] The creator's own role cannot be edited.
+- [x] An assistant can read and decide join requests, and is notified of them.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR122 — Follow a Calendar, Not Just an Activity
+> **Added in Step 9 from the owner's picks of the competitor research (2026-09-17)** — pick 23 (Luma's subscribable Calendars).
+
+**Traces from:** BR06 (calendar), BR11 (public pages), FR026–FR029
+**Traced to:** IMP35–IMP37; TS209–TS211
+**Priority:** Should
+**Status:** Implemented (Step 9)
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+A member shall be able to follow a host, privately, so that host's public activities appear in their calendar; and a calendar feed (.ics) for that host shall be subscribable from any calendar app without signing in. The feed shall contain only public activities, and following shall never be disclosed to the host.
+
+**Intent (why)**
+Luma's strongest idea is that a calendar is a thing you follow, so every new date the host posts lands in your own calendar automatically — exactly what a weekly badminton or a monthly satsang needs. Milavn could export one activity at a time, so a regular host's community had to keep coming back to look. The feed is public-only by necessity: a subscription URL is unauthenticated by nature.
+
+**Acceptance criteria**
+- [x] Following is private to the follower.
+- [x] The feed carries public activities only, from a month back.
+- [x] It is a valid calendar file any app can subscribe to.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR123 — Chapters Under One Umbrella
+> **Added in Step 9 from the owner's picks of the competitor research (2026-09-17)** — pick 18 (Meetup Pro Networks).
+
+**Traces from:** BR05 (circles), BR02 (discovery)
+**Traced to:** IMP35–IMP37; TS209–TS211
+**Priority:** Should
+**Status:** Implemented (Step 9)
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+A circle shall be able to sit under a named umbrella, set by its own organizer. Anyone signed in shall be able to see an umbrella's chapters — name, locality, how many members, and whether that chapter asks before letting people in — and belonging to one chapter shall grant no access to another: joining still goes through that chapter's own door.
+
+**Intent (why)**
+One community often runs in several cities, which is why Meetup Pro has networks. A samaj is exactly this shape: Hyderabad, Mumbai, Bengaluru, and an overseas chapter, one community. Making chapters findable is the point; making them shared would quietly undo each chapter's own privacy.
+
+**Acceptance criteria**
+- [x] Only a chapter's organizer attaches or detaches it.
+- [x] The chapter list exposes name, place, size and door policy only.
+- [x] No membership, post or activity crosses between chapters.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR124 — A Drive for Something the Community Needs
+> **Added in Step 9 from the owner's picks of the competitor research (2026-09-17)** — pick 14 (Mera Samaj's fundraising; Heylo's dues).
+
+**Traces from:** BR05 (circles), BR13 (organizer tooling), FR102 (paid spots and the payments port)
+**Traced to:** IMP35–IMP37; TS209–TS211
+**Priority:** Must
+**Status:** Implemented (Step 9)
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+An organizer or assistant shall be able to open a drive inside a circle with a title, a purpose, an optional target and an optional closing date. A member shall be able to promise an amount with a short note, change it, or take it back. Every member shall see the totals — promised, how many people, and how much has actually arrived — and nobody but the organizers shall see who promised what. Money shall not move inside Milavn until Payment Services exists; until then an organizer marks by hand what has arrived.
+
+**Intent (why)**
+This is the one capability the Indian community products have that none of the Western ones do. Mera Samaj's own case study is an admin collecting in a few months what had taken twelve years by hand; Heylo builds recurring dues for clubs. A samaj collects constantly — for a hall, a scholarship, a family in trouble — and today that happens in a WhatsApp group with a screenshot of a UPI payment and a hand-kept list.
+
+**Acceptance criteria**
+- [x] Only an organizer or assistant opens or closes a drive.
+- [x] Totals are visible to the circle; individual amounts only to organizers.
+- [x] Promises are clearly labelled as promises while payments are off (blocker B1).
+- [x] `paid_at`/`payment_reference` are where a real payment will attach, with nothing else to change.
+
+**Quality gate (ISO 29148)**
+Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
+
+## FR114 — Bringing Someone With You
+> **Added in Step 9 from the owner's pick of the competitor research (2026-09-17)** — item 1 of 14. Tested in TS208; built in IMP34.
+
+**Traces from:** BR04 (participation lifecycle), BR03, FR015–FR016 (join/withdraw), FR058 (capacity and waitlist), FR105 (coming with)
+**Traced to:** IMP34; TS208
+**Priority:** Must
+**Status:** Implemented (Step 9)
+**Confidence:** High
+
+**Requirement (ISO 29148 form)**
+When creating a free activity the host shall choose how many extra people each person may bring (none, 1, 2 or 3; at most 4). A member who is Going shall then be able to say how many they are bringing, in one tap, without leaving the page. Every count the app shows shall include those guests: capacity, spots left, "full", and the total shown next to the going count. When a party does not fit, the whole party shall go on the waitlist together and shall be promoted only when there is room for all of them — never split, and never moved down the queue. A member already Going who raises their guest count beyond the room left shall be refused with a plain message, never silently waitlisted. Guests shall not be available on paid activities, where a spot is bought per person. The organizer's attendee list shall show who is bringing how many.
+
+**Intent (why)**
+In this community an activity is rarely attended alone — a spouse, a cousin, a child comes along. Every comparable product treats this as part of the RSVP: Meetup counts up to five guests per RSVP against capacity and holds a party on the waitlist until it fits, Partiful makes plus-ones a first-class object, and 222 offers a plus-one precisely so nobody has to arrive alone. Milavn could previously record only the sentiment ("coming with: family") in a plan note that no capacity arithmetic ever saw, so a host with twelve spots could have twenty people turn up.
+
+**Acceptance criteria**
+- [x] Host sets the allowance; it is refused on paid activities and above 4.
+- [x] Guests count towards capacity, spots left and "full" everywhere, including cards and the public page.
+- [x] A party that does not fit waits together and is promoted only when it fits; a smaller party behind it is taken first only when the bigger one cannot fit.
+- [x] Raising guests beyond the room left is refused (409) and never demotes someone already going.
+- [x] Withdrawing clears the guests; bringing fewer frees room and promotes whoever now fits.
 
 **Quality gate (ISO 29148)**
 Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ · Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓

@@ -75,6 +75,9 @@ class Settings(BaseSettings):
     # notifications (the same operator context the existing jobs use).
     dispatcher_operator_member_id: str = "m_neha_ops"
 
+    # [TR045] HMAC key for member_pseudo — never the verification key, never logged
+    analytics_pseudonym_secret: str = "CHANGE_ME_dev_analytics_pseudonym_secret"
+
 
 @lru_cache
 def get_settings() -> Settings:

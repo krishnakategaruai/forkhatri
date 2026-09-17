@@ -60,6 +60,7 @@ class MemberContext:
     handle: str
     avatar: str | None
     scopes: tuple[str, ...]
+    identity_level: int = 0
 
     @property
     def is_moderator(self) -> bool:
@@ -76,13 +77,52 @@ def _read_member_header(request: Request, header: str | None) -> UUID | None:
         return None
 
 
+_UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
+
+
+def origin_allowed(origin: str | None, settings: Settings) -> bool:
+    """A cookie-authenticated call must come from a Milavn web origin (or carry no Origin: server-side fetches)."""
+    return origin is None or origin in settings.cors_allowed_origins
+
+
+async def resolve_member_identity(cookies: dict[str, str], header_member_id: str | None, settings: Settings) -> identity.MemberIdentity | None:
+    """The one place a request's acting member is identified (HTTP and WebSocket).
+
+    [ParentApp TR15] `fk_session` first, resolved by the platform through the
+    Identity Bridge; the legacy `X-Milavn-Member-Id` stand-in only when
+    `dev_identity_enabled` is explicitly on. Raises
+    `identity.IdentityServiceUnavailable` when the platform cannot answer."""
+    token = cookies.get(settings.platform_session_cookie)
+    if token:
+        ident = await identity.resolve_session(token)
+        if ident is not None:
+            return ident
+    if settings.dev_identity_enabled:
+        raw = header_member_id or cookies.get("milavn_member")
+        try:
+            return identity.resolve_dev(UUID(raw)) if raw else None
+        except ValueError:
+            return None
+    return None
+
+
 async def get_optional_member(
     request: Request,
     session: DbSession,
     x_milavn_member_id: Annotated[str | None, Header()] = None,
 ) -> MemberContext | None:
-    member_id = _read_member_header(request, x_milavn_member_id)
-    ident = identity.resolve(member_id) if member_id else None
+    settings = get_settings()
+    try:
+        ident = await resolve_member_identity(request.cookies, x_milavn_member_id, settings)
+    except identity.IdentityServiceUnavailable as exc:
+        # [TR15.3] Fail closed: never fall back to anonymous or a default member.
+        from app.i18n import resolve_language, translate
+
+        lang = resolve_language(request.headers.get("x-milavn-language") or request.headers.get("accept-language"))
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=translate("auth.identityUnavailable", lang)) from exc
+    if ident is not None and request.method in _UNSAFE_METHODS and not origin_allowed(request.headers.get("origin"), settings):
+        # Cookie credentials ride along on any same-site request; state changes must come from our own web app.
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="origin_not_allowed")
     if ident is None:
         # [FR046/FR029] Anonymous request: bind the nil member so RLS predicates
         # evaluate (a missing variable is a uuid cast error, not "no rows") and
@@ -90,7 +130,7 @@ async def get_optional_member(
         await set_member_context(session, ANONYMOUS_MEMBER_ID, [])
         return None
     await set_member_context(session, ident.member_id, list(ident.scopes))
-    return MemberContext(ident.member_id, ident.display_name, ident.handle, ident.avatar, ident.scopes)
+    return MemberContext(ident.member_id, ident.display_name, ident.handle, ident.avatar, ident.scopes, ident.identity_level)
 
 
 OptionalMember = Annotated[MemberContext | None, Depends(get_optional_member)]

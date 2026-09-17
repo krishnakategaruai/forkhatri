@@ -4,6 +4,8 @@
  * platform session — see lib/identity.tsx) and the resolved UI language.
  * Client-queueable mutations send an Idempotency-Key (TR-CROSSCUT-01). */
 
+import { withBasePath } from './base-path';
+
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8001';
 
 export class ApiError extends Error {
@@ -16,11 +18,12 @@ export class ApiError extends Error {
   }
 }
 
-let memberId: string | null = null;
 let language = 'en';
-export function setApiMember(id: string | null) { memberId = id; }
 export function setApiLanguage(lang: string) { language = lang; }
-export function currentApiMember() { return memberId; }
+
+/* Fired when the API says the ForKhatri session is gone (401), so the identity
+ * provider can drop the member and the shell can send them to the entrance. */
+export const UNAUTHORIZED_EVENT = 'milavn:unauthorized';
 
 export function newIdempotencyKey(): string {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
@@ -30,7 +33,6 @@ type Opts = { method?: string; body?: unknown; idempotent?: boolean; form?: Form
 
 export async function api<T = unknown>(path: string, opts: Opts = {}): Promise<T> {
   const headers: Record<string, string> = { 'X-Milavn-Language': language };
-  if (memberId) headers['X-Milavn-Member-Id'] = memberId;
   if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
   if (opts.idempotent) headers['Idempotency-Key'] = newIdempotencyKey();
   const res = await fetch(`${API_BASE}${path}`, {
@@ -39,19 +41,23 @@ export async function api<T = unknown>(path: string, opts: Opts = {}): Promise<T
     body: opts.form ?? (opts.body !== undefined ? JSON.stringify(opts.body) : undefined),
     signal: opts.signal,
     cache: 'no-store',
+    // The member is the ForKhatri session cookie (TR16) — never a header this client sets.
+    credentials: 'include',
   });
   if (res.status === 204) return undefined as T;
   const text = await res.text();
-  const data = text ? JSON.parse(text) : null;
+  let data: { detail?: unknown } | null = null;
+  try { data = text ? JSON.parse(text) : null; } catch { data = null; }
+  if (res.status === 401 && typeof window !== 'undefined') window.dispatchEvent(new Event(UNAUTHORIZED_EVENT));
   if (!res.ok) throw new ApiError(res.status, data?.detail ?? data);
-  return data as T;
+  return data as unknown as T;
 }
 
 export function resolveMediaUrl(path: string | null | undefined): string | null {
   if (!path) return null;
   if (path.startsWith('http')) return path;
   if (path.startsWith('/media/')) return `${API_BASE}${path}`;
-  return path; // /assets/... served by this web app
+  return withBasePath(path); // /assets/... served by this web app (under its zone prefix)
 }
 
 /* ---------- Types (mirror the API's card contract, FR006) ---------- */
@@ -64,6 +70,8 @@ export type Card = {
   why_reason: string; why_factor: string; viewer_status: string | null;
   cover_image_url: string | null; visibility_scope: string; circle_id: string | null;
   high_risk: boolean; status: string; is_recurring: boolean; lat: number | null; lng: number | null;
+  price_paise?: number | null; // FR102: null = free
+  audience_tags?: string[]; food_tags?: string[]; // FR110: who it's for, food and drink
 };
 
 export type Profile = {

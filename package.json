@@ -1,0 +1,17 @@
+{
+  "name": "forkhatri",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ForKhatri monorepo. `npm run dev` starts the platform and every built module together.",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:platform": "node scripts/dev.mjs --only=platform",
+    "dev:mangaly": "node scripts/dev.mjs --only=platform,mangaly",
+    "dev:milavn": "node scripts/dev.mjs --only=platform,milavn",
+    "dev:vyapar": "node scripts/dev.mjs --only=platform,vyapar",
+    "dev:status": "node scripts/dev.mjs --status"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans, Space_Grotesk } from 'next/font/google';
 import './globals.css';
+import OutageGate from '@/components/OutageGate';
 import TabBar from '@/components/TabBar';
 import { I18nProvider } from '@/lib/i18n/provider';
 
@@ -70,7 +71,10 @@ export default function RootLayout({
           }}
         />
         <I18nProvider>
-          <div className="shell">{children}</div>
+          <div className="shell">
+            {/* [ForKhatri TR15/TR16] One shared "can't reach Mangaly" retry state. */}
+            <OutageGate>{children}</OutageGate>
+          </div>
           <TabBar />
         </I18nProvider>
       </body>

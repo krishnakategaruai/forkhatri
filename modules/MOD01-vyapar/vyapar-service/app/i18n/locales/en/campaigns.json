@@ -1,0 +1,9 @@
+{
+  "error": {
+    "notFound": "Campaign not found.",
+    "packageNotFound": "That campaign package isn't available.",
+    "duplicateItems": "Each item can only be added once.",
+    "noEligibleItems": "None of these items can be boosted yet — verify the listing first.",
+    "invalidTransition": "This action isn't available in the campaign's current state."
+  }
+}

@@ -6,7 +6,11 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { resolveMediaUrl } from '@/lib/api';
+import ForKhatriHubLink from '@/components/ForKhatriHubLink';
 import { getSession, logOut, type Session } from '@/lib/auth';
+import { reportOutage } from '@/lib/outage';
+import { redirectToEntrance } from '@/lib/platform';
+import { getContexts } from '@/lib/homeCircle';
 import { getOwnProfile, type Profile } from '@/lib/profile';
 
 /* FR090 · TR090 · UX01 · UI01 · SP090
@@ -39,16 +43,30 @@ export default function HomePage() {
   useEffect(() => {
     let active = true;
     (async () => {
-      const session = await getSession();
+      let session: Session | null;
+      try {
+        session = await getSession();
+      } catch {
+        // [ForKhatri TR15/TR16] Mangaly or ForKhatri sign-in is unreachable:
+        // the shared retry state (OutageGate), never "signed out" (a loop).
+        if (active) reportOutage();
+        return;
+      }
       if (!active) return;
       if (!session) {
-        setState({ phase: 'out' });
+        // [TR16] Signed out: the ForKhatri entrance signs the member in and
+        // returns them here. The old signed-out screen below is retained, unused.
+        redirectToEntrance();
         return;
       }
       const profile = await getOwnProfile();
       if (!active) return;
       if (!profile) {
-        router.replace('/profile/create');
+        // A parent or relative helping someone else has no candidate profile of
+        // their own; they belong in that candidate's circle, not the wizard.
+        const contexts = await getContexts();
+        if (!active) return;
+        router.replace(contexts?.circles.length ? '/circle' : '/profile/create');
         return;
       }
       setState({ phase: 'in', session, profile });
@@ -107,15 +125,12 @@ export default function HomePage() {
           </span>
           <h1>{t('common:app.name')}</h1>
         </div>
-        <button
-          className="icon-btn icon-btn--text"
-          onClick={async () => {
-            await logOut();
-            setState({ phase: 'out' });
-          }}
-        >
-          {t('common:action.logOut')}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <ForKhatriHubLink />
+          <button className="icon-btn icon-btn--text" onClick={() => void logOut()}>
+            {t('common:action.logOut')}
+          </button>
+        </div>
       </header>
 
       <main className="screen">

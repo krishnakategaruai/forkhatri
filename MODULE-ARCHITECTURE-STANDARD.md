@@ -214,6 +214,56 @@ decides for itself whether that actor may proceed. If a method is found
 taking a bare user ID and querying data with it, that is a defect against
 this pattern, not a stylistic preference.
 
+## 5b. Identity Bridge: how every module accepts the ForKhatri session
+
+*(Added 2026-09-14; post-seal correction awaiting the owner's review. Binding
+contract: `docs/ParentApp/07-tech-reqs.md` TR11, TR15, TR16; decisions:
+`docs/ParentApp/00c-identity-and-entrance-decisions.md`.)*
+
+**Principle:** a module never authenticates a person. The ForKhatri Identity &
+Trust Service (`platform/identity-service`) and web entrance
+(`platform/forkhatri-web`) own sign-in, sign-up, one-time codes, passwords and
+sessions. Each module has exactly one internal component, its Identity Bridge,
+that turns the platform session into the module's own authorization context;
+no other component reads the cookie or calls the identity service.
+
+**What the bridge does, in order:**
+
+1. **No credentials in the module.** The module stores no passwords, OTPs,
+   reset tokens or sessions for platform members and exposes no sign-in
+   endpoint.
+2. **Cookie.** Read the `fk_session` cookie (name from configuration). Absent
+   means anonymous; the module decides between `401` and a public view.
+3. **Internal resolve.** Call `POST /internal/v1/sessions/resolve` with the
+   module's service name and key. Cache the result per token in process for
+   at most 30 seconds (negative results 5 seconds), so sign-out reaches the
+   module within 30 seconds.
+4. **Fail closed.** If the identity service is unreachable, return `503`.
+   Never fall back to a default or development member.
+5. **Member-link row.** Ensure the module's own member-link row exists for
+   `member_id`, creating it just-in-time on first entry. Tiers, roles,
+   onboarding state and Level-3 trust live in that module's tables, never in
+   the session.
+6. **Module RLS context.** Bind the resolved `member_id` into the module's
+   own authorization context and RLS variable with `SET LOCAL` (§4, §5), as
+   before.
+7. **Legacy development identity paths off by default.** Any interim path
+   (for example a development member header or a module-local session
+   cookie) is disabled by default and may be enabled only by an explicit
+   development setting for automated tests.
+
+**Module web clients:** send `credentials: "include"` on every API call; on
+signed-out or `401`, navigate the full page to
+`${FORKHATRI_ENTRANCE_URL}/?return_to=${encodeURIComponent(location.href)}`
+(the entrance honours only allow-listed origins, TR17); sign-out calls the
+identity service then returns to the entrance; module login/sign-up/OTP/reset
+routes redirect to the entrance (files retained); every module surface shows a
+persistent way back to the ForKhatri hub.
+
+**Why:** one identity with no second account anywhere (ADR-004, ADR-021), no
+credential readable by page JavaScript (ADR-019), and module data ownership
+unchanged. The bridge is the same seam a future API gateway would take over.
+
 ## 6. Cross-component side effects: an in-process domain event bus, not direct call-chaining
 
 **Principle:** when one action needs several independent components to
@@ -268,6 +318,7 @@ confirmed to recur, not a coincidence.
 | 2026-09-12 | Initial version. Extracted from `modules/MOD03-mangaly/architecture.md`'s own MOD03-ADR-001 through MOD03-ADR-004, which on review were not actually Mangaly-specific — they were general patterns that happened to be written while building Mangaly. Moved here so every future module applies the same pattern instead of each independently rediscovering (or worse, diverging from) it, which is what actually makes later cross-module integration and shared engineering practice easy. Mangaly's own `architecture.md` was trimmed to reference this file and keep only what's genuinely Mangaly-specific. | Chief Architect — krishna kategaru (autonomous), 2026-09-12. |
 | 2026-09-12 | Impact Analysis follow-up (Mangaly, the first module to exercise this pattern, surfaced two real gaps in it — genuinely generic ones, so fixed here rather than only in Mangaly's own file). §4 strengthened with the two specific RLS failure modes any adopting module must design against (non-owning application DB role; `SET LOCAL`, not `SET`, for the session context variable under transaction-mode connection pooling) — found via live research when this pattern was first exercised for real. Added §4b: idempotent mutation endpoints as a required pattern for any module with an offline-capable client, since "offline resilience" as a stated requirement silently implies this and a module could otherwise miss it entirely, as Mangaly's own Impact Analysis pass (IA102) found. | Chief Architect — krishna kategaru (autonomous), 2026-09-12. |
 | 2026-09-13 | Tech Reqs review follow-up. A critique-mindset review of Mangaly's `07-tech-reqs.md` (checking specifically for common-utility duplication, per explicit instruction) found rate-limiting described three times as "the same pattern as" an earlier item, across two different components (Identity Bridge, Trust & Verification), rather than genuinely one shared implementation — the same divergence risk class §4b's idempotency pattern was already written to prevent, just recurring for a different cross-cutting concern. Added §4c: one shared, parameterized rate-limiting utility required for any module with multiple abuse-prone endpoints, rather than one independently-built counter per endpoint. | Chief Architect — krishna kategaru (autonomous), 2026-09-13. |
+| 2026-09-14 | Post-seal correction: ForKhatri platform identity. Added §5b (Identity Bridge: how every module accepts the ForKhatri session), summarising `docs/ParentApp/07-tech-reqs.md` TR11, TR15 and TR16. No other section changed. Not re-sealed; awaits the owner's review. | Product-owner instruction, 2026-09-14: one ForKhatri sign-in and member identity for every module. |
 
 ## Approval
 

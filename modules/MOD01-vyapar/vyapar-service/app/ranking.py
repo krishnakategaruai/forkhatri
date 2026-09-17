@@ -98,3 +98,22 @@ def diversify(items: list, provider_key, type_key, max_consecutive: int = 3) -> 
             # remaining one anyway rather than drop data.
             result.append(pending.pop(0))
     return result
+
+
+# [TR049] Ranking diagnostics for commercial administration (FR49): the SAME
+# scorer, explained. `explain()` returns each allow-listed signal's raw value,
+# its configured weight and the weighted contribution, so an operator sees why
+# a record scores what it scores. There is deliberately no second scoring
+# implementation here — it reads the identical `RankingSignals` struct and
+# `DEFAULT_WEIGHTS` that `score()` uses, so a diagnostic can never disagree
+# with the real ranking. It also stays read-only: nothing in this module (or
+# reachable from the admin surface) can write a weight — `vyapar_app` holds
+# SELECT-only rights on `vyapar_integration.config`.
+# Traces to: FR49, TR049, SP049, TR019
+def explain(signals: RankingSignals) -> dict:
+    parts = []
+    for field, weight in DEFAULT_WEIGHTS.items():
+        value = getattr(signals, field)
+        parts.append({"signal": field, "value": round(value, 4), "weight": weight, "contribution": round(value * weight, 4)})
+    parts.sort(key=lambda p: p["contribution"], reverse=True)
+    return {"total": round(score(signals), 4), "signals": parts}

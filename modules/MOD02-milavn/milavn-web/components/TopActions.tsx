@@ -32,6 +32,8 @@ export default function TopActions({ people = false }: { people?: boolean }) {
 
   return (
     <div className="row" style={{ gap: 8 }}>
+      {/* [ParentApp TR16] The way back to the ForKhatri hub lives beside the Milavn wordmark (home), in the
+          profile settings sheet and in the desktop rail — not here, where it crowded the bell/avatar row. */}
       {people && (
         <Link href="/people" className="icon-btn" aria-label={t('people.title')}><Users size={20} strokeWidth={1.8} aria-hidden="true" /></Link>
       )}

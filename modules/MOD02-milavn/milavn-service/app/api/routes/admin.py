@@ -59,7 +59,7 @@ async def _subject_titles(session: DbSession, reports: list[safety.Report]) -> d
             except activity.OccurrenceNotFound:
                 out[r.subject_id] = None
         elif r.subject_type == "user":
-            out[r.subject_id] = identity.display_names_for([r.subject_id])[r.subject_id].display_name
+            out[r.subject_id] = (await identity.display_names_for([r.subject_id]))[r.subject_id].display_name
         else:
             out[r.subject_id] = None
     return out
@@ -78,9 +78,9 @@ async def detail(item_id: UUID, session: DbSession, moderator: Moderator) -> dic
         r = await safety.get_report(session, report_id=item_id)
     except safety.ReportNotFound as exc:
         raise HTTPException(status_code=404) from exc
-    reporter = identity.display_names_for([r.reporter_member_id])[r.reporter_member_id]
+    reporter = (await identity.display_names_for([r.reporter_member_id]))[r.reporter_member_id]
     actions = await safety.actions_for(session, report_id=item_id)
-    names = identity.display_names_for([a["moderator_member_id"] for a in actions])
+    names = await identity.display_names_for([a["moderator_member_id"] for a in actions])
     subject: dict = {"type": r.subject_type, "id": str(r.subject_id)}
     if r.subject_type in ("occurrence", "activity"):
         from app.components.activity import interface as activity
@@ -88,12 +88,16 @@ async def detail(item_id: UUID, session: DbSession, moderator: Moderator) -> dic
         try:
             occ = await activity.get(session, occurrence_id=r.subject_id)
             subject.update(
-                {"title": occ.title, "slug": occ.canonical_url_slug, "organizer": identity.display_names_for([occ.creator_member_id])[occ.creator_member_id].display_name}
+                {
+                    "title": occ.title,
+                    "slug": occ.canonical_url_slug,
+                    "organizer": (await identity.display_names_for([occ.creator_member_id]))[occ.creator_member_id].display_name,
+                }
             )
         except activity.OccurrenceNotFound:
             pass
     elif r.subject_type == "user":
-        subject["display_name"] = identity.display_names_for([r.subject_id])[r.subject_id].display_name
+        subject["display_name"] = (await identity.display_names_for([r.subject_id]))[r.subject_id].display_name
     return {
         "item_id": str(r.id),
         "case_detail": {

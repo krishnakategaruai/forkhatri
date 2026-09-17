@@ -88,6 +88,9 @@ class Card:
     is_recurring: bool
     lat: float | None
     lng: float | None
+    price_paise: int | None = None  # [FR102] None = free
+    audience_tags: tuple[str, ...] = ()  # [FR110] family_friendly | elder_friendly | beginner_friendly
+    food_tags: tuple[str, ...] = ()  # [FR110] veg | jain_options | non_veg | alcohol_free
     score: float = field(default=0.0, repr=False)
 
 
@@ -207,16 +210,32 @@ class RankingEngine:
     def __init__(self, weights: Weights) -> None:
         self.w = weights
 
-    def score(self, occ: Occurrence, viewer: ViewerProfile, *, trust_level: str, peers: int, now: datetime) -> tuple[float, tuple[str, dict], str] | None:
+    def score(
+        self,
+        occ: Occurrence,
+        viewer: ViewerProfile,
+        *,
+        trust_level: str,
+        peers: int,
+        now: datetime,
+        host_times: int = 0,
+        host_held: int | None = None,
+        host_name: str = "",
+    ) -> tuple[float, tuple[str, dict], str] | None:
         loc, loc_reason = _locality_factor(occ, viewer)
         interest, int_reason = _interest_factor(occ, viewer)
         fresh, fresh_reason = _freshness_factor(occ, now)
         tr = TRUST_SCORE.get(trust_level, 0.3)
         circle_hit = occ.circle_id is not None and occ.circle_id in viewer.circle_ids
         social = min(1.0, peers / 3) if peers else 0.0
+        # [FR111] For brand-new activities the host matters most (Zhang & Wang 2015): having checked in at a host's
+        # activities before is a strong, checkable signal. A host who has never held an activity gets a small, *labelled*
+        # fair-start boost when it is nearby, so new hosts are not starved by the ones already known (Abdollahpouri 2019).
+        returning = min(1.0, host_times / 2) if host_times else 0.0
+        fair_start = host_held == 0 and loc >= 0.6
 
         base = self.w.locality * loc + self.w.interest * interest + self.w.trust * tr + self.w.freshness * fresh
-        score = base + 0.25 * (1.0 if circle_hit else 0.0) + 0.2 * social + 0.1 * _time_fit(occ, now)
+        score = base + 0.25 * (1.0 if circle_hit else 0.0) + 0.2 * social + 0.1 * _time_fit(occ, now) + 0.15 * returning + (0.08 if fair_start else 0.0)
 
         # [FR008] The reason names the dominant *real* factor. Priority favours
         # the socially/personally specific over the generic. Reasons are i18n
@@ -226,6 +245,10 @@ class RankingEngine:
             candidates.append((0.2 * social + 0.5, ("reason.social_one" if peers == 1 else "reason.social_many", {"n": peers}), "social"))
         if circle_hit:
             candidates.append((0.45, ("reason.circle", {}), "circle"))
+        if returning and host_name:
+            candidates.append((0.35 + 0.05 * min(host_times, 3), ("reason.host_before", {"host": host_name}), "host"))
+        if fair_start:
+            candidates.append((0.12, ("reason.new_host", {}), "fair_start"))
         if interest and int_reason:
             candidates.append((self.w.interest * interest + (0.1 if interest == 1.0 else 0), int_reason, "interest"))
         if loc and loc_reason:
@@ -241,6 +264,63 @@ class RankingEngine:
         return score, reason, factor
 
 
+HIDE_REASONS = ("not_my_thing", "too_far", "bad_time", "not_this_host")
+HIDE_HOST_DAYS = 60
+
+
+def cap_per_host(cards: list[Card], *, max_per_host: int = 2, window: int = 10) -> list[Card]:
+    """[FR111] Within the first `window` results no host appears more than `max_per_host` times; the rest keep
+    their order after the window. Variety without hiding anything (Kaminskas & Bridge 2016)."""
+    head: list[Card] = []
+    overflow: list[Card] = []
+    counts: dict[UUID, int] = {}
+    for c in cards:
+        if len(head) < window and counts.get(c.host_member_id, 0) < max_per_host:
+            head.append(c)
+            counts[c.host_member_id] = counts.get(c.host_member_id, 0) + 1
+        else:
+            overflow.append(c)
+    return head + overflow
+
+
+async def hosts_attended(session: AsyncSession, member_id: UUID) -> dict[UUID, int]:
+    rows = (await session.execute(text("SELECT host_member_id, times FROM milavn_activity.hosts_attended(:m)"), {"m": str(member_id)})).all()
+    return {r[0]: int(r[1]) for r in rows}
+
+
+async def host_track_record(session: AsyncSession, host_ids: list[UUID]) -> dict[UUID, int]:
+    if not host_ids:
+        return {}
+    rows = (
+        await session.execute(text("SELECT host_member_id, held FROM milavn_activity.host_track_record(CAST(:ids AS uuid[]))"), {"ids": [str(h) for h in host_ids]})
+    ).all()
+    return {r[0]: int(r[1]) for r in rows}
+
+
+async def hide(session: AsyncSession, *, member_id: UUID, occurrence_id: UUID, reason: str) -> None:
+    """[FR111] "Not interested", with a reason. "Not this host" also hides that host's activities for 60 days."""
+    if reason not in HIDE_REASONS:
+        raise ValueError(reason)
+    host = (await activity.get(session, occurrence_id=occurrence_id)).creator_member_id if reason == "not_this_host" else None
+    await session.execute(
+        text(
+            "INSERT INTO milavn_discovery.hidden_occurrence (member_id, occurrence_id, reason, host_member_id) VALUES (:m, :o, :r, :h) "
+            "ON CONFLICT (member_id, occurrence_id) DO UPDATE SET reason = EXCLUDED.reason, host_member_id = EXCLUDED.host_member_id, created_at = now()"
+        ),
+        {"m": str(member_id), "o": str(occurrence_id), "r": reason, "h": str(host) if host else None},
+    )
+
+
+async def hidden_for(session: AsyncSession, member_id: UUID) -> tuple[set[UUID], set[UUID]]:
+    rows = (
+        await session.execute(
+            text("SELECT occurrence_id, host_member_id, created_at > now() - make_interval(days => :d) FROM milavn_discovery.hidden_occurrence WHERE member_id = :m"),
+            {"m": str(member_id), "d": HIDE_HOST_DAYS},
+        )
+    ).all()
+    return {r[0] for r in rows}, {r[1] for r in rows if r[1] is not None and r[2]}
+
+
 def render_reason(reason: tuple[str, dict], lang: str) -> str:
     """Render an (i18n key, params) reason; a param value starting with '@' is itself a key."""
     key, params = reason
@@ -248,7 +328,9 @@ def render_reason(reason: tuple[str, dict], lang: str) -> str:
     return translate(key, lang, **resolved)
 
 
-async def build_cards(session: AsyncSession, occurrences: list[Occurrence], viewer: ViewerProfile | None, *, rank: bool = True, lang: str | None = None) -> list[Card]:
+async def build_cards(
+    session: AsyncSession, occurrences: list[Occurrence], viewer: ViewerProfile | None, *, rank: bool = True, lang: str | None = None, exclude_hidden: bool = False
+) -> list[Card]:
     if not occurrences:
         return []
     lang = lang or current_language.get()
@@ -257,16 +339,40 @@ async def build_cards(session: AsyncSession, occurrences: list[Occurrence], view
     engine = RankingEngine(weights)
     ids = [o.id for o in occurrences]
     trust_map = await trust.trust_for_many(session, subject_type="occurrence", subject_ids=ids)
-    hosts = identity.display_names_for(list({o.creator_member_id for o in occurrences}))
+    hosts = await identity.display_names_for(list({o.creator_member_id for o in occurrences}))
     statuses = await activity.viewer_statuses(session, ids, viewer.member_id) if viewer else {}
+    returning: dict[UUID, int] = {}
+    track_record: dict[UUID, int] = {}  # activities each host has already held (0 = new host)
+    hidden_occ: set[UUID] = set()
+    hidden_hosts: set[UUID] = set()
+    if viewer and rank:
+        returning = await hosts_attended(session, viewer.member_id)
+        track_record = await host_track_record(session, list({o.creator_member_id for o in occurrences}))
+    if viewer and exclude_hidden:
+        hidden_occ, hidden_hosts = await hidden_for(session, viewer.member_id)
     cards: list[Card] = []
     for occ in occurrences:
+        # Something the member already joined never disappears from their own view, even if they hid the host later.
+        if (occ.id in hidden_occ or occ.creator_member_id in hidden_hosts) and not statuses.get(occ.id):
+            continue
         badge = trust_map.get(occ.id) or trust.TrustBadge("community_submitted", trust.TRUST_LABELS["community_submitted"], False)
         going = await activity.going_count(session, occ.id)
+        # [FR114] Spots left counts guests too, so a card never promises room that is taken.
+        taken = await activity.spots_taken(session, occ.id) if occ.capacity is not None else going
+        held = await activity.held_spot_count(session, occ.id) if occ.capacity is not None and occ.price_paise is not None else 0
         interested = await activity.interested_count(session, occ.id)
         peers = await activity.circle_peers_going(session, occ.id, viewer.member_id) if viewer else 0
         if viewer and rank:
-            scored = engine.score(occ, viewer, trust_level=badge.level, peers=peers, now=now)
+            scored = engine.score(
+                occ,
+                viewer,
+                trust_level=badge.level,
+                peers=peers,
+                now=now,
+                host_times=returning.get(occ.creator_member_id, 0),
+                host_held=track_record.get(occ.creator_member_id),
+                host_name=hosts[occ.creator_member_id].display_name.split(" ")[0],
+            )
             if scored is None:
                 continue
             score, reason, factor = scored
@@ -306,7 +412,7 @@ async def build_cards(session: AsyncSession, occurrences: list[Occurrence], view
                 going_count=going,
                 interested_count=interested,
                 capacity=occ.capacity,
-                spots_left=(occ.capacity - going) if occ.capacity is not None else None,
+                spots_left=max(0, occ.capacity - taken - held) if occ.capacity is not None else None,
                 trust_level=badge.level,
                 trust_label=translate(f"trust.{badge.level}", lang),
                 trust_positive=badge.positive,
@@ -321,11 +427,15 @@ async def build_cards(session: AsyncSession, occurrences: list[Occurrence], view
                 is_recurring=occ.activity_id is not None,
                 lat=loc.lat if loc else None,
                 lng=loc.lng if loc else None,
+                price_paise=occ.price_paise,
+                audience_tags=tuple(occ.audience_tags),
+                food_tags=tuple(occ.food_tags),
                 score=score,
             )
         )
     if rank:
         cards.sort(key=lambda c: (-c.score, c.time_start))
+        cards = cap_per_host(cards)
     return cards
 
 
@@ -399,7 +509,7 @@ async def around_you(session: AsyncSession, viewer: ViewerProfile) -> dict:
     bounds = _day_bounds(now_ist)
     horizon = bounds["today"][0] + timedelta(days=21)
     occs = await activity.list_visible(session, city=viewer.city, start=now_ist - timedelta(hours=3), end=horizon)
-    cards = await build_cards(session, occs, viewer)
+    cards = await build_cards(session, occs, viewer, exclude_hidden=True)
     groups: dict[str, list[Card]] = {"today": [], "tomorrow": [], "weekend": [], "later": []}
     for c in cards:
         t = c.time_start.astimezone(IST)
@@ -417,7 +527,7 @@ async def around_you(session: AsyncSession, viewer: ViewerProfile) -> dict:
 async def calendar_day(session: AsyncSession, viewer: ViewerProfile, day: datetime) -> list[Card]:
     start = day.astimezone(IST).replace(hour=0, minute=0, second=0, microsecond=0)
     occs = await activity.list_visible(session, city=viewer.city, start=start, end=start + timedelta(days=1))
-    return await build_cards(session, occs, viewer)
+    return await build_cards(session, occs, viewer, exclude_hidden=True)
 
 
 async def calendar_range(session: AsyncSession, viewer: ViewerProfile, start: datetime, end: datetime) -> list[Card]:
@@ -435,8 +545,12 @@ async def search(
     when: str | None,
     distance: str | None,
     high_risk: bool | None,
+    free: bool | None = None,
+    audience: str | None = None,
+    food: str | None = None,
 ) -> list[Card]:
-    """[FR005/FR009] Common filters (date, distance, category, scope) + advanced."""
+    """[FR005/FR009] Common filters (date, distance, category, scope) + advanced.
+    [FR102/FR110] Free only, who it's for (family, elders, beginners) and food (veg, alcohol-free)."""
     now_ist = datetime.now(IST)
     bounds = _day_bounds(now_ist)
     start, end = now_ist - timedelta(hours=3), bounds["today"][0] + timedelta(days=60)
@@ -447,7 +561,13 @@ async def search(
     occs = await activity.list_visible(session, city=viewer.city, start=start, end=end, category=category, scope=scope, query=query)
     if high_risk is False:
         occs = [o for o in occs if not o.high_risk]
-    cards = await build_cards(session, occs, viewer)
+    if free:
+        occs = [o for o in occs if o.price_paise is None]
+    if audience:
+        occs = [o for o in occs if audience in o.audience_tags]
+    if food:
+        occs = [o for o in occs if food in o.food_tags]
+    cards = await build_cards(session, occs, viewer, exclude_hidden=True)
     if distance == "locality" and viewer.locality:
         cards = [c for c in cards if c.location_label.lower() == viewer.locality.lower()]
     elif distance == "zone" and viewer.zone:
@@ -464,7 +584,7 @@ async def search(
 async def map_pins(session: AsyncSession, viewer: ViewerProfile) -> list[Card]:
     now_ist = datetime.now(IST)
     occs = await activity.list_visible(session, city=viewer.city, start=now_ist - timedelta(hours=3), end=now_ist + timedelta(days=30))
-    cards = await build_cards(session, occs, viewer)
+    cards = await build_cards(session, occs, viewer, exclude_hidden=True)
     return [c for c in cards if c.lat is not None]
 
 

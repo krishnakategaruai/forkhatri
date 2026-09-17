@@ -15,6 +15,7 @@ updated: 2026-09-12
 | 2026-09-06 | Reviewed against architecture-reviewer's Definition of Done (module→container coverage, every dependency edge resolved, every shared concern resolved with an ADR, no undeclared shared-database anti-pattern, every ADR in genuine Y-statement form with real accepted downsides, no open blockers). One gap found and fixed: Payments Infrastructure Service was described as owning "gateway/ledger/PCI" scope but had no database of its own drawn in the Container diagram — only Payment Services App's `PaymentsDB` was shown, leaving it ambiguous whether Payments Infrastructure silently shared that database (the exact anti-pattern ADR-002 rejects), undeclared and unargued. Fixed by adding a dedicated `PaymentsLedgerDB` node/edge for Payments Infrastructure Service, consistent with ADR-002's own rule that every isolated container gets a fully separate Postgres instance, and by updating ADR-008 and the Payments shared-concern resolution to state this explicitly. All other checks passed on first read. Sealed. | Step 1 gate, autonomous mode (architecture-reviewer). |
 | 2026-09-12 | **Relocation pass.** Moved this file from `docs/PreStartResearch/ARCHITECTURE.md` to the project root `/ARCHITECTURE.md`, matching this agent's own Input/Output convention (same placement as `/IMPLEMENTATION-TEST-STANDARDS.md`) and the path every downstream module's Tech Reqs/Impact Analysis step actually looks for. Checked the repository for other references to the old path before moving: three Sealed/in-progress module files cite it by that literal path — `modules/MOD01-vyapar/01-business-requirements.md` (source-traceability table), `modules/MOD03-mangaly/01-business-requirements.md` and `modules/MOD03-mangaly/02-functional-requirements.md` (both in their "Architecture cross-check" sections). This agent's own tool access (Read/Write/Grep/Glob/Task/WebSearch/WebFetch, no file-editing or delete capability) cannot safely make a small in-place correction inside those large, already-Sealed files without a full blind rewrite, which risks corrupting content this agent has not fully re-read. Rather than leave those three citations pointing at a path that no longer resolves, the old location (`docs/PreStartResearch/ARCHITECTURE.md`) has been overwritten with a short, permanent redirect stub pointing to this file, so existing citations remain resolvable. Flagged as a follow-up (see Open blockers) for whichever agent next touches those three files with in-place-edit tooling to update the citation to `/ARCHITECTURE.md` directly. | Relocation per explicit instruction — this pass, 2026-09-12. |
 | 2026-09-12 | **Mangaly build-order correction pass.** MOD03-Mangaly's Business Requirements, Functional Requirements, UX, UI, and Test Scenarios (Steps 1-5) are now all Sealed, and Mangaly is — in actual practice — the first module being carried into Impact Analysis/Tech Reqs, not the "V2/V3" module this file's Container diagram and ADR-007 assumed. This mismatch was flagged as a non-blocking finding by the Solution Architect cross-checks already recorded in `01-business-requirements.md` and `02-functional-requirements.md` for MOD03, explicitly left for this file to resolve rather than decided unilaterally downstream. Also confirmed directly against the current, Sealed `/modules/modules.md`: it no longer states any V1/V2/V3 wave assignment for any module at all (an earlier draft apparently did — see `docs/PreStartResearch/PROCESS-README.md`'s now-stale wave table — but the current Sealed `modules.md` carries no such section), so relabeling Mangaly here is not overriding a module-level decision; it is this file's own record, corrected against reality. Traced through the actual consequences (not just the label) and recorded three new ADRs: **ADR-016** (Container diagram/mapping label correction — Mangaly is the first module in actual build order); **ADR-017** (re-examines and re-confirms ADR-001's isolated-container topology decision for Mangaly holds even arriving first, since it was never justified by ship order but by Mangaly's own privacy/regulatory driver — while retiring ADR-001's "cheap monolith modules ship first" sequencing narrative, which no longer describes reality); **ADR-018** (re-examines and re-confirms ADR-007's decision to defer a dedicated Search Service, replacing its wave-based trigger with a capability/volume-based one, since Mangaly's actual Discovery/ranking need is rule-based, not full-text-relevance-based, and its realistic V1 scale is far below the threshold where Postgres full-text search stops being sufficient). ADR-001 and ADR-007 are marked superseded-in-part (sequencing narrative / trigger condition only — their core decisions are unchanged) rather than edited, per this file's append-only ADR convention. Updated the Container diagram's Mangaly label, the Module→Container mapping's MOD03 notes, and the Non-functional baselines' scalability rows to match. Research grounding: current (2026) industry guidance confirms regulatory/sensitivity-driven service extraction is legitimate to do early, independent of scaling triggers, and that Postgres full-text search remains sufficient below roughly 500K rows / 20K daily active users — both cited in ADR-017/ADR-018. Definition of Done re-verified at the end of this pass (see new "Revision reviewer notes" section); no open blockers introduced. Re-sealed. | Wave-sequencing correction, per explicit instruction tracing BR/FR-flagged finding — this pass, 2026-09-12. |
+| 2026-09-14 | **Post-seal correction: ForKhatri platform identity and entrance.** The Identity & Trust Service designed in ADR-004 is now being built (`platform/identity-service`, dev port 8100, database `forkhatri_identity`) together with a ForKhatri web entrance (`platform/forkhatri-web`, Next.js, dev port 3100). Container diagram: web client relabelled as the ForKhatri web entrance acting as the Multi-Zones host for module web apps; Identity/Trust DB labelled `forkhatri_identity`. "Unified member identity" shared-concern row updated. Appended **ADR-019** (opaque HttpOnly session cookie + server-side introspection by module Identity Bridges, refining ADR-004's JWT mechanism), **ADR-020** (web composition via Next.js Multi-Zones, not Module Federation) and **ADR-021** (canonical member + module member-link tables, just-in-time provisioning, preserved ids; trust/tier/role stay in modules). Earlier ADRs are not edited. Sources: `docs/ParentApp/00c-identity-and-entrance-decisions.md` (PA-DEC-01…09), `docs/ParentApp/07-tech-reqs.md` (TR10–TR24), `docs/ForKhatri-Unified-Umbrella-App-Interpretation.md`. This correction has not been re-sealed and awaits the owner's review. | Product-owner instruction, 2026-09-14: one ForKhatri app, one sign-in, one member identity, then the member chooses a module. |
 
 ## Problem framing
 
@@ -73,7 +74,7 @@ system boundary (see ADR-004).
 
 ```mermaid
 graph TD
-  WebClient[Web Client - React/TypeScript SPA]
+  WebClient[ForKhatri Web Entrance - Next.js Multi-Zones host - sign-in and module hub, module web apps are zones - ADR-020]
 
   subgraph "Core Platform (modular monolith - FastAPI)"
     Vyapar[Vyapar module]
@@ -96,7 +97,7 @@ graph TD
   Broker[(Message Broker)]
 
   CoreDB[(Core Platform DB - Postgres, schema-per-module: vyapar, milavn, dashboard, counsel)]
-  IdentityDB[(Identity/Trust DB - Postgres)]
+  IdentityDB[(Identity/Trust DB - Postgres, forkhatri_identity)]
   MangalyDB[(Mangaly DB - Postgres, isolated)]
   PaymentsDB[(Payments DB - Postgres, isolated - Payment Services App only: bill-pay/coupon/benefit data, tokenized refs only, no raw gateway data)]
   PaymentsLedgerDB[(Payments Ledger DB - Postgres, isolated/PCI-scoped - Payments Infrastructure Service only: gateway tokens, transaction ledger)]
@@ -111,7 +112,7 @@ graph TD
   WebClient -->|REST/JSON, HTTPS| MangalyService
   WebClient -->|REST/JSON, HTTPS| PaymentServicesApp
   WebClient -->|REST/JSON, HTTPS| LoansFinanceService
-  WebClient -->|OAuth2/OIDC login| IdentityTrust
+  WebClient -->|sign-in, session cookie - ADR-019| IdentityTrust
   WebClient -->|REST/JSON| AdminConsole
 
   Vyapar --> CoreDB
@@ -255,7 +256,7 @@ ADR-002).
 
 | Shared concern (from modules.md) | Resolution (own container / shared library / platform-level) | ADR ref |
 |---|---|---|
-| Unified member identity, auth, Level-1/Level-2 trust | Own container — Identity & Trust Service, sole source of truth for `Member`, auth tokens, and Level-1/2 trust status. Every module's Level-3 verification record references `member_id` from here; no module ever forks its own login/identity table. | ADR-004 |
+| Unified member identity, auth, Level-1/Level-2 trust | Own container — Identity & Trust Service, sole source of truth for `Member`, auth tokens, and Level-1/2 trust status. Every module's Level-3 verification record references `member_id` from here; no module ever forks its own login/identity table. **2026-09-14:** being built as `platform/identity-service` (database `forkhatri_identity`) with the ForKhatri web entrance `platform/forkhatri-web` as the only sign-in surface. The browser holds one opaque HttpOnly session cookie; each module's Identity Bridge resolves it server-side (cache ≤30 s, fail closed). Modules keep member-link tables keyed by the canonical `member_id` and own their tiers, roles and Level-3 trust. Contract: `docs/ParentApp/07-tech-reqs.md` TR10–TR24. | ADR-004 (mechanism refined by ADR-019), ADR-020, ADR-021 |
 | Common reputation infrastructure | Own container — the scoring/aggregation engine lives inside Identity & Trust Service (co-located with trust, since reputation is trust's evidence layer) and reads each module's own feedback entity via its DB or an internal read API; it never writes to a module's feedback table. | ADR-005 |
 | Notifications & communication infrastructure | Own container — Notification & Communication Service, consumed by every module via the Message Broker (publish an event, Notification Service renders/sends/records it) rather than direct synchronous calls, so a module never blocks on SMS/email/push delivery. | ADR-006 |
 | Search infrastructure | Platform-level, embedded per-module in the near term (Postgres full-text search inside each module's own schema, queried through a thin shared `search` library so query syntax stays consistent) — extraction to a dedicated Search Service (e.g., OpenSearch/Meilisearch) deferred until a module's actual search need becomes genuine relevance-ranked free-text search over content at meaningful scale, re-evaluated per module rather than tied to a wave number. | ADR-007 (superseded in part by ADR-018) |
@@ -679,6 +680,101 @@ ADR-002).
   against this same capability/volume trigger when Counsel's Tech Reqs step
   runs, not assumed to arrive alongside Mangaly's.
 
+- **ADR-019** (2026-09-14, awaiting owner review) · In the context of
+  actually building the Identity & Trust Service ADR-004 designed, for a
+  mobile-first web app whose modules handle personal and family data, facing
+  the choice between self-contained JWTs held by the browser (ADR-004's
+  stated mechanism) and an opaque server-held session, we chose **one opaque,
+  HttpOnly session cookie (`fk_session`, dev; `__Host-fk_session`,
+  production; 256-bit CSPRNG token stored only as its SHA-256 digest,
+  `SameSite=Lax`, `Secure` when deployed, 30-day absolute lifetime), resolved
+  server-side by each module's Identity Bridge through
+  `POST /internal/v1/sessions/resolve` with a service credential and an
+  in-process cache of at most 30 seconds, failing closed with `503` when the
+  identity service is unreachable** over browser-held JWTs or tokens in
+  `localStorage`, to achieve credentials no page script can read (RFC 10017 /
+  BCP 212), revocation that reaches every module without signing-key
+  distribution, and no module data (tier, role, trust) copied into a
+  platform credential, accepting one internal call per member per module per
+  30 seconds, sign-out taking up to 30 seconds to reach every module, the
+  identity service sitting on every authenticated path (already accepted by
+  ADR-004 with its 99.9% target), and `SameSite=Lax` rather than `Strict` so
+  SMS/notification deep links open signed in, compensated by an `Origin`
+  allow-list on every state-changing request. ADR-004's core decision (one
+  standalone service, sole writer of members and credentials) is unchanged;
+  only its token mechanism is refined. No API gateway is introduced now; the
+  resolve call is the same seam a gateway would use later (phantom-token
+  style), so adding one at deployment moves the call out of modules without
+  changing module business code. Source: PA-DEC-05, PA-DEC-06, PA-DEC-07;
+  contract TR12–TR15, TR19, TR20.
+  *Consequences:* + no token readable by JavaScript anywhere on the
+  platform · + one-step revocation (`everywhere: true` sign-out) · − an
+  identity-service outage makes every module's authenticated surface
+  unavailable (fail closed) · − up to 30 seconds of stale session after
+  sign-out in each module · ~ revisit the per-module call when a gateway is
+  introduced at deployment.
+
+- **ADR-020** (2026-09-14, awaiting owner review) · In the context of
+  separately built module web apps (Mangaly, Milavn, Vyapar, all Next.js App
+  Router) that must feel like one ForKhatri app entered through one sign-in,
+  facing Module Federation, iframes, and Next.js Multi-Zones, we chose
+  **Next.js Multi-Zones with the ForKhatri web entrance
+  (`platform/forkhatri-web`) as the default zone serving `/` and each module
+  web app as its own zone with `basePath`/`assetPrefix` (`/mangaly`,
+  `/milavn`, `/vyapar`) on one production origin; in development the zones
+  run on their own ports and the entrance navigates to them** over Module
+  Federation (the `@module-federation/nextjs-mf` plugin never supported the
+  App Router and is being retired) or iframes (break deep links, back
+  navigation, focus management and accessibility on phones), to achieve
+  independently built and deployed module apps under one origin, one cookie
+  and one entrance, accepting that moving between the hub and a module is a
+  full page load, that each module app must adopt `basePath`/`assetPrefix`
+  and audit raw `/assets/...` paths before production (a scheduled module
+  task, not yet done), and that no shared in-memory client state exists
+  across zones. This supersedes the single "React/TypeScript SPA" web client
+  shape drawn in the original Container diagram. Source: PA-DEC-04; contract
+  TR16, TR21, TR22.
+  *Consequences:* + each module team keeps its own web app and release
+  cadence · + within a module, navigation stays client-side and instant ·
+  − hard navigation on every module switch · − production routing (entrance
+  rewrites or edge proxy) becomes one more thing to configure and test ·
+  ~ every module surface must show a persistent way back to the hub, since
+  the shell is not shared in memory.
+
+- **ADR-021** (2026-09-14, awaiting owner review) · In the context of one
+  ForKhatri member entering several modules that each already hold
+  person-level records (Mangaly `mangaly_identity.account`, Milavn
+  `milavn_profile.member_profile`, Vyapar `vyapar.members`) and each with its
+  own tiers, roles and trust evidence, facing a single platform user table
+  that also carries module tiers/roles/access lists versus separate module
+  accounts, we chose **one canonical `identity.member` in the Identity &
+  Trust Service whose `id` is the only `member_id` on the platform, with each
+  module keeping its own member-link table keyed by that id, created
+  just-in-time the first time the member enters the module; existing Mangaly
+  account ids and Milavn development member ids preserved unchanged on
+  import (with active Mangaly Argon2id hashes, so members keep their
+  passwords; never-verified pending accounts not imported); the platform
+  holding only Level 1/2 trust while tiers, roles and Level-3 trust stay
+  module data never placed in the session; and
+  `registry.member_module_entry` recording entries for hub ordering only,
+  not as an access list — every member may enter every available module**
+  over a platform-owned module-access table or tiers in the session, to
+  achieve one identity without moving module-owned data or rewriting any
+  module foreign key, and to keep ADR-005's "trusted in one context is not
+  trusted in another" rule structural, accepting that display names live on
+  the platform so modules must fetch them through
+  `POST /internal/v1/members/lookup` and cache rather than join, that module
+  interim identity paths (Mangaly's credential routes, Milavn's development
+  header) must be switched off by setting rather than deleted, and that
+  cross-module account lifecycle (deletion, suspension) still needs its own
+  orchestration contract. Source: PA-DEC-01, PA-DEC-02, PA-DEC-03, PA-DEC-08;
+  contract TR10, TR11, TR14, TR18, TR23.
+  *Consequences:* + no module foreign key changes · + module teams keep
+  full ownership of tiers, roles and trust · − display names require an
+  internal lookup and cache in every module · − account deletion across
+  modules is not yet specified · ~ Mangaly's interim credential tables stay
+  in place for existing tests until retired.
+
 ## Non-functional baselines
 
 | Driver | Target | Notes |
@@ -806,6 +902,33 @@ to leave the file Sealed without re-checking it:
    topology-sequencing narrative) were re-examined and changed.
 
 No new gap found. Re-sealed.
+
+## Revision reviewer notes (2026-09-14)
+
+Self-check of the 2026-09-14 post-seal correction (platform identity and
+entrance). Not an approval; the correction awaits the owner's review and no
+approval box is ticked for it.
+
+1. **Scope** — only the web client label, the Identity/Trust DB label, the
+   web client → Identity edge label and the unified-identity shared-concern
+   row were changed; ADR-001 through ADR-018 are unedited (append-only).
+2. **Consistency with sources** — ADR-019/020/021 restate
+   `docs/ParentApp/00c-identity-and-entrance-decisions.md` PA-DEC-01…08 and
+   `docs/ParentApp/07-tech-reqs.md` TR10–TR23; no new decision is introduced
+   here that those files do not contain.
+3. **Honest downsides** — each new ADR names a real cost (fail-closed
+   outage coupling and 30-second revocation lag; hard navigation and
+   pending `basePath` work; name lookups and unspecified cross-module account
+   deletion).
+4. **Status accuracy** — the identity service and entrance are being built;
+   module integration (Identity Bridges, redirects, `basePath`) is in
+   progress in separate work and is not claimed complete here.
+5. **Known residual mismatch, not resolved in this pass** — the Dependency
+   resolution table still describes service-to-service calls as "a
+   short-lived JWT issued by Identity & Trust"; TR14 defines internal
+   identity calls with a service name and key instead. Module-to-module
+   service authentication is outside TR14's scope and is left for the owner
+   to decide.
 
 ## Approval
 

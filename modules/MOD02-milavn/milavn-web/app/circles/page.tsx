@@ -46,6 +46,9 @@ export default function CirclesPage() {
   const [q, setQ] = useState('');
   const [error, setError] = useState(false);
   const [create, setCreate] = useState(false);
+  // [FR115] A circle can ask a question or two before letting someone in.
+  const [askFirst, setAskFirst] = useState(false);
+  const [questions, setQuestions] = useState<string[]>(['', '']);
   const [name, setName] = useState('');
   const [type, setType] = useState('public');
   const [desc, setDesc] = useState('');
@@ -62,7 +65,11 @@ export default function CirclesPage() {
   useEffect(() => { const id = setTimeout(load, 200); return () => clearTimeout(id); }, [load]);
 
   const join = async (c: Circle) => {
-    try { await api(`/circles/${c.id}/join`, { body: {} }); say(t('circles.joined')); load(); }
+    try {
+      const r = await api<{ status: string }>(`/circles/${c.id}/join`, { body: {} });
+      say(r.status === 'pending' ? t('join.asked') : t('circles.joined'));
+      load();
+    }
     catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
   };
   const respond = async (s: Suggestion, accept: boolean) => {
@@ -71,7 +78,8 @@ export default function CirclesPage() {
   };
   const submit = async () => {
     const place = homeLocality === 'home' && profile ? { locality_city: profile.locality_city, locality_locality: profile.locality_locality } : {};
-    try { const c = await api<Circle>('/circles', { body: { name, circle_type: type, description: desc, ...place } }); setCreate(false); setName(''); setDesc(''); say(`${c.name} ✓`); load(); }
+    const joinSetup = { join_policy: askFirst ? 'approval' : 'open', join_questions: askFirst ? questions.map((q) => q.trim()).filter(Boolean) : [] };
+    try { const c = await api<Circle>('/circles', { body: { name, circle_type: type, description: desc, ...place, ...joinSetup } }); setCreate(false); setName(''); setDesc(''); setAskFirst(false); setQuestions(['', '']); say(`${c.name} ✓`); load(); }
     catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
   };
 
@@ -138,6 +146,30 @@ export default function CirclesPage() {
               <button className="chip chip--sm" aria-pressed={homeLocality === 'home'} onClick={() => setHomeLocality('home')}>📍 {profile?.locality_locality ?? profile?.locality_city ?? t('circles.home')}</button>
               <button className="chip chip--sm" aria-pressed={homeLocality === 'anywhere'} onClick={() => setHomeLocality('anywhere')}>{t('circles.anywhere')}</button>
             </div>
+          </div>
+          <div className="stack" style={{ gap: 8 }}>
+            <span className="field__label">{t('join.whoCanJoin')}</span>
+            <div className="chips">
+              <button type="button" className="chip chip--sm" aria-pressed={!askFirst} onClick={() => setAskFirst(false)}>{t('join.anyone')}</button>
+              <button type="button" className="chip chip--sm" aria-pressed={askFirst} onClick={() => setAskFirst(true)}>{t('join.askFirst')}</button>
+            </div>
+            {askFirst && (
+              <>
+                <span className="caption">{t('join.questionsHint')}</span>
+                {questions.map((q, i) => (
+                  <label key={i} className="field">
+                    <input
+                      className="field__input"
+                      name={`join-question-${i}`}
+                      maxLength={120}
+                      placeholder={t(`join.questionPlaceholder${i}`)}
+                      value={q}
+                      onChange={(e) => setQuestions((prev) => prev.map((v, j) => (j === i ? e.target.value : v)))}
+                    />
+                  </label>
+                ))}
+              </>
+            )}
           </div>
           <button className="btn btn--primary btn--block" disabled={!name.trim()} onClick={submit}>{t('circles.create')}</button>
         </div>

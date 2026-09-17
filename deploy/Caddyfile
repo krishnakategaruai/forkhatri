@@ -1,0 +1,110 @@
+# ForKhatri single-origin edge (deployment kit, 2026-09-14).
+#
+# The only HTTP entry. In production it is reached solely by the cloudflared
+# container over the private Docker network (no published ports); Cloudflare
+# terminates TLS. Upstreams are Docker service names; each can be overridden
+# by environment (used for the local rehearsal without Docker).
+#
+# Routing (docs/ParentApp/07-tech-reqs.md TR22):
+#   /api/identity/*  -> identity-service   (prefix stripped; app runs with --root-path)
+#   /api/mangaly/*   -> mangaly-service    (prefix stripped; app runs with --root-path)
+#   /api/milavn/*    -> milavn-service     (prefix stripped; WebSocket /ws/chat included)
+#   /mangaly, /mangaly/*  -> mangaly-web  (Next basePath /mangaly, not stripped)
+#   /milavn,  /milavn/*   -> milavn-web   (Next basePath /milavn, not stripped)
+#   everything else  -> forkhatri-web      (default zone)
+# /internal/* of the identity service is never public: modules call it directly
+# on the Docker network (TR14).
+#
+# Everything sits in one `route` block so it runs in the order written. Without
+# it Caddy sorts `handle`/`handle_path` ahead of `respond`, and the 404 rules
+# below would never run (found in the local rehearsal).
+{
+	admin off
+	auto_https off
+	servers {
+		# cloudflared reaches Caddy from the private Docker network. Only then is
+		# CF-Connecting-IP (set by Cloudflare, not by the browser) trusted as the client IP.
+		trusted_proxies static private_ranges
+		client_ip_headers CF-Connecting-IP
+	}
+	log {
+		output stdout
+		format json
+		level INFO
+	}
+}
+
+(upstream_headers) {
+	# One trustworthy client address for rate limits (TR20); never the browser's own X-Forwarded-For.
+	header_up X-Forwarded-For {client_ip}
+	header_up X-Real-IP {client_ip}
+	header_up X-Forwarded-Proto {$PUBLIC_SCHEME:https}
+}
+
+:{$CADDY_PORT:80} {
+	encode zstd gzip
+	request_body {
+		max_size 25MB
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(self), camera=(self), microphone=()"
+		-Server
+		-X-Powered-By
+	}
+
+	route {
+		# Liveness of the edge itself (heartbeat and deploy health checks).
+		respond /edge-health "ok" 200
+
+		# Internal identity API and API docs are never public. Path matching is
+		# case-insensitive on the decoded, cleaned path. Separate matchers:
+		# conditions inside one named matcher are ANDed.
+		@internal path /internal /internal/* /api/identity/internal /api/identity/internal/*
+		respond @internal 404
+		@internal_unclean path_regexp (?i)^/api/identity/.*internal
+		respond @internal_unclean 404
+		@api_docs path_regexp (?i)^/api/[^/]+/(docs|redoc|openapi\.json)(/.*)?$
+		respond @api_docs 404
+
+		handle_path /api/identity/* {
+			reverse_proxy {$IDENTITY_UPSTREAM:identity-service:8100} {
+				import upstream_headers
+			}
+		}
+		handle_path /api/mangaly/* {
+			reverse_proxy {$MANGALY_API_UPSTREAM:mangaly-service:8000} {
+				import upstream_headers
+			}
+		}
+		handle_path /api/milavn/* {
+			reverse_proxy {$MILAVN_API_UPSTREAM:milavn-service:8001} {
+				import upstream_headers
+				# Chat WebSockets stay open; keep them through config reloads.
+				stream_close_delay 5m
+			}
+		}
+		respond /api/* 404
+
+		@mangaly_zone path /mangaly /mangaly/*
+		handle @mangaly_zone {
+			reverse_proxy {$MANGALY_WEB_UPSTREAM:mangaly-web:3000} {
+				import upstream_headers
+			}
+		}
+		@milavn_zone path /milavn /milavn/*
+		handle @milavn_zone {
+			reverse_proxy {$MILAVN_WEB_UPSTREAM:milavn-web:3001} {
+				import upstream_headers
+			}
+		}
+		handle {
+			reverse_proxy {$ENTRANCE_WEB_UPSTREAM:forkhatri-web:3100} {
+				import upstream_headers
+			}
+		}
+	}
+}

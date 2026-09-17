@@ -48,16 +48,24 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     from app.components.notification import interface as notification  # subscribers
 
     notification.register_subscribers()
+    from app.components.ticketing import interface as ticketing  # refunds when an organizer cancels (FR102)
+
+    ticketing.register_subscribers()
     # [TR17/TR52] The two scheduled jobs this module owns (24h reminders,
     # co-participation circle suggestions). No platform scheduler is named
     # yet, so they run as an in-process loop; a platform job runner can call
     # the same functions later.
     jobs = asyncio.create_task(_scheduled_jobs())
+    holds = asyncio.create_task(_hold_expiry_loop())
     logger.info("Milavn service started against %s:%s/%s", settings.db_host, settings.db_port, settings.db_name)
     try:
         yield
     finally:
         jobs.cancel()
+        holds.cancel()
+        from app.components.identity_bridge import interface as identity_bridge
+
+        await identity_bridge.aclose()
         await engine.dispose()
 
 
@@ -88,6 +96,22 @@ async def _scheduled_jobs() -> None:
             logger.exception("scheduled job failed")
 
 
+async def _hold_expiry_loop() -> None:
+    """[FR102] Every minute: a spot held for someone who did not finish paying goes back (and is offered to the waitlist)."""
+    from app.components.ticketing import interface as ticketing
+
+    while True:
+        try:
+            await asyncio.sleep(60)
+            expired = await ticketing.run_hold_expiry()
+            if expired:
+                logger.info("payment holds expired: %s", expired)
+        except asyncio.CancelledError:
+            raise
+        except Exception:  # noqa: BLE001 — retried next minute
+            logger.exception("hold expiry failed")
+
+
 def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(
@@ -106,7 +130,9 @@ def create_app() -> FastAPI:
         allow_origins=settings.cors_allowed_origins,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
-        allow_headers=["Content-Type", "Authorization", "Idempotency-Key", "X-Milavn-Language", "X-Milavn-Member-Id"],
+        # The member is identified by the ForKhatri session cookie (credentials); the legacy
+        # X-Milavn-Member-Id header is only accepted from browsers when the dev stand-in is on.
+        allow_headers=["Content-Type", "Authorization", "Idempotency-Key", "X-Milavn-Language"] + (["X-Milavn-Member-Id"] if settings.dev_identity_enabled else []),
     )
 
     @app.middleware("http")
@@ -160,7 +186,22 @@ def _include_feature_routers(app: FastAPI) -> None:
         app.include_router(occurrences.router)
     except ImportError:
         pass
-    for name in ("circles", "calendar", "trust", "privacy", "connect", "public", "notifications", "organizer", "safety", "feedback", "admin", "conversation", "chat"):
+    for name in (
+        "circles",
+        "calendar",
+        "trust",
+        "privacy",
+        "connect",
+        "public",
+        "notifications",
+        "organizer",
+        "safety",
+        "feedback",
+        "admin",
+        "conversation",
+        "chat",
+        "payments",
+    ):
         try:
             module = __import__(f"app.api.routes.{name}", fromlist=["router"])
         except ImportError:

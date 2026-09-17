@@ -22,6 +22,7 @@ items: "20 | approved: 20 | blockers: 0"
 | 2026-09-11 | Live-internet research pass (per the Step 1 agent's updated loop-discipline process, which now requires external market research wherever a BR's underlying business need or mechanism is non-obvious, not internal-source citation alone). Added corroborating external evidence as new append-only Decisions to the four BRs where the source documents' own claims most needed real-market grounding, with no change to any BR's scope or wording: BR06 DEC-004 (peer-reviewed and regulatory evidence — a 2023 CMU/Tepper study, a 2023 Dutch human-rights ruling against the Breeze dating app, and 2025 fairness-aware re-ranking research — confirms the popularity/bias risk this BR guards against is real and its mitigation is tractable); BR07 DEC-003 (Hinge's shipped "Most Compatible" feature confirms explainable, non-percentage compatibility is a proven, shippable pattern, not an untested ideal); BR08 DEC-003 (Shaadi.com/BharatMatrimony's existing evidence-layer verification, plus a real user-reported fake-profile-request precedent, confirms both the evidence-not-score approach and the need for this BR's still-open anti-abuse safeguards); BR14 DEC-003 (Tinder's and Bumble's shipped two-layer detection-plus-human-review models, with Bumble's Deception Detector measurably cutting fraud reports 45% in testing, confirm this BR's graduated-response model is provenly workable). Also verified, via `02-functional-requirements.md`'s Coverage check, that every BR's `Traced to:` FR range remains accurate — no drift found. | Loop-discipline re-verification pass — krishna kategaru (autonomous), 2026-09-11. |
 | 2026-09-11 | Solution Architect cross-check against `/ARCHITECTURE.md` (Sealed): verified every BR is buildable against an already-resolved architectural component, that no BR forces ADR-009's deferred AI Service to exist prematurely, and that no BR implies a cross-container database join or ownership conflict with the sealed isolation model. All Pass. One non-blocking finding recorded: `/ARCHITECTURE.md` labels Mangaly Service "V2/V3," which is stale against this module's actual build order (it is the first module carried through this pipeline) — flagged for the product owner, not resolved unilaterally given its cascading effect on ADR-007's Search Service extraction timing. File approved by Solution Architect; added the "Architecture cross-check" section above the BR items. | Solution Architect review — krishna kategaru (autonomous), 2026-09-11. |
 | 2026-09-12 | V1 design-decisions pass: `v1-decisions.md` resolves every remaining internal-only open item from this file's BRs (BR01 tier-field mapping, BR06 ranking weights/fairness methodology/hint mechanics, BR08 verifier anti-abuse mechanics and the marriageable-age threshold, BR14 severity taxonomy/detection scope, BR16 admin workflow/staffing, BR20 safety-guidance content) with concrete Y-statement decisions, leaving open only what is genuinely external (DPDP legal sign-off on retention, verification vendor selection, and BR17's deliberate Agent-layer deferral). No BR content in this file changed — see `v1-decisions.md` for the resolutions and their reasoning. | V1 decisions pass — krishna kategaru (autonomous), 2026-09-12. |
+| 2026-09-14 | Post-seal correction: ForKhatri platform identity. Added dated notes under "Explicitly out of this file's scope" (base identity) and BR08 DEC-001 recording that the platform Identity & Trust Service and ForKhatri entrance now own sign-up, sign-in and sessions, and how Mangaly consumes them. No BR body, priority or approval changed. Not re-sealed; awaits the owner's review. | Product-owner instruction, 2026-09-14. See `docs/ParentApp/00c-identity-and-entrance-decisions.md` and `docs/ParentApp/07-tech-reqs.md` TR10–TR16. |
 
 ## Scope of this step
 
@@ -79,6 +80,12 @@ Mangaly BR even though the source dossiers discuss them:
   Mangaly's own BRs (notably BR08) only cover the matrimonial-specific
   Level-3 verification layered on top of that platform identity, not the
   underlying account/authentication system itself.
+  > **2026-09-14 correction:** this boundary is now concrete. Sign-up,
+  > sign-in, one-time codes and sessions are delivered by the ForKhatri
+  > Identity & Trust Service (`platform/identity-service`) and entrance
+  > (`platform/forkhatri-web`), not by Mangaly. Mangaly keeps
+  > `mangaly_identity.account` as its member-link record and owns its own
+  > Level-3 trust. See `docs/ParentApp/07-tech-reqs.md` TR10–TR16.
 - The *underlying* AI-assistant infrastructure, search infrastructure, and
   notification-delivery infrastructure remain Common Platform capabilities
   (`modules.md` Shared Concerns) — Mangaly does not build its own AI
@@ -1067,6 +1074,12 @@ Feasible: Pass · Verifiable: Pass · Correct: Pass · Conforming: Pass
   rather than silently re-absorbing a platform concern into Mangaly,
   accepting the risk that this needs re-checking once Solution Architecture
   (Step 0b) defines exactly how Mangaly consumes platform identity.
+  > **2026-09-14 correction:** the re-check this decision called for is now
+  > defined: Mangaly's Identity Bridge resolves the ForKhatri session
+  > server-side and binds `member_id` into Mangaly's RLS context
+  > (`docs/ParentApp/07-tech-reqs.md` TR14–TR15, `/ARCHITECTURE.md`
+  > ADR-019/ADR-021). The platform supplies only Level 1/2 trust
+  > (`identity_level`); BR08's matrimonial Level-3 layers remain Mangaly's.
 - DEC-002 · In the context of a Product Manager review noting that framing
   verification as knowing claims "are real" implicitly promises truth
   certification, which even government documents or human verifiers cannot

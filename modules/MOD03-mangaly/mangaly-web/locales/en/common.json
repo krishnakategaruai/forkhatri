@@ -1,5 +1,14 @@
 {
-  "app": { "name": "Mangaly", "tagline": "A family-involved search, built on evidence." },
+  "app": {
+    "name": "Mangaly",
+    "tagline": "A family-involved search, built on evidence."
+  },
+  "platform": {
+    "name": "ForKhatri",
+    "backToHub": "Back to ForKhatri",
+    "redirecting": "Taking you to ForKhatri…",
+    "unavailable": "Mangaly can't be reached right now. Your details are safe — please try again in a moment."
+  },
   "nav": {
     "home": "Home",
     "discover": "Discover",
@@ -7,13 +16,22 @@
     "messages": "Messages",
     "me": "Me"
   },
-  "language": { "en": "English", "hi": "हिन्दी", "te": "తెలుగు", "change": "Change language" },
+  "language": {
+    "en": "English",
+    "hi": "हिन्दी",
+    "te": "తెలుగు",
+    "change": "Change language"
+  },
   "settings": {
     "title": "Settings",
     "language": "Language",
     "theme": "Appearance",
-    "themeOption": { "light": "Light", "dark": "Dark", "system": "System" },
-    "logOutConfirm": "Log out of Mangaly on this device?"
+    "themeOption": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "logOutConfirm": "Log out of ForKhatri on this device?"
   },
   "action": {
     "back": "Back",
@@ -46,5 +64,15 @@
     "explainer": "Every row carries its real parent IDs, extracted from the sealed pipeline documents rather than typed by hand. A row turns Live only once it works end to end against the database.",
     "foundations": "Foundations",
     "foundationsBlurb": "Cross-cutting infrastructure every feature sits on. Not user-visible, but nothing else is correct without it."
+  },
+  "context": {
+    "viewing": "Viewing {{name}}'s search",
+    "yourSearch": "Your search",
+    "switchTitle": "Whose search are you viewing?",
+    "you": "You",
+    "yourProfile": "Your own profile",
+    "role": "You're in this circle as: {{relationship}}",
+    "nowViewing": "Now viewing {{name}}'s search",
+    "nowViewingSelf": "Now viewing your own search"
   }
 }

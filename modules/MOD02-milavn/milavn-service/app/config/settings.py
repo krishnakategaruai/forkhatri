@@ -55,12 +55,23 @@ class Settings(BaseSettings):
     # Public web origin used inside QR codes and share links generated server-side.
     web_base_url: str = "http://localhost:3001"
 
-    # --- Identity (platform-owned; dev stub only) ------------------------------
-    # Authentication is owned by the parent ForKhatri platform (Identity & Trust
-    # Service, ADR-004). Until this module is wired to it, requests identify the
-    # acting member with the `X-Milavn-Member-Id` header, resolved against
-    # `config/dev_identities.json`. Never true in a real deployment.
-    dev_identity_enabled: bool = True
+    # --- Identity (platform-owned) ----------------------------------------------
+    # Authentication is owned by the ForKhatri platform's Identity & Trust
+    # Service (ADR-004; docs/ParentApp/07-tech-reqs.md TR12-TR15). The browser
+    # holds one HttpOnly cookie (`platform_session_cookie`); Milavn resolves it
+    # server-to-server with its own service credentials. Values come from
+    # `milavn-service/.env` (see `.env.example`); the key default is a placeholder.
+    platform_identity_url: str = "http://localhost:8100"
+    platform_service_name: str = "milavn"
+    platform_service_key: str = "CHANGE_ME"
+    platform_session_cookie: str = "fk_session"
+    # Where a signed-out person is sent to sign in (the ForKhatri web entrance).
+    forkhatri_entrance_url: str = "http://localhost:3100"
+    # Legacy development stand-in: `X-Milavn-Member-Id` header / `milavn_member`
+    # cookie resolved against `config/dev_identities.json`. Off by default;
+    # only automated tests switch it on explicitly (TR15.5). Never true in a
+    # real deployment.
+    dev_identity_enabled: bool = False
 
     # --- Idempotency / rate limiting (§4b / §4c) -------------------------------
     idempotency_key_ttl_days: int = 7
@@ -71,6 +82,16 @@ class Settings(BaseSettings):
     rate_limit_participation_max: int = 60
     rate_limit_participation_window_seconds: int = 600
 
+    # --- Payments (FR102) ---------------------------------------------------------
+    # Money moves only through Payment Services (MOD06); Milavn keeps references.
+    # "none" (default): paid activities say payments are not switched on yet.
+    # "sandbox": development test checkout, refused unless API and web are on localhost.
+    # "payment_services": MOD06 HTTP contract (components/payments/interface.py).
+    payments_provider: str = "none"
+    payment_services_url: str = "http://localhost:8016"  # MOD06's reserved API port; MOD06 is not built yet
+    payment_services_key: str = "CHANGE_ME"
+    payment_services_webhook_key: str = "CHANGE_ME"
+
     # --- External services (config/external_services.yaml placeholders) -------
     map_tile_vendor: str = "maptiler"
     map_tile_api_key: str = "REPLACE_ME_MAPTILER_API_KEY"
@@ -80,6 +101,11 @@ class Settings(BaseSettings):
     @property
     def sqlalchemy_url(self) -> str:
         return f"postgresql+asyncpg://{self.db_app_user}:{self.db_app_password}@{self.db_host}:{self.db_port}/{self.db_name}"
+
+    @property
+    def payments_sandbox_allowed(self) -> bool:
+        local = ("http://localhost", "http://127.0.0.1")
+        return self.api_host in ("127.0.0.1", "localhost") and self.web_base_url.startswith(local)
 
     @property
     def media_root(self) -> Path:

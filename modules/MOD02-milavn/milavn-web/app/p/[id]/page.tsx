@@ -14,11 +14,13 @@ import { useTranslation } from 'react-i18next';
 import ActivityCard from '@/components/ActivityCard';
 import { Modal } from '@/components/Sheet';
 import { CardSkeleton, ErrorState, Toast } from '@/components/States';
-import { api, ApiError, resolveMediaUrl, type Card } from '@/lib/api';
+import { api, API_BASE, ApiError, resolveMediaUrl, type Card } from '@/lib/api';
 
 type Person = {
   member_id: string; display_name: string; handle: string; avatar: string | null; bio: string | null; interests: string[];
   location_label: string | null; reputation: string[]; shared_circles: { id: string; name: string }[]; hosting: Card[]; is_me: boolean; can_message?: boolean;
+  familiar_count?: number; // [FR116] activities you have both been to
+  following?: boolean; // [FR122] do I follow their calendar
 };
 
 export default function PersonPage() {
@@ -32,6 +34,12 @@ export default function PersonPage() {
   const say = (m: string) => { setToast(m); setTimeout(() => setToast(null), 2200); };
 
   const load = useCallback(() => { setError(false); api<Person>(`/people/${id}`).then(setP).catch(() => setError(true)); }, [id]);
+  // [FR122] Follow their calendar — private to me, and undone with the same tap.
+  const follow = async (next: boolean) => {
+    setP((prev) => (prev ? { ...prev, following: next } : prev));
+    try { await api(`/people/${id}/follow`, { body: { follow: next } }); }
+    catch { setP((prev) => (prev ? { ...prev, following: !next } : prev)); }
+  };
   useEffect(load, [load]);
 
   const block = async () => {
@@ -63,6 +71,23 @@ export default function PersonPage() {
               </div>
             </div>
 
+            {!p.is_me && (
+              <div className="row" style={{ gap: 8 }}>
+                <button className="btn btn--secondary btn--sm" onClick={() => follow(!p.following)}>
+                  {p.following ? t('follow.following') : t('follow.follow')}
+                </button>
+                {p.following && (
+                  <a className="link" href={`${API_BASE}/public/hosts/${p.member_id}/calendar.ics`} target="_blank" rel="noopener">
+                    {t('follow.subscribe')}
+                  </a>
+                )}
+              </div>
+            )}
+            {(p.familiar_count ?? 0) > 0 && (
+              <p className="caption" style={{ margin: 0, color: 'var(--accent-pressed)' }}>
+                ✦ {t('person.familiar', { count: p.familiar_count })}
+              </p>
+            )}
             {p.reputation.length > 0 && (
               <section className="stack" style={{ gap: 8 }}>
                 <span className="label">{t('person.reputation')}</span>

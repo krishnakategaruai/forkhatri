@@ -1,11 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Field } from '@/components/form/Field';
 import { SubmitButton } from '@/components/form/SubmitButton';
+import { requireSession } from '@/lib/auth';
 import { createProfile } from '@/lib/profile';
 
 /* FR001 · TR001 · UX11 · UI11 · TS001-002/TS010 · SP001 · DEC-V1-001
@@ -35,12 +36,20 @@ export default function CreateProfilePage() {
   const [name, setName] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [gender, setGender] = useState<Gender | ''>('');
+  const [lookingFor, setLookingFor] = useState<'bride' | 'groom' | ''>('');
   const [cityLocality, setCityLocality] = useState('');
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // [ForKhatri TR16] Confirm the ForKhatri session on arrival: signed out →
+  // entrance; unreachable → the shared retry state. A failure while SAVING
+  // keeps the inline error below so the member's answers are not lost.
+  useEffect(() => {
+    void requireSession();
+  }, []);
 
   function onPhotoChange(file: File | null) {
     setPhoto(file);
@@ -52,7 +61,7 @@ export default function CreateProfilePage() {
 
   const stepValid =
     (step === 1 && name.trim().length > 0) ||
-    (step === 2 && dateOfBirth !== '' && gender !== '') ||
+    (step === 2 && dateOfBirth !== '' && gender !== '' && lookingFor !== '') ||
     (step === 3 && cityLocality.trim().length > 0) ||
     (step === 4 && photo !== null);
 
@@ -63,10 +72,10 @@ export default function CreateProfilePage() {
       setStep((s) => s + 1);
       return;
     }
-    if (!photo || !gender) return;
+    if (!photo || !gender || !lookingFor) return;
 
     setBusy(true);
-    const result = await createProfile({ name, dateOfBirth, gender, cityLocality, photo });
+    const result = await createProfile({ name, dateOfBirth, gender, lookingFor, cityLocality, photo });
     setBusy(false);
 
     if (result.ok) {
@@ -134,6 +143,26 @@ export default function CreateProfilePage() {
                     disabled={busy}
                   >
                     {t(`profile:field.genderOption.${g}`)}
+                  </button>
+                ))}
+              </div>
+              <span className="caption">{t('profile:field.partner_preference.looking_for')}</span>
+              <div
+                className="segmented"
+                role="radiogroup"
+                aria-label={t('profile:field.partner_preference.looking_for')}
+              >
+                {(['bride', 'groom'] as const).map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    role="radio"
+                    aria-checked={lookingFor === option}
+                    className={`segmented__opt${lookingFor === option ? ' is-active' : ''}`}
+                    onClick={() => setLookingFor(option)}
+                    disabled={busy}
+                  >
+                    {t(`profile:option.looking_for.${option}`)}
                   </button>
                 ))}
               </div>

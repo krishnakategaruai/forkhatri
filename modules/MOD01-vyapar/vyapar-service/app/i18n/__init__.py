@@ -34,6 +34,10 @@ logger = logging.getLogger(__name__)
 
 SUPPORTED_LANGUAGES: Final = ("en", "hi", "te")
 DEFAULT_LANGUAGE: Final = "en"
+# Alias used by every "render this text in all three languages" caller
+# (notifications handed to a SECURITY DEFINER function that picks the
+# recipient's own language).
+LAUNCH_LANGUAGES: Final = SUPPORTED_LANGUAGES
 _LOCALES_DIR = Path(__file__).parent / "locales"
 
 

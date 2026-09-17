@@ -1,0 +1,47 @@
+{
+  "title": "सामग्री संचालन",
+  "notOperator": "यह क्षेत्र केवल उचित अनुमति वाले ऑपरेटरों के लिए है।",
+  "health": {
+    "title": "मार्केटप्लेस स्वास्थ्य",
+    "minGroupNote": "{{n}} से छोटे समूह को यहाँ छिपाया जाता है, अनुमानित संख्या के रूप में नहीं दिखाया जाता।",
+    "notEnoughData": "अभी पर्याप्त डेटा नहीं",
+    "metric": {
+      "opportunity_coverage": "अवसर कवरेज",
+      "relevant_discovery_rate": "प्रासंगिक खोज दर",
+      "zero_result_rate": "शून्य-परिणाम दर",
+      "opportunity_action_rate": "अवसर कार्रवाई दर",
+      "relevant_opportunity_connections": "प्रासंगिक कनेक्शन",
+      "successful_connection_rate": "सफल कनेक्शन दर",
+      "discovery_to_enquiry_rate_listings": "खोज → पूछताछ दर",
+      "freshness": "ताज़गी",
+      "reports_per_1000_interactions": "प्रति 1,000 बातचीत रिपोर्ट",
+      "notification_opt_out_rate": "सूचना बंद करने की दर",
+      "promotion_repeat_rate": "बूस्ट दोहराव दर",
+      "revenue_paise": "आय (पैसे)",
+      "refunds_paise": "धन-वापसी (पैसे)",
+      "time_to_first_relevant_opportunity_hours": "पहले प्रासंगिक अवसर तक का समय (घंटे)"
+    }
+  },
+  "opportunitiesQueue": {
+    "title": "अवसर समीक्षा कतार",
+    "empty": "समीक्षा के लिए कुछ भी लंबित नहीं है।",
+    "ageDays": "{{n}} दिन पुराना",
+    "approve": "स्वीकृत करें",
+    "return": "योगदानकर्ता को वापस भेजें",
+    "remove": "हटाएँ",
+    "flag": {
+      "source_unreachable": "स्रोत तक नहीं पहुँचा जा सका",
+      "unconfirmed_fields": "फ़ील्ड अपुष्ट"
+    }
+  },
+  "staleQueue": {
+    "title": "पुरानी / समाप्त कतार",
+    "empty": "अभी कुछ भी पुराना नहीं है।",
+    "remind": "याद दिलाएँ ({{n}})",
+    "expire": "समाप्त करें ({{n}})",
+    "done": "{{n}} आइटम अपडेट किए गए।"
+  },
+  "taxonomy": {
+    "title": "वर्गीकरण"
+  }
+}

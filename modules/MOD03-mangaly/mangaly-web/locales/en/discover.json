@@ -1,11 +1,12 @@
 {
   "title": "Discover",
   "blurb": "Ranked by evidence you can check, never a score.",
-  "identityProtected": "Identity protected until you connect",
+  "identityProtected": "Name and contact are shared only after you connect",
   "requests": {
     "title": "Requests for you",
     "accept": "Accept",
-    "decline": "Decline"
+    "decline": "Decline",
+    "sentByFamily": "Sent by their family, on their behalf"
   },
   "search": {
     "localityPlaceholder": "Filter by locality",
@@ -15,7 +16,10 @@
     "pending": "Request sent",
     "whyThisMatch": "Why this match",
     "seeMoreReasons_one": "See {{count}} more reason",
-    "seeMoreReasons_other": "See {{count}} more reasons"
+    "seeMoreReasons_other": "See {{count}} more reasons",
+    "requestSent": "Request sent",
+    "more": "Loading more profiles…",
+    "end": "That is everyone who matches right now."
   },
   "detail": {
     "back": "Back",
@@ -29,5 +33,43 @@
     "invalidTarget": "You can't send a connection request to yourself.",
     "alreadyPending": "You already have a pending request to this profile.",
     "rateLimited": "Too many connection requests. Please try again later."
+  },
+  "family": {
+    "blurb": "Searching for {{name}}. Your suggestions go to {{name}}, who decides.",
+    "suggest": "Suggest to {{name}}",
+    "suggested": "Suggested to {{name}}. Nothing was sent to that person.",
+    "suggestFailed": "Couldn't send the suggestion. Try again.",
+    "empty": "No profiles match {{name}}'s preferences yet.",
+    "identityProtected": "Name and contact are shared only after {{name}} connects",
+    "note": "Private note",
+    "sendRequest": "Send request for {{name}}",
+    "requestSent": "Request sent for {{name}}"
+  },
+  "card": {
+    "age": "{{age}} yrs"
+  },
+  "lookingFor": {
+    "title": "Tell us who you're looking for",
+    "body": "Matches follow your partner preference. Choose Bride or Groom and your matches will appear here.",
+    "cta": "Choose now",
+    "familyTitle": "{{name}} hasn't said who they're looking for yet",
+    "familyBody": "Matches follow {{name}}'s own partner preference. Ask {{name}} to choose Bride or Groom in their profile."
+  },
+  "filters": {
+    "open": "Filters",
+    "openCount": "Filters · {{count}}",
+    "title": "Filters",
+    "location": "Location",
+    "nearbyCity": "Same city",
+    "nearbyState": "Same state",
+    "openToRelocate": "Open to relocating",
+    "age": "Age",
+    "ageFrom": "From",
+    "ageTo": "To",
+    "maritalStatus": "Marital status",
+    "education": "Education",
+    "diet": "Lifestyle",
+    "reset": "Reset",
+    "apply": "Show matches"
   }
 }

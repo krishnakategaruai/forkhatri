@@ -92,5 +92,5 @@ async def unblock(member_id: UUID, session: DbSession, member: CurrentMember) ->
 @router.get("/blocks")
 async def my_blocks(session: DbSession, member: CurrentMember) -> list[dict]:
     ids = await safety.my_blocks(session, member_id=member.member_id)
-    names = identity.display_names_for(ids)
+    names = await identity.display_names_for(ids)
     return [{"member_id": str(m), "display_name": names[m].display_name, "avatar": names[m].avatar} for m in ids]

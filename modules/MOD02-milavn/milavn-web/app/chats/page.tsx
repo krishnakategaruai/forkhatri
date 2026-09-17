@@ -1,9 +1,10 @@
 'use client';
 
 /* Chats — trust-scoped messaging (owner decision 2026-09-14). The list shows
- * 1:1 and group conversations with presence (active now), the other person's
- * live expression, and unread counts. New chats start from people you already
- * share an activity or a circle with. */
+ * 1:1 and group conversations with the other person's expressive avatar
+ * (alive at rest, glowing while active, showing their current mood), and
+ * unread counts. New chats start from people you already share an activity
+ * or a circle with. */
 
 import { MessageSquarePlus } from 'lucide-react';
 import Link from 'next/link';
@@ -51,24 +52,27 @@ export default function ChatsPage() {
       <main className="screen">
         <p className="caption" style={{ margin: 0 }}>{t('chat.scope')}</p>
         {error && <ErrorState onRetry={load} />}
-        {!convs && !error && <div className="stack">{[0, 1, 2].map((i) => <div key={i} className="sk" style={{ height: 72 }} />)}</div>}
+        {!convs && !error && <div className="stack">{[0, 1, 2].map((i) => <div key={i} className="sk" style={{ height: 76 }} />)}</div>}
         {convs && convs.length === 0 && <EmptyState message={t('chat.empty')} action={t('chat.new')} onAction={startNew} />}
         {convs && convs.length > 0 && (
           <div className="list">
-            {convs.map((c) => (
-              <Link key={c.id} href={`/chats/${c.id}`} className={`lrow lrow--tap chatrow${c.unread ? ' chatrow--unread' : ''}`}>
-                <span className="chatrow__avatar">
-                  {c.avatar ? <img className="avatar avatar--lg" src={resolveMediaUrl(c.avatar) ?? ''} alt="" /> : <span className="avatar avatar--lg avatar--group">{c.kind === 'group' ? '👥' : ''}</span>}
-                  {c.active && <span className="presence-dot" aria-label={t('chat.activeNow')} />}
-                  {c.expression && c.kind === 'direct' && c.members.filter((m) => m.member_id !== '')[0] && <span className="expr-badge" aria-hidden="true"><MoodAvatar seed={c.members.find((m) => m.avatar === c.avatar)?.member_id ?? c.id} expression={c.expression as Expression} size={26} /></span>}
-                </span>
-                <span className="grow" style={{ minWidth: 0 }}>
-                  <span className="row row--between"><b className="truncate">{c.title}</b>{c.last_message_at && <span className="caption">{formatRelative(c.last_message_at)}</span>}</span>
-                  <span className="caption truncate" style={{ display: 'block' }}>{c.last_preview ?? (c.active ? t('chat.activeNow') : t('chat.sayHello'))}</span>
-                </span>
-                {c.unread > 0 && <span className="nav__badge nav__badge--inline">{c.unread > 9 ? '9+' : c.unread}</span>}
-              </Link>
-            ))}
+            {convs.map((c) => {
+              const solo = c.kind === 'direct' ? c.members.find((m) => m.avatar === c.avatar) ?? c.members[0] : null;
+              return (
+                <Link key={c.id} href={`/chats/${c.id}`} className={`lrow lrow--tap chatrow${c.unread ? ' chatrow--unread' : ''}`}>
+                  {c.kind === 'direct' && solo ? (
+                    <MoodAvatar seed={solo.member_id} expression={(c.expression as Expression) ?? 'neutral'} size={52} active={c.active} label={c.title} />
+                  ) : (
+                    <span className="avatar avatar--lg avatar--group" style={{ width: 52, height: 52, fontSize: '1.3rem' }}>👥</span>
+                  )}
+                  <span className="grow" style={{ minWidth: 0 }}>
+                    <span className="row row--between"><b className="truncate">{c.title}</b>{c.last_message_at && <span className="caption">{formatRelative(c.last_message_at)}</span>}</span>
+                    <span className="caption truncate" style={{ display: 'block' }}>{c.last_preview ?? (c.active ? t('chat.activeNow') : t('chat.sayHello'))}</span>
+                  </span>
+                  {c.unread > 0 && <span className="nav__badge nav__badge--inline">{c.unread > 9 ? '9+' : c.unread}</span>}
+                </Link>
+              );
+            })}
           </div>
         )}
       </main>
@@ -80,7 +84,7 @@ export default function ChatsPage() {
           <div className="list" style={{ maxHeight: '40vh', overflowY: 'auto' }}>
             {people.map((p) => (
               <button key={p.member_id} className="lrow lrow--tap" style={{ width: '100%', textAlign: 'left' }} aria-pressed={picked.includes(p.member_id)} onClick={() => setPicked((c) => (c.includes(p.member_id) ? c.filter((x) => x !== p.member_id) : [...c, p.member_id]))}>
-                {p.avatar ? <img className="avatar avatar--lg" src={resolveMediaUrl(p.avatar) ?? ''} alt="" /> : <span className="avatar avatar--lg" />}
+                {p.avatar ? <img className="avatar avatar--lg" src={resolveMediaUrl(p.avatar) ?? ''} alt="" /> : <MoodAvatar seed={p.member_id} size={44} idle={false} />}
                 <span className="grow"><b>{p.display_name}</b><br /><span className="caption">{p.reason}</span></span>
                 <span className={`check${picked.includes(p.member_id) ? ' check--on' : ''}`} aria-hidden="true">✓</span>
               </button>

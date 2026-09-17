@@ -33,7 +33,7 @@ export default function PerformanceReport({
   targetId,
   promotionId,
 }: {
-  targetKind: "listing" | "opportunity";
+  targetKind: "listing" | "opportunity" | "campaign";
   targetId: string;
   promotionId?: string;
 }) {

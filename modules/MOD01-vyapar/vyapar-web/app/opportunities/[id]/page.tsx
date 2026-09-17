@@ -117,7 +117,9 @@ export default function OpportunityDetailPage({ params }: { params: Promise<{ id
       <div className="vy-card">
         {opp.description && <p>{opp.description}</p>}
         <p className="vy-muted" style={{ marginTop: 8 }}>
-          {[opp.location, opp.work_mode, opp.compensation].filter(Boolean).join(" · ") || t("opportunities:detail.noDetailsYet")}
+          {/* [Bug fix] work_mode is a raw enum column (on_site/remote/both) — never
+              render it directly; the same class of bug as the taxonomy-slug leak. */}
+          {[opp.location, opp.work_mode ? t(`opportunities:workMode.${opp.work_mode}` as "workMode.on_site") : null, opp.compensation].filter(Boolean).join(" · ") || t("opportunities:detail.noDetailsYet")}
         </p>
       </div>
 
@@ -183,7 +185,10 @@ export default function OpportunityDetailPage({ params }: { params: Promise<{ id
           <div className="vy-row" style={{ flexWrap: "wrap" }}>
             {opp.source_segment === "public" && opp.source_url ? (
               <a className="vy-btn vy-btn-primary" href={opp.source_url} target="_blank" rel="noopener noreferrer" onClick={() => api.post(`/v1/opportunities/${id}/external-open`).catch(() => {})}>
-                {t("opportunities:detail.openOfficialWebsite")}
+                {/* [FR55 fix] Employment public/external items must read "Apply on source
+                    website" (the Naukri "Apply on Company Website" pattern), not the generic
+                    "Open official website" used by every other public/external type. */}
+                {t(opp.type === "employment" ? "opportunities:actionLabel.applyOnSource" : "opportunities:detail.openOfficialWebsite")}
               </a>
             ) : (
               <a className="vy-btn vy-btn-primary" href={`/enquiries/new?opportunity_id=${id}`} style={{ textDecoration: "none", display: "inline-block" }}>

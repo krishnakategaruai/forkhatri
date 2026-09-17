@@ -83,6 +83,13 @@ export const DISCOVERABILITY_CATEGORIES: CategoryDef[] = [
     fields: [
       {
         category: 'partner_preference',
+        key: 'looking_for',
+        kind: 'select',
+        labelKey: 'field.partner_preference.looking_for',
+        options: ['bride', 'groom'],
+      },
+      {
+        category: 'partner_preference',
         key: 'age_range',
         kind: 'ageRange',
         labelKey: 'field.partner_preference.age_range',

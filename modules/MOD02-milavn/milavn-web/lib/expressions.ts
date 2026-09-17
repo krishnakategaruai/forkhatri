@@ -29,11 +29,19 @@ export function classify(b: Blend): Expression {
 
 export type ExpressionSession = { stop: () => void };
 
-/** Starts the camera + landmarker and calls `onChange` whenever the classified expression changes (max once per 800 ms). */
+/** MediaPipe's WASM prints routine "INFO: …" lines through console.error, which the Next dev overlay counts as an Issue. Drop only those. */
+function quietMediaPipeInfo(): () => void {
+  const original = console.error;
+  console.error = (...args: unknown[]) => { if (typeof args[0] === 'string' && args[0].startsWith('INFO:')) return; original(...args); };
+  return () => { console.error = original; };
+}
+
+/** Starts the camera + landmarker and calls `onChange` as soon as a new expression holds for two readings in a row (~0.4 s): live, without frame-to-frame flicker. */
 export async function startExpressions(video: HTMLVideoElement, onChange: (e: Expression) => void, onError: (msg: string) => void): Promise<ExpressionSession | null> {
   let stream: MediaStream | null = null;
   let raf = 0;
   let stopped = false;
+  const restoreConsole = quietMediaPipeInfo();
   try {
     stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 320, height: 240 }, audio: false });
     video.srcObject = stream;
@@ -44,7 +52,7 @@ export async function startExpressions(video: HTMLVideoElement, onChange: (e: Ex
       baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task', delegate: 'GPU' },
       outputFaceBlendshapes: true, runningMode: 'VIDEO', numFaces: 1,
     });
-    let last: Expression | null = null; let lastAt = 0;
+    let last: Expression | null = null; let candidate: Expression | null = null; let streak = 0; let lastAt = 0;
     const tick = () => {
       if (stopped) return;
       const now = performance.now();
@@ -56,7 +64,8 @@ export async function startExpressions(video: HTMLVideoElement, onChange: (e: Ex
           if (shapes) {
             const b: Blend = {}; for (const c of shapes) b[c.categoryName] = c.score;
             const e = classify(b);
-            if (e !== last) { last = e; onChange(e); }
+            streak = e === candidate ? streak + 1 : 1; candidate = e;
+            if (streak >= 2 && e !== last) { last = e; onChange(e); }
           }
         } catch { /* a dropped frame is fine */ }
       }
@@ -64,9 +73,10 @@ export async function startExpressions(video: HTMLVideoElement, onChange: (e: Ex
     };
     raf = requestAnimationFrame(tick);
     return {
-      stop: () => { stopped = true; cancelAnimationFrame(raf); landmarker.close(); stream?.getTracks().forEach((t) => t.stop()); video.srcObject = null; },
+      stop: () => { stopped = true; cancelAnimationFrame(raf); landmarker.close(); stream?.getTracks().forEach((t) => t.stop()); video.srcObject = null; restoreConsole(); },
     };
   } catch (e) {
+    restoreConsole();
     stream?.getTracks().forEach((t) => t.stop());
     onError(e instanceof Error ? e.message : 'camera');
     return null;
