@@ -12,31 +12,30 @@
 // dropdown panel listing the inbox on click, matching the same
 // dropdown-panel pattern DevMemberSwitcher/LanguageSwitcher already use.
 // Traces to: FR21, TR021
-import { useEffect, useState } from "react";
+// [IMP38 — Refactor C] The bell no longer calls a fixed endpoint: it reads
+// its items from the host's NotificationSource (Vyapar's own inbox on both
+// shipped hosts), through the SDK instance in scope. A host with its own
+// notification centre supplies a different source, or none at all.
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useTranslation } from "react-i18next";
-import { api } from "@/lib/api";
-
-interface Notification {
-  id: string;
-  kind: string;
-  title: string;
-  body: string | null;
-  link: string | null;
-  read: boolean;
-  created_at: string;
-}
+import type { Notification } from "@/lib/sdk";
+import { useSdk } from "@/lib/sdk/react";
+import { useHost } from "@/app/host/HostProvider";
 
 export default function NotificationBell() {
   const { t } = useTranslation("notifications");
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Notification[]>([]);
   const [unread, setUnread] = useState(0);
+  const sdk = useSdk();
+  const host = useHost();
+  const source = useMemo(() => host.notifications?.(sdk) ?? null, [host, sdk]);
 
   async function refreshCount() {
+    if (!source) return;
     try {
-      const r = await api.get<{ count: number }>("/v1/notifications/unread-count");
-      setUnread(r.count);
+      setUnread(await source.unreadCount());
     } catch {
       /* dev-only polling — a failed check just tries again next interval */
     }
@@ -46,24 +45,29 @@ export default function NotificationBell() {
     refreshCount();
     const interval = setInterval(refreshCount, 30_000);
     return () => clearInterval(interval);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [source]);
 
   async function openPanel() {
     setOpen((v) => !v);
-    if (!open) {
-      const list = await api.get<Notification[]>("/v1/notifications");
+    if (!open && source) {
+      const list = await source.list();
       setItems(list);
     }
   }
 
   async function markAllRead() {
-    await api.post("/v1/notifications/read-all");
+    if (!source) return;
+    await source.markAllRead();
     setItems((prev) => prev.map((n) => ({ ...n, read: true })));
     setUnread(0);
   }
 
+  // [Bug fix — see layout.tsx's comment] no longer self-positions with a
+  // hardcoded `right` offset; the parent flex row in layout.tsx now owns
+  // placement for both this and DevMemberSwitcher.
   return (
-    <div style={{ position: "fixed", top: 14, right: 168, zIndex: 60 }}>
+    <div style={{ position: "relative", flexShrink: 0 }}>
       <button
         className="vy-btn vy-btn-secondary"
         style={{ fontSize: 13, padding: "8px 12px", position: "relative" }}
@@ -90,7 +94,12 @@ export default function NotificationBell() {
               padding: "0 3px",
             }}
           >
-            {unread}
+            {/* [Same bug-fix pass] the badge itself was already safe at
+                double digits (absolute-positioned on its own button, grows
+                via padding rather than a fixed width) — capped display
+                text defensively anyway so a large backlog never shows an
+                unreasonably wide badge. */}
+            {unread > 99 ? "99+" : unread}
           </span>
         )}
       </button>
@@ -101,7 +110,10 @@ export default function NotificationBell() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 400, damping: 32 }}
-            className="vy-card"
+            // [Design-enhancement pass, DESIGN-ENHANCEMENT.md — named
+            // example] a floating dropdown panel, one step above the
+            // ordinary --surface-raised content sitting behind it.
+            className="vy-card vy-card-floating"
             style={{ position: "absolute", top: 44, right: 0, width: 280, maxHeight: 360, overflowY: "auto", padding: 10 }}
           >
             <div className="vy-row" style={{ justifyContent: "space-between", marginBottom: 8 }}>

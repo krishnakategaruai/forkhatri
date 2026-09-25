@@ -1,0 +1,981 @@
+/* ===================================================================
+   Royal & calm (owner, 2026-09-24 night)
+   -------------------------------------------------------------------
+   Asked for: glass, motion typography in more places, elegance and
+   royal-ness — and, after seeing a first pass, "I was feeling stress
+   because of your highlighted things" and "photos were good previously".
+   What stayed after that feedback:
+     * motion titles on every page (words settle from a soft blur) with a
+       small gold ornament rule — hairline, lotus bud, hairline — beneath;
+     * a frosted sticky header, a frosted navigation bar and frosted
+       status rows (glass where something scrolls behind it);
+     * a calm active state: a frosted pill with a kumkum mark, not a solid
+       red block; selected chips as a soft tint;
+     * prompts and the sealed card arriving as they scroll into view.
+   Tried and removed: palace-arch photo frames, glass name plates on
+   photos, a silk damask background, gold hairlines around every surface.
+   Photos keep their earlier treatment. Loaded last in the layout.
+   =================================================================== */
+
+/* ---- Titles: motion type + the ornament rule ------------------------- */
+.royal-title,
+.home-head__title {
+  position: relative;
+  padding-bottom: 14px;
+}
+.royal-title::after,
+.home-head__title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 132px;
+  height: 12px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='132' height='12' viewBox='0 0 132 12'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%23b0862a' stop-opacity='0'/%3E%3Cstop offset='.5' stop-color='%23d6aa32'/%3E%3Cstop offset='1' stop-color='%23b0862a' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0 6h54M78 6h54' stroke='url(%23g)' stroke-width='1'/%3E%3Cpath d='M66 1.5c3 2.4 3 6.6 0 9-3-2.4-3-6.6 0-9z' fill='%23d6aa32'/%3E%3Ccircle cx='58' cy='6' r='1.3' fill='%23d6aa32'/%3E%3Ccircle cx='74' cy='6' r='1.3' fill='%23d6aa32'/%3E%3C/svg%3E")
+    no-repeat left center / 132px 12px;
+  transform-origin: left center;
+  animation: ornament-draw 1100ms var(--ease-out) 450ms both;
+}
+@keyframes ornament-draw {
+  from {
+    opacity: 0;
+    transform: scaleX(0.2);
+  }
+}
+.royal-title .mt__w,
+.home-head__title .mt__w {
+  animation-duration: 1000ms;
+}
+/* The word settles from a soft blur — ink meeting silk. */
+@keyframes mt-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.35em);
+    filter: blur(6px);
+  }
+  60% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+/* ---- Sticky frosted header ------------------------------------------- */
+.app__content > .topbar,
+.app__content > .home-head {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  margin: calc(var(--space-3) * -1) calc(var(--gutter) * -1) 0;
+  padding: var(--space-3) var(--gutter) 6px;
+  background: color-mix(in srgb, var(--paper) 72%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4);
+}
+@media (min-width: 1024px) {
+  .app__content > .topbar,
+  .app__content > .home-head {
+    margin-top: calc(var(--space-5) * -1);
+    padding-top: var(--space-5);
+  }
+}
+:root .app__content > .topbar.pview__bar {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  background: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* ---- Calm navigation: a frosted pill, a kumkum mark ------------------- */
+.bottombar__item[aria-current='page'],
+.sidebar__item[aria-current='page'] {
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  color: var(--accent-ink);
+  box-shadow: inset 0 0 0 1px var(--hairline), 0 4px 14px rgba(120, 40, 10, 0.1);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.bottombar__item[aria-current='page'] svg,
+.sidebar__item[aria-current='page'] svg {
+  color: var(--accent);
+}
+.bottombar__item[aria-current='page']::before {
+  content: '';
+  position: absolute;
+  top: 5px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--gold-deep);
+}
+:root[data-theme='dark'] .bottombar__item[aria-current='page'] svg,
+:root[data-theme='dark'] .sidebar__item[aria-current='page'] svg {
+  color: var(--gold);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .bottombar__item[aria-current='page'] svg,
+  :root:not([data-theme='light']) .sidebar__item[aria-current='page'] svg {
+    color: var(--gold);
+  }
+}
+.bottombar,
+.sidebar {
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  backdrop-filter: blur(24px) saturate(1.5);
+}
+
+/* Chips: selected is a calm ink-on-gold-tint with a kumkum keyline, not a
+   solid red block. */
+:root .dlens.is-on,
+:root .relchip.is-on,
+.fchip.is-on,
+.quick-pick__chip--active,
+.quick-pick__chip.is-on {
+  background: var(--gold-tint);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+:root .dlens.is-on .dlens__n {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* Frosted status rows and panels on the page. */
+.duo,
+.home-alert:not(.home-alert--req),
+.bento:not(.bento--hero) {
+  background: color-mix(in srgb, var(--surface) 68%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  backdrop-filter: blur(14px) saturate(1.3);
+}
+
+/* ---- More air: calmer rhythm ---------------------------------------- */
+:root .dwall,
+:root .dwall--lens {
+  gap: 14px;
+}
+@media (min-width: 1100px) {
+  :root .dwall {
+    gap: 22px;
+  }
+}
+.home {
+  gap: 22px;
+}
+
+/* (A scroll-driven reveal on prompts was tried and removed: content stayed
+   invisible until it scrolled into view, which read as empty gaps.) */
+/* Hover: the name breathes a little wider, the photo leans in. */
+:root .dtile__link:hover .dtile__title,
+.hcard__link:hover .hcard__name {
+  letter-spacing: 0.01em;
+  transition: letter-spacing 500ms var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .royal-title::after,
+  .home-head__title::after,
+  :root .dwall .dtile__text,
+  .hcard__text,
+  .pview__prompt,
+  .sealed {
+    animation: none !important;
+  }
+}
+
+/* ---- Calm: fewer highlights (owner: "I was feeling stress because of
+   your highlighted things"; "photos were good previously") -------------
+   Photos are back to their earlier treatment. Everything that was drawn
+   as a highlight goes quiet: no gold hairline boxed around every card, no
+   gold keyline inside photos, no filled red count pills, no ornament
+   drawn loudly. Surfaces separate by soft shadow alone. */
+.card,
+.section-card,
+.track,
+:root .insight,
+.next-step,
+.olook,
+.member__card,
+.tier-section,
+.thread-panel,
+.chat-panel,
+.preview-card,
+.share-card,
+.duo,
+.bento,
+.home-alert,
+.sealed,
+.pview__prompt,
+:root .category-card,
+.bottombar,
+.sidebar,
+.mpane,
+:root .dlens,
+:root .relchip,
+.chip,
+.fchip,
+.quick-pick__chip,
+.factchip,
+.dchip,
+.btn--secondary {
+  border-color: transparent;
+}
+.hcard__link::before,
+:root .dtile__photo::before,
+:root .pview__hero--immersive::before {
+  content: none;
+}
+/* Counts are quiet text, not filled badges. */
+.hfeed__count,
+:root .dlens__n,
+:root .dlens.is-on .dlens__n {
+  background: transparent;
+  color: var(--gold-ink);
+  min-width: 0;
+  padding: 0;
+  font-weight: 700;
+}
+.nav-badge,
+.sidebar__count {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+/* Selected chip: a soft tint and ink, no ring. */
+:root .dlens.is-on,
+:root .relchip.is-on,
+.fchip.is-on,
+.quick-pick__chip--active,
+.quick-pick__chip.is-on {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  color: var(--accent-ink);
+  box-shadow: none;
+}
+:root .btn--primary,
+:root .cta {
+  box-shadow: 0 6px 16px rgba(204, 1, 6, 0.16);
+}
+/* Labels in soft ink, not gold. */
+.label,
+.bento__label,
+.duo__label,
+:root .dhead__for,
+.home-head__date,
+:root .relpick__group-title,
+.pview__prompt-q,
+.factgroup__title,
+.insight__title {
+  color: var(--ink-3);
+}
+.royal-title::after,
+.home-head__title::after {
+  opacity: 0.55;
+}
+
+/* Sheets never run past the screen: they scroll inside, and their bottom
+   clears the phone's safe area. */
+:root .sheet {
+  max-height: min(88dvh, calc(100dvh - 24px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
+}
+
+/* ---- Navigation below desktop: a left drawer (owner, 2026-09-24) --------
+   A frosted menu button at the top-left opens the sidebar as a drawer over
+   the page; the bottom bar is retired so photos keep the full width. The
+   page header makes room for the button. */
+.menu-btn {
+  display: none;
+}
+.drawer-scrim {
+  display: none;
+}
+@media (max-width: 1023px) {
+  .bottombar {
+    display: none !important;
+  }
+  .app__main {
+    padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
+  }
+  .menu-btn {
+    display: grid;
+    place-items: center;
+    position: fixed;
+    z-index: 45;
+    top: calc(env(safe-area-inset-top, 0px) + 12px);
+    left: 12px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    color: var(--ink);
+    background: color-mix(in srgb, var(--surface) 72%, transparent);
+    border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+    box-shadow: var(--shadow-1);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    backdrop-filter: blur(16px) saturate(1.4);
+    transition: transform var(--dur-2) var(--ease-spring);
+  }
+  .menu-btn:active {
+    transform: scale(0.92);
+  }
+  .menu-btn svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+  }
+  /* The page's own title starts after the button. */
+  .app:not(.app--detail) .app__content > .topbar,
+  .app:not(.app--detail) .app__content > .home-head,
+  .app:not(.app--detail) .inbox__head {
+    padding-left: calc(var(--gutter) + 48px);
+  }
+  .app:not(.app--detail) .inbox__head {
+    padding-left: 52px;
+  }
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    position: fixed;
+    z-index: 44;
+    top: 8px;
+    bottom: 8px;
+    left: 8px;
+    width: min(280px, 80vw);
+    padding: calc(env(safe-area-inset-top, 0px) + 64px) var(--space-3) var(--space-4);
+    border-radius: 28px;
+    background: color-mix(in srgb, var(--surface) 82%, transparent);
+    -webkit-backdrop-filter: blur(28px) saturate(1.5);
+    backdrop-filter: blur(28px) saturate(1.5);
+    box-shadow: var(--shadow-3);
+    overflow-y: auto;
+    transform: translateX(calc(-100% - 16px));
+    transition: transform 420ms var(--ease-out);
+  }
+  .app--drawer .sidebar {
+    transform: none;
+  }
+  .drawer-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 43;
+    background: rgba(30, 6, 6, 0.28);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 320ms var(--ease);
+  }
+  .app--drawer .drawer-scrim {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  /* The drawer shows the full sidebar (brand, labels), never the rail. */
+  .sidebar__brand {
+    font-size: 1.75rem;
+    padding: 0 6px;
+    justify-content: flex-start;
+  }
+  .sidebar__item {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    min-height: 50px;
+    padding: 0 14px;
+    font-size: 1rem;
+    text-align: left;
+  }
+  .sidebar__count {
+    position: static;
+    margin-left: auto;
+  }
+  .sidebar__foot .hub-link span {
+    display: inline;
+  }
+  /* Items slide in one after another as the drawer opens. */
+  .app--drawer .sidebar__item {
+    animation: drawer-item 520ms var(--ease-out) both;
+  }
+  .app--drawer .sidebar__item:nth-child(2) { animation-delay: 40ms; }
+  .app--drawer .sidebar__item:nth-child(3) { animation-delay: 80ms; }
+  .app--drawer .sidebar__item:nth-child(4) { animation-delay: 120ms; }
+  .app--drawer .sidebar__item:nth-child(5) { animation-delay: 160ms; }
+  @keyframes drawer-item {
+    from {
+      opacity: 0;
+      transform: translateX(-18px);
+    }
+  }
+}
+@media (min-width: 1024px) and (max-width: 1279px) {
+  /* Desktop rail range keeps its own layout (defined in sindoor.css). */
+  .menu-btn,
+  .drawer-scrim {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .app--drawer .sidebar__item {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* No visible scrollbars anywhere (owner, 2026-09-24: "can't we hide scroll
+   bars?"). Scrolling itself is unchanged — touch, wheel, trackpad, keys. */
+html,
+body,
+* {
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+.picker__none {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 12vh 20px 20px;
+  text-align: center;
+}
+.picker__none .caption {
+  max-width: 36ch;
+  font-size: 0.875rem;
+}
+
+/* The reason on a tile is a quiet italic line on the photo, not a yellow
+   pill (it was also yellow text on yellow in dark mode — unreadable). */
+:root .dwall .dtile__why,
+:root .dtile__why {
+  align-self: auto;
+  margin: 0 0 2px;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  color: #ffe2a6;
+  font-family: var(--font-display-stack);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 0.8125rem;
+  letter-spacing: 0;
+  text-transform: none;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+
+/* Conversation kind: a quiet word, not a coloured pill (the lock on the
+   avatar already marks a private session). */
+.convo__kind,
+.convo__kind--candidate,
+.convo__kind--family {
+  background: none;
+  padding: 0;
+  margin-right: 6px;
+  border-radius: 0;
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+html:is([lang='hi'], [lang='te']) .convo__kind {
+  letter-spacing: 0;
+  text-transform: none;
+}
+.convo__kind--candidate {
+  color: var(--accent-ink);
+}
+.convo {
+  border-color: transparent;
+}
+.convo__lock {
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: 0 0 0 2px var(--surface), var(--shadow-1);
+}
+
+/* ---- Threads: calm bubbles, one explanation --------------------------- */
+/* Your own words: a soft kumkum tint with ink by day, deep velvet with
+   cream at night — not a glossy red slab. */
+.msg__bubble--mine {
+  background: color-mix(in srgb, var(--accent) 11%, var(--surface));
+  color: var(--ink);
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
+  box-shadow: none;
+}
+:root[data-theme='dark'] .msg__bubble--mine {
+  background: #4d0b0d;
+  color: #fff0d2;
+  border-color: rgba(251, 217, 70, 0.14);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .msg__bubble--mine {
+    background: #4d0b0d;
+    color: #fff0d2;
+    border-color: rgba(251, 217, 70, 0.14);
+  }
+}
+.msg__bubble {
+  box-shadow: none;
+}
+/* The families' chat explains itself once, in its system line. */
+.chat--family .chat__intro-note {
+  display: none;
+}
+.chat__intro {
+  padding-bottom: 6px;
+}
+.chat__send {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.chat__send:disabled {
+  opacity: 1;
+  background: var(--surface-2);
+  color: var(--ink-3);
+}
+
+/* The private session: your words glow softly in lamp-gold rather than
+   sitting in solid yellow slabs. */
+.chat--candidate .msg__bubble--mine {
+  background: rgba(251, 217, 70, 0.16);
+  color: #ffeec2;
+  border: 1px solid rgba(251, 217, 70, 0.28);
+}
+.chat--candidate .msg__bubble:not(.msg__bubble--mine) {
+  background: rgba(255, 240, 210, 0.07);
+  border-color: rgba(255, 240, 210, 0.1);
+}
+/* Panes that set their own thin scrollbar earlier: hidden too. */
+.chat__scroll,
+.mpane__list,
+:root .sheet,
+.fsheet__body,
+.sidebar,
+.inbox {
+  scrollbar-width: none;
+}
+
+/* Conversation starters follow the thread's own mood (they took the page's
+   cream surface inside the night-mode private session: invisible). */
+.chat__starter {
+  background: var(--chat-surface);
+  color: var(--chat-ink);
+  border: 1px solid var(--chat-line);
+  box-shadow: none;
+  font-weight: 500;
+}
+.chat--candidate .chat__starter {
+  background: rgba(255, 240, 210, 0.06);
+  color: #fff0d2;
+  border-color: rgba(251, 217, 70, 0.22);
+}
+.chat--candidate .chat__starter:hover {
+  border-color: rgba(251, 217, 70, 0.5);
+}
+
+/* The request popup never sits over the open drawer. */
+.app--drawer .reqpop {
+  display: none;
+}
+/* The popup's actions share one baseline; Accept is the one filled button. */
+.reqpop__actions {
+  align-items: center;
+}
+.reqpop {
+  border: 0;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  backdrop-filter: blur(22px) saturate(1.4);
+}
+
+/* ---- The loader, larger (owner: "increase size", then "increase more") -- */
+.sloader {
+  gap: 18px;
+  padding: 16px 0;
+}
+.sloader__art {
+  width: min(78vw, 360px);
+  margin-top: 18px;
+}
+.sloader__ring {
+  top: 0;
+  width: min(92vw, 440px);
+  height: min(92vw, 440px);
+}
+.sloader__text {
+  font-size: 0.9375rem;
+}
+.screen--centered:has(.sloader) {
+  min-height: calc(100dvh - 48px);
+}
+
+/* ---- The private session's opening: calm, contained, readable ----------
+   The explanation wrapped past both edges over a busy diamond pattern. It
+   is now a small card with a lock, set to a readable measure, on the plain
+   night ground. */
+.chat--candidate::before {
+  content: none;
+}
+.chat__intro {
+  gap: 8px;
+  padding: 24px 16px 12px;
+}
+.chat__intro-note {
+  max-width: min(36ch, 100%);
+  margin: 6px auto 0;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  text-align: center;
+  overflow-wrap: anywhere;
+  background: rgba(255, 240, 210, 0.05);
+  border: 1px solid rgba(251, 217, 70, 0.14);
+}
+.chat--candidate .chat__intro-note::before {
+  content: '';
+  display: block;
+  width: 18px;
+  height: 18px;
+  margin: 0 auto 6px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fbd946' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='11' width='14' height='9' rx='2'/%3E%3Cpath d='M8 11V8a4 4 0 0 1 8 0v3'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+.chat__intro-name {
+  font-size: 1.5rem;
+}
+
+/* Me: the account control is the avatar again, as on every other screen —
+   a second ☰ beside the drawer's ☰ read as two identical menus. */
+:root .me-account .account__button > :first-child {
+  display: grid !important;
+}
+:root .me-account .account__button > .account__caption {
+  display: none !important;
+}
+:root .me-account .account__button::before {
+  content: none !important;
+}
+:root .me-account .account__button {
+  background: none;
+  box-shadow: none;
+}
+:root .me-account .account__button[aria-expanded='true'] {
+  background: none;
+  box-shadow: none;
+}
+
+/* Circle relation choices keep a quiet button shape (the calm pass had
+   left them as plain words). */
+:root .relchip {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  min-height: 34px;
+}
+:root .relchip.is-on {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--accent-ink);
+}
+:root .relchip--more {
+  background: transparent;
+  border-style: dashed;
+}
+
+/* Discover: the eyebrow repeated what Filters says; the chip count is
+   plain text beside its word. */
+:root .dhead__for {
+  display: none;
+}
+:root .dlens__n {
+  margin-left: 2px;
+  padding-right: 6px;
+}
+
+/* ---- Thread polish (owner: "you lowered your standard") ---------------- */
+/* Focus: a soft ring that follows the control's own shape, never a thick
+   gold rectangle left behind after a tap. */
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--gold) 55%, transparent);
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+.icon-btn:focus-visible,
+.chat__head .icon-btn:focus-visible {
+  border-radius: 50%;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+/* The name in the thread header speaks in the same serif as everywhere. */
+.chat__name {
+  font-family: var(--font-display-stack);
+  font-weight: 600;
+  font-size: 1.25rem;
+  letter-spacing: -0.005em;
+}
+.chat__sub {
+  font-size: 0.75rem;
+}
+.chat--candidate .chat__sub {
+  color: rgba(251, 217, 70, 0.75);
+}
+/* The private-session lock: a small quiet mark, not a yellow blob. */
+.chat__lock,
+.convo__lock {
+  width: 16px;
+  height: 16px;
+  right: -2px;
+  bottom: -2px;
+  background: #2a0a0b;
+  color: var(--gold);
+  box-shadow: 0 0 0 2px var(--chat-bg, var(--surface));
+}
+.chat__lock svg,
+.convo__lock svg {
+  width: 9px;
+  height: 9px;
+}
+/* A readable measure on a wide screen: the conversation and the composer
+   sit in a centred column instead of stretching across 1,000px. */
+@media (min-width: 1024px) {
+  .chat__scroll > *,
+  .chat__compose > * {
+    max-width: 760px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .chat__body {
+    max-width: 760px;
+    width: 100%;
+    margin: 0 auto;
+  }
+}
+/* The kind of conversation in the list: quiet, sentence case. */
+.convo__kind,
+.convo__kind--candidate,
+.convo__kind--family {
+  letter-spacing: 0.02em;
+  text-transform: none;
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: var(--ink-3);
+}
+
+/* ---- Critique watch, threads round ------------------------------------ */
+/* Focus rings follow each control's own rounded shape, in soft kumkum. */
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 2px;
+}
+.sidebar__item:focus-visible,
+:root .dlens:focus-visible,
+:root .relchip:focus-visible,
+.btn:focus-visible,
+.convo:focus-visible {
+  border-radius: inherit;
+}
+/* Overlapping faces: a ring in the page colour and a gentler overlap, so
+   initials are never cut. */
+.chat__faces > * + *,
+.convo__faces > * + * {
+  margin-left: -8px;
+  box-shadow: 0 0 0 2px var(--chat-bg, var(--surface));
+}
+/* The speaker's name above a bubble: quiet. */
+.msg__who,
+.msg__who--a,
+.msg__who--b {
+  font-size: 0.71875rem;
+  font-weight: 500;
+  color: var(--chat-muted, var(--ink-3));
+}
+/* The private session stays night in dark mode; by day it is a soft
+   velvet rose, not a black pane beside a cream list. */
+:root:not([data-theme='dark']) .chat--candidate {
+  --chat-bg: #f6e6dc;
+  --chat-surface: #fbf0e8;
+  --chat-other: #fffaf4;
+  --chat-ink: #2a0707;
+  --chat-muted: #8f5a4c;
+  --chat-line: #ead2c4;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .chat--candidate {
+    --chat-bg: #16040a;
+    --chat-surface: #230a12;
+    --chat-other: #2e0f19;
+    --chat-ink: #fff0d2;
+    --chat-muted: #b88e86;
+    --chat-line: #401724;
+  }
+}
+:root:not([data-theme='dark']) .chat--candidate .msg__bubble--mine {
+  background: color-mix(in srgb, var(--accent) 10%, #fffaf4);
+  color: #2a0707;
+  border-color: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+:root:not([data-theme='dark']) .chat--candidate .chat__sub,
+:root:not([data-theme='dark']) .chat--candidate .chat__starter {
+  color: var(--accent-ink);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .chat--candidate .msg__bubble--mine {
+    background: rgba(251, 217, 70, 0.16);
+    color: #ffeec2;
+  }
+  :root:not([data-theme='light']) .chat--candidate .chat__sub,
+  :root:not([data-theme='light']) .chat--candidate .chat__starter {
+    color: #fff0d2;
+  }
+}
+/* Messages' compose button: quiet, like the page's other icon buttons. */
+.inbox__new {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+/* Desktop pages fit the window exactly: no few-pixel scroll. */
+@media (min-width: 1024px) {
+  .mpane {
+    height: calc(100dvh - var(--space-5) - var(--space-5));
+  }
+  .home {
+    padding-bottom: 0;
+  }
+  .hcard__link {
+    height: calc((100dvh - 214px - 16px) / 2);
+  }
+  .hcard__meta {
+    white-space: normal;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+}
+
+/* Focus: a soft ring drawn as a shadow, which always follows the element's
+   own corners (outlines ignore radius in some cases). */
+a:focus-visible,
+button:focus-visible,
+[role='tab']:focus-visible,
+[role='radio']:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+/* Home desktop: every name on the same baseline — the details line always
+   reserves two lines, the chips sit below. */
+@media (min-width: 1024px) {
+  .hcard__meta {
+    min-height: 2.6em;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    align-content: end;
+  }
+  .duo__body {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+}
+
+/* Focus ring, decisively: no outline anywhere, a soft rounded glow. */
+html :is(a, button, input, select, textarea, [tabindex], [role='tab']):focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent) !important;
+}
+
+/* Circle (dark): readable "Looking for" chip; the join link is quiet. */
+:root .circle-chip {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+:root .circle-switch {
+  color: var(--ink-2);
+  font-weight: 500;
+  font-size: 0.8125rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (min-width: 1024px) {
+  :root .circle-grid > :only-child {
+    max-width: none;
+  }
+  :root .circle-grid:has(> :only-child) {
+    grid-template-columns: minmax(0, 720px);
+    justify-content: center;
+  }
+}
+
+/* Connected profile: one message action (the button), four facts on one
+   line (the age already sits with the name), no glow in the dark. */
+:root .pview__bar .icon-btn[href^='/messages'] {
+  display: none;
+}
+:root .pview--immersive .pview__actions .btn,
+:root .btn--primary {
+  box-shadow: none;
+}
+
+/* Focused rows keep their own rounded corners (an earlier "inherit" took
+   the parent's square corner). */
+.sidebar__item,
+.sidebar__item:focus-visible {
+  border-radius: 16px;
+}
+:root .dlens:focus-visible,
+:root .relchip:focus-visible,
+.btn:focus-visible {
+  border-radius: 999px;
+}
+.convo:focus-visible {
+  border-radius: 16px;
+}
+/* Discover: the count sits inside the pill with room to breathe. */
+:root .dlens {
+  padding-right: 14px;
+  gap: 6px;
+}
+:root .dlens__n,
+:root .dlens.is-on .dlens__n {
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  margin: 0;
+  background: none;
+  font-size: 0.75rem;
+}
+
+/* Me: tile hints get three lines, so no hint stops mid-sentence. */
+:root .me-tile__text {
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+/* Overlapping faces in thread headers and intros: gentler overlap so
+   initials stay whole (beats the larger intro variant too). */
+:root .chat__faces > * + *,
+:root .chat__faces--lg > * + *,
+:root .convo__faces > * + * {
+  margin-left: -8px;
+}

@@ -2,6 +2,9 @@
   "error": {
     "listingNotFound": "लिस्टिंग नहीं मिली या अब उपलब्ध नहीं है",
     "opportunityNotFound": "यह अवसर अब उपलब्ध नहीं है",
-    "operatorPermissionRequired": "ऑपरेटर अनुमति आवश्यक है"
+    "operatorPermissionRequired": "ऑपरेटर अनुमति आवश्यक है",
+    "validation": "अनुरोध में कुछ फ़ील्ड गायब या अमान्य हैं।",
+    "generic": "कुछ गलत हो गया। कृपया फिर से कोशिश करें।",
+    "invalidCursor": "यह पेज लिंक अब मान्य नहीं है। पहले पेज से फिर शुरू करें।"
   }
 }

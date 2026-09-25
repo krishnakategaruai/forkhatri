@@ -1,0 +1,112 @@
+{
+  "reason": {
+    "relocation": "స్థలమార్పుపై ఇద్దరి దృక్పథం ఒకటే ({value}).",
+    "diet": "ఇద్దరూ {value} జీవనశైలిని పాటిస్తారు.",
+    "education": "ఇద్దరి విద్య {value} స్థాయిది.",
+    "locality": "{locality}లో ఉన్నారు, ఇష్టపడిన ప్రాంతానికి సరిపోతుంది."
+  },
+  "value": {
+    "relocation_willingness": {
+      "open_to_discussion": "చర్చకు సిద్ధం",
+      "willing": "స్థలమార్పుకు సిద్ధం",
+      "not_willing": "స్థలమార్పు ఇష్టం లేదు",
+      "depends": "సంబంధంపై ఆధారపడి"
+    },
+    "diet": {
+      "vegetarian": "శాకాహారం",
+      "non_vegetarian": "మాంసాహారం",
+      "vegan": "వీగన్",
+      "eggetarian": "గుడ్డు ఆహారం",
+      "jain": "జైన"
+    },
+    "education_level": {
+      "high_school": "హైస్కూల్",
+      "diploma": "డిప్లొమా",
+      "bachelors": "డిగ్రీ",
+      "masters": "పీజీ",
+      "doctorate": "డాక్టరేట్",
+      "professional": "వృత్తిపరమైన"
+    },
+    "mother_tongue": {
+      "telugu": "తెలుగు",
+      "tamil": "తమిళం",
+      "kannada": "కన్నడ",
+      "hindi": "హిందీ",
+      "punjabi": "పంజాబీ",
+      "marathi": "మరాఠీ",
+      "gujarati": "గుజరాతీ",
+      "english": "ఇంగ్లీష్"
+    },
+    "sub_community": {
+      "khatri": "ఖత్రీ",
+      "arora": "అరోరా",
+      "sood": "సూద్",
+      "bhatia": "భాటియా"
+    },
+    "family_involvement": {
+      "close_knit": "పూర్తిగా కలిసి",
+      "moderate": "పెద్ద నిర్ణయాల్లో కలిసి",
+      "independent": "దగ్గరగా కానీ స్వతంత్రంగా"
+    },
+    "relationship": {
+      "parent": "తల్లిదండ్రులు",
+      "guardian": "సంరక్షకులు",
+      "sibling": "తోబుట్టువు",
+      "relative": "బంధువు"
+    },
+    "relation": {
+      "mother": "అమ్మ",
+      "father": "నాన్న",
+      "brother": "అన్న/తమ్ముడు",
+      "sister": "అక్క/చెల్లెలు",
+      "guardian": "సంరక్షకులు",
+      "grandmother": "నానమ్మ/అమ్మమ్మ",
+      "grandfather": "తాతయ్య",
+      "paternal_uncle": "బాబాయి/పెదనాన్న",
+      "maternal_uncle": "మావయ్య",
+      "paternal_aunt": "అత్త",
+      "maternal_aunt": "పిన్ని/పెద్దమ్మ",
+      "cousin": "కజిన్",
+      "brother_in_law": "బావ/బావమరిది",
+      "sister_in_law": "వదిన/మరదలు",
+      "family_friend": "కుటుంబ స్నేహితులు"
+    }
+  },
+  "shelf": {
+    "reason": {
+      "sharedHobbies": "మీ ఇద్దరికీ {list} ఇష్టం",
+      "sameTongue": "వారు కూడా {value} మాట్లాడతారు",
+      "sameCommunity": "వారు కూడా {value}",
+      "sameNative": "కుటుంబం కూడా {place} నుండి",
+      "sameDiet": "వారు కూడా {value}",
+      "sameCity": "మీలాగే {city}లో",
+      "openToMove": "{city}లో · మారడానికి సిద్ధం",
+      "suggestedBy": "మీ {relation} సూచించారు",
+      "sameFamilyView": "వారు కూడా కుటుంబం {value} ఉండాలనుకుంటారు",
+      "joined": "{days} రోజుల క్రితం చేరారు",
+      "joinedToday": "ఈరోజు చేరారు",
+      "joinedYesterday": "నిన్న చేరారు",
+      "suggestedByYou": "మీరు సూచించారు",
+      "mutualFit": "మీరిద్దరూ ఒకరి ఇష్టాలకు మరొకరు సరిపోతారు",
+      "wantsYourCity": "వారు కూడా {city}లో ఉన్నవారిని కోరుకుంటున్నారు",
+      "wantsYourAge": "మీ వయసు వారిని కోరుకుంటున్నారు"
+    },
+    "reasonFor": {
+      "sharedHobbies": "{name} లాగే {list} ఇష్టం",
+      "sameTongue": "{name} లాగే {value} మాట్లాడతారు",
+      "sameCommunity": "{name} లాగే {value}",
+      "sameNative": "కుటుంబం కూడా {place} నుండి",
+      "sameDiet": "{name} లాగే {value}",
+      "sameCity": "{name} లాగే {city}లో",
+      "suggestedBy": "{name} {relation} సూచించారు",
+      "suggestedByYou": "మీరు సూచించారు",
+      "sameFamilyView": "వారు కూడా కుటుంబం {value} ఉండాలనుకుంటారు",
+      "mutualFit": "{name}, వారు ఒకరి ఇష్టాలకు మరొకరు సరిపోతారు",
+      "wantsYourCity": "{name} ఉన్న {city}లో ఉన్నవారిని కోరుకుంటున్నారు",
+      "wantsYourAge": "{name} వయసు వారిని కోరుకుంటున్నారు"
+    }
+  },
+  "error": {
+    "lookingForMissing": "సంబంధాలు చూడటానికి మీరు వధువు కోసం వెతుకుతున్నారా లేదా వరుడి కోసమా చెప్పండి."
+  }
+}

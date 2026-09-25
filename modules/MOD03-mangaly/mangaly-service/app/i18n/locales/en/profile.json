@@ -8,6 +8,8 @@
     "photoLimit": "You can add up to {max} photos. Remove one to add another.",
     "lastPhoto": "Your profile needs at least one photo — add another before removing this one.",
     "photoOrder": "Your photos changed while you were reordering. Refresh and try again.",
-    "unsupportedRecording": "That recording is not a supported audio file, or it is too long."
+    "unsupportedRecording": "That recording is not a supported audio file, or it is too long.",
+    "childAlreadyJoined": "That number is already on ForKhatri. Ask to join their Home Circle instead — the profile is theirs to make.",
+    "childPhone": "Enter their 10-digit mobile number."
   }
 }

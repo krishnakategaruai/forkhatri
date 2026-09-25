@@ -205,3 +205,35 @@ def _error_code(response: httpx.Response) -> str | None:
         code = detail.get("code")
         return str(code) if code else None
     return None
+
+
+class MemberExists(Exception):
+    """The number already belongs to a ForKhatri member."""
+
+
+class InvalidPhone(Exception):
+    """The platform did not accept the number as a mobile number."""
+
+
+async def provision_member(*, phone: str, display_name: str, preferred_language: str) -> tuple[UUID, str]:
+    """[DEC-V1-019] Ask the Identity & Trust Service to create a member for a
+    son or daughter who has not joined yet. Their number is the key: when they
+    sign in with an OTP to it, they land on this same member.
+
+    Raises `MemberExists`, `InvalidPhone` or `PlatformIdentityUnavailable`."""
+    try:
+        response = await _get_client().post(
+            "/internal/v1/members/provision",
+            json={"phone": phone, "display_name": display_name, "preferred_language": preferred_language},
+        )
+    except httpx.HTTPError as exc:
+        raise PlatformIdentityUnavailable from exc
+    if response.status_code == 409:
+        raise MemberExists
+    if response.status_code == 422:
+        raise InvalidPhone
+    if response.status_code != 201:
+        logger.warning("member provisioning answered %s", response.status_code)
+        raise PlatformIdentityUnavailable
+    body = response.json()
+    return UUID(body["member_id"]), body["phone_e164"]

@@ -48,7 +48,7 @@ export function setPreferredLanguage(lang: Language): void {
   // Best-effort sync to the member's own row — the backend is the source
   // of truth for the next device/session; localStorage is the same-device
   // fast path. Failure here must never block the visible language switch.
-  import("@/lib/api").then(({ api }) => {
-    api.patch("/v1/members/me/language", { language: lang }).catch(() => {});
+  import("@/lib/sdk/default").then(({ defaultSdk }) => {
+    defaultSdk.members.setLanguage(lang).catch(() => {});
   });
 }

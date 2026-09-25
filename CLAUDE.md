@@ -33,7 +33,7 @@ Switching person takes one tap and no password:
 - **Personas:**
   - `asha`: data in Mangaly and Milavn.
   - `new-member`: no module data at seed time.
-  - `mangaly-family`: Vikram Rao.
+  - `mangaly-family`: Vikram Rao, father in his daughter Kavya Rao's Home Circle (Kavya: Hyderabad architect, looking for a groom).
   - `mangaly-parent`: Lakshmi Reddy, Ananya Reddy's mother, not a candidate.
   - `milavn-moderator`.
   - `krishna`: the product owner's account, for people only, never automated tests.

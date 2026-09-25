@@ -6,6 +6,14 @@
     "contact": "Contact",
     "register": "Register"
   },
+  "type": {
+    "employment": "Employment",
+    "freelance": "Freelance",
+    "local_service": "Local service",
+    "partnership": "Partnership",
+    "training": "Training",
+    "community": "Community"
+  },
   "error": {
     "untitled": "Untitled opportunity",
     "sourceRequired": "Tell us where you found it — a source name or link is required.",

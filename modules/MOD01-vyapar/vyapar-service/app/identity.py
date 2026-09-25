@@ -1,152 +1,118 @@
-# [TR050] Identity Bridge: platform session resolve, fail-closed, member-link
-# (FR50). Vyapar never signs a member up, logs them in, or issues a session —
-# authentication is 100% owned by the parent ForKhatri platform. This module
-# only resolves "who is calling" from whatever the platform already
-# authenticated, then upserts the thin member-link row every other schema's
-# owner_id/member_id column points at.
-# Approach: two code paths behind one function, selected by DEV_MODE — (1)
-# dev stub: trust the X-Dev-Member-Id header (clearly dev-only; a future
-# integrator replaces this branch with the real fk_session-cookie read), (2)
-# real path: resolve against IDENTITY_SERVICE_INTERNAL_URL and fail CLOSED
-# (503) on any non-2xx/timeout — never a default-member fallback, per
-# TR050's structural-absence requirement. Both paths converge on the same
-# ensure_member() SECURITY DEFINER upsert (idempotent, closes IA050's
-# duplicate-row risk) before returning, so downstream code never has to
-# special-case which path resolved the caller.
-# Traces to: FR50, TR050, SP050 (IdentityBridge-CC)
+# [TR050] Identity Bridge — the single choke point that turns "whatever the
+# caller presented" into an AuthzContext (FR50). Vyapar never signs a member
+# up, logs them in, or issues a session: authentication belongs to the host
+# platform (or, for agents, to a personal access token the member created).
+#
+# [IMP37 — Refactor B] How the caller is recognised is no longer written
+# here. It is delegated to the IdentityProvider adapters in
+# app/integrations/identity/ (dev header, ForKhatri session, bearer token),
+# chosen by IDENTITY_PROVIDERS. What stays here, unchanged for every router:
+#   * the signature of resolve_authz_context(request, X-Dev-Member-Id);
+#   * AuthzContext(member_id, is_operator) — now also recording HOW the
+#     caller authenticated (auth_method), the token's scopes and its id;
+#   * the operator lookup under the resolved member's RLS context.
+# New here:
+#   * the default-deny scope policy for access tokens (scopes.py) — applied
+#     before any route code runs, so no route can forget it;
+#   * a token never carries operator powers, even a token an operator made;
+#   * require_scope("...") for routes/services that want an explicit check.
+# Traces to: FR50, TR050, SP050 (IdentityBridge-CC), REFACTOR-PLAN.md §B
 from __future__ import annotations
 
-import asyncio
-import json
-import time
-import urllib.error
-import urllib.request
 from dataclasses import dataclass
 
-from fastapi import Header, HTTPException, Request
+from fastapi import Depends, Header, Request
 
-from app.config import get_settings
-
-# [TR050] ≤30s positive / ≤5s negative in-process cache for the real resolve
-# path — avoids hammering Identity & Trust on every request without risking
-# a stale-forever session.
-_resolve_cache: dict[str, tuple[float, str | None]] = {}
+from app.integrations.errors import fail, request_language
+from app.integrations.identity import AUTH_ACCESS_TOKEN, AUTH_MEMBER_SESSION, authenticate
+from app.integrations.identity.scopes import DENY, required_scopes
 
 
 @dataclass(frozen=True)
 class AuthzContext:
     member_id: str
     is_operator: bool = False
+    # How the caller authenticated: "member_session", "dev_header" or
+    # "access_token". Defaults keep every existing AuthzContext(...) call valid.
+    auth_method: str = AUTH_MEMBER_SESSION
+    # None for member sessions (they implicitly hold every scope).
+    scopes: frozenset[str] | None = None
+    # The access token's id when auth_method == "access_token" — the audit
+    # trail records it for every write the token makes.
+    credential_id: str | None = None
+
+    @property
+    def is_token(self) -> bool:
+        return self.auth_method == AUTH_ACCESS_TOKEN
+
+    def has_scope(self, scope: str) -> bool:
+        return self.scopes is None or scope in self.scopes
 
 
-async def _ensure_member_row(member_id: str, display_name: str, phone: str | None, language: str) -> None:
-    """[TR050/IA050] Runs BEFORE vyapar.authz_context is meaningful for a
-    brand-new member — calls the SECURITY DEFINER pre-authorization escape
-    hatch documented in 07a-db-implementation/README.md, never a plain
-    INSERT from this service (which would be blocked by RLS for a new row
-    with no context set yet)."""
-    from app.db import get_pool
-
-    pool = get_pool()
-    async with pool.acquire() as conn:
-        await conn.execute(
-            "SELECT vyapar_identity.ensure_member($1, $2, $3, $4)",
-            member_id,
-            display_name,
-            phone,
-            language,
-        )
-
-
-async def _resolve_dev_stub(request: Request, x_dev_member_id: str | None) -> str:
-    """[Dev-only stand-in for the platform's real fk_session cookie/session.
-    NOT authentication — selects which already-seeded member the request
-    acts as, for local development and manual QA only. A future integrator
-    replaces this whole branch with a real fk_session cookie read + the
-    resolve() call in _resolve_real below.]"""
-    settings = get_settings()
-    member_id = x_dev_member_id or request.cookies.get("vyapar_dev_member_id") or settings.dev_default_member_id
-    await _ensure_member_row(member_id, member_id, None, "en")
-    return member_id
-
-
-async def _resolve_real(request: Request) -> str:
-    """[TR050] Real platform resolve path — reads fk_session cookie, calls
-    POST /internal/v1/sessions/resolve, fails closed on any failure."""
-    settings = get_settings()
-    cookie = request.cookies.get("fk_session")
-    if not cookie:
-        raise HTTPException(status_code=401, detail="No ForKhatri session — redirect to entrance")
-
-    now = time.time()
-    cached = _resolve_cache.get(cookie)
-    if cached is not None:
-        cached_at, cached_member_id = cached
-        window = (
-            settings.identity_resolve_cache_seconds
-            if cached_member_id
-            else settings.identity_resolve_negative_cache_seconds
-        )
-        if now - cached_at < window:
-            if cached_member_id is None:
-                raise HTTPException(status_code=401, detail="Session invalid (cached negative)")
-            return cached_member_id
-
-    def _do_request() -> tuple[int, dict]:
-        # Stdlib-only (urllib), not a third-party HTTP client — this path is
-        # inert until a real IDENTITY_SERVICE_INTERNAL_URL replaces the
-        # CHANGE_ME placeholder, and avoids adding a new pip dependency
-        # (e.g. httpx) that would otherwise need its own Step 8 supplementary
-        # security pass for a code path nothing in dev exercises.
-        req = urllib.request.Request(
-            f"{settings.identity_service_internal_url}/internal/v1/sessions/resolve",
-            data=json.dumps({"session_cookie": cookie}).encode(),
-            headers={"X-Service-Key": settings.identity_service_key, "Content-Type": "application/json"},
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=2.0) as resp:
-            return resp.status, json.loads(resp.read())
-
-    try:
-        status, body = await asyncio.wait_for(asyncio.to_thread(_do_request), timeout=2.0)
-    except (urllib.error.URLError, asyncio.TimeoutError, TimeoutError, ValueError):
-        # [TR050] Fail CLOSED — never a default/local member fallback.
-        raise HTTPException(status_code=503, detail="Identity & Trust unavailable")
-
-    if status != 200:
-        _resolve_cache[cookie] = (now, None)
-        raise HTTPException(status_code=401, detail="Session invalid")
-
-    member_id = body["member_id"]
-    _resolve_cache[cookie] = (now, member_id)
-    await _ensure_member_row(
-        member_id, body.get("display_name", member_id), body.get("phone"), body.get("language", "en")
-    )
-    return member_id
+def _enforce_token_policy(request: Request, ctx: AuthzContext) -> None:
+    lang = request_language(request)
+    needed = required_scopes(request.method, request.url.path)
+    if needed == DENY:
+        raise fail(403, "not_available_to_tokens", lang)
+    if not any(ctx.has_scope(s) for s in needed):
+        raise fail(403, "scope_required", lang, scope=" | ".join(needed))
 
 
 async def resolve_authz_context(
     request: Request,
     x_dev_member_id: str | None = Header(default=None, alias="X-Dev-Member-Id"),
 ) -> AuthzContext:
-    settings = get_settings()
-    if settings.dev_mode:
-        member_id = await _resolve_dev_stub(request, x_dev_member_id)
+    # x_dev_member_id stays in the signature so the header keeps appearing in
+    # the OpenAPI document; DevHeaderProvider reads it from the request.
+    identity = await authenticate(request)
+
+    if identity.auth_method == AUTH_ACCESS_TOKEN:
+        ctx = AuthzContext(
+            member_id=identity.member_id,
+            is_operator=False,
+            auth_method=identity.auth_method,
+            scopes=identity.scopes,
+            credential_id=identity.credential_id,
+        )
+        # Set before the policy check so a refused write is audited too.
+        request.state.vyapar_authz = ctx
+        _enforce_token_policy(request, ctx)
     else:
-        member_id = await _resolve_real(request)
+        from app.db import get_pool
 
-    from app.db import get_pool
+        async with get_pool().acquire() as conn:
+            # set_config(..., true) is transaction-scoped (SET LOCAL-equivalent)
+            # — set AND read inside one transaction, or the RLS-scoped read
+            # below would not see this member's row.
+            async with conn.transaction():
+                await conn.execute("SELECT set_config('vyapar.authz_context', $1, true)", identity.member_id)
+                row = await conn.fetchrow(
+                    "SELECT is_operator FROM vyapar_identity.members WHERE id = $1", identity.member_id
+                )
+        ctx = AuthzContext(
+            member_id=identity.member_id,
+            is_operator=bool(row["is_operator"]) if row else False,
+            auth_method=identity.auth_method,
+        )
 
-    pool = get_pool()
-    async with pool.acquire() as conn:
-        # set_config(..., true) is transaction-scoped (SET LOCAL-equivalent)
-        # — it must be set AND read inside the same transaction, or asyncpg's
-        # implicit per-statement auto-transaction resets it before the next
-        # bare statement runs. Wrapping both in one conn.transaction() here
-        # is what actually makes the RLS-scoped read below see this row.
-        async with conn.transaction():
-            await conn.execute("SELECT set_config('vyapar.authz_context', $1, true)", member_id)
-            row = await conn.fetchrow(
-                "SELECT is_operator FROM vyapar_identity.members WHERE id = $1", member_id
-            )
-    return AuthzContext(member_id=member_id, is_operator=bool(row["is_operator"]) if row else False)
+    # Read by the integration middleware (per-token write audit).
+    request.state.vyapar_authz = ctx
+    return ctx
+
+
+def require_scope(scope: str):
+    """FastAPI dependency: `ctx: AuthzContext = Depends(require_scope("listings:write"))`.
+    Member sessions pass; access tokens must hold the scope."""
+
+    async def _dependency(request: Request, ctx: AuthzContext = Depends(resolve_authz_context)) -> AuthzContext:
+        if not ctx.has_scope(scope):
+            raise fail(403, "scope_required", request_language(request), scope=scope)
+        return ctx
+
+    return _dependency
+
+
+def require_member_session(request: Request, ctx: AuthzContext) -> None:
+    """Refuses access tokens outright (credential management, for example)."""
+    if ctx.is_token:
+        raise fail(403, "member_session_required", request_language(request))

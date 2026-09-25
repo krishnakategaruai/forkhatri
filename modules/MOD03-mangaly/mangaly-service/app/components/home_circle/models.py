@@ -64,6 +64,30 @@ class RelationshipType(StrEnum):
     PARENT = "parent"
     SIBLING = "sibling"
     RELATIVE = "relative"
+    # [Migration 030, DEC-V1-022] A guardian stands in for a parent.
+    GUARDIAN = "guardian"
+
+
+# [Migration 040] The EXACT relation of a member to the candidate, and the
+# role it belongs to. The role groups the circle (Home / Relatives) and is what
+# every check reads; the relation is what the family actually calls each other.
+RELATION_ROLE: dict[str, RelationshipType] = {
+    "mother": RelationshipType.PARENT,
+    "father": RelationshipType.PARENT,
+    "guardian": RelationshipType.GUARDIAN,
+    "brother": RelationshipType.SIBLING,
+    "sister": RelationshipType.SIBLING,
+    "grandmother": RelationshipType.RELATIVE,
+    "grandfather": RelationshipType.RELATIVE,
+    "paternal_uncle": RelationshipType.RELATIVE,
+    "maternal_uncle": RelationshipType.RELATIVE,
+    "paternal_aunt": RelationshipType.RELATIVE,
+    "maternal_aunt": RelationshipType.RELATIVE,
+    "cousin": RelationshipType.RELATIVE,
+    "brother_in_law": RelationshipType.RELATIVE,
+    "sister_in_law": RelationshipType.RELATIVE,
+    "family_friend": RelationshipType.RELATIVE,
+}
 
 
 class Invitation(Base):
@@ -100,6 +124,9 @@ class Invitation(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=text("now()"))
     updated_at: Mapped[datetime] = mapped_column(server_default=text("now()"))
     expires_at: Mapped[datetime | None] = mapped_column(default=None)
+    # [Migration 030] `to_member`: join the candidate's circle (default);
+    # `to_candidate`: the inviter asks a candidate to let them join THEIR circle.
+    direction: Mapped[str] = mapped_column(default="to_member")
 
 
 class Membership(Base):

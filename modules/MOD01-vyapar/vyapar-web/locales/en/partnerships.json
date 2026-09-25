@@ -18,7 +18,10 @@
     "send": "Send request",
     "needListing": "Create a listing first to propose partnerships.",
     "createListing": "Create listing",
-    "viewPending": "View pending requests"
+    "viewPending": "View pending requests",
+    "previewCaption": "What {{name}} will see",
+    "guide1": "Be specific about what each side brings.",
+    "guide2": "Contact details are shared only if they accept."
   },
   "detail": {
     "title": "Partnership request",

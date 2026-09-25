@@ -14,7 +14,9 @@
     "discover": "Discover",
     "circle": "Circle",
     "messages": "Messages",
-    "me": "Me"
+    "me": "Me",
+    "menu": "Menu",
+    "closeMenu": "Close menu"
   },
   "language": {
     "en": "English",
@@ -39,7 +41,8 @@
     "continue": "Continue",
     "retry": "Try again",
     "logOut": "Log out",
-    "showLess": "Show less"
+    "showLess": "Show less",
+    "close": "Close"
   },
   "state": {
     "loading": "Loading…",
@@ -74,5 +77,42 @@
     "role": "You're in this circle as: {{relationship}}",
     "nowViewing": "Now viewing {{name}}'s search",
     "nowViewingSelf": "Now viewing your own search"
+  },
+  "account": {
+    "menu": "Account: {{name}}",
+    "signedIn": "Signed in to ForKhatri",
+    "roles": "You are here as",
+    "candidateRole": "Candidate · looking for {{lookingFor}}",
+    "helperRole": "{{relationship}} of {{name}}",
+    "noRole": "Not in any search yet",
+    "myProfile": "My profile",
+    "createProfile": "Create my own profile",
+    "homeCircle": "Home Circle",
+    "signOut": "Sign out",
+    "fillIn": "Fill in {{name}}'s profile",
+    "createForChild": "Create a profile for my son or daughter"
+  },
+  "requestPrompt": {
+    "forYou": "A request for you",
+    "forCandidate": "A request for {{name}}",
+    "title": "{{name}} would like to connect",
+    "someone": "A new match",
+    "sentBy": "Sent by {{name}}, their {{relation}}",
+    "noteSelf": "Accepting opens both profiles to each other. Your parents can also answer this — whoever answers first answers for the family.",
+    "noteSelfAlone": "Accepting opens both profiles to each other.",
+    "noteFamily": "{{name}} and {{name}}'s parents all see this request. Whoever answers first answers for the family — accepting opens both profiles.",
+    "view": "View profile",
+    "notNow": "Not now",
+    "decline": "Decline",
+    "accept": "Accept",
+    "accepted": "Accepted. You can now see each other's full profiles.",
+    "acceptedFor": "Accepted for {{name}}. Both families can now see the full profiles.",
+    "more_one": "{{count}} more request waiting",
+    "more_other": "{{count}} more requests waiting"
+  },
+  "splash": {
+    "blessing": "Two families. One auspicious beginning.",
+    "art": "Seeta and Rama at their wedding",
+    "skip": "Skip"
   }
 }

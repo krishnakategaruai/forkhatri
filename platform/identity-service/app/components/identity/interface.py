@@ -341,6 +341,74 @@ async def password_sign_in(
     return await _open_session(db, settings, member, "password", user_agent)
 
 
+async def retire_provisioned_member(db: AsyncSession, member_id: UUID) -> bool:
+    """Remove a member that was only ever provisioned for someone and never
+    used — identity level 0, no password, never signed in. Anyone who has used
+    their account is never touched. Returns whether it was removed."""
+    result = await db.execute(
+        text(
+            "DELETE FROM identity.member m WHERE m.id = :id AND m.identity_level = 0 "
+            "AND NOT EXISTS (SELECT 1 FROM identity.password_credential c WHERE c.member_id = m.id) "
+            "AND NOT EXISTS (SELECT 1 FROM identity.session s WHERE s.member_id = m.id)"
+        ),
+        {"id": member_id},
+    )
+    return result.rowcount == 1
+
+
+class MemberExists(Exception):
+    """The identifier already belongs to a member: never provisioned over."""
+
+
+async def provision_member(
+    db: AsyncSession, *, raw_phone: str, display_name: str, preferred_language: str
+) -> tuple[UUID, str]:
+    """Create a member for someone who has not joined yet, at a module's request.
+
+    Mangaly's case (DEC-V1-019): a parent creates a matrimony profile for their
+    son or daughter, the way Shaadi.com's "profile for: son / daughter" works.
+    The member is created with the child's mobile number and identity level 0
+    (the number is not proven); no credential, no session. When the child signs
+    in with an OTP to that number, `verify_code` finds this member and signs them
+    in — so the profile is theirs with nothing to move.
+
+    Refuses an identifier that already belongs to a member (`MemberExists`):
+    provisioning must never attach anything to an existing person's account."""
+    identifier = normalize(raw_phone)
+    if identifier.kind != "phone":
+        raise InvalidIdentifier("Enter a valid mobile number.")
+    existing = await _member_by_identifier(db, identifier.value)
+    if existing is not None:
+        # A member this same flow provisioned earlier, who has never signed in
+        # and has no password, is handed back rather than refused: otherwise a
+        # module that failed after provisioning could never retry. Anyone who
+        # has ever used their account is refused, always.
+        untouched = (
+            await db.execute(
+                text(
+                    "SELECT m.identity_level = 0 "
+                    "AND NOT EXISTS (SELECT 1 FROM identity.password_credential c WHERE c.member_id = m.id) "
+                    "AND NOT EXISTS (SELECT 1 FROM identity.session s WHERE s.member_id = m.id) "
+                    "FROM identity.member m WHERE m.id = :id"
+                ),
+                {"id": existing.member_id},
+            )
+        ).scalar_one()
+        if not untouched:
+            raise MemberExists
+        return existing.member_id, identifier.value
+    row = (
+        await db.execute(
+            text(
+                "INSERT INTO identity.member (display_name, phone_e164, preferred_language, identity_level) "
+                "VALUES (:name, :phone, :language, 0) RETURNING id"
+            ),
+            {"name": display_name.strip()[:80], "phone": identifier.value, "language": preferred_language},
+        )
+    ).first()
+    return row.id, identifier.value
+
+
 async def members_by_id(db: AsyncSession, member_ids: list[UUID]) -> dict[UUID, Member]:
     """Active members among `member_ids` (unknown or inactive ids are omitted)."""
     if not member_ids:

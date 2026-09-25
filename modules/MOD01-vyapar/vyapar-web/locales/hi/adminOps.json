@@ -42,6 +42,15 @@
     "done": "{{n}} आइटम अपडेट किए गए।"
   },
   "taxonomy": {
-    "title": "वर्गीकरण"
+    "title": "वर्गीकरण",
+    "kind": {
+      "category": "श्रेणी",
+      "capability": "क्षमता"
+    },
+    "status": {
+      "active": "सक्रिय",
+      "unmapped": "अनमैप्ड",
+      "merged": "मर्ज किया गया"
+    }
   }
 }

@@ -63,8 +63,18 @@ class Settings(BaseSettings):
     rate_limit_home_circle_invite_max: int = 20
     # SP042's flagged gap: "tens per day, not hundreds per hour" — 30/day.
     rate_limit_connection_request_max_per_day: int = 30
+    # [Owner, 2026-09-25] After a DECLINE the declined side waits this long to
+    # ask the same person again, and does not see them in Discover meanwhile.
+    request_cooldown_after_decline_days: int = 90
+    # After WITHDRAWING a pending request, the sender waits this long to
+    # re-send (LinkedIn's re-invite norm). The decliner is never blocked.
+    request_cooldown_after_withdraw_days: int = 21
     # SP049's flagged gap: generous enough not to impede real conversation.
     rate_limit_message_send_max_per_hour: int = 120
+    # [DEC-V1-028] Report/block volume bounds: a report is cheap to file and
+    # each one opens a human-reviewed case, so the queue needs a ceiling.
+    rate_limit_report_max_per_day: int = 20
+    rate_limit_block_max_per_day: int = 50
     # [DEC-V1-014, 2026-09-14] FR050 requires "no permanent, conventional
     # chat history" but explicitly leaves the exact window open pending
     # technical/legal design (its own Confidence note). 30 days is a
@@ -92,6 +102,11 @@ class Settings(BaseSettings):
     pagerduty_events_api_url: str = "https://events.pagerduty.com/v2/enqueue"
     pagerduty_routing_key: str = "CHANGE_ME_tier3_4_integration_routing_key"
     pagerduty_escalation_policy_id: str = "CHANGE_ME"
+
+    # --- CSAM reporting channel (DEC-V1-009/DEC-V1-011, POCSO Rule 11) --------
+    csam_report_endpoint: str = "https://cybercrime.gov.in/CHANGE_ME_actual_intake_endpoint"
+    csam_report_api_key: str = "CHANGE_ME"
+    csam_report_fallback_mode: str = "manual_portal_submission"
 
     # --- Retention (DEC-V1-010) ----------------------------------------------
     retention_post_deletion_grace_days: int = 30
@@ -135,6 +150,11 @@ class Settings(BaseSettings):
     cors_allowed_origins: list[str] = Field(
         default_factory=lambda: ["http://localhost:3000", "http://127.0.0.1:3000"]
     )
+    # Development only: lets `p1.localhost:3000`, `c2.localhost:3000` … each be
+    # a separate origin with its own session cookie, so several family members
+    # can be signed in side by side as tabs of ONE Chrome window (cookies are
+    # per host). Unset (None) everywhere but a developer's `.env`.
+    cors_allowed_origin_regex: str | None = None
 
     # --- ForKhatri platform identity (docs/ParentApp/07-tech-reqs.md TR14-TR16, TR24)
     # [2026-09-14] Sign-in belongs to the ForKhatri Identity & Trust Service.
@@ -151,6 +171,13 @@ class Settings(BaseSettings):
     # login, OTP, reset) is retired. Off by default; only automated tests or
     # an explicit development override may turn it back on.
     interim_identity_enabled: bool = False
+
+    # --- Payments (DEC-V1-031) -------------------------------------------------
+    # Razorpay keys are the vendor blocker: with all three at CHANGE_ME the
+    # DevSandboxGateway is used and no money moves (components/billing/gateway.py).
+    razorpay_key_id: str = "CHANGE_ME"
+    razorpay_key_secret: str = "CHANGE_ME"
+    razorpay_webhook_secret: str = "CHANGE_ME"
 
     api_debug: bool = Field(default=False)
 

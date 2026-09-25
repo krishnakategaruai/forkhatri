@@ -11,7 +11,12 @@
     "sectionNearYou": "Near You",
     "sectionCommunity": "Community",
     "sectionPublic": "Public",
-    "seeAll": "See all {{count}}"
+    "seeAll": "See all {{count}}",
+    "emptyBody": "Nothing has been posted that matches you yet. Post what you need, and people in your community will see it.",
+    "emptyAction": "Post something"
+  },
+  "enrichment": {
+    "sparseProfile": "Add your capabilities to get better matches — we can't personalize your feed much yet."
   },
   "card": {
     "postedToday": "posted today",
@@ -34,7 +39,34 @@
     "broadenIncludeUnverified": "Include unverified listings",
     "tooManySearches": "Too many searches — please slow down.",
     "searchUnavailable": "Search is temporarily unavailable — showing recently added listings instead.",
-    "recentlyAdded": "recently added"
+    "recentlyAdded": "recently added",
+    "filters": "Filters",
+    "filtersActive": "Filters ({{count}})",
+    "radius": "Distance",
+    "radiusAny": "Any distance",
+    "radiusKm": "Within {{km}} km",
+    "serviceMode": "Service mode",
+    "serviceModeAny": "Any",
+    "serviceModeOnSite": "On-site",
+    "serviceModeRemote": "Remote",
+    "serviceModeBoth": "On-site or remote",
+    "availability": "Availability",
+    "availabilityAny": "Any",
+    "availabilityNow": "Available now",
+    "availabilityThisWeek": "This week",
+    "availabilityLater": "Later",
+    "verifiedOnly": "Verified only",
+    "sortBy": "Sort by",
+    "sortRelevance": "Relevance",
+    "sortDistance": "Distance",
+    "sortFreshness": "Newest",
+    "sortVerifiedFirst": "Verified first",
+    "skills": "Skills",
+    "skillsSearchPlaceholder": "Search skills",
+    "clearFilters": "Clear filters",
+    "applyFilters": "Apply",
+    "distanceAway": "{{km}} km away",
+    "resultsCount": "{{count}} results"
   },
   "post": {
     "title": "What are you posting?",
@@ -42,5 +74,18 @@
     "listingDesc": "A durable presence people can find and contact.",
     "opportunityTitle": "An opportunity",
     "opportunityDesc": "A job, gig, or something time-bound worth sharing."
+  },
+  "profiles": {
+    "similarTitle": "Similar profiles",
+    "matchingTitle": "Profiles that match this",
+    "matchingHelp": "People and businesses on Vyapar who already have the skills you asked for.",
+    "hasSkills": "Has {{skills}}",
+    "availableNow": "Available now",
+    "experience_one": "{{count}} year of experience",
+    "experience_other": "{{count}} years of experience",
+    "kind": {
+      "business": "Business",
+      "professional": "Professional"
+    }
   }
 }

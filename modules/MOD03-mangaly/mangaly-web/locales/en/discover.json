@@ -70,6 +70,173 @@
     "education": "Education",
     "diet": "Lifestyle",
     "reset": "Reset",
-    "apply": "Show matches"
+    "apply": "Show matches",
+    "min": "Min",
+    "max": "Max",
+    "height": "Height",
+    "city": "City",
+    "cityPlaceholder": "A city, e.g. Chennai",
+    "group": {
+      "basics": "Basics",
+      "community": "Community",
+      "work": "Education & work"
+    },
+    "applyCount_one": "Show {{count}} match",
+    "applyCount_other": "Show {{count}} matches"
+  },
+  "verified": {
+    "title": "Verified",
+    "none": "No verification yet",
+    "layer": {
+      "community_verification": "Community confirmed",
+      "profile_facts": "Photos confirmed as their own",
+      "home_circle_relationship": "Family link",
+      "account_authenticity": "Phone number"
+    },
+    "on": "{{label}} · {{date}}",
+    "note": "Verification confirms a fact. It does not vouch for character or intentions."
+  },
+  "forSelf": "Matches for you",
+  "forFamily": "Matches for {{name}}",
+  "searchPlaceholder": "Search",
+  "tabs": {
+    "forYou": "For you",
+    "all": "All matches",
+    "saved": "Saved"
+  },
+  "count": {
+    "forYou_one": "{{count}} match",
+    "forYou_other": "{{count}} matches",
+    "new_one": "{{count}} new match",
+    "new_other": "{{count}} new matches",
+    "near_one": "{{count}} match near you",
+    "near_other": "{{count}} matches near you",
+    "saved_one": "{{count}} saved",
+    "saved_other": "{{count}} saved",
+    "all_one": "{{count}} match",
+    "all_other": "{{count}} matches"
+  },
+  "chips": {
+    "age": "Age {{min}}–{{max}}",
+    "height": "{{min}}–{{max}} cm",
+    "remove": "Remove filter",
+    "clearAll": "Clear all"
+  },
+  "tile": {
+    "photos": "{{count}} photos",
+    "save": "Save",
+    "unsave": "Saved — remove",
+    "state": {
+      "pending": "Request sent",
+      "accepted": "Connected",
+      "declined": "They said not now"
+    }
+  },
+  "empty": {
+    "forYou": {
+      "title": "No one matches these settings yet",
+      "body": "Try fewer filters, or check back — new people join every week."
+    },
+    "new": {
+      "title": "No new matches yet",
+      "body": "People who join and match will appear here first."
+    },
+    "near": {
+      "title": "No matches in this city yet",
+      "body": "Widen to the whole state, or include people open to relocating."
+    },
+    "saved": {
+      "title": "Nothing saved yet",
+      "body": "Tap the bookmark on any photo to keep someone here to come back to."
+    }
+  },
+  "lookingForLine": "looking for {{value}}",
+  "shelf": {
+    "seeAll": "See all",
+    "mostCompatible": {
+      "title": "Most compatible today",
+      "sub": "One person, chosen because you fit each other's preferences, refreshed every day",
+      "titleFor": "Most compatible today for {{name}}",
+      "subFor": "One person, chosen because {{name}} and they fit each other's preferences, refreshed every day"
+    },
+    "picked": {
+      "title": "Picked for you",
+      "sub": "Where your preferences and theirs agree — never by popularity",
+      "titleFor": "Best matches for {{name}}",
+      "subFor": "Where {{name}}'s preferences and theirs agree — never by popularity"
+    },
+    "family": {
+      "title": "Suggested by your family",
+      "sub": "Your circle’s picks. Nothing was sent to anyone.",
+      "titleFor": "Your family's picks for {{name}}",
+      "subFor": "Profiles someone in {{name}}'s circle recommended. Nothing was sent to them."
+    },
+    "near": {
+      "title": "Close to home",
+      "sub": "In your city",
+      "titleFor": "Close to {{name}}'s home",
+      "subFor": "In {{name}}'s city"
+    },
+    "moving": {
+      "title": "Would move for the right person",
+      "sub": "Other cities, open to relocating",
+      "titleFor": "Would move for the right person",
+      "subFor": "Other cities, open to moving to {{name}}'s"
+    },
+    "roots": {
+      "title": "Same roots",
+      "sub": "Mother tongue, community or native place in common",
+      "titleFor": "Same roots as {{name}}",
+      "subFor": "Mother tongue, community or native place in common"
+    },
+    "life": {
+      "title": "Shares your way of life",
+      "sub": "Interests or food in common",
+      "titleFor": "Shares {{name}}'s way of life",
+      "subFor": "Interests or food in common"
+    },
+    "familyView": {
+      "title": "Sees family life the way you do",
+      "sub": "The same answer on how involved family should be",
+      "titleFor": "Sees family life the way {{name}} does",
+      "subFor": "The same answer on how involved family should be"
+    },
+    "words": {
+      "title": "In their own words",
+      "sub": "Answers they chose to share openly",
+      "titleFor": "In their own words",
+      "subFor": "Answers they chose to share openly"
+    },
+    "new": {
+      "title": "New this month",
+      "sub": "Joined recently and match your preferences",
+      "titleFor": "New this month",
+      "subFor": "Joined recently and match {{name}}'s preferences"
+    },
+    "more": {
+      "title": "More matches",
+      "sub": "Everyone else who matches your preferences",
+      "titleFor": "More matches",
+      "subFor": "Everyone else who matches {{name}}'s preferences"
+    },
+    "familyFor": {
+      "title": "Suggested by {{name}}’s family",
+      "sub": "Picks from {{name}}’s circle. Nothing was sent to anyone."
+    }
+  },
+  "searchLabel": "Search by city, job or college",
+  "lens": {
+    "everyone": "Everyone",
+    "mostCompatible": "Top match",
+    "picked": "Picked for you",
+    "family": "Family picks",
+    "near": "Near you",
+    "moving": "Open to move",
+    "roots": "Same roots",
+    "life": "Same way of life",
+    "familyView": "Same family values",
+    "words": "In their words",
+    "new": "New",
+    "more": "More"
   }
 }

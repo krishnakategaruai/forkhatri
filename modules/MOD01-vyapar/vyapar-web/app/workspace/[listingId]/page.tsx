@@ -17,11 +17,19 @@
 //   open any campaign's own screen.
 // The API decides every permission; this screen only renders what the
 // Authorization Engine reported in `capabilities`.
+// [IMP39 — desktop layout] At ≥900px the workspace reads as a dashboard:
+// a facts strip (your role, plan, team size, campaigns — all from this
+// response), then the sections in a two-column grid. With no plan yet, the
+// plan chooser spans the width with the choices on the left and the full
+// disclosure (or, before a choice, what a plan includes and never
+// includes) on the right. Below 900px the strip is hidden and every wrapper
+// is display:contents — the phone screen is unchanged.
 // Traces to: FR33, FR34, FR35, FR54, TR033, TR034, UX21
 import { useCallback, useEffect, useState, use as useParamsPromise } from "react";
 import { useTranslation } from "react-i18next";
 import { api, ApiError } from "@/lib/api";
 import { formatPaise } from "@/lib/money";
+import Screen from "@/app/components/Screen";
 
 interface Plan {
   id: string;
@@ -194,8 +202,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ listingId:
     }
   }
 
-  if (error) return <main className="vy-shell"><h1>{t("workspace:title")}</h1><p className="vy-error">{error}</p></main>;
-  if (!ws) return <main className="vy-shell"><p className="vy-muted">{t("common:state.loading")}</p></main>;
+  if (error) return <Screen><h1>{t("workspace:title")}</h1><p className="vy-error">{error}</p></Screen>;
+  if (!ws) return <Screen><p className="vy-muted">{t("common:state.loading")}</p></Screen>;
 
   const plan = ws.plans.find((p) => p.id === planId) ?? null;
   const chipStyle = (active: boolean) => ({
@@ -205,14 +213,42 @@ export default function WorkspacePage({ params }: { params: Promise<{ listingId:
     color: active ? "var(--accent-ink)" : "var(--text-primary)",
   });
 
+  const planFact = ws.entitlement
+    ? ws.entitlement.active
+      ? t("workspace:dash.planOn")
+      : t(`workspace:plan.state.${ws.entitlement.state}` as "plan.state.paused")
+    : t("workspace:dash.noPlan");
+  const activeMembers = ws.members.filter((m) => m.state === "active" || m.state === "pending").length;
+
   return (
-    <main className="vy-shell">
+    <Screen width="wide">
       <div>
-        <span className="vy-badge vy-badge-member-provided">{t(`workspace:role.${ws.role}` as "role.owner")}</span>
+        <span className="vy-badge vy-badge-member-provided vy-m-only">{t(`workspace:role.${ws.role}` as "role.owner")}</span>
         <h1 style={{ marginTop: 8 }}>{t("workspace:title")}</h1>
         <p className="vy-muted">{ws.listing_name}</p>
       </div>
       {notice && <p className="vy-error">{notice}</p>}
+
+      <div className="vy-facts vy-dash-facts">
+        <div className="vy-fact">
+          <span className="vy-fact-label">{t("workspace:dash.role")}</span>
+          <span className="vy-fact-value">{t(`workspace:role.${ws.role}` as "role.owner")}</span>
+        </div>
+        <div className="vy-fact">
+          <span className="vy-fact-label">{t("workspace:dash.plan")}</span>
+          <span className="vy-fact-value">{planFact}</span>
+        </div>
+        <div className="vy-fact">
+          <span className="vy-fact-label">{t("workspace:dash.team")}</span>
+          <span className="vy-fact-value">{ws.capabilities.includes("team") ? activeMembers : t("workspace:dash.withPlan")}</span>
+        </div>
+        <div className="vy-fact">
+          <span className="vy-fact-label">{t("workspace:dash.campaigns")}</span>
+          <span className="vy-fact-value">{ws.capabilities.includes("campaigns") ? ws.campaigns.length : t("workspace:dash.withPlan")}</span>
+        </div>
+      </div>
+
+      <div className="vy-dash">
 
       {/* [FR33] plan state, or the disclosure + purchase when there is none */}
       {ws.entitlement?.active && (
@@ -259,8 +295,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ listingId:
       )}
 
       {!ws.entitlement && ws.is_owner && (
-        <section className="vy-card vy-stack">
-          <h2 style={{ fontSize: 16 }}>{t("workspace:plan.chooseTitle")}</h2>
+        <section className="vy-card vy-stack vy-dash-full vy-plan-choose">
+          <h2 className="vy-card-title">{t("workspace:plan.chooseTitle")}</h2>
           <div className="vy-stack" role="radiogroup" aria-label={t("workspace:plan.chooseTitle")} style={{ gap: 8 }}>
             {ws.plans.map((p) => (
               <button key={p.id} role="radio" aria-checked={planId === p.id} className="vy-card vy-row"
@@ -271,6 +307,16 @@ export default function WorkspacePage({ params }: { params: Promise<{ listingId:
               </button>
             ))}
           </div>
+          <div className="vy-plan-side">
+          {!plan && (
+            <div className="vy-d-flex vy-stack">
+              <h3 className="vy-card-title">{t("workspace:dash.whatYouGet")}</h3>
+              <dl className="vy-ctx-card vy-plan-hint" style={{ margin: 0 }}>
+                <div><dt>{t("workspace:plan.included")}</dt><dd>{t("workspace:plan.includedText")}</dd></div>
+                <div><dt>{t("workspace:plan.notIncluded")}</dt><dd>{t("workspace:plan.neverIncluded")}</dd></div>
+              </dl>
+            </div>
+          )}
           {plan && (
             <dl className="vy-stack" style={{ gap: 10, margin: 0 }}>
               <div><dt className="vy-label">{t("commercial:disclosure.price")}</dt><dd style={{ margin: 0 }}>{money(plan.price_paise)}</dd></div>
@@ -282,6 +328,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ listingId:
               <div><dt className="vy-label">{t("commercial:disclosure.refund")}</dt><dd style={{ margin: 0 }}>{t("workspace:plan.cancelTerms")}</dd></div>
             </dl>
           )}
+          </div>
           <button className="vy-btn vy-btn-primary" disabled={!plan || busy} onClick={buyPlan}>
             {plan ? t("commercial:disclosure.confirmPay", { amount: money(plan.total_paise) }) : t("workspace:plan.choosePrompt")}
           </button>
@@ -291,7 +338,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ listingId:
       {/* [FR34] team */}
       {ws.capabilities.includes("team") && (
         <section className="vy-stack">
-          <h2 style={{ fontSize: 16 }}>{t("workspace:team.title")}</h2>
+          <h2 className="vy-card-title">{t("workspace:team.title")}</h2>
           <p className="vy-muted" style={{ fontSize: 13 }}>{t("workspace:team.roleHelp")}</p>
           {ws.members.length === 0 && <p className="vy-muted">{t("workspace:team.empty")}</p>}
           {ws.members.map((m) => (
@@ -320,7 +367,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ listingId:
               )}
             </div>
           ))}
-          <div className="vy-card vy-stack">
+          {/* [Design-enhancement pass, DESIGN-ENHANCEMENT.md] a secondary
+              sub-panel within the team section, not the section's primary
+              list content — steps to --surface-nested. */}
+          <div className="vy-card vy-card-nested vy-stack">
             <label className="vy-field">
               <span className="vy-label">{t("workspace:team.invitePhone")}</span>
               <input className="vy-input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t("workspace:team.phonePlaceholder")} />
@@ -344,7 +394,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ listingId:
       {/* [FR35] campaigns */}
       {ws.capabilities.includes("campaigns") && (
         <section className="vy-stack">
-          <h2 style={{ fontSize: 16 }}>{t("workspace:campaigns.title")}</h2>
+          <h2 className="vy-card-title">{t("workspace:campaigns.title")}</h2>
           {ws.campaigns.length === 0 && <p className="vy-muted">{t("workspace:campaigns.empty")}</p>}
           {ws.campaigns.map((c) => (
             <a key={c.id} className="vy-card" href={`/campaigns/${c.id}`} style={{ textDecoration: "none" }}>
@@ -356,7 +406,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ listingId:
             </a>
           ))}
           {options && options.items.length > 0 && (
-            <div className="vy-card vy-stack">
+            <div className="vy-card vy-card-nested vy-stack">
               <h3 style={{ fontSize: 14 }}>{t("workspace:campaigns.newTitle")}</h3>
               <label className="vy-field">
                 <span className="vy-label">{t("workspace:campaigns.name")}</span>
@@ -392,6 +442,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ listingId:
           )}
         </section>
       )}
-    </main>
+      </div>
+    </Screen>
   );
 }

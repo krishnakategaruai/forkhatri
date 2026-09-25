@@ -13,9 +13,12 @@
 // Traces to: FR28, FR29, TR028, TR029, UX16, UX07
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, ApiError } from "@/lib/api";
+import { ApiError, type Reputation as SdkReputation } from "@/lib/sdk";
+import { useSdk } from "@/lib/sdk/react";
 
-export interface Reputation {
+// [IMP38] The wire type now lives in lib/sdk; kept here as an alias-compatible
+// interface so existing imports of `Reputation` from this file keep working.
+export interface Reputation extends SdkReputation {
   interactions: number;
   recommends: number;
   top_tags: string[];
@@ -82,6 +85,7 @@ export function ReputationLine({ rep }: { rep: Reputation | null | undefined }) 
 
 export function ReviewList({ listingId }: { listingId: string }) {
   const { t, i18n } = useTranslation(["reviews", "common"]);
+  const sdk = useSdk();
   const [rows, setRows] = useState<ReviewRow[] | null>(null);
   const [disputing, setDisputing] = useState<string | null>(null);
   const [reason, setReason] = useState<string | null>(null);
@@ -89,20 +93,20 @@ export function ReviewList({ listingId }: { listingId: string }) {
   const [notice, setNotice] = useState<string | null>(null);
 
   async function load() {
-    setRows(await api.get<ReviewRow[]>(`/v1/listings/${listingId}/reviews`));
+    setRows(await sdk.listings.reviews<ReviewRow[]>(listingId));
   }
 
   useEffect(() => {
     load().catch(() => setRows([]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listingId]);
+  }, [listingId, sdk, i18n.language]);
 
   async function sendDispute(reviewId: string) {
     if (!reason) return;
     setBusy(true);
     setNotice(null);
     try {
-      await api.post(`/v1/reviews/${reviewId}/dispute`, { reason });
+      await sdk.reviews.dispute(reviewId, { reason });
       setDisputing(null);
       setReason(null);
       setNotice(t("reviews:disputed"));
@@ -155,10 +159,10 @@ export function ReviewList({ listingId }: { listingId: string }) {
                     aria-checked={reason === d}
                     className="vy-chip"
                     style={{
-                      border: "none",
+                      border: `1px solid ${reason === d ? "var(--accent)" : "var(--border-hairline)"}`,
                       cursor: "pointer",
-                      background: reason === d ? "var(--accent)" : "var(--surface-overlay)",
-                      color: reason === d ? "var(--accent-ink)" : "var(--text-primary)",
+                      background: reason === d ? "var(--accent-soft)" : "var(--surface-overlay)",
+                      color: reason === d ? "var(--accent-strong)" : "var(--text-primary)",
                     }}
                     onClick={() => setReason(d)}
                   >

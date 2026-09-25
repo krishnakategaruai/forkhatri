@@ -15,7 +15,8 @@
 // Traces to: FR08, FR09, FR10, TR008, TR009, TR010
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, ApiError } from "@/lib/api";
+import { ApiError } from "@/lib/sdk";
+import { useSdk } from "@/lib/sdk/react";
 
 export const DOC_KEY: Record<string, string> = {
   gst: "typeGst",
@@ -33,7 +34,64 @@ export interface VerificationFields {
   verification_expires_at: string | null;
 }
 
-export function VerificationBadge({ listing }: { listing: VerificationFields }) {
+// [Critique agent finding, fixed here] UX07 names a whole "Trust context
+// sheet" — a modal explaining exactly what was checked, "Contact verified"
+// with its own explanation, credential rows, an explicit "What this
+// doesn't mean" disclaimer, and a Report link — reachable by tapping the
+// verification label. None of it existed; the badge above was a dead end.
+// One shared sheet, reused wherever a trust label is shown.
+export function TrustContextSheet({
+  listing,
+  contactVerified,
+  onClose,
+  onReport,
+}: {
+  listing: VerificationFields;
+  contactVerified?: boolean;
+  onClose: () => void;
+  onReport?: () => void;
+}) {
+  const { t, i18n } = useTranslation(["verification", "common"]);
+  const fmt = (d: string | null) => (d ? new Date(d).toLocaleDateString(i18n.language) : "");
+  const isCredential = listing.verification_document === "credential";
+  const scope = isCredential ? listing.verification_claim ?? "" : listing.verification_document ? t(DOC_KEY[listing.verification_document] as "typeGst") : "";
+  const state = listing.verification_state;
+  const explainKey = state === "verified" && isCredential ? "credentialReviewed" : state;
+  const date = state === "expiring" ? fmt(listing.verification_expires_at) : fmt(listing.verified_at);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={t("sheetTitle")}
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "flex-end", zIndex: 80 }}
+      onClick={onClose}
+    >
+      {/* [Design-enhancement pass, DESIGN-ENHANCEMENT.md — named example]
+          a genuinely-overlaid sheet, not page-flow content — steps to
+          --surface-floating. */}
+      <div className="vy-card vy-card-floating vy-stack" style={{ width: "100%", maxHeight: "80vh", overflowY: "auto", borderRadius: "16px 16px 0 0" }} onClick={(e) => e.stopPropagation()}>
+        <h2 style={{ fontSize: 17 }}>{t("sheetTitle")}</h2>
+        <p>{t(`sheetExplain.${explainKey}` as "sheetExplain.verified", { scope, date })}</p>
+        {contactVerified && <p className="vy-muted">{t("contactVerifiedExplain")}</p>}
+        <div>
+          <strong style={{ fontSize: 13, color: "var(--text-secondary)" }}>{t("whatThisDoesntMeanTitle")}</strong>
+          <p className="vy-muted" style={{ marginTop: 4 }}>{t("whatThisDoesntMean")}</p>
+        </div>
+        {onReport && (
+          <button className="vy-btn vy-btn-ghost" style={{ alignSelf: "flex-start" }} onClick={onReport}>
+            {t("reportProblem")}
+          </button>
+        )}
+        <button className="vy-btn vy-btn-primary" onClick={onClose}>
+          {t("common:action.close")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function VerificationBadge({ listing, onOpenTrustSheet }: { listing: VerificationFields; onOpenTrustSheet?: () => void }) {
   const { t, i18n } = useTranslation("verification");
   const fmt = (d: string | null) => (d ? new Date(d).toLocaleDateString(i18n.language) : "");
   const isCredential = listing.verification_document === "credential";
@@ -43,14 +101,24 @@ export function VerificationBadge({ listing }: { listing: VerificationFields }) 
       ? t(DOC_KEY[listing.verification_document] as "typeGst")
       : "";
   const state = listing.verification_state;
+  let inner: React.ReactNode;
+  let cls = "vy-badge vy-badge-member-provided";
   if (state === "verified") {
     const key = isCredential ? "label.credentialReviewed" : "label.verified";
-    return <span className="vy-badge vy-badge-verified">✓ {t(key as "label.verified", { scope, date: fmt(listing.verified_at) })}</span>;
+    inner = <>✓ {t(key as "label.verified", { scope, date: fmt(listing.verified_at) })}</>;
+    cls = "vy-badge vy-badge-verified";
+  } else if (state === "expiring") {
+    inner = <>✓ {t("label.expiring", { scope, date: fmt(listing.verification_expires_at) })}</>;
+    cls = "vy-badge vy-badge-verified";
+  } else {
+    inner = t(`label.${state}` as "label.not_started");
   }
-  if (state === "expiring") {
-    return <span className="vy-badge vy-badge-verified">✓ {t("label.expiring", { scope, date: fmt(listing.verification_expires_at) })}</span>;
-  }
-  return <span className="vy-badge vy-badge-member-provided">{t(`label.${state}` as "label.not_started")}</span>;
+  if (!onOpenTrustSheet) return <span className={cls}>{inner}</span>;
+  return (
+    <button type="button" className={cls} style={{ border: "none", cursor: "pointer" }} onClick={onOpenTrustSheet} aria-label={t("whatWasChecked")}>
+      {inner}
+    </button>
+  );
 }
 
 interface RecordOut {
@@ -72,6 +140,7 @@ export function VerificationPanel({
   onChanged: () => void;
 }) {
   const { t } = useTranslation(["verification", "common"]);
+  const sdk = useSdk();
   const [records, setRecords] = useState<RecordOut[] | null>(null);
   const options = kind === "professional" ? ["credential", "gst", "udyam", "pan", "shops_est"] : ["gst", "udyam", "pan", "shops_est"];
   const [docType, setDocType] = useState(options[0]);
@@ -82,7 +151,7 @@ export function VerificationPanel({
   const [busy, setBusy] = useState(false);
 
   async function load() {
-    setRecords(await api.get<RecordOut[]>(`/v1/listings/${listingId}/verification`));
+    setRecords(await sdk.listings.verification<RecordOut[]>(listingId));
   }
 
   useEffect(() => {
@@ -101,7 +170,7 @@ export function VerificationPanel({
     setBusy(true);
     setError(null);
     try {
-      await api.post(`/v1/listings/${listingId}/verification`, {
+      await sdk.listings.requestVerification(listingId, {
         document_type: docType,
         identifier: docType === "credential" ? undefined : identifier,
         credential_name: docType === "credential" ? credentialName : undefined,
@@ -120,7 +189,7 @@ export function VerificationPanel({
 
   return (
     <div className="vy-card vy-stack">
-      <h2 style={{ fontSize: 16 }}>{t("verification:title")}</h2>
+      <h2 className="vy-card-title">{t("verification:title")}</h2>
       {verificationState === "expiring" || verificationState === "expired" ? (
         <p className="vy-muted">{t("verification:reconfirmNotice")}</p>
       ) : (
@@ -139,10 +208,10 @@ export function VerificationPanel({
             key={o}
             className="vy-chip"
             style={{
-              border: "none",
+              border: `1px solid ${docType === o ? "var(--accent)" : "var(--border-hairline)"}`,
               cursor: "pointer",
-              background: docType === o ? "var(--accent)" : "var(--surface-overlay)",
-              color: docType === o ? "var(--accent-ink)" : "var(--text-primary)",
+              background: docType === o ? "var(--accent-soft)" : "var(--surface-overlay)",
+              color: docType === o ? "var(--accent-strong)" : "var(--text-primary)",
             }}
             onClick={() => setDocType(o)}
           >

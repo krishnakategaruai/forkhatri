@@ -11,7 +11,8 @@
 // Traces to: FR39, FR24, FR53, TR039
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, apiFetch, ApiError } from "@/lib/api";
+import { ApiError } from "@/lib/sdk";
+import { useSdk } from "@/lib/sdk/react";
 
 const REASONS = ["scam", "fake", "impersonation", "harassment", "discrimination", "spam", "stale", "privacy", "other"] as const;
 
@@ -25,6 +26,7 @@ export default function ReportSheet({
   blockMemberId?: string;
 }) {
   const { t } = useTranslation(["trustSafety", "common"]);
+  const sdk = useSdk();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<string | null>(null);
   const [note, setNote] = useState("");
@@ -53,7 +55,7 @@ export default function ReportSheet({
             className="vy-btn vy-btn-secondary"
             style={{ alignSelf: "flex-start" }}
             onClick={async () => {
-              await api.post("/v1/enquiries/block", { blocked_id: blockTarget });
+              await sdk.enquiries.block(blockTarget);
               setBlocked(true);
             }}
           >
@@ -70,11 +72,10 @@ export default function ReportSheet({
     setSending(true);
     setError(null);
     try {
-      const result = await apiFetch<{ received: boolean; block_member_id: string | null }>("/v1/reports", {
-        method: "POST",
-        headers: { "Idempotency-Key": idempotencyKey },
-        body: JSON.stringify({ object_kind: objectKind, object_id: objectId, reason, evidence_text: note || undefined }),
-      });
+      const result = await sdk.trustSafety.report(
+        { object_kind: objectKind, object_id: objectId, reason, evidence_text: note || undefined },
+        idempotencyKey,
+      );
       setBlockTarget(blockMemberId ?? result.block_member_id);
       setSent(true);
     } catch (e) {
@@ -86,17 +87,17 @@ export default function ReportSheet({
 
   return (
     <div className="vy-card vy-stack">
-      <h2 style={{ fontSize: 16 }}>{t("trustSafety:report.title")}</h2>
+      <h2 className="vy-card-title">{t("trustSafety:report.title")}</h2>
       <div className="vy-row" style={{ flexWrap: "wrap" }}>
         {REASONS.map((r) => (
           <button
             key={r}
             className="vy-chip"
             style={{
-              border: "none",
+              border: `1px solid ${reason === r ? "var(--accent)" : "var(--border-hairline)"}`,
               cursor: "pointer",
-              background: reason === r ? "var(--accent)" : "var(--surface-overlay)",
-              color: reason === r ? "var(--accent-ink)" : "var(--text-primary)",
+              background: reason === r ? "var(--accent-soft)" : "var(--surface-overlay)",
+              color: reason === r ? "var(--accent-strong)" : "var(--text-primary)",
             }}
             onClick={() => setReason(r)}
           >

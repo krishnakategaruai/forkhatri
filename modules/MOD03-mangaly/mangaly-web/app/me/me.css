@@ -1,0 +1,1508 @@
+/* ===================================================================
+   Me — "My profile" (app/me/page.tsx, components/MemberMe.tsx)
+   Editorial pass, 2026-09-25 (owner: "web needs complete redesign … no
+   classy. Minimalist, modern"; critique agent's Me deep review).
+   -------------------------------------------------------------------
+   The page opens on the person, not on a settings form: a photo grid,
+   then the name in Instrument Serif with an italic age and city. The
+   profile below is a list of what it says: filled values lead, empty
+   ones recede to one quiet line.
+   Phone: the structure the owner accepted (photos, name, underline tabs,
+   two-column tiles). Desktop: an editorial two-column composition, the
+   person on the left and sticky, the content on the right as rows
+   divided by hairlines, no boxes. Calm rules hold: no gold outlines, no
+   filled badges, no patterns; kumkum only for the one primary action.
+   Instrument Serif has one weight (400): size and italic carry it.
+   =================================================================== */
+
+/* ---- Shared pieces ------------------------------------------------- */
+.me {
+  --me-hair: color-mix(in srgb, var(--ink) 11%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-top: 4px;
+}
+.me-quiet {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+.me .me-chev,
+.sheet .me-chev {
+  flex: none;
+  color: var(--ink-3);
+  transition: transform var(--dur-2) var(--ease);
+}
+.me-count {
+  flex: none;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--ink-3);
+}
+
+/* A full-width quiet row: the way every "go somewhere" is drawn here. */
+.me-row {
+  --me-hair: color-mix(in srgb, var(--ink) 11%, transparent);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 14px 2px;
+  border: 0;
+  border-top: 1px solid var(--me-hair);
+  background: none;
+  color: var(--ink);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  list-style: none;
+}
+.me-row::-webkit-details-marker {
+  display: none;
+}
+.me-row:hover .me-chev {
+  transform: translateX(3px);
+}
+.me-row__icon {
+  color: var(--ink-2);
+}
+.me-row__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.me-row__label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+html:is([lang='hi'], [lang='te']) .me-row__label {
+  letter-spacing: 0;
+}
+.me-row__title {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* ---- Header -------------------------------------------------------- */
+.me-top .hub-link {
+  display: none;
+}
+@media (min-width: 1024px) {
+  /* The person is on the page; the sidebar and the settings sheet carry
+     the account on a desktop. */
+  .me-top .me-account {
+    display: none;
+  }
+}
+
+/* ---- The person ---------------------------------------------------- */
+.me .me-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.me-person {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.me-photos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.me .me-pgrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  max-width: none;
+}
+.me .photo-slot {
+  border: 0;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ink) 4%, var(--surface));
+  box-shadow: none;
+  color: var(--ink-3);
+  font-size: 1.25rem;
+  font-weight: 300;
+}
+.me .photo-slot--main {
+  border-radius: 16px;
+}
+.me .photo-slot--empty {
+  border: 0;
+  background: color-mix(in srgb, var(--ink) 4%, var(--surface));
+}
+.me .photo-slot--empty:disabled {
+  opacity: 0.55;
+}
+.me .photo-slot--empty:not(:disabled):hover {
+  background: color-mix(in srgb, var(--ink) 7%, var(--surface));
+}
+.me .photo-slot__badge {
+  left: 10px;
+  bottom: 10px;
+  padding: 3px 9px;
+  border: 0;
+  background: color-mix(in srgb, var(--paper) 80%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: var(--ink);
+  font-size: 0.6875rem;
+  font-weight: 500;
+}
+.me-first__in {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  color: var(--ink-2);
+}
+.me-first__title {
+  font-family: var(--font-display-stack);
+  font-style: italic;
+  font-size: 1.125rem;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--ink);
+}
+.me-person__id {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.me .me-person__name {
+  margin: 0;
+  font-family: var(--font-display-stack);
+  font-weight: 400;
+  font-size: 2.5rem;
+  line-height: 1;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.me-person__meta {
+  margin: 2px 0 0;
+  font-family: var(--font-display-stack);
+  font-style: italic;
+  font-size: 1.25rem;
+  line-height: 1.25;
+  color: var(--ink-2);
+}
+.me-person__pct {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ink-2);
+  text-decoration: none;
+}
+.me-person__pct:hover {
+  color: var(--ink);
+}
+.me-pct {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: conic-gradient(var(--accent) var(--pct, 0%), color-mix(in srgb, var(--ink) 12%, transparent) 0);
+  -webkit-mask: radial-gradient(circle, transparent 4.5px, #000 5px);
+  mask: radial-gradient(circle, transparent 4.5px, #000 5px);
+}
+.me-hero__cheer {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ok);
+}
+.me-person .me-next {
+  border-bottom: 1px solid var(--me-hair);
+}
+.me-person .me-next .me-row__title {
+  font-family: var(--font-display-stack);
+  font-size: 1.25rem;
+  font-weight: 400;
+}
+.me .photo-check {
+  margin: 0;
+}
+
+/* ---- Tabs: underlined words, not a pill track -------------------- */
+.me-tabs {
+  display: flex;
+  gap: 28px;
+  border-bottom: 1px solid var(--me-hair);
+}
+.me-tab {
+  position: relative;
+  padding: 10px 0 12px;
+  border: 0;
+  background: none;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--ink-3);
+  transition: color var(--dur-1) var(--ease);
+}
+.me-tab:hover {
+  color: var(--ink);
+}
+.me-tab.is-active {
+  color: var(--ink);
+}
+.me-tab.is-active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1.5px;
+  background: var(--ink);
+  animation: me-tab-in 280ms var(--ease-out) both;
+}
+@keyframes me-tab-in {
+  from {
+    transform: scaleX(0.3);
+    opacity: 0;
+  }
+}
+.me .me-grid__main {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+/* ---- Details: the biodata --------------------------------------- */
+/* Phone: two-column tiles on soft surfaces, no drawings. */
+.me-secs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.me-sec {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+  min-height: 108px;
+  padding: 14px 14px 16px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  color: var(--ink);
+  text-align: left;
+  animation: me-rise 460ms var(--ease-out) both;
+  transition: transform var(--dur-2) var(--ease-spring), box-shadow var(--dur-2) var(--ease);
+}
+.me-sec:active {
+  transform: scale(0.98);
+}
+.me-sec__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 34px;
+  font-family: var(--font-display-stack);
+  font-size: 1.3125rem;
+  line-height: 1.05;
+  color: var(--ink);
+}
+.me-sec__title .icon {
+  color: var(--ink-3);
+}
+.me-sec__text {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ink);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.me-sec.is-empty {
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  box-shadow: none;
+}
+.me-sec.is-empty .me-sec__title {
+  color: var(--ink-2);
+}
+.me-sec.is-empty .me-sec__text {
+  font-weight: 400;
+  color: var(--ink-3);
+}
+.me-sec__side {
+  position: absolute;
+  top: 16px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.me-sec__add,
+.me-sec__side .me-chev {
+  display: none;
+}
+.me-sec:nth-child(2) { animation-delay: 30ms; }
+.me-sec:nth-child(3) { animation-delay: 60ms; }
+.me-sec:nth-child(4) { animation-delay: 90ms; }
+.me-sec:nth-child(5) { animation-delay: 120ms; }
+.me-sec:nth-child(6) { animation-delay: 150ms; }
+.me-sec:nth-child(7) { animation-delay: 180ms; }
+.me-sec:nth-child(8) { animation-delay: 210ms; }
+
+/* ---- In my words ------------------------------------------------ */
+.me-prompts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.me-prompt {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 18px 18px 20px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  color: var(--ink);
+  text-align: left;
+}
+.me-prompt__q {
+  display: block;
+  padding-right: 64px;
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-3);
+}
+.me-prompt__a {
+  margin: 0;
+  font-family: var(--font-display-stack);
+  font-weight: 400;
+  font-size: 1.3125rem;
+  line-height: 1.3;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.me-prompt__a.is-short {
+  font-style: italic;
+  font-size: 1.375rem;
+}
+.me-prompt__a:not(.is-short)::first-line {
+  font-style: italic;
+}
+.me-edit {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+.me-prompt:hover .me-edit {
+  color: var(--ink);
+}
+.me-addprompt {
+  border-top: 0;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+}
+.me-duo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+.me .voice-intro,
+.me-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 18px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+}
+.me .voice-intro .label {
+  font-family: var(--font-display-stack);
+  font-size: 1.3125rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+}
+.me .voice-intro .caption {
+  font-size: 0.8125rem;
+  color: var(--ink-3);
+}
+.me-block__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+.me .me-block__title {
+  margin: 0;
+  font-family: var(--font-display-stack);
+  font-size: 1.3125rem;
+  font-weight: 400;
+  line-height: 1.1;
+}
+.me-textbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+.me-textbtn:hover .me-chev {
+  transform: translateX(3px);
+}
+.me .portrait__tile {
+  background: color-mix(in srgb, var(--ink) 4%, var(--surface));
+}
+
+/* ---- Who sees what, and the way on -------------------------------- */
+.me-who {
+  display: block;
+}
+.me-who[open] > .me-who__sum .me-chev {
+  transform: rotate(90deg);
+}
+.me-who__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 2px 18px 34px;
+  animation: me-rise 320ms var(--ease-out) both;
+}
+.me .me-openly {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 6px;
+}
+.me .me-openly .openly__title {
+  font-family: var(--font-display-stack);
+  font-size: 1.25rem;
+  font-weight: 400;
+}
+.me .me-openly .openly__always {
+  margin: 6px 0;
+  padding: 0;
+  background: none;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+.me .me-openly .openly__row {
+  padding: 12px 0;
+  border-top: 1px solid var(--me-hair);
+}
+.me .me-openly .openly__name {
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+.me .me-openly .switch:not(:checked) {
+  background: color-mix(in srgb, var(--ink) 14%, transparent);
+  box-shadow: none;
+}
+.me-nextpart {
+  border-bottom: 1px solid var(--me-hair);
+  margin-top: -18px;
+}
+.me-nextpart .me-row__title {
+  color: var(--ink-2);
+}
+.me-nextpart:hover .me-row__title {
+  color: var(--ink);
+}
+
+/* ---- Preview: the profile as others read it ---------------------- */
+.me-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+.me-viewas {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  font-size: 0.875rem;
+  color: var(--ink-3);
+}
+.me-viewas__value {
+  font-family: var(--font-display-stack);
+  font-style: italic;
+  font-size: 1.1875rem;
+  color: var(--ink);
+  border-bottom: 1px solid var(--me-hair);
+}
+.me-viewas:hover .me-viewas__value {
+  border-bottom-color: var(--ink);
+}
+.me-phone {
+  width: 100%;
+}
+.me-pv {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 20px;
+}
+.me-pv__hero {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  max-height: 72vh;
+  border-radius: 22px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--ink) 6%, var(--surface));
+}
+.me-pv__hero img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.me-pv__hero::after {
+  content: '';
+  position: absolute;
+  inset: 45% 0 0;
+  background: linear-gradient(to top, rgba(26, 6, 6, 0.72), rgba(26, 6, 6, 0));
+}
+.me-pv__over {
+  position: absolute;
+  z-index: 1;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #fff8ec;
+}
+.me-pv__name {
+  font-family: var(--font-display-stack);
+  font-size: 2.75rem;
+  line-height: 1;
+  letter-spacing: -0.015em;
+}
+.me-pv__age {
+  font-style: italic;
+  opacity: 0.85;
+}
+.me-pv__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.me-pv__chip {
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: rgba(255, 248, 236, 0.16);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.me-pv__lock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0 4px;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+.me-pv__photo {
+  border-radius: 22px;
+  overflow: hidden;
+}
+.me-pv__photo img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+}
+.me-pv__prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 6px;
+}
+.me-pv__prompt .me-prompt__q {
+  padding-right: 0;
+}
+.me-pv__sec {
+  padding: 4px 6px;
+}
+.me .me-pv__h {
+  margin: 0 0 6px;
+  font-family: var(--font-display-stack);
+  font-size: 1.375rem;
+  font-weight: 400;
+}
+.me-pv__dl {
+  margin: 0;
+}
+.me-pv__row {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--me-hair);
+}
+.me-pv__row dt {
+  font-size: 0.8125rem;
+  color: var(--ink-3);
+}
+.me-pv__row dd {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+.me-pv__note {
+  max-width: 52ch;
+}
+
+/* ---- Claim and managing notes ------------------------------------ */
+.me .managed-note {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}
+.me .managed-note strong {
+  font-family: var(--font-display-stack);
+  font-size: 1.375rem;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+/* ---- Settings sheet: the account links --------------------------- */
+.me-sheetlinks {
+  display: flex;
+  flex-direction: column;
+  margin-top: 18px;
+}
+.me-sheetlinks .me-row {
+  min-height: 50px;
+  padding: 12px 2px;
+}
+.me-sheetlinks .me-row:last-child {
+  border-bottom: 1px solid var(--me-hair);
+}
+
+/* ---- Phone and tablet ------------------------------------------- */
+@media (max-width: 1023px) {
+  .me.is-preview .me-person {
+    display: none;
+  }
+}
+@media (min-width: 600px) and (max-width: 1023px) {
+  .me-secs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .me-person {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    column-gap: 22px;
+    align-items: end;
+  }
+  .me-person > .me-photos {
+    grid-row: span 4;
+  }
+  .me-duo {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .me-phone {
+    max-width: 420px;
+  }
+}
+
+/* ===================================================================
+   Desktop: editorial two columns
+   =================================================================== */
+@media (min-width: 1024px) {
+  .me {
+    gap: 28px;
+    padding-top: 8px;
+  }
+  .me > .managed-note {
+    max-width: 760px;
+  }
+  .me .me-grid {
+    display: grid;
+    grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+    column-gap: clamp(48px, 6vw, 104px);
+    align-items: start;
+  }
+  .me-person {
+    position: sticky;
+    top: 104px;
+    gap: 16px;
+  }
+  .me .me-pgrid {
+    gap: 8px;
+  }
+  .me .me-person__name {
+    font-size: 3.25rem;
+  }
+  .me-person__meta {
+    font-size: 1.375rem;
+  }
+  .me .me-grid__main {
+    max-width: 760px;
+    gap: 8px;
+  }
+  .me-tabs {
+    gap: 36px;
+    margin-bottom: 8px;
+  }
+  .me-tab {
+    font-size: 1rem;
+  }
+
+  /* The biodata as rows: name, what it says, and a quiet affordance. */
+  .me-secs {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .me-sec {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr) auto;
+    align-items: baseline;
+    column-gap: 28px;
+    min-height: 0;
+    padding: 22px 4px;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    border-top: 1px solid var(--me-hair);
+    transition: background var(--dur-1) var(--ease);
+  }
+  .me-sec:first-child {
+    border-top: 0;
+  }
+  .me-sec:hover {
+    background: color-mix(in srgb, var(--ink) 2.5%, transparent);
+  }
+  .me-sec:active {
+    transform: none;
+  }
+  .me-sec.is-empty {
+    background: none;
+  }
+  .me-sec.is-empty:hover {
+    background: color-mix(in srgb, var(--ink) 2.5%, transparent);
+  }
+  .me-sec__title {
+    padding-right: 0;
+    font-size: 1.5rem;
+  }
+  .me-sec__text {
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+  .me-sec.is-empty .me-sec__text {
+    font-size: 0.875rem;
+  }
+  .me-sec__side {
+    position: static;
+    gap: 14px;
+  }
+  .me-sec__add,
+  .me-sec__side .me-chev {
+    display: inline-flex;
+  }
+  .me-sec__add {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--ink-3);
+    white-space: nowrap;
+  }
+  .me-sec:hover .me-sec__add {
+    color: var(--ink);
+  }
+  .me-sec:hover .me-chev {
+    transform: translateX(3px);
+  }
+
+  /* Prompts as a reading list. */
+  .me-prompts {
+    gap: 0;
+  }
+  .me-prompt {
+    padding: 26px 4px;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    border-bottom: 1px solid var(--me-hair);
+  }
+  .me-prompt:first-child {
+    padding-top: 14px;
+  }
+  .me-prompt__a {
+    font-size: 1.625rem;
+    max-width: 30ch;
+  }
+  .me-prompt__a.is-short {
+    font-size: 1.75rem;
+  }
+  .me-edit {
+    top: 18px;
+    right: 4px;
+    opacity: 0;
+    transition: opacity var(--dur-1) var(--ease);
+  }
+  .me-prompt:first-child .me-edit {
+    top: 12px;
+  }
+  .me-prompt:hover .me-edit,
+  .me-prompt:focus-visible .me-edit {
+    opacity: 1;
+  }
+  .me-addprompt {
+    padding: 22px 4px;
+    border-radius: 0;
+    background: none;
+    border-bottom: 1px solid var(--me-hair);
+  }
+  .me-addprompt .me-row__title {
+    font-family: var(--font-display-stack);
+    font-size: 1.375rem;
+    font-weight: 400;
+    color: var(--ink-2);
+  }
+  .me-duo {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    margin-top: 8px;
+  }
+  .me .voice-intro,
+  .me-block {
+    padding: 22px 28px 22px 4px;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .me-duo > :last-child {
+    padding-left: 28px;
+    border-left: 1px solid var(--me-hair);
+  }
+  .me .voice-intro .label,
+  .me .me-block__title {
+    font-size: 1.5rem;
+  }
+
+  .me-who {
+    margin-top: 24px;
+  }
+  .me-nextpart {
+    margin-top: 0;
+  }
+
+  /* The preview in a phone-sized frame. */
+  .me-preview {
+    display: grid;
+    grid-template-columns: 390px minmax(0, 1fr);
+    column-gap: 40px;
+    align-items: start;
+  }
+  .me-viewas {
+    grid-column: 2;
+    grid-row: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .me-viewas .icon {
+    display: none;
+  }
+  .me-pv__note {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+  }
+  .me-phone {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    height: min(760px, calc(100vh - 180px));
+    overflow-y: auto;
+    padding: 10px;
+    border-radius: 42px;
+    background: var(--surface);
+    box-shadow: 0 30px 80px -30px rgba(60, 10, 0, 0.35), 0 0 0 1px var(--me-hair);
+    scrollbar-width: none;
+  }
+  .me-phone::-webkit-scrollbar {
+    display: none;
+  }
+  .me-pv__hero {
+    border-radius: 32px;
+    max-height: none;
+  }
+  .me-pv__photo {
+    border-radius: 26px;
+  }
+}
+@media (min-width: 1440px) {
+  .me .me-grid {
+    grid-template-columns: 400px minmax(0, 1fr);
+  }
+}
+
+@keyframes me-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* ===================================================================
+   The family member's "My profile" (components/MemberMe.tsx, DEC-V1-027)
+   =================================================================== */
+.me-member {
+  --me-hair: color-mix(in srgb, var(--ink) 11%, transparent);
+  padding-top: 4px;
+}
+.me-member .member__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.me-member .member__main {
+  gap: 14px;
+}
+.me-member .member__card {
+  gap: 12px;
+  padding: 18px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+}
+.me-member .member__id {
+  align-items: flex-start;
+  text-align: left;
+  gap: 4px;
+  background: none;
+  box-shadow: none;
+  padding: 4px 2px;
+}
+.me-member .member__photo {
+  width: 112px;
+  height: 112px;
+  padding: 0;
+  border-radius: 50%;
+  background: none;
+  box-shadow: none;
+}
+.me-member .member__photo img,
+.me-member .member__photo-empty {
+  border: 0;
+}
+.me-member .member__photo-empty > span {
+  width: 100% !important;
+  height: 100% !important;
+  font-size: 2.25rem !important;
+  background: color-mix(in srgb, var(--ink) 6%, var(--surface)) !important;
+  color: var(--ink-2) !important;
+  font-family: var(--font-display-stack);
+  font-weight: 400;
+}
+.me-member .member__photo-badge {
+  right: 2px;
+  bottom: 2px;
+  width: 32px;
+  height: 32px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: var(--shadow-1);
+}
+.me-member .member__name {
+  margin: 12px 0 0;
+  font-family: var(--font-display-stack);
+  font-size: 2.5rem;
+  font-weight: 400;
+  line-height: 1;
+}
+.me-member .member__role {
+  margin: 0;
+  font-family: var(--font-display-stack);
+  font-style: italic;
+  font-size: 1.25rem;
+  color: var(--ink-2);
+}
+.me-member .member__nudge {
+  margin: 4px 0 0;
+  padding: 0;
+  background: none;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ink-3);
+  text-align: left;
+}
+.me-member .member__h {
+  margin: 0;
+  font-family: var(--font-display-stack);
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1.1;
+}
+.me-member .member__card > .caption {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+.me-member .member__textarea,
+.me-member .field__input {
+  font-size: 1rem;
+  border: 0;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ink) 4%, var(--surface));
+  box-shadow: none;
+}
+.me-member .member__textarea::placeholder,
+.me-member .field__input::placeholder {
+  color: var(--ink-3);
+  opacity: 1;
+}
+.me-member .member__actions .btn {
+  min-height: 42px;
+  padding: 0 24px;
+}
+.me-member .member__row {
+  gap: 14px;
+  padding: 12px 0;
+}
+.me-member .member__row + .member__row {
+  border-top-color: var(--me-hair);
+}
+.me-member .member__row-text strong {
+  font-family: var(--font-display-stack);
+  font-size: 1.375rem;
+  font-weight: 400;
+}
+.me-member .member__row-text span {
+  font-size: 0.8125rem;
+  color: var(--ink-3);
+}
+.me-member .member__row-actions {
+  gap: 8px;
+}
+@media (max-width: 639px) {
+  .me-member .member__row-actions {
+    flex-basis: 100%;
+  }
+  .me-member .member__row-actions .me-tonal {
+    flex: 1 1 0;
+  }
+}
+.me-member .me-tonal {
+  min-height: 38px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 5%, var(--surface));
+  color: var(--ink);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  box-shadow: none;
+  white-space: nowrap;
+}
+.me-member .me-tonal:hover {
+  background: color-mix(in srgb, var(--ink) 9%, var(--surface));
+}
+.me-member .me-tonal--accent {
+  background: color-mix(in srgb, var(--ink) 5%, var(--surface));
+  color: var(--ink);
+}
+.me-member .member__make {
+  align-self: flex-start;
+  min-height: 42px;
+}
+.me-member .member__signout {
+  align-self: flex-start;
+  min-height: 40px;
+  padding: 0 2px;
+  background: none;
+  box-shadow: none;
+  color: var(--ink-3);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.me-member .member__signout:hover {
+  color: var(--ink);
+}
+.me-member .photo-check {
+  width: 100%;
+}
+.me-member .member__card--primary {
+  box-shadow: var(--shadow-2);
+}
+
+@media (min-width: 1024px) {
+  .me-member .member__grid {
+    display: grid;
+    grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+    column-gap: clamp(48px, 6vw, 104px);
+    align-items: start;
+  }
+  .me-member .member__id {
+    position: sticky;
+    top: 104px;
+  }
+  .me-member .member__photo {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 5;
+    border-radius: 18px;
+    overflow: hidden;
+  }
+  .me-member .member__photo img,
+  .me-member .member__photo-empty {
+    border-radius: 18px;
+  }
+  .me-member .member__photo-empty > span {
+    border-radius: 18px !important;
+    font-size: 4.5rem !important;
+  }
+  .me-member .member__photo-badge {
+    right: 14px;
+    bottom: 14px;
+    width: 40px;
+    height: 40px;
+  }
+  .me-member .member__name {
+    font-size: 3.25rem;
+  }
+  .me-member .member__main {
+    max-width: 760px;
+    gap: 0;
+  }
+  /* Right column: the families lead as the one card; the rest are sections
+     divided by hairlines. */
+  .me-member .member__card {
+    padding: 28px 4px;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    border-top: 1px solid var(--me-hair);
+  }
+  .me-member .member__card--primary {
+    padding: 24px 28px;
+    margin-bottom: 20px;
+    border-top: 0;
+    border-radius: 22px;
+    background: var(--surface);
+    box-shadow: var(--shadow-2);
+  }
+  .me-member .member__h {
+    font-size: 1.75rem;
+  }
+  .me-member .member__signout {
+    margin-top: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .me-sec,
+  .me-who__body,
+  .me-tab.is-active::after {
+    animation: none !important;
+  }
+}
+
+/* Preview without a photo yet: a quiet paper card, dark ink, no scrim. */
+.me-pv__hero:has(.me-pv__nophoto) {
+  aspect-ratio: 5 / 4;
+  background: color-mix(in srgb, var(--ink) 5%, var(--surface));
+}
+.me-pv__hero:has(.me-pv__nophoto)::after {
+  content: none;
+}
+.me-pv__hero:has(.me-pv__nophoto) .me-pv__over {
+  color: var(--ink);
+}
+.me-pv__hero:has(.me-pv__nophoto) .me-pv__chip {
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+}
+.me-viewas {
+  text-align: left;
+}
+.me-member .member__id.member__card {
+  border-top: 0;
+}
+.me-member .member__id .member__role {
+  font-family: var(--font-display-stack);
+  font-style: italic;
+  font-size: 1.25rem;
+  color: var(--ink-2);
+}
+
+/* ===================================================================
+   Review round (critique 7.5/10, 25 Sep)
+   =================================================================== */
+/* Short titles and hints on narrow tiles; the full ones on wide rows. */
+.me-short {
+  display: none;
+}
+@media (max-width: 1023px) {
+  .me-sec .me-long {
+    display: none;
+  }
+  .me-sec .me-short {
+    display: inline;
+  }
+  .me-sec__title {
+    font-size: 1.25rem;
+    white-space: nowrap;
+  }
+  /* Empty tiles: a word or two, and "+ Add" — quieter than filled ones. */
+  .me-sec.is-empty {
+    min-height: 0;
+  }
+  .me-sec.is-empty .me-sec__text {
+    font-size: 0.75rem;
+  }
+  .me-sec.is-empty .me-sec__side {
+    position: static;
+    order: 3;
+    margin-top: auto;
+  }
+  .me-sec.is-empty .me-sec__add {
+    display: inline;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--ink-2);
+  }
+}
+
+/* Progress: gold arc, calm ink. */
+.me-pct {
+  background: conic-gradient(var(--gold-deep) var(--pct, 0%), color-mix(in srgb, var(--ink) 12%, transparent) 0);
+}
+.me-person__pct {
+  color: var(--ink-2);
+}
+.me-person__age {
+  font-style: italic;
+  color: var(--ink-2);
+}
+
+/* Who sees what: before and after, then the way to Preview. */
+.me-who__group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.me-who__group + .me-who__group {
+  margin-top: 8px;
+}
+.me .me-who__h {
+  margin: 0;
+  font-family: var(--font-display-stack);
+  font-size: 1.1875rem;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--ink);
+}
+.me-who__body .me-textbtn {
+  align-self: flex-start;
+}
+.me-who--side {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .me-who--main {
+    display: none;
+  }
+  .me-who--side {
+    display: block;
+    margin-top: 4px;
+  }
+  .me-who--side .me-who__sum {
+    border-bottom: 1px solid var(--me-hair);
+  }
+  .me-who--side[open] .me-who__sum {
+    border-bottom: 0;
+  }
+  .me-who--side .me-who__body {
+    padding-left: 34px;
+  }
+  /* Opened, the rules can run longer than the window: let the column
+     scroll with the page instead of pinning it. */
+  .me-person:has(.me-who--side[open]) {
+    position: static;
+  }
+  /* Sticky just below the page's own frosted header. */
+  .me-person {
+    top: 96px;
+  }
+  .me-person .me-next {
+    border-bottom: 0;
+  }
+}
+
+/* Preview without a photo: large serif initials on a soft kumkum-to-gold
+   wash, and the one thing to do about it. */
+.me-pv__hero:has(.me-pv__nophoto) {
+  aspect-ratio: 4 / 5;
+  background: linear-gradient(160deg,
+      color-mix(in srgb, var(--accent) 16%, var(--surface)) 0%,
+      color-mix(in srgb, var(--gold) 30%, var(--surface)) 100%);
+}
+.me-pv__nophoto {
+  position: absolute;
+  inset: 0 0 30%;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display-stack);
+  font-size: 7rem;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: color-mix(in srgb, var(--ink) 55%, transparent);
+}
+.me-pv__addphoto {
+  position: absolute;
+  z-index: 2;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper) 70%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  color: var(--ink);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+.me-pv__addphoto:hover {
+  background: var(--paper);
+}
+@media (min-width: 1024px) {
+  .me-preview {
+    grid-template-columns: 360px minmax(0, 1fr);
+  }
+  .me-phone {
+    height: min(720px, calc(100vh - 230px));
+  }
+}
+
+/* Parent: no photo yet means a modest circle, not a poster. Visible labels
+   above the fields. */
+.me-member .member__label {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+.me-member .member__two .field,
+.me-member .member__card > .field {
+  display: flex;
+  flex-direction: column;
+}
+@media (min-width: 1024px) {
+  .me-member .member__photo--empty {
+    width: 160px;
+    height: 160px;
+    aspect-ratio: auto;
+    border-radius: 50%;
+  }
+  .me-member .member__photo--empty .member__photo-empty,
+  .me-member .member__photo--empty .member__photo-empty > span {
+    border-radius: 50% !important;
+  }
+  .me-member .member__photo--empty .member__photo-empty > span {
+    font-size: 3rem !important;
+  }
+  .me-member .member__photo--empty .member__photo-badge {
+    right: 4px;
+    bottom: 4px;
+    width: 36px;
+    height: 36px;
+  }
+  .me-member .member__id {
+    top: 96px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .me-sec {
+    padding: 18px 4px;
+  }
+}
+@media (min-width: 1024px) {
+  .me-member .member__photo--empty {
+    overflow: visible;
+  }
+  .me-member .member__signout {
+    margin-top: 4px;
+  }
+  .me-member .member__card {
+    padding-top: 24px;
+    padding-bottom: 24px;
+  }
+}
+
+.me .me-grid__main {
+  width: 100%;
+}

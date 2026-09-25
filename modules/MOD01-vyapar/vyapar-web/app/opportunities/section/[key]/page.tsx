@@ -10,6 +10,7 @@ import { useEffect, useState, use as useParamsPromise } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";
 import LivingCard from "@/app/components/LivingCard";
+import Screen from "@/app/components/Screen";
 
 interface OpportunityCard {
   id: string;
@@ -48,12 +49,14 @@ export default function FeedSectionPage({ params }: { params: Promise<{ key: str
   }
 
   return (
-    <main className="vy-shell">
+    <Screen width="wide">
       <h1>{t(`discover:home.${SECTION_LABEL_KEY[key] ?? "sectionForYou"}` as "home.sectionForYou")}</h1>
       {items === null && <p className="vy-muted">{t("common:state.loading")}</p>}
-      <div className="vy-stack">
-        {items?.map((item) => (
+      {/* [IMP33] F4 "2-column result lists" at ≥600px. */}
+      <div className="vy-grid vy-grid-3">
+        {items?.map((item, i) => (
           <LivingCard
+            index={i}
             key={item.id}
             href={`/opportunities/${item.id}`}
             title={item.title}
@@ -68,6 +71,6 @@ export default function FeedSectionPage({ params }: { params: Promise<{ key: str
           />
         ))}
       </div>
-    </main>
+    </Screen>
   );
 }

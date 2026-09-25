@@ -9,6 +9,8 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, ApiError } from "@/lib/api";
+import FileUpload from "@/app/components/FileUpload";
+import Screen from "@/app/components/Screen";
 
 interface Outcome {
   case_id: string;
@@ -27,6 +29,11 @@ function OutcomeCard({ item, onDone }: { item: Outcome; onDone: () => void }) {
   const { t, i18n } = useTranslation(["trustSafety", "common"]);
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
+  // [Critique agent finding, fixed here] FR41 names evidence as an
+  // explicitly optional part of an appeal — no attachment control existed
+  // anywhere on this form. Reuses the one shared FileUpload component
+  // already built for enquiries/opportunities, not a second upload path.
+  const [evidenceUrl, setEvidenceUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fmt = (d: string) => new Date(d).toLocaleDateString(i18n.language);
@@ -35,7 +42,7 @@ function OutcomeCard({ item, onDone }: { item: Outcome; onDone: () => void }) {
     setBusy(true);
     setError(null);
     try {
-      await api.post("/v1/appeals", { case_id: item.case_id, text });
+      await api.post("/v1/appeals", { case_id: item.case_id, text, evidence_urls: evidenceUrl ? [evidenceUrl] : [] });
       onDone();
     } catch (e) {
       setError(e instanceof ApiError ? String(e.detail) : t("common:state.somethingWentWrong"));
@@ -61,6 +68,8 @@ function OutcomeCard({ item, onDone }: { item: Outcome; onDone: () => void }) {
       {item.can_appeal && open && (
         <div className="vy-stack">
           <textarea className="vy-textarea" rows={4} maxLength={1000} value={text} onChange={(e) => setText(e.target.value)} placeholder={t("trustSafety:outcomes.appealPlaceholder")} />
+          <label className="vy-label">{t("trustSafety:outcomes.evidenceLabel")}</label>
+          <FileUpload value={evidenceUrl} onChange={setEvidenceUrl} />
           {error && <p className="vy-error">{error}</p>}
           <button className="vy-btn vy-btn-primary" style={{ alignSelf: "flex-start" }} disabled={!text || busy} onClick={appeal}>
             {t("trustSafety:outcomes.appeal")}
@@ -84,7 +93,7 @@ export default function OutcomesPage() {
   }, []);
 
   return (
-    <main className="vy-shell">
+    <Screen width="wide">
       <h1>{t("trustSafety:outcomes.title")}</h1>
       <p className="vy-muted">{t("trustSafety:outcomes.process")}</p>
       <p id="grievance" className="vy-muted">{t("trustSafety:report.grievance")}</p>
@@ -93,6 +102,6 @@ export default function OutcomesPage() {
       <div className="vy-stack">
         {items?.map((o) => <OutcomeCard key={o.case_id} item={o} onDone={load} />)}
       </div>
-    </main>
+    </Screen>
   );
 }

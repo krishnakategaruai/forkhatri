@@ -1,0 +1,6 @@
+WARNING:identity:Development tools are mounted at /dev/v1 (ENVIRONMENT=development, DEV_TOOLS_ENABLED=true).
+INFO:     Started server process [50112]
+INFO:     Waiting for application startup.
+INFO:identity:Identity service started against localhost:5433/forkhatri_identity
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8100 (Press CTRL+C to quit)

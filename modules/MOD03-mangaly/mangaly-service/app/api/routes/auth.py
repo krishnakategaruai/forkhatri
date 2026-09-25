@@ -31,7 +31,7 @@ from app.api.deps import (
     DbSession,
     Locale,
     get_current_session_token,
-)
+)  # noqa: I001
 from app.components.identity_bridge import interface as identity
 from app.i18n import translate
 
@@ -305,21 +305,177 @@ async def confirm_password_reset(
     )
 
 
-@router.get("/me", response_model=SessionResponse)
-async def me(caller: AuthenticatedSession) -> SessionResponse:
-    """[FR090/TR090 → ForKhatri TR15] Resolve the current session for launch routing.
+class OwnProfileOut(BaseModel):
+    profile_id: str
+    name: str
+    looking_for: str | None
+    primary_photo_url: str | None
+    discoverable: bool
+    # [DEC-V1-019] Set when someone else (a parent) created this profile.
+    created_by_name: str | None = None
+    created_by_relation: str | None = None
+    created_by_role: str | None = None
+    claimed: bool = True
 
-    Goes through the same `get_authenticated_account` dependency as every other
-    endpoint, so it answers for the ForKhatri session (and for the interim
-    session only when that path is explicitly enabled). Creating the member-link
-    row on a new member's first visit happens here as a side effect.
 
-    `expires_at` is the ForKhatri session's `session_expires_at` (ISO 8601);
-    it stays "" only for the interim path, which has no platform expiry.
+class ManagedOut(BaseModel):
+    """A profile the caller created for their son or daughter, not yet taken over."""
+
+    account_id: str
+    name: str
+    primary_photo_url: str | None
+
+
+class CircleOut(BaseModel):
+    """[Contract §1/§6] One entry per membership, with ITS relationship —
+    never a role on the account. `candidate_profile_id` is the real profile
+    id (null until a candidate invited by their family creates one);
+    `candidate_account_id` is what every existing people-keyed endpoint takes,
+    and `?for_candidate=` accepts either."""
+
+    membership_id: str
+    candidate_profile_id: str | None
+    candidate_account_id: str
+    candidate_name: str
+    relationship: str
+    # [Migration 040] Exact relation (mother, maternal_uncle, …) when stated.
+    relation: str | None = None
+    looking_for: str | None
+    primary_photo_url: str | None
+    member_count: int
+
+
+class CountsOut(BaseModel):
+    unread_messages: int
+    pending_requests: int
+    unread_notifications: int
+
+
+class MeResponse(BaseModel):
+    account_id: str
+    display_name: str | None
+    preferred_language: str
+    expires_at: str
+    own_profile: OwnProfileOut | None
+    circles: list[CircleOut]
+    counts: CountsOut
+    managed_profiles: list[ManagedOut] = []
+
+
+@router.get("/me", response_model=MeResponse)
+async def me(caller: AuthenticatedSession, session: DbSession) -> MeResponse:
+    """[FR090/TR090 → ForKhatri TR15; rework contract §1] Resolve the current
+    session AND everything the shell needs to draw itself: the member's own
+    candidate profile (if any), every circle they act in with their
+    relationship in that circle, and the three badge counts. Creating the
+    member-link row on a new member's first visit happens here as a side
+    effect of authentication.
     """
-    return SessionResponse(
-        account_id=str(caller.account_id),
+    from sqlalchemy import text
+
+    from app.components.authorization import interface as authz
+    from app.components.authorization.context import Action
+    from app.components.communication import interface as communication
+    from app.components.discovery import interface as discovery
+    from app.components.home_circle import interface as home_circle
+    from app.components.notification_bridge import interface as notifications
+    from app.components.profile import interface as profile
+
+    account_id = caller.account_id
+    # Binds `mangaly.authz_context` once: every `has_scope()` predicate below
+    # (a circle's requests, a circle's members) then resolves for this member.
+    await authz.resolve_self(session, account_id=account_id, action=Action.READ)
+
+    own = await profile.get_own_profile(session, account_id=account_id)
+    own_out = None
+    if own is not None:
+        snapshot = await discovery.get_snapshot(session, account_id=account_id) or {}
+        searchable = (
+            await session.execute(
+                text(
+                    "SELECT searchable FROM mangaly_discovery.discovery_profile_index "
+                    "WHERE profile_id = :id"
+                ),
+                {"id": account_id},
+            )
+        ).scalar_one_or_none()
+        own_out = OwnProfileOut(
+            profile_id=str(own.id),
+            name=own.name,
+            looking_for=str(snapshot["looking_for"]) if snapshot.get("looking_for") else None,
+            primary_photo_url=own.photo_url,
+            discoverable=bool(searchable),
+        )
+        # [DEC-V1-019] "Your father created this profile for you."
+        made = (
+            await session.execute(
+                text("SELECT * FROM mangaly_profile.created_for_me(:me)"), {"me": account_id}
+            )
+        ).mappings().first()
+        if made is not None:
+            own_out.created_by_name = made["creator_name"]
+            own_out.created_by_relation = made["relation"]
+            own_out.created_by_role = made["relationship_type"]
+            own_out.claimed = made["claimed_at"] is not None
+
+    managed_rows = (
+        await session.execute(
+            text("SELECT * FROM mangaly_profile.managed_profiles_of(:me)"), {"me": account_id}
+        )
+    ).mappings().all()
+    managed_out = [
+        ManagedOut(
+            account_id=str(r["account_id"]),
+            name=r["name"],
+            primary_photo_url=(
+                profile.resolve_photo_url(r["primary_photo_ref"]) if r["primary_photo_ref"] else None
+            ),
+        )
+        for r in managed_rows
+    ]
+
+    circles = await home_circle.list_member_contexts(session, account_id=account_id)
+    circles_out = [
+        CircleOut(
+            membership_id=str(c.membership_id),
+            candidate_profile_id=str(c.candidate_profile_id) if c.candidate_profile_id else None,
+            candidate_account_id=str(c.candidate_account_id),
+            candidate_name=c.candidate_name,
+            relationship=c.relationship_type.value,
+            relation=c.relation,
+            looking_for=c.looking_for,
+            primary_photo_url=(
+                profile.resolve_photo_url(c.primary_photo_ref) if c.primary_photo_ref else None
+            ),
+            member_count=c.member_count,
+        )
+        for c in circles
+    ]
+
+    candidates = [account_id, *(c.candidate_account_id for c in circles)]
+    pending = (
+        await session.execute(
+            text(
+                "SELECT count(*) FROM mangaly_connection.connection_request "
+                "WHERE status = 'pending' AND target_profile_id = ANY(CAST(:ids AS uuid[]))"
+            ),
+            {"ids": [str(c) for c in candidates]},
+        )
+    ).scalar_one()
+
+    return MeResponse(
+        account_id=str(account_id),
+        display_name=caller.display_name or (own.name if own else None),
+        preferred_language=caller.preferred_language or "en",
         expires_at=caller.expires_at.isoformat() if caller.expires_at else "",
+        own_profile=own_out,
+        circles=circles_out,
+        managed_profiles=managed_out,
+        counts=CountsOut(
+            unread_messages=await communication.unread_total(session, account_id=account_id),
+            pending_requests=int(pending),
+            unread_notifications=await notifications.unread_count(session, account_id=account_id),
+        ),
     )
 
 

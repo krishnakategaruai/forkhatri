@@ -3,9 +3,15 @@
  * `app/config/profile_tiers.py` exactly. Two lists, not one, would risk the
  * TR003/TR027 non-divergence contract drifting; this file is deliberately
  * the frontend's single copy of the same tuples the backend already treats
- * as its one source of truth. */
+ * as its one source of truth.
+ *
+ * [2026-09-17 rework, contract §3] New categories a mature matrimony biodata
+ * carries: `basics` (height, mother tongue, children), `community` (gotra,
+ * sub-community, native place), `education_career` (income, employer,
+ * college), `family` (family type/values, parents' occupations, siblings),
+ * and the horoscope extras (manglik, rashi, nakshatra, birth time/place). */
 
-export type FieldKind = 'select' | 'text' | 'ageRange' | 'tags';
+export type FieldKind = 'select' | 'text' | 'number' | 'textarea' | 'ageRange' | 'tags';
 
 export type FieldDef = {
   category: string;
@@ -13,6 +19,10 @@ export type FieldDef = {
   kind: FieldKind;
   labelKey: string; // profile:field.<category>.<key>
   options?: string[]; // for 'select' — i18n keys are profile:option.<key>.<option>
+  /** Unit suffix shown after a number (e.g. cm). */
+  unit?: string;
+  min?: number;
+  max?: number;
 };
 
 export type CategoryDef = {
@@ -21,6 +31,27 @@ export type CategoryDef = {
   tier: 'discoverability' | 'enhanced';
   fields: FieldDef[];
 };
+
+export const MOTHER_TONGUES = ['telugu', 'tamil', 'kannada', 'hindi', 'punjabi', 'marathi', 'gujarati', 'english', 'other'];
+export const SUB_COMMUNITIES = ['khatri', 'arora', 'sood', 'bhatia', 'other'];
+export const INCOME_BANDS = ['under_5', '5_10', '10_20', '20_40', '40_plus', 'prefer_not'];
+export const FAMILY_TYPES = ['joint', 'nuclear', 'extended'];
+export const FAMILY_VALUES = ['traditional', 'moderate', 'liberal'];
+export const MANGLIK = ['yes', 'no', 'partial', 'dont_know'];
+export const RASHIS = [
+  'mesh',
+  'vrishabh',
+  'mithun',
+  'kark',
+  'simha',
+  'kanya',
+  'tula',
+  'vrishchik',
+  'dhanu',
+  'makar',
+  'kumbh',
+  'meen',
+];
 
 /* Discoverability tier — DEC-V1-001's four required attributes, plus the
  * any-of partner-preference pair, exactly matching
@@ -104,11 +135,65 @@ export const DISCOVERABILITY_CATEGORIES: CategoryDef[] = [
   },
 ];
 
-/* Enhanced-matching tier — DEC-V1-001 defines this as "everything else," so
- * the exhaustive field list per category is this app's own implementation
- * choice (FR002's Assumptions note the exact schema is implementation-
- * stage), kept to one representative field per category to stay simple. */
+/* Enhanced-matching tier — DEC-V1-001 defines this as "everything else." */
 export const ENHANCED_CATEGORIES: CategoryDef[] = [
+  {
+    category: 'basics',
+    titleKey: 'category.basics',
+    tier: 'enhanced',
+    fields: [
+      // The formal introduction a biodata opens with — written by the candidate
+      // or, on a profile a parent created, by the parent (DEC-V1-019).
+      { category: 'basics', key: 'about', kind: 'textarea', labelKey: 'field.basics.about' },
+      { category: 'basics', key: 'height_cm', kind: 'number', labelKey: 'field.basics.height_cm', unit: 'cm', min: 120, max: 220 },
+      {
+        category: 'basics',
+        key: 'mother_tongue',
+        kind: 'select',
+        labelKey: 'field.basics.mother_tongue',
+        options: MOTHER_TONGUES,
+      },
+      {
+        category: 'basics',
+        key: 'have_children',
+        kind: 'select',
+        labelKey: 'field.basics.have_children',
+        options: ['no', 'yes_living_with_me', 'yes_not_living_with_me'],
+      },
+    ],
+  },
+  {
+    category: 'community',
+    titleKey: 'category.community',
+    tier: 'enhanced',
+    fields: [
+      { category: 'community', key: 'gotra', kind: 'text', labelKey: 'field.community.gotra' },
+      {
+        category: 'community',
+        key: 'sub_community',
+        kind: 'select',
+        labelKey: 'field.community.sub_community',
+        options: SUB_COMMUNITIES,
+      },
+      { category: 'community', key: 'native_place', kind: 'text', labelKey: 'field.community.native_place' },
+    ],
+  },
+  {
+    category: 'education_career',
+    titleKey: 'category.education_career',
+    tier: 'enhanced',
+    fields: [
+      {
+        category: 'education_career',
+        key: 'income_band',
+        kind: 'select',
+        labelKey: 'field.education_career.income_band',
+        options: INCOME_BANDS,
+      },
+      { category: 'education_career', key: 'employer', kind: 'text', labelKey: 'field.education_career.employer' },
+      { category: 'education_career', key: 'college', kind: 'text', labelKey: 'field.education_career.college' },
+    ],
+  },
   {
     category: 'lifestyle',
     titleKey: 'category.lifestyle',
@@ -165,6 +250,33 @@ export const ENHANCED_CATEGORIES: CategoryDef[] = [
     ],
   },
   {
+    category: 'family',
+    titleKey: 'category.family',
+    tier: 'enhanced',
+    fields: [
+      { category: 'family', key: 'family_type', kind: 'select', labelKey: 'field.family.family_type', options: FAMILY_TYPES },
+      {
+        category: 'family',
+        key: 'family_values',
+        kind: 'select',
+        labelKey: 'field.family.family_values',
+        options: FAMILY_VALUES,
+      },
+      { category: 'family', key: 'father_occupation', kind: 'text', labelKey: 'field.family.father_occupation' },
+      { category: 'family', key: 'mother_occupation', kind: 'text', labelKey: 'field.family.mother_occupation' },
+      { category: 'family', key: 'brothers', kind: 'number', labelKey: 'field.family.brothers', min: 0, max: 12 },
+      { category: 'family', key: 'sisters', kind: 'number', labelKey: 'field.family.sisters', min: 0, max: 12 },
+      {
+        category: 'family',
+        key: 'lives_with_parents',
+        kind: 'select',
+        labelKey: 'field.family.lives_with_parents',
+        options: ['yes', 'no'],
+      },
+      { category: 'family', key: 'about_family', kind: 'textarea', labelKey: 'field.family.about_family' },
+    ],
+  },
+  {
     category: 'family_involvement_expectations',
     titleKey: 'category.family_involvement_expectations',
     tier: 'enhanced',
@@ -218,6 +330,11 @@ export const ENHANCED_CATEGORIES: CategoryDef[] = [
         labelKey: 'field.horoscope.matching_required',
         options: ['yes', 'no', 'open'],
       },
+      { category: 'horoscope', key: 'manglik', kind: 'select', labelKey: 'field.horoscope.manglik', options: MANGLIK },
+      { category: 'horoscope', key: 'rashi', kind: 'select', labelKey: 'field.horoscope.rashi', options: RASHIS },
+      { category: 'horoscope', key: 'nakshatra', kind: 'text', labelKey: 'field.horoscope.nakshatra' },
+      { category: 'horoscope', key: 'birth_time', kind: 'text', labelKey: 'field.horoscope.birth_time' },
+      { category: 'horoscope', key: 'birth_place', kind: 'text', labelKey: 'field.horoscope.birth_place' },
     ],
   },
 ];
@@ -226,4 +343,8 @@ export const ALL_CATEGORIES: CategoryDef[] = [...DISCOVERABILITY_CATEGORIES, ...
 
 export function findCategory(category: string): CategoryDef | undefined {
   return ALL_CATEGORIES.find((c) => c.category === category);
+}
+
+export function findField(category: string, key: string): FieldDef | undefined {
+  return findCategory(category)?.fields.find((f) => f.key === key);
 }

@@ -10,7 +10,7 @@
 // Traces to: FR32, TR032, SP032, UX20
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api } from "@/lib/api";
+import { useSdk } from "@/lib/sdk/react";
 
 interface Count {
   kind: string;
@@ -39,11 +39,14 @@ export default function PerformanceReport({
 }) {
   const { t, i18n } = useTranslation(["commercial"]);
   const [report, setReport] = useState<Report | null>(null);
+  const sdk = useSdk();
 
   useEffect(() => {
-    const query = promotionId ? `?promotion_id=${promotionId}` : "";
-    api.get<Report>(`/v1/performance/${targetKind}/${targetId}${query}`).then(setReport).catch(() => setReport(null));
-  }, [targetKind, targetId, promotionId]);
+    sdk.commercial
+      .performance<Report>(targetKind, targetId, { promotion_id: promotionId })
+      .then(setReport)
+      .catch(() => setReport(null));
+  }, [targetKind, targetId, promotionId, sdk]);
 
   if (!report) return null;
   const fmt = (d: string) => new Date(d).toLocaleDateString(i18n.language);

@@ -1,0 +1,10 @@
+{
+  "error": {
+    "notRm": "This account is not a relationship manager.",
+    "notFound": "That assignment was not found.",
+    "notEntitled": "This member does not have assisted matching on their plan.",
+    "alreadyAssigned": "This member already has a relationship manager.",
+    "invalidTarget": "That person cannot be suggested.",
+    "memberLookingForMissing": "The member has not said whether they are looking for a bride or a groom, so there is nothing to search yet."
+  }
+}

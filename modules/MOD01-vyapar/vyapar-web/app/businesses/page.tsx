@@ -11,75 +11,59 @@
 // `relevance_reason` from the API are now i18n KEYS (discovery.py's own
 // i18n conversion) — this page translates them via discover.json/
 // ranking.json, never renders them as raw English/key text.
+// [IMP38 — Refactor C] Now only the route: search state and the query
+// building live here, the request goes through useListingSearch (SDK; the
+// last search re-runs on a live language switch), the markup is
+// <BusinessesView>.
 // Traces to: FR15, FR16, FR17, TR015, TR016, TR017
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { api } from "@/lib/api";
-import IntentBar, { ParsedIntent } from "@/app/components/IntentBar";
-import LivingCard from "@/app/components/LivingCard";
-import { useReputationText, type Reputation } from "@/app/components/Reputation";
+import type { ListingSearchParams } from "@/lib/sdk";
+import type { ParsedIntent } from "@/app/components/IntentBar";
+import { DEFAULT_FILTERS, type Filters } from "@/app/components/FilterSheet";
+import Screen from "@/app/components/Screen";
+import BusinessesView from "@/app/components/businesses/BusinessesView";
+import { useListingSearch } from "@/app/hooks/listings";
 
-interface SearchListing {
-  id: string;
-  name: string;
-  locality: string;
-  categories: string[];
-  capabilities: string[];
-  category_labels: string[];
-  capability_labels: string[];
-  verification_state: string;
-  contact_verified: boolean;
-  reputation?: Reputation | null; // [FR28] reputation line on every result card
+function buildParams(intent: ParsedIntent, attempt: number, f: Filters, extraParams: Record<string, string> = {}): ListingSearchParams {
+  const params: ListingSearchParams = {};
+  if (intent.text) params.q = intent.text;
+  // [Third critique pass fix] intent.category is now a real taxonomy
+  // slug from IntentBar's own suggestion fetch, never a label needing a
+  // lossy space-to-underscore guess.
+  if (intent.category) params.category = intent.category;
+  if (intent.locality) params.locality = intent.locality;
+  if (f.radius_km) params.radius_km = String(f.radius_km);
+  if (f.service_mode) params.service_mode = f.service_mode;
+  if (f.availability) params.availability = f.availability;
+  if (f.verified_only) params.verified_only = "true";
+  if (f.skills && f.skills.length > 0) params.skills = f.skills;
+  params.sort_by = f.sort_by;
+  params.broaden_attempt = attempt;
+  Object.entries(extraParams).forEach(([k, v]) => (params[k] = v));
+  return params;
 }
-
-interface SearchResult {
-  listing: SearchListing;
-  relevance_reason: string;
-}
-
-interface BroadeningOption {
-  id: string;
-  label: string;
-}
-
-interface SearchResponse {
-  results: SearchResult[];
-  total_considered: number;
-  degraded?: boolean;
-  notice?: string | null;
-  broadening_options: BroadeningOption[];
-  fallback?: { post_link: string; notify_link: string } | null;
-  sponsored?: SearchResult[]; // [FR30] labelled extra slot; organic results unchanged
-}
-
-const RANKING_SIGNAL_KEYS = [
-  "capability_fit", "intent_fit", "location_fit", "timing_fit", "value_fit", "experience_fit", "freshness_fit", "trust_fit",
-];
 
 export default function BusinessesPage() {
-  const { t } = useTranslation(["discover", "common", "ranking"]);
-  const [response, setResponse] = useState<SearchResponse | null>(null);
   const [lastQuery, setLastQuery] = useState<ParsedIntent | null>(null);
   const [broadenAttempt, setBroadenAttempt] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const reputationText = useReputationText();
+  // [Real regression fix — FR15/FR17/FR19, coordinator direction] the
+  // free-text IntentBar had quietly become the ONLY way to narrow results.
+  // `filters` is real, structured state independent of the parsed intent —
+  // both are sent together on every search, and the intent bar is now a
+  // shortcut INTO these filters (it can set locality/category), never the
+  // only path to them.
+  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  const { response, loading, search } = useListingSearch();
 
-  async function runSearch(intent: ParsedIntent, attempt = 0, extraParams: Record<string, string> = {}) {
-    setLoading(true);
+  async function runSearch(intent: ParsedIntent, attempt = 0, extraParams: Record<string, string> = {}, f: Filters = filters) {
     setLastQuery(intent);
     setBroadenAttempt(attempt);
-    try {
-      const params = new URLSearchParams();
-      if (intent.text) params.set("q", intent.text);
-      if (intent.category) params.set("category", intent.category.replace(" ", "_"));
-      if (intent.locality) params.set("locality", intent.locality);
-      params.set("broaden_attempt", String(attempt));
-      Object.entries(extraParams).forEach(([k, v]) => params.set(k, v));
-      const res = await api.get<SearchResponse>(`/v1/listings/search?${params.toString()}`);
-      setResponse(res);
-    } finally {
-      setLoading(false);
-    }
+    await search(buildParams(intent, attempt, f, extraParams));
+  }
+
+  function changeFilters(next: Filters) {
+    setFilters(next);
+    if (lastQuery) runSearch(lastQuery, 0, {}, next);
   }
 
   function applyBroadening(optionId: string) {
@@ -94,85 +78,27 @@ export default function BusinessesPage() {
     runSearch(lastQuery, broadenAttempt + 1, extra);
   }
 
-  function broadeningLabel(o: BroadeningOption): string {
-    if (o.label === "radius") return t("discover:broaden.radius", { km: o.id.replace("radius_", "") });
-    return t(`discover:broaden.${o.label}` as "broaden.remove_filter");
-  }
-
-  function relevanceLabel(key: string): string {
-    if (RANKING_SIGNAL_KEYS.includes(key)) return t(`ranking:signal.${key}` as "signal.capability_fit");
-    return t(`ranking:fallback.${key}` as "fallback.matchesFilters");
-  }
-
   return (
-    <main className="vy-shell">
-      <div className="vy-row" style={{ justifyContent: "space-between" }}>
-        <h1>{t("discover:businesses.title")}</h1>
-        <a className="vy-btn vy-btn-ghost" href="/listings/mine" style={{ fontSize: 13 }}>
-          {t("common:action.myListings")}
-        </a>
-      </div>
-      <IntentBar onSearch={(intent) => runSearch(intent)} />
-
-      {loading && <p className="vy-muted">{t("common:state.searching")}</p>}
-
-      {response?.sponsored && response.sponsored.length > 0 && (
-        <div className="vy-stack">
-          {response.sponsored.map((r) => (
-            <LivingCard
-              key={`sponsored-${r.listing.id}`}
-              href={`/listings/${r.listing.id}`}
-              title={r.listing.name}
-              subtitle={`${r.listing.locality} · ${[...r.listing.category_labels, ...r.listing.capability_labels].join(", ") || "—"}`}
-              verified={r.listing.verification_state === "verified"}
-              verificationLabel={t("discover:businesses.verifiedLabel")}
-              sponsored
-              meta={reputationText(r.listing.reputation)}
-            />
-          ))}
-        </div>
-      )}
-
-      {response && response.results.length > 0 && (
-        <div className="vy-stack">
-          {response.degraded && response.notice && <p className="vy-muted">{t(`discover:notice.${response.notice}` as "notice.degraded")}</p>}
-          {response.results.map((r) => (
-            <LivingCard
-              key={r.listing.id}
-              href={`/listings/${r.listing.id}`}
-              title={r.listing.name}
-              subtitle={`${r.listing.locality} · ${[...r.listing.category_labels, ...r.listing.capability_labels].join(", ") || "—"}`}
-              verified={r.listing.verification_state === "verified"}
-              verificationLabel={t("discover:businesses.verifiedLabel")}
-              meta={[reputationText(r.listing.reputation), relevanceLabel(r.relevance_reason)].filter(Boolean).join(" · ")}
-            />
-          ))}
-        </div>
-      )}
-
-      {response && response.results.length === 0 && (
-        <div className="vy-card vy-stack">
-          <p>{t(`discover:notice.${response.notice ?? "noMatch"}` as "notice.noMatch")}</p>
-          <div className="vy-row" style={{ flexWrap: "wrap" }}>
-            {response.broadening_options.map((o) => (
-              <button key={o.id} className="vy-chip" style={{ border: "none", cursor: "pointer" }} onClick={() => applyBroadening(o.id)}>
-                {broadeningLabel(o)}
-              </button>
-            ))}
-          </div>
-          {response.fallback && (
-            <div className="vy-row" style={{ flexWrap: "wrap" }}>
-              <a className="vy-btn vy-btn-secondary" href={response.fallback.post_link}>
-                {t("discover:businesses.postWhatYouNeed")}
-              </a>
-            </div>
-          )}
-        </div>
-      )}
-
-      {!response && !loading && (
-        <p className="vy-muted">{t("discover:businesses.hint")}</p>
-      )}
-    </main>
+    // [IMP33] Directory screen — wide measure, and the whole body becomes
+    // a sidebar layout at ≥900px. REQUIREMENT (owner, 2026-09-17):
+    // "filters should become a persistent left sidebar on desktop instead
+    // of a collapsible sheet, with results in a multi-column grid beside
+    // them." A toggle-to-reveal filter panel is a phone compromise for
+    // scarce vertical space; keeping it on a 1440px screen hides the
+    // single most useful control on the screen behind a click. The SAME
+    // <FilterSheet> component renders in both places — one filter
+    // implementation, two placements, chosen by CSS breakpoint
+    // (`vy-desktop-only` / `vy-mobile-only`) so there is no resize
+    // listener and no hydration mismatch.
+    <Screen width="wide">
+      <BusinessesView
+        response={response}
+        loading={loading}
+        filters={filters}
+        onFiltersChange={changeFilters}
+        onSearch={(intent) => runSearch(intent)}
+        onBroaden={applyBroadening}
+      />
+    </Screen>
   );
 }

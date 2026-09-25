@@ -12,20 +12,17 @@
  * does not re-translate it. The one case with no server response at all
  * (`kind: 'network'`) is the only one a caller should translate client-side,
  * since there is nothing localized to display otherwise.
- */
+ *
+ * [2026-09-17 rework, contract §1] `GET /auth/me` is now the ONE identity
+ * call: it carries the account's display name, its own candidate profile (if
+ * any), every Home Circle membership with its relationship, and the unread
+ * counts the navigation shows. Pages never call `/home-circle/contexts` or
+ * `/profile/me` just to find out who is signed in any more — `lib/session.tsx`
+ * fetches this once and shares it. */
 
-import { API_BASE } from './api';
+import { API_BASE, currentLanguageHeader } from './api';
 import { reportOutage } from './outage';
 import { redirectToEntrance, signOutOfForKhatri } from './platform';
-import { getI18n } from './i18n/config';
-
-function currentLanguageHeader(): Record<string, string> {
-  try {
-    return { 'X-Mangaly-Language': getI18n().language };
-  } catch {
-    return {};
-  }
-}
 
 export type AuthOutcome<T> =
   | { ok: true; data: T }
@@ -56,13 +53,117 @@ async function post<T>(path: string, body: unknown): Promise<AuthOutcome<T>> {
   return { ok: false, kind: res.status === 429 ? 'rateLimited' : 'rejected', message };
 }
 
-export type Session = { account_id: string; expires_at: string };
+/* ---------- Contract §1: the identity payload ---------- */
+
+export type LookingFor = 'bride' | 'groom';
+
+/** Relationship vocabulary — per membership, never per account (contract §6). */
+export type Relationship = 'parent' | 'sibling' | 'relative' | 'guardian';
+
+export type OwnProfile = {
+  profile_id: string;
+  name: string;
+  looking_for: LookingFor | null;
+  primary_photo_url: string | null;
+  discoverable: boolean;
+  /** [DEC-V1-019] Set when someone else (a parent) created this profile. */
+  created_by_name?: string | null;
+  created_by_relation?: string | null;
+  created_by_role?: string | null;
+  claimed?: boolean;
+};
+
+export type ManagedProfileRef = { account_id: string; name: string; primary_photo_url: string | null };
+
+export type CircleMembership = {
+  /** The candidate's account id — what every people-keyed endpoint takes. */
+  candidate_account_id: string;
+  candidate_profile_id: string;
+  candidate_name: string;
+  relationship: Relationship;
+  /** [Migration 040] Exact relation (mother, maternal_uncle, …) when stated. */
+  relation?: string | null;
+  looking_for: LookingFor | null;
+  primary_photo_url: string | null;
+  member_count: number;
+  /** The caller's own membership row, when the server sends it (leave/remove). */
+  membership_id?: string;
+};
+
+export type Counts = {
+  unread_messages: number;
+  pending_requests: number;
+  unread_notifications: number;
+};
+
+export type Session = {
+  account_id: string;
+  display_name: string;
+  preferred_language: string;
+  expires_at: string;
+  /** Present ⇒ the account is also a candidate. */
+  own_profile: OwnProfile | null;
+  /** One entry per Home Circle membership, each with its own relationship. */
+  circles: CircleMembership[];
+  counts: Counts;
+  /** [DEC-V1-019] Profiles this person created for a son or daughter, not yet taken over. */
+  managed_profiles: ManagedProfileRef[];
+};
+
+/** Normalizes whatever `/auth/me` answers into the contract shape, so a field
+ *  the server has not started sending yet reads as "none" rather than crashing
+ *  the shell. Nothing here invents data. */
+function normalizeSession(raw: Record<string, unknown>): Session {
+  const own = (raw.own_profile ?? null) as OwnProfile | null;
+  const circles = Array.isArray(raw.circles) ? (raw.circles as CircleMembership[]) : [];
+  const counts = (raw.counts ?? {}) as Partial<Counts>;
+  return {
+    account_id: String(raw.account_id ?? ''),
+    display_name: typeof raw.display_name === 'string' ? raw.display_name : '',
+    preferred_language: typeof raw.preferred_language === 'string' ? raw.preferred_language : 'en',
+    expires_at: typeof raw.expires_at === 'string' ? raw.expires_at : '',
+    own_profile: own
+      ? {
+          profile_id: String(own.profile_id ?? ''),
+          name: own.name ?? '',
+          looking_for: own.looking_for ?? null,
+          primary_photo_url: own.primary_photo_url ?? null,
+          discoverable: !!own.discoverable,
+          created_by_name: own.created_by_name ?? null,
+          created_by_relation: own.created_by_relation ?? null,
+          created_by_role: own.created_by_role ?? null,
+          claimed: own.claimed ?? true,
+        }
+      : null,
+    managed_profiles: Array.isArray(raw.managed_profiles)
+      ? (raw.managed_profiles as ManagedProfileRef[])
+      : [],
+    circles: circles.map((c) => ({
+      candidate_account_id: String(
+        (c as { candidate_account_id?: string }).candidate_account_id ?? c.candidate_profile_id ?? '',
+      ),
+      candidate_profile_id: String(c.candidate_profile_id ?? ''),
+      candidate_name: c.candidate_name ?? '',
+      relationship: (c.relationship ?? 'relative') as Relationship,
+      relation: c.relation ?? null,
+      looking_for: c.looking_for ?? null,
+      primary_photo_url: c.primary_photo_url ?? null,
+      member_count: Number(c.member_count ?? 0),
+      membership_id: c.membership_id,
+    })),
+    counts: {
+      unread_messages: Number(counts.unread_messages ?? 0),
+      pending_requests: Number(counts.pending_requests ?? 0),
+      unread_notifications: Number(counts.unread_notifications ?? 0),
+    },
+  };
+}
 
 /** [FR093/TR093, DEC-V1-012] SECONDARY login path — password, for an account
  *  that has one set. Reached only via the login screen's "use password
  *  instead" link. Failure carries the server's own localized reason. */
 export function logIn(identifier: string, credential: string) {
-  return post<Session>('/auth/login', { identifier, credential });
+  return post<{ account_id: string; expires_at: string }>('/auth/login', { identifier, credential });
 }
 
 /** [FR093/DEC-V1-012] PRIMARY login path — request an OTP. Same response
@@ -153,12 +254,12 @@ export async function getSession(): Promise<Session | null> {
   }
   if (res.status === 401) return null;
   if (!res.ok) throw new SessionUnavailableError(`HTTP ${res.status}`);
-  return (await res.json()) as Session;
+  return normalizeSession((await res.json()) as Record<string, unknown>);
 }
 
-/** For signed-in screens. Returns the session; or starts the hand-off to the
- *  ForKhatri entrance and returns null (signed out); or reports an outage —
- *  the shared retry state replaces the screen — and returns null. */
+/** For signed-in screens outside the shell's provider (the profile wizard).
+ *  Returns the session; or starts the hand-off to the ForKhatri entrance and
+ *  returns null (signed out); or reports an outage and returns null. */
 export async function requireSession(): Promise<Session | null> {
   try {
     const session = await getSession();

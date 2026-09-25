@@ -9,5 +9,45 @@
   "groupResponded": "Responded",
   "groupToReview": "To review",
   "groupPartnerships": "Partnerships",
-  "untitled": "Interaction"
+  "untitled": "Interaction",
+  "status": {
+    "listing": {
+      "draft": "Draft",
+      "submitted": "Submitted",
+      "active_unverified": "Active",
+      "active_verified": "Active, verified",
+      "suspended": "Suspended",
+      "archived": "Archived"
+    },
+    "opportunity": {
+      "draft": "Draft",
+      "pending_review": "Pending review",
+      "active": "Active",
+      "paused": "Paused",
+      "stale": "Stale",
+      "expired": "Expired",
+      "closed": "Closed",
+      "removed": "Removed"
+    },
+    "enquiry": {
+      "open": "Open",
+      "awaiting_response": "Awaiting response",
+      "in_progress": "In progress",
+      "resolved": "Resolved",
+      "closed": "Closed",
+      "withdrawn": "Withdrawn",
+      "restricted": "Restricted"
+    },
+    "partnership": {
+      "draft": "Draft",
+      "pending": "Pending",
+      "accepted": "Accepted",
+      "declined": "Declined",
+      "withdrawn": "Withdrawn",
+      "restricted": "Restricted",
+      "closed": "Closed",
+      "open": "Open"
+    }
+  },
+  "emptyBody": "Things you save, post, respond to or complete will collect here."
 }

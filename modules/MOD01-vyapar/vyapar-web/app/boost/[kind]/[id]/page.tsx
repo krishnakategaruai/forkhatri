@@ -10,12 +10,18 @@
 // pre-selected; there are no timers. An ineligible item shows its reason and
 // the single next step instead. No reach estimate is shown (UX20 DEC-001;
 // pricing doc §5.2 — only when defensible).
+// [IMP39 — desktop layout] At ≥900px the choices (duration as a row of
+// equal cards, audience narrowing) sit on the left and the disclosure with
+// its one confirm button stays in a sticky column on the right, so the
+// person always sees exactly what they are agreeing to while choosing.
+// Below 900px the wrappers are display:contents: phone order unchanged.
 // Traces to: FR30, FR51, FR54, TR030, TR054, UX20
 import { useEffect, useState, use as useParamsPromise } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { api, ApiError } from "@/lib/api";
 import { formatPaise } from "@/lib/money";
+import Screen from "@/app/components/Screen";
 
 interface Product {
   id: string;
@@ -30,10 +36,27 @@ interface Options {
   eligible: boolean;
   reason: string | null;
   target_title: string;
-  audience: { locality: string | null; categories: string[] };
+  // [Critique agent finding, fixed here] category_labels are the real,
+  // already-translated display names — categories itself stays raw (used
+  // only as the value sent back on select, never rendered directly).
+  audience: { locality: string | null; categories: string[]; category_labels: string[] };
   products: Product[];
   credit_available_paise: number;
+  // [Custom duration — owner: "no custom duration?"] any length between
+  // min and max days, priced from the packs by the server (one rule, used
+  // for both the quote shown here and the order).
+  custom_duration: { min_days: number; max_days: number } | null;
 }
+
+interface Quote {
+  days: number;
+  product_id: string;
+  price_paise: number;
+  tax_paise: number;
+  total_paise: number;
+}
+
+const CUSTOM = "custom";
 
 export default function BoostPage({ params }: { params: Promise<{ kind: string; id: string }> }) {
   const { kind, id } = useParamsPromise(params);
@@ -45,6 +68,18 @@ export default function BoostPage({ params }: { params: Promise<{ kind: string; 
   const [onlyCategory, setOnlyCategory] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [customDays, setCustomDays] = useState(10);
+  const [quote, setQuote] = useState<Quote | null>(null);
+
+  // Live quote while the person drags the slider; small debounce so a drag
+  // is one request, not thirty.
+  useEffect(() => {
+    if (productId !== CUSTOM) return;
+    const h = setTimeout(() => {
+      api.get<Quote>(`/v1/promotions/quote?days=${customDays}`).then(setQuote).catch(() => setQuote(null));
+    }, 150);
+    return () => clearTimeout(h);
+  }, [productId, customDays]);
 
   useEffect(() => {
     api
@@ -57,13 +92,13 @@ export default function BoostPage({ params }: { params: Promise<{ kind: string; 
   const money = (p: number) => formatPaise(p, i18n.language);
 
   if (!opts) {
-    return <main className="vy-shell">{notice ? <p className="vy-error">{notice}</p> : <p className="vy-muted">{t("common:state.loading")}</p>}</main>;
+    return <Screen>{notice ? <p className="vy-error">{notice}</p> : <p className="vy-muted">{t("common:state.loading")}</p>}</Screen>;
   }
 
   if (!opts.eligible) {
     const reason = opts.reason ?? "notFound";
     return (
-      <main className="vy-shell">
+      <Screen>
         <h1>{t("commercial:boost.title", { name: opts.target_title })}</h1>
         <div className="vy-card vy-stack">
           <p>{t(`commercial:ineligible.${reason}` as "ineligible.notActive")}</p>
@@ -73,14 +108,20 @@ export default function BoostPage({ params }: { params: Promise<{ kind: string; 
             </a>
           )}
         </div>
-      </main>
+      </Screen>
     );
   }
 
-  const product = opts.products.find((p) => p.id === productId) ?? null;
+  const product: Product | null =
+    productId === CUSTOM
+      ? quote && quote.days === customDays
+        ? { id: CUSTOM, version: 0, duration_days: quote.days, price_paise: quote.price_paise, tax_paise: quote.tax_paise, total_paise: quote.total_paise }
+        : null
+      : (opts.products.find((p) => p.id === productId) ?? null);
+  const custom = opts.custom_duration;
   const credit = product ? Math.min(opts.credit_available_paise, product.total_paise) : 0;
   const due = product ? product.total_paise - credit : 0;
-  const endsOn = product ? new Date(Date.now() + product.duration_days * 86400000).toLocaleDateString(i18n.language) : "";
+  const endsOn = product ? new Date(Date.now() + product.duration_days * 86400000).toLocaleDateString(i18n.language, { day: "numeric", month: "long", year: "numeric" }) : "";
   const audienceLocality = opts.audience.locality;
 
   async function confirm() {
@@ -91,7 +132,8 @@ export default function BoostPage({ params }: { params: Promise<{ kind: string; 
       const draft = await api.post<{ id: string }>("/v1/promotions", {
         target_kind: kind,
         target_id: id,
-        product_id: product.id,
+        product_id: product.id === CUSTOM ? undefined : product.id,
+        custom_days: product.id === CUSTOM ? product.duration_days : undefined,
         audience_locality: onlyLocality && audienceLocality ? audienceLocality : undefined,
         audience_category: onlyCategory ?? undefined,
       });
@@ -120,7 +162,12 @@ export default function BoostPage({ params }: { params: Promise<{ kind: string; 
 
   const disclosureRows: [string, string][] = product
     ? [
-        [t("commercial:disclosure.product"), t(`commercial:product.${product.id}` as "product.boost_7d", { defaultValue: product.id })],
+        [
+          t("commercial:disclosure.product"),
+          product.id === CUSTOM
+            ? t("commercial:boost.customProduct", { n: product.duration_days })
+            : t(`commercial:product.${product.id}` as "product.boost_7d", { defaultValue: product.id }),
+        ],
         [t("commercial:disclosure.price"), money(product.price_paise)],
         [t("commercial:disclosure.tax"), money(product.tax_paise)],
         ...(credit > 0 ? ([[t("commercial:disclosure.credit"), `− ${money(credit)}`]] as [string, string][]) : []),
@@ -136,12 +183,14 @@ export default function BoostPage({ params }: { params: Promise<{ kind: string; 
     : [];
 
   return (
-    <main className="vy-shell">
+    <Screen width="wide">
       <h1>{t("commercial:boost.title", { name: opts.target_title })}</h1>
 
+      <div className="vy-split">
+      <div className="vy-split-main">
       <section className="vy-stack">
         <h2 id="boost-duration" style={{ fontSize: 16 }}>{t("commercial:boost.duration")}</h2>
-        <div className="vy-stack" role="radiogroup" aria-labelledby="boost-duration" style={{ gap: 8 }}>
+        <div className="vy-stack vy-option-grid" role="radiogroup" aria-labelledby="boost-duration" style={{ gap: 8 }}>
           {opts.products.map((p) => (
             <button
               key={p.id}
@@ -155,12 +204,59 @@ export default function BoostPage({ params }: { params: Promise<{ kind: string; 
               <span className="vy-muted">{t("commercial:boost.inclTax", { amount: money(p.total_paise) })}</span>
             </button>
           ))}
+          {custom && (
+            <button
+              role="radio"
+              aria-checked={productId === CUSTOM}
+              className="vy-card vy-row"
+              style={{ justifyContent: "space-between", cursor: "pointer", borderColor: productId === CUSTOM ? "var(--accent)" : undefined, color: "inherit" }}
+              onClick={() => setProductId(CUSTOM)}
+            >
+              <strong>{productId === CUSTOM ? "● " : "○ "}{t("commercial:boost.custom")}</strong>
+              <span className="vy-muted">{t("commercial:boost.customRange", { min: custom.min_days, max: custom.max_days })}</span>
+            </button>
+          )}
         </div>
+        {custom && productId === CUSTOM && (
+          <div className="vy-card vy-stack vy-custom-duration">
+            <div className="vy-row" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
+              <label htmlFor="boost-custom-days" className="vy-label">{t("commercial:boost.customDays")}</label>
+              <strong style={{ fontSize: 20 }}>{t("commercial:boost.days", { n: customDays })}</strong>
+            </div>
+            <input
+              id="boost-custom-days"
+              type="range"
+              min={custom.min_days}
+              max={custom.max_days}
+              value={customDays}
+              onChange={(e) => setCustomDays(Number(e.target.value))}
+            />
+            <div className="vy-row" style={{ justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={custom.min_days}
+                max={custom.max_days}
+                value={customDays}
+                aria-label={t("commercial:boost.customDays")}
+                style={{ width: 88 }}
+                onChange={(e) => {
+                  const n = Number(e.target.value);
+                  if (Number.isFinite(n)) setCustomDays(Math.min(custom.max_days, Math.max(custom.min_days, Math.round(n))));
+                }}
+              />
+              <span className="vy-muted" aria-live="polite">
+                {quote && quote.days === customDays ? t("commercial:boost.inclTax", { amount: money(quote.total_paise) }) : t("common:state.loading")}
+              </span>
+            </div>
+            <p className="vy-muted" style={{ fontSize: 13, margin: 0 }}>{t("commercial:boost.customHelp")}</p>
+          </div>
+        )}
       </section>
 
       {(audienceLocality || opts.audience.categories.length > 0) && (
         <section className="vy-stack">
-          <h2 style={{ fontSize: 16 }}>{t("commercial:boost.audience")}</h2>
+          <h2 className="vy-card-title">{t("commercial:boost.audience")}</h2>
           <p className="vy-muted" style={{ fontSize: 13 }}>{t("commercial:boost.audienceHelp")}</p>
           <div className="vy-row" style={{ flexWrap: "wrap" }}>
             {audienceLocality && (
@@ -168,20 +264,23 @@ export default function BoostPage({ params }: { params: Promise<{ kind: string; 
                 {t("commercial:boost.onlyLocality", { locality: audienceLocality })}
               </button>
             )}
-            {opts.audience.categories.map((c) => (
+            {opts.audience.categories.map((c, i) => (
               <button key={c} className="vy-chip" aria-pressed={onlyCategory === c} style={chipStyle(onlyCategory === c)} onClick={() => setOnlyCategory((v) => (v === c ? null : c))}>
-                {t("commercial:boost.onlyCategory", { category: c.replace(/_/g, " ") })}
+                {t("commercial:boost.onlyCategory", { category: opts.audience.category_labels[i] ?? c })}
               </button>
             ))}
           </div>
         </section>
       )}
 
+      </div>
+
+      <div className="vy-split-aside">
       {!product ? (
         <p className="vy-muted">{t("commercial:boost.chooseDuration")}</p>
       ) : (
         <section className="vy-card vy-stack">
-          <h2 style={{ fontSize: 16 }}>{t("commercial:disclosure.title")}</h2>
+          <h2 className="vy-card-title">{t("commercial:disclosure.title")}</h2>
           <dl className="vy-stack" style={{ gap: 10, margin: 0 }}>
             {disclosureRows.map(([label, value]) => (
               <div key={label}>
@@ -199,6 +298,8 @@ export default function BoostPage({ params }: { params: Promise<{ kind: string; 
           </button>
         </section>
       )}
-    </main>
+      </div>
+      </div>
+    </Screen>
   );
 }

@@ -1,22 +1,49 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import Link from "next/link";
+import { useLoaderHold } from "@/lib/useLoaderHold";
+import SacredLoader from "@/components/SacredLoader";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
-import { Avatar } from '@/components/Avatar';
-import VoiceIntro from '@/components/VoiceIntro';
-import { resolveMediaUrl } from '@/lib/api';
-import ForKhatriHubLink from '@/components/ForKhatriHubLink';
-import { requireSession, logOut, type Session } from '@/lib/auth';
-import { SUPPORTED_LANGUAGES, type Language } from '@/lib/i18n/config';
-import { setPreferredLanguage } from '@/lib/i18n/provider';
-import { findCategory, type CategoryDef, type FieldDef } from '@/lib/profileCategoryConfig';
-import { INTEREST_TAGS, MAX_TAGS, parseTags, toTagKey } from '@/lib/profileFormat';
+import OutlookGame from "@/components/OutlookGame";
+import OutlookScene from "@/components/OutlookScene";
+import PhotoCheckCard from "@/components/PhotoCheckCard";
+import MemberMe from "@/components/MemberMe";
+import {
+  OUTLOOK,
+  OUTLOOK_CATEGORY,
+  readOutlook,
+  type OutlookAnswers,
+} from "@/lib/outlook";
+import VoiceIntro from "@/components/VoiceIntro";
+import { resolveMediaUrl } from "@/lib/api";
+import AccountButton from "@/components/AccountButton";
+import Icon from "@/components/Icon";
+import "./me.css";
+import ForKhatriHubLink from "@/components/ForKhatriHubLink";
+import { requireSession, logOut, type Session } from "@/lib/auth";
+import { setManaging } from "@/lib/api";
+import { claimProfile, disownProfile } from "@/lib/profile";
+import { entranceUrl } from "@/lib/platform";
+import { SUPPORTED_LANGUAGES, type Language } from "@/lib/i18n/config";
+import { setPreferredLanguage } from "@/lib/i18n/provider";
+import {
+  findCategory,
+  type CategoryDef,
+  type FieldDef,
+} from "@/lib/profileCategoryConfig";
+import {
+  INTEREST_TAGS,
+  MAX_TAGS,
+  parseTags,
+  toTagKey,
+} from "@/lib/profileFormat";
 import {
   deletePhoto,
   getAllAttributeValues,
+  getCompleteness,
   getOwnProfile,
   listPhotos,
   reorderPhotos,
@@ -27,21 +54,22 @@ import {
   type AttributeState,
   type AttributeValue,
   type CategoryAttributes,
+  type CompletenessReport,
   type Photo,
   type Profile,
-} from '@/lib/profile';
+} from "@/lib/profile";
 import {
   PROFILE_SECTIONS,
   PROMPT_CATEGORY,
-  PROMPT_QUESTIONS,
+  PROMPT_GROUPS,
   PROMPT_SLOTS,
   isPromptValue,
   type PromptSlot,
   type PromptValue,
   type SectionId,
-} from '@/lib/profileSections';
-import { getContexts } from '@/lib/homeCircle';
-import { getStoredTheme, setPreferredTheme, type Theme } from '@/lib/theme';
+} from "@/lib/profileSections";
+import { getContexts } from "@/lib/homeCircle";
+import { getStoredTheme, setPreferredTheme, type Theme } from "@/lib/theme";
 
 /* FR001/FR002/FR003/FR005 · UX11 "Profile edit hub" — v3, built from
  * researched reference patterns rather than invented ones:
@@ -62,7 +90,7 @@ import { getStoredTheme, setPreferredTheme, type Theme } from '@/lib/theme';
  *     bottom sheet: single-choice saves on tap, text/range fields on Save.
  */
 
-const THEME_OPTIONS: Theme[] = ['light', 'dark', 'system'];
+const THEME_OPTIONS: Theme[] = ["light", "dark", "system"];
 
 // Partner age range bounds for the slider (Baymard: pair a range slider with
 // exact number fields; the slider sets an approximate range fast, the fields
@@ -74,86 +102,97 @@ const AGE_MAX = 70;
 // dropdown on mobile, and suggestions keep common answers consistent so
 // matching isn't split across spellings. Free text still accepted.
 const OCCUPATION_SUGGESTIONS = [
-  'Software Engineer',
-  'Doctor',
-  'Teacher',
-  'Professor',
-  'Chartered Accountant',
-  'Lawyer',
-  'Civil Engineer',
-  'Architect',
-  'Banker',
-  'Business Owner',
-  'Entrepreneur',
-  'Government Employee',
-  'Civil Services (IAS/IPS)',
-  'Defence Services',
-  'Nurse',
-  'Pharmacist',
-  'Product Manager',
-  'Data Scientist',
-  'Designer',
-  'Consultant',
+  "Software Engineer",
+  "Doctor",
+  "Teacher",
+  "Professor",
+  "Chartered Accountant",
+  "Lawyer",
+  "Civil Engineer",
+  "Architect",
+  "Banker",
+  "Business Owner",
+  "Entrepreneur",
+  "Government Employee",
+  "Civil Services (IAS/IPS)",
+  "Defence Services",
+  "Nurse",
+  "Pharmacist",
+  "Product Manager",
+  "Data Scientist",
+  "Designer",
+  "Consultant",
 ];
 
 type Values = Record<string, CategoryAttributes>;
-type Status = 'answered' | 'hidden' | 'empty';
+type Status = "answered" | "hidden" | "empty";
 type Draft = Record<string, { state: AttributeState; value: unknown }>;
 type Sheet =
-  | { kind: 'category'; category: string }
-  | { kind: 'prompt'; slot: PromptSlot }
-  | { kind: 'photo'; id: string }
-  | { kind: 'settings' }
+  | { kind: "section"; id: SectionId }
+  | { kind: "prompt"; slot: PromptSlot }
+  | { kind: "photo"; id: string }
+  | { kind: "settings" }
+  | { kind: "outlook" }
   | null;
 type PageState =
-  | { phase: 'checking' }
-  | { phase: 'ready'; profile: Profile; values: Values; photos: Photo[] };
+  | { phase: "checking" }
+  | { phase: "ready"; profile: Profile; values: Values; photos: Photo[] };
 
-type EditBlock = { kind: 'photos' } | { kind: 'prompt'; slot: PromptSlot } | { kind: 'section'; id: SectionId };
-const EDIT_LAYOUT: EditBlock[] = [
-  { kind: 'photos' },
-  { kind: 'prompt', slot: 'prompt_1' },
-  { kind: 'section', id: 'basics' },
-  { kind: 'section', id: 'lifestyle' },
-  { kind: 'prompt', slot: 'prompt_2' },
-  { kind: 'section', id: 'family' },
-  { kind: 'section', id: 'future' },
-  { kind: 'prompt', slot: 'prompt_3' },
-  { kind: 'section', id: 'partner' },
+type EditBlock =
+  | { kind: "outlook" }
+  | { kind: "photos" }
+  | { kind: "voice" }
+  | { kind: "prompt"; slot: PromptSlot }
+  | { kind: "section"; id: SectionId };
+/* The profile is built in two parts, by the owner's instruction.
+
+   Part 1 — DETAILS. The standard biodata a family reads, in the order a
+   matrimonial profile is actually read: who you are, what you do, where you
+   come from, how you live, your family, the horoscope, the forward-looking
+   parts, and finally the private partner preference. Parents and relatives
+   of a match see this part — and only as much of it as is shared.
+
+   Part 2 — IN YOUR OWN WORDS. The Hinge/Bumble-style part: prompts, the
+   voice introduction and the ten quick choices. Written for the person you
+   might marry, seen only by candidates you connect with (or anything you
+   choose to publish), never by their parents (migration 039). */
+const DETAILS_LAYOUT: EditBlock[] = [
+  { kind: "photos" },
+  { kind: "section", id: "basics" },
+  { kind: "section", id: "education_career" },
+  { kind: "section", id: "community" },
+  { kind: "section", id: "lifestyle" },
+  { kind: "section", id: "family" },
+  { kind: "section", id: "horoscope" },
+  { kind: "section", id: "future" },
+  { kind: "section", id: "partner" },
 ];
 
 type PreviewBlock =
-  | { kind: 'photo'; index: number }
-  | { kind: 'identity' }
-  | { kind: 'prompt'; slot: PromptSlot }
-  | { kind: 'section'; id: SectionId };
+  | { kind: "photo"; index: number }
+  | { kind: "identity" }
+  | { kind: "prompt"; slot: PromptSlot }
+  | { kind: "section"; id: SectionId };
 const PREVIEW_LAYOUT: PreviewBlock[] = [
-  { kind: 'photo', index: 0 },
-  { kind: 'identity' },
-  { kind: 'prompt', slot: 'prompt_1' },
-  { kind: 'photo', index: 1 },
-  { kind: 'section', id: 'basics' },
-  { kind: 'section', id: 'lifestyle' },
-  { kind: 'prompt', slot: 'prompt_2' },
-  { kind: 'photo', index: 2 },
-  { kind: 'section', id: 'family' },
-  { kind: 'section', id: 'future' },
-  { kind: 'prompt', slot: 'prompt_3' },
-  { kind: 'photo', index: 3 },
-  { kind: 'photo', index: 4 },
-  { kind: 'photo', index: 5 },
-  { kind: 'section', id: 'partner' },
+  { kind: "photo", index: 0 },
+  { kind: "identity" },
+  { kind: "prompt", slot: "prompt_1" },
+  { kind: "photo", index: 1 },
+  { kind: "section", id: "basics" },
+  { kind: "section", id: "education_career" },
+  { kind: "section", id: "lifestyle" },
+  { kind: "prompt", slot: "prompt_2" },
+  { kind: "photo", index: 2 },
+  { kind: "section", id: "family" },
+  { kind: "section", id: "community" },
+  { kind: "section", id: "horoscope" },
+  { kind: "section", id: "future" },
+  { kind: "prompt", slot: "prompt_3" },
+  { kind: "photo", index: 3 },
+  { kind: "photo", index: 4 },
+  { kind: "photo", index: 5 },
+  { kind: "section", id: "partner" },
 ];
-
-const ICON: Record<SectionId | 'photos', string> = {
-  photos: 'M4 7h3l2-2h6l2 2h3v12H4z M12 10a3 3 0 1 0 0 6a3 3 0 1 0 0-6z',
-  basics: 'M4 6h16v12H4z M8 10h4 M8 14h8',
-  lifestyle: 'M12 3v2 M12 19v2 M3 12h2 M19 12h2 M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8z',
-  family:
-    'M9 4.8a3.2 3.2 0 1 0 0 6.4a3.2 3.2 0 1 0 0-6.4z M3.5 19.5a5.5 5.5 0 0 1 11 0 M16 6.2a3 3 0 0 1 0 5.6 M17.5 19.5a5.4 5.4 0 0 0-2-4.2',
-  future: 'M5 19L19 5 M9 5h10v10',
-  partner: 'M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z',
-};
 
 const ALL_CATEGORIES_IN_ORDER = PROFILE_SECTIONS.flatMap((s) => s.categories);
 
@@ -169,59 +208,140 @@ function ageFromDob(dob: string): number {
 }
 
 function statusOf(values: Values, category: string): Status {
-  const attrs = Object.values(values[category] ?? {});
-  if (attrs.some((a) => a.state === 'value')) return 'answered';
-  if (attrs.some((a) => a.state === 'declined')) return 'hidden';
-  return 'empty';
+  // Only keys the config knows. A row stored under a stale key (a seed once
+  // wrote marital_history/marital_history instead of .../marital_status)
+  // otherwise counts as "answered" while the tile shows no value.
+  const known = new Set(findCategory(category)?.fields.map((f) => f.key) ?? []);
+  const attrs = Object.entries(values[category] ?? {})
+    .filter(([key]) => known.has(key))
+    .map(([, a]) => a);
+  if (attrs.some((a) => a.state === "value")) return "answered";
+  if (attrs.some((a) => a.state === "declined")) return "hidden";
+  return "empty";
 }
 
 function emptyValue(f: FieldDef): unknown {
-  if (f.kind === 'ageRange') return { min: '', max: '' };
-  return f.kind === 'tags' ? [] : '';
+  if (f.kind === "ageRange") return { min: "", max: "" };
+  return f.kind === "tags" ? [] : "";
 }
 
-function buildDraft(def: CategoryDef, saved: CategoryAttributes): Draft {
+/* The draft for a whole section. Keys are "<category>::<key>": two
+   categories can share a key ("preference" is both pets and independence). */
+const dkey = (category: string, key: string) => `${category}::${key}`;
+
+function sectionDefs(id: SectionId): CategoryDef[] {
+  const section = PROFILE_SECTIONS.find((s) => s.id === id);
+  return (section?.categories ?? [])
+    .map((c) => findCategory(c))
+    .filter((d): d is CategoryDef => !!d);
+}
+
+function sectionOf(category: string): SectionId | undefined {
+  return PROFILE_SECTIONS.find((s) => s.categories.includes(category))?.id;
+}
+
+function buildDraft(defs: CategoryDef[], values: Values): Draft {
   const next: Draft = {};
-  for (const f of def.fields) {
-    const row = saved[f.key];
-    if (!row) next[f.key] = { state: 'unset', value: emptyValue(f) };
-    else if (row.state !== 'value') next[f.key] = { state: row.state, value: emptyValue(f) };
-    else next[f.key] = { state: 'value', value: f.kind === 'tags' ? parseTags(row.value) : row.value };
+  for (const def of defs) {
+    const saved = values[def.category] ?? {};
+    for (const f of def.fields) {
+      const k = dkey(def.category, f.key);
+      const row = saved[f.key];
+      if (!row) next[k] = { state: "unset", value: emptyValue(f) };
+      else if (row.state !== "value")
+        next[k] = { state: row.state, value: emptyValue(f) };
+      else
+        next[k] = {
+          state: "value",
+          value: f.kind === "tags" ? parseTags(row.value) : row.value,
+        };
+    }
   }
   return next;
 }
 
 function promptAt(values: Values, slot: PromptSlot): PromptValue | null {
   const row = values[PROMPT_CATEGORY]?.[slot];
-  return row && row.state === 'value' && isPromptValue(row.value) ? row.value : null;
+  return row && row.state === "value" && isPromptValue(row.value)
+    ? row.value
+    : null;
 }
 
-function Icon({ d }: { d: string }) {
+/* Answers are capped short on purpose — a prompt is a line, not an essay —
+   but long enough for a real sentence about a hard subject. */
+const PROMPT_MAX = 220;
+
+/* Answer coaching, the pattern Bumble ships as "Add a bit more detail".
+ *
+ * It exists because the failure mode is so common: a prompt answered with
+ * "Forgetting" or "Being honest" is a dead end, and on a matrimonial profile
+ * a one-word answer to "On working after marriage, I think" tells a family
+ * nothing at all. The nudge is advisory — it never blocks saving, because
+ * someone who wants to write two words is allowed to.
+ *
+ * Rule-based, not AI: ADR-009 defers the AI Service, and counting words and
+ * looking for something concrete does not need one. */
+function AnswerCoach({ answer }: { answer: string }) {
+  const { t } = useTranslation(["profile"]);
+  const text = answer.trim();
+  if (text.length === 0) return null;
+
+  const words = text.split(/\s+/).filter(Boolean).length;
+  // A concrete answer tends to carry a proper noun, a number, or simply
+  // enough clause structure to contain a reason.
+  const hasSpecific =
+    /\d/.test(text) || /\s[A-Z][a-z]{2,}/.test(text) || /[,;—-]/.test(text);
+
+  const state =
+    words < 6
+      ? "tooShort"
+      : !hasSpecific && words < 14
+        ? "addSpecific"
+        : "good";
+
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d={d} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <div className={`coach coach--${state === "good" ? "good" : "nudge"}`}>
+      <span className="coach__title">
+        {t(`profile:hub.prompts.coach.${state}`)}
+      </span>
+      <p className="coach__body">
+        {t(`profile:hub.prompts.coach.${state}Body`)}
+      </p>
+    </div>
   );
 }
 
 export default function ProfileHubPage() {
-  const { t, i18n } = useTranslation(['common', 'profile', 'discover']);
+  // [owner 2026-09-25] The loader stays at least a second, never a flash.
+  const loaderHold = useLoaderHold();
+  const { t, i18n } = useTranslation(["common", "profile", "discover"]);
   const router = useRouter();
-  const [state, setState] = useState<PageState>({ phase: 'checking' });
-  const [mode, setMode] = useState<'edit' | 'preview'>('edit');
-  const [lens, setLens] = useState<'before' | 'after'>('after');
+  const [state, setState] = useState<PageState>({ phase: "checking" });
+  const [mode, setMode] = useState<"details" | "words" | "preview">("details");
+  const [lens, setLens] = useState<"before" | "after">("after");
   // 'system' on first render so server and client markup agree; corrected
   // from localStorage after mount.
-  const [theme, setTheme] = useState<Theme>('system');
+  const [theme, setTheme] = useState<Theme>("system");
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [sheet, setSheet] = useState<Sheet>(null);
+  const [savingOutlook, setSavingOutlook] = useState(false);
+  const [completeness, setCompleteness] = useState<CompletenessReport | null>(
+    null,
+  );
+  /* Remembers the milestone already reached, so crossing one can be marked
+     the moment it happens. The research is specific about this: reward the
+     completion of a meaningful milestone, not a click — and "you are now
+     discoverable" is the only moment on this screen that genuinely changes
+     what the product does for you. */
+  const reachedRef = useRef<number>(-1);
+  const [justReached, setJustReached] = useState<number | null>(null);
   // The owner's spoken introduction, recorded beside their photos.
   const [voiceIntroUrl, setVoiceIntroUrl] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>({});
-  const [promptDraft, setPromptDraft] = useState<PromptValue>({ q: '', a: '' });
+  const [promptDraft, setPromptDraft] = useState<PromptValue>({ q: "", a: "" });
   const [saving, setSaving] = useState(false);
   const [sheetError, setSheetError] = useState<string | null>(null);
-  const [tagInput, setTagInput] = useState('');
+  const [tagInput, setTagInput] = useState("");
   const [uploading, setUploading] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [fileInputKey, setFileInputKey] = useState(0);
@@ -231,6 +351,43 @@ export default function ProfileHubPage() {
   const pressTimer = useRef<number | null>(null);
   const pressStart = useRef<{ x: number; y: number } | null>(null);
   const suppressClick = useRef(false);
+
+  /* [DEC-V1-019] Whose profile this screen edits: the member's own, or one
+     they created for their son or daughter who has not taken it over yet. */
+  const [managing, setManagingState] = useState<{
+    account_id: string;
+    name: string;
+  } | null>(null);
+  const [me, setMe] = useState<Session | null>(null);
+  const [memberView, setMemberView] = useState(false);
+  const [claiming, setClaiming] = useState(false);
+  const [disowning, setDisowning] = useState(false);
+  // Leaving the screen stops acting on the child's profile.
+  useEffect(() => () => setManaging(null), []);
+  /* The Details tab speaks to the candidate ("What you studied"). When a
+     parent is filling in their child's profile it names the child instead —
+     `hub.for.*` variants, falling back to the usual text. */
+  function optionLabel(key: string, opt: string): string {
+    const them = `profile:option.${key}.${opt}Them`;
+    if (managing && i18n.exists(them)) return t(them);
+    return t(`profile:option.${key}.${opt}`);
+  }
+
+  /* Field labels, with the same managed-mode wording ("A few lines about them"). */
+  function fieldLabel(labelKey: string): string {
+    if (managing && i18n.exists(`profile:${labelKey}Them`))
+      return t(`profile:${labelKey}Them`);
+    return t(`profile:${labelKey}`);
+  }
+
+  function hubText(key: string): string {
+    if (managing) {
+      const forKey = `profile:hub.for.${key}`;
+      if (i18n.exists(forKey))
+        return t(forKey, { name: managing.name.split(" ")[0] });
+    }
+    return t(`profile:hub.${key}`);
+  }
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -247,6 +404,24 @@ export default function ProfileHubPage() {
         // requireSession() has already handed off to the ForKhatri entrance (TR16).
         return;
       }
+      setMe(session);
+      // A profile this person created for their child: named in the URL, or —
+      // for a parent with no profile of their own — the one they manage.
+      const wanted = new URLSearchParams(window.location.search).get("manage");
+      // [DEC-V1-027] Someone who is not a candidate has their own member
+      // profile here; the child's profile they made opens with ?manage=.
+      if (!session.own_profile && !wanted) {
+        setMemberView(true);
+        return;
+      }
+      const target =
+        session.managed_profiles.find((m) => m.account_id === wanted) ??
+        (!session.own_profile ? session.managed_profiles[0] : undefined);
+      if (target) {
+        setManaging(target.account_id);
+        setManagingState({ account_id: target.account_id, name: target.name });
+        setMode((m) => (m === "words" ? "details" : m));
+      }
       const profile = await getOwnProfile();
       if (!active) return;
       if (!profile) {
@@ -254,23 +429,32 @@ export default function ProfileHubPage() {
         // their own; they belong in that candidate's circle, not the wizard.
         const contexts = await getContexts();
         if (!active) return;
-        router.replace(contexts?.circles.length ? '/circle' : '/profile/create');
+        router.replace(
+          contexts?.circles.length ? "/circle" : "/profile/create",
+        );
         return;
       }
-      const [values, photos, voice] = await Promise.all([
+      const [values, photos, voice, report] = await Promise.all([
         getAllAttributeValues(),
         listPhotos(),
         getVoiceIntro(),
+        getCompleteness().catch(() => null),
       ]);
       if (!active) return;
-      setState({ phase: 'ready', profile, values, photos });
+      setState({ phase: "ready", profile, values, photos });
+      setCompleteness(report);
       setVoiceIntroUrl(voice);
       // Deep link from the completeness screen: /me?edit=<category> opens that sheet.
-      const editDef = findCategory(new URLSearchParams(window.location.search).get('edit') ?? '');
+      const editDef = findCategory(
+        new URLSearchParams(window.location.search).get("edit") ?? "",
+      );
       if (editDef) {
-        setDraft(buildDraft(editDef, values[editDef.category] ?? {}));
-        setSheet({ kind: 'category', category: editDef.category });
-        window.history.replaceState(null, '', '/me');
+        const sid = sectionOf(editDef.category);
+        if (sid) {
+          setDraft(buildDraft(sectionDefs(sid), values));
+          setSheet({ kind: "section", id: sid });
+        }
+        window.history.replaceState(null, "", "/me");
       }
     })();
     return () => {
@@ -281,40 +465,111 @@ export default function ProfileHubPage() {
   useEffect(() => {
     if (!sheet) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setSheet(null);
+      if (e.key === "Escape") setSheet(null);
     }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [sheet]);
 
-  if (state.phase === 'checking') {
+  /* Three real milestones, not a percentage of fields. Each one changes
+     something concrete: the profile exists, it appears in search, it is
+     filled in enough to match well. */
+  const milestones = [
+    { id: "saved", done: completeness?.existence_complete ?? true },
+    { id: "discoverable", done: !!completeness?.discoverability_complete },
+    {
+      id: "complete",
+      done:
+        !!completeness &&
+        completeness.enhanced_filled_categories >=
+          completeness.enhanced_total_categories,
+    },
+  ];
+  const reached = milestones.filter((m) => m.done).length;
+
+  /* Never zero: reaching this screen means the profile is saved. That is the
+     endowed-progress effect, and here it is simply true. */
+  const enhancedShare = completeness
+    ? completeness.enhanced_filled_categories /
+      Math.max(1, completeness.enhanced_total_categories)
+    : 0;
+  const pct = Math.round(
+    ((reached + enhancedShare) / (milestones.length + 1)) * 100,
+  );
+
+  /* Mark the crossing once, when it happens, and never on first load. */
+  useEffect(() => {
+    if (!completeness) return;
+    if (reachedRef.current === -1) {
+      reachedRef.current = reached;
+      return;
+    }
+    if (reached > reachedRef.current) {
+      setJustReached(reached);
+      reachedRef.current = reached;
+      const timer = window.setTimeout(() => setJustReached(null), 6000);
+      return () => window.clearTimeout(timer);
+    }
+    reachedRef.current = reached;
+  }, [completeness, reached]);
+
+  if (memberView && me) {
+    return <MemberMe session={me} />;
+  }
+
+  if (state.phase === "checking" || loaderHold) {
     return (
       <main className="screen screen--centered">
-        <span className="brand-mark brand-mark--lg" aria-hidden="true">
-          m
-        </span>
-        <p className="caption">{t('common:state.loading')}</p>
+        <SacredLoader />
       </main>
     );
   }
 
   const { profile, values, photos } = state;
+  const outlookAnswers: OutlookAnswers = readOutlook(values);
+
+  /* The activity writes one category in a single PATCH, like every other
+     editor here — ten keys, one request. */
+  async function saveOutlook(answers: OutlookAnswers) {
+    setSavingOutlook(true);
+    /* Every dimension is sent, not just the answered ones. A question that
+       was answered before and skipped now has to be actively cleared —
+       omitting it would leave the old answer standing on the profile, which
+       is exactly the "said something they did not say" problem. `declined`
+       is the state that clears a stored value. */
+    await persist(
+      OUTLOOK_CATEGORY,
+      Object.fromEntries(
+        OUTLOOK.map((d) => [
+          d.id,
+          answers[d.id]
+            ? { state: "value" as AttributeState, value: answers[d.id] }
+            : { state: "declined" as AttributeState },
+        ]),
+      ),
+    );
+    setSavingOutlook(false);
+  }
 
   function tagLabel(tag: string): string {
     return INTEREST_TAGS.includes(tag) ? t(`profile:tag.${tag}`) : tag;
   }
 
   function formatField(field: FieldDef, value: AttributeValue): string | null {
-    if (value === null || value === undefined || value === '') return null;
-    if (field.kind === 'select') return t(`profile:option.${field.key}.${String(value)}`);
-    if (field.kind === 'tags') {
+    if (value === null || value === undefined || value === "") return null;
+    if (field.kind === "select")
+      return t(`profile:option.${field.key}.${String(value)}`);
+    if (field.kind === "tags") {
       const tags = parseTags(value);
-      return tags.length ? tags.map(tagLabel).join(', ') : null;
+      return tags.length ? tags.map(tagLabel).join(", ") : null;
     }
-    if (field.kind === 'ageRange' && typeof value === 'object') {
-      const { min, max } = value as { min?: number | null; max?: number | null };
+    if (field.kind === "ageRange" && typeof value === "object") {
+      const { min, max } = value as {
+        min?: number | null;
+        max?: number | null;
+      };
       if (!min && !max) return null;
-      return t('profile:hub.ageRange', { min: min ?? '–', max: max ?? '–' });
+      return t("profile:hub.ageRange", { min: min ?? "–", max: max ?? "–" });
     }
     return String(value);
   }
@@ -322,29 +577,48 @@ export default function ProfileHubPage() {
   function summaryOf(def: CategoryDef): string | null {
     const attrs = values[def.category] ?? {};
     const parts = def.fields
-      .map((f) => (attrs[f.key]?.state === 'value' ? formatField(f, attrs[f.key].value) : null))
+      .map((f) =>
+        attrs[f.key]?.state === "value"
+          ? formatField(f, attrs[f.key].value)
+          : null,
+      )
       .filter((p): p is string => !!p);
-    return parts.length ? parts.join(' · ') : null;
+    return parts.length ? parts.join(" · ") : null;
   }
 
-  function applyLocal(category: string, payload: Record<string, { state: AttributeState; value?: AttributeValue }>) {
+  function applyLocal(
+    category: string,
+    payload: Record<string, { state: AttributeState; value?: AttributeValue }>,
+  ) {
     setState((prev) => {
-      if (prev.phase !== 'ready') return prev;
+      if (prev.phase !== "ready") return prev;
       const merged: CategoryAttributes = { ...(prev.values[category] ?? {}) };
       for (const [key, entry] of Object.entries(payload)) {
-        merged[key] = { state: entry.state, value: entry.state === 'value' ? (entry.value ?? null) : null };
+        merged[key] = {
+          state: entry.state,
+          value: entry.state === "value" ? (entry.value ?? null) : null,
+        };
       }
       return { ...prev, values: { ...prev.values, [category]: merged } };
     });
   }
 
-  async function persist(category: string, payload: Record<string, { state: AttributeState; value?: AttributeValue }>) {
+  async function persist(
+    category: string,
+    payload: Record<string, { state: AttributeState; value?: AttributeValue }>,
+  ) {
     setSaving(true);
     setSheetError(null);
     const outcome = await updateCategoryAttributes(category, payload);
     setSaving(false);
     if (!outcome.ok) {
-      setSheetError(t(outcome.kind === 'network' ? 'profile:error.network' : 'profile:editor.saveError'));
+      setSheetError(
+        t(
+          outcome.kind === "network"
+            ? "profile:error.network"
+            : "profile:editor.saveError",
+        ),
+      );
       return;
     }
     applyLocal(category, payload);
@@ -354,13 +628,17 @@ export default function ProfileHubPage() {
   async function refreshPhotos() {
     const next = await listPhotos();
     setState((prev) =>
-      prev.phase !== 'ready'
+      prev.phase !== "ready"
         ? prev
         : {
             ...prev,
             photos: next,
-            profile: { ...prev.profile, photo_url: next.find((p) => p.is_primary)?.url ?? prev.profile.photo_url },
-          }
+            profile: {
+              ...prev.profile,
+              photo_url:
+                next.find((p) => p.is_primary)?.url ?? prev.profile.photo_url,
+            },
+          },
     );
   }
 
@@ -373,19 +651,20 @@ export default function ProfileHubPage() {
     const outcome = await uploadPhoto(file);
     setUploading(false);
     if (!outcome.ok) {
-      setPhotoError(outcome.message ?? t('profile:error.network'));
+      setPhotoError(outcome.message ?? t("profile:error.network"));
       return;
     }
     await refreshPhotos();
   }
 
-  async function onPhotoAction(action: 'main' | 'remove', id: string) {
+  async function onPhotoAction(action: "main" | "remove", id: string) {
     setSaving(true);
     setSheetError(null);
-    const outcome = action === 'main' ? await setPrimaryPhoto(id) : await deletePhoto(id);
+    const outcome =
+      action === "main" ? await setPrimaryPhoto(id) : await deletePhoto(id);
     setSaving(false);
     if (!outcome.ok) {
-      setSheetError(outcome.message ?? t('profile:editor.saveError'));
+      setSheetError(outcome.message ?? t("profile:editor.saveError"));
       return;
     }
     await refreshPhotos();
@@ -394,17 +673,20 @@ export default function ProfileHubPage() {
 
   async function commitOrder(next: Photo[]) {
     setState((prev) =>
-      prev.phase !== 'ready'
+      prev.phase !== "ready"
         ? prev
         : {
             ...prev,
             photos: next.map((p, i) => ({ ...p, is_primary: i === 0 })),
-            profile: { ...prev.profile, photo_url: next[0]?.url ?? prev.profile.photo_url },
-          }
+            profile: {
+              ...prev.profile,
+              photo_url: next[0]?.url ?? prev.profile.photo_url,
+            },
+          },
     );
     const outcome = await reorderPhotos(next.map((p) => p.id));
     if (!outcome.ok) {
-      setPhotoError(outcome.message ?? t('profile:editor.saveError'));
+      setPhotoError(outcome.message ?? t("profile:editor.saveError"));
       await refreshPhotos();
     }
   }
@@ -426,7 +708,10 @@ export default function ProfileHubPage() {
     pressStart.current = null;
   }
 
-  function onPhotoPointerDown(e: React.PointerEvent<HTMLButtonElement>, id: string) {
+  function onPhotoPointerDown(
+    e: React.PointerEvent<HTMLButtonElement>,
+    id: string,
+  ) {
     // A finished drag never produces a click, so the suppression flag from
     // the previous gesture must be cleared here — otherwise the first real
     // tap after any reorder is silently swallowed (found live).
@@ -450,98 +735,150 @@ export default function ProfileHubPage() {
   function onPhotoPointerMove(e: React.PointerEvent<HTMLButtonElement>) {
     if (!dragId) {
       const start = pressStart.current;
-      if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 8) clearPress();
+      if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 8)
+        clearPress();
       return;
     }
-    const over = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>('[data-photo-index]');
-    if (over) setDropIndex(Math.min(Number(over.dataset.photoIndex), photos.length - 1));
+    const over = document
+      .elementFromPoint(e.clientX, e.clientY)
+      ?.closest<HTMLElement>("[data-photo-index]");
+    if (over)
+      setDropIndex(
+        Math.min(Number(over.dataset.photoIndex), photos.length - 1),
+      );
   }
 
   function onPhotoPointerUp() {
     clearPress();
     if (dragId !== null && dropIndex !== null) {
-      movePhoto(photos.findIndex((p) => p.id === dragId), dropIndex);
+      movePhoto(
+        photos.findIndex((p) => p.id === dragId),
+        dropIndex,
+      );
     }
     setDragId(null);
     setDropIndex(null);
   }
 
-  function openCategory(category: string) {
-    const def = findCategory(category);
-    if (!def) return;
-    setDraft(buildDraft(def, values[category] ?? {}));
-    setTagInput('');
+  function openSection(id: SectionId) {
+    setDraft(buildDraft(sectionDefs(id), values));
+    setTagInput("");
     setSheetError(null);
-    setSheet({ kind: 'category', category });
+    setSheet({ kind: "section", id });
   }
 
   function openPrompt(slot: PromptSlot) {
-    setPromptDraft(promptAt(values, slot) ?? { q: '', a: '' });
+    setPromptDraft(promptAt(values, slot) ?? { q: "", a: "" });
     setSheetError(null);
-    setSheet({ kind: 'prompt', slot });
+    setSheet({ kind: "prompt", slot });
   }
 
-  function saveDraft(def: CategoryDef) {
-    const payload: Record<string, { state: AttributeState; value?: AttributeValue }> = {};
+  function payloadFor(
+    def: CategoryDef,
+  ): Record<string, { state: AttributeState; value?: AttributeValue }> {
+    const payload: Record<
+      string,
+      { state: AttributeState; value?: AttributeValue }
+    > = {};
     for (const f of def.fields) {
-      const entry = draft[f.key];
-      if (!entry || entry.state !== 'value') continue;
-      if (f.kind === 'ageRange') {
+      const entry = draft[dkey(def.category, f.key)];
+      if (!entry || entry.state !== "value") continue;
+      if (f.kind === "ageRange") {
         const v = (entry.value ?? {}) as { min?: unknown; max?: unknown };
         const min = Number(v.min) || null;
         const max = Number(v.max) || null;
-        if (min || max) payload[f.key] = { state: 'value', value: { min, max } };
-      } else if (f.kind === 'tags') {
+        if (min || max)
+          payload[f.key] = { state: "value", value: { min, max } };
+      } else if (f.kind === "tags") {
         const tags = parseTags(entry.value);
-        if (tags.length) payload[f.key] = { state: 'value', value: tags };
-      } else if (typeof entry.value === 'string' && entry.value.trim()) {
-        payload[f.key] = { state: 'value', value: entry.value.trim() };
+        if (tags.length) payload[f.key] = { state: "value", value: tags };
+      } else if (typeof entry.value === "number") {
+        payload[f.key] = { state: "value", value: entry.value };
+      } else if (typeof entry.value === "string" && entry.value.trim()) {
+        payload[f.key] = { state: "value", value: entry.value.trim() };
       }
     }
-    if (Object.keys(payload).length === 0) {
+    return payload;
+  }
+
+  /* One Save for the section; underneath, one PATCH per storage category
+     that actually changed. */
+  async function saveSection(defs: CategoryDef[]) {
+    const work = defs
+      .map((def) => [def, payloadFor(def)] as const)
+      .filter(([, payload]) => Object.keys(payload).length > 0);
+    if (work.length === 0) {
       setSheet(null);
       return;
     }
-    void persist(def.category, payload);
+    setSaving(true);
+    setSheetError(null);
+    for (const [def, payload] of work) {
+      const outcome = await updateCategoryAttributes(def.category, payload);
+      if (!outcome.ok) {
+        setSaving(false);
+        setSheetError(
+          t(
+            outcome.kind === "network"
+              ? "profile:error.network"
+              : "profile:editor.saveError",
+          ),
+        );
+        return;
+      }
+      applyLocal(def.category, payload);
+    }
+    setSaving(false);
+    setSheet(null);
   }
 
-  function hideCategory(def: CategoryDef) {
-    void persist(
-      def.category,
-      Object.fromEntries(def.fields.map((f) => [f.key, { state: 'declined' as const, value: null }]))
-    );
+  /* "Prefer not to say" for the parts of the section not yet answered;
+     what is already answered stays. */
+  async function hideSection(defs: CategoryDef[]) {
+    setSaving(true);
+    for (const def of defs.filter(
+      (d) => statusOf(values, d.category) === "empty",
+    )) {
+      const payload = Object.fromEntries(
+        def.fields.map((f) => [
+          f.key,
+          { state: "declined" as const, value: null },
+        ]),
+      );
+      const outcome = await updateCategoryAttributes(def.category, payload);
+      if (outcome.ok) applyLocal(def.category, payload);
+    }
+    setSaving(false);
+    setSheet(null);
   }
 
-  const answeredCount = ALL_CATEGORIES_IN_ORDER.filter((c) => statusOf(values, c) !== 'empty').length;
-  const total = ALL_CATEGORIES_IN_ORDER.length;
-  const pct = Math.round((answeredCount / total) * 100);
-  const nextEmpty = ALL_CATEGORIES_IN_ORDER.find((c) => statusOf(values, c) === 'empty');
-  const meta = [t('profile:hub.ageYears', { age: ageFromDob(profile.date_of_birth) }), profile.city_locality]
-    .filter(Boolean)
-    .join(' · ');
+  const nextEmpty = ALL_CATEGORIES_IN_ORDER.find(
+    (c) => statusOf(values, c) === "empty",
+  );
 
-  const sheetDef = sheet?.kind === 'category' ? findCategory(sheet.category) : undefined;
-  const singleSelect = !!sheetDef && sheetDef.fields.length === 1 && sheetDef.fields[0].kind === 'select';
-  const usedQuestions = PROMPT_SLOTS.filter((s) => sheet?.kind !== 'prompt' || s !== sheet.slot)
+  const sheetDefs = sheet?.kind === "section" ? sectionDefs(sheet.id) : [];
+  const sheetItems = sheetDefs.flatMap((def) =>
+    def.fields.map((f) => ({ def, f, dk: dkey(def.category, f.key) })),
+  );
+  const usedQuestions = PROMPT_SLOTS.filter(
+    (s) => sheet?.kind !== "prompt" || s !== sheet.slot,
+  )
     .map((s) => promptAt(values, s)?.q)
     .filter(Boolean);
-  const sheetPhoto = sheet?.kind === 'photo' ? photos.find((p) => p.id === sheet.id) : undefined;
+  const sheetPhoto =
+    sheet?.kind === "photo" ? photos.find((p) => p.id === sheet.id) : undefined;
 
   function renderVoice() {
     return <VoiceIntro key="voice" initialUrl={voiceIntroUrl} />;
   }
 
+  /* The person comes first, as on Hinge, Bumble and Shaadi: a photo grid
+     (one large slot and five small), then the name. With no photo yet the
+     large slot itself is the invitation. */
   function renderPhotos() {
     return (
-      <section key="photos" className="card section-card" aria-label={t('profile:hub.photos.title')}>
-        <div className="section-card__head">
-          <span className="section-card__icon">
-            <Icon d={ICON.photos} />
-          </span>
-          <h2 className="h2 section-card__title">{t('profile:hub.photos.title')}</h2>
-          <span className="section-card__count">{photos.length}/6</span>
-        </div>
-        <div className="photo-grid">
+      <div className="me-photos" aria-label={t("profile:hub.photos.title")}>
+        <div className="photo-grid me-pgrid">
           {Array.from({ length: 6 }, (_, i) => {
             const photo = photos[i];
             if (photo) {
@@ -550,8 +887,8 @@ export default function ProfileHubPage() {
                   key={photo.id}
                   type="button"
                   data-photo-index={i}
-                  className={`photo-slot${i === 0 ? ' photo-slot--main' : ''}${dragId === photo.id ? ' is-dragging' : ''}${dragId && dropIndex === i && dragId !== photo.id ? ' is-drop-target' : ''}`}
-                  aria-label={`${t('profile:hub.photos.title')} ${i + 1}${photo.is_primary ? ` · ${t('profile:hub.photos.main')}` : ''}`}
+                  className={`photo-slot${i === 0 ? " photo-slot--main" : ""}${dragId === photo.id ? " is-dragging" : ""}${dragId && dropIndex === i && dragId !== photo.id ? " is-drop-target" : ""}`}
+                  aria-label={`${t("profile:hub.photos.title")} ${i + 1}${photo.is_primary ? ` · ${t("profile:hub.photos.main")}` : ""}`}
                   onPointerDown={(e) => onPhotoPointerDown(e, photo.id)}
                   onPointerMove={onPhotoPointerMove}
                   onPointerUp={onPhotoPointerUp}
@@ -563,12 +900,16 @@ export default function ProfileHubPage() {
                       return;
                     }
                     setSheetError(null);
-                    setSheet({ kind: 'photo', id: photo.id });
+                    setSheet({ kind: "photo", id: photo.id });
                   }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={resolveMediaUrl(photo.url) ?? ''} alt="" />
-                  {photo.is_primary && <span className="photo-slot__badge">{t('profile:hub.photos.main')}</span>}
+                  <img src={resolveMediaUrl(photo.url) ?? ""} alt="" />
+                  {photo.is_primary && (
+                    <span className="photo-slot__badge">
+                      {t("profile:hub.photos.main")}
+                    </span>
+                  )}
                 </button>
               );
             }
@@ -577,13 +918,26 @@ export default function ProfileHubPage() {
               <button
                 key={`empty-${i}`}
                 type="button"
-                className={`photo-slot photo-slot--empty${i === 0 ? ' photo-slot--main' : ''}`}
-                aria-label={t('profile:hub.photos.add')}
+                className={`photo-slot photo-slot--empty${i === 0 ? " photo-slot--main me-first" : ""}`}
+                aria-label={
+                  i === 0
+                    ? t("profile:hub.photos.firstPhoto")
+                    : t("profile:hub.photos.add")
+                }
                 disabled={!isNext || uploading}
                 onClick={() => fileRef.current?.click()}
               >
                 {isNext && uploading ? (
-                  <span className="caption">{t('profile:hub.photos.uploading')}</span>
+                  <span className="caption">
+                    {t("profile:hub.photos.uploading")}
+                  </span>
+                ) : i === 0 ? (
+                  <span className="me-first__in">
+                    <Icon name="camera" />
+                    <span className="me-first__title">
+                      {t("profile:hub.photos.firstPhoto")}
+                    </span>
+                  </span>
                 ) : (
                   <span aria-hidden="true">+</span>
                 )}
@@ -591,10 +945,9 @@ export default function ProfileHubPage() {
             );
           })}
         </div>
-        <p className="caption">
-          {t('profile:hub.photos.hint')}
-          {photos.length > 1 ? ` ${t('profile:hub.photosReorderHint')}` : ''}
-        </p>
+        {photos.length > 1 && (
+          <p className="me-quiet">{t("profile:hub.photosReorderHint")}</p>
+        )}
         {photoError && (
           <p className="form__error" role="status">
             {photoError}
@@ -609,115 +962,260 @@ export default function ProfileHubPage() {
           hidden
           onChange={onFileChosen}
         />
-      </section>
+      </div>
     );
   }
 
+  const pencil = <Icon name="edit" size={16} />;
+
+  /* A written prompt: the question quiet, the answer in the serif. Short
+     answers are set in italic; long ones only on their first line. */
   function renderPromptEdit(slot: PromptSlot) {
     const p = promptAt(values, slot);
-    return p ? (
-      <button key={slot} type="button" className="prompt-card prompt-card--elevated" onClick={() => openPrompt(slot)}>
-        <span className="prompt-card__q">{t(`profile:hub.prompts.q.${p.q}`)}</span>
-        <span className="prompt-card__a">{p.a}</span>
-      </button>
-    ) : (
-      <button key={slot} type="button" className="prompt-add" onClick={() => openPrompt(slot)}>
-        <span className="prompt-add__title">+ {t('profile:hub.prompts.add')}</span>
-        <span className="caption">{t('profile:hub.prompts.emptyHint')}</span>
+    if (!p) return null;
+    return (
+      <button
+        key={slot}
+        type="button"
+        className="me-prompt"
+        onClick={() => openPrompt(slot)}
+      >
+        <span className="me-prompt__q">
+          {t(`profile:hub.prompts.q.${p.q}`)}
+        </span>
+        <span
+          className={`me-prompt__a${p.a.length <= 90 ? " is-short" : ""}`}
+        >
+          {p.a}
+        </span>
+        <span className="me-edit">
+          {pencil}
+          {t("profile:hub.edit")}
+        </span>
       </button>
     );
   }
 
-  function renderSectionEdit(id: SectionId) {
-    const section = PROFILE_SECTIONS.find((s) => s.id === id);
-    if (!section) return null;
-    const done = section.categories.filter((c) => statusOf(values, c) !== 'empty').length;
+  /* The ten quick choices: one thing you do once, then see on your
+     profile. */
+  function renderOutlook() {
+    const answered = OUTLOOK.filter((d) => outlookAnswers[d.id]).length;
+    const complete = answered === OUTLOOK.length;
     return (
-      <section key={id} className="card section-card" aria-label={t(`profile:hub.section.${id}`)}>
-        <div className="section-card__head">
-          <span className="section-card__icon">
-            <Icon d={ICON[id]} />
-          </span>
-          <h2 className="h2 section-card__title">{t(`profile:hub.section.${id}`)}</h2>
-          <span className={`section-card__count${done === section.categories.length ? ' is-done' : ''}`}>
-            {done}/{section.categories.length}
-          </span>
+      <section
+        key="outlook"
+        className="me-block"
+        aria-label={t("profile:outlook.title")}
+      >
+        <div className="me-block__head">
+          <h3 className="me-block__title">{t("profile:outlook.title")}</h3>
+          {answered > 0 && !complete && (
+            <span className="me-count">
+              {answered}/{OUTLOOK.length}
+            </span>
+          )}
         </div>
-        <div className="vitals">
-          {section.categories.map((category, i) => {
-            const def = findCategory(category);
-            if (!def) return null;
-            const status = statusOf(values, category);
-            const wide = section.categories.length % 2 === 1 && i === section.categories.length - 1;
-            return (
-              <button
-                key={category}
-                type="button"
-                className={`vital vital--${status}${wide ? ' vital--wide' : ''}`}
-                onClick={() => openCategory(category)}
-              >
-                <span className="vital__label">{t(`profile:hub.category.${category}`)}</span>
-                <span className="vital__value">
-                  {status === 'answered'
-                    ? summaryOf(def)
-                    : status === 'hidden'
-                      ? t('profile:hub.hidden')
-                      : `+ ${t('profile:hub.add')}`}
+        {answered === 0 && (
+          <p className="me-quiet">{t("profile:outlook.intro")}</p>
+        )}
+        {answered > 0 && (
+          <ul className="portrait portrait--compact">
+            {OUTLOOK.filter((d) => outlookAnswers[d.id]).map((d) => (
+              <li key={d.id} className="portrait__tile">
+                <OutlookScene id={outlookAnswers[d.id]} />
+                <span className="portrait__label">
+                  {t(`profile:outlook.pole.${outlookAnswers[d.id]}`)}
                 </span>
-              </button>
-            );
-          })}
-        </div>
-        {id === 'partner' && <p className="caption">🔒 {t('profile:hub.partnerPrivate')}</p>}
+              </li>
+            ))}
+          </ul>
+        )}
+        <button
+          type="button"
+          className="me-textbtn"
+          onClick={() => setSheet({ kind: "outlook" })}
+        >
+          {answered === 0
+            ? t("profile:outlook.cta")
+            : complete
+              ? t("profile:outlook.redo")
+              : t("profile:outlook.resume")}
+          <Icon name="caretRight" size={16} className="me-chev" />
+        </button>
       </section>
     );
   }
 
+  /* One section of the biodata: its name, then what it says. Filled values
+     lead; an empty section recedes to its one-line hint. "2/6" appears only
+     while a section is part filled. */
+  function renderSectionEdit(id: SectionId) {
+    const defs = sectionDefs(id);
+    if (defs.length === 0) return null;
+    /* Every field under its own label — never the storage category's name,
+       which used to put tiles called "Education", "Profession" and
+       "Education & career" inside the section "Education & career". */
+    const facts = defs.flatMap((def) =>
+      def.fields.map((f) => {
+        const row = values[def.category]?.[f.key];
+        return {
+          key: dkey(def.category, f.key),
+          state: row?.state ?? "unset",
+          text: row?.state === "value" ? formatField(f, row.value) : null,
+        };
+      }),
+    );
+    const filled = facts.filter((x) => x.text).length;
+    const missing = facts.filter((x) => x.state === "unset").length;
+    const summary = facts
+      .filter((x) => x.text)
+      .map((x) => x.text)
+      .join(" · ");
+    return (
+      <button
+        key={id}
+        type="button"
+        className={`me-sec${filled === 0 ? " is-empty" : ""}`}
+        aria-label={`${hubText(`section.${id}`)} · ${
+          filled === 0
+            ? t("profile:hub.addDetails")
+            : missing > 0
+              ? t("profile:hub.addMore", { count: missing })
+              : t("profile:hub.edit")
+        }`}
+        onClick={() => openSection(id)}
+      >
+        <span className="me-sec__title">
+          <span className="me-long">{hubText(`section.${id}`)}</span>
+          <span className="me-short">
+            {i18n.exists(`profile:hub.sectionShortTitle.${id}`)
+              ? t(`profile:hub.sectionShortTitle.${id}`)
+              : hubText(`section.${id}`)}
+          </span>
+          {id === "partner" && (
+            <Icon name="lock" size={16} />
+          )}
+        </span>
+        {filled > 0 ? (
+          <span className="me-sec__text">{summary}</span>
+        ) : (
+          <span className="me-sec__text">
+            <span className="me-long">{hubText(`sectionHint.${id}`)}</span>
+            <span className="me-short">
+              {t(`profile:hub.sectionShortHint.${id}`)}
+            </span>
+          </span>
+        )}
+        <span className="me-sec__side">
+          {filled > 0 && missing > 0 && (
+            <span className="me-count">
+              {filled}/{facts.length}
+            </span>
+          )}
+          {filled === 0 ? (
+            <span className="me-sec__add">
+              <span className="me-long">+ {t("profile:hub.addDetails")}</span>
+              <span className="me-short">+ {t("profile:hub.addShort")}</span>
+            </span>
+          ) : (
+            <Icon name="caretRight" size={16} className="me-chev" />
+          )}
+        </span>
+      </button>
+    );
+  }
+
+  /* One age rule everywhere: the age sits in italic beside a word. When
+     the name is not shown, the profession (or education, or city) is that
+     word, so a bare number never stands as a title. */
+  const firstOpen =
+    values.openly?.first_name?.state === "value" &&
+    values.openly.first_name.value === true;
+  const occupationRow = values.profession?.occupation;
+  const occupation =
+    occupationRow?.state === "value" && occupationRow.value
+      ? String(occupationRow.value)
+      : null;
+  const eduDef = findCategory("education");
+  const education = eduDef ? summaryOf(eduDef) : null;
+  const city = profile.city_locality?.split(",")[0]?.trim() || null;
+  const showName = lens === "after" || firstOpen;
+  const pvName = showName
+    ? profile.name.split(" ")[0]
+    : (occupation ?? education ?? city ?? "");
+  const pvChips = (
+    showName
+      ? [city, education, occupation]
+      : occupation
+        ? [city, education]
+        : education
+          ? [city]
+          : []
+  ).filter((c): c is string => !!c);
+  const initials = profile.name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase())
+    .join("");
+
+  /* The preview is drawn the way the real profile reads: the main photo
+     full-bleed with the name set on it, then the words and the biodata. */
   function renderPreviewBlock(block: PreviewBlock, index: number) {
-    if (block.kind === 'photo') {
+    if (block.kind === "photo") {
+      if (block.index === 0) return null;
       const photo = photos[block.index];
       if (!photo) return null;
       return (
-        <div key={`photo-${index}`} className="preview-photo">
+        <div key={`photo-${index}`} className="me-pv__photo">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={resolveMediaUrl(photo.url) ?? ''} alt="" />
+          <img src={resolveMediaUrl(photo.url) ?? ""} alt="" />
         </div>
       );
     }
-    if (block.kind === 'identity') {
-      return (
-        <div key="identity" className="preview-identity">
-          <span className="profile-hero__name">{profile.name}</span>
-          <span className="caption">{meta}</span>
-        </div>
-      );
-    }
-    if (block.kind === 'prompt') {
+    if (block.kind === "identity") return null;
+    if (block.kind === "prompt") {
       const p = promptAt(values, block.slot);
       if (!p) return null;
       return (
-        <div key={block.slot} className="prompt-card prompt-card--elevated">
-          <span className="prompt-card__q">{t(`profile:hub.prompts.q.${p.q}`)}</span>
-          <span className="prompt-card__a">{p.a}</span>
+        <div key={block.slot} className="me-pv__prompt">
+          <span className="me-prompt__q">
+            {t(`profile:hub.prompts.q.${p.q}`)}
+          </span>
+          <p className={`me-prompt__a${p.a.length <= 90 ? " is-short" : ""}`}>
+            {p.a}
+          </p>
         </div>
       );
     }
     // Partner preferences are private matching filters, never shown to
     // anyone else — Hinge treats preferences the same way.
-    if (block.id === 'partner') return null;
-    const section = PROFILE_SECTIONS.find((s) => s.id === block.id);
-    const rows = (section?.categories ?? [])
-      .map((c) => findCategory(c))
-      .filter((d): d is CategoryDef => !!d && statusOf(values, d.category) === 'answered');
+    if (block.id === "partner") return null;
+    const rows = sectionDefs(block.id).flatMap((d) =>
+      d.fields
+        .map((f) => {
+          const row = values[d.category]?.[f.key];
+          return row?.state === "value"
+            ? {
+                key: dkey(d.category, f.key),
+                label: fieldLabel(f.labelKey),
+                text: formatField(f, row.value),
+              }
+            : null;
+        })
+        .filter(
+          (r): r is { key: string; label: string; text: string } => !!r?.text,
+        ),
+    );
     if (rows.length === 0) return null;
     return (
-      <div key={block.id} className="card preview-section">
-        <div className="label">{t(`profile:hub.section.${block.id}`)}</div>
-        <dl className="biodata">
-          {rows.map((d) => (
-            <div key={d.category} className="biodata__row">
-              <dt>{t(`profile:hub.category.${d.category}`)}</dt>
-              <dd>{summaryOf(d)}</dd>
+      <div key={block.id} className="me-pv__sec">
+        <h4 className="me-pv__h">{t(`profile:hub.section.${block.id}`)}</h4>
+        <dl className="me-pv__dl">
+          {rows.map((r) => (
+            <div key={r.key} className="me-pv__row">
+              <dt>{r.label}</dt>
+              <dd>{r.text}</dd>
             </div>
           ))}
         </dl>
@@ -725,141 +1223,475 @@ export default function ProfileHubPage() {
     );
   }
 
+  const emptyPrompt = PROMPT_SLOTS.find((s) => !promptAt(values, s));
+  const writtenPrompts = PROMPT_SLOTS.filter((s) => promptAt(values, s)).length;
+  const chevronRight = <Icon name="caretRight" size={16} className="me-chev" />;
+
+  /* Who sees what, grouped the way the preview lenses are: before you
+     connect, and after. On a desktop it sits under your name; on a phone,
+     after the profile. */
+  function renderWho(where: "side" | "main") {
+    return (
+      <details className={`me-who me-who--${where}`}>
+        <summary className="me-row me-who__sum">
+          <Icon name="eye" className="me-row__icon" />
+          <span className="me-row__body">
+            <span className="me-row__title">{t("profile:hub.whoSees")}</span>
+          </span>
+          {chevronRight}
+        </summary>
+        <div className="me-who__body">
+          <div className="me-who__group">
+            <h4 className="me-who__h">{t("profile:hub.preview.before")}</h4>
+            <p className="me-quiet">{t("profile:openly.always")}</p>
+            {/* [Migration 043] What this person shows before anyone
+                connects. Closed by default; each switch is one tap and
+                saves at once. Only the candidate decides — never a parent
+                filling it in. */}
+            {!managing && (
+              <div className="openly me-openly">
+                        {(["first_name", "photos"] as const).map((key) => {
+                          const on =
+                            values.openly?.[key]?.state === "value" &&
+                            values.openly?.[key]?.value === true;
+                          return (
+                            <label key={key} className="openly__row">
+                              <span className="openly__text">
+                                <span className="openly__name">
+                                  {t(`profile:openly.${key}`)}
+                                </span>
+                                <span className="me-quiet">
+                                  {t(`profile:openly.${key}Hint`)}
+                                </span>
+                              </span>
+                              <input
+                                type="checkbox"
+                                role="switch"
+                                className="switch"
+                                checked={on}
+                                disabled={saving}
+                                onChange={(e) =>
+                                  void persist("openly", {
+                                    [key]: {
+                                      state: "value",
+                                      value: e.target.checked,
+                                    },
+                                  })
+                                }
+                              />
+                            </label>
+                          );
+                        })}
+                        <button
+                          type="button"
+                          className="openly__row openly__row--link"
+                          onClick={() => setMode("words")}
+                        >
+                          <span className="openly__text">
+                            <span className="openly__name">
+                              {t("profile:openly.prompts")}
+                            </span>
+                            <span className="me-quiet">
+                              {t("profile:openly.promptsCount", {
+                                count: Object.values(
+                                  values.in_my_words ?? {},
+                                ).filter(
+                                  (e) =>
+                                    e.state === "value" &&
+                                    !!e.value &&
+                                    typeof e.value === "object" &&
+                                    (e.value as { public?: boolean }).public ===
+                                      true,
+                                ).length,
+                              })}
+                            </span>
+                          </span>
+                          {chevronRight}
+                        </button>
+              </div>
+            )}
+          </div>
+          <div className="me-who__group">
+            <h4 className="me-who__h">{t("profile:hub.preview.after")}</h4>
+            <p className="me-quiet">{t("profile:hub.part.details.hint")}</p>
+            {!managing && (
+              <p className="me-quiet">{t("profile:hub.part.words.hint")}</p>
+            )}
+            <p className="me-quiet">{t("profile:hub.photos.hint")}</p>
+          </div>
+          <p className="me-quiet">{hubText("partnerPrivate")}</p>
+          <button
+            type="button"
+            className="me-textbtn"
+            onClick={() => setMode("preview")}
+          >
+            {t("profile:hub.seeInPreview")}
+          </button>
+        </div>
+      </details>
+    );
+  }
+
   return (
     <>
-      <header className="topbar">
-        <h1>{t('profile:hub.title')}</h1>
-        <div style={{ display: 'flex', gap: 4 }}>
+      {/* Title left, settings right. On a phone the account avatar stays in
+          the header as on every screen; on a desktop the sidebar and the
+          settings sheet carry the account, so your own face is not repeated
+          beside the one this page is about. */}
+      <header className="topbar me-top">
+        <h1>{t("profile:hub.title")}</h1>
+        <div className="topbar__actions">
           <ForKhatriHubLink />
           <button
             type="button"
             className="icon-btn"
-            aria-label={t('common:settings.title')}
+            aria-label={t("common:settings.title")}
             aria-haspopup="dialog"
             onClick={() => {
               setConfirmLogout(false);
-              setSheet({ kind: 'settings' });
+              setSheet({ kind: "settings" });
             }}
           >
-            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-              <path
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z M19.4 13.5a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V19.4a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H4.6a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H10.5a1.65 1.65 0 0 0 1-1.51V4.6a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V10.5a1.65 1.65 0 0 0 1.51 1H19.4a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"
-              />
-            </svg>
+            <Icon name="settings" />
           </button>
+          <span className="me-account">
+            <AccountButton />
+          </span>
         </div>
       </header>
 
-      <main className="screen">
-        <div className="segmented" role="tablist" aria-label={t('profile:hub.title')}>
-          {(['edit', 'preview'] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              role="tab"
-              aria-selected={mode === m}
-              className={`segmented__opt${mode === m ? ' is-active' : ''}`}
-              onClick={() => setMode(m)}
-            >
-              {t(m === 'edit' ? 'profile:hub.tabEdit' : 'profile:hub.tabPreview')}
-            </button>
-          ))}
-        </div>
+      <main className={`screen me${mode === "preview" ? " is-preview" : ""}`}>
+        {/* [DEC-V1-019] Say plainly whose profile this is. */}
+        {managing && (
+          <div className="managed-note" role="status">
+            <strong>
+              {t("profile:managed.editingTitle", {
+                name: managing.name.split(" ")[0],
+              })}
+            </strong>
+            <span>
+              {t("profile:managed.editingBody", {
+                name: managing.name.split(" ")[0],
+              })}
+            </span>
+          </div>
+        )}
+        {!managing &&
+          me?.own_profile?.created_by_name &&
+          me.own_profile.claimed === false && (
+            <div className="managed-note managed-note--claim" role="status">
+              <strong>
+                {t("profile:managed.claimTitle", {
+                  name: me.own_profile.created_by_name,
+                  relation: me.own_profile.created_by_relation
+                    ? t(`circle:relation.${me.own_profile.created_by_relation}`)
+                    : t(
+                        `circle:invite.relationshipOption.${me.own_profile.created_by_role ?? "relative"}`,
+                      ),
+                })}
+              </strong>
+              <span>{t("profile:managed.claimBody")}</span>
+              <button
+                type="button"
+                className="btn btn--primary"
+                disabled={claiming}
+                onClick={async () => {
+                  setClaiming(true);
+                  if (await claimProfile()) window.location.reload();
+                  setClaiming(false);
+                }}
+              >
+                {t("profile:managed.claimCta")}
+              </button>
+              {/* The number's owner did not ask for this profile: remove it,
+                confirmed in place rather than on another screen. */}
+              {disowning ? (
+                <div className="managed-note__confirm">
+                  <span>{t("profile:managed.disownConfirm")}</span>
+                  <button
+                    type="button"
+                    className="btn btn--ghost"
+                    disabled={claiming}
+                    onClick={async () => {
+                      setClaiming(true);
+                      if (await disownProfile())
+                        window.location.assign(entranceUrl());
+                      setClaiming(false);
+                    }}
+                  >
+                    {t("profile:managed.disownYes")}
+                  </button>
+                  <button
+                    type="button"
+                    className="link link--button"
+                    onClick={() => setDisowning(false)}
+                  >
+                    {t("profile:managed.disownNo")}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="link link--button"
+                  onClick={() => setDisowning(true)}
+                >
+                  {t("profile:managed.disownCta")}
+                </button>
+              )}
+            </div>
+          )}
 
-        {mode === 'edit' ? (
-          <>
-            <div className="card profile-hero">
+        <div className="me-grid">
+          {/* The person: photos, name, and the one next step. Sticky beside
+              the content on a desktop. */}
+          <section className="me-grid__side me-person" aria-label={profile.name}>
+            {renderPhotos()}
+            <div className="me-person__id">
+              <h2 className="me-person__name">
+                {profile.name}{" "}
+                <em className="me-person__age">
+                  {ageFromDob(profile.date_of_birth)}
+                </em>
+              </h2>
+              {city && <p className="me-person__meta">{city}</p>}
               <Link
                 href="/me/completeness"
-                className="hero-ring"
-                aria-label={t('profile:hub.completenessCta')}
-                style={{ background: `conic-gradient(var(--saffron-500) ${pct}%, var(--surface-sunken) 0)` }}
+                className="me-person__pct"
+                aria-label={t("profile:hub.completenessCta")}
               >
-                <Avatar photoUrl={profile.photo_url} name={profile.name} size={80} />
+                <span
+                  className="me-pct"
+                  style={{ "--pct": `${pct}%` } as React.CSSProperties}
+                  aria-hidden="true"
+                />
+                {t("profile:hub.complete", { pct })}
               </Link>
-              <div className="profile-hero__body">
-                <span className="profile-hero__name">{profile.name}</span>
-                <span className="caption">{meta}</span>
-                <span className="profile-hero__answered">
-                  {t('profile:hub.answered', { done: answeredCount, total })}
-                </span>
-              </div>
             </div>
-
-            {nextEmpty && (
-              <button type="button" className="next-step" onClick={() => openCategory(nextEmpty)}>
-                <span className="next-step__dot" aria-hidden="true">
-                  +
+            {justReached !== null && (
+              <p className="me-hero__cheer" role="status">
+                {t(
+                  `profile:hub.milestone.reached.${milestones[justReached - 1]?.id}`,
+                )}
+              </p>
+            )}
+            {/* One next step. While there is no photo, the large photo slot
+                above is that step, so nothing else competes with it. */}
+            {photos.length > 0 && nextEmpty && (
+              <button
+                type="button"
+                className="me-row me-next"
+                onClick={() => {
+                  const sid = sectionOf(nextEmpty);
+                  if (sid) openSection(sid);
+                }}
+              >
+                <span className="me-row__body">
+                  <span className="me-row__label">{t("profile:hub.nextUp")}</span>
+                  <span className="me-row__title">
+                    {hubText(`section.${sectionOf(nextEmpty) ?? "basics"}`)}
+                  </span>
                 </span>
-                <span className="next-step__body">
-                  <span className="caption">{t('profile:hub.nextUp')}</span>
-                  <span className="next-step__title">{t(`profile:hub.category.${nextEmpty}`)}</span>
-                </span>
-                <span className="caption">{t('profile:hub.nextHint')}</span>
+                {chevronRight}
               </button>
             )}
-
-            {EDIT_LAYOUT.map((block) =>
-              block.kind === 'photos'
-                ? [renderPhotos(), renderVoice()]
-                : block.kind === 'prompt'
-                  ? renderPromptEdit(block.slot)
-                  : renderSectionEdit(block.id)
+            {/* [DEC-V1-016] Photo check: the invitation, or the fact. */}
+            {!managing && (
+              // Re-checks once the first photo is added (it hides at 0).
+              <PhotoCheckCard key={photos.length > 0 ? "photos" : "none"} />
             )}
-          </>
-        ) : (
-          <>
-            <div className="segmented" role="tablist" aria-label={t('profile:hub.tabPreview')}>
-              {(['before', 'after'] as const).map((l) => (
+            {renderWho("side")}
+          </section>
+
+          <div className="me-grid__main">
+            <div
+              className="me-tabs"
+              role="tablist"
+              aria-label={t("profile:hub.title")}
+            >
+              {/* The "In my words" part is the candidate's own voice: a
+                  parent filling in the profile never writes it. */}
+              {(managing
+                ? (["details", "preview"] as const)
+                : (["details", "words", "preview"] as const)
+              ).map((m) => (
                 <button
-                  key={l}
+                  key={m}
                   type="button"
                   role="tab"
-                  aria-selected={lens === l}
-                  className={`segmented__opt${lens === l ? ' is-active' : ''}`}
-                  onClick={() => setLens(l)}
+                  aria-selected={mode === m}
+                  className={`me-tab${mode === m ? " is-active" : ""}`}
+                  onClick={() => setMode(m)}
                 >
-                  {t(`profile:hub.preview.${l}`)}
+                  {t(
+                    m === "details"
+                      ? "profile:hub.tabDetails"
+                      : m === "words"
+                        ? "profile:hub.tabWords"
+                        : "profile:hub.tabPreview",
+                  )}
                 </button>
               ))}
             </div>
 
-            {lens === 'before' ? (
+            {mode === "details" && (
+              <div className="me-secs">
+                {DETAILS_LAYOUT.map((block) =>
+                  block.kind === "section" ? renderSectionEdit(block.id) : null,
+                )}
+              </div>
+            )}
+
+            {mode === "words" && (
               <>
-                <div className="card preview-card">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <Avatar anonymized size={56} />
-                    <div style={{ minWidth: 0 }}>
-                      <span className="body-lg" style={{ fontWeight: 600 }}>
-                        {[findCategory('education'), findCategory('profession')]
-                          .map((d) => (d ? summaryOf(d) : null))
-                          .filter(Boolean)
-                          .join(' · ') || t('profile:hub.preview.noBasics')}
+                <div className="me-prompts">
+                  {PROMPT_SLOTS.map((slot) => renderPromptEdit(slot))}
+                  {emptyPrompt && (
+                    <button
+                      type="button"
+                      className="me-row me-addprompt"
+                      onClick={() => openPrompt(emptyPrompt)}
+                    >
+                      <span className="me-row__body">
+                        <span className="me-row__title">
+                          + {t("profile:hub.prompts.add")}
+                        </span>
+                        {writtenPrompts === 0 && (
+                          <span className="me-quiet">
+                            {t("profile:hub.prompts.emptyHint")}
+                          </span>
+                        )}
                       </span>
-                      <p className="caption" style={{ margin: '2px 0 0' }}>
-                        {profile.city_locality}
-                      </p>
-                      <p className="caption" style={{ margin: '2px 0 0' }}>
-                        🔒 {t('discover:identityProtected')}
-                      </p>
-                    </div>
-                  </div>
+                      <span className="me-count">
+                        {t("profile:hub.prompts.limit", {
+                          count: writtenPrompts,
+                          max: PROMPT_SLOTS.length,
+                        })}
+                      </span>
+                    </button>
+                  )}
                 </div>
-                <p className="caption">{t('profile:hub.preview.beforeNote')}</p>
-              </>
-            ) : (
-              <>
-                {PREVIEW_LAYOUT.map((block, i) => renderPreviewBlock(block, i))}
-                <p className="caption">{t('profile:hub.preview.afterNote')}</p>
+                <div className="me-duo">
+                  {renderVoice()}
+                  {renderOutlook()}
+                </div>
               </>
             )}
-          </>
-        )}
+
+            {mode === "preview" && (
+              <div className="me-preview">
+                {/* One toggle: whose eyes the preview is seen through. */}
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={lens === "after"}
+                  className="me-viewas"
+                  onClick={() => setLens(lens === "before" ? "after" : "before")}
+                >
+                  <span className="me-viewas__label">
+                    {t("profile:hub.preview.viewingAs")}
+                  </span>
+                  <span className="me-viewas__value">
+                    {t(
+                      lens === "before"
+                        ? "profile:hub.preview.asBefore"
+                        : "profile:hub.preview.asAfter",
+                    )}
+                  </span>
+                  <Icon name="swap" size={16} />
+                </button>
+
+                <div className="me-phone">
+                  <div className="me-pv">
+                    <div className="me-pv__hero">
+                      {photos[0] ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={resolveMediaUrl(photos[0].url) ?? ""} alt="" />
+                      ) : (
+                        <>
+                          {/* No photo yet: initials on a soft wash, and the
+                              one thing to do about it. */}
+                          <span className="me-pv__nophoto" aria-hidden="true">
+                            {initials}
+                          </span>
+                          <button
+                            type="button"
+                            className="me-pv__addphoto"
+                            onClick={() => fileRef.current?.click()}
+                          >
+                            <Icon name="camera" size={16} />
+                            {t("profile:hub.preview.addPhotoHere")}
+                          </button>
+                        </>
+                      )}
+                      <div className="me-pv__over">
+                        <span className="me-pv__name">
+                          {pvName}
+                          {" "}
+                          <em className="me-pv__age">
+                            {ageFromDob(profile.date_of_birth)}
+                          </em>
+                        </span>
+                        {pvChips.length > 0 && (
+                          <span className="me-pv__chips">
+                            {pvChips.map((c) => (
+                              <span key={c} className="me-pv__chip">
+                                {c}
+                              </span>
+                            ))}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {lens === "before" ? (
+                      <p className="me-pv__lock">
+                        <Icon name="lock" size={16} />
+                        {t("discover:identityProtected")}
+                      </p>
+                    ) : (
+                      PREVIEW_LAYOUT.map((block, i) =>
+                        renderPreviewBlock(block, i),
+                      )
+                    )}
+                  </div>
+                </div>
+                <p className="me-quiet me-pv__note">
+                  {t(
+                    lens === "before"
+                      ? "profile:hub.preview.beforeNote"
+                      : "profile:hub.preview.afterNote",
+                  )}
+                </p>
+              </div>
+            )}
+
+            {mode !== "preview" && (
+              <>
+                {renderWho("main")}
+
+                {/* The way on to the next part: a quiet full-width row. */}
+                <button
+                  type="button"
+                  className="me-row me-nextpart"
+                  onClick={() =>
+                    setMode(
+                      mode === "details" && !managing ? "words" : "preview",
+                    )
+                  }
+                >
+                  <span className="me-row__body">
+                    <span className="me-row__title">
+                      {t(
+                        mode === "details" && !managing
+                          ? "profile:hub.part.toWords"
+                          : "profile:hub.part.toPreview",
+                      )}
+                    </span>
+                  </span>
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       </main>
 
       {sheet && (
@@ -874,33 +1706,44 @@ export default function ProfileHubPage() {
             <div className="sheet__handle" aria-hidden="true" />
             <div className="sheet__head">
               <h2 id="sheet-title" className="h2">
-                {sheet.kind === 'category'
-                  ? t(`profile:hub.category.${sheet.category}`)
-                  : sheet.kind === 'photo'
-                    ? t('profile:hub.photos.title')
-                    : sheet.kind === 'settings'
-                      ? t('common:settings.title')
-                      : t('profile:hub.section.prompts')}
+                {sheet.kind === "section"
+                  ? hubText(`section.${sheet.id}`)
+                  : sheet.kind === "photo"
+                    ? t("profile:hub.photos.title")
+                    : sheet.kind === "outlook"
+                      ? t("profile:outlook.title")
+                      : sheet.kind === "settings"
+                        ? t("common:settings.title")
+                        : t("profile:hub.section.prompts")}
               </h2>
               <button
                 type="button"
                 className="icon-btn"
-                aria-label={t('common:action.cancel')}
+                aria-label={t("common:action.cancel")}
                 onClick={() => setSheet(null)}
               >
-                ✕
+                <Icon name="close" />
               </button>
             </div>
 
-            {sheet.kind === 'settings' && (
+            {sheet.kind === "outlook" && (
+              <OutlookGame
+                initial={outlookAnswers}
+                saving={savingOutlook}
+                onSave={(a) => void saveOutlook(a)}
+                onCancel={() => setSheet(null)}
+              />
+            )}
+
+            {sheet.kind === "settings" && (
               <>
-                <div className="label">{t('common:settings.language')}</div>
+                <div className="label">{t("common:settings.language")}</div>
                 <div className="segmented segmented--3" role="radiogroup">
                   {SUPPORTED_LANGUAGES.map((lang) => (
                     <button
                       key={lang}
                       type="button"
-                      className={`segmented__opt${i18n.language === lang ? ' is-active' : ''}`}
+                      className={`segmented__opt${i18n.language === lang ? " is-active" : ""}`}
                       aria-pressed={i18n.language === lang}
                       onClick={() => {
                         void i18n.changeLanguage(lang as Language);
@@ -912,14 +1755,14 @@ export default function ProfileHubPage() {
                   ))}
                 </div>
                 <div className="label" style={{ marginTop: 16 }}>
-                  {t('common:settings.theme')}
+                  {t("common:settings.theme")}
                 </div>
                 <div className="segmented segmented--3" role="radiogroup">
                   {THEME_OPTIONS.map((opt) => (
                     <button
                       key={opt}
                       type="button"
-                      className={`segmented__opt${theme === opt ? ' is-active' : ''}`}
+                      className={`segmented__opt${theme === opt ? " is-active" : ""}`}
                       aria-pressed={theme === opt}
                       onClick={() => {
                         setTheme(opt);
@@ -930,37 +1773,65 @@ export default function ProfileHubPage() {
                     </button>
                   ))}
                 </div>
-                <div className="sheet__stack" style={{ marginTop: 24 }}>
+                {/* The account links from the header avatar, which a desktop
+                    does not show on this page. */}
+                <nav className="me-sheetlinks">
+                  <Link href="/profile/create?for=child" className="me-row">
+                    <span className="me-row__body">
+                      <span className="me-row__title">
+                        {t("common:account.createForChild")}
+                      </span>
+                    </span>
+                    <Icon name="caretRight" size={16} className="me-chev" />
+                  </Link>
+                  <a href={entranceUrl()} className="me-row">
+                    <span className="me-row__body">
+                      <span className="me-row__title">
+                        {t("common:platform.backToHub")}
+                      </span>
+                    </span>
+                    <Icon name="caretRight" size={16} className="me-chev" />
+                  </a>
+                </nav>
+                <div className="sheet__stack" style={{ marginTop: 16 }}>
                   {confirmLogout ? (
                     <>
                       <p className="caption" style={{ margin: 0 }}>
-                        {t('common:settings.logOutConfirm')}
+                        {t("common:settings.logOutConfirm")}
                       </p>
                       <button
                         type="button"
                         className="sheet__danger"
                         onClick={() => void logOut()}
                       >
-                        {t('common:action.logOut')}
+                        {t("common:action.logOut")}
                       </button>
-                      <button type="button" className="quick-pick__chip" onClick={() => setConfirmLogout(false)}>
-                        {t('common:action.cancel')}
+                      <button
+                        type="button"
+                        className="quick-pick__chip"
+                        onClick={() => setConfirmLogout(false)}
+                      >
+                        {t("common:action.cancel")}
                       </button>
                     </>
                   ) : (
-                    <button type="button" className="sheet__danger" onClick={() => setConfirmLogout(true)}>
-                      {t('common:action.logOut')}
+                    <button
+                      type="button"
+                      className="sheet__danger"
+                      onClick={() => setConfirmLogout(true)}
+                    >
+                      {t("common:action.logOut")}
                     </button>
                   )}
                 </div>
               </>
             )}
 
-            {sheet.kind === 'photo' && sheetPhoto && (
+            {sheet.kind === "photo" && sheetPhoto && (
               <>
                 <div className="sheet__photo">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={resolveMediaUrl(sheetPhoto.url) ?? ''} alt="" />
+                  <img src={resolveMediaUrl(sheetPhoto.url) ?? ""} alt="" />
                 </div>
                 <div className="sheet__stack">
                   <div className="sheet__row">
@@ -968,17 +1839,30 @@ export default function ProfileHubPage() {
                       type="button"
                       className="quick-pick__chip"
                       disabled={saving || photos.indexOf(sheetPhoto) === 0}
-                      onClick={() => movePhoto(photos.indexOf(sheetPhoto), photos.indexOf(sheetPhoto) - 1)}
+                      onClick={() =>
+                        movePhoto(
+                          photos.indexOf(sheetPhoto),
+                          photos.indexOf(sheetPhoto) - 1,
+                        )
+                      }
                     >
-                      ← {t('profile:hub.photos.moveEarlier')}
+                      ← {t("profile:hub.photos.moveEarlier")}
                     </button>
                     <button
                       type="button"
                       className="quick-pick__chip"
-                      disabled={saving || photos.indexOf(sheetPhoto) === photos.length - 1}
-                      onClick={() => movePhoto(photos.indexOf(sheetPhoto), photos.indexOf(sheetPhoto) + 1)}
+                      disabled={
+                        saving ||
+                        photos.indexOf(sheetPhoto) === photos.length - 1
+                      }
+                      onClick={() =>
+                        movePhoto(
+                          photos.indexOf(sheetPhoto),
+                          photos.indexOf(sheetPhoto) + 1,
+                        )
+                      }
                     >
-                      {t('profile:hub.photos.moveLater')} →
+                      {t("profile:hub.photos.moveLater")} →
                     </button>
                   </div>
                   {!sheetPhoto.is_primary && (
@@ -986,76 +1870,100 @@ export default function ProfileHubPage() {
                       type="button"
                       className="cta"
                       disabled={saving}
-                      onClick={() => void onPhotoAction('main', sheetPhoto.id)}
+                      onClick={() => void onPhotoAction("main", sheetPhoto.id)}
                     >
-                      {t('profile:hub.photos.makeMain')}
+                      {t("profile:hub.photos.makeMain")}
                     </button>
                   )}
                   <button
                     type="button"
                     className="sheet__danger"
                     disabled={saving}
-                    onClick={() => void onPhotoAction('remove', sheetPhoto.id)}
+                    onClick={() => void onPhotoAction("remove", sheetPhoto.id)}
                   >
-                    {t('profile:hub.photos.remove')}
+                    {t("profile:hub.photos.remove")}
                   </button>
                 </div>
               </>
             )}
 
-            {sheet.kind === 'category' && sheetDef && (
+            {sheet.kind === "section" && sheetItems.length > 0 && (
               <>
-                {sheetDef.fields.map((f) => {
-                  const entry = draft[f.key];
+                {sheetItems.map(({ f, dk }) => {
+                  const entry = draft[dk];
                   return (
                     <div key={f.key} className="sheet__field">
-                      {sheetDef.fields.length > 1 && <div className="label">{t(`profile:${f.labelKey}`)}</div>}
-                      {f.kind === 'select' ? (
+                      {sheetItems.length > 1 && (
+                        <div className="label">{fieldLabel(f.labelKey)}</div>
+                      )}
+                      {f.kind === "select" ? (
                         <div className="quick-pick__chips">
                           {(f.options ?? []).map((opt) => {
-                            const active = entry?.state === 'value' && entry.value === opt;
+                            const active =
+                              entry?.state === "value" && entry.value === opt;
                             return (
                               <button
                                 key={opt}
                                 type="button"
-                                className={`quick-pick__chip${active ? ' quick-pick__chip--active' : ''}`}
+                                className={`quick-pick__chip${active ? " quick-pick__chip--active" : ""}`}
                                 disabled={saving}
                                 onClick={() =>
-                                  singleSelect
-                                    ? void persist(sheetDef.category, { [f.key]: { state: 'value', value: opt } })
-                                    : setDraft((d) => ({ ...d, [f.key]: { state: 'value', value: opt } }))
+                                  setDraft((d) => ({
+                                    ...d,
+                                    [dk]: { state: "value", value: opt },
+                                  }))
                                 }
                               >
-                                {t(`profile:option.${f.key}.${opt}`)}
+                                {optionLabel(f.key, opt)}
                               </button>
                             );
                           })}
                         </div>
-                      ) : f.kind === 'tags' ? (
+                      ) : f.kind === "tags" ? (
                         (() => {
                           const chosen = parseTags(entry?.value);
                           const full = chosen.length >= MAX_TAGS;
                           const setTags = (next: string[]) =>
-                            setDraft((d) => ({ ...d, [f.key]: { state: 'value', value: next } }));
+                            setDraft((d) => ({
+                              ...d,
+                              [dk]: { state: "value", value: next },
+                            }));
                           const toggle = (tag: string) =>
-                            setTags(chosen.includes(tag) ? chosen.filter((c) => c !== tag) : full ? chosen : [...chosen, tag]);
+                            setTags(
+                              chosen.includes(tag)
+                                ? chosen.filter((c) => c !== tag)
+                                : full
+                                  ? chosen
+                                  : [...chosen, tag],
+                            );
                           const addCustom = () => {
                             const tag = toTagKey(tagInput);
-                            if (tag && !chosen.includes(tag) && !full) setTags([...chosen, tag]);
-                            setTagInput('');
+                            if (tag && !chosen.includes(tag) && !full)
+                              setTags([...chosen, tag]);
+                            setTagInput("");
                           };
                           return (
                             <>
-                              <div className="label">{t('profile:hub.tags.pick', { max: MAX_TAGS, count: chosen.length })}</div>
+                              <div className="label">
+                                {t("profile:hub.tags.pick", {
+                                  max: MAX_TAGS,
+                                  count: chosen.length,
+                                })}
+                              </div>
                               <div className="quick-pick__chips">
-                                {[...INTEREST_TAGS, ...chosen.filter((c) => !INTEREST_TAGS.includes(c))].map((tag) => {
+                                {[
+                                  ...INTEREST_TAGS,
+                                  ...chosen.filter(
+                                    (c) => !INTEREST_TAGS.includes(c),
+                                  ),
+                                ].map((tag) => {
                                   const active = chosen.includes(tag);
                                   return (
                                     <button
                                       key={tag}
                                       type="button"
                                       aria-pressed={active}
-                                      className={`quick-pick__chip${active ? ' quick-pick__chip--active' : ''}`}
+                                      className={`quick-pick__chip${active ? " quick-pick__chip--active" : ""}`}
                                       disabled={saving || (!active && full)}
                                       onClick={() => toggle(tag)}
                                     >
@@ -1071,13 +1979,13 @@ export default function ProfileHubPage() {
                                   name="custom-interest"
                                   maxLength={30}
                                   autoComplete="off"
-                                  aria-label={t('profile:hub.tags.custom')}
-                                  placeholder={t('profile:hub.tags.custom')}
+                                  aria-label={t("profile:hub.tags.custom")}
+                                  placeholder={t("profile:hub.tags.custom")}
                                   value={tagInput}
                                   disabled={full}
                                   onChange={(e) => setTagInput(e.target.value)}
                                   onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
+                                    if (e.key === "Enter") {
                                       e.preventDefault();
                                       addCustom();
                                     }
@@ -1089,19 +1997,22 @@ export default function ProfileHubPage() {
                                   disabled={full || !tagInput.trim()}
                                   onClick={addCustom}
                                 >
-                                  {t('profile:hub.tags.addCustom')}
+                                  {t("profile:hub.tags.addCustom")}
                                 </button>
                               </div>
                             </>
                           );
                         })()
-                      ) : f.kind === 'ageRange' ? (
+                      ) : f.kind === "ageRange" ? (
                         <>
                           {(() => {
-                            const rv = (entry?.value as Record<string, unknown> | undefined) ?? {};
+                            const rv =
+                              (entry?.value as
+                                Record<string, unknown> | undefined) ?? {};
                             const lo = Number(rv.min) || AGE_MIN;
                             const hi = Number(rv.max) || AGE_MAX;
-                            const pct = (n: number) => ((n - AGE_MIN) / (AGE_MAX - AGE_MIN)) * 100;
+                            const pct = (n: number) =>
+                              ((n - AGE_MIN) / (AGE_MAX - AGE_MIN)) * 100;
                             return (
                               <div className="range-dual">
                                 <div
@@ -1110,7 +2021,7 @@ export default function ProfileHubPage() {
                                     background: `linear-gradient(to right, var(--surface-sunken) ${pct(lo)}%, var(--saffron-500) ${pct(lo)}%, var(--saffron-500) ${pct(hi)}%, var(--surface-sunken) ${pct(hi)}%)`,
                                   }}
                                 />
-                                {(['min', 'max'] as const).map((bound) => (
+                                {(["min", "max"] as const).map((bound) => (
                                   <input
                                     key={bound}
                                     type="range"
@@ -1118,18 +2029,39 @@ export default function ProfileHubPage() {
                                     max={AGE_MAX}
                                     step={1}
                                     name={`${f.key}-${bound}-slider`}
-                                    aria-label={t(bound === 'min' ? 'profile:editor.ageRangeFrom' : 'profile:editor.ageRangeTo')}
-                                    value={bound === 'min' ? lo : hi}
+                                    aria-label={t(
+                                      bound === "min"
+                                        ? "profile:editor.ageRangeFrom"
+                                        : "profile:editor.ageRangeTo",
+                                    )}
+                                    value={bound === "min" ? lo : hi}
                                     onChange={(e) => {
                                       const next = Number(e.target.value);
                                       setDraft((d) => {
-                                        const prev = (d[f.key]?.value as Record<string, unknown>) ?? {};
-                                        const otherKey = bound === 'min' ? 'max' : 'min';
-                                        const other = Number(prev[otherKey]) || (bound === 'min' ? AGE_MAX : AGE_MIN);
-                                        const clamped = bound === 'min' ? Math.min(next, other) : Math.max(next, other);
+                                        const prev =
+                                          (d[dk]?.value as Record<
+                                            string,
+                                            unknown
+                                          >) ?? {};
+                                        const otherKey =
+                                          bound === "min" ? "max" : "min";
+                                        const other =
+                                          Number(prev[otherKey]) ||
+                                          (bound === "min" ? AGE_MAX : AGE_MIN);
+                                        const clamped =
+                                          bound === "min"
+                                            ? Math.min(next, other)
+                                            : Math.max(next, other);
                                         return {
                                           ...d,
-                                          [f.key]: { state: 'value', value: { ...prev, [otherKey]: other, [bound]: clamped } },
+                                          [dk]: {
+                                            state: "value",
+                                            value: {
+                                              ...prev,
+                                              [otherKey]: other,
+                                              [bound]: clamped,
+                                            },
+                                          },
                                         };
                                       });
                                     }}
@@ -1138,47 +2070,96 @@ export default function ProfileHubPage() {
                               </div>
                             );
                           })()}
-                        <div className="age-range">
-                          {(['min', 'max'] as const).map((bound, i) => (
-                            <span key={bound} style={{ display: 'contents' }}>
-                              {i === 1 && <span aria-hidden="true">–</span>}
-                              <input
-                                className="field__input"
-                                type="number"
-                                inputMode="numeric"
-                                name={`${f.key}-${bound}`}
-                                aria-label={t(bound === 'min' ? 'profile:editor.ageRangeFrom' : 'profile:editor.ageRangeTo')}
-                                placeholder={t(bound === 'min' ? 'profile:editor.ageRangeFrom' : 'profile:editor.ageRangeTo')}
-                                value={String((entry?.value as Record<string, unknown> | undefined)?.[bound] ?? '')}
-                                onChange={(e) =>
-                                  setDraft((d) => ({
-                                    ...d,
-                                    [f.key]: {
-                                      state: 'value',
-                                      value: {
-                                        ...((d[f.key]?.value as Record<string, unknown>) ?? {}),
-                                        [bound]: e.target.value,
+                          <div className="age-range">
+                            {(["min", "max"] as const).map((bound, i) => (
+                              <span key={bound} style={{ display: "contents" }}>
+                                {i === 1 && <span aria-hidden="true">–</span>}
+                                <input
+                                  className="field__input"
+                                  type="number"
+                                  inputMode="numeric"
+                                  name={`${f.key}-${bound}`}
+                                  aria-label={t(
+                                    bound === "min"
+                                      ? "profile:editor.ageRangeFrom"
+                                      : "profile:editor.ageRangeTo",
+                                  )}
+                                  placeholder={t(
+                                    bound === "min"
+                                      ? "profile:editor.ageRangeFrom"
+                                      : "profile:editor.ageRangeTo",
+                                  )}
+                                  value={String(
+                                    (
+                                      entry?.value as
+                                        Record<string, unknown> | undefined
+                                    )?.[bound] ?? "",
+                                  )}
+                                  onChange={(e) =>
+                                    setDraft((d) => ({
+                                      ...d,
+                                      [dk]: {
+                                        state: "value",
+                                        value: {
+                                          ...((d[dk]?.value as Record<
+                                            string,
+                                            unknown
+                                          >) ?? {}),
+                                          [bound]: e.target.value,
+                                        },
                                       },
-                                    },
-                                  }))
-                                }
-                              />
-                            </span>
-                          ))}
-                        </div>
+                                    }))
+                                  }
+                                />
+                              </span>
+                            ))}
+                          </div>
                         </>
+                      ) : f.kind === "textarea" ? (
+                        <textarea
+                          className="field__input field__input--area"
+                          name={f.key}
+                          rows={5}
+                          maxLength={1200}
+                          aria-label={fieldLabel(f.labelKey)}
+                          placeholder={fieldLabel(f.labelKey)}
+                          value={
+                            typeof entry?.value === "string" ? entry.value : ""
+                          }
+                          onChange={(e) =>
+                            setDraft((d) => ({
+                              ...d,
+                              [dk]: {
+                                state: "value",
+                                value: e.target.value,
+                              },
+                            }))
+                          }
+                        />
                       ) : (
                         <input
                           className="field__input"
                           type="text"
                           name={f.key}
-                          list={f.key === 'occupation' ? 'occupation-suggestions' : undefined}
+                          list={
+                            f.key === "occupation"
+                              ? "occupation-suggestions"
+                              : undefined
+                          }
                           autoComplete="off"
-                          aria-label={t(`profile:${f.labelKey}`)}
-                          placeholder={t(`profile:${f.labelKey}`)}
-                          value={typeof entry?.value === 'string' ? entry.value : ''}
+                          aria-label={fieldLabel(f.labelKey)}
+                          placeholder={fieldLabel(f.labelKey)}
+                          value={
+                            typeof entry?.value === "string" ? entry.value : ""
+                          }
                           onChange={(e) =>
-                            setDraft((d) => ({ ...d, [f.key]: { state: 'value', value: e.target.value } }))
+                            setDraft((d) => ({
+                              ...d,
+                              [dk]: {
+                                state: "value",
+                                value: e.target.value,
+                              },
+                            }))
                           }
                         />
                       )}
@@ -1195,53 +2176,107 @@ export default function ProfileHubPage() {
                     type="button"
                     className="quick-pick__chip quick-pick__chip--decline"
                     disabled={saving}
-                    onClick={() => hideCategory(sheetDef)}
+                    onClick={() => void hideSection(sheetDefs)}
                   >
-                    {t('profile:editor.decline')}
+                    {t("profile:editor.decline")}
                   </button>
-                  {!singleSelect && (
+                  {
                     <button
                       type="button"
                       className="cta sheet__save"
                       disabled={saving}
-                      onClick={() => saveDraft(sheetDef)}
+                      onClick={() => void saveSection(sheetDefs)}
                     >
-                      {saving ? t('profile:editor.saving') : t('profile:editor.save')}
+                      {saving
+                        ? t("profile:editor.saving")
+                        : t("profile:editor.save")}
                     </button>
-                  )}
+                  }
                 </div>
               </>
             )}
 
-            {sheet.kind === 'prompt' && (
+            {sheet.kind === "prompt" && (
               <>
-                <div className="label">{t('profile:hub.prompts.pick')}</div>
-                <div className="quick-pick__chips">
-                  {PROMPT_QUESTIONS.map((q) => (
-                    <button
-                      key={q}
-                      type="button"
-                      className={`quick-pick__chip${promptDraft.q === q ? ' quick-pick__chip--active' : ''}`}
-                      disabled={usedQuestions.includes(q)}
-                      onClick={() => setPromptDraft((p) => ({ ...p, q }))}
-                    >
-                      {t(`profile:hub.prompts.q.${q}`)}
-                    </button>
-                  ))}
-                </div>
+                <div className="label">{t("profile:hub.prompts.pick")}</div>
+                {/* Grouped, because there are three dozen of these now and a
+                    single run of chips would be a wall to read. The groups are
+                    the same shape Hinge uses, so someone can go straight to
+                    the kind of thing they want to say. */}
+                {PROMPT_GROUPS.map((group) => (
+                  <div key={group.id} className="prompt-group">
+                    <div className="prompt-group__title">
+                      {t(`profile:hub.prompts.group.${group.id}`)}
+                    </div>
+                    <div className="quick-pick__chips">
+                      {group.questions.map((q) => (
+                        <button
+                          key={q}
+                          type="button"
+                          className={`quick-pick__chip${promptDraft.q === q ? " quick-pick__chip--active" : ""}`}
+                          disabled={usedQuestions.includes(q)}
+                          onClick={() => setPromptDraft((p) => ({ ...p, q }))}
+                        >
+                          {t(`profile:hub.prompts.q.${q}`)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
                 {promptDraft.q && (
                   <div className="sheet__field">
                     <label className="label" htmlFor="prompt-answer">
-                      {t('profile:hub.prompts.answer')}
+                      {t("profile:hub.prompts.answer")}
                     </label>
                     <textarea
                       id="prompt-answer"
                       className="field__input prompt-textarea"
-                      maxLength={150}
+                      maxLength={PROMPT_MAX}
                       value={promptDraft.a}
-                      onChange={(e) => setPromptDraft((p) => ({ ...p, a: e.target.value }))}
+                      onChange={(e) =>
+                        setPromptDraft((p) => ({ ...p, a: e.target.value }))
+                      }
                     />
-                    <span className="caption">{promptDraft.a.length}/150</span>
+                    <span className="caption">
+                      {promptDraft.a.length}/{PROMPT_MAX}
+                    </span>
+                    <AnswerCoach answer={promptDraft.a} />
+
+                    {/* Who may read this one answer. Default is connected
+                        candidates only — publishing is a deliberate act, not
+                        something that happens by forgetting a setting. */}
+                    <div className="visibility">
+                      <div className="label">
+                        {t("profile:hub.prompts.visibility")}
+                      </div>
+                      {(
+                        [
+                          ["connectedOnly", false],
+                          ["publicOne", true],
+                        ] as const
+                      ).map(([key, isPublic]) => (
+                        <button
+                          key={key}
+                          type="button"
+                          className={`visibility__opt${
+                            !!promptDraft.public === isPublic
+                              ? " is-chosen"
+                              : ""
+                          }`}
+                          aria-pressed={!!promptDraft.public === isPublic}
+                          onClick={() =>
+                            setPromptDraft((p) => ({ ...p, public: isPublic }))
+                          }
+                        >
+                          <span className="visibility__name">
+                            {t(`profile:hub.prompts.${key}`)}
+                          </span>
+                          <span className="caption">
+                            {t(`profile:hub.prompts.${key}Hint`)}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
                 <div className="sheet__actions">
@@ -1250,9 +2285,13 @@ export default function ProfileHubPage() {
                       type="button"
                       className="quick-pick__chip quick-pick__chip--decline"
                       disabled={saving}
-                      onClick={() => void persist(PROMPT_CATEGORY, { [sheet.slot]: { state: 'declined', value: null } })}
+                      onClick={() =>
+                        void persist(PROMPT_CATEGORY, {
+                          [sheet.slot]: { state: "declined", value: null },
+                        })
+                      }
                     >
-                      {t('profile:hub.prompts.remove')}
+                      {t("profile:hub.prompts.remove")}
                     </button>
                   ) : (
                     <span />
@@ -1263,11 +2302,16 @@ export default function ProfileHubPage() {
                     disabled={saving || !promptDraft.q || !promptDraft.a.trim()}
                     onClick={() =>
                       void persist(PROMPT_CATEGORY, {
-                        [sheet.slot]: { state: 'value', value: { q: promptDraft.q, a: promptDraft.a.trim() } },
+                        [sheet.slot]: {
+                          state: "value",
+                          value: { q: promptDraft.q, a: promptDraft.a.trim() },
+                        },
                       })
                     }
                   >
-                    {saving ? t('profile:editor.saving') : t('profile:editor.save')}
+                    {saving
+                      ? t("profile:editor.saving")
+                      : t("profile:editor.save")}
                   </button>
                 </div>
               </>

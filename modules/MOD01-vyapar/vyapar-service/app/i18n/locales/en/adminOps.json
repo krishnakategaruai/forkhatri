@@ -1,0 +1,10 @@
+{
+  "error": {
+    "permissionRequired": "You need the \"{permission}\" operator permission to do this.",
+    "confirmCountMismatch": "The confirmed count does not match the number of selected items. Review the selection and try again.",
+    "taxonomySlugExists": "A term with this identifier already exists.",
+    "taxonomyMergeSameTerm": "Choose two different terms to merge.",
+    "taxonomyNotFound": "This taxonomy term was not found.",
+    "nothingToRename": "Enter at least one new name to rename this term."
+  }
+}

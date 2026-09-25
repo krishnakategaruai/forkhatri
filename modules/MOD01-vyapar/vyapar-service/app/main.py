@@ -13,11 +13,12 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
 from app.db import close_pool, get_pool, init_pool
 from app.taxonomy_cache import refresh_taxonomy_cache
-from app.routers import admin_commercial, admin_ops, campaigns, commercial, dev, discovery, enquiries, events, feed, first_run, listings, member_settings, notifications, opportunities, partnerships, payments, privacy, reviews, trust_safety, verification, workspace
+from app.routers import admin_commercial, admin_ops, campaigns, commercial, dev, discovery, enquiries, events, feed, first_run, listings, member_settings, notifications, opportunities, partnerships, payments, privacy, reviews, trust_safety, uploads, verification, workspace
 from app.routers.commercial import run_commercial_lifecycle_pass
 from app.routers.privacy import run_preference_detection_pass
 from app.outbox import run_outbox_dispatch_pass
@@ -25,6 +26,10 @@ from app.routers.trust_safety import run_moderation_escalation_pass
 from app.routers.listings import sync_credential_refs
 from app.routers.notifications import notification_loop
 from app.routers.verification import run_verification_expiry_pass, run_verification_image_cleanup
+# [IMP37 — Refactor B] integration edges: token/webhook API, middleware, webhook dispatch loop
+from app.routers import integrations as integrations_router
+from app.integrations import http_middleware as integration_middleware
+from app.integrations.webhooks.dispatcher import webhook_loop
 
 VERIFICATION_CLEANUP_INTERVAL_SECONDS = 3600
 
@@ -68,16 +73,25 @@ async def lifespan(app: FastAPI):
     notify_task = asyncio.create_task(notification_loop())
     credential_task = asyncio.create_task(credential_sync_loop())
     cleanup_task = asyncio.create_task(verification_cleanup_loop())
+    webhook_task = asyncio.create_task(webhook_loop())  # [IMP37] outbound webhook fan-out + delivery
     yield
     notify_task.cancel()
     credential_task.cancel()
     cleanup_task.cancel()
+    webhook_task.cancel()
     await close_pool()
 
 
 app = FastAPI(title="Vyapar API", version="0.1.0", lifespan=lifespan)
 
+from app.errors import register_error_handlers  # noqa: E402  [Refactor A] error envelope
+
+register_error_handlers(app)
+
 settings = get_settings()
+# [IMP37] Idempotency-Key replay + per-token write audit. Installed BEFORE
+# CORS so CORS stays outermost and replayed/refused responses keep CORS headers.
+integration_middleware.install(app)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.web_origin],
@@ -85,6 +99,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(uploads.router)
+# [FR11/FR22, one real upload implementation] served back statically — dev
+# environment has no object-storage vendor, same honest gap already
+# declared for verification-document images.
+app.mount("/uploads", StaticFiles(directory=uploads.UPLOAD_DIR), name="uploads")
 
 app.include_router(first_run.router)
 app.include_router(member_settings.router)
@@ -120,6 +140,7 @@ app.include_router(privacy.router)
 app.include_router(events.router)
 app.include_router(admin_commercial.audit_router)
 app.include_router(dev.router)
+app.include_router(integrations_router.router)  # [IMP37] tokens, webhooks, /me
 
 
 @app.get("/health")

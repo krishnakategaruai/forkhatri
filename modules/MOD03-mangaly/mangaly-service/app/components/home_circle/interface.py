@@ -71,6 +71,9 @@ __all__ = [
     "AlreadyMember",
     "InvitationNotFound",
     "InviteSelf",
+    "CandidateNotOnForKhatri",
+    "PersonSummary",
+    "search_people",
     "MemberSummary",
     "NotFound",
     "PendingInvitationSummary",
@@ -137,6 +140,11 @@ class NotFound(Exception):
     """Generic "no such row, or not visible to this caller" outcome."""
 
 
+class CandidateNotOnForKhatri(Exception):
+    """[FR007 path B] A `to_candidate` invitation names a candidate who has no
+    ForKhatri account yet: there is no account to own the circle."""
+
+
 @dataclass(frozen=True, slots=True)
 class PendingInvitationSummary:
     id: UUID
@@ -145,6 +153,13 @@ class PendingInvitationSummary:
     relationship_type: RelationshipType
     created_at: datetime
     expires_at: datetime | None
+    # [Migration 030] `to_member` (join the candidate's circle) or
+    # `to_candidate` (the inviter asks the invitee — a candidate — to let them
+    # join the invitee's circle as `relationship_type`).
+    direction: str = "to_member"
+    inviter_name: str | None = None
+    candidate_name: str | None = None
+    relation: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -161,18 +176,30 @@ async def invite(
     *,
     inviter_account_id: UUID,
     candidate_account_id: UUID,
-    invitee_identifier: str,
     relationship_type: RelationshipType,
+    invitee_identifier: str | None = None,
+    invitee_account_id: UUID | None = None,
+    direction: str = "to_member",
+    relation: str | None = None,
 ) -> UUID:
-    """[FR007/TR007] Invite `invitee_identifier` (phone or email) into
-    `candidate_account_id`'s Home Circle. Directory/username search does not
-    exist in this codebase (confirmed against Identity Bridge — see
-    `models.py`), so identifier is the only addressing scheme, exactly as
-    TR007 itself names as the fallback.
+    """[FR007/TR007, DEC-V1-022] Invite someone into a Home Circle. Three paths,
+    one function (rework contract §3/§6):
+
+      * candidate → family (`to_member`, inviter == candidate): the invitee
+        joins the inviter's circle as `relationship_type`.
+      * member → relative (`to_member`, inviter != candidate): the caller,
+        already in `candidate_account_id`'s circle (the route checked
+        `family_info`), invites another person into that same circle.
+      * family → candidate (`to_candidate`): the inviter — with or without a
+        profile or any circle of their own — asks a CANDIDATE to let them join
+        the candidate's circle as `relationship_type`. `candidate_account_id`
+        is then the invitee's own account, which must already exist on
+        ForKhatri (`CandidateNotOnForKhatri` otherwise).
+
+    The invitee is addressed by account id (from `search_people`) or by phone/
+    email; whichever is known is stored, and both response functions match on
+    either (migration 030). Any signed-in account may invite.
     """
-    # [SP007 denial-of-service row] Rate-limited per inviter, durable so a
-    # rejected attempt (e.g. self-invite below) still counts — the same
-    # reasoning Identity Bridge's own `enforce_durable()` calls document.
     settings = get_settings()
     try:
         await limiter.enforce_durable(
@@ -184,21 +211,83 @@ async def invite(
     except limiter.RateLimitExceeded as exc:
         raise RateLimited(exc.result.retry_after_seconds) from exc
 
+    if direction not in ("to_member", "to_candidate"):
+        raise ValueError("direction must be to_member or to_candidate")
+    identifier = (invitee_identifier or "").strip() or None
+    if identifier is None and invitee_account_id is None:
+        raise InviteSelf  # nothing to address; treated as an invalid invite
+
     inviter_phone, inviter_email = await identity.get_own_identifiers(
         session, account_id=inviter_account_id
     )
-    if invitee_identifier in (inviter_phone, inviter_email):
+    # `identifier` is None when the invitee was picked by account id, and a
+    # member with no email has `inviter_email` None — so compare only real
+    # values, or `None in (phone, None)` rejects every pick-by-name invite.
+    own = {i for i in (inviter_phone, inviter_email) if i}
+    if (identifier is not None and identifier in own) or invitee_account_id == inviter_account_id:
         raise InviteSelf
+
+    # Resolve the other half of the address when we can: an account id from
+    # people search gets its identifier; a typed identifier gets its account.
+    if invitee_account_id is not None and identifier is None:
+        identifier = (
+            await session.execute(
+                text("SELECT mangaly_identity.primary_identifier_of(:id)"),
+                {"id": invitee_account_id},
+            )
+        ).scalar_one_or_none()
+    if identifier is not None and identifier in own:
+        raise InviteSelf
+    if invitee_account_id is None and identifier is not None:
+        invitee_account_id = (
+            await session.execute(
+                text("SELECT mangaly_identity.account_id_for_identifier(:identifier)"),
+                {"identifier": identifier},
+            )
+        ).scalar_one_or_none()
+
+    if direction == "to_candidate":
+        if invitee_account_id is None:
+            raise CandidateNotOnForKhatri
+        candidate_account_id = invitee_account_id
+        member_account_id: UUID | None = inviter_account_id
+    else:
+        member_account_id = invitee_account_id
+    if candidate_account_id == member_account_id:
+        raise InviteSelf
+
+    if member_account_id is not None:
+        active = (
+            await session.execute(
+                text(
+                    "SELECT 1 FROM mangaly_home_circle.membership "
+                    "WHERE candidate_profile_id = :candidate AND member_account_id = :member "
+                    "AND status = 'active' LIMIT 1"
+                ),
+                {"candidate": candidate_account_id, "member": member_account_id},
+            )
+        ).first()
+        if active is not None:
+            raise AlreadyMember
 
     existing = (
         await session.execute(
-            select(Invitation.id).where(
-                Invitation.candidate_profile_id == candidate_account_id,
-                Invitation.invitee_identifier == invitee_identifier,
-                Invitation.status == InvitationStatus.PENDING,
-            )
+            text(
+                "SELECT 1 FROM mangaly_home_circle.invitation "
+                "WHERE candidate_profile_id = :candidate AND status = 'pending' "
+                "AND direction = :direction "
+                "AND ((CAST(:identifier AS text) IS NOT NULL AND invitee_identifier = :identifier) "
+                "     OR (CAST(:invitee AS uuid) IS NOT NULL AND invitee_account_id = :invitee)) "
+                "LIMIT 1"
+            ),
+            {
+                "candidate": candidate_account_id,
+                "direction": direction,
+                "identifier": identifier,
+                "invitee": invitee_account_id,
+            },
         )
-    ).scalar_one_or_none()
+    ).first()
     if existing is not None:
         raise AlreadyMember
 
@@ -208,16 +297,20 @@ async def invite(
             """
             INSERT INTO mangaly_home_circle.invitation
                 (id, candidate_profile_id, inviter_account_id, invitee_identifier,
-                 relationship_type, status)
-            VALUES (:id, :candidate, :inviter, :identifier, :relationship, 'pending')
+                 invitee_account_id, relationship_type, status, direction, relation)
+            VALUES (:id, :candidate, :inviter, :identifier, :invitee, :relationship,
+                    'pending', :direction, :relation)
             """
         ),
         {
             "id": invitation_id,
             "candidate": candidate_account_id,
             "inviter": inviter_account_id,
-            "identifier": invitee_identifier,
+            "identifier": identifier,
+            "invitee": invitee_account_id,
             "relationship": relationship_type.value,
+            "direction": direction,
+            "relation": relation,
         },
     )
     await bus.publish(
@@ -230,30 +323,43 @@ async def invite(
             "candidate_account_id": str(candidate_account_id),
             "inviter_account_id": str(inviter_account_id),
             "relationship_type": relationship_type.value,
+            "direction": direction,
         },
     )
+    if invitee_account_id is not None:
+        from app.components.notification_bridge import interface as notifications
+
+        await notifications.notify(
+            session,
+            recipients=[invitee_account_id],
+            subject_account_id=invitee_account_id,
+            kind="invitation_received",
+            payload={
+                "invitation_id": invitation_id,
+                "relationship": relationship_type.value,
+                "direction": direction,
+            },
+            link="/circle",
+        )
     return invitation_id
 
 
 async def list_pending_invitations(
     session: AsyncSession, *, account_id: UUID
 ) -> list[PendingInvitationSummary]:
-    """[FR008] The caller's own pending invitations — matched by identifier,
-    not by `invitee_account_id` (which is NULL pre-response). Goes through
-    the SECURITY DEFINER function from migration 006; see this module's
-    docstring for why a plain SELECT cannot see these rows at all."""
+    """[FR008] The caller's own pending invitations — addressed to their account
+    id or to their phone/email. Goes through the SECURITY DEFINER function from
+    migration 030; see this module's docstring for why a plain SELECT cannot
+    see these rows at all."""
     phone, email = await identity.get_own_identifiers(session, account_id=account_id)
     identifiers = [i for i in (phone, email) if i is not None]
-    if not identifiers:
-        return []
 
     rows = await session.execute(
         text(
-            "SELECT id, candidate_profile_id, inviter_account_id, relationship_type, "
-            "created_at, expires_at "
-            "FROM mangaly_home_circle.list_pending_invitations_for_identifiers(:identifiers)"
+            "SELECT * FROM mangaly_home_circle.list_pending_invitations_for("
+            ":account_id, CAST(:identifiers AS text[]))"
         ),
-        {"identifiers": identifiers},
+        {"account_id": account_id, "identifiers": identifiers},
     )
     return [
         PendingInvitationSummary(
@@ -263,22 +369,35 @@ async def list_pending_invitations(
             relationship_type=RelationshipType(row.relationship_type),
             created_at=row.created_at,
             expires_at=row.expires_at,
+            direction=row.direction,
+            inviter_name=row.inviter_name,
+            candidate_name=row.candidate_name,
+            relation=row.relation,
         )
         for row in rows
     ]
 
 
+@dataclass(frozen=True, slots=True)
+class _Response:
+    candidate_account_id: UUID
+    relationship_type: RelationshipType
+    inviter_account_id: UUID
+    direction: str
+    relation: str | None = None
+
+
 async def _respond(
     session: AsyncSession, *, invitation_id: UUID, account_id: UUID, response: InvitationStatus
-) -> tuple[UUID, RelationshipType]:
+) -> _Response:
     phone, email = await identity.get_own_identifiers(session, account_id=account_id)
     identifiers = [i for i in (phone, email) if i is not None]
     row = (
         await session.execute(
             text(
-                "SELECT candidate_profile_id, relationship_type "
+                "SELECT candidate_profile_id, relationship_type, inviter_account_id, direction, relation "
                 "FROM mangaly_home_circle.respond_to_invitation"
-                "(:id, :account, :identifiers, :response)"
+                "(:id, :account, CAST(:identifiers AS text[]), :response)"
             ),
             {
                 "id": invitation_id,
@@ -290,7 +409,13 @@ async def _respond(
     ).first()
     if row is None:
         raise InvitationNotFound
-    return row.candidate_profile_id, RelationshipType(row.relationship_type)
+    return _Response(
+        candidate_account_id=row.candidate_profile_id,
+        relationship_type=RelationshipType(row.relationship_type),
+        inviter_account_id=row.inviter_account_id,
+        direction=row.direction,
+        relation=row.relation,
+    )
 
 
 async def accept_invitation(
@@ -298,13 +423,24 @@ async def accept_invitation(
 ) -> UUID:
     """[FR008/TR008] Accept: links the invitation, creates the membership,
     grants `family_info` scope, publishes `HomeCircleMemberJoined` — all in
-    the caller's one transaction (TR069's outbox rule)."""
-    candidate_account_id, relationship_type = await _respond(
+    the caller's one transaction (TR069's outbox rule).
+
+    [Migration 030] For a `to_candidate` invitation the accepter IS the
+    candidate and the inviter becomes the member; for `to_member` the
+    accepter joins the named candidate's circle."""
+    answer = await _respond(
         session,
         invitation_id=invitation_id,
         account_id=account_id,
         response=InvitationStatus.ACCEPTED,
     )
+    if answer.direction == "to_candidate":
+        candidate_account_id = account_id
+        member_account_id = answer.inviter_account_id
+    else:
+        candidate_account_id = answer.candidate_account_id
+        member_account_id = account_id
+    relationship_type = answer.relationship_type
 
     membership_id = uuid4()
     await session.execute(
@@ -312,22 +448,23 @@ async def accept_invitation(
             """
             INSERT INTO mangaly_home_circle.membership
                 (id, candidate_profile_id, member_account_id, invitation_id,
-                 relationship_type, status)
-            VALUES (:id, :candidate, :member, :invitation, :relationship, 'active')
+                 relationship_type, status, relation)
+            VALUES (:id, :candidate, :member, :invitation, :relationship, 'active', :relation)
             """
         ),
         {
             "id": membership_id,
             "candidate": candidate_account_id,
-            "member": account_id,
+            "member": member_account_id,
             "invitation": invitation_id,
             "relationship": relationship_type.value,
+            "relation": answer.relation,
         },
     )
 
     await authz.grant(
         session,
-        subject_id=account_id,
+        subject_id=member_account_id,
         target_profile_id=candidate_account_id,
         scope=GrantScope.FAMILY_INFO,
         grant_type=GrantType.HOME_CIRCLE_MEMBERSHIP,
@@ -343,8 +480,67 @@ async def accept_invitation(
         payload={
             "membership_id": str(membership_id),
             "candidate_account_id": str(candidate_account_id),
-            "member_account_id": str(account_id),
+            "member_account_id": str(member_account_id),
             "relationship_type": relationship_type.value,
+        },
+    )
+    # [Migration 037] A new member is added to the family conversations their
+    # candidate already has open.
+    await session.execute(
+        text("SELECT mangaly_communication.sync_family_participants_for(:candidate)"),
+        {"candidate": candidate_account_id},
+    )
+    return membership_id
+
+
+async def add_founding_member(
+    session: AsyncSession, *, candidate_account_id: UUID, member_account_id: UUID, relation: str
+) -> UUID:
+    """[DEC-V1-019] The person who creates a profile for their son or daughter
+    is its circle's first member — as their exact relation, with the same
+    `family_info` grant an accepted invitation gives. Must run with the
+    CANDIDATE's account bound (the membership and grant policies admit the
+    candidate), exactly like accepting a `to_candidate` invitation."""
+    from app.components.home_circle.models import RELATION_ROLE
+
+    role = RELATION_ROLE[relation]
+    membership_id = uuid4()
+    await session.execute(
+        text(
+            """
+            INSERT INTO mangaly_home_circle.membership
+                (id, candidate_profile_id, member_account_id, invitation_id,
+                 relationship_type, status, relation)
+            VALUES (:id, :candidate, :member, NULL, :relationship, 'active', :relation)
+            """
+        ),
+        {
+            "id": membership_id,
+            "candidate": candidate_account_id,
+            "member": member_account_id,
+            "relationship": role.value,
+            "relation": relation,
+        },
+    )
+    await authz.grant(
+        session,
+        subject_id=member_account_id,
+        target_profile_id=candidate_account_id,
+        scope=GrantScope.FAMILY_INFO,
+        grant_type=GrantType.HOME_CIRCLE_MEMBERSHIP,
+        source_component=_SOURCE,
+        source_reference_id=membership_id,
+    )
+    await bus.publish(
+        session,
+        schema="mangaly_home_circle",
+        aggregate_id=membership_id,
+        event_type="HomeCircleMemberJoined",
+        payload={
+            "membership_id": str(membership_id),
+            "candidate_account_id": str(candidate_account_id),
+            "member_account_id": str(member_account_id),
+            "relationship_type": role.value,
         },
     )
     return membership_id
@@ -361,6 +557,30 @@ async def decline_invitation(
         account_id=account_id,
         response=InvitationStatus.DECLINED,
     )
+
+
+async def set_relation(
+    session: AsyncSession, *, membership_id: UUID, caller_account_id: UUID, relation: str
+) -> bool:
+    """[Migration 040] State the exact relation on a membership — and so its role.
+
+    Only the two people the row is about may say how they are related: the
+    candidate, or the member themselves. The membership RLS policy also admits
+    other family members (they may READ the circle), so this check is made here,
+    not left to RLS. Returns False when the caller may not, or the row is gone."""
+    from app.components.home_circle.models import RELATION_ROLE
+
+    role = RELATION_ROLE[relation]
+    result = await session.execute(
+        text(
+            "UPDATE mangaly_home_circle.membership "
+            "SET relation = :relation, relationship_type = :role, updated_at = now() "
+            "WHERE id = :id AND status = 'active' "
+            "AND (candidate_profile_id = :caller OR member_account_id = :caller)"
+        ),
+        {"relation": relation, "role": role.value, "id": membership_id, "caller": caller_account_id},
+    )
+    return result.rowcount == 1
 
 
 async def get_membership_candidate(session: AsyncSession, *, membership_id: UUID) -> UUID | None:
@@ -537,6 +757,16 @@ async def suggest(
             "suggested_profile_id": str(suggested_profile_id),
         },
     )
+    from app.components.notification_bridge import interface as notifications
+
+    await notifications.notify(
+        session,
+        recipients=[candidate_account_id],
+        subject_account_id=candidate_account_id,
+        kind="suggestion_received",
+        payload={"suggestion_id": suggestion_id, "suggested_account_id": suggested_profile_id},
+        link="/circle/suggestions",
+    )
     return suggestion_id
 
 
@@ -547,6 +777,9 @@ class SuggestionSummary:
     suggested_by_relationship_type: RelationshipType
     note: str | None
     created_at: datetime
+    # [Migration 040] Who suggested it, and their exact relation.
+    suggested_by_account_id: UUID | None = None
+    suggested_by_relation: str | None = None
 
 
 async def list_suggestions(
@@ -579,7 +812,7 @@ async def list_suggestions(
             text(
                 """
                 SELECT s.id, s.suggested_profile_id, s.note, s.created_at,
-                       m.relationship_type
+                       m.relationship_type, m.relation, m.member_account_id
                 FROM mangaly_home_circle.suggestion s
                 JOIN mangaly_home_circle.membership m ON m.id = s.suggested_by_membership_id
                 WHERE s.candidate_profile_id = :candidate
@@ -594,6 +827,8 @@ async def list_suggestions(
             id=row["id"],
             suggested_profile_id=row["suggested_profile_id"],
             suggested_by_relationship_type=RelationshipType(row["relationship_type"]),
+            suggested_by_account_id=row["member_account_id"],
+            suggested_by_relation=row["relation"],
             note=row["note"],
             created_at=row["created_at"],
         )
@@ -797,6 +1032,16 @@ async def request_note_forward(session: AsyncSession, *, note_id: UUID) -> Famil
         event_type="FamilyNoteReadRequested",
         payload={"note_id": str(note_id), "candidate_account_id": str(row.candidate_profile_id)},
     )
+    from app.components.notification_bridge import interface as notifications
+
+    await notifications.notify(
+        session,
+        recipients=[row.candidate_profile_id],
+        subject_account_id=row.candidate_profile_id,
+        kind="note_forwarded",
+        payload={"note_id": note_id, "subject_account_id": row.subject_account_id},
+        link="/circle/notes",
+    )
     return _family_note(row)
 
 
@@ -897,13 +1142,20 @@ class MemberContext:
     candidate_name: str
     relationship_type: RelationshipType
     joined_at: datetime
+    # [Migration 030] What the identity payload carries per circle.
+    candidate_profile_id: UUID | None = None
+    member_count: int = 0
+    looking_for: str | None = None
+    primary_photo_ref: str | None = None
+    relation: str | None = None
 
 
 async def list_member_contexts(session: AsyncSession, *, account_id: UUID) -> list[MemberContext]:
     """[FR097] The candidates whose Home Circle the caller actively belongs to:
     the searches they may act in besides their own. Names come through
-    `list_member_contexts()` (migration 017), because a family grant does not
-    unlock the candidate's profile row."""
+    `list_member_contexts()` (migrations 017/030), because a family grant does
+    not unlock the candidate's profile row; a candidate who has not created a
+    profile yet is named from their ForKhatri display name."""
     rows = await session.execute(
         text("SELECT * FROM mangaly_home_circle.list_member_contexts(:account_id)"),
         {"account_id": account_id},
@@ -912,9 +1164,47 @@ async def list_member_contexts(session: AsyncSession, *, account_id: UUID) -> li
         MemberContext(
             membership_id=r["membership_id"],
             candidate_account_id=r["candidate_account_id"],
-            candidate_name=r["candidate_name"],
+            candidate_name=r["candidate_name"] or "",
             relationship_type=RelationshipType(r["relationship_type"]),
             joined_at=r["joined_at"],
+            candidate_profile_id=r["candidate_profile_id"],
+            member_count=int(r["member_count"] or 0),
+            looking_for=r["looking_for"],
+            primary_photo_ref=r["primary_photo_ref"],
+            relation=r["relation"],
+        )
+        for r in rows.mappings()
+    ]
+
+
+@dataclass(frozen=True, slots=True)
+class PersonSummary:
+    """[Rework contract §6] One ForKhatri member found by name or phone."""
+
+    account_id: UUID
+    display_name: str | None
+    phone_masked: str | None
+    has_profile: bool
+
+
+async def search_people(session: AsyncSession, *, q: str) -> list[PersonSummary]:
+    """[Rework contract §6] Find people to invite, by name or phone. The
+    identity service exposes only an id-based member lookup, so this searches
+    Mangaly's own member-link rows (id = platform member id) through
+    `mangaly_identity.search_people()` (migration 030): signed-in callers only,
+    never the caller themselves, phone masked, at most 20 rows."""
+    cleaned = (q or "").strip()
+    if len(cleaned) < 2:
+        return []
+    rows = await session.execute(
+        text("SELECT * FROM mangaly_identity.search_people(:q)"), {"q": cleaned}
+    )
+    return [
+        PersonSummary(
+            account_id=r["account_id"],
+            display_name=r["display_name"],
+            phone_masked=r["phone_masked"],
+            has_profile=bool(r["has_profile"]),
         )
         for r in rows.mappings()
     ]
@@ -927,6 +1217,7 @@ class CircleMember:
     member_name: str | None
     relationship_type: RelationshipType
     joined_at: datetime
+    relation: str | None = None
 
 
 async def list_circle_members(
@@ -946,6 +1237,7 @@ async def list_circle_members(
             member_name=r["member_name"],
             relationship_type=RelationshipType(r["relationship_type"]),
             joined_at=r["joined_at"],
+            relation=r["relation"],
         )
         for r in rows.mappings()
     ]

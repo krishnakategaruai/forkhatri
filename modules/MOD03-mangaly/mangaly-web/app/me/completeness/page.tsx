@@ -1,12 +1,15 @@
 'use client';
 
 import Link from 'next/link';
+import { useLoaderHold } from "@/lib/useLoaderHold";
+import SacredLoader from "@/components/SacredLoader";
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { requireSession } from '@/lib/auth';
-import { ENHANCED_CATEGORIES } from '@/lib/profileCategoryConfig';
+import { ENHANCED_CATEGORIES, findField } from '@/lib/profileCategoryConfig';
+import { PROFILE_SECTIONS } from '@/lib/profileSections';
 import { getAllAttributes, getCompleteness, type AttributeState, type CompletenessReport } from '@/lib/profile';
 
 /* FR005/TR005 · UX11 "Completeness status screen"
@@ -35,6 +38,8 @@ function categoryOf(missingKey: string): string {
 }
 
 export default function CompletenessPage() {
+  // [owner 2026-09-25] The loader stays at least a second, never a flash.
+  const loaderHold = useLoaderHold();
   const { t } = useTranslation(['common', 'profile']);
   const router = useRouter();
   const [state, setState] = useState<PageState>({ phase: 'checking' });
@@ -61,10 +66,10 @@ export default function CompletenessPage() {
     };
   }, [router]);
 
-  if (state.phase === 'checking') {
+  if (state.phase === 'checking' || loaderHold) {
     return (
       <main className="screen screen--centered">
-        <p className="caption">{t('common:state.loading')}</p>
+        <SacredLoader />
       </main>
     );
   }
@@ -115,7 +120,16 @@ export default function CompletenessPage() {
                   return (
                     <li key={missing}>
                       <Link href={`/me?edit=${category}`} className="tier-section__missing-item">
-                        <span>{t(`profile:hub.category.${category}`)}</span>
+                        <span>
+                          {(() => {
+                            // The missing FIELD by its own label ("Highest education level").
+                            const [cat, key] = missing.split('.');
+                            const def = key ? findField(cat, key) : undefined;
+                            return def
+                              ? t(`profile:${def.labelKey}`)
+                              : t(`profile:completeness.missing.${missing}`, { defaultValue: t(`profile:hub.category.${category}`) });
+                          })()}
+                        </span>
                         <span aria-hidden="true">→</span>
                       </Link>
                     </li>
@@ -142,14 +156,22 @@ export default function CompletenessPage() {
           </p>
           {unfilledEnhanced.length > 0 && (
             <ul className="tier-section__missing">
-              {unfilledEnhanced.map((cat) => (
-                <li key={cat.category}>
-                  <Link href={`/me?edit=${cat.category}`} className="tier-section__missing-item">
-                    <span>{t(`profile:hub.category.${cat.category}`)}</span>
-                    <span aria-hidden="true">→</span>
-                  </Link>
-                </li>
-              ))}
+              {/* By section, the way the Details tab is organised — one entry
+                  per section with something left, not one per storage
+                  category. */}
+              {PROFILE_SECTIONS.filter((sec) =>
+                unfilledEnhanced.some((cat) => sec.categories.includes(cat.category)),
+              ).map((sec) => {
+                const first = unfilledEnhanced.find((cat) => sec.categories.includes(cat.category))!;
+                return (
+                  <li key={sec.id}>
+                    <Link href={`/me?edit=${first.category}`} className="tier-section__missing-item">
+                      <span>{t(`profile:hub.section.${sec.id}`)}</span>
+                      <span aria-hidden="true">→</span>
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>

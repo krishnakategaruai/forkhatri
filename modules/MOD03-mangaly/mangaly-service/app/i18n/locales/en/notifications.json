@@ -1,0 +1,61 @@
+{
+  "someone": "A new match",
+  "request_received": {
+    "title": "A new request",
+    "body": "{who} would like to connect.",
+    "bodyFamily": "{who} would like to connect — sent by their {relationship_text}."
+  },
+  "request_accepted": {
+    "title": "Request accepted",
+    "body": "You and {other_name} can now see each other’s full profiles."
+  },
+  "invitation_received": {
+    "title": "Home Circle invitation",
+    "body": "You are invited into a Home Circle as {relationship_text}.",
+    "bodyToCandidate": "Someone asks to join your Home Circle as your {relationship_text}."
+  },
+  "suggestion_received": {
+    "title": "A suggestion from your family",
+    "body": "Someone in your Home Circle suggested a profile. Nothing was sent."
+  },
+  "family_conversation_opened": {
+    "title": "Family conversation opened",
+    "body": "The two families can now talk here."
+  },
+  "note_forwarded": {
+    "title": "A note from family",
+    "body": "Someone in your Home Circle wants you to read a note."
+  },
+  "profile_disowned": {
+    "title": "A profile you made was removed",
+    "body": "The owner of the mobile number you used said the profile is not theirs, so it has been removed."
+  },
+  "profile_removal_notice": {
+    "title": "An unused profile will be removed",
+    "body": "{name} has not signed in to take over the profile you made. It will be removed in {days} days unless they do."
+  },
+  "rm_assigned": {
+    "title": "You have a relationship manager",
+    "body": "{rm_name} will help with the search: shortlisting, calls and meetings. Everything they do is written here for the family to read."
+  },
+  "rm_suggested": {
+    "title": "A suggestion from your relationship manager",
+    "body": "{rm_name} suggested someone for {member_name}. Nothing was sent."
+  },
+  "rm_interaction_scheduled": {
+    "title": "A call with your relationship manager",
+    "body": "{rm_name} scheduled a {kind} for {when}."
+  },
+  "rm_suggestion_decided": {
+    "title": "A suggestion was answered",
+    "body": "{member_name} {decision} the profile you suggested."
+  },
+  "ProfileCreated": {
+    "title": "Your profile is live",
+    "body": "People looking for someone like you can now find you in Discover."
+  },
+  "generic": {
+    "title": "Update from Mangaly",
+    "body": "Something changed on your account. Open Mangaly to see it."
+  }
+}

@@ -14,37 +14,45 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useTranslation } from "react-i18next";
-import { api, getDevMemberId, setDevMemberId } from "@/lib/api";
-
-interface DevMember {
-  id: string;
-  display_name: string;
-  locality: string | null;
-  is_operator: boolean;
-}
+// [IMP38 — Refactor C] Mounted only by the ForKhatri host (app/host/
+// forkhatri.tsx) as its account control; the standalone host has none.
+import { getDevMemberId, setDevMemberId, type DevMember } from "@/lib/sdk";
+import { useSdk } from "@/lib/sdk/react";
 
 export default function DevMemberSwitcher() {
   const { t } = useTranslation("common");
   const [open, setOpen] = useState(false);
   const [members, setMembers] = useState<DevMember[]>([]);
   const [current, setCurrent] = useState("m_krishna");
+  const sdk = useSdk();
 
   useEffect(() => {
     setCurrent(getDevMemberId());
-    api.get<DevMember[]>("/v1/dev/members").then(setMembers).catch(() => setMembers([]));
-  }, []);
+    sdk.dev.members().then(setMembers).catch(() => setMembers([]));
+  }, [sdk]);
 
   const currentMember = members.find((m) => m.id === current);
 
+  // [Real bug found live by the product owner — "Alerts and name is being
+  // missed up in UI"] this pill used to `position: fixed; right: 14`
+  // independently of NotificationBell's own hand-guessed offset, so a
+  // longer display name than the dev-seeded default pushed this pill
+  // leftward and OVER the bell. Now sits inside layout.tsx's shared flex
+  // row (no more of its own `position: fixed`); the name itself gets an
+  // explicit max-width + ellipsis so even a very long real name can never
+  // force the header wider than the viewport on a narrow phone.
   return (
-    <div style={{ position: "fixed", top: 14, right: 14, zIndex: 60 }}>
+    <div style={{ position: "relative", flexShrink: 0, minWidth: 0 }}>
       <button
         className="vy-btn vy-btn-secondary"
-        style={{ fontSize: 13, padding: "8px 14px" }}
+        style={{ fontSize: 13, padding: "8px 14px", display: "flex", alignItems: "center", gap: 4, maxWidth: "44vw" }}
         onClick={() => setOpen((v) => !v)}
         aria-label={t("devTools.switcherLabel")}
       >
-        🧪 {currentMember?.display_name ?? current}
+        <span>🧪</span>
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>
+          {currentMember?.display_name ?? current}
+        </span>
       </button>
       <AnimatePresence>
         {open && (

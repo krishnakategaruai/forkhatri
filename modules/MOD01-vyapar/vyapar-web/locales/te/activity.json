@@ -9,5 +9,45 @@
   "groupResponded": "స్పందించారు",
   "groupToReview": "సమీక్షించాల్సినవి",
   "groupPartnerships": "భాగస్వామ్యాలు",
-  "untitled": "పరస్పర చర్య"
+  "untitled": "పరస్పర చర్య",
+  "status": {
+    "listing": {
+      "draft": "డ్రాఫ్ట్",
+      "submitted": "సమర్పించబడింది",
+      "active_unverified": "యాక్టివ్",
+      "active_verified": "యాక్టివ్, వెరిఫైడ్",
+      "suspended": "నిలిపివేయబడింది",
+      "archived": "ఆర్కైవ్ చేయబడింది"
+    },
+    "opportunity": {
+      "draft": "డ్రాఫ్ట్",
+      "pending_review": "సమీక్ష పెండింగ్‌లో",
+      "active": "యాక్టివ్",
+      "paused": "పాజ్ చేయబడింది",
+      "stale": "పాతది",
+      "expired": "గడువు తీరింది",
+      "closed": "మూసివేయబడింది",
+      "removed": "తీసివేయబడింది"
+    },
+    "enquiry": {
+      "open": "ఓపెన్",
+      "awaiting_response": "స్పందన కోసం వేచి ఉంది",
+      "in_progress": "పురోగతిలో ఉంది",
+      "resolved": "పరిష్కరించబడింది",
+      "closed": "మూసివేయబడింది",
+      "withdrawn": "వెనక్కి తీసుకోబడింది",
+      "restricted": "పరిమితం చేయబడింది"
+    },
+    "partnership": {
+      "draft": "డ్రాఫ్ట్",
+      "pending": "పెండింగ్‌లో",
+      "accepted": "ఆమోదించబడింది",
+      "declined": "తిరస్కరించబడింది",
+      "withdrawn": "వెనక్కి తీసుకోబడింది",
+      "restricted": "పరిమితం చేయబడింది",
+      "closed": "మూసివేయబడింది",
+      "open": "ఓపెన్"
+    }
+  },
+  "emptyBody": "మీరు సేవ్ చేసినవి, పోస్ట్ చేసినవి, స్పందించినవి లేదా పూర్తి చేసినవి ఇక్కడ చేరతాయి."
 }

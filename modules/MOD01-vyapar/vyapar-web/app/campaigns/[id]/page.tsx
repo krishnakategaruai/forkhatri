@@ -5,12 +5,17 @@
 // and the campaign-level report — one screen, no sub-pages.
 // Each item is a real FR30 boost, so each carries the Sponsored label and its
 // own pro-rata credit if it stops being active mid-campaign.
+// [IMP39 — desktop layout] ≥860px of room: items and the campaign report
+// in the main column; a sticky aside with the window, budget and receipt.
+// Phone order unchanged (wrappers are display:contents below the
+// breakpoint).
 // Traces to: FR35, FR30, FR31, FR32, TR035, UX21
 import { useCallback, useEffect, useState, use as useParamsPromise } from "react";
 import { useTranslation } from "react-i18next";
 import { api, ApiError } from "@/lib/api";
 import { formatPaise } from "@/lib/money";
 import PerformanceReport from "@/app/components/PerformanceReport";
+import Screen from "@/app/components/Screen";
 
 interface CampaignItem {
   promotion_id: string;
@@ -76,30 +81,38 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
     }
   }
 
-  if (error) return <main className="vy-shell"><h1>{t("workspace:campaigns.notFound")}</h1><p>{error}</p></main>;
-  if (!campaign) return <main className="vy-shell"><p className="vy-muted">{t("common:state.loading")}</p></main>;
+  if (error) return <Screen><h1>{t("workspace:campaigns.notFound")}</h1><p>{error}</p></Screen>;
+  if (!campaign) return <Screen><p className="vy-muted">{t("common:state.loading")}</p></Screen>;
 
   const anyActive = campaign.items.some((i) => i.state === "active");
   const anyPaused = campaign.items.some((i) => i.state === "paused");
 
   return (
-    <main className="vy-shell">
+    <Screen width="wide">
+      <div className="vy-ctx">
+      <div className="vy-ctx-grid">
+      <div className="vy-ctx-main">
       <div>
         <span className="vy-badge vy-badge-member-provided">{t(`commercial:state.${campaign.state}` as "state.active")}</span>
         <h1 style={{ marginTop: 8 }}>{campaign.name}</h1>
         <a className="vy-muted" href={`/workspace/${campaign.listing_id}`}>{t("workspace:title")} →</a>
       </div>
       {notice && <p className="vy-error">{notice}</p>}
+      </div>
 
+      <aside className="vy-ctx-aside">
       <div className="vy-card vy-stack" style={{ gap: 6 }}>
         <span>{t("commercial:promotion.period", { from: fmt(campaign.starts_at), to: fmt(campaign.ends_at) })}</span>
         <span>{t("workspace:campaigns.budget", { amount: money(campaign.budget_paise + campaign.tax_paise) })}</span>
         <span className="vy-muted">{t("workspace:campaigns.allocated", { spent: money(campaign.spent_paise), total: money(campaign.budget_paise + campaign.tax_paise) })}</span>
         {campaign.receipt_ref && <span className="vy-muted" style={{ fontSize: 13 }}>{t("commercial:promotion.receiptRef", { ref: campaign.receipt_ref })}</span>}
       </div>
+      </aside>
+
+      <div className="vy-ctx-after">
 
       <section className="vy-stack">
-        <h2 style={{ fontSize: 16 }}>{t("workspace:campaigns.itemsTitle", { n: campaign.items.length })}</h2>
+        <h2 className="vy-card-title">{t("workspace:campaigns.itemsTitle", { n: campaign.items.length })}</h2>
         {campaign.items.map((item) => (
           <div key={item.promotion_id} className="vy-card vy-stack" style={{ gap: 4 }}>
             <div className="vy-row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
@@ -125,6 +138,9 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
       </section>
 
       <PerformanceReport targetKind="campaign" targetId={campaign.id} />
-    </main>
+      </div>
+      </div>
+      </div>
+    </Screen>
   );
 }

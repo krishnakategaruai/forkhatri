@@ -24,7 +24,10 @@ export default function LanguageSwitcher() {
   }
 
   return (
-    <div style={{ position: "fixed", top: 14, left: 14, zIndex: 60 }}>
+    // [IMP33] `vy-fixed-topleft` shifts this clear of the persistent
+    // desktop rail at ≥900px (globals.css) — at 1440px it used to sit on
+    // top of where the rail now is.
+    <div className="vy-fixed-topleft" style={{ position: "fixed", top: 14, left: 14, zIndex: 60 }}>
       <button
         className="vy-btn vy-btn-secondary"
         style={{ fontSize: 13, padding: "8px 14px" }}

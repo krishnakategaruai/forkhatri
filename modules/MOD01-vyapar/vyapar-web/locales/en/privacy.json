@@ -13,7 +13,11 @@
     "notificationsEnabled": "Notifications",
     "notificationsEnabledHelp": "In-app alerts for strong matches and updates on things you're part of.",
     "commercialComms": "Promotional messages",
-    "commercialCommsHelp": "Off by default. When on, we may tell you about boosts, plans and offers."
+    "commercialCommsHelp": "Off by default. When on, we may tell you about boosts, plans and offers.",
+    "behavioralAnalytics": "Usage analytics",
+    "behavioralAnalyticsHelp": "Lets Vyapar record how you use the app, without your name, to improve it. Nothing is recorded while this is off.",
+    "digestEnabled": "Daily digest",
+    "digestEnabledHelp": "One message a day about new opportunities that match you."
   },
   "contactOption": {
     "public": "Always visible",

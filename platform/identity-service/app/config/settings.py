@@ -88,12 +88,14 @@ class Settings(BaseSettings):
     service_keys: dict[str, str] = {
         "mangaly": "CHANGE_ME_dev_mangaly_service_key",
         "milavn": "CHANGE_ME_dev_milavn_service_key",
+        "vyapar": "CHANGE_ME_dev_vyapar_service_key",
     }
     services_receiving_identifiers: list[str] = ["mangaly"]
 
     module_entry_urls: dict[str, str] = {
         "mangaly": "http://localhost:3000",
         "milavn": "http://localhost:3001",
+        "vyapar": "http://localhost:3011",
     }
 
     @property

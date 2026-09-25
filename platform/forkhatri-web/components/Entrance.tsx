@@ -24,6 +24,7 @@ import Arrival from "./Arrival";
 import Hub, { EnteringOverlay, HubSkeleton } from "./Hub";
 import Offline from "./Offline";
 import Sheet from "./Sheet";
+import Splash from "./Splash";
 import { Aurora, Avatar, BellIcon, CheckIcon, OrbCore, Wordmark } from "./ui";
 
 /**
@@ -429,6 +430,9 @@ export default function Entrance({ initialSheet }: { initialSheet?: SheetKind })
         )}
 
         {entering && <EnteringOverlay t={t} module={entering} />}
+
+        {/* First load of the session only; leaves once boot knows what to show. */}
+        <Splash ready={phase.kind !== "boot"} />
 
         <div className="toast-region" aria-live="polite">
           <AnimatePresence>

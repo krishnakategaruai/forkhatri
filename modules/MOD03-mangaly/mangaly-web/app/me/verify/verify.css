@@ -1,0 +1,412 @@
+/* "Confirm your photos" — DEC-V1-016 / DEC-V1-025.
+ *
+ * Calm and quiet on purpose: a biometric check is a moment of trust, so the
+ * page is one accent, the serif for the few sentences that matter, tonal
+ * surfaces from the shared tokens, and no motion beyond the progress ring and
+ * a gentle pulse while comparing. Phone first; two panes from 900px. */
+
+.verify {
+  max-width: 1040px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.verify__loading {
+  text-align: center;
+  padding: var(--space-7) 0;
+}
+
+.verify__grid {
+  display: grid;
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.verify__lead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.verify__eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.verify__heading {
+  font-family: var(--font-serif);
+  font-size: clamp(26px, 5vw, 34px);
+  line-height: 1.15;
+  font-weight: 500;
+  color: var(--ink);
+  margin: 0;
+}
+
+.verify__heading--sm {
+  font-size: clamp(22px, 4vw, 26px);
+}
+
+.verify__body {
+  color: var(--ink-2);
+  font-size: 16px;
+  line-height: 1.55;
+  margin: 0;
+  max-width: 60ch;
+}
+
+.verify__note {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 14px;
+}
+
+/* Consent: its own box, unticked, never bundled with anything else. */
+.verify__consent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+}
+
+.verify__check {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-3);
+  align-items: start;
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.verify__check input {
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  accent-color: var(--accent);
+}
+
+.verify__start {
+  align-self: stretch;
+}
+
+/* The three promises. */
+.verify__points {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-2) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.verify__point {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.verify__point-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-serif);
+  font-size: 16px;
+  color: var(--accent-ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+
+.verify__point-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.verify__point-text strong {
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/* The confirmed fact. */
+.verify__fact {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: var(--space-3) var(--space-4);
+  align-items: center;
+  padding: var(--space-4);
+  margin-top: var(--space-2);
+}
+
+.verify__fact-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.verify__fact-text strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.verify__fact-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.verify__confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.verify__seal {
+  width: 44px;
+  height: 44px;
+  padding: 9px;
+  border-radius: 50%;
+  color: var(--ok);
+  background: var(--ok-tint);
+  display: block;
+  box-sizing: border-box;
+}
+
+.verify__seal--lg {
+  width: 64px;
+  height: 64px;
+  padding: 13px;
+}
+
+/* Camera stage: an oval portrait window inside a thin progress ring. */
+.verify__stage {
+  display: grid;
+  place-items: center;
+}
+
+.verify__ring {
+  --progress: 0%;
+  width: min(78vw, 340px);
+  aspect-ratio: 3 / 4;
+  border-radius: 50% / 45%;
+  padding: 5px;
+  background: conic-gradient(var(--accent) var(--progress), var(--surface-2) 0);
+  transition: background 0.4s ease;
+}
+
+.verify__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50% / 45%;
+  display: block;
+  background: var(--surface-2);
+  /* Shown like a mirror, which is how people expect to see themselves.
+     Detection reads the un-mirrored frames. */
+  transform: scaleX(-1);
+}
+
+.verify__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+.verify__instruction {
+  font-family: var(--font-serif);
+  font-size: clamp(22px, 4.5vw, 28px);
+  line-height: 1.25;
+  color: var(--ink);
+  margin: 0;
+}
+
+.verify__hint {
+  margin: 0;
+  min-height: 1.5em;
+  font-size: 14px;
+  color: var(--accent-ink);
+}
+
+.verify__moves {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.verify__move {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.verify__move.is-current {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.verify__tick {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  flex: none;
+}
+
+.verify__move.is-current .verify__tick {
+  border-color: var(--accent);
+}
+
+.verify__move.is-done .verify__tick {
+  border-color: var(--ok);
+  background: var(--ok);
+}
+
+/* Outcomes. */
+.verify__result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-3);
+  max-width: 520px;
+  margin: var(--space-6) auto 0;
+  padding: var(--space-6) var(--space-5);
+}
+
+.verify__result .verify__body {
+  margin-bottom: var(--space-2);
+}
+
+.verify__date {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.verify__pulse {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 2px solid var(--accent);
+  animation: verify-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes verify-pulse {
+  0%, 100% { transform: scale(0.9); opacity: 0.6; }
+  50% { transform: scale(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .verify__pulse { animation: none; }
+  .verify__ring { transition: none; }
+}
+
+/* Desktop: explanation beside the promises; camera beside the steps. */
+@media (min-width: 900px) {
+  .verify__grid {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: var(--space-7);
+    padding-top: var(--space-5);
+  }
+
+  .verify__points {
+    padding: var(--space-5);
+    border-radius: var(--radius-xl);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    gap: var(--space-5);
+  }
+
+  .verify__start {
+    align-self: flex-start;
+    min-width: 240px;
+  }
+
+  .verify__grid--stage {
+    align-items: center;
+  }
+
+  .verify__ring {
+    width: 360px;
+  }
+}
+
+/* The Me-screen entry row (components/PhotoCheckCard.tsx). */
+.photo-check {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.photo-check:hover {
+  background: var(--surface-2);
+}
+
+.photo-check__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--accent-ink);
+  background: var(--surface-2);
+}
+
+.photo-check__icon.is-done {
+  color: var(--ok);
+  background: var(--ok-tint);
+}
+
+.photo-check__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.photo-check__title {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.photo-check__chev {
+  color: var(--ink-2);
+  font-size: 20px;
+}

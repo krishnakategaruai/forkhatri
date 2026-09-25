@@ -9,5 +9,45 @@
   "groupResponded": "जवाब दिया गया",
   "groupToReview": "समीक्षा करें",
   "groupPartnerships": "साझेदारियाँ",
-  "untitled": "बातचीत"
+  "untitled": "बातचीत",
+  "status": {
+    "listing": {
+      "draft": "ड्राफ्ट",
+      "submitted": "सबमिट किया गया",
+      "active_unverified": "सक्रिय",
+      "active_verified": "सक्रिय, सत्यापित",
+      "suspended": "निलंबित",
+      "archived": "संग्रहीत"
+    },
+    "opportunity": {
+      "draft": "ड्राफ्ट",
+      "pending_review": "समीक्षा लंबित",
+      "active": "सक्रिय",
+      "paused": "रुका हुआ",
+      "stale": "पुराना",
+      "expired": "समाप्त",
+      "closed": "बंद",
+      "removed": "हटाया गया"
+    },
+    "enquiry": {
+      "open": "खुला",
+      "awaiting_response": "जवाब की प्रतीक्षा",
+      "in_progress": "प्रगति में",
+      "resolved": "सुलझाया गया",
+      "closed": "बंद",
+      "withdrawn": "वापस लिया गया",
+      "restricted": "प्रतिबंधित"
+    },
+    "partnership": {
+      "draft": "ड्राफ्ट",
+      "pending": "लंबित",
+      "accepted": "स्वीकृत",
+      "declined": "अस्वीकृत",
+      "withdrawn": "वापस लिया गया",
+      "restricted": "प्रतिबंधित",
+      "closed": "बंद",
+      "open": "खुला"
+    }
+  },
+  "emptyBody": "आप जो सहेजते, पोस्ट करते, जवाब देते या पूरा करते हैं, वह यहाँ जमा होगा।"
 }

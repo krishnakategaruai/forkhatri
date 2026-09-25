@@ -11,13 +11,46 @@
 from __future__ import annotations
 
 from fastapi import APIRouter
+from pydantic import BaseModel
 
 from app.db import get_pool
+from app.errors import ERROR_RESPONSES
 
-router = APIRouter(prefix="/v1/dev", tags=["dev"])
+router = APIRouter(prefix="/v1/dev", tags=["dev"], responses=ERROR_RESPONSES)
 
 
-@router.get("/members")
+class DevMemberOut(BaseModel):
+    id: str
+    display_name: str
+    locality: str | None
+    is_operator: bool
+
+
+class SentOut(BaseModel):
+    sent: int
+
+
+class UpdatedOut(BaseModel):
+    updated: int
+
+
+class DevRevokedOut(BaseModel):
+    revoked: str
+
+
+class VerificationJobsOut(BaseModel):
+    reminded: int
+    expired: int
+    images_cleaned: int
+
+
+class ModerationJobsOut(BaseModel):
+    escalated: int
+    appeals_delayed: int
+    suspension_rows_lifted: int
+
+
+@router.get("/members", response_model=list[DevMemberOut], operation_id="listDevMembers", summary="List development members (dev only)")
 async def list_dev_members() -> list[dict]:
     pool = get_pool()
     async with pool.acquire() as conn:
@@ -42,16 +75,16 @@ async def list_dev_members() -> list[dict]:
 # NOTIFY_MATCHER_INTERVAL_SECONDS — the real, scheduled `notification_loop()`
 # (app/main.py's lifespan) is what runs in a genuine deployment; this is
 # strictly a dev convenience on top of it, not a replacement for it.
-@router.post("/run-notification-matcher")
+@router.post("/run-notification-matcher", response_model=SentOut, operation_id="runNotificationMatcher", summary="Run the notification matcher now (dev only)")
 async def run_notification_matcher() -> dict:
-    from app.routers.notifications import run_strong_match_pass
+    from app.services.notifications import run_strong_match_pass
 
     return {"sent": await run_strong_match_pass(get_pool())}
 
 
-@router.post("/run-notification-digest")
+@router.post("/run-notification-digest", response_model=SentOut, operation_id="runNotificationDigest", summary="Run the notification digest now (dev only)")
 async def run_notification_digest() -> dict:
-    from app.routers.notifications import run_digest_pass
+    from app.services.notifications import run_digest_pass
 
     return {"sent": await run_digest_pass(get_pool())}
 
@@ -59,14 +92,14 @@ async def run_notification_digest() -> dict:
 # [TR006 — dev-only trigger] Runs the FR06 credential re-sync on demand —
 # the real, scheduled `credential_sync_loop()` (app/main.py's lifespan) is
 # what runs in a genuine deployment; this is a dev convenience on top.
-@router.post("/run-credential-sync")
+@router.post("/run-credential-sync", response_model=UpdatedOut, operation_id="runCredentialSync", summary="Run the credential sync now (dev only)")
 async def run_credential_sync() -> dict:
-    from app.routers.listings import sync_credential_refs
+    from app.services.listings import sync_credential_refs
 
     return {"updated": await sync_credential_refs(get_pool())}
 
 
-@router.post("/revoke-credential/{member_id}")
+@router.post("/revoke-credential/{member_id}", response_model=DevRevokedOut, operation_id="devRevokeCredential", summary="Revoke a member's platform credential (dev only)")
 async def dev_revoke_credential(member_id: str) -> dict:
     """[Dev-only test hook] Simulates an upstream Identity & Trust
     revocation so FR06's removal behaviour is actually exercisable."""
@@ -78,9 +111,9 @@ async def dev_revoke_credential(member_id: str) -> dict:
 
 # [TR010/TR008 — dev-only trigger] runs the verification expiry/reminder
 # pass and the 30-day image cleanup on demand.
-@router.post("/run-verification-jobs")
+@router.post("/run-verification-jobs", response_model=VerificationJobsOut, operation_id="runVerificationJobs", summary="Run verification jobs now (dev only)")
 async def run_verification_jobs() -> dict:
-    from app.routers.verification import run_verification_expiry_pass, run_verification_image_cleanup
+    from app.services.verification import run_verification_expiry_pass, run_verification_image_cleanup
 
     expiry = await run_verification_expiry_pass(get_pool())
     cleaned = await run_verification_image_cleanup(get_pool())
@@ -88,16 +121,16 @@ async def run_verification_jobs() -> dict:
 
 
 # [TR040/TR041 — dev-only trigger] escalation / appeal-delay / suspension-lift pass.
-@router.post("/run-moderation-jobs")
+@router.post("/run-moderation-jobs", response_model=ModerationJobsOut, operation_id="runModerationJobs", summary="Run moderation jobs now (dev only)")
 async def run_moderation_jobs() -> dict:
-    from app.routers.trust_safety import run_moderation_escalation_pass
+    from app.services.trust_safety import run_moderation_escalation_pass
 
     return await run_moderation_escalation_pass(get_pool())
 
 
 # [TR030/TR031 — dev-only trigger] promotion lifecycle pass (payment window, completion, pause + credit).
-@router.post("/run-commercial-jobs")
+@router.post("/run-commercial-jobs", response_model=dict[str, int], operation_id="runCommercialJobs", summary="Run commercial jobs now (dev only)")
 async def run_commercial_jobs() -> dict:
-    from app.routers.commercial import run_commercial_lifecycle_pass
+    from app.services.commercial import run_commercial_lifecycle_pass
 
     return await run_commercial_lifecycle_pass(get_pool())

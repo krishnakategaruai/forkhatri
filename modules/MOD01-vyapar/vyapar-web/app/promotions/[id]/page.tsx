@@ -10,12 +10,18 @@
 // earned, the full state history, and exactly the actions this state allows:
 // retry payment or cancel while awaiting payment; stop with the exact
 // pro-rata credit amount while active.
+// [IMP39 — desktop layout] ≥860px of room: the record (result banner,
+// title, performance, history) in the main column, and a sticky aside with
+// the order card (price, tax, credit, receipt) and its actions. Phone order
+// is unchanged — the aside sits in the source exactly where those blocks
+// were, and every wrapper is display:contents below the breakpoint.
 // Traces to: FR30, FR31, FR32, FR51, TR031, TR032, UX20
 import { useEffect, useState, use as useParamsPromise } from "react";
 import { useTranslation } from "react-i18next";
 import { api, ApiError } from "@/lib/api";
 import { formatPaise } from "@/lib/money";
 import PerformanceReport from "@/app/components/PerformanceReport";
+import Screen from "@/app/components/Screen";
 
 interface HistoryRow {
   from_state: string | null;
@@ -92,8 +98,8 @@ export default function PromotionPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, result]);
 
-  if (error) return <main className="vy-shell"><h1>{t("commercial:promotion.notFound")}</h1><p>{error}</p></main>;
-  if (!promo) return <main className="vy-shell"><p className="vy-muted">{t("common:state.loading")}</p></main>;
+  if (error) return <Screen><h1>{t("commercial:promotion.notFound")}</h1><p>{error}</p></Screen>;
+  if (!promo) return <Screen><p className="vy-muted">{t("common:state.loading")}</p></Screen>;
 
   const money = (p: number) => formatPaise(p, i18n.language);
   const fmt = (d: string) => new Date(d).toLocaleDateString(i18n.language);
@@ -140,7 +146,10 @@ export default function PromotionPage({
     : "";
 
   return (
-    <main className="vy-shell">
+    <Screen width="wide">
+      <div className="vy-ctx">
+      <div className="vy-ctx-grid">
+      <div className="vy-ctx-main">
       {banner && <div className="vy-card" role="status"><p>{banner}</p></div>}
 
       <div>
@@ -150,7 +159,9 @@ export default function PromotionPage({
         </h1>
         <a className="vy-muted" href={targetPath}>{promo.target_title ?? t("commercial:promotion.target")} →</a>
       </div>
+      </div>
 
+      <aside className="vy-ctx-aside">
       <div className="vy-card vy-stack" style={{ gap: 6 }}>
         <strong>{t(`commercial:product.${promo.product_id}` as "product.boost_7d", { defaultValue: promo.product_id })}</strong>
         <span className="vy-muted" style={{ fontSize: 13 }}>{t("commercial:promotion.version", { v: promo.product_version })}</span>
@@ -166,7 +177,7 @@ export default function PromotionPage({
       </div>
 
       {notice && <p className="vy-error">{notice}</p>}
-      <div className="vy-row" style={{ flexWrap: "wrap" }}>
+      <div className="vy-row vy-ctx-actions" style={{ flexWrap: "wrap" }}>
         {promo.state === "awaiting_payment" && (
           <button className="vy-btn vy-btn-primary" disabled={busy} onClick={retryPayment}>{t("commercial:promotion.retryPayment")}</button>
         )}
@@ -179,11 +190,13 @@ export default function PromotionPage({
           </button>
         )}
       </div>
+      </aside>
 
+      <div className="vy-ctx-after">
       {promo.starts_at && <PerformanceReport targetKind={promo.target_kind} targetId={promo.target_id} promotionId={promo.id} />}
 
       <section className="vy-stack" style={{ gap: 6 }}>
-        <h2 style={{ fontSize: 16 }}>{t("commercial:promotion.history")}</h2>
+        <h2 className="vy-card-title">{t("commercial:promotion.history")}</h2>
         <ol className="vy-stack" style={{ gap: 4, margin: 0, paddingLeft: 18 }}>
           {promo.history.map((h, i) => (
             <li key={i} className="vy-muted" style={{ fontSize: 13 }}>
@@ -193,6 +206,9 @@ export default function PromotionPage({
           ))}
         </ol>
       </section>
-    </main>
+      </div>
+      </div>
+      </div>
+    </Screen>
   );
 }

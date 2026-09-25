@@ -1,0 +1,51 @@
+{
+  "greeting": "Hello, {{name}}",
+  "subtitle": "Here is where your search stands today.",
+  "forCandidate": "You are helping {{name}} with their search.",
+  "buildNote": "Build progress",
+  "matches": {
+    "title": "New matches",
+    "seeAll": "See all",
+    "empty": "No new matches today. Completing more of your profile brings better ones.",
+    "prev": "Previous matches",
+    "next": "More matches",
+    "seeAllCount_one": "See {{count}} match",
+    "seeAllCount_other": "See all {{count}} matches"
+  },
+  "waiting": {
+    "title": "Waiting for you",
+    "body": "Someone asked to connect."
+  },
+  "progress": {
+    "title": "Your profile",
+    "answered": "{{done}} of {{total}} answered",
+    "cta": "Continue"
+  },
+  "circle": {
+    "title": "Your Home Circle",
+    "helping": "{{count}} helping your search",
+    "none": "No one is helping yet",
+    "invite": "Invite family"
+  },
+  "greetingWord": "Namaste,",
+  "hero": {
+    "newMatches_one": "{{count}} new match is waiting to be seen",
+    "newMatches_other": "{{count}} new matches are waiting to be seen",
+    "noMatches": "New profiles arrive every day. Complete your profile to be matched sooner.",
+    "cta": "See who is new",
+    "art": "Seeta Rama Kalyanam"
+  },
+  "tiles": {
+    "requests": "Requests",
+    "requestsWaiting_one": "waiting for your answer",
+    "requestsWaiting_other": "waiting for your answer",
+    "requestsNone": "None waiting right now",
+    "messages": "Messages",
+    "unread_one": "unread",
+    "unread_other": "unread",
+    "allRead": "You are all caught up",
+    "profile": "Profile strength",
+    "profileDone": "Your profile is complete",
+    "circleEmpty": "Bring your family in — they can search and answer requests with you."
+  }
+}

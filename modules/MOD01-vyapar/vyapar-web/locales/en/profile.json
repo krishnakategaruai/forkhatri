@@ -14,5 +14,36 @@
   "pendingInvites": "Team invitations",
   "accept": "Accept",
   "decline": "Decline",
-  "inviteRole": "Role: {{role}}"
+  "inviteRole": "Role: {{role}}",
+  "hub": {
+    "languageLine": "Using Vyapar in {{language}}",
+    "statListings": "Listings",
+    "statOpenEnquiries": "Open enquiries",
+    "statSaved": "Saved",
+    "desc": {
+      "myListings": "Your business and professional profiles, drafts and verification.",
+      "enquiries": "Everything you have sent and received, in one inbox.",
+      "moderationOutcomes": "Decisions on your posts and how to appeal them.",
+      "myBoosts": "Paid boosts, how they performed, and receipts.",
+      "privacy": "Who sees what, your data, and your choices.",
+      "workspace": "Plan, team and campaigns for this business.",
+      "operator": "Operator tool, shown only to members with access.",
+      "help": "Raise a concern or follow one up.",
+      "back": "Return to the ForKhatri home."
+    }
+  },
+  "profiles": {
+    "title": "Your profile",
+    "help": "Both kinds can live side by side; keep either one up to date.",
+    "helpNone": "Add a business, a professional profile, or both. One is enough to post and enquire.",
+    "requiredTitle": "Set up your profile first",
+    "requiredHelp": "To post or enquire, Vyapar needs to know who you are. Add a business profile or a professional profile — either one is enough.",
+    "businessTitle": "Business",
+    "businessDesc": "A shop, firm or service business with a name, categories and a locality.",
+    "professionalTitle": "Professional",
+    "professionalDesc": "You and your skills — what you do and where.",
+    "addBusiness": "Add a business",
+    "addProfessional": "Add yourself as a professional",
+    "view": "View or edit"
+  }
 }

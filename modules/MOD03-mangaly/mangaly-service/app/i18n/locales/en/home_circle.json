@@ -7,6 +7,7 @@
     "rateLimited": "Too many invitations sent. Please try again later.",
     "contactRequestNotFound": "That request is no longer waiting for you.",
     "noteEmpty": "Write something before saving the note.",
-    "noteSubject": "A note must be about a match."
+    "noteSubject": "A note must be about a match.",
+    "candidateNotFound": "That person isn't on ForKhatri yet. Ask them to join first, then invite them."
   }
 }

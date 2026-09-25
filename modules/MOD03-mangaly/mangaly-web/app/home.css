@@ -1,0 +1,1020 @@
+/* ===================================================================
+   Home — people first (app/page.tsx), DEC-V1-030
+   -------------------------------------------------------------------
+   The first version opened on a large illustrated banner and two tiles
+   that each said "nothing waiting"; the owner rejected it. Home now
+   answers in this order: who you are (the greeting as the title), what is
+   waiting on you (only if something is), who is new (large immersive
+   portraits, the reference apps' pattern: name set big on the photo,
+   facts as glass chips), then two small tiles for profile and circle.
+   On a phone the first portrait fills most of the screen with the next
+   one peeking; on a desktop four portraits sit in a row above the fold.
+   =================================================================== */
+.home-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0 2px;
+}
+.home-head__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.home-head__date {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.home-head__title {
+  margin: 0;
+  font-family: var(--font-display-stack);
+  font-weight: 800;
+  font-size: clamp(2rem, 1.5rem + 2.4vw, 3.25rem);
+  line-height: 1;
+  letter-spacing: -0.035em;
+  color: var(--ink);
+}
+.home-head__title .mt--accent {
+  background: linear-gradient(100deg, var(--accent) 0%, #ff5a2a 45%, var(--accent) 90%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+:root[data-theme='dark'] .home-head__title .mt--accent {
+  background-image: linear-gradient(100deg, #fbd946 0%, #fff6d0 45%, #fbd946 90%);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .home-head__title .mt--accent {
+    background-image: linear-gradient(100deg, #fbd946 0%, #fff6d0 45%, #fbd946 90%);
+  }
+}
+.home-head .topbar__actions {
+  margin-left: 0;
+  flex: none;
+}
+
+.home {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-top: 10px;
+  padding-bottom: var(--space-4);
+}
+
+/* What is waiting on you */
+.home-alerts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.home-alert {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px 0 12px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-1), var(--highlight);
+  animation: bento-in 600ms var(--ease-out) both;
+}
+.home-alert svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linejoin: round;
+}
+.home-alert strong {
+  font-family: var(--font-display-stack);
+  font-size: 1.125rem;
+  font-weight: 800;
+}
+.home-alert--req {
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-accent);
+}
+.home-alert--req svg {
+  fill: currentColor;
+  animation: icon-pulse 1.8s ease-in-out infinite;
+}
+@keyframes icon-pulse {
+  50% {
+    transform: scale(1.15);
+  }
+}
+@keyframes bento-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+}
+
+/* New matches */
+.hfeed {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.hfeed__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.hfeed__title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display-stack);
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+}
+.hfeed__count {
+  min-width: 28px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 0.8125rem;
+  font-weight: 800;
+}
+.hfeed__all {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: var(--accent-ink);
+  text-decoration: none;
+}
+.hfeed__all svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.hrail {
+  list-style: none;
+  margin: 0;
+  padding: 4px var(--gutter) 14px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 82%;
+  gap: 12px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: var(--gutter);
+  scrollbar-width: none;
+}
+.hrail::-webkit-scrollbar {
+  display: none;
+}
+.hcard {
+  scroll-snap-align: start;
+  min-width: 0;
+  animation: bento-in 700ms var(--ease-out) both;
+  animation-delay: calc(120ms + var(--i, 0) * 70ms);
+}
+.hcard__link {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 5;
+  max-height: calc(100dvh - 330px);
+  min-height: 340px;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 30px;
+  background: var(--surface-2);
+  color: #fff6e0;
+  text-decoration: none;
+  isolation: isolate;
+  box-shadow: var(--shadow-3);
+  transition: transform var(--dur-3) var(--ease-spring), box-shadow var(--dur-2) var(--ease);
+}
+.hcard__link:hover {
+  transform: translateY(-4px) rotate(-0.4deg);
+}
+.hcard__link:active {
+  transform: scale(0.98);
+}
+.hcard__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 900ms var(--ease-out);
+}
+.hcard__link:hover .hcard__img {
+  transform: scale(1.05);
+}
+.hcard__empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+/* A warm kumkum scrim, not black: the words sit on the brand's own night. */
+.hcard__link::after {
+  content: '';
+  position: absolute;
+  inset: 40% 0 0;
+  z-index: 0;
+  background: linear-gradient(to top, rgba(42, 5, 5, 0.9) 0%, rgba(42, 5, 5, 0.5) 45%, rgba(42, 5, 5, 0) 100%);
+}
+.hcard__top {
+  position: absolute;
+  z-index: 1;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.hcard__text {
+  position: absolute;
+  z-index: 1;
+  left: 18px;
+  right: 18px;
+  bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hcard__name {
+  font-family: var(--font-display-stack);
+  font-weight: 800;
+  font-size: clamp(2.25rem, 1.8rem + 2vw, 2.75rem);
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+  font-variation-settings: 'wdth' 106;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
+}
+.hcard__age {
+  font-weight: 400;
+  color: #ffd98a;
+}
+.hcard__meta {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  opacity: 0.92;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hcard__chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.hcard__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff6e0;
+  background: rgba(255, 240, 210, 0.16);
+  border: 1px solid rgba(255, 240, 210, 0.28);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  backdrop-filter: blur(12px) saturate(1.4);
+  white-space: nowrap;
+}
+.hcard__chip svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.hcard__chip--ok {
+  background: rgba(251, 217, 70, 0.92);
+  border-color: transparent;
+  color: #3b0a06;
+}
+.hcard__link--more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  text-align: center;
+  background: linear-gradient(160deg, #cc0106, #7a0104);
+  color: #fff3d6;
+  font-weight: 700;
+}
+.hcard__link--more::after {
+  content: none;
+}
+.hcard__more-n {
+  font-family: var(--font-display-stack);
+  font-weight: 800;
+  font-size: 4rem;
+  line-height: 1;
+  color: #fbd946;
+}
+
+/* Profile and circle — two small tiles */
+.home-duo {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.duo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 14px;
+  border-radius: 24px;
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  box-shadow: var(--shadow-1), var(--highlight);
+  transition: transform var(--dur-2) var(--ease-spring), box-shadow var(--dur-2) var(--ease);
+}
+.duo:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-2), var(--highlight);
+}
+.duo__label {
+  margin-top: 8px;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.duo__body {
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.duo-ring {
+  --pct: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: conic-gradient(var(--accent) calc(var(--pct) * 1%), var(--surface-3) 0);
+}
+.duo-ring__n {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  font-family: var(--font-display-stack);
+  font-weight: 800;
+  font-size: 0.8125rem;
+}
+.duo__faces {
+  min-height: 48px;
+  align-items: center;
+}
+.duo__plus {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-accent);
+}
+.duo__plus svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+@media (min-width: 640px) {
+  .hrail {
+    grid-auto-columns: 280px;
+    gap: 16px;
+  }
+  .hcard__link {
+    max-height: none;
+  }
+}
+@media (hover: hover) and (min-width: 1024px) {
+  .hrail {
+    padding-left: 0;
+    padding-right: 0;
+    scroll-padding-left: 0;
+  }
+}
+@media (min-width: 1024px) {
+  .home {
+    gap: 22px;
+  }
+  .hrail {
+    grid-auto-columns: calc((100% - 3 * 16px) / 4);
+  }
+  .home-duo {
+    grid-template-columns: repeat(2, minmax(0, 360px));
+  }
+  .duo {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    column-gap: 14px;
+  }
+  .duo__label {
+    margin-top: 0;
+  }
+  .duo > :first-child {
+    grid-row: span 2;
+  }
+}
+@media (min-width: 1440px) {
+  .hrail {
+    grid-auto-columns: calc((100% - 4 * 16px) / 5);
+  }
+}
+
+/* ===================================================================
+   The loading state: Seeta–Rama Kalyanam in a turning kolam ring
+   (components/SacredLoader)
+   =================================================================== */
+.sloader {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 24px 0;
+}
+.sloader__ring {
+  position: absolute;
+  top: 6px;
+  width: 196px;
+  height: 196px;
+  border-radius: 50%;
+  border: 1.5px dashed color-mix(in srgb, var(--gold-deep) 70%, transparent);
+  box-shadow: 0 0 0 14px color-mix(in srgb, var(--gold) 12%, transparent),
+    0 0 60px color-mix(in srgb, var(--gold) 45%, transparent);
+  animation: kolam-turn 14s linear infinite;
+}
+.sloader__art {
+  position: relative;
+  width: 150px;
+  height: auto;
+  margin-top: 8px;
+  filter: drop-shadow(0 10px 18px rgba(80, 10, 0, 0.3));
+  animation: sloader-breathe 2.4s ease-in-out infinite;
+}
+@keyframes sloader-breathe {
+  50% {
+    transform: scale(1.04) translateY(-3px);
+  }
+}
+.sloader__text {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.sloader--inline {
+  padding: 0;
+}
+.chat--loading .sloader__text {
+  color: var(--chat-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bento,
+  .mcard,
+  .bento-hero__art,
+  .bento-hero__kolam,
+  .bento--stat.is-live .bento__icon,
+  .sloader__ring,
+  .sloader__art {
+    animation: none !important;
+  }
+}
+
+/* Names scale with the card, not the viewport, so a first name always fits
+   whether five cards share a row or one fills a phone. */
+.hcard {
+  container-type: inline-size;
+}
+.hcard__name {
+  font-size: clamp(1.625rem, 13.5cqi, 2.75rem);
+}
+.hcard__meta {
+  font-size: clamp(0.8125rem, 5.2cqi, 0.9375rem);
+}
+/* Room for the card shadow inside the scroller, so it is not cut into a
+   hard band at the rail's edge. */
+.hrail {
+  padding-bottom: 30px;
+  margin-bottom: -16px;
+}
+@media (min-width: 1024px) {
+  .hrail {
+    grid-auto-columns: calc((100% - 3 * 16px) / 4);
+  }
+  .home-duo {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1600px) {
+  .hrail {
+    grid-auto-columns: calc((100% - 4 * 16px) / 5);
+  }
+}
+@media (min-width: 1024px) {
+  .hcard__link {
+    aspect-ratio: 3 / 4;
+    max-height: calc(100dvh - 360px);
+    min-height: 360px;
+  }
+}
+
+/* Calmer type on the Home portraits: the face leads. */
+.hcard__name {
+  font-size: clamp(1.375rem, 10cqi, 2rem);
+  font-weight: 750;
+}
+.hcard__meta {
+  font-size: clamp(0.75rem, 4.4cqi, 0.8125rem);
+  font-weight: 500;
+}
+.hcard__chip {
+  height: 24px;
+  padding: 0 9px;
+  font-size: 0.6875rem;
+}
+.home-head__title {
+  font-size: clamp(1.75rem, 1.4rem + 1.6vw, 2.5rem);
+}
+.hfeed__title {
+  font-size: 1.125rem;
+}
+.duo__body {
+  font-size: 0.8125rem;
+}
+
+/* ---- Round 2 (critique, 2026-09-24) ---------------------------------- */
+
+/* Date: sentence case, no tracking — spaced capitals break Devanagari and
+   Telugu, and the eyebrow should whisper. */
+.home-head__date {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-3);
+}
+
+/* Portrait type: the face leads. */
+.hcard__name {
+  font-size: clamp(1.25rem, 7.6cqi, 1.375rem);
+}
+.hcard__meta {
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+}
+/* Every card said "3 photos": noise, not news. */
+.hcard__top .hcard__chip:not(.hcard__chip--ok),
+.dwall .dtile__count {
+  display: none;
+}
+/* The rail arrows appear on hover only, so they never sit on a face. */
+.hfeed .mrail__nav {
+  opacity: 0;
+  transition: opacity var(--dur-2) var(--ease);
+}
+.hfeed:hover .mrail__nav,
+.hfeed .mrail__nav:focus-visible {
+  opacity: 1;
+}
+
+/* Profile and circle: compact rows (64px) with a chevron, not half-empty
+   tiles; the circle's "+" is quiet, not a second primary button. */
+.home-duo {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.duo {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 16px;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 1px;
+  min-height: 64px;
+  padding: 10px 14px;
+  border-radius: 20px;
+}
+.duo > :first-child {
+  grid-row: 1 / span 2;
+}
+.duo::after {
+  content: '›';
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  font-size: 1.375rem;
+  color: var(--ink-3);
+}
+.duo__label {
+  margin: 0;
+  align-self: end;
+  font-size: 0.6875rem;
+  color: var(--ink-2);
+  letter-spacing: 0.06em;
+}
+.duo__body {
+  align-self: start;
+  font-size: 0.875rem;
+  font-weight: 600;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+.duo-ring {
+  width: 44px;
+  height: 44px;
+}
+.duo-ring__n {
+  width: 34px;
+  height: 34px;
+  font-size: 0.75rem;
+}
+.duo__plus {
+  width: 44px;
+  height: 44px;
+  background: var(--surface-2);
+  color: var(--accent-ink);
+  box-shadow: var(--neu-in);
+}
+.duo__faces {
+  min-height: 0;
+}
+.duo__faces > * {
+  width: 30px !important;
+  height: 30px !important;
+}
+
+/* Desktop: a real bento. The portraits take the wide column; what is
+   waiting and the two rows stack in a right column; nothing leaves a dead
+   band below the fold. */
+@media (min-width: 1024px) {
+  .home {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-areas:
+      'feed alerts'
+      'feed duo'
+      'feed .';
+    grid-template-rows: auto auto 1fr;
+    column-gap: 24px;
+    row-gap: 12px;
+    align-items: start;
+  }
+  .hfeed {
+    grid-area: feed;
+  }
+  .home-alerts {
+    grid-area: alerts;
+    flex-direction: column;
+  }
+  .home-alert {
+    width: 100%;
+  }
+  .home-duo {
+    grid-area: duo;
+    grid-template-columns: 1fr;
+  }
+  .home:not(:has(.home-alerts)) .home-duo {
+    grid-row: 1;
+  }
+  .hrail {
+    grid-auto-columns: calc((100% - 2 * 16px) / 3);
+  }
+  .hcard__link {
+    aspect-ratio: 3 / 4;
+    max-height: calc(100dvh - 190px);
+  }
+  .hcard__name {
+    font-size: 1.25rem;
+  }
+}
+@media (min-width: 1600px) {
+  .hrail {
+    grid-auto-columns: calc((100% - 3 * 16px) / 4);
+  }
+}
+
+/* Desktop: the new faces as a 3 x 2 grid that fills the height of the
+   screen (five people and a "see all" tile), instead of one short strip
+   with a dead band under it. The phone keeps the swipeable strip. */
+@media (min-width: 1024px) {
+  .hrail {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-columns: auto;
+    overflow: visible;
+    scroll-snap-type: none;
+    padding: 0;
+    margin: 0;
+    gap: 16px;
+  }
+  .hrail > .hcard:nth-child(n + 6):not(.hcard--more) {
+    display: none;
+  }
+  .hcard__link {
+    aspect-ratio: auto;
+    min-height: 0;
+    max-height: none;
+    height: calc((100dvh - 190px - 16px) / 2);
+  }
+  .hfeed .mrail__nav {
+    display: none;
+  }
+}
+@media (min-width: 1600px) {
+  .hrail {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .hrail > .hcard:nth-child(n + 6):not(.hcard--more) {
+    display: block;
+  }
+  .hrail > .hcard:nth-child(n + 8):not(.hcard--more) {
+    display: none;
+  }
+}
+.home-head .hub-link {
+  display: none;
+}
+.duo__body {
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  line-height: 1.3;
+}
+
+/* Phone: the portrait takes the space the compact rows freed, and its
+   shadow is tight enough to stay inside the strip's padding, so no clipped
+   shadow draws a pale box behind the strip. */
+@media (max-width: 1023px) {
+  .hcard__link {
+    max-height: calc(100dvh - 262px);
+    box-shadow: 0 8px 18px rgba(90, 20, 5, 0.18);
+  }
+  .hrail {
+    padding-top: 10px;
+    padding-bottom: 22px;
+    margin-top: -8px;
+    margin-bottom: -14px;
+  }
+}
+@media (max-width: 1023px) {
+  .hcard__link {
+    aspect-ratio: auto;
+    height: clamp(360px, calc(100dvh - 412px), 560px);
+    min-height: 0;
+    max-height: none;
+  }
+}
+
+/* The greeting's name in the brand's own two colours, not orange. */
+.home-head__title .mt--accent {
+  background-image: linear-gradient(100deg, var(--accent) 0%, #e8b50b 55%, var(--accent) 100%);
+}
+
+.duo--desk {
+  display: none;
+}
+.duo__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--surface-2);
+  color: var(--accent-ink);
+  box-shadow: var(--neu-in);
+}
+.duo__icon svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+.duo__icon.is-live {
+  background: var(--accent);
+  color: var(--gold);
+  box-shadow: var(--shadow-accent);
+}
+@media (min-width: 1024px) {
+  .duo--desk {
+    display: grid;
+  }
+  .home-alerts {
+    display: none;
+  }
+  .home .home-duo {
+    grid-row: 1 / span 2;
+    position: sticky;
+    top: 24px;
+  }
+  .hcard__meta {
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+  }
+}
+@media (min-width: 1024px) {
+  .hfeed__all {
+    display: none;
+  }
+}
+
+/* ---- Lavish ---------------------------------------------------------- */
+.home-head__title {
+  font-size: clamp(2.25rem, 1.9rem + 1.6vw, 3rem);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+/* The name in italic kumkum by day, italic gold by night — a flourish, not
+   a gradient. */
+.home-head__title .mt--accent {
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  color: var(--accent-ink);
+  font-style: italic;
+  font-weight: 600;
+  animation: mt-rise 900ms var(--ease-out) forwards;
+  animation-delay: calc(var(--i, 0) * 70ms + 60ms);
+}
+.home-head__date {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold-ink);
+}
+html:is([lang='hi'], [lang='te']) .home-head__date {
+  letter-spacing: 0;
+  text-transform: none;
+}
+.hcard__name {
+  font-family: var(--font-display-stack);
+  font-weight: 600;
+  font-size: clamp(1.625rem, 11cqi, 2.125rem);
+  letter-spacing: -0.01em;
+  font-variation-settings: normal;
+}
+.hcard__age {
+  font-style: italic;
+  font-weight: 500;
+}
+.hcard__chip {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.hcard__chip--ok {
+  background: var(--foil);
+}
+.hcard__link--more {
+  background: radial-gradient(120% 120% at 50% 0%, #b3050a 0%, #7a0104 60%, #4a0103 100%);
+  box-shadow: inset 0 0 0 1px rgba(251, 217, 70, 0.4), var(--shadow-2);
+}
+.hcard__more-n {
+  font-family: var(--font-display-stack);
+  font-weight: 600;
+  font-size: 4.5rem;
+  background: var(--foil);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.duo-ring {
+  background: conic-gradient(#c99a22 0%, #fbd946 calc(var(--pct) * 1%), var(--surface-3) 0);
+}
+.duo-ring__n,
+.home-alert strong {
+  font-family: var(--font-display-stack);
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+.home-head__title .mt--accent {
+  background-image: none !important;
+  -webkit-text-fill-color: currentColor;
+}
+
+/* Phone: each portrait settles in the centre of the screen after a swipe,
+   with an equal glimpse of its neighbours on both sides. */
+@media (max-width: 1023px) {
+  .hrail {
+    grid-auto-columns: 84%;
+    padding-left: 8%;
+    padding-right: 8%;
+    scroll-padding-left: 0;
+    scroll-snap-type: x mandatory;
+  }
+  .hcard {
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+  }
+}
+
+/* One signal per request (critique watch): the filled red "Requests" pill
+   is gone; a waiting request shows as a quiet status row, on phones too. */
+.home-alerts {
+  display: none;
+}
+.duo--desk:has(.duo__icon.is-live) {
+  display: grid;
+}
+.duo__icon.is-live {
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+@media (max-width: 1023px) {
+  .duo__body {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+}
+/* 600–1023px (a tablet, or a narrow desktop window): two portraits per
+   view on the page's own gutter, not one oversized centred card. */
+@media (min-width: 600px) and (max-width: 1023px) {
+  .hrail {
+    grid-auto-columns: calc((100% - 2 * var(--gutter) - 14px) / 2);
+    gap: 14px;
+    padding-left: var(--gutter);
+    padding-right: var(--gutter);
+    scroll-padding-left: var(--gutter);
+  }
+  .hcard {
+    scroll-snap-align: start;
+  }
+  .hcard__link {
+    height: clamp(340px, calc(100dvh - 380px), 520px);
+  }
+}
+
+/* 600–1023px: the rail starts on the page gutter (the phone's centred
+   snap, added later in this file, was overriding it). */
+@media (min-width: 600px) and (max-width: 1023px) {
+  .hrail {
+    padding-left: var(--gutter);
+    padding-right: var(--gutter);
+    scroll-padding-left: var(--gutter);
+  }
+  .hcard {
+    scroll-snap-align: start;
+  }
+}

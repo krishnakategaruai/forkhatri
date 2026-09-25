@@ -1,0 +1,9 @@
+{
+  "name": "@forkhatri/chat-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared conversation layout logic (message grouping, day separators, block timestamps) for ForKhatri module chats.",
+  "types": "index.ts",
+  "main": "index.ts",
+  "sideEffects": false
+}

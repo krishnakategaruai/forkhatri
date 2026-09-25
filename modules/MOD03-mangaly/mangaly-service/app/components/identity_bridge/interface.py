@@ -362,6 +362,10 @@ class PlatformSession:
 
     account_id: UUID
     expires_at: datetime | None
+    # [Rework contract §1] The identity payload carries the member's ForKhatri
+    # name and language; both come straight from the session claims.
+    display_name: str | None = None
+    preferred_language: str | None = None
 
 
 _LINK_REFUSAL_SQLSTATES = {
@@ -432,7 +436,12 @@ async def resolve_platform_session(session: AsyncSession, token: str) -> Platfor
                 "WHERE id = :account_id AND display_name IS DISTINCT FROM :name"
             ).bindparams(name=claims.display_name, account_id=account_id)
         )
-    return PlatformSession(account_id=account_id, expires_at=claims.session_expires_at)
+    return PlatformSession(
+        account_id=account_id,
+        expires_at=claims.session_expires_at,
+        display_name=claims.display_name,
+        preferred_language=claims.preferred_language,
+    )
 
 
 async def validate_session(session: AsyncSession, token: str) -> UUID | None:

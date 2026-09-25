@@ -29,7 +29,11 @@
     "phonePlaceholder": "+91...",
     "saveDraft": "Save as Draft",
     "editExisting": "Edit existing listing",
-    "duplicateError": "You already have a listing with this name and locality."
+    "duplicateError": "You already have a listing with this name and locality.",
+    "previewUnverified": "Not verified yet",
+    "guide1": "Pick the categories and skills people actually search for.",
+    "guide2": "Use the locality people know, such as your neighbourhood's name.",
+    "guide3": "Your phone number stays hidden until you accept an enquiry."
   },
   "mine": {
     "title": "My listings",

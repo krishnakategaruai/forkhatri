@@ -11,6 +11,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, ApiError } from "@/lib/api";
+import Screen from "@/app/components/Screen";
 
 interface Metric {
   level: string;
@@ -123,20 +124,20 @@ export default function AdminOpsPage() {
 
   if (forbidden) {
     return (
-      <main className="vy-shell">
+      <Screen width="console">
         <h1>{t("adminOps:title")}</h1>
         <p className="vy-muted">{t("adminOps:notOperator")}</p>
-      </main>
+      </Screen>
     );
   }
 
   return (
-    <main className="vy-shell">
+    <Screen width="console">
       <h1>{t("adminOps:title")}</h1>
       {notice && <p className="vy-error">{notice}</p>}
 
       <section className="vy-stack">
-        <h2 style={{ fontSize: 16 }}>{t("adminOps:health.title")}</h2>
+        <h2 className="vy-card-title">{t("adminOps:health.title")}</h2>
         {health && (
           <>
             <p className="vy-muted" style={{ fontSize: 12 }}>{t("adminOps:health.minGroupNote", { n: health.min_group_size })}</p>
@@ -158,13 +159,17 @@ export default function AdminOpsPage() {
       </section>
 
       <section className="vy-stack">
-        <h2 style={{ fontSize: 16 }}>{t("adminOps:opportunitiesQueue.title")}</h2>
+        <h2 className="vy-card-title">{t("adminOps:opportunitiesQueue.title")}</h2>
         {oppQueue.length === 0 && <p className="vy-muted">{t("adminOps:opportunitiesQueue.empty")}</p>}
         {oppQueue.map((o) => (
           <div key={o.id} className="vy-card vy-stack" style={{ gap: 6 }}>
             <strong>{o.title}</strong>
             <span className="vy-muted" style={{ fontSize: 13 }}>
-              {o.type} · {t("adminOps:opportunitiesQueue.ageDays", { n: o.age_days })}
+              {/* [Final sweep, fixed here] raw opportunity `type` enum was
+                  rendered directly — same class of bug as the earlier
+                  raw-enum leaks, caught by grepping for the pattern
+                  project-wide rather than waiting for another live report. */}
+              {t(`opportunities:type.${o.type}` as "type.employment", { defaultValue: o.type })} · {t("adminOps:opportunitiesQueue.ageDays", { n: o.age_days })}
               {o.flags.length > 0 ? ` · ${o.flags.map((f) => t(`adminOps:opportunitiesQueue.flag.${f}` as "opportunitiesQueue.flag.source_unreachable")).join(", ")}` : ""}
             </span>
             <div className="vy-row">
@@ -177,7 +182,7 @@ export default function AdminOpsPage() {
       </section>
 
       <section className="vy-stack">
-        <h2 style={{ fontSize: 16 }}>{t("adminOps:staleQueue.title")}</h2>
+        <h2 className="vy-card-title">{t("adminOps:staleQueue.title")}</h2>
         {staleQueue.length === 0 && <p className="vy-muted">{t("adminOps:staleQueue.empty")}</p>}
         {staleQueue.map((o) => (
           <label key={o.id} className="vy-row" style={{ justifyContent: "space-between" }}>
@@ -199,14 +204,23 @@ export default function AdminOpsPage() {
       </section>
 
       <section className="vy-stack">
-        <h2 style={{ fontSize: 16 }}>{t("adminOps:taxonomy.title")}</h2>
+        <h2 className="vy-card-title">{t("adminOps:taxonomy.title")}</h2>
         {taxonomy.map((term) => (
           <div key={term.id} className="vy-row" style={{ justifyContent: "space-between", fontSize: 13 }}>
-            <span>{term.name_en} ({term.slug}) — {term.kind}</span>
-            <span className="vy-muted">{term.status}</span>
+            {/* [Final sweep, fixed here] `term.kind`/`term.status` are raw
+                enum values ("category"/"capability", "active"/"unmapped"/
+                "merged") rendered directly — same class of bug as every
+                other raw-enum leak found this session. This is the ONE
+                internal admin tool that was never covered by the earlier
+                sweeps because it renders operator-facing raw data by
+                design in most rows (the slug itself is intentionally shown
+                here for operators); kind/status specifically still need
+                translation since they're prose, not identifiers. */}
+            <span>{term.name_en} ({term.slug}) — {t(`adminOps:taxonomy.kind.${term.kind}` as "taxonomy.kind.category")}</span>
+            <span className="vy-muted">{t(`adminOps:taxonomy.status.${term.status}` as "taxonomy.status.active")}</span>
           </div>
         ))}
       </section>
-    </main>
+    </Screen>
   );
 }

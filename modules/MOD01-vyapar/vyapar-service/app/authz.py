@@ -23,9 +23,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import asyncpg
-from fastapi import HTTPException
 
-from app.i18n import translate
+from app.errors import ApiError
 
 ROLE_CAPABILITIES: dict[str, set[str]] = {
     "owner": {"billing", "team", "campaigns", "reports", "opportunities", "enquiries", "delete_transfer"},
@@ -92,9 +91,9 @@ async def require(conn: asyncpg.Connection, listing_id: str, capability: str, la
     workspace route starts with this call — it is the only place that decides."""
     ctx = await workspace_context(conn, listing_id)
     if ctx is None or ctx.role == "none":
-        raise HTTPException(status_code=404, detail=translate("workspace.error.notFound", lang))
+        raise ApiError(404, "workspace.error.notFound", lang)
     if capability in ENTITLEMENT_REQUIRED and not ctx.entitlement_active:
-        raise HTTPException(status_code=403, detail=translate("workspace.error.planRequired", lang))
+        raise ApiError(403, "workspace.error.planRequired", lang)
     if not ctx.can(capability):
-        raise HTTPException(status_code=403, detail=translate("workspace.error.roleNotAllowed", lang))
+        raise ApiError(403, "workspace.error.roleNotAllowed", lang)
     return ctx

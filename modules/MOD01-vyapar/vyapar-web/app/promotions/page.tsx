@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";
+import Screen from "@/app/components/Screen";
 
 interface PromotionRow {
   id: string;
@@ -25,7 +26,7 @@ export default function PromotionsPage() {
   }, []);
 
   return (
-    <main className="vy-shell">
+    <Screen width="wide">
       <h1>{t("commercial:list.title")}</h1>
       {rows === null && <p className="vy-muted">{t("common:state.loading")}</p>}
       {rows?.length === 0 && <p className="vy-muted">{t("commercial:list.empty")}</p>}
@@ -43,6 +44,6 @@ export default function PromotionsPage() {
           </a>
         ))}
       </div>
-    </main>
+    </Screen>
   );
 }

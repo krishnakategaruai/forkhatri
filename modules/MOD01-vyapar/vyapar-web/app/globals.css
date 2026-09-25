@@ -35,7 +35,105 @@
 
   --trust-verified: #3aa66b;
   --trust-verified-soft: rgba(58, 166, 107, 0.14);
-  --trust-sponsored-border: var(--ink-6);
+  /* [Design-enhancement pass, DESIGN-ENHANCEMENT.md] now an alias for the
+     named --border-strong step (defined below in this same block; CSS
+     custom properties resolve lazily so referencing it here is safe)
+     instead of its own separately-named ink-6 value — one documented
+     border relationship instead of three ad hoc ones. */
+  --trust-sponsored-border: var(--border-strong);
+  /* [Design-enhancement pass, DESIGN-ENHANCEMENT.md, relayed by the
+     coordinator — research-grounded, additive-only, no new colours] a
+     second step for trust-green, matching the accent's existing soft/
+     strong pattern, reserved for VerificationBadge's pressed state only. */
+  --trust-verified-strong: #4fc384;
+
+  /* [Same pass] finer surface ladder (Linear's 4-step pattern, same ink
+     family) — --surface/--surface-raised/--surface-overlay above are
+     UNCHANGED; these three are new, inserted between/around them so
+     nested panels, floating overlays and pressed/sunken states each get
+     their own lightness step instead of collapsing onto one of the three
+     existing ones. */
+  --surface-sunken: var(--ink-0);
+  --surface-nested: var(--ink-3);
+  --surface-floating: var(--ink-4);
+
+  /* [Same pass] named border steps — replaces three ad hoc ink-value uses
+     (LivingCard's inline ink-5 hover border, --trust-sponsored-border's
+     separately-named ink-6) with one documented relationship between them.
+     --border-hairline is an alias for the existing --border-subtle value,
+     kept so nothing existing needs to change. */
+  --border-hairline: var(--ink-4);
+  --border-default: var(--ink-5);
+  --border-strong: var(--ink-6);
+
+  /* [Same pass] press feedback restored to the sealed 04-ui.md F6 spec
+     ("Pressed: transform scale(0.98) 100ms + fill darkens to #D97A12") —
+     only the scale half was ever implemented. */
+  --accent-pressed: #d97a12;
+
+  /* [Same pass] fourth text-emphasis step, between secondary (ink-7) and
+     primary (ink-9), for content that's socially/trust-meaningful but not
+     a card's primary subject (submitter/community framing specifically —
+     closes the still-open UX-CRITIQUE finding on social-trust prominence
+     for this audience). */
+  --text-quaternary: var(--ink-8);
+
+  /* ==================================================================
+     [IMP33 — desktop layout system + drastic visual/motion pass]
+     REQUIREMENT: 04-ui.md F4 already sealed a four-breakpoint responsive
+     model (`--fk-bp-wide` ≥600, `--fk-bp-desktop` ≥900, `--fk-bp-console`
+     ≥1024) and it was never built — every screen rendered as a 480px
+     phone column centred in empty space at any width. This is closing an
+     implementation gap against the sealed spec, not adding a new
+     requirement. The product owner confirmed it live: "I wanted Vyapar as
+     mobile first web app, but also as web app right, I am only seeing it
+     as mobile UI."
+     APPROACH: put the breakpoint model in ONE place — these tokens plus
+     the shell/grid/pane primitives below — so all 30 screens that already
+     use `.vy-shell` gain a real desktop layout from the design system
+     rather than each page inventing its own media queries. Screens then
+     opt into a *shape* (`vy-shell-wide`, `vy-grid`, `vy-detail`,
+     `vy-pane`, `vy-with-sidebar`) rather than hand-rolling widths.
+     Mobile-first is preserved literally: every rule below the base is
+     inside a `min-width` query, so the 390px rendering is byte-identical
+     to what it was before this pass.
+     Traces to: 04-ui.md F4 (breakpoints, container, spacing), product
+     owner's live direction 2026-09-17.
+     ================================================================== */
+  --bp-wide: 600px;
+  --bp-desktop: 900px;
+  --bp-console: 1024px;
+  /* F4: "bottom nav becomes a 240 px left rail with the same five items" */
+  --rail-w: 240px;
+
+  /* [IMP33 — type] A fluid type scale. Research (web.dev "Responsive and
+     fluid typography with Baseline CSS features"; fluid-type-scale.com;
+     the 2026 responsive-typography surveys) is consistent that a single
+     clamp() curve per role beats redeclaring sizes per breakpoint: one
+     min/max pair, continuous interpolation, no jump at the breakpoint,
+     and the token itself carries the responsiveness. This is how desktop
+     gets "a different, more confident scale than phone" without a second
+     parallel set of rules to keep in sync. Values are px-based deliberately
+     (not rem-based vw math) so they compose with the existing px spacing
+     ramp already used throughout this codebase. */
+  --type-display: clamp(28px, 1.35rem + 1.7vw, 42px);
+  --type-title: clamp(21px, 1.15rem + 0.9vw, 30px);
+  --type-heading: clamp(16px, 0.9rem + 0.4vw, 19px);
+  --type-body: clamp(15px, 0.9rem + 0.12vw, 16px);
+  --type-sm: 13px;
+  --type-xs: 12px;
+
+  /* [IMP33 — motion] One shared motion vocabulary. Durations follow the
+     asymmetric exit/enter pairing the Next.js 16 view-transitions guide
+     documents (old content leaves fast so it stops competing for
+     attention; new content arrives more gently, delayed until the exit
+     finishes). Springs are used for anything a finger/cursor touches;
+     eased durations for anything the system initiates. */
+  --dur-exit: 140ms;
+  --dur-enter: 210ms;
+  --dur-move: 380ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 
   --radius-sm: 10px;
   --radius-md: 16px;
@@ -69,6 +167,22 @@
     --text-secondary: #565049;
     --text-tertiary: #8a837a;
     --accent-ink: #ffffff;
+    /* [Design-enhancement pass, DESIGN-ENHANCEMENT.md] light-mode values
+       for the new surface/border steps above — same additive, no-new-hue
+       rule applies in light mode too. */
+    --surface-sunken: #f0ece3;
+    --surface-nested: #f4f1ea;
+    --surface-floating: #ffffff;
+    --border-default: #d0cbc0;
+    --border-strong: #b8b2a4;
+    /* [Design-enhancement pass — gap noticed and closed while implementing,
+       not in the spec's own light-mode block] `--text-quaternary: var(
+       --ink-8)` in :root resolves to a light gray (#c3c9d2), correct only
+       for the dark palette; light mode needs its own darker step between
+       --text-secondary (#565049) and --text-primary (#16130f), or the
+       submitter/community line would render as low-contrast light text on
+       a light background. */
+    --text-quaternary: #3a352d;
     color-scheme: light;
   }
 }
@@ -95,24 +209,80 @@ h1,
 h2,
 h3 {
   font-weight: 700;
-  letter-spacing: -0.01em;
   margin: 0;
 }
 
+/* [IMP33 — type rhythm] Optical tracking: large type needs negative
+   tracking to stop looking loose, small type needs slightly positive
+   tracking to stay legible. Previously every heading shared one
+   -0.01em value regardless of size, which is why the desktop sizes read
+   as "big phone text" rather than as a designed display scale. */
 h1 {
-  font-size: clamp(28px, 5vw, 40px);
-  line-height: 1.08;
+  font-size: var(--type-display);
+  line-height: 1.06;
+  letter-spacing: -0.028em;
 }
 
 h2 {
-  font-size: clamp(20px, 3vw, 26px);
-  line-height: 1.15;
+  font-size: var(--type-title);
+  line-height: 1.14;
+  letter-spacing: -0.02em;
+}
+
+h3 {
+  font-size: var(--type-heading);
+  line-height: 1.25;
+  letter-spacing: -0.012em;
 }
 
 p {
   margin: 0;
   color: var(--text-secondary);
-  line-height: 1.5;
+  line-height: 1.55;
+  font-size: var(--type-body);
+}
+
+/* [IMP33] The one shared section-heading style. Every screen was
+   hand-writing `style={{ fontSize: 16, color: "var(--text-secondary)" }}`
+   on its <h2>s — eight copies of the same decision, none of which could
+   scale on desktop. Quiet by design (secondary colour, not primary): a
+   section label must never compete with the content under it, per the
+   fintech-restraint reference already cited in DESIGN-ENHANCEMENT.md. */
+.vy-section-title {
+  font-size: var(--type-heading);
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+/* [IMP33] The heading of a panel/card. 26 screens had hand-written
+   `style={{ fontSize: 16 }}` on an <h2> — all of them fighting the old
+   global h2 size rather than expressing an intent, and none of them able
+   to scale on desktop. One named step replaces all 26: primary text
+   colour (unlike a section label, a card's own title IS its subject) at
+   the heading size, so it sits clearly below the page <h1> and clearly
+   above body copy. */
+.vy-card-title {
+  font-size: var(--type-heading);
+  font-weight: 600;
+  letter-spacing: -0.008em;
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+
+/* [IMP33] Page title + one-line subtitle, so a screen's primary subject is
+   unmistakable at a glance (the brief's "which element is primary on each
+   screen should be unmistakable"). */
+.vy-page-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.vy-page-head > p {
+  max-width: 58ch;
+  color: var(--text-secondary);
 }
 
 a {
@@ -142,12 +312,308 @@ button {
   gap: var(--space-5);
 }
 
+/* ---------------------------------------------------------------------- */
+/* [IMP33] Responsive shell — 04-ui.md F4's sealed breakpoint model        */
+/* ---------------------------------------------------------------------- */
+
+/* F4 `--fk-bp-wide` ≥600: gutter steps 1rem → 1.5rem, the column widens
+   enough for the 2-column result lists and 4-column category grid below,
+   and vertical rhythm opens up (more space is the cheapest way to read as
+   premium — it is what every reference product in DESIGN-ENHANCEMENT.md
+   spends its width on first). */
+@media (min-width: 600px) {
+  .vy-shell {
+    max-width: 640px;
+    padding-inline: var(--space-5);
+    gap: var(--space-6);
+  }
+}
+
+/* F4 `--fk-bp-desktop` ≥900: "content column max 720 px" and the floating
+   command hub becomes a persistent 240 px left rail (see .vy-rail). The
+   rail is `position: fixed`, so the page is inset with a body padding
+   rather than a wrapper element — that keeps all 30 existing screens
+   working untouched and keeps the rail out of every page's own scroll. */
+@media (min-width: 900px) {
+  body {
+    padding-left: var(--rail-w);
+  }
+
+  .vy-shell {
+    max-width: 720px;
+    /* Still clears the fixed top-right NotificationBell + member pill
+       (top: 14px, ~40px tall) — on a wide screen the content column can
+       reach far enough right to sit under them, so the clearance the
+       phone layout needed is not something desktop can drop. */
+    padding-top: 72px;
+    /* no floating hub at this width, so the 140px hub clearance goes away */
+    padding-bottom: var(--space-7);
+    gap: var(--space-6);
+  }
+}
+
+/* First-run centres its single step card vertically. */
+.vy-shell-center {
+  justify-content: center;
+}
+
+/* [IMP33] Screens whose content is a *collection* (Discover, the
+   Businesses directory, Activity, My listings, the Admin console) opt into
+   a wider measure than F4's 720px reading column — 720px is the right max
+   for prose and forms, and the wrong max for a grid of cards, which is
+   exactly why the owner saw "a phone column in a sea of background". */
+@media (min-width: 900px) {
+  .vy-shell-wide {
+    max-width: 1080px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .vy-shell-wide {
+    max-width: 1240px;
+  }
+}
+
+/* F4 `--fk-bp-console` ≥1024: Admin screens get list + right detail pane. */
+@media (min-width: 1024px) {
+  .vy-shell-console {
+    max-width: 1320px;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* [IMP33] Layout shapes a screen opts into                               */
+/* ---------------------------------------------------------------------- */
+
+/* Card grid. F4: "2-column result lists" at ≥600. `.vy-grid-3` adds a
+   third column only once there is genuinely room for a readable card
+   (~340px each), never earlier — a 3-column grid at 900px produces
+   cramped, unreadable cards, which would be a different kind of wrong
+   answer to the same complaint. */
+.vy-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+@media (min-width: 600px) {
+  .vy-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .vy-grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* F4: "4-column category grid" at ≥600 — used by chip/tile pickers. */
+.vy-tile-grid {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 600px) {
+  .vy-tile-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Detail screens: primary content left, trust/actions/meta in a sticky
+   right column. Below 900px it is one stacked column in exactly the order
+   the phone build already had, so nothing regresses. */
+.vy-detail {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+.vy-detail-main,
+.vy-detail-aside {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+@media (min-width: 900px) {
+  .vy-detail {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: var(--space-6);
+  }
+
+  /* Explicit placement rather than auto-flow: a detail screen's reading
+     content is interleaved with its action column in the SOURCE order
+     that the phone layout needs (actions appear early, above reviews and
+     management panels). Pinning the aside to row 1 / column 2 lets the
+     left column keep that phone-correct source order across several
+     sibling blocks without the aside jumping to column 1 when a
+     conditional block above it does not render. */
+  .vy-detail > .vy-detail-main {
+    grid-column: 1;
+  }
+
+  .vy-detail > .vy-detail-aside {
+    grid-column: 2;
+    grid-row: 1;
+    position: sticky;
+    top: var(--space-6);
+  }
+
+  /* In a 320px action column a wrapping button row reads as ragged;
+     stack them full-width instead, with the primary first. */
+  .vy-card-actions > .vy-btn,
+  .vy-card-actions > a.vy-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* List + detail split pane (Enquiries, Admin console per F4's
+   `--fk-bp-console`). Below the breakpoint the detail pane is simply not
+   rendered and the list rows stay ordinary links that navigate — the
+   phone flow is untouched. */
+.vy-pane {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+.vy-pane-list,
+.vy-pane-detail {
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .vy-pane {
+    grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+    gap: var(--space-5);
+  }
+
+  .vy-pane-list {
+    position: sticky;
+    top: var(--space-6);
+    max-height: calc(100dvh - 2 * var(--space-6));
+    overflow-y: auto;
+    /* hairline separator instead of a scrollbar-adjacent shadow — dark
+       mode's own rule in this file is lightness/border, never shadow */
+    padding-right: var(--space-2);
+  }
+}
+
+/* Persistent filter sidebar (Businesses & Professionals). On phones the
+   same FilterSheet stays a collapsible panel; on desktop it is always
+   visible beside the results — a filter you can see is a filter people
+   actually use, and hiding it behind a toggle on a 1440px screen is the
+   mobile compromise leaking onto desktop. */
+.vy-with-sidebar {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .vy-with-sidebar {
+    grid-template-columns: 268px minmax(0, 1fr);
+  }
+
+  .vy-sidebar {
+    position: sticky;
+    top: var(--space-6);
+    max-height: calc(100dvh - 2 * var(--space-6));
+    overflow-y: auto;
+  }
+}
+
+/* [IMP33] Breakpoint-scoped visibility, so components never need a resize
+   listener or a hydration-unsafe `window.innerWidth` read. */
+.vy-desktop-only {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .vy-desktop-only {
+    display: revert;
+  }
+
+  .vy-mobile-only {
+    display: none;
+  }
+}
+
+.vy-console-only {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .vy-console-only {
+    display: revert;
+  }
+}
+
+/* A split-pane list row exists twice in the DOM: once as an <a> that
+   navigates (phone/tablet, and the route that notifications and shared
+   links open) and once as a <button> that selects into the pane beside
+   it (≥1024px). These two classes carry their own explicit `display`
+   rather than composing `.vy-stack` with a generic visibility utility —
+   `.vy-stack { display: flex }` would otherwise win the cascade against
+   a `display: none` utility and both rows would render at once. */
+.vy-pane-row-mobile,
+.vy-pane-row-console {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vy-pane-row-console {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .vy-pane-row-mobile {
+    display: none;
+  }
+
+  .vy-pane-row-console {
+    display: flex;
+  }
+}
+
 .vy-card {
   background: var(--surface-raised);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: var(--space-5);
   box-shadow: var(--shadow-card);
+}
+
+/* [Design-enhancement pass, DESIGN-ENHANCEMENT.md] a card that sits INSIDE
+   another card's content flow (verification/contact/capability panels
+   inside Listing Detail; plan/team/campaign panels inside Workspace; the
+   refund form inside an order card in Admin Commercial) steps to
+   --surface-nested (one luminance step up from its --surface-raised
+   parent, per Linear's "step up 5-8% per level" practice) and drops the
+   shadow — the parent card already established the layer, nested content
+   doesn't need its own elevation cue. Applied alongside "vy-card", never
+   replacing it. */
+.vy-card-nested {
+  background: var(--surface-nested);
+  box-shadow: none;
+}
+
+/* [Design-enhancement pass, DESIGN-ENHANCEMENT.md] genuinely-overlaid
+   content (TrustContextSheet, NotificationBell's dropdown, FilterSheet
+   when expanded) steps to --surface-floating — one step above
+   --surface-overlay — so a real luminance cue registers that this content
+   is layered above the page, not just a card sitting in its flow. */
+.vy-card-floating {
+  background: var(--surface-floating);
 }
 
 .vy-btn {
@@ -168,6 +634,15 @@ button {
 .vy-btn-primary {
   background: var(--accent);
   color: var(--accent-ink);
+}
+
+/* [Design-enhancement pass, DESIGN-ENHANCEMENT.md] restores the fill-
+   darken half of 04-ui.md F6's own sealed press spec ("Pressed: transform
+   scale(0.98) 100ms + fill darkens to #D97A12") — only the scale half was
+   ever implemented (see .vy-btn:active above). Layered alongside it, not
+   replacing it. */
+.vy-btn-primary:active {
+  background: var(--accent-pressed);
 }
 
 .vy-btn-secondary {
@@ -254,6 +729,15 @@ a:focus-visible,
   color: var(--trust-verified);
 }
 
+/* [Design-enhancement pass, DESIGN-ENHANCEMENT.md] when VerificationBadge
+   renders as a button (its onOpenTrustSheet case), this confirms a tap the
+   same restrained two-step (soft/strong) pattern the accent already uses —
+   one new token reserved solely for this pressed state, not a new "shade
+   of meaning." */
+.vy-badge-verified:active {
+  color: var(--trust-verified-strong);
+}
+
 .vy-badge-sponsored {
   background: transparent;
   border: 1px dashed var(--trust-sponsored-border);
@@ -288,14 +772,1656 @@ a:focus-visible,
   gap: var(--space-2);
 }
 
+/* [Design-enhancement pass, DESIGN-ENHANCEMENT.md — real bug this pass
+   fixes] the base class used to default to accent-tinted, so every chip
+   that never received an inline "selected" override (e.g. IntentBar's
+   parsed category/locality chips) was accent-colored by accident, not by
+   selection state — exactly the "accent as decoration, not meaning"
+   anti-pattern the fintech-restraint research this spec cites warns
+   against. Flipped to a neutral default; [aria-pressed="true"] (already
+   used by several call sites for accessibility) or .vy-chip-selected now
+   opts INTO the accent tint. */
 .vy-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
   border-radius: var(--radius-pill);
-  background: var(--accent-soft);
-  color: var(--accent-strong);
+  background: var(--surface-overlay);
+  color: var(--text-primary);
+  border: 1px solid var(--border-hairline);
   font-size: 13px;
   font-weight: 600;
+}
+
+.vy-chip[aria-pressed="true"],
+.vy-chip.vy-chip-selected {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  /* [IMP33] A tinted fill alone is a weak selection cue at 13px on a dark
+     surface. Adding a 1px accent edge (as a border colour, not a glow)
+     makes "selected" unmistakable while keeping the chip far quieter than
+     the screen's one real primary button — the restraint rule. */
+  border-color: var(--accent);
+}
+
+/* ====================================================================== */
+/* [IMP33] Hover, press and focus — the desktop half of interaction       */
+/* ====================================================================== */
+/* REQUIREMENT: the owner asked to "drastically improve styling, themes,
+   colors, motions". A real cause of this app feeling unfinished on
+   desktop is that it had NO hover states at all: `.vy-btn` had only
+   `:active { scale }`, cards only had a motion `whileHover`, and chips,
+   links, rows and list items had nothing. A pointer device expects every
+   interactive surface to answer before it is clicked. Every rule below
+   is a lightness step or a border step on the SAME neutral/accent
+   families already in this file — no new hue, no glow, no gradient,
+   consistent with DESIGN-ENHANCEMENT.md's Linear/Vercel grounding
+   (hierarchy and feedback come from which step a surface sits on).
+   Wrapped in `@media (hover: hover)` so touch devices never get a
+   sticky hover state left behind after a tap. */
+
+.vy-btn {
+  transition: transform var(--dur-exit) var(--ease-out),
+    background-color var(--dur-exit) var(--ease-out),
+    border-color var(--dur-exit) var(--ease-out),
+    color var(--dur-exit) var(--ease-out), opacity var(--dur-exit) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .vy-btn-primary:hover:not(:disabled) {
+    background: var(--accent-strong);
+  }
+
+  .vy-btn-secondary:hover:not(:disabled) {
+    background: var(--surface-nested);
+    border-color: var(--border-default);
+  }
+
+  .vy-btn-ghost:hover:not(:disabled) {
+    background: var(--surface-overlay);
+    color: var(--text-primary);
+  }
+
+  .vy-chip:hover {
+    border-color: var(--border-default);
+  }
+
+  .vy-chip[aria-pressed="true"]:hover,
+  .vy-chip.vy-chip-selected:hover {
+    border-color: transparent;
+  }
+
+  a.vy-card:hover,
+  .vy-card-interactive:hover {
+    border-color: var(--border-default);
+    background: var(--surface-nested);
+  }
+}
+
+.vy-card,
+.vy-chip {
+  transition: border-color var(--dur-enter) var(--ease-out),
+    background-color var(--dur-enter) var(--ease-out);
+}
+
+/* A selected row/card in a split pane: the accent marks the ONE selected
+   thing, which is exactly the "accent means something specific" rule. */
+.vy-card-selected {
+  border-color: var(--accent);
+  background: var(--surface-nested);
+}
+
+/* ====================================================================== */
+/* [IMP33] Loading and empty states                                       */
+/* ====================================================================== */
+/* REQUIREMENT: "polished empty/loading/skeleton states rather than bare
+   text". Every screen previously rendered `<p class="vy-muted">Loading…
+   </p>` — a layout that collapses and then jumps when data lands.
+   DECISION: the shimmer is an OPACITY pulse, not the conventional
+   travelling light gradient, because a moving gradient is exactly the
+   decorative effect this product's rules forbid. A pulse between two
+   steps of the existing ink ramp reads as "this is coming" without
+   introducing a gradient anywhere in the app. */
+/* [IMP33/FR43] Standard visually-hidden utility — used so a loading
+   skeleton announces "Loading" once to assistive tech instead of having
+   its placeholder boxes read out. */
+.vy-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.vy-skeleton {
+  background: var(--surface-overlay);
+  border-radius: var(--radius-sm);
+  animation: vy-pulse 1.6s var(--ease-in-out) infinite;
+}
+
+@keyframes vy-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* An empty state that holds its space and says what to do next, instead
+   of one muted sentence floating in a void. Dashed hairline (the same
+   device the Sponsored tag already uses for "this frame is provisional")
+   so it never reads as a real card with no content in it. */
+.vy-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: center;
+  padding: var(--space-7) var(--space-5);
+  border: 1px dashed var(--border-hairline);
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+}
+
+.vy-empty-mark {
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text-tertiary);
+}
+
+.vy-empty p {
+  max-width: 44ch;
+}
+
+/* ====================================================================== */
+/* [IMP33] The persistent desktop rail (04-ui.md F4)                      */
+/* ====================================================================== */
+/* F4: "≥900: bottom nav becomes a 240 px left rail with the same five
+   items and labels". Vyapar's phone build replaced the bottom nav with a
+   floating command hub per the standing design direction; the rail is
+   the same five destinations, so the sealed intent holds. The two are
+   CSS-swapped rather than JS-swapped so there is no hydration mismatch
+   and no resize listener. */
+.vy-rail {
+  display: none;
+}
+
+.vy-hub-float {
+  display: flex;
+}
+
+@media (min-width: 900px) {
+  .vy-rail {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: var(--rail-w);
+    padding: var(--space-5) var(--space-3) var(--space-4);
+    background: var(--surface);
+    border-right: 1px solid var(--border-hairline);
+    z-index: 45;
+  }
+
+  .vy-hub-float {
+    display: none;
+  }
+}
+
+.vy-rail-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 10px var(--space-3);
+  border-radius: var(--radius-md);
+  border: none;
+  text-decoration: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--type-sm);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  transition: background-color var(--dur-exit) var(--ease-out),
+    color var(--dur-exit) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .vy-rail-link:hover {
+    background: var(--surface-raised);
+    color: var(--text-primary);
+  }
+}
+
+/* The active destination is marked with the accent, once, as a hairline
+   marker + accent text rather than a filled pill — a filled accent block
+   in a persistent rail would be the single loudest element on every
+   screen, permanently, which is the opposite of "the accent marks the one
+   thing that matters on THIS screen". */
+.vy-rail-link[aria-current="page"] {
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.vy-rail-mark {
+  width: 20px;
+  text-align: center;
+  font-size: 15px;
+  color: var(--text-tertiary);
+}
+
+.vy-rail-link[aria-current="page"] .vy-rail-mark {
+  color: var(--accent);
+}
+
+/* The wordmark at the top of the rail — a persistent anchor, the thing a
+   desktop product has and a phone screen does not have room for. */
+.vy-rail-brand {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3) var(--space-5);
+  font-size: var(--type-heading);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.vy-rail-brand span {
+  font-size: var(--type-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+/* The top-left language control must clear the rail once the rail exists. */
+@media (min-width: 900px) {
+  .vy-fixed-topleft {
+    left: calc(var(--rail-w) + 14px) !important;
+  }
+}
+
+/* ====================================================================== */
+/* [IMP33] Route-level motion — React <ViewTransition> (Next.js 16)       */
+/* ====================================================================== */
+/* REQUIREMENT: "real motion design — view transitions between routes,
+   shared-element transitions from card to detail".
+   APPROACH, and why it is split across two technologies: the Next.js 16
+   view-transitions guide (nextjs.org/docs/app/guides/view-transitions,
+   version-stamped 16.3.5 — this app's exact version) documents that
+   React's <ViewTransition> handles route-level enter/exit and
+   shared-element morphs declaratively, and that per-item staggered
+   entrance animations during navigation are explicitly NOT available
+   through it. So: route transitions and card→detail morphs use
+   <ViewTransition>; list/card entrance staggering uses the `motion`
+   library already installed. That split is the documented one, not a
+   preference.
+   Timings below are the guide's own asymmetric pairing: the old view
+   leaves in --dur-exit so it stops competing for attention, the new view
+   fades in over --dur-enter delayed until that exit completes, while its
+   positional movement runs longer (--dur-move) so the motion reads as
+   one continuous gesture rather than a fade and a slide. */
+
+::view-transition-old(.vy-nav-forward) {
+  --vy-slide: -48px;
+  animation: var(--dur-exit) var(--ease-in-out) both vy-vt-fade reverse,
+    var(--dur-move) var(--ease-in-out) both vy-vt-slide reverse;
+}
+
+::view-transition-new(.vy-nav-forward) {
+  --vy-slide: 48px;
+  animation: var(--dur-enter) var(--ease-out) var(--dur-exit) both vy-vt-fade,
+    var(--dur-move) var(--ease-in-out) both vy-vt-slide;
+}
+
+::view-transition-old(.vy-nav-back) {
+  --vy-slide: 48px;
+  animation: var(--dur-exit) var(--ease-in-out) both vy-vt-fade reverse,
+    var(--dur-move) var(--ease-in-out) both vy-vt-slide reverse;
+}
+
+::view-transition-new(.vy-nav-back) {
+  --vy-slide: -48px;
+  animation: var(--dur-enter) var(--ease-out) var(--dur-exit) both vy-vt-fade,
+    var(--dur-move) var(--ease-in-out) both vy-vt-slide;
+}
+
+@keyframes vy-vt-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes vy-vt-slide {
+  from {
+    translate: var(--vy-slide);
+  }
+  to {
+    translate: 0;
+  }
+}
+
+/* Shared-element morph: a card on a list morphs into the header of the
+   detail screen it opens. 320ms is long enough to register as "the same
+   object moved", short enough not to delay the person. */
+::view-transition-group(.vy-morph) {
+  animation-duration: 320ms;
+  animation-timing-function: var(--ease-out);
+}
+
+/* The transition overlay swallows clicks while it runs; letting them
+   through keeps the app interactive mid-animation (documented recipe in
+   the same Next.js guide). */
+::view-transition {
+  pointer-events: none;
+}
+
+/* ====================================================================== */
+/* [IMP33] Reduced motion                                                 */
+/* ====================================================================== */
+/* Directional slides are the most common motion-sensitivity trigger, so
+   they are removed outright; opacity changes are kept because they carry
+   the "something changed here" information without simulating movement.
+   Also covers this pass's own skeleton pulse and the motion library's
+   transforms. Traces to FR43/TR043 (accessibility) as well as this pass. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+  }
+
+  .vy-skeleton {
+    animation: none;
+    opacity: 0.7;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}
+
+/* [Opportunity detail rebuild, 2026-09-21] Key facts at a glance. WorkIndia
+   puts Job Type / Role / Incentive / Address in labelled rows and Upwork
+   puts budget / experience / duration in a facts strip, because a person
+   decides from these before reading a word of description. Vyapar's own
+   version: quiet label above a confident value, two across on a phone,
+   four across when there is room. No new colour, only the neutral ladder. */
+.vy-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.vy-fact {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.vy-fact-label {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.01em;
+}
+
+.vy-fact-value {
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 720px) {
+  .vy-facts {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* A byline that carries trust (who posted, from where) rather than a
+   generic grey footnote — one step above tertiary, per DESIGN-ENHANCEMENT
+   item 5. */
+.vy-byline {
+  color: var(--text-quaternary);
+  font-size: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  align-items: center;
+}
+
+.vy-byline-sep {
+  color: var(--text-tertiary);
+}
+
+/* Deadline urgency: the one place a detail screen earns the accent outside
+   its primary button — only when three or fewer days remain. */
+.vy-deadline-soon {
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+/* On desktop the action column must stay in view for the whole read, not
+   only beside the first block — span every row of the main column. */
+@media (min-width: 900px) {
+  .vy-detail > .vy-detail-aside.vy-detail-aside-full {
+    grid-row: 1 / span 12;
+  }
+}
+
+/* Opportunity detail, second pass (reference review): decision context
+   beside the action, a per-skill fit read, a safety line, and a phone
+   action bar that appears only once the real action card is off screen. */
+.vy-signal-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.vy-signal-list li::before {
+  content: "•";
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+.vy-safety-line {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  border-top: 1px solid var(--border-hairline);
+  padding-top: var(--space-3);
+  margin: 0;
+}
+
+.vy-safety-line a {
+  color: var(--text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.vy-fit-line {
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.vy-fit-line.vy-fit-full {
+  color: var(--trust-verified-strong);
+}
+
+.vy-chip.vy-chip-match {
+  border-color: var(--trust-verified);
+  background: var(--trust-verified-soft);
+  color: var(--text-primary);
+}
+
+.vy-actionbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 55;
+  display: flex;
+  gap: var(--space-2);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(14px);
+  border-top: 1px solid var(--border-hairline);
+  transform: translateY(110%);
+  transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.vy-actionbar.vy-actionbar-in {
+  transform: translateY(0);
+}
+
+.vy-actionbar-main {
+  flex: 1;
+  display: flex;
+}
+
+.vy-actionbar-main > .vy-btn {
+  flex: 1;
+}
+
+.vy-actionbar-save {
+  width: 48px;
+  padding: 0;
+  font-size: 18px;
+}
+
+/* The command orb shares the bottom edge; lift it above the bar while the
+   bar is showing so neither covers the other. */
+body:has(.vy-actionbar-in) .vy-hub-float {
+  bottom: 84px !important;
+  transition: bottom 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (min-width: 900px) {
+  .vy-actionbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vy-actionbar {
+    transition: none;
+  }
+}
+
+/* Primary action first, Save to its right, clear of the bottom-left corner. */
+.vy-actionbar-save {
+  order: 2;
+}
+
+/* Scrim behind the floating top pills (language, alerts, account). */
+.vy-topbar-scrim {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  z-index: 58;
+  pointer-events: none;
+  background: linear-gradient(to bottom, var(--surface) 55%, color-mix(in srgb, var(--surface) 0%, transparent));
+}
+
+@media (min-width: 900px) {
+  .vy-topbar-scrim {
+    left: var(--rail-w);
+  }
+}
+
+/* ====================================================================== */
+/* [IMP39 — agent D] Desktop layouts for the reading-width screens         */
+/* ====================================================================== */
+/* REQUIREMENT (owner): "why is it that I see it as phone only? It is a
+   mobile-first web app, right?" Every screen on the default 720px reading
+   column rendered as a phone stack floating in the middle of a desktop.
+   APPROACH: a handful of layout shapes, each a no-op below 900px so the
+   phone rendering does not move:
+     - .vy-hub          Profile: identity card + grid of described tiles
+     - .vy-choice-grid  chooser cards (Post, composer modes)
+     - .vy-compose      form + sticky live preview (create/edit screens)
+     - .vy-ctx          record/conversation + sticky context aside
+                        (threads, requests, promotions, campaigns). This
+                        one is CONTAINER-query driven, so the same thread
+                        stays single-column inside the ≥1024px split pane
+                        on /enquiries/mine and goes two-column on its own
+                        route.
+     - .vy-settings     section nav + content (Privacy)
+     - .vy-dash / .vy-split / .vy-checkout / .vy-firstrun  focused flows
+   Wrappers that must not exist on a phone use `display: contents`, so
+   their children stay direct flex children of .vy-shell exactly as
+   before. No new colours; only the existing token ladder. */
+
+/* Desktop-only / phone-only helpers that keep a flex display. */
+.vy-d-flex {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .vy-d-flex {
+    display: flex;
+  }
+
+  .vy-m-only {
+    display: none !important;
+  }
+}
+
+/* ---- Profile hub ------------------------------------------------------ */
+.vy-hub,
+.vy-hub-main {
+  display: contents;
+}
+
+.vy-hub-identity {
+  display: none;
+}
+
+.vy-hub-tile {
+  display: block;
+  text-decoration: none;
+  padding: 14px 18px;
+}
+
+.vy-hub-tile-mark,
+.vy-hub-tile-desc {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .vy-hub {
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    gap: var(--space-6);
+    align-items: start;
+  }
+
+  .vy-hub-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    min-width: 0;
+  }
+
+  .vy-hub-identity {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    position: sticky;
+    top: 72px;
+  }
+
+  .vy-hub-monogram {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .vy-hub-identity h1 {
+    font-size: var(--type-title);
+    line-height: 1.15;
+  }
+
+  .vy-hub-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-top: 1px solid var(--border-hairline);
+    padding-top: var(--space-4);
+    gap: var(--space-2);
+  }
+
+  .vy-hub-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    padding: var(--space-1);
+    transition: background-color var(--dur-exit) var(--ease-out);
+  }
+
+  .vy-hub-stat strong {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+  }
+
+  .vy-hub-stat span {
+    font-size: var(--type-xs);
+    color: var(--text-tertiary);
+  }
+
+  .vy-hub-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4) !important;
+  }
+
+  .vy-hub-tile {
+    position: relative;
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: var(--space-2) var(--space-4);
+    align-items: start;
+    padding: var(--space-5);
+    min-height: 124px;
+  }
+
+  .vy-hub-tile-mark {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    background: var(--surface-nested);
+    border: 1px solid var(--border-hairline);
+    color: var(--text-secondary);
+    font-size: 17px;
+    line-height: 1;
+  }
+
+  .vy-hub-tile-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    padding-right: var(--space-5);
+  }
+
+  .vy-hub-tile-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: var(--type-body);
+  }
+
+  .vy-hub-tile-desc {
+    display: block;
+    font-size: var(--type-sm);
+    line-height: 1.5;
+    color: var(--text-secondary);
+  }
+
+  .vy-hub-tile-arrow {
+    position: absolute;
+    top: var(--space-5);
+    right: var(--space-5);
+    color: var(--text-tertiary);
+    transition: transform var(--dur-enter) var(--ease-out), color var(--dur-enter) var(--ease-out);
+  }
+}
+
+@media (min-width: 1280px) {
+  .vy-hub-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (hover: hover) and (min-width: 900px) {
+  .vy-hub-stat:hover {
+    background: var(--surface-nested);
+  }
+
+  .vy-hub-tile:hover .vy-hub-tile-arrow {
+    transform: translateX(3px);
+    color: var(--accent);
+  }
+
+  .vy-hub-tile:hover .vy-hub-tile-mark {
+    color: var(--text-primary);
+    border-color: var(--border-default);
+  }
+}
+
+/* ---- Chooser cards (Post, composer modes) ----------------------------- */
+.vy-choice {
+  text-align: left;
+  border: none;
+  cursor: pointer;
+}
+
+.vy-choice-mark,
+.vy-choice-arrow {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .vy-choice-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+
+  .vy-choice-grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .vy-choice {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-height: 220px;
+    padding: var(--space-6) var(--space-5) var(--space-5);
+    border: 1px solid var(--border-subtle);
+    color: inherit;
+  }
+
+  .vy-choice-mark {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    margin-bottom: var(--space-3);
+    border-radius: var(--radius-sm);
+    background: var(--surface-nested);
+    border: 1px solid var(--border-hairline);
+    color: var(--accent-strong);
+    font-size: 19px;
+  }
+
+  .vy-choice p {
+    font-size: var(--type-sm);
+  }
+
+  .vy-choice-arrow {
+    display: block;
+    margin-top: auto;
+    padding-top: var(--space-4);
+    color: var(--text-tertiary);
+    transition: transform var(--dur-enter) var(--ease-out), color var(--dur-enter) var(--ease-out);
+  }
+}
+
+@media (hover: hover) and (min-width: 900px) {
+  .vy-choice:hover {
+    border-color: var(--border-default);
+    background: var(--surface-nested);
+  }
+
+  .vy-choice:hover .vy-choice-arrow {
+    transform: translateX(4px);
+    color: var(--accent);
+  }
+}
+
+/* ---- Composer: form + sticky live preview ------------------------------ */
+.vy-compose,
+.vy-compose-main {
+  display: contents;
+}
+
+.vy-compose-aside {
+  display: none;
+}
+
+/* Paired fields: an ordinary stacked flow on a phone (same gap as the
+   .vy-stack they sit in), side by side on desktop. */
+.vy-field-pair {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+@media (min-width: 900px) {
+  .vy-compose {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: var(--space-7);
+    align-items: start;
+  }
+
+  .vy-compose-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    min-width: 0;
+    max-width: 640px;
+  }
+
+  .vy-compose-aside {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    position: sticky;
+    top: 72px;
+  }
+
+  .vy-field-pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+
+  /* A full-width submit across a 640px form reads as a phone control. */
+  .vy-compose-main .vy-submit {
+    align-self: flex-start;
+    min-width: 240px;
+  }
+}
+
+.vy-preview-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--type-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+/* A small live-dot: this panel follows what you type. */
+.vy-preview-label::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--trust-verified);
+}
+
+.vy-preview-caption {
+  font-size: var(--type-sm);
+  color: var(--text-tertiary);
+  margin-top: calc(-1 * var(--space-2));
+}
+
+.vy-preview-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vy-preview-card h3 {
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+
+.vy-preview-empty {
+  color: var(--text-tertiary) !important;
+  font-weight: 500;
+}
+
+.vy-preview-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+  max-height: 340px;
+  overflow: hidden;
+}
+
+.vy-preview-img {
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-hairline);
+}
+
+.vy-guide {
+  border-top: 1px solid var(--border-hairline);
+  padding-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.vy-guide h3 {
+  font-size: var(--type-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.vy-guide ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.vy-guide li {
+  position: relative;
+  padding-left: 18px;
+  font-size: var(--type-sm);
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.vy-guide li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.62em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+}
+
+/* ---- Context layout: main + sticky aside (container-query driven) ----- */
+.vy-ctx {
+  container-type: inline-size;
+  min-width: 0;
+}
+
+.vy-ctx-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+@media (min-width: 600px) {
+  .vy-ctx-grid {
+    gap: var(--space-6);
+  }
+}
+
+/* The enquiry thread always used a 24px rhythm, at every width. */
+.vy-ctx-tight > .vy-ctx-grid {
+  gap: var(--space-5);
+}
+
+.vy-ctx-main,
+.vy-ctx-aside,
+.vy-ctx-after {
+  display: contents;
+}
+
+.vy-ctx-wide-only {
+  display: none !important;
+}
+
+/* A block rendered in its phone position only; its children join the
+   surrounding flow as if the wrapper were not there. */
+.vy-ctx-contents {
+  display: contents;
+}
+
+@container (min-width: 860px) {
+  .vy-ctx-grid,
+  .vy-ctx-tight > .vy-ctx-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-rows: auto 1fr;
+    gap: var(--space-5) var(--space-6);
+    align-items: start;
+  }
+
+  .vy-ctx-main,
+  .vy-ctx-after {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    min-width: 0;
+    grid-column: 1;
+  }
+
+  .vy-ctx-main {
+    grid-row: 1;
+  }
+
+  .vy-ctx-after {
+    grid-row: 2;
+  }
+
+  .vy-ctx-aside {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    position: sticky;
+    top: 72px;
+    min-width: 0;
+  }
+
+  .vy-ctx-wide-only {
+    display: flex !important;
+  }
+
+  .vy-ctx-narrow-only {
+    display: none !important;
+  }
+
+  /* An action row inside the aside stacks full width, primary first. */
+  .vy-ctx-aside .vy-ctx-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .vy-ctx-aside .vy-ctx-actions > .vy-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  /* Secondary actions read as a quiet menu in one panel, not as loose
+     centred words floating in the column. */
+  .vy-ctx-aside .vy-ctx-actions {
+    gap: 4px;
+    padding: var(--space-2);
+    background: var(--surface-raised);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+  }
+
+  .vy-ctx-aside .vy-ctx-actions > .vy-btn-ghost {
+    text-align: left;
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+  }
+
+  .vy-ctx-aside .vy-ctx-actions:empty {
+    display: none;
+  }
+
+  /* Messages read as a conversation: the viewer's own sit right. */
+  .vy-thread-msg {
+    max-width: 80%;
+  }
+
+  .vy-thread-msg-mine {
+    align-self: flex-end;
+  }
+}
+
+/* The aside's summary card: quiet label over a confident value. */
+.vy-ctx-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.vy-ctx-card dl {
+  margin: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.vy-ctx-card dt {
+  font-size: var(--type-xs);
+  color: var(--text-tertiary);
+  letter-spacing: 0.01em;
+}
+
+.vy-ctx-card dd {
+  margin: 2px 0 0;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.vy-ctx-card dd a {
+  text-decoration: none;
+}
+
+.vy-ctx-card dd a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.vy-ctx-heading {
+  font-size: var(--type-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+/* ---- Settings layout (Privacy) ---------------------------------------- */
+.vy-settings,
+.vy-settings-main {
+  display: contents;
+}
+
+.vy-settings-nav {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .vy-settings {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: var(--space-7);
+    align-items: start;
+  }
+
+  .vy-settings-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    min-width: 0;
+    max-width: 760px;
+  }
+
+  .vy-settings-main > section {
+    scroll-margin-top: 80px;
+  }
+
+  .vy-settings-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    position: sticky;
+    top: 72px;
+  }
+
+  .vy-settings-nav a {
+    display: block;
+    padding: 9px var(--space-3);
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    font-size: var(--type-sm);
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: background-color var(--dur-exit) var(--ease-out), color var(--dur-exit) var(--ease-out);
+  }
+
+  .vy-settings-main input[type="checkbox"] {
+    accent-color: var(--accent);
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    margin-top: 3px;
+  }
+
+  .vy-settings-main .vy-toggle-row {
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--border-hairline);
+    gap: var(--space-5);
+  }
+
+  .vy-settings-main .vy-card-title + .vy-toggle-row {
+    border-top: none;
+    padding-top: 0;
+  }
+}
+
+@media (hover: hover) and (min-width: 900px) {
+  .vy-settings-nav a:hover {
+    background: var(--surface-raised);
+    color: var(--text-primary);
+  }
+}
+
+/* ---- Workspace dashboard ---------------------------------------------- */
+.vy-dash {
+  display: contents;
+}
+
+.vy-dash-facts {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .vy-dash-facts {
+    display: grid;
+  }
+}
+
+.vy-plan-side {
+  display: contents;
+}
+
+@media (min-width: 900px) {
+  .vy-dash {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-5);
+    align-items: start;
+  }
+
+  .vy-dash > * {
+    min-width: 0;
+  }
+
+  .vy-dash-full {
+    grid-column: 1 / -1;
+  }
+
+  .vy-plan-choose {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    /* the spanning disclosure column's extra height goes to the last
+       (flexible) row, so Confirm stays right under the choices */
+    grid-template-rows: auto auto 1fr;
+    gap: var(--space-4) var(--space-7) !important;
+    align-items: start;
+  }
+
+  .vy-plan-choose > h2 {
+    grid-column: 1 / -1;
+  }
+
+  .vy-plan-choose > [role="radiogroup"] {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .vy-plan-choose > .vy-btn {
+    grid-column: 1;
+    grid-row: 3;
+    align-self: start;
+  }
+
+  .vy-plan-side {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    grid-column: 2;
+    grid-row: 2 / span 2;
+    border-left: 1px solid var(--border-hairline);
+    padding-left: var(--space-6);
+  }
+
+  .vy-plan-side > dl {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .vy-plan-side > dl > div:nth-child(n + 4) {
+    grid-column: 1 / -1;
+  }
+
+  .vy-plan-hint dd {
+    font-weight: 400;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+}
+
+/* ---- Focused flows: boost, checkout, first-run ------------------------ */
+.vy-split,
+.vy-split-main,
+.vy-split-aside,
+.vy-checkout,
+.vy-checkout-intro {
+  display: contents;
+}
+
+@media (min-width: 900px) {
+  .vy-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 400px;
+    gap: var(--space-7);
+    align-items: start;
+  }
+
+  .vy-split-main,
+  .vy-split-aside {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    min-width: 0;
+  }
+
+  .vy-split-aside {
+    position: sticky;
+    top: 72px;
+  }
+
+  /* Boost disclosure: the short money/date facts pair up two by two so the
+     confirm button stays near the fold; the five explanatory rows (always
+     the last five) keep the full width. */
+  .vy-split-aside dl {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3) var(--space-4) !important;
+  }
+
+  .vy-split-aside dl > div:nth-last-child(-n + 5) {
+    grid-column: 1 / -1;
+  }
+
+  /* Duration options as a row of equal cards rather than a tall list. */
+  .vy-option-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: var(--space-3) !important;
+  }
+
+  .vy-option-grid > .vy-card {
+    flex-direction: column;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: var(--space-3);
+    min-height: 112px;
+    text-align: left;
+  }
+
+  .vy-shell.vy-firstrun {
+    max-width: 920px;
+  }
+
+  .vy-firstrun .vy-input {
+    max-width: 560px;
+  }
+
+  .vy-firstrun .vy-stack > .vy-btn-primary,
+  .vy-firstrun .vy-stack > .vy-btn-ghost {
+    align-self: flex-start;
+    min-width: 240px;
+  }
+
+  .vy-firstrun-cats {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-3) !important;
+  }
+
+  .vy-firstrun-help {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3) !important;
+  }
+
+  .vy-firstrun-help > .vy-btn {
+    min-height: 64px;
+    text-align: left;
+    border-radius: var(--radius-md);
+  }
+
+  .vy-checkout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 420px;
+    gap: var(--space-7);
+    align-items: start;
+    /* a focused flow: one centred group, not two ends of a wide screen */
+    width: 100%;
+    max-width: 960px;
+    margin: var(--space-6) auto 0;
+  }
+
+  .vy-checkout-intro {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .vy-checkout .vy-card {
+    padding: var(--space-6);
+  }
+}
+
+
+/* Your profile: business and professional side by side (owner, 2026-09-22). */
+.vy-profile-kinds {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.vy-profile-kind {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  text-decoration: none;
+  color: inherit;
+}
+
+.vy-profile-kind-mark {
+  flex: 0 0 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  display: grid;
+  place-items: center;
+  background: var(--surface-nested);
+  color: var(--text-secondary);
+  font-size: 18px;
+}
+
+.vy-profile-kind-empty {
+  border-style: dashed;
+}
+
+.vy-profile-kind-cta {
+  color: var(--accent-strong);
+  font-weight: 600;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+@media (min-width: 720px) {
+  .vy-profile-kinds {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+/* ====================================================================== */
+/* Design tightening, 2026-09-22 (owner: "Do the changes.")               */
+/* Fewer borders, a clearer type ladder, real icons, a proper desktop     */
+/* header, denser phone tiles, one link style.                            */
+/* ====================================================================== */
+
+/* 1. Type ladder. Section labels were 14px grey text that never led the
+   eye. An eyebrow is small, tracked and quiet; a section title is now
+   primary-coloured and clearly a step below the page title. */
+.vy-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.vy-section-title {
+  color: var(--text-primary);
+  font-size: var(--type-heading);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+/* 2. Fewer borders. Cards keep a hairline, not a full border; nested
+   facts and tiles are surfaces, not outlined boxes. */
+.vy-card {
+  border-color: var(--border-hairline);
+}
+
+.vy-fact {
+  border: none;
+  background: var(--surface-nested);
+}
+
+/* 3. Hub tiles: icon + description on every width, borderless surface
+   that only outlines on hover/focus. Denser on the phone. */
+.vy-hub-tile {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid transparent;
+  background: var(--surface-raised);
+  box-shadow: none;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.vy-hub-tile:hover,
+.vy-hub-tile:focus-visible {
+  border-color: var(--border-default);
+  background: var(--surface-overlay);
+}
+
+.vy-hub-tile-mark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--surface-nested);
+  color: var(--text-secondary);
+  flex: 0 0 36px;
+}
+
+.vy-hub-tile-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.vy-hub-tile-title {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.vy-hub-tile-desc {
+  display: block;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.vy-hub-tile-arrow {
+  color: var(--text-tertiary);
+}
+
+.vy-profile-kind-mark,
+.vy-choice-mark {
+  color: var(--text-secondary);
+}
+
+.vy-profile-kind {
+  border-color: var(--border-hairline);
+}
+
+.vy-profile-kind-empty {
+  border-style: dashed;
+  border-color: var(--border-default);
+  background: transparent;
+}
+
+/* 4. Rail: icons align with the label baseline. */
+.vy-rail-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+}
+
+/* 5. Desktop header: the language / alerts / account pills sit on a real
+   bar, not on a gradient patch over the content. Phone keeps the light
+   scrim so the floating pills stay readable over scrolled content. */
+@media (min-width: 900px) {
+  .vy-topbar-scrim {
+    height: 60px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border-hairline);
+  }
+}
+
+/* 6. One link style for plain links inside content (View or edit, View
+   profile, Report if asked): accent, no underline until hover. Classed
+   anchors (buttons, cards, rail links) are untouched. */
+a:not([class]) {
+  color: var(--accent-strong);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+a:not([class]):hover,
+a:not([class]):focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Section spacing carries structure now that borders do less of it. */
+.vy-hub-main > * + * {
+  margin-top: var(--space-2);
 }

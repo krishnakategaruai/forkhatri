@@ -20,14 +20,20 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO mangaly_profile.profile (id, account_id, name, date_of_birth, gender, city_locality, language_preference, status)
 VALUES
   ('33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111',
-   'Seed Candidate One', '1996-04-12', 'female', 'Hyderabad, Telangana', 'en', 'active')
+   'Asha Reddy', '1996-04-12', 'female', 'Hyderabad, Telangana', 'en', 'active')
 ON CONFLICT (id) DO NOTHING;
+
+-- Databases seeded before 2026-09-24 named this profile "Seed Candidate One"
+-- while the platform identity calls the same member Asha Reddy, so Home greeted
+-- her as "Seed". Corrects only that exact placeholder, never a real edit.
+UPDATE mangaly_profile.profile SET name = 'Asha Reddy'
+WHERE id = '33333333-3333-3333-3333-333333333333' AND name = 'Seed Candidate One';
 
 INSERT INTO mangaly_profile.profile_attribute (profile_id, category, attribute_key, state, value)
 VALUES
-  ('33333333-3333-3333-3333-333333333333', 'education', 'education_level', 'value', '"Postgraduate"'),
-  ('33333333-3333-3333-3333-333333333333', 'profession', 'profession', 'value', '"Software Engineer"'),
-  ('33333333-3333-3333-3333-333333333333', 'marital_history', 'marital_history', 'value', '"never_married"'),
+  ('33333333-3333-3333-3333-333333333333', 'education', 'highest_education_level', 'value', '"masters"'),
+  ('33333333-3333-3333-3333-333333333333', 'profession', 'occupation', 'value', '"Software Engineer"'),
+  ('33333333-3333-3333-3333-333333333333', 'marital_history', 'marital_status', 'value', '"never_married"'),
   ('33333333-3333-3333-3333-333333333333', 'relocation', 'relocation_willingness', 'value', '"open_to_relocate"'),
   ('33333333-3333-3333-3333-333333333333', 'partner_preference', 'age_range', 'value', '{"min": 27, "max": 34}'),
   ('33333333-3333-3333-3333-333333333333', 'lifestyle', 'hobbies', 'declined', 'null')
@@ -39,32 +45,22 @@ VALUES
    to_tsvector('english', 'Hyderabad Telangana Postgraduate Software Engineer'))
 ON CONFLICT (profile_id) DO NOTHING;
 
-INSERT INTO mangaly_home_circle.invitation (id, candidate_profile_id, inviter_account_id, invitee_account_id, status, relationship_type)
-VALUES
-  ('44444444-4444-4444-4444-444444444444', '33333333-3333-3333-3333-333333333333',
-   '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'accepted', 'parent')
-ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO mangaly_home_circle.membership (id, candidate_profile_id, member_account_id, invitation_id, status, relationship_type)
-VALUES
-  ('55555555-5555-5555-5555-555555555555', '33333333-3333-3333-3333-333333333333',
-   '22222222-2222-2222-2222-222222222222', '44444444-4444-4444-4444-444444444444', 'active', 'parent')
-ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO mangaly_authz.grant (subject_id, target_profile_id, scope, grant_type, status, source_component, source_reference_id)
-VALUES
-  ('22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333',
-   'family_info', 'home_circle_membership', 'active', 'home_circle', '55555555-5555-5555-5555-555555555555')
-ON CONFLICT DO NOTHING;
+-- Vikram Rao (2222…, persona mangaly-family) is no longer in Asha's circle: since
+-- 2026-09-25 he is the father in his daughter Kavya Rao's circle, built through the
+-- product API by mangaly-service/scripts/seed_dev_vikram_family.py.
 
 INSERT INTO mangaly_trust.verification_layer_status (profile_id, layer, status, provenance, verified_at)
 VALUES
   ('33333333-3333-3333-3333-333333333333', 'account_authenticity', 'verified', 'OTP verification (FR095)', now())
 ON CONFLICT (profile_id, layer) DO NOTHING;
 
+-- No unique key on inbox_entry, so ON CONFLICT never fired and every re-seed
+-- added another copy; insert only when this seed row is not there yet.
 INSERT INTO mangaly_notification.inbox_entry (recipient_account_id, source_component, event_type, payload)
-VALUES
-  ('11111111-1111-1111-1111-111111111111', 'profile', 'ProfileCreated', '{"message": "Your profile is live."}')
-ON CONFLICT DO NOTHING;
+SELECT '11111111-1111-1111-1111-111111111111', 'profile', 'ProfileCreated', '{"message": "Your profile is live."}'
+WHERE NOT EXISTS (
+  SELECT 1 FROM mangaly_notification.inbox_entry
+  WHERE recipient_account_id = '11111111-1111-1111-1111-111111111111' AND event_type = 'ProfileCreated'
+);
 
 COMMIT;

@@ -1,13 +1,75 @@
 ---
 step: 09-implementation
 module: MOD01
-status: In Progress
+status: Ready for Review
 approver: Engineering Manager / Tech Lead
-updated: 2026-09-15
-items: "55 of 55 FRs have a real IMP entry (FR43 partial — see IMP25) as IMP00-IMP25 + i18n/design fixes + 3 coordinator-reported bugs fixed | approved: 0 | blockers: 2 (real payment-vendor account; recurring host memory exhaustion currently blocking API server verification — see IMP25 incident note)"
+updated: 2026-09-17
+items: "55 of 55 FRs have a real, live-verified IMP entry (FR43 partial, honestly declared — see IMP25) across IMP00-IMP33 | approved: 0 | blockers: 1 (real Razorpay vendor account — DevSandboxGateway stands in)"
 ---
 
 # 09 — Implementation — MOD01 Vyapar
+
+## Prototype ready — summary (2026-09-17)
+
+**All 55 FRs have a real, working implementation**, each traceable to an IMP
+entry below and each backed by a live-endpoint check (curl and/or
+`test_slice*.py` scripts, not code-reading alone) run against the running
+API on this date. **FR43 (accessibility) is the one genuinely partial item**:
+a real manual review found and fixed two concrete WCAG gaps (missing
+`:focus-visible` styling app-wide, and two form fields whose only accessible
+name was a placeholder) — but a full label/`id`+`htmlFor` audit across every
+other form and a colour-contrast pass remain undone. This is declared
+honestly in IMP25, not silently dropped. No FR is fully skipped; the only
+standing blocker is a real external vendor account (Razorpay production
+keys) — `DevSandboxGateway` (app/payment_gateway.py) stands in with
+Razorpay-shaped signed webhook events so the whole payment flow is exercised
+end to end in this environment.
+
+**Bugs found and fixed across two full completion passes** (coordinator's
+browser screenshots + this session's own live curl sweeps and static
+scans): untranslated `actionLabel` key literal, raw taxonomy slugs on cards,
+a duplicate-looking notification, the wrong Employment-public action label,
+a raw `work_mode` enum leak, a "~1 days" grammar bug, a stale/contradictory
+Profile-hub sentence (fixed directly by the coordinator), plus three
+backend-only bugs this session's live sweep caught that no manual
+screenshot pass would have surfaced on a healthy path: `content_language`
+written to a column that doesn't exist on `enquiries` (only on
+`enquiry_messages`), an undeclared `lang` name in two GET handlers
+(`/v1/listings/search`, `/v1/listings/mine`), and a static route
+(`/v1/workspace/mine`) permanently shadowed by a dynamic one
+(`/v1/workspace/{listing_id}`) registered earlier in the same router. All
+verified live post-fix; see IMP26.
+
+**How to open the app:** with both servers running (see below), open
+`http://localhost:3011` in a browser. There is no login screen by design —
+identity comes from the dev member switcher (see below), standing in for
+the parent ForKhatri platform's real session until this module is wired
+into it.
+
+**Dev member switcher:** the 🧪-prefixed pill fixed to the top-right corner
+of every screen. Tap it to see the full seeded member roster (fetched live
+from `GET /v1/dev/members`) and pick any of them — the switch is instant
+(no reload) and stored in `localStorage`, read by every subsequent API call
+via the `X-Dev-Member-Id` header. Useful identities: `m_krishna` (product
+owner, ordinary member), `m_anita`/`m_rahul`/`m_arjun`/`m_priya`/`m_gaurav`
+(ordinary members with varied seeded listings/opportunities/reviews),
+`m_neha_ops` (holds every operator permission — verification, moderation,
+commercial, content, analytics — for the admin screens). This switcher is
+explicitly not an authentication flow; it selects an identity the real
+platform would already have authenticated.
+
+**Running the app:**
+- API: `cd vyapar-service && .venv/Scripts/python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8011`
+- Web: `cd vyapar-web && npm run dev` (pinned to port 3011 in `package.json`)
+- Postgres `vyapar` @ localhost:5433 must already be migrated/seeded (Step 7a's own scripts) — both servers assume it, neither creates it.
+
+**FR-by-FR status:** every FR01-FR55 has a matching IMP entry in this file
+(grep `FR<nn>` against this file to find it) — see the Coverage check table
+below for the parent-Tech-Req mapping, and IMP20 through IMP26 for the
+majority of the slices built in the most recent sessions (verification,
+trust & safety, reviews/partnerships, commercial/boost/payments,
+workspace/entitlements/campaigns, privacy/analytics/adjacent-contracts, and
+this final correctness pass).
 
 Continuous, autonomous build per the standing product-owner direction ("never
 wait for me... complete this application developing as continuous chain").
@@ -65,6 +127,26 @@ cards with the three trust axes kept visually distinct per 04-ui.md's
 separation rule. Documented in full under IMP-DESIGN below.
 
 ## Resume point (read this first when resuming)
+
+**LATEST (2026-09-17, IMP33 — supersedes everything below for UI work):**
+Vyapar now has real desktop layouts. 04-ui.md F4's sealed breakpoint model
+(≥600 / ≥900 / ≥1024) was never implemented — every screen was a flat 480px
+phone column at any viewport width — and IMP33 closes that gap across all 30
+screens, together with a large visual/motion pass (fluid type scale, app-wide
+hover/press/focus states, skeleton and empty states, React `<ViewTransition>`
+route + shared-element motion, `motion`-driven list stagger, the persistent
+240px left rail). **Three things are outstanding and are NOT claimed as
+done:** (1) no visual/screenshot verification at 390px or 1440px was possible
+from that session — the `mcp__chrome-devtools-vyapar__*` tools were not
+available and no Playwright/Puppeteer exists in the repo, so the first
+session with a browser should walk Discover, Businesses, both detail screens,
+Enquiries and Admin Verification at both widths before treating IMP33 as
+closed; (2) `admin/moderation`, `admin/commercial` and `admin/ops` got the
+console width but not the full ≥1024 list+record pane that
+`admin/verification` got; (3) Activity deliberately got a grouped grid rather
+than a split pane — reasoning recorded in IMP33, revisit only if the owner
+disagrees.
+
 
 **CURRENT (2026-09-17, supersedes the older notes below):** slices 1-9 are
 built — FR01-FR35, FR39-FR41, FR44, FR47, FR49, FR50, FR51, FR54, FR55
@@ -2251,3 +2333,723 @@ A second episode of the same class of failure documented under IMP24's incident 
 4. Left the last restart attempt running in the background rather than continuing to hammer the host with more spawn attempts once the Cygwin fork failure made the root cause unambiguous.
 
 **Status:** web (3011) and the shared Postgres cluster (5433) remained healthy throughout this incident and were not restarted. The API (8011) is down as of this record and its restart is queued to resume the moment host conditions allow — this is the very first action on resume, ahead of any further feature work.
+
+---
+
+## IMP26 — Live verification after host recovery + coordinator's second bug batch + 3 self-found live-endpoint bugs
+**Traces from:** FR38, FR53 (verification only), FR55, FR28, FR42, FR33, FR34
+**Status:** Complete
+
+**Files touched**
+- `vyapar-service/app/routers/enquiries.py` — moved `content_language` off the (column-less) `enquiries` INSERT onto both `enquiry_messages` INSERTs (create + reply) — [comment block present: Yes]
+- `vyapar-service/app/routers/discovery.py` — added the missing `lang: Locale` parameter to `search_listings` (three existing `lang=lang` call sites were referencing an undeclared name) — [comment block present: Yes]
+- `vyapar-service/app/routers/listings.py` — same fix, added `lang: Locale` to `list_my_listings` — [comment block present: Yes]
+- `vyapar-service/app/routers/workspace.py` — moved the static `/v1/workspace/mine` route to be registered before the dynamic `/v1/workspace/{listing_id}` route (Starlette matches registration order; the dynamic route was silently swallowing every `/mine` call) — [comment block present: Yes]
+- `vyapar-web/app/opportunities/[id]/page.tsx` — Employment public/external items now say "Apply on source website" instead of the generic "Open official website"; `work_mode` enum rendered through a display-label map instead of raw
+- `vyapar-web/app/components/Reputation.tsx` — "Responds in ~1 days" → "Responds in ~1 day" (explicit singular key, not relying on unwired i18next plural suffixes)
+- `vyapar-web/locales/{en,hi,te}/opportunities.json` — added `actionLabel.applyOnSource`, `workMode.{on_site,remote,both}`
+- `vyapar-web/locales/{en,hi,te}/reviews.json` — added `oneDay`
+
+**Approach**
+Resumed after the host memory-exhaustion incident cleared and both servers were confirmed up. Rewrote and ran `test_slice10.py` end to end (22/22 pass, cleans up its own data) against the live API, which caught the `content_language` bug on enquiries immediately (a real ER-model-vs-code mismatch: the column only exists on `enquiry_messages`, not `enquiries` — an earlier slice had wrongly written it onto both). Rather than stop at the coordinator's named 6 UI issues, ran a broader curl sweep across every top-level screen's backing endpoint (home, businesses, listing/opportunity detail, notifications, activity, profile, moderation, verification, promotions, workspace, campaigns, privacy, admin ops) plus a static AST/regex scan for the same two bug classes (an undeclared `lang` name used via `lang=lang`, and static-vs-dynamic FastAPI route shadowing within a single router) across all router files — both scans are now clean project-wide. Each fix was verified live (curl 200, or the full test suite) after an exact-PID server restart (via a saved PowerShell `Start-Process` script, redirecting logs to `api-out.log`/`api-err.log`, per the coordinator's guidance to avoid bare bash `&`/nohup under load) — never a claim from code reading alone.
+Of the coordinator's own 6-item batch: items 1 (FR55 action label), 2 (work_mode enum), 3 (grammar) were coordinator-confirmed already fixed in code from the previous session and are now also confirmed by this session's fresh restart+curl pass; item 4 (header identity) was coordinator-diagnosed as a transient load flash, not a persistent bug — accepted, no further change; item 5 (Profile hub contradiction) was fixed directly by the coordinator (`profile.json`, `profile/page.tsx`, `moderation/outcomes/page.tsx`, env files) — confirmed present in the codebase, not touched again to avoid conflicting edits; item 6 ("To review" group) was accepted as documented-intentional, no change.
+
+**Assumptions:** the coordinator's own 5 direct fixes are correct as delivered and out of scope for this entry to re-litigate; only re-verified they exist, did not re-review their internals line by line.
+**Decisions (append-only):** any future new endpoint that accepts a language header must declare `lang: Locale` as an explicit parameter — never assume a same-named module-level variable; any new static sub-route under an existing `{param}`-based router must be registered before the dynamic route, checked going forward by the `check_routes.py` scan pattern used here (not committed as a permanent CI script, but the pattern is now documented here for reuse).
+**Review history:** self-reviewed via live test suite + broad curl sweep + static AST scan, not code-reading alone.
+**Approval:** Eng Manager / Tech Lead — [ ] Approved — pending
+
+---
+
+## IMP27 — Live two-user testing batch + code critique: FR15/FR19 filter regression, enquiry list bug, forced-typing audit, real file upload, Trust context sheet, composer UX12 gaps
+**Traces from:** FR11, FR15, FR16, FR17, FR19, FR22, FR23, FR25, FR26, FR27, FR34, FR39, UX07, UX12
+**Status:** Complete
+
+**Files touched**
+- `vyapar-service/app/routers/discovery.py` — real radius/availability filters, `sort_by` (relevance/distance/freshness/verified_first), real haversine-approximation `distance_km` using caller+listing lat/lng — [comment block: Yes]
+- `vyapar-service/app/routers/enquiries.py` — `content_language` fix (see IMP26), `target_name`/`counterpart_name` enrichment on `/mine` via `public_names()`, `attachment_url` exposed on `EnquiryMessageOut` (was stored, never returned) — [comment block: Yes]
+- `vyapar-service/app/routers/uploads.py` (new) — the one real file-upload endpoint (`POST /v1/uploads`, local-disk dev storage, served back via `/uploads` static mount) — [comment block: Yes]
+- `vyapar-service/app/main.py` — wired `uploads.router` + static mount
+- `vyapar-web/app/components/FilterSheet.tsx` (new) — real structured filters (radius/service-mode/availability/verified-only/sort-by), shared component
+- `vyapar-web/app/components/FileUpload.tsx` (new) — the one real file-picker component, used by both the opportunity screenshot field and the enquiry composer's attachment field
+- `vyapar-web/app/components/Verification.tsx` — new `TrustContextSheet` component; `VerificationBadge` now optionally tappable
+- `vyapar-web/app/businesses/page.tsx` — wired `FilterSheet`, distance display
+- `vyapar-web/app/listings/[id]/page.tsx` — wired `TrustContextSheet`, tappable trust badge, `#report-listing` anchor
+- `vyapar-web/app/opportunities/new/page.tsx` — real file upload for "Upload a screenshot"
+- `vyapar-web/app/enquiries/new/page.tsx` — trust context card, live char counter, parsed 409/429/400 errors into UX12's exact copy with a real "Open it" link, Fixed/Hourly rate-type toggle, real attachment upload
+- `vyapar-web/app/enquiries/[id]/page.tsx` — attachment file-chip rendering in the thread
+- `vyapar-web/app/enquiries/mine/page.tsx` — full rewrite (see below)
+- `vyapar-web/lib/api.ts` — `uploadFile()`, `resolveAttachmentUrl()`
+- Locale additions across en/hi/te: `discover.json` (filters/sort), `enquiries.json` (counter/privacy line/error copy/rate-type/attachment/actionType/mine), `verification.json` (Trust context sheet), `common.json` (upload/remove/close)
+
+**Approach**
+Worked through the coordinator's live two-user test findings and a parallel code-critique agent's report, in the stated priority order.
+
+1. **FR15/FR19 filter regression (top priority, product-owner direction verbatim).** The IntentBar's free-text field had quietly become the ONLY way to narrow Businesses & Professionals results — hardcoded English-keyword parsing had displaced FR15's own named structured filters (radius/service-mode/availability/verification/freshness) and FR19's configuration-weighted ranking was never exposed as a user-facing sort. Fixed by: (a) making `radius_km` and `availability` real SQL filters for the first time (both existed as accepted parameters or table columns but were never actually applied), (b) adding a real `distance_km` using a planar-approximation formula against both the caller's and the listing's actual seeded lat/lng (both columns existed, unused), (c) adding `sort_by` with four real modes, (d) a new `FilterSheet` component making all of this a permanent, reachable control (a "Filters" button) rather than a hidden capability, with IntentBar remaining a shortcut INTO the filters, never the only path.
+2. **Forced-typing audit (product-owner direction verbatim: "labour and business people are both opportunity givers and takers").** Reviewed every provider/responder-side action: partnership accept/decline (already one-tap), review-invite Yes/No (already one-tap, comment genuinely optional), workspace invite accept/decline (already one-tap), moderation/verification operator decisions (already button/dropdown, not free text). Two apparent counter-examples were checked and found to be genuinely necessary typing, not a false gate: the appeal composer (a dispute inherently needs stated grounds; minimum gate is 1 non-empty character) and verification submission (an identifier/credential number cannot be replaced by a tap). No further fix needed — audit is the deliverable.
+3. **Enquiry list bug (`/v1/enquiries/mine` showing raw `"enquire · open"`).** Full rewrite: backend now joins listing/opportunity titles and resolves the counterpart's name through the same `public_names()` SECURITY DEFINER function FR18/feed.py already established for this exact RLS gap (a plain SELECT against `members` for another member is blocked by `members_self_or_operator`), and the frontend renders a translated action-type label, translated state, counterpart name, and a formatted timestamp — matching every other list in the app.
+4. **Critique agent's top 5.** (a) Composer error parsing: 409 (duplicate-open) previously rendered as `"[object Object]"` because `String(e.detail)` was called on an object — now parsed per-status into UX12's exact wireframe copy, with a real "Open it" link using the response's `existing_enquiry_id`; added the live "count / max · at least min" counter and the UX12 safety line; added a real trust-labelled context card (target name, locality/type summary, verification badge) that never existed. (b) FR15 filter regression — see item 1. (c) Real file upload for "Upload a screenshot" — one new `POST /v1/uploads` endpoint (local-disk dev storage, same honest "no object-storage vendor" gap already declared for verification documents and privacy exports) and one shared `FileUpload` component, replacing the pasted-URL-only field. (d) Submit-a-Proposal: added a Fixed/Hourly rate-type toggle and a real attachment control (reusing the same FileUpload component) — FR22 already allowed one attachment; it just had no UI. (e) UX07's Trust context sheet — genuinely did not exist anywhere; built `TrustContextSheet` (modal bottom sheet: what was checked with state-specific sentences, "Contact verified" explanation, the mandatory "What this doesn't mean" disclaimer, and a "Report a problem" link that scrolls to the existing `ReportSheet`), reachable by tapping the verification badge on Listing Detail.
+5. **Secondary fix found while touching `EnquiryMessageOut`:** `attachment_url` was stored on every message insert since the very first slice but never included in the response model — the thread view had no data to render an attachment even before this pass added new ways to create one. Fixed for both the create-enquiry and reply-to-enquiry paths, plus rendered as a file-chip link in the thread.
+
+**Doc/spec note (per coordinator instruction, not silently diverged):** the enquiry composer (rewritten in an earlier slice, extended further this slice with attachment/rate-type/char-counter/context-card/error-copy) is now more detailed than sealed UX12's own wireframe in some respects (per-type structured sub-flows) while also completing several things UX12 explicitly named that were missing (context card, counter, error copy). This is treated as UX12 under-specifying this step, with FR22's actual behavior contract as the governing source — consistent with the standing approach recorded in an earlier IMP entry for this same composer.
+
+**Manual test evidence**
+- `py_compile` clean on every touched backend file.
+- Live curl verification of every backend change: `/v1/listings/search` with `sort_by=distance` returning real, increasing distances; `sort_by=verified_first` returning verified listings first; `availability=now`/`radius_km=5` both 200; `/v1/enquiries/mine` returning real `target_name`/`counterpart_name` for both roles; `/v1/uploads` accepting a real multipart file and the returned URL being immediately fetchable (200); a full create-enquiry to attachment round-trip confirmed end to end via curl, then cleaned up.
+- `test_slice10.py` rerun clean (22/22) after every restart in this batch — no regression introduced.
+- Frontend: curl 200 + no compile errors in `web-out.log`/`web-err.log` for every touched page (`/businesses`, `/opportunities/new`, `/enquiries/mine`, `/enquiries/new`, `/listings/{id}`) after each edit.
+
+**Deviations from plan / honest scope**
+1. The reply-to-enquiry composer (mid-thread, not the initial compose step) does not yet have a file-upload control — only the initial compose step and the opportunity screenshot field were wired to the new `FileUpload` component, per the critique's own priority ordering. `MessageIn.attachment_url` already exists server-side for when this is added.
+2. `distance_km`/radius filtering silently no-ops (matches nothing excluded) for any member or listing missing seeded lat/lng — both columns exist but are not populated for every seed row; this is disclosed in the code's own comment, not hidden.
+3. FR34 (workspace invite typing) and FR41 (appeal typing) were reviewed as part of the forced-typing audit but no code changed for them — recorded as "audited, no fix needed" rather than skipped.
+
+**Assumptions:** `python-multipart` (already installed, already a FastAPI extra dependency, not newly added) is sufficient for `UploadFile`/`File` — confirmed via `pip show` before use, not assumed.
+**Decisions (append-only):** file uploads across the whole module go through exactly one endpoint (`POST /v1/uploads`) and one frontend component (`FileUpload.tsx`) — any future "attach a file" need (reply composer, verification documents, review disputes) should call this, not build a second upload path.
+**Review history:** self-reviewed via live curl + full regression suite + frontend compile checks, not code-reading alone.
+**Approval:** Eng Manager / Tech Lead — [ ] Approved — pending
+
+---
+
+## IMP28 — Second critique pass fixes (verification/moderation/appeals/boost), header overlap bug, final raw-enum sweep
+**Traces from:** FR08, FR09, FR25, FR40, FR41, FR47, UX07
+**Status:** Complete
+
+**Files touched**
+- `07a-db-implementation/migrations/011-appeal-evidence.sql` (new) — extends `file_appeal()` with an `evidence_urls text[]` parameter, dropping and replacing the old 2-arg signature — [comment block: Yes]
+- `vyapar-service/app/routers/trust_safety.py` — `moderation_queue()` returns real `prior_case_history` (action/reason/date per prior case, not a count); `AppealIn.evidence_urls`; `file_appeal()` call updated to 3 args
+- `vyapar-service/app/routers/commercial.py` — `boost_options()` returns `category_labels` alongside raw `categories` (listing via `labels_for()`, opportunity via a new `opportunities.type.*` i18n block)
+- `vyapar-service/app/i18n/locales/{en,hi,te}/opportunities.json` — new `type.*` block (backend)
+- `vyapar-web/app/admin/verification/page.tsx` — real reason-code select gating Reject/Needs-clearer-copy (reused the exact pattern already correct in admin/moderation/page.tsx); public GST/Udyam lookup link per document type
+- `vyapar-web/app/admin/moderation/page.tsx` — prior-cases count is now an expandable real history list
+- `vyapar-web/app/moderation/outcomes/page.tsx` — appeal form now has a real evidence-attachment control (reused `FileUpload`)
+- `vyapar-web/app/boost/[kind]/[id]/page.tsx` — audience chip renders `category_labels[i]` instead of `category.replace(/_/g, ' ')`
+- `vyapar-web/app/admin/ops/page.tsx` — two more raw-enum leaks found via a project-wide grep sweep (`o.type`, `term.status`/`term.kind`), fixed
+- `vyapar-web/app/layout.tsx`, `NotificationBell.tsx`, `DevMemberSwitcher.tsx` — real, live-reported header-overlap bug fix (see below)
+- Locale additions across en/hi/te: `verification.json` (publicLookup/chooseReason/reasonCode), `trustSafety.json` (caseState, evidenceLabel), `adminOps.json` (taxonomy.kind/status), `opportunities.json` (frontend `type.*` block)
+
+**Approach**
+
+1. **Verification queue reason code (was posting `{}` for every decision).** The backend `DecisionIn.reason_code` field and DB storage already existed and worked correctly — only the frontend never collected or sent one. Reused the exact REASON_CODES-select-gates-Apply pattern already correct in `admin/moderation/page.tsx` rather than inventing a second UI pattern; Verify stays a direct one-tap action (no reason needed), Reject/Needs-clearer-copy now require picking one of 6 reason codes before the button enables. Live-verified: rejected a real pending seed record with `reason_code=document_illegible`, confirmed stored via direct DB read, then restored the record to its original pending state (test cleanup).
+2. **Public GST/Udyam lookup link (FR47's own explicit requirement, never built).** Added direct links to the real public registries (GST Search TP portal, Udyam Verify portal) per document type, next to each queue item — grounds the manual-lookup commitment FR08 DEC-001 already made in an actual, clickable place to do it.
+3. **Moderation history detail (was a bare count).** `moderation_queue()` now runs a second real query per case returning `action`/`reason_code`/`primary_reason`/`state`/`date` for every prior case on the same object, not just `count(*)`. Frontend renders this as a collapsed-by-default expandable list. Live-verified by inserting a temporary second case on a real flagged object, confirming the API returned full structured history, then deleting the test row.
+4. **Appeal evidence attachment (FR41 names it as explicitly optional, no control existed).** The `appeals.evidence_urls text[]` column existed since migration 001 but `file_appeal()` never accepted or wrote to it. New migration 011 extends the function with a third, defaulted parameter (old 2-arg signature dropped explicitly, since Postgres resolves overloads by parameter types, not by replacing on name alone). Reused the same `FileUpload` component built for enquiries/opportunities rather than a third upload path. Live-verified: inserted a temporary appealable case (the only real seed case eligible had already used its one appeal), filed a real appeal with an `evidence_urls` entry via curl, confirmed it round-tripped through the DB correctly, then deleted both the test appeal and the test case.
+5. **Boost audience chip raw slug (same class as earlier taxonomy-slug leaks, missed on this one screen).** `boost_options()` now returns `category_labels` — a listing's categories resolve through the same shared `labels_for()` cache every other screen already uses; an opportunity's single pseudo-category (its `type` enum) resolves through a new `opportunities.type.*` i18n block instead of the raw enum value. Live-verified against a real listing: `"Accounting & Tax"` instead of `accounting_tax`.
+6. **FR25 partnership-visibility gate — checked, already correct.** `partnership_open` is enforced server-side (`partnerships.py` rejects a request when the recipient has it off — real defense, not just UI hiding) and the frontend already hides the "Propose partnership" button under the same condition. No fix needed; recorded as verified rather than left unconfirmed.
+7. **Final raw-enum/slug sweep (grep across the whole frontend).** `grep -rn "replace(/_/g" app/ --include=*.tsx` returned zero matches after the boost-page fix. A broader sweep for un-translated enum interpolation found two more real leaks that had never been reported live, in the one internal admin screen the earlier sweeps hadn't covered: `admin/ops/page.tsx`'s opportunities-queue row showed the raw opportunity `type` directly, and its taxonomy list showed raw `kind`/`status` values. Both fixed with the same `t()`-lookup pattern used everywhere else.
+8. **Header overlap bug (live product-owner report: "Alerts and name is being missed up in UI") — reproduced the ROOT CAUSE via code reading, even though visual reproduction at 390/360/320px with the seeded short name didn't show it.** `NotificationBell` and `DevMemberSwitcher` were two INDEPENDENT `position: fixed` elements, each with a hand-guessed pixel offset assuming the other's exact width (`NotificationBell` hardcoded `right: 168` assuming `DevMemberSwitcher`'s pill is always ~154px). Any longer display name, or an unread badge reaching two digits, breaks that assumption and the two elements visually collide — exactly matching the report. Fixed structurally: both now sit inside one shared flex-row container in `layout.tsx` (real flexbox, `gap: 8`, neither child hardcodes the other's width), the name pill gets an explicit `max-width: 44vw` + ellipsis so no real member name can ever force the header wider than the viewport, and the unread badge is capped to display "99+" defensively. This is a structural fix, not a guess at a new magic-number offset — it cannot regress the same way for any future name length or badge value.
+
+**Manual test evidence**
+- `py_compile` clean on every touched backend file.
+- Migration 011 applied directly against the dev database (`DROP FUNCTION` / `CREATE FUNCTION` / `GRANT` all succeeded).
+- Every fix live-verified via curl against the running API (not code-reading alone) — see each numbered item above for its specific test; all test data created was cleaned up (temporary moderation cases, appeals, and one temporarily-mutated verification record were all restored/deleted).
+- `test_slice10.py` rerun clean (22/22) after this batch.
+- Frontend: every touched page (`/admin/verification`, `/admin/moderation`, `/moderation/outcomes`, `/boost/listing/{id}`, `/admin/ops`, `/`, `/businesses`, `/opportunities/new`, `/listings/{id}`, `/profile`) returns 200 with no compile errors in `web-out.log`/`web-err.log` after every edit.
+
+**Deviations from plan / honest scope**
+1. The header-overlap fix could not be visually confirmed against the exact device/browser/zoom the product owner is using (option (d) in the coordinator's own framing) — fixed defensively via a structural layout change that removes the underlying hardcoded-offset assumption entirely, which should hold regardless of the specific cause, but this is not the same as a confirmed-identical reproduction.
+2. The `setInterval` sweep (checking for a possible frequent-re-render cause behind a reported stale-accessibility-tree symptom) found only the one, 30-second notification-poll interval — not fast enough to explain a 1-2 second staleness. No other polling exists in the codebase. Most likely explanation is dev-mode Fast Refresh/React double-render behavior or the browser-automation tool's own timing, not a genuine app-level bug; recorded as checked-and-inconclusive rather than fixed, since there was nothing further to change.
+
+**Assumptions:** the six verification reason codes (document_illegible/expired/name_mismatch/document_type_mismatch/suspected_fraud/other) are a reasonable real-world set for a GST/Udyam/PAN/Shops-Establishment/credential reviewer to choose from — no fixed enum was named in FR08/FR09/the DB schema (the column is free text), so this is a judgment call, not a spec requirement.
+**Decisions (append-only):** the shared header (bell + identity pill) is now a single flex-row layout owned by `layout.tsx`, not two independently-positioned components — any future header addition (e.g. the real platform avatar replacing DevMemberSwitcher) should join this same flex row rather than reintroducing a hardcoded offset.
+**Review history:** self-reviewed via live curl round-trips for every backend change, full regression suite, and frontend compile checks across every touched page.
+**Approval:** Eng Manager / Tech Lead — [ ] Approved — pending
+
+## Note — Upwork/WorkIndia reference research, deferred per product-owner direction (2026-09-17)
+
+Two items queued from real Upwork/WorkIndia screenshots the product owner shared (saved to `modules/MOD01-vyapar/references/{upwork,workindia}/`), explicitly deferred until after this session's priority fix batch and the FR-completeness pass:
+
+1. **Upwork's "My proposals" screen** exposes a second row of state-filter chips with live counts (Offers/Invites/Discussing/Submitted) under a top-level tab set — a real precedent for restructuring `/enquiries/mine` with a second row of count-badged filter chips for FR23's real states (Open/Awaiting Response/In Progress/Resolved/Closed), on top of the existing Sent/Received tabs. Not yet built.
+2. **WorkIndia's job-detail screen** shows two primary actions side by side (in-app Apply AND a direct "Click to call HR"). The product owner was explicit this is a **question back to them, not a build decision**: should Employment/local-service opportunity detail get a second "Call directly" action when the poster's phone is already Public, given it interacts with FR24's default after-accepted contact-disclosure timing? **Not built — raised as an open question in this session's final report, per direct instruction not to decide it unilaterally.**
+3. **WorkIndia's onboarding job-type step** uses picture-card multi-select with scoped skill suggestions — approved by the product owner as a pure UX upgrade within FR44's existing behavior contract (guided, scoped capability capture), explicitly on condition it is an **original Vyapar design inside Vyapar's own design system** (near-monochrome, one accent colour, no gradients/glassmorphism, structured composers, floating command hub) solving the same problem, never a reproduction of WorkIndia's own layout/chrome/iconography. Not yet built — queued after the current fix batch, per the coordinator's own sequencing.
+4. **New requirement queued (2026-09-17):** "based on skills we need list to be flown" — add a skill/capability filter to the `FilterSheet` already built (reusing the taxonomy capability list, same pattern as categories), on both Discover and Businesses & Professionals, extending FR19's existing capability-fit ranking signal into an explicit member-controlled filter. To be built consistently with item 3's skill-selection UI pattern where sensible. Not yet built — queued.
+
+None of these four items are built yet; none are silently dropped. All four are explicitly sequenced to come after the current priority batch, per direct coordinator instruction each time they were raised.
+
+---
+
+## IMP29 — Third critique pass (6 items) + submitter-name gap + FR44 onboarding upgrade (product-owner-reaffirmed) + live i18n bug fixes
+**Traces from:** FR11, FR15, FR20, FR22, FR23, FR26, FR44, FR55, UX08, UX09, UX12
+**Status:** Complete
+
+**Files touched**
+- `vyapar-web/app/enquiries/new/page.tsx` — rendered the already-populated `duplicateEnquiryId`/`error` state (409 handling was wired but never read in JSX); added the privacy safety line
+- `vyapar-web/app/opportunities/[id]/page.tsx` — safety line before external source link; `submitter_name` rendered near the title; `#report-opportunity` anchor
+- `vyapar-web/app/components/IntentBar.tsx` — real taxonomy category/locality suggestions via new `GET /v1/listings/search-suggestions`, replacing the hardcoded 14-item list
+- `vyapar-web/app/businesses/page.tsx`, `page.tsx` (Discover) — `intent.category` is now a real slug (no lossy space/underscore guess)
+- `vyapar-web/app/listings/new/page.tsx` — real tap-only taxonomy chips for categories/capabilities (+ free-text "other"), replacing raw comma-separated text fields
+- `vyapar-web/app/activity/page.tsx` — real per-row status, resolved via each kind's own state map
+- `vyapar-web/app/components/LivingCard.tsx` — overflow menu (Not interested/Share/Report); dedicated `submitterName` prop with more visual weight than the generic meta line
+- `vyapar-web/app/first-run/page.tsx` — full FR44 onboarding rebuild: step-progress indicator; two-phase capability capture (categories → scoped skills) as one first-run step, not a 6th screen
+- `vyapar-service/app/routers/discovery.py` — new `GET /v1/listings/search-suggestions`
+- `vyapar-service/app/routers/first_run.py` — new `GET /v1/first-run/category-options`, `GET /v1/first-run/scoped-capability-options`, curated `CATEGORY_CAPABILITY_SCOPE`/`CATEGORY_DESCRIPTIONS` (3-language) maps; **live bug fix**: all three taxonomy-label endpoints hardcoded `labels_for(slugs, "en")`, never threading the caller's own language through — fixed to accept `lang: Locale`
+- `vyapar-service/app/routers/opportunities.py` — `submitter_name` resolved on `GET /{opportunity_id}` via the same `public_names()` RLS-safe lookup feed.py already used, previously only ever populated by the feed builder
+- `vyapar-service/app/routers/feed.py` — `ActivityItem.status`, populated from each kind's real state column
+- Locale additions across en/hi/te: `opportunities.json` (leavingVyaparNotice, postedBy), `activity.json` (full status.* block per kind), `common.json` (moreOptions/notInterested/report), `firstRun.json` (step2cat, progress, step2cap rework)
+
+**Approach**
+
+1. **Duplicate-thread recovery never rendered (highest priority).** The 409-handling logic in `send()` was fully correct — `duplicateEnquiryId` and `error` were genuinely being set — but no JSX anywhere read them. Added the actual error card with a real "Open it" link. Live-verified by inserting a real member, sending the same enquiry twice via curl, confirming the exact 409 shape (`{message, existing_enquiry_id}`), and confirming the frontend's parsing logic matches it exactly. Added the previously also-dead `compose.privacyLine` render.
+2. **Safety line missing on Opportunity Detail.** Added under the external-source button specifically (not a full "Leaving Vyapar" modal sheet — that remains UX09's fuller, unbuilt spec, noted honestly). Verified against a real public/external opportunity (Naukri link).
+3. **IntentBar's hardcoded 14-item list.** Replaced with a real fetch (`GET /v1/listings/search-suggestions`) returning real taxonomy categories (slug+label) and real seeded localities — matching the pattern first-run's own capability picker already used. `intent.category` is now the real slug end to end, closing a second bug (a lossy space-to-underscore guess in both callers).
+4. **New Listing's comma-separated text fields.** Replaced with real tap-only taxonomy chips (same shared endpoints as IntentBar/first-run) plus a free-text "other" input — matching first-run's own pattern exactly, per the critique's own instruction.
+5. **Activity screen rows carrying no status.** Backend now returns each row's real lifecycle state (opportunity/listing/enquiry/partnership all have genuinely different state enums — each resolved through its own translated map, never a fabricated shared one). Live-verified against real seeded data.
+6. **LivingCard overflow menu.** Added Not interested/Share/Report as a real per-card affordance, scoped to what each surface actually supports (Not interested only wired on opportunity cards, per FR20). Not interested reuses the existing `/v1/opportunities/{id}/not-interested` endpoint and optimistically removes the card; Report links to a same-page anchor on the detail screen's existing `ReportSheet` rather than duplicating a second reason-picker inline.
+7. **Submitter name missing entirely on Opportunity Detail.** `submitter_name` was populated only by the feed's own card builder, never by the detail `GET` — a member tapping in from a card lost the trust signal exactly where they act. Fixed via the same RLS-safe `public_names()` lookup, rendered directly under the title.
+8. **Feed-card submitter-name emphasis.** Given its own line with `--text-secondary` + medium weight, separated from the generic (`--text-tertiary`) meta line it used to be folded into.
+9. **FR44 onboarding upgrade (product-owner-reaffirmed, high priority).** Rebuilt as an original Vyapar screen — never WorkIndia's own layout/chrome/photos: a step-progress indicator (quiet accent-filled segments); phase 1 is a searchable, tappable category list with real one-line descriptions (taxonomy has no description column, so a curated 3-language description map was added); phase 2 shows capability suggestions SCOPED to whichever categories were picked (no real DB parent-child link exists between category/capability terms — checked directly — so an explicit, curated `CATEGORY_CAPABILITY_SCOPE` mapping does the scoping, falling back to the full list for anything unmapped) plus a real search-to-add box for anything not suggested. Both phases live inside the SAME first-run server step (`first_run_step` only advances once, on phase 2's Continue) — FR44's "<=5 screens" limit is unchanged, not a 6th required step.
+10. **Live bug found during this same work, fixed immediately: category/skill names stayed in English in Hindi/Telugu.** All three new taxonomy-label endpoints (`capability-options`, `category-options`, `scoped-capability-options`) hardcoded `labels_for(slugs, "en")` — the one inconsistency against every other taxonomy-label call site in the codebase, which already thread the caller's language through. Checked the seed data directly first (`SELECT ... WHERE name_hi IS NULL OR name_te IS NULL` returned zero rows — the translations existed, the endpoint just never asked for them) before concluding the bug was in the endpoint, not the data. Fixed by adding `lang: Locale` to all three; also translated `CATEGORY_DESCRIPTIONS` into all 3 languages (was English-only, the same class of gap).
+
+**Manual test evidence**
+- `py_compile` clean on every touched backend file.
+- Live curl verification, every item: a real duplicate-enquiry 409 triggered and its exact shape confirmed; a real public/external opportunity confirmed to carry the safety line condition; `search-suggestions` confirmed returning real category/locality data; `category-options`/`scoped-capability-options` confirmed scoping correctly (`home_repair` → plumbing/electrical/car_repair); a full onboarding flow (name → locality/radius/work-mode → capabilities via categories+skills → help-with → done) run end to end against a fresh test member, then deleted; Activity endpoint confirmed returning real per-kind status values; LivingCard's Not-interested wired to the real endpoint and confirmed hiding/restoring a real row; `submitter_name` confirmed populated on a real opportunity detail fetch; Hindi and Telugu category/skill labels confirmed correct (not English) via a proper UTF-8 file read after an initial terminal-display false alarm.
+- `test_slice10.py` rerun clean (22/22) after this whole batch — no regression introduced.
+- Frontend: every touched page (`/enquiries/new`, `/opportunities/{id}`, `/businesses`, `/`, `/listings/new`, `/activity`, `/first-run`) returns 200 with no compile errors in `web-out.log`/`web-err.log`.
+
+**Deviations from plan / honest scope**
+1. UX09's fuller "External link" modal sheet (domain name interpolated, Continue/Cancel buttons) remains unbuilt — this pass added the safety-line text itself (what was explicitly asked), not the full sheet.
+2. LivingCard's "Report" affordance links to the existing detail-page `ReportSheet` via an anchor rather than duplicating a second inline reason-picker inside the card's overflow menu — a deliberate scope decision to avoid a second, divergent report-UI implementation.
+3. `CATEGORY_CAPABILITY_SCOPE` is an editorially curated mapping, not a real DB relationship (checked directly — no such relationship exists in the schema) — documented as a judgment call, not a spec requirement.
+
+**Assumptions:** none beyond what's stated inline above.
+**Decisions (append-only):** any future taxonomy-label endpoint MUST accept and thread through `lang: Locale` — this is now the second time a hardcoded `"en"` shipped past `py_compile`/curl-200 checks undetected until a real multilingual click-through caught it; worth remembering as a checklist item on every new taxonomy-touching endpoint.
+**Review history:** self-reviewed via live curl round-trips for every backend change (including a live Hindi/Telugu check after the coordinator's own live-testing catch), full regression suite, and frontend compile checks across every touched page.
+**Approval:** Eng Manager / Tech Lead — [ ] Approved — pending
+
+## Open question for the product owner (raised, not built, per direct instruction)
+
+**WorkIndia's dual-action job-detail pattern.** WorkIndia shows two primary actions side by side on job detail — an in-app "Apply" AND a direct "Click to call HR". Comparing against FR22/FR55's current single primary action for Employment/local-service opportunities: **should Employment/local-service opportunity detail get a second "Call directly" action when the poster's phone is already set to Public visibility**, matching this pattern? This interacts directly with FR24's default contact-disclosure timing (a number is normally shown only "after accepted enquiry") — a real product decision, not an engineering one, so it has NOT been built and is raised here for the product owner's decision rather than decided unilaterally.
+
+---
+
+## IMP30 — Skills/capability filter on FilterSheet (Discover + Businesses & Professionals)
+**Traces from:** FR15, FR19
+**Status:** Complete
+
+**Files touched**
+- `vyapar-service/app/routers/discovery.py` — `skills` query param on `/v1/listings/search`, array-overlap filter against `listings.capabilities`
+- `vyapar-service/app/routers/feed.py` — `skills` query param on `/v1/opportunities/feed`, injected once into the shared `candidates()` choke point so every one of the 5 sections is filtered identically
+- `vyapar-web/app/components/FilterSheet.tsx` — new `skills` field, a searchable multi-select chip list fetched from the same `/v1/first-run/capability-options` endpoint first-run's own picker already uses
+- `vyapar-web/app/businesses/page.tsx` — `skills` threaded into `buildParams`
+- `vyapar-web/app/page.tsx` (Discover) — `FilterSheet` wired in for the first time on this surface (previously Businesses-only); `skills` genuinely narrows the feed, other controls (radius/sort/availability) are inert here since the feed's sections are relevance-ranked by FR19, not independently sortable/radius-filtered the way a flat search list is — a deliberate, disclosed scope choice, not a hidden gap
+- Locale additions (en/hi/te): `discover.json` `businesses.skills`/`skillsSearchPlaceholder`
+
+**Approach**
+Product-owner direction, verbatim: "based on skills we need list to be flown." FR19's `capability_fit` ranking signal already existed as an invisible ranking input; this makes it a real, explicit, member-controlled filter on top of that, on both surfaces named. Reused the one shared `FilterSheet` component (per IMP27's own "one filter-panel implementation" decision) rather than building a second, surface-specific skills picker, and reused the same capability taxonomy endpoint first-run's onboarding picker already calls, per the coordinator's own instruction to share that data source.
+
+**Manual test evidence**
+- `py_compile` clean on both touched backend files.
+- Live curl verification: `/v1/listings/search?skills=plumbing` returned exactly the one listing carrying that capability; `/v1/opportunities/feed?skills=software` returned a real narrowed result (`for_you: 2` only) compared to the unfiltered feed (`for_you: 2, explore: 4, community: 4, public: 2`) — confirmed the filter genuinely excludes rows, not a cosmetic no-op.
+- `test_slice10.py` rerun clean (22/22) after this change.
+- Frontend: `/` and `/businesses` both return 200 with no compile errors.
+
+**Deviations from plan / honest scope**
+On Discover, only the `skills` control in the shared FilterSheet actually affects results — the panel's other controls (radius/service-mode/availability/verified-only/sort-by) are rendered but inert on this surface, since `/v1/opportunities/feed` is a 5-section, FR19-ranked feed, not a flat sortable/filterable list the way Businesses & Professionals is. This is disclosed here rather than silently shipped; building surface-specific relevance controls for the feed (e.g. a real per-section sort) was out of scope for this pass.
+
+**Assumptions:** none beyond what's stated inline above.
+**Decisions (append-only):** none new beyond IMP27's already-recorded "one shared FilterSheet" decision, which this item extends.
+**Review history:** self-reviewed via live curl round-trips (both endpoints, confirmed real narrowing not just 200s) and the full regression suite.
+**Approval:** Eng Manager / Tech Lead — [ ] Approved — pending
+
+---
+
+## IMP31 — Design-enhancement pass (DESIGN-ENHANCEMENT.md, relayed by coordinator) + self-caught follow-up i18n bug
+**Traces from:** design direction (04-ui.md F4/F6, UX-CRITIQUE social-trust finding), FR15
+**Status:** Complete
+
+**Files touched**
+- `vyapar-web/app/globals.css` — new tokens (`--surface-sunken/-nested/-floating`, `--border-hairline/-default/-strong`, `--accent-pressed`, `--trust-verified-strong`, `--text-quaternary`, light-mode overrides for all of them including a light-mode `--text-quaternary` the spec's own light block omitted); `.vy-chip` default flipped from accent-tinted to neutral, `[aria-pressed="true"]`/`.vy-chip-selected` now opts into the accent tint; `.vy-btn-primary:active` fill-darken restored (04-ui.md F6); `.vy-card-nested`/`.vy-card-floating` utility classes; `.vy-badge-verified:active` press feedback; `--trust-sponsored-border` now aliases `--border-strong` instead of a separate ad hoc `ink-6` use
+- `vyapar-web/app/components/LivingCard.tsx` — `submitterName` line now uses `--text-quaternary` (was `--text-secondary`) — the exact fix DESIGN-ENHANCEMENT.md names for the still-open UX-CRITIQUE social-trust finding, already partially addressed in IMP29 with a different token; hover border now uses `--border-default` instead of a raw `ink-5`
+- `vyapar-web/app/listings/[id]/page.tsx` — 3 named nested panels (phone-verify, contact-visibility, capability-visibility) → `.vy-card-nested`
+- `vyapar-web/app/workspace/[listingId]/page.tsx` — 2 secondary sub-panels (team-invite form, new-campaign form) → `.vy-card-nested`
+- `vyapar-web/app/admin/commercial/page.tsx` — refund form nested inside an order card → `.vy-card vy-card-nested` (previously had no card styling at all)
+- `vyapar-web/app/components/Verification.tsx` (`TrustContextSheet`), `NotificationBell.tsx` (dropdown panel), `FilterSheet.tsx` (expanded panel) → `.vy-card-floating`
+- `vyapar-service/app/routers/discovery.py` — **self-caught follow-up bug**: `search_suggestions()` (IntentBar's own real-taxonomy fix from IMP29) also hardcoded `labels_for(cat_slugs, "en")` — found via a project-wide `grep -rn 'labels_for([^)]*"en"'` sweep run proactively after the coordinator's live Hindi/Telugu bug report on a *different* endpoint, before it could be live-reported a second time. Fixed to thread `lang: Locale` through.
+
+**Approach**
+Read the full `DESIGN-ENHANCEMENT.md` spec (research-cited: Linear's 4-step surface ladder, Vercel's named border-step discipline, 2026 dark-mode/fintech-restraint sources) before implementing. Confirmed the spec is additive-only — no renamed/removed tokens, no new hues, no gradients/shadows on dark mode — and implemented in the suggested priority order: (1) chip default-state flip, (2) button press-fill, (3) nested-card step-down at every named location, (4) floating-surface step at every named location, (5) submitter/community text-emphasis (already half-solved in IMP29 with a different, non-system token — corrected to use the new `--text-quaternary` step instead), (6) named border steps replacing the three ad hoc `ink-*` uses, (7) trust-badge press feedback.
+
+Re-verified contrast per the spec's own explicit request before calling it done: `--text-quaternary` (`#c3c9d2`) against `--surface-raised` (`#11151b`) computes to **10.99:1** (comfortably passes WCAG AAA); `--accent-pressed` (`#d97a12`) against `--accent-ink` (`#1c0f00`) computes to **6.03:1** (comfortably passes WCAG AA). Also computed the light-mode `--text-quaternary` value the spec itself never provided (**11.47:1** against the light `--surface`) — a real gap in the spec's own light-mode block, closed rather than left as a silent light-mode regression.
+
+**Scope decision, disclosed rather than silently applied:** did NOT do a mass removal of the ~14 files' existing inline `style={{background: selected ? "var(--accent)" : "var(--surface-overlay)"}}` chip overrides the spec describes as now-redundant. Those inline styles already produce the exact correct selected/unselected behavior via their own JS logic (inline styles win over the new CSS `[aria-pressed]` rule regardless), so they are not a visible bug — only a code-duplication cleanup opportunity the spec itself frames as optional ("this LETS every screen... drop the inline override"). The one genuine, spec-named bug (IntentBar's parsed chips, which have no override at all and were accent-tinted purely by the old class default) is fixed by the CSS flip alone and confirmed by inspection to have no inline override. Given this session's remaining time budget, the 14-file inline-style cleanup was deferred as a disclosed, non-blocking scope cut, not silently dropped.
+
+**Manual test evidence**
+- CSS brace-balance check: 39 `{` / 39 `}` in `globals.css` — no syntax breakage.
+- WCAG contrast computed via a small script for both pairs the spec asked to re-verify, both comfortably passing (see numbers above).
+- Every touched page compiled and returned 200 with no errors in `web-out.log`: `/`, `/businesses`, `/listings/{id}`, `/workspace/{id}`, `/admin/commercial`, `/first-run`.
+- `py_compile` clean on `discovery.py`; live curl re-verification of `search-suggestions` in Hindi confirmed real translated category labels (not English) after the fix, via a proper UTF-8 file read.
+- `test_slice10.py` rerun clean (22/22) after this whole batch — no regression introduced.
+- No visual screenshot verification was possible from this side (no browser tool available to this session per the established tool-boundary rule — browser/visual verification is the coordinator's own session's job); all verification here is compile-success, contrast-math, and live-data correctness, consistent with this session's standing "curl/server-render checks, not browser" role throughout.
+
+**Deviations from plan / honest scope**
+1. The ~14-file inline chip-style cleanup described in the spec as an optional follow-on was not done — see the scope decision above.
+2. Workspace's top-level Plan-state sections (lines ~219/250/262) were deliberately left as plain `.vy-card`, not nested — they sit directly in the page's own flow (inside `<main className="vy-shell">`, no outer wrapping card), so per the spec's own rule ("top-level/primary cards... stay as-is"), they are not actually nested content. Only the genuinely-secondary sub-panels (team-invite form, new-campaign form) were stepped down.
+3. Visual/screenshot verification of the actual rendered result was not performed from this session — no browser tool is available here; this is disclosed rather than claimed.
+
+**Assumptions:** the spec's own light-mode block omission of `--text-quaternary` was an oversight, not an intentional decision to leave it unstyled — filled with a value computed to sit correctly between the existing light-mode secondary/primary text steps.
+**Decisions (append-only):** `.vy-card-nested`/`.vy-card-floating` are the two new utility classes going forward for any future nested-panel-inside-a-card or genuinely-overlaid-content case — new screens should reach for these rather than reintroducing a flat `--surface-raised` card at every depth.
+**Review history:** self-reviewed via CSS brace-balance check, WCAG contrast computation, live curl re-verification of the self-caught i18n bug, and the full regression suite — no browser/visual check available from this session.
+**Approval:** Eng Manager / Tech Lead — [ ] Approved — pending
+
+---
+
+## IMP32 — Live language-switch bug: fetched taxonomy data never re-fetched on language change ("make language also live")
+**Traces from:** FR42
+**Status:** Complete
+
+**Files touched**
+- `vyapar-web/app/components/FilterSheet.tsx` — skills fetch now depends on `i18n.language`
+- `vyapar-web/app/first-run/page.tsx` — category-options fetch split out of the one-time member-state effect into its own effect depending on `i18n.language`; scoped-capability-options fetch's dependency array extended with `i18n.language`
+- `vyapar-web/app/listings/new/page.tsx` — category/capability fetch now depends on `i18n.language`
+- `vyapar-web/app/components/IntentBar.tsx` — search-suggestions fetch now depends on `i18n.language`
+
+**Approach**
+Product-owner live report: on `/businesses`, opening Filters then switching the language pill from Hindi to English updated every static label correctly but left the skill chip list itself in Hindi. Root cause confirmed exactly as the coordinator suspected: `FilterSheet`'s capability-options fetch ran inside `useEffect(() => {...}, [])` — an empty dependency array — so it fetched once on mount (with whatever language was active in the `X-Vyapar-Language` header at that moment, read by `lib/api.ts`'s `getLanguage()` from `localStorage`) and never re-ran on a later language switch while the sheet stayed open. Static UI strings update live because react-i18next re-renders on `i18n.language` change automatically; fetched *data* does not re-fetch itself — that requires the fetch's own effect to explicitly depend on `i18n.language`.
+
+Audited every other screen with the same shape (a taxonomy/capability/category list fetched via `useEffect([], ...)`) via `grep` for every frontend call site of `capability-options`/`category-options`/`scoped-capability-options`/`search-suggestions` — the exact 4 endpoints these lists come from. Found and fixed 3 more instances of the identical anti-pattern beyond FilterSheet: first-run's category-options and scoped-capability-options fetches, New Listing's category/capability fetch, and IntentBar's search-suggestions fetch. All four now include `i18n.language` in their effect's dependency array, so a live language switch triggers a genuine re-fetch with the new language header — the general rule stated: "make language also live," never requiring a reload or leaving any visible content, static or fetched, in the old language.
+
+Verified the underlying sequencing is race-free: `LanguageSwitcher.tsx` calls `i18n.changeLanguage(lang)` then synchronously `setPreferredLanguage(lang)` (writes `localStorage` immediately) in the same click handler — by the time React re-renders on the `i18n.language` state change and the dependent effects re-fire, `localStorage` (and therefore the next request's `X-Vyapar-Language` header) is already updated, so no stale-language race is possible.
+
+**Manual test evidence**
+- Every touched page compiles and returns 200 with no errors in `web-out.log`: `/`, `/businesses`, `/listings/new`, `/first-run`.
+- The underlying fix mechanism (an effect depending on `i18n.language` re-running on language change, calling an endpoint whose response genuinely differs by the `X-Vyapar-Language` header) was already proven correct at the data layer in IMP29/IMP31 (Hindi vs English category/skill labels confirmed to differ via live curl with a proper UTF-8 file read) — this fix only needed to make the fetch re-run at the right time, which is standard, well-established React dependency-array semantics, not something requiring a new data-layer test.
+- No live browser click-through was performed from this session (no browser tool available here — that verification belongs to the coordinator's own session, consistent with this session's standing curl/server-render-only role); the fix is disclosed as mechanism-verified, not visually re-confirmed by this agent.
+- `test_slice10.py` rerun clean (22/22) — no backend changes in this item, included for completeness/no-regression confirmation.
+
+**Deviations from plan / honest scope**
+Did not do a full audit of every `Locale`-parameterized backend endpoint's frontend call sites (16 backend router files accept `lang: Locale`) — scoped specifically to the 4 taxonomy/capability/category-list endpoints named in the coordinator's own report, which is the exact pattern class reported. Per-item detail-page fetches (a specific listing/opportunity/enquiry) were not re-audited; those pages typically remount on navigation rather than staying open across a language switch the way a filter sheet does, so they carry materially lower risk of this same symptom, and re-auditing all 16 was judged disproportionate to what was actually reported.
+
+**Assumptions:** none beyond what's verified above.
+**Decisions (append-only):** any future component that fetches server-translated content (taxonomy labels, or any endpoint reading `X-Vyapar-Language`) and stays mounted across a possible language switch MUST include `i18n.language` in its fetch effect's dependency array — this is now a standing checklist item alongside the earlier-established "every taxonomy-label endpoint must accept `lang: Locale`" rule from IMP29.
+**Review history:** self-reviewed via compile checks across all 4 touched pages and a sequencing/race-condition check of the language-switch write path; no browser/visual re-confirmation available from this session.
+**Approval:** Eng Manager / Tech Lead — [ ] Approved — pending
+
+---
+
+## IMP33 — Vyapar as a real web app: desktop layouts for every screen (04-ui.md F4, never built) + a drastic visual/motion pass
+**Traces from:** 04-ui.md F4 (sealed breakpoint model), UI19 (Admin console ≥1024), FR15-FR20, FR23, FR47, FR55, FR43 (reduced motion / focus / live regions), product-owner direction 2026-09-17
+**Status:** Built — compile-, type- and route-verified live; **visual verification at 390px/1440px not performed from this session (no browser tool available here)** | **Confidence:** High on structure, Medium on pixel-level result until the coordinator's own browser pass
+
+### What the product owner reported
+Verified live at 1440x900 by the coordinator: every screen rendered as a ~480-560px phone-width column centred in empty background. Owner's words: *"I wanted Vyapar as mobile first web app, but also as web app right, I am only seeing it as mobile UI. That is issue."* Plus: *"I really feel you should drastically improve styling, themes, colors, motions, etc in the app."*
+
+**This was an implementation gap against an already-sealed spec, not a new requirement.** 04-ui.md F4 defines four breakpoints — `--fk-bp-wide` ≥600 (2-column result lists, 4-column category grid), `--fk-bp-desktop` ≥900 (bottom nav → 240px left rail, content column max 720px), `--fk-bp-console` ≥1024 (Admin list + right detail pane) — and UI19 spells out the console proportions ("list left (40%) + record/case right"). None of it existed in the code: `.vy-shell` was a flat `max-width: 480px` with no media query anywhere in `globals.css`.
+
+### Files touched
+**Design system (the leverage point — all 30 screens use `.vy-shell`)**
+- `vyapar-web/app/globals.css` — [requirement-level comment blocks present: Yes, one per concern] breakpoint tokens, responsive shell, layout shapes (`vy-grid`, `vy-tile-grid`, `vy-detail`, `vy-pane`, `vy-with-sidebar`), fluid type scale + optical tracking, `.vy-section-title` / `.vy-card-title` / `.vy-page-head`, hover/press/focus states, skeleton + empty-state styles, the `.vy-rail`, `::view-transition` keyframes, reduced-motion block, `.vy-visually-hidden`.
+
+**New shared components**
+- `app/components/Screen.tsx` — [comment block: Yes] the responsive `<main>` every screen now uses (`width="reading" | "wide" | "console"`), wrapping React's `<ViewTransition>` with a directional enter/exit map; exports `<Morph>` for shared-element card→detail transitions.
+- `app/components/Motion.tsx` — [comment block: Yes] `<Reveal>` / `<RevealSection>`, the app's only entrance-motion primitives.
+- `app/components/States.tsx` — [comment block: Yes] `<SkeletonCard>` / `<SkeletonGrid>` / `<EmptyState>`.
+- `app/components/EnquiryThread.tsx` — [comment block: Yes] the enquiry conversation extracted from its route so the same implementation serves the route AND the ≥1024px split pane.
+
+**Screens given real desktop layouts**
+- `app/page.tsx` (Discover) — wide shell; greeting promoted to the screen's `<h1>` above the search chrome; sections in a 2-col (≥600) / 3-col (≥1280) card grid; per-section reveal + per-card stagger; skeleton grid; real empty state with a next action.
+- `app/businesses/page.tsx` — wide shell; **persistent left filter sidebar at ≥900px** (same `<FilterSheet>` component, second placement chosen by CSS, not a viewport read) with results in a multi-column grid beside it; live result count; framed zero-result state that keeps FR17's labelled broadening chips.
+- `app/listings/[id]/page.tsx` — **two-column**: identity header full width, reading content left, a sticky action card right (Enquire/Save/Share/Propose for visitors; Submit/Boost/Workspace/Archive for owners, moved up from the bottom of the page).
+- `app/opportunities/[id]/page.tsx` — same two-column shape; apply/save/poster-lifecycle in the sticky right column.
+- `app/enquiries/mine/page.tsx` — **list + detail split pane at ≥1024px** rendering `<EnquiryThread>` beside the list; below that, rows stay ordinary links that navigate (unchanged phone flow, and `/enquiries/[id]` still works for notifications and shared URLs).
+- `app/enquiries/[id]/page.tsx` — reduced to the shared thread component + a `vy-back`-typed return link.
+- `app/admin/verification/page.tsx` — **console list + right record pane at ≥1024px**, the decision surface extracted to one `record()` function so phone and console share it.
+- `app/activity/page.tsx` — grouped multi-column grid (see the declared divergence below).
+- `app/listings/mine/page.tsx`, `app/opportunities/section/[key]/page.tsx`, `app/promotions/page.tsx`, `app/moderation/outcomes/page.tsx` — wide shell + card grid.
+- `app/admin/{moderation,commercial,ops}/page.tsx` — console shell.
+- The remaining 13 screens (forms, profile, post, privacy, boost, workspace, campaigns, partnerships, payments, first-run) — moved onto `<Screen>`, so they gain F4's 720px reading column, the desktop gutters, and route transitions. A reading column is the *correct* desktop answer for a form; widening them would have been the wrong fix.
+
+**Navigation**
+- `app/components/CommandHub.tsx` — the floating hub now has a sibling `<nav className="vy-rail">`: F4's persistent 240px left rail at ≥900px, same five destinations from the same array. CSS-swapped, so no hydration mismatch and no resize listener. `body` is inset by the rail width at ≥900.
+- `app/components/LanguageSwitcher.tsx` — shifted clear of the rail at ≥900.
+
+**Visual/interaction system**
+- `app/components/LivingCard.tsx` — entrance stagger by list index, full-height grid cells, forward-typed navigation, optional shared-element morph.
+- Chips: 12 inline re-implementations of "selected chip" collapsed onto the design system's `[aria-pressed]` rule; the remaining 5 multi-line call sites adopted the same soft/strong accent tokens plus an accent border edge.
+- 26 hand-written `<h2 style={{fontSize: 16}}>` overrides replaced by `.vy-card-title`.
+
+### The motion system built (and why it is split across two technologies)
+Grounded in the Next.js 16 view-transitions guide (nextjs.org/docs/app/guides/view-transitions, doc version-stamped **16.3.5 — this app's exact Next version**, and verified that `ViewTransition` is present in the React build Next bundles here):
+- **Route transitions** — React `<ViewTransition>` via `<Screen>`, with `enter`/`exit` keyed by transition type. Links going deeper pass `transitionTypes={["vy-forward"]}`, return links pass `["vy-back"]`, so forward and back are visibly different; untyped navigations (browser back, refresh) get `default: "none"` and no directional slide.
+- **Shared-element morph** — `<Morph name={...}>` on a list card's title and on the detail screen's `<h1>`, using the documented `share` + `default="none"` pairing (the guide flags that `default="none"` *without* an explicit `share` silently stops the morph).
+- **List/card entrance staggering** — the `motion` library, because the same guide states per-item staggered animation during navigation is **not** available through View Transitions. The split is the documented one, not a preference.
+- **Timings** — the guide's asymmetric pairing: exit 140ms (old content stops competing for attention), enter 210ms delayed until the exit completes, positional movement 380ms. Springs (stiffness 320 / damping 30) for anything a finger or cursor touches, near-critically damped so nothing overshoots — bounce reads as toy-like, and this is a trust/commerce surface.
+- **Reduced motion** — directional slides removed outright in CSS, and `useReducedMotion()` checked in JS as well, since a CSS block cannot reach the motion library's inline transforms.
+
+Typography research: web.dev's Baseline fluid-type article and the 2026 responsive-typography surveys agree that one `clamp()` curve per role beats redeclaring sizes per breakpoint — the token itself carries the responsiveness. So desktop gets a genuinely more confident scale (display 28→42px, title 21→30px) with no parallel rule set, plus optical tracking (-0.028em at display size, near-zero at label size) which the old single -0.01em value never gave.
+
+Colour/surface work stayed strictly inside the standing rules and the Linear/Vercel/fintech-restraint grounding already recorded in `DESIGN-ENHANCEMENT.md`: **no new hue, no gradient, no glass, no glow, no ambient mesh.** Hover states (previously absent app-wide — a real desktop gap) are lightness or border steps on the existing ink ramp. The skeleton "shimmer" is an opacity pulse, not a travelling light gradient, specifically because a moving gradient is the decorative effect this product forbids.
+
+### Deviations from the direction, declared not silently applied
+1. **Activity did not get a list+detail split pane.** The direction named Enquiries and Activity together. The split pane is right for Enquiries because every row opens the same kind of thing (a thread). Activity's rows are deliberately heterogeneous — listing, opportunity, enquiry or partnership, each with its own full screen — so a shared right pane would have to be four different detail views and picking one would make the others feel wrong. It got a grouped multi-column grid instead, which uses the width honestly. Recorded inline in the file too.
+2. **Only `admin/verification` got the full ≥1024 list+record pane.** `admin/moderation`, `admin/commercial` and `admin/ops` received the console shell width and the shared visual/motion system but keep their existing stacked-card queues. Their per-item decision surfaces are more entangled with page-level state than verification's was, and restructuring them without a browser to verify operator flows against would have been the wrong trade. Flagged as remaining work, not claimed as done.
+3. **The 720px reading column was kept for forms and prose screens** rather than widened. F4 specifies it, and a 1240px-wide single-column form is worse, not better. If the owner reads "not mobile-only" as "every screen must fill the width", this is the one place to revisit.
+
+### Manual test evidence
+- `npx tsc --noEmit` — **exit 0** (covers `Link transitionTypes`, `ViewTransition`, and every new component).
+- All 20 routes return **200** with a clean `web-err.log`: `/`, `/businesses`, `/activity`, `/profile`, `/post`, `/listings/mine`, `/listings/new`, `/opportunities/new`, `/enquiries/mine`, `/enquiries/new`, `/privacy`, `/promotions`, `/admin/{moderation,commercial,ops,verification}`, `/moderation/outcomes`, `/first-run`, a real listing detail, a real opportunity detail. API `/v1/members/me` 200 throughout — servers left healthy, nothing restarted, nothing killed.
+- Server-rendered DOM confirmed to carry the new containers per route: `vy-rail` on every page; `vy-shell-wide` + `vy-grid vy-grid-3` on `/`, `/activity`, `/listings/mine`; `vy-with-sidebar` + `vy-sidebar` + the `vy-desktop-only`/`vy-mobile-only` pair on `/businesses`; `vy-shell-console` on `/enquiries/mine` and `/admin/verification`.
+- `globals.css` brace balance 146/146.
+- ESLint: the four remaining `react-hooks/set-state-in-effect` errors in touched files are the codebase's **pre-existing** pattern (21 of them exist across files this pass never opened); the one instance this pass would have introduced (`EnquiryThread`) was removed by keying the component for remount instead.
+- **Not done: visual/screenshot verification at 390px and 1440px.** This session's tool set does not include the `mcp__chrome-devtools-vyapar__*` tools, and no Playwright/Puppeteer install exists anywhere in the repo (checked). This is stated rather than claimed. The phone-safety argument rests on every desktop rule living inside a `min-width` media query, so the 390px rendering is structurally unchanged — but that reasoning is not a substitute for looking.
+
+### Assumptions
+- `--fk-bp-*` in F4 are breakpoint *values*, not literal CSS custom properties that must be emitted (custom properties cannot be used inside media queries); implemented as documented tokens plus the corresponding `min-width` queries.
+- F4's "bottom nav becomes a 240px left rail with the same five items" applies to this build's floating command hub, which replaced the bottom nav under the standing design direction — same five destinations, so the sealed intent holds.
+
+### Decisions (append-only)
+- A screen declares a *shape* (`Screen width=...`, `vy-grid`, `vy-detail`, `vy-pane`, `vy-with-sidebar`) and never its own pixel widths; all breakpoint numbers live in `globals.css`.
+- Breakpoint-dependent behaviour is chosen by CSS class, never by reading `window.innerWidth` — no hydration mismatch, no resize listener.
+- Route/shared-element motion = React `<ViewTransition>`; list/card entrance stagger = `motion`. Do not re-litigate this per screen.
+- Any new user-visible string added here is a key in all three locales (`nav.primary`, `discover:home.emptyBody`/`emptyAction`, `discover:businesses.resultsCount`, `activity:emptyBody`, `enquiries:mine.selectPrompt`) — no English fallback shipped.
+
+### Review history
+2026-09-17 — Built in one pass, screen by screen, compile-checked after every screen. Two real defects caught and fixed during the pass: a duplicated `Screen` import in `first-run/page.tsx` that 500'd every route (caught immediately by the route sweep, not left for the owner to find), and a cascade bug where `.vy-stack { display: flex }` would have beaten a generic `display: none` visibility utility and rendered both the mobile and console variants of every split-pane row at once — fixed with dedicated `.vy-pane-row-mobile` / `.vy-pane-row-console` classes carrying their own explicit display.
+
+### No new external dependencies
+Nothing was added to `package.json`. `motion` was already installed and already in use; `ViewTransition` ships inside React/Next itself. `09a-external-dependencies.md` therefore needs no new row and no supplementary Step 8 security review for this item.
+
+**Approval:** Eng Manager / Tech Lead — [ ] Approved — pending
+
+## IMP34 — Opportunity Detail rebuilt, then taken past the Upwork/WorkIndia references (2026-09-21)
+
+**Trigger.** Product owner: "Focus on this screen, do this screen and details is correct and enough? I don't think any of Upwork or WorkIndia works like this", then pointed to `docs/vyapar reference images/` — "we will be more and best over on that, not that we follow them."
+
+**Pass 1: rebuild.** The API already returned requirements, timing, skills, deadline and source, but the screen showed only a description. Added:
+- a key-facts grid (pay, duration, work mode, location);
+- the apply-by date with days left (accented at 3 days or fewer) and a trust byline ("Posted by X · From your community" / "Shared by X · found on <source>");
+- a "What they're looking for" section with skills, experience and requirements;
+- a Source card, "About the person who posted", and Similar opportunities (which must share a skill);
+- Save/Share, and Not interested with its reasons opening in place.
+
+Backend: migration `013-opportunity-detail-context.sql` adds the response bucket and poster summary. `GET /v1/opportunities/{id}/similar` added.
+
+**Pass 2: beyond the references.**
+
+| Reference pattern | What Vyapar does instead |
+|---|---|
+| Upwork "Activity on this job" (proposals / interviewing / invites) | Shows how many people responded **and** whether this poster replies ("Replies to most people · usually within a day"). The source is migration `014-poster-reply-habit.sql`: coarse buckets over the last 90 days of received enquiries, returned only once there are at least 3. |
+| Upwork skills chips (per-skill fit behind a paid tier) | Per-skill fit for free: matched chips carry a ✓ and a summary reads "You have 1 of 2 skills they asked for". The data is `capability_match` on the detail response. It is left out when the viewer lists no skills. |
+| WorkIndia "No Payment Involved" banner at the top | A safety line beside the action ("Free to respond. Never pay anyone to get this work.") with a one-tap "Report if asked" link. It is not shown on Public items, because an official source can legitimately charge a fee. |
+| Both apps pin Apply/Save permanently at the bottom | On phones, a bottom bar slides up **only after** the in-page action card has scrolled away, so the action is never duplicated on the first screen. The command orb lifts above the bar. The bar is hidden at ≥900px, where the action column is already sticky. |
+
+**Also fixed while looking at the screen:**
+- The desktop rail links were underlined.
+- The floating orb showed on desktop, because an inline `display` style beat the CSS.
+- "View profile" wrapped mid-link.
+- A dangling "·" appeared in the byline.
+
+**Verified:**
+- Phone 390px and desktop 1440px, with screenshots 53–56.
+- Live switch English → Hindi → English.
+- No console errors.
+- The orb is `display:none` at 1440px, and the bar toggles on scroll.
+
+## IMP35: Skills-first recommendations and profile recommendations (2026-09-21)
+
+**Trigger.** The product owner asked: "make sure we are prioritizing to show the skills as per person's profile, and like similar profiles, we will have other profiles for you."
+
+**Shared building blocks:**
+- **`app/profile_cards.py`** is the one backend rule for recommending business and professional profiles.
+  - Matches on shared skills first, then shared categories.
+  - Ties are broken by verified, then same locality, then available now.
+  - Every card lists which skills matched.
+  - Skills hidden with `capability_visible=false` are never matched on or shown.
+  - Only discoverable, active profiles appear.
+- **`ProfileRecommendations.tsx`** is one self-contained front-end block.
+  - It takes an API path and a heading, then fetches the cards itself.
+  - It re-fetches when the language changes.
+  - It renders nothing when the list is empty.
+
+**Where it appears:**
+- **Similar profiles** at the end of every profile page (`GET /v1/listings/{id}/similar`). It excludes this owner's other profiles and the viewer's own.
+- **Profiles that match this** on the poster's own active opportunity (`GET /v1/opportunities/{id}/matching-profiles`). This endpoint is poster-only and lists only profiles that opted in to opportunities.
+- **Similar opportunities** now rank the viewer's own skills first, and each card reads "Matches your skill: X".
+- On an opportunity, the skill chips you already have come first.
+
+**Fixed while reading the screens:**
+- The poster saw "What *they're* looking for" on their own post. It now reads "What you're looking for".
+- The top pills overlapped scrolled content. A scrim now sits behind them.
+- The profile page had a large empty gap on desktop. Its action column now spans every row.
+
+**Verified:** at 1440px, with no console errors. Screenshots 57–58.
+
+## IMP37 — Refactor B: identity adapters, personal access tokens, webhooks, idempotency, MCP server
+
+**Trigger.** The product owner's refactor direction (REFACTOR-PLAN.md §B): "I don't want Vyapar tightly coupled with anything, and I need more API-like connections, as many as possible, so we can have agents working on top of Vyapar easily." Workstream B owns the integration edges. The full write-up for integrators is `INTEGRATION-GUIDE.md`.
+
+**Identity adapters** (`vyapar-service/app/integrations/identity/`):
+- An `IdentityProvider` protocol has three adapters, chosen by `IDENTITY_PROVIDERS`:
+  - `DevHeaderProvider`: the dev stub, moved here unchanged. It steps aside when an `Authorization` header is present.
+  - `ForKhatriSessionProvider`: the fk_session resolve path, moved unchanged, with the same fail-closed behaviour and the same 30-second / 5-second caches.
+  - `BearerTokenProvider`: personal access tokens.
+- If `IDENTITY_PROVIDERS` is empty, the service keeps its old behaviour: `bearer,dev` in development, `bearer,forkhatri` otherwise.
+- `app/identity.py`'s `resolve_authz_context` keeps the same signature and remains the single choke point.
+- `AuthzContext` is still frozen and existing calls still work. It gains `auth_method`, `scopes`, `credential_id` and `has_scope()`.
+- There is a new `require_scope("...")` dependency, plus `require_member_session()`. Member sessions implicitly hold every scope.
+- Access tokens are governed by a **central, default-deny scope policy** (`scopes.py`), applied before any route runs:
+  - GET needs `read`;
+  - a write needs the scope of its area;
+  - operator, dev, money, plan, privacy, verification, report and appeal routes, and credential management, are never reachable with a token;
+  - a token never carries operator powers.
+
+**Personal access tokens:**
+- **Migration 015** adds `vyapar_integration.access_tokens`:
+  - it stores the sha256 hash and a display prefix, never the plaintext;
+  - scopes are validated by a CHECK constraint;
+  - row-level security is self-only, and there is no DELETE grant (revoking is an update);
+  - authentication looks tokens up through the SECURITY DEFINER function `resolve_access_token()`, written in migration 013's style, which advances `last_used_at` at most once a minute.
+- Routes in the new `app/routers/integrations.py`:
+  - `GET /v1/integrations/me`;
+  - `GET /v1/integrations/scopes`;
+  - `GET`, `POST` and `DELETE /v1/integrations/tokens`. The plaintext is returned once.
+- Tokens expire after 90 days by default and after at most 365 days. A member can hold at most 20 active tokens.
+- `TokenAuditMiddleware` records every write made with a token in `audit_events`, through `app/audit.py`, with `access_token_id`, route, status and scopes. Refused writes are recorded too.
+
+**Webhooks (migration 016):**
+- **The outbox never carried member events.** It only had `opportunity.queue_decided` and `taxonomy.changed`, and the plan's `opportunity.published`, `enquiry.received` and similar events were never written.
+- Migration 016 adds AFTER triggers on opportunities, listings, enquiries, enquiry messages, partnership requests and reviews. Each trigger writes to the owning schema's outbox in the same transaction as the change.
+  - This required new `vyapar_enquiries.outbox_event` and `vyapar_reviews.outbox_event` tables, registered in `app/outbox.py`.
+  - Payloads carry ids and states only, plus an `audience` list.
+- Subscriptions, deliveries and cursors live in `vyapar_integration`:
+  - the signing secret is encrypted with AES-GCM under `INTEGRATION_SECRET_KEY` and shown once;
+  - the owner and the dispatcher role can see subscriptions and deliveries; only the dispatcher role can see cursors.
+- `app/integrations/webhooks/dispatcher.py` fans out from the outbox using its own cursors, so it never touches the Search Bridge's `published_at`.
+  - Cursors are locked FOR UPDATE, and deliveries are claimed with SKIP LOCKED and a lease.
+  - Each delivery is signed with HMAC-SHA256: `X-Vyapar-Signature: t=..,v1=..`.
+  - Failed deliveries are retried after 30 seconds, 2 minutes, 10 minutes, 1 hour and 6 hours, up to 6 attempts. The delivery rows are the log.
+  - A subscription is switched off after 25 consecutive failures. Redirects are never followed, and private targets are blocked when `WEBHOOK_ALLOW_PRIVATE_TARGETS=false`.
+- Endpoints: create, list, delete, test ping, delivery log and event catalogue.
+- A member receives only events whose audience includes them. An operator can set `all_events` to receive everything.
+- The loop starts from `main.py`'s lifespan. It also purges expired idempotency keys every hour.
+
+**Idempotency** (`IdempotencyMiddleware`):
+- Applies to any POST with an `Idempotency-Key` header.
+- Keys are scoped to the member and credential, plus method and path, and the request body is fingerprinted.
+- A 2xx response is stored for 24 hours in the existing `vyapar_platform.idempotency_key` table, under an `mw:` namespace so it never collides with the existing per-route keys. A repeat gets the stored response back byte for byte, with `Idempotent-Replayed: true`.
+- The same key with a different body gets a 422. A repeat while the first request is still running gets a 409.
+- A 4xx or 5xx releases the key.
+- The middleware is installed before CORS, so CORS stays the outermost layer.
+
+**Adapter folders:**
+- `app/integrations/payments/` holds the payment gateway, moved here. `app/payment_gateway.py` is now a shim.
+- `app/integrations/notifications/` holds the channel classes, moved here. `app/notifications.py` re-exports them.
+- `app/integrations/storage/` defines an `ObjectStorage` protocol and `LocalFilesystemStorage`. `routers/uploads.py` belongs to workstream A and was not edited; switching it to the new seam is documented.
+- `main.py` got targeted edits only: imports, the webhook task, `integration_middleware.install(app)` before CORS, and `include_router`.
+
+**`vyapar-mcp/`** is a standalone MCP server built on the official `mcp` SDK. Version 2.2 renamed FastMCP to `MCPServer`; the code falls back to FastMCP on 1.x.
+- It talks to Vyapar only over HTTP, using `VYAPAR_API_URL` and `VYAPAR_TOKEN`.
+- It offers 28 typed tools covering:
+  - the feed and feed sections;
+  - opportunities: detail, why recommended, similar, matching profiles and the member's own;
+  - saving, unsaving and hiding;
+  - posting and publishing opportunities;
+  - enquiries: create, list, get and reply;
+  - activity and notifications;
+  - profiles: search (by kind), detail, similar, reviews and the member's own; saving and unsaving.
+- Every write sends a fresh Idempotency-Key.
+- It has its own `.venv`, `requirements.txt`, `pyproject.toml`, and a README with Claude Desktop and Claude Code config.
+
+**i18n:** a new `integrations` namespace (errors, scope descriptions, 29 event descriptions) has real English, Hindi and Telugu values. Errors are built on workstream A's `ApiError`, so the stable code comes from the key (for example `integrations.error.tokenInvalid` gives `token_invalid`). The code is also sent in the `X-Vyapar-Error-Code` header.
+
+**Proof** was run on a private instance on port 8612; the live 8011 instance was not touched. The webhook receiver ran on port 8613.
+1. A PAT created as m_krishna returned 200 on `GET /v1/opportunities/feed` with only `Authorization: Bearer`. `/me` showed `auth_method=access_token` and `scopes=[read]`.
+2. The read-only token got 403 `scope_required` on `POST /v1/opportunities/{id}/save`. It got 403 `not_available_to_tokens` when minting a token, and 403 on `/v1/admin/audit`. Both refusals were audited with the token id.
+3. After revoking, the token got 401 `token_invalid`, with the message localized in Hindi when requested. A made-up token also got 401.
+4. Idempotency: the first save returned 200. The repeat returned 200 with `idempotent-replayed: true` and an identical body. The same key with a different body returned 422 `idempotency_key_reused`.
+5. Webhooks:
+   - The test ping was delivered to the local receiver with a valid signature (HTTP 200).
+   - An outbox event whose audience included m_krishna was fanned out and delivered, signed. An event about m_priya was not delivered to him.
+   - A ping to a closed port was recorded as `failed` with the connection error.
+   - A non-operator asking for `all_events` got 403, and an unknown event type got 422.
+6. The MCP server, driven over stdio by an MCP client, listed 28 tools. `whoami`, `get_opportunity_feed` and `search_profiles(kind=professional)` succeeded against port 8612. `mark_notification_read` was refused with `scope_required` as expected.
+7. The ForKhatri provider was checked alone:
+   - no cookie gave 401;
+   - a cookie with the placeholder identity URL gave 503 (fail closed);
+   - the dev header was ignored.
+
+The triggers were exercised in a rolled-back transaction, and all six event families were emitted correctly.
+
+**Clean-up:** all test tokens, subscriptions, deliveries, idempotency rows, the 13 audit rows the proof created, and the two proof outbox rows were deleted. The saved-opportunity row the test touched is back exactly as it was, and no analytics rows were written. The 8612 and 8613 processes were stopped by exact PID.
+
+**Found, not changed (flagged):**
+- In the ForKhatri resolve path, urllib raises `HTTPError`, which is a subclass of `URLError`, for any non-2xx answer. A **rejected** session therefore returns 503 "identity unavailable" instead of 401. It was kept as-is because the move had to be behaviour-neutral. It is a one-line follow-up.
+- The three original outbox tables have no UPDATE policy, so `run_outbox_dispatch_pass` cannot actually mark rows `published_at` (RLS silently matches zero rows). Webhooks do not depend on this, because they use their own cursors. The new tables have the UPDATE policy.
+
+**Follow-ups:**
+- Switch `routers/uploads.py` to `get_storage().put()` (workstream A's file).
+- Set `INTEGRATION_SECRET_KEY` and `WEBHOOK_ALLOW_PRIVATE_TARGETS=false` in any shared deployment.
+- Restart the live API, when the owner chooses, to pick up the new routes, middleware and webhook loop. Migrations 015 and 016 are already applied.
+
+## IMP36 — Refactor A: service layer, operation ids, error envelope, pagination
+
+**Scope (REFACTOR-PLAN.md §A).** Backend core only: `vyapar-service/app/routers/*`, the new `vyapar-service/app/services/*`, `app/errors.py`, `app/authz.py` (error type only), translation catalogues, and one `register_error_handlers(app)` line in `main.py`. Nothing in `identity.py`, `integrations/`, `routers/integrations.py`, middleware, migrations, `vyapar-mcp/` or `vyapar-web/` was edited.
+
+**1. Operation ids.** Every route has a unique, stable camelCase `operation_id` and a one-line `summary`; tags stay on the routers. Every route now has a real `response_model` (about 100 routes used to return a bare `dict`). Error responses are documented on every router through `ERROR_RESPONSES`. `vyapar-service/openapi.json` is the dump: 167 operations (148 existing, 8 new `/page` variants, 11 from workstream B), all ids unique. Service functions are named after their operation (`getOpportunity` → `services.opportunities.get_opportunity`).
+
+**2. Error envelope (`app/errors.py`).** Every error keeps `detail` exactly as before and adds `error: {code, message, details}`.
+- `ApiError(status, key, lang, **params)` replaces `HTTPException(detail=translate(...))`. It is an `HTTPException`, so existing handlers still work.
+- The code comes from the translation key: `common.error.opportunityNotFound` → `opportunity_not_found`. Seven last segments that several namespaces share (`notFound`, `invalidTransition`, `permissionRequired`, `productNotFound`, `dailyCapReached`, `senderOnly`, `targetNotActive`) are qualified with the namespace, for example `campaigns_not_found`. The list is fixed so codes never change silently.
+- Errors that already returned an object `detail` (`{message, code, ...}` for acceptance-required, partnership cooldown and caps, duplicate listing, already-open enquiry) keep the same object. Validation errors get `validation_error` with a translated message. Raw code-style details such as `unsupported_file_type` become the code.
+
+**3. Service layer.** Routers now only parse, call and return. SQL, rules, RLS behaviour, SECURITY DEFINER calls, audit calls, translated messages and `[TRxxx]/[FRxx]` comments moved with the code into:
+- `app/services/`: `opportunities`, `feed`, `activity` (split out of feed), `listings`, `discovery`, `enquiries`, `reviews`, `partnerships`, `trust_safety`, `verification`, `commercial`, `payments`, `workspace`, `campaigns`, `privacy`, `admin_commercial`, `admin_ops`, `notifications`, `first_run`, `member_settings`, `events`, `uploads`, and `pagination`.
+- Each service takes `(conn, ctx[, lang], typed inputs)` and returns pydantic models.
+- No router imports another router any more. Routers re-export only the background passes `main.py` imports, plus `UPLOAD_DIR`.
+- The payment webhook stays in its router because it must read the raw body; it calls `services.payments.process_webhook`.
+- Uploads now go through workstream B's `app.integrations.storage` seam. The default local adapter writes the same folder and returns the same `/uploads/<name>` URL.
+
+**4. Cursor pagination (additive).** New routes return `{items, next_cursor}` and take `?limit=` (1–100, default 20) and `?cursor=`. Existing routes are unchanged.
+- `/v1/opportunities/mine/page`
+- `/v1/listings/mine/page`
+- `/v1/enquiries/mine/page` (same `role` filter as the plain route)
+- `/v1/opportunities/feed/section/{key}/page`
+- `/v1/listings/{id}/reviews/page`
+- `/v1/promotions/mine/page`
+- `/v1/partnership-requests/mine/page`
+- `/v1/notifications/page`: uses a keyset cursor on (created_at, id), so the whole inbox is reachable. The plain inbox still stops at 50.
+
+Every other `/page` route uses an opaque offset cursor over exactly the rows and order the plain route returns. A bad cursor returns 422 `invalid_cursor`, translated.
+
+**Real bugs found and fixed on the way (translations):**
+- `privacy.*` had no catalogue in any language. The web app was showing raw keys such as `privacy.error.acceptanceRequired` on the publish gate.
+- `adminOps.*` had no catalogue in any language.
+
+Both are added in en/hi/te, along with `common.error.validation`, `common.error.generic` and `common.error.invalidCursor`.
+
+**Deliberate contract corrections:** `credit_available_paise` (boost options) and the `revenue_paise`/`refunds_paise` health metrics used to serialise as strings (`"0"`), because a Postgres `numeric` sum leaked through a bare dict. They are now numbers, which matches the web app's declared TypeScript type (`number`).
+
+**Proof.** All checks ran on a private uvicorn on port 8611. The live API on 8011 was never restarted.
+- A diff script compared 8011 (old code) with 8611 (new code) on 638 GET calls: 6 members including the operator, en and hi, with ids discovered from each member's own lists. 589 were identical. The other 49 were only the translation fixes above and the string-to-number correction.
+- 116 non-mutating write and error-path calls matched `detail` and status exactly (en and hi), and each returned the expected envelope code.
+- Reversible writes were tested: save/unsave of an opportunity and of a listing, restored to their prior state; a `PATCH /v1/privacy {}` no-op; and re-accepting an already-accepted legal version.
+- Every `/page` route was walked at limit 1, 2 and 100 for 5 members, and reproduced the plain list exactly.
+- One upload round-trip returned 201 and the file was served back. The test file was deleted afterwards.
+- `python -c "import app.main"` passed after each domain. The 8611 process was stopped by exact PID.
+
+**Left for later:** true keyset cursors for the offset-paged lists; a cursor on `/v1/listings/search`, which already takes `limit`; and a `/v1/admin/audit/page` route. Raw slugs next to labels are already present on listings and opportunity detail (`categories`/`category_labels`, `required_capabilities`/`capability_labels`); feed cards still carry only the raw `required_capabilities`. A few pre-existing unused variables were left untouched, because this was a move and not a rewrite.
+
+## IMP38 — Refactor C: typed SDK, host adapter, page composition, embeddable components
+
+**Direction:** REFACTOR-PLAN.md §C (owner, 2026-09-21): Vyapar must not be tightly coupled to ForKhatri, and it must be easy to integrate with other platforms. This entry covers `vyapar-web/**` only.
+
+**1. Typed SDK (`vyapar-web/lib/sdk/`).**
+- `client.ts` holds `VyaparClient`:
+  - a configurable base URL, auth strategy, language provider (sent as `X-Vyapar-Language`) and `fetch`;
+  - JSON encoding and a query builder;
+  - an `idempotencyKey` option, and multipart `upload()`.
+- `auth.ts` has three pluggable strategies:
+  - `devHeaderAuth()`: today's `X-Dev-Member-Id` behaviour, read from localStorage;
+  - `cookieSessionAuth()`: `credentials: "include"`, no header;
+  - `bearerTokenAuth(token | () => token)`: `Authorization: Bearer`.
+  - `anonymousAuth()` is also available.
+- `errors.ts`: `ApiError` keeps `status` and `detail`, and adds:
+  - `code`, taken from `body.error.code` and falling back to the `X-Vyapar-Error-Code` header;
+  - `details` and the raw `body`.
+  - `detail` stays the legacy localized text, falling back to `error.message`, so every screen renders errors exactly as before.
+- Domain modules under `domains/` cover every endpoint the web app calls, plus the new integration routes:
+  - `opportunities`, `feed`, `listings`, `enquiries`, `activity`, `notifications`, `reviews`, `partnerships`, `trustSafety`;
+  - `members`, `firstRun`, `privacy`, `preferences`, `workspace`, `commercial`, `admin`, `uploads`, `events`, `dev`;
+  - `integrations`: tokens, scopes, webhooks and deliveries.
+  - Doc comments name each method's `operationId` from the final `vyapar-service/openapi.json`.
+  - The cursor `/page` routes (`minePage`, `sectionPage`, `reviewsPage`, `listPage` …) are included.
+- `types.ts` holds the wire types. They come from the interfaces the pages already declared and were cross-checked against OpenAPI `OpportunityOut`, `ListingOut`, `FeedResponse`, `ActivityResponse`, `EnquiryOut` and the token/webhook schemas.
+- `default.ts` holds the app's own instance:
+  - `NEXT_PUBLIC_API_URL`;
+  - `NEXT_PUBLIC_VYAPAR_AUTH` = `dev|cookie`. When unset, it follows the host: the dev header for forkhatri, the cookie for standalone.
+  - A bearer token is deliberately not configurable through public env.
+- `react.tsx` provides `VyaparSdkProvider` and `useSdk()`.
+- `lib/api.ts` is now a thin shim over the default SDK. It keeps every export (`api`, `apiFetch`, `ApiError`, `uploadFile`, `resolveAttachmentUrl`, `getDevMemberId`, `setDevMemberId`), so pages not yet migrated still work.
+- `lib/i18n/provider.tsx` syncs the chosen language through `sdk.members.setLanguage`.
+
+**2. Host adapter (`vyapar-web/app/host/`).**
+- `HostConfig` has these fields:
+  - `brand`;
+  - `AccountControl`;
+  - `platformLink` (href plus i18n key);
+  - `notifications`, a `NotificationSource` factory;
+  - `routes`, a `VyaparRoutes` URL builder.
+- There are two implementations:
+  - `forkhatri`, the default: the DevMemberSwitcher as account control, "Back to ForKhatri" pointing at `NEXT_PUBLIC_PLATFORM_URL`, and the "Vyapar ForKhatri" brand;
+  - `standalone`: no switcher, no platform link, the brand "Vyapar", and cookie auth.
+  - `NEXT_PUBLIC_VYAPAR_HOST` selects between them.
+- The document title and description also follow the host (`host/meta.ts`).
+- `HostProvider`, `useHost()` and `useRoutes()` are the context API.
+- `HostTopBar` is the old inline fixed flex row from `layout.tsx`, unchanged. It now takes the bell and the account control from the host.
+- `CommandHub` takes the rail brand from the host, with byte-identical markup under forkhatri.
+- `NotificationBell` reads the host's source through the SDK.
+- `profile/page.tsx` renders the platform link only when the host has one. That file is agent D's from now on, and the coordinator was sent the host API.
+
+**3. Composition.** Each migrated page is now route-only: a Screen frame per state, data hooks, and a presentational view. Views are props in, callbacks out, no fetching. Blocks that load their own data arrive as slots.
+- **Data hooks** (`app/hooks/`):
+  - `useResource` is the shared primitive. It always includes `i18n.language` in the dependency list; this is the hard rule that a live language switch updates server-translated labels. It keeps the old value while a re-fetch runs, ignores stale responses, and starts on a microtask, so the development double-mount issues one request.
+  - On top of it: `useOpportunity`, `useSimilarOpportunities`, `useOpportunityWhy`, `useFirstRunState`, `useFeed`, `useProfileRecommendations`, `useListing`, `useListingSearch` (re-runs the last search on a language switch), `useEnquiries` and `useActivity`.
+- **Opportunity detail:**
+  - `components/opportunity/OpportunityDetailView.tsx`;
+  - `useOpportunityDetailController.ts`, which holds every action through the SDK and re-reads the opportunity after each one;
+  - `OpportunityCard.tsx`, one card with `feed`, `sponsored` and `similar` variants, replacing three inline card assemblies;
+  - `labels.ts`, the shared signal, freshness and posted helpers.
+- **Listing detail:** `components/listing/ListingDetailView.tsx` and `useListingDetailController.ts`.
+- **Discover:** `components/discover/DiscoverView.tsx`.
+- **Businesses:** `components/businesses/BusinessesView.tsx`.
+- **Enquiries list:** `components/enquiries/EnquiriesView.tsx`. The thread comes in through `renderThread`.
+- **Activity:** `components/activity/ActivityView.tsx`.
+- **Shared components moved onto `useSdk()`:** ProfileRecommendations (split into `ProfileRecommendationsView` plus a container that takes a `load` loader), ReportSheet (Idempotency-Key through the SDK), PerformanceReport, Reputation/ReviewList, Verification, FilterSheet, IntentBar and DevMemberSwitcher.
+- **Language refresh added where it was missing:** Listing detail, Discover's feed, Activity, Enquiries, ReviewList and a Businesses search already on screen now also re-fetch on a live language switch. Before, they kept the old language until a reload.
+
+**4. Embeddable surfaces (`vyapar-web/embed/`).**
+- `index.ts` exports:
+  - `VyaparEmbedProvider`, which takes an SDK, a host (standalone by default) and a `language`, and supplies Vyapar's own en/hi/te translations;
+  - `OpportunityDetailPanel`, which uses the same controller and view as the route, without the page frame;
+  - `OpportunityCard`, `ProfileRecommendations` and `ProfileRecommendationsView`;
+  - the hooks, the host API and the SDK factories.
+- `embed/README.md` covers usage, auth, custom routes and limits.
+
+**Verification.**
+- `npx tsc --noEmit -p .` passed after every page migration and at the end. ESLint is clean on every new or changed file.
+- **Browser:** `mcp__chrome-devtools-vyapar` only. Before and after, at 390 px mobile emulation and at 1440 px:
+  - screenshots 60–69 are before, 70–79 are after;
+  - the pages were opportunity 101 (non-poster), opportunity 104 (poster view for m_krishna), listing 005, `/` and `/businesses`.
+- **Rendered DOM, before and after:** `body.innerHTML` was diffed per page, including `/activity` and `/enquiries/mine`, whose baselines were captured by briefly restoring the original file. Every page is identical, except:
+  - live data: the impressions counter, and the order of recently viewed items;
+  - one empty `style=""` attribute;
+  - Suspense comment markers.
+- **Live language switch** on opportunity 101 to हिन्दी:
+  - server-translated skill chips re-fetched ("सॉफ्टवेयर विकास"), and so did the similar-card meta line;
+  - Discover in Hindi rendered fully translated;
+  - switching back to English restored everything;
+  - screenshots 80 and 81; no console errors or warnings.
+- **Error envelope:** an unknown opportunity id returns `error.code = opportunity_not_found`, and the page shows the localized `detail` as before.
+- **Other checks:** a directory search went through the SDK (`/v1/listings/search?sort_by=relevance&broaden_attempt=0`, 16 results). No data was created; save and share were never tapped.
+
+**Left for later:**
+- Pages still on the `lib/api` shim: first-run, the `/new` forms, the enquiry thread, partnerships, workspace, promotions, campaigns, boost, payments, privacy, moderation outcomes, `listings/mine`, `opportunities/section`, the admin screens, and the FileUpload and ReviewComposer components. They work unchanged. Several are now agent D's files.
+- The `standalone` host was checked by type and by code path only. Checking it live needs a dev-server restart with `NEXT_PUBLIC_VYAPAR_HOST=standalone`, which was not done because the live server is the owner's.
+- The embeddable components rely on `next/link` and view transitions, so a non-Next host needs a shim (documented).
+- The SDK is hand-written and typed. There is no codegen dependency; types were checked against `openapi.json` by hand.
+
+## IMP40: custom boost duration, and the member's two-kind profile (2026-09-22)
+
+**Custom boost duration.** Owner, on the boost screen: "no custom duration?" Boosts were sold only as 3, 7 or 14-day packs.
+- Migration `017-custom-boost-duration.sql`: `promotions.duration_days` (1–30, NULL means the pack's own length); `apply_payment_result()` honours it when a paid boost goes live.
+- One pricing rule, `custom_boost_quote()` in `services/commercial.py`, used by both the on-screen quote (`GET /v1/promotions/quote?days=N`, operation `quoteCustomPromotion`) and the order, so the member is charged exactly what was shown: per-day rate of the longest pack that fits (the shortest pack's rate below 3 days), rounded to whole rupees; a custom length equal to a pack is just that pack.
+- `POST /v1/promotions` accepts `custom_days` instead of `product_id`. Options carry `custom_duration {min_days, max_days, bands}`.
+- Boost screen: a fourth "Custom" choice with a slider and a number field, live "₹… incl. GST", and the disclosure reads "Custom boost, N days".
+
+**Your profile: business and professional, either one, at least one.** Owner: "in my profile we can enhance profile information about business / or skill; keep both models, any one can be an option, without any nothing can move forward."
+- `/v1/members/me` now returns `profiles {business, professional, complete}`: the member's most recent non-archived listing of each kind (name, headline, skills, state, verification).
+- Profile hub: a "Your profile" block above the tiles with both kinds side by side; each card summarises the profile or invites the member to add that kind (`/listings/new?kind=…` lands on the form directly).
+- Gate: `require_profile()` in `services/listings.py` refuses `POST /v1/enquiries` and `POST /v1/opportunities` with 403 `profile_required` until the member has at least one profile of either kind (a draft counts). The enquiry composer and the post-opportunity screen show the same two-card setup block in place of the form. Browsing, saving and reading never need a profile.
+
+Verified at 1440px and 390px (screenshots 90–92), no console errors. Test member row created during the API check was deleted.
+
+## IMP41: design tightening (owner asked "did you like the UI?", then "do the changes")
+
+Six points, applied across the shell and the screens they touch:
+1. **Fewer borders.** Cards keep a hairline; facts and hub tiles are plain surfaces that outline only on hover.
+2. **Type ladder.** New `.vy-eyebrow` (small, tracked, uppercase, tertiary) for section labels; `.vy-section-title` is now primary-coloured. Inline `fontSize: 14` section headings on the profile hub replaced.
+3. **Phone tiles** carry icon and description at every width, denser padding.
+4. **Real icons.** `app/components/Icon.tsx`, one thin-line SVG set, replaces the Unicode glyphs in the rail, floating hub, profile tiles, profile cards and both choosers.
+5. **Desktop header.** At ≥900px the top pills sit on a solid bar with a hairline, not a gradient over content.
+6. **Rough edges.** Boost end date is written out ("12 October 2026"); plain content links share one accent, no-underline-until-hover style; the stray "·" before the locality on the profile card is gone.
+
+Verified at 1440px and 390px (screenshots 93–95), no console errors.

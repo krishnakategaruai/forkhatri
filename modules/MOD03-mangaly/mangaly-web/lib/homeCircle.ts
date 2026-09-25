@@ -1,108 +1,121 @@
-/* Home Circle calls against MangalyService — FR007/FR008/FR009/FR010/FR014/FR016. */
+/* Home Circle calls against MangalyService — FR007/FR008/FR009/FR010/FR014/FR016.
+ *
+ * [2026-09-17 rework, contract §3/§6] Invite is available to every signed-in
+ * account, in every context: a candidate invites family, a family member
+ * invites a relative (or a candidate, by phone), and an account with no
+ * context at all can start a circle by inviting someone. People are found
+ * through `GET /home-circle/people?q=` (ForKhatri members by name or phone).
+ * Relationship vocabulary now includes `guardian`. */
 
-import { API_BASE, apiFetch } from './api';
-import { getI18n } from './i18n/config';
+import { deleteJson, getJson, postJson, query, sendJson, type Outcome } from './api';
+import type { LookingFor, Relationship } from './auth';
 
-function currentLanguageHeader(): Record<string, string> {
-  try {
-    return { 'X-Mangaly-Language': getI18n().language };
-  } catch {
-    return {};
-  }
+export type { Outcome };
+export type RelationshipType = Relationship;
+
+export const RELATIONSHIPS: RelationshipType[] = ['parent', 'guardian', 'sibling', 'relative'];
+
+/* [Migration 040] Two levels, as the owner described them: the ROLE
+ * (parent / guardian / sibling / relative — it groups the circle into Home and
+ * Relatives and is what permissions read) and, inside it, the EXACT relation of
+ * the member to the candidate — what the family actually calls each other. */
+export type Relation =
+  | 'mother' | 'father' | 'brother' | 'sister' | 'guardian'
+  | 'grandmother' | 'grandfather'
+  | 'paternal_uncle' | 'maternal_uncle' | 'paternal_aunt' | 'maternal_aunt'
+  | 'cousin' | 'brother_in_law' | 'sister_in_law' | 'family_friend';
+
+export const HOME_RELATIONS: Relation[] = ['mother', 'father', 'brother', 'sister', 'guardian'];
+export const RELATIVE_RELATIONS: Relation[] = [
+  'grandmother', 'grandfather',
+  'paternal_uncle', 'maternal_uncle', 'paternal_aunt', 'maternal_aunt',
+  'cousin', 'brother_in_law', 'sister_in_law', 'family_friend',
+];
+
+export const RELATION_ROLE: Record<Relation, RelationshipType> = {
+  mother: 'parent', father: 'parent', guardian: 'guardian',
+  brother: 'sibling', sister: 'sibling',
+  grandmother: 'relative', grandfather: 'relative',
+  paternal_uncle: 'relative', maternal_uncle: 'relative',
+  paternal_aunt: 'relative', maternal_aunt: 'relative',
+  cousin: 'relative', brother_in_law: 'relative', sister_in_law: 'relative',
+  family_friend: 'relative',
+};
+
+/** The words for someone's place in a circle: the exact relation when stated,
+ *  else the role (rows from before migration 040 recorded only a role). */
+export function relationKey(relation: string | null | undefined, role: string): string {
+  return relation ? `circle:relation.${relation}` : `circle:invite.relationshipOption.${role}`;
 }
-
-async function getJson<T>(path: string): Promise<T | null> {
-  try {
-    const res = await apiFetch(`${API_BASE}${path}`, {
-      credentials: 'include',
-      cache: 'no-store',
-      headers: currentLanguageHeader(),
-    });
-    if (!res.ok) return null;
-    const text = await res.text();
-    return text ? (JSON.parse(text) as T) : null;
-  } catch {
-    return null;
-  }
-}
-
-export type Outcome<T> = { ok: true; data: T } | { ok: false; status: number; message?: string };
-
-async function sendJson<T>(method: 'POST' | 'PATCH', path: string, body?: unknown): Promise<Outcome<T>> {
-  let res: Response;
-  try {
-    res = await apiFetch(`${API_BASE}${path}`, {
-      method,
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json', ...currentLanguageHeader() },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-    });
-  } catch {
-    return { ok: false, status: 0 };
-  }
-  const text = await res.text();
-  const parsed = text ? JSON.parse(text) : null;
-  if (!res.ok) {
-    return {
-      ok: false,
-      status: res.status,
-      message: typeof parsed?.detail === 'string' ? parsed.detail : undefined,
-    };
-  }
-  return { ok: true, data: parsed as T };
-}
-
-function postJson<T>(path: string, body?: unknown): Promise<Outcome<T>> {
-  return sendJson<T>('POST', path, body);
-}
-
-async function del(path: string): Promise<Outcome<null>> {
-  try {
-    const res = await apiFetch(`${API_BASE}${path}`, {
-      method: 'DELETE',
-      credentials: 'include',
-      headers: currentLanguageHeader(),
-    });
-    if (!res.ok) return { ok: false, status: res.status };
-    return { ok: true, data: null };
-  } catch {
-    return { ok: false, status: 0 };
-  }
-}
-
-export type RelationshipType = 'parent' | 'sibling' | 'relative';
 
 export type PendingInvitation = {
   id: string;
   candidate_account_id: string;
+  candidate_profile_id?: string;
+  candidate_name?: string | null;
   inviter_account_id: string;
+  inviter_name?: string | null;
   relationship_type: RelationshipType;
+  relation?: Relation | null;
   created_at: string;
   expires_at: string | null;
+  /** `to_member`: you are invited into the candidate's circle.
+   *  `to_candidate`: the inviter asks to join YOUR circle (you are the candidate). */
+  direction?: 'to_member' | 'to_candidate';
 };
 
 export type Member = {
   membership_id: string;
   member_account_id: string;
   relationship_type: RelationshipType;
+  relation?: Relation | null;
   status: string;
   joined_at: string;
   member_name?: string | null;
+  member_photo_url?: string | null;
 };
 
 export type Suggestion = {
   id: string;
   suggested_profile_id: string;
   suggested_by_relationship_type: RelationshipType;
+  suggested_by_name?: string | null;
+  /** True when the reader made this suggestion themselves. */
+  suggested_by_is_you?: boolean;
+  suggested_by_relation?: string | null;
   note: string | null;
   created_at: string;
 };
 
-export async function invite(
-  invitee_identifier: string,
-  relationship_type: RelationshipType
-): Promise<Outcome<{ invitation_id: string }>> {
-  return postJson('/home-circle/invite', { invitee_identifier, relationship_type });
+/** Contract §6: a ForKhatri member found by name or phone. */
+export type Person = {
+  account_id: string;
+  display_name: string;
+  phone_masked: string | null;
+  has_profile: boolean;
+};
+
+export async function searchPeople(q: string): Promise<Person[]> {
+  if (!q.trim()) return [];
+  return (await getJson<Person[]>(`/home-circle/people${query({ q: q.trim() })}`)) ?? [];
+}
+
+export type InviteInput = {
+  /** A found person's account id (preferred) … */
+  invitee_account_id?: string;
+  /** … or a raw phone/email when they are not on ForKhatri yet. */
+  invitee_identifier?: string;
+  relationship_type: RelationshipType;
+  /** [Migration 040] The exact relation; the server derives the role from it. */
+  relation?: Relation;
+  /** Whose circle: omitted ⇒ the caller's own. */
+  for_candidate?: string;
+  /** `to_candidate`: ask the invitee (a candidate) to let the caller join their circle. */
+  direction?: 'to_member' | 'to_candidate';
+};
+
+export async function invite(input: InviteInput): Promise<Outcome<{ invitation_id: string }>> {
+  return postJson('/home-circle/invite', input);
 }
 
 export async function listPendingInvitations(): Promise<PendingInvitation[]> {
@@ -117,24 +130,62 @@ export async function declineInvitation(id: string): Promise<Outcome<null>> {
   return postJson(`/home-circle/invitations/${id}/decline`);
 }
 
-/* `candidateAccountId` reads the circle of a candidate the signed-in member
- * helps, rather than their own — what the parent-role Circle screen shows. */
-export async function listMembers(candidateAccountId?: string): Promise<Member[]> {
-  const query = candidateAccountId
-    ? `?candidate_account_id=${encodeURIComponent(candidateAccountId)}`
-    : '';
-  return (await getJson<Member[]>(`/home-circle/members${query}`)) ?? [];
+/* The contexts this account can act in: their own candidate profile (if they
+ * have one) and every circle they belong to. A parent or relative with no
+ * profile of their own still has circles here, which is how the Home and
+ * Profile screens tell "start the wizard" apart from "go to your circle".
+ * Each context carries `looking_for` because that answer always constrains
+ * discovery for the candidate being acted for. */
+
+export type OwnProfileContext = {
+  account_id: string;
+  name: string;
+  looking_for: LookingFor | null;
+};
+
+export type CircleContext = {
+  membership_id: string;
+  candidate_account_id: string;
+  candidate_name: string;
+  relationship_type: RelationshipType;
+  relation?: Relation | null;
+  joined_at: string;
+  looking_for: LookingFor | null;
+};
+
+export type Contexts = {
+  own_profile: OwnProfileContext | null;
+  circles: CircleContext[];
+};
+
+export async function getContexts(): Promise<Contexts | null> {
+  return await getJson<Contexts>('/home-circle/contexts');
+}
+
+/** Members of a candidate's circle; omitted ⇒ the caller's own. */
+export async function listMembers(forCandidate?: string): Promise<Member[]> {
+  return (await getJson<Member[]>(`/home-circle/members${query({ for_candidate: forCandidate })}`)) ?? [];
+}
+
+/** FR010 — the candidate removes a member. */
+/** [Migration 040] The candidate, or the member themselves, states the exact relation. */
+export async function setMemberRelation(membershipId: string, relation: Relation): Promise<Outcome<null>> {
+  return sendJson('PATCH', `/home-circle/members/${membershipId}/relation`, { relation });
 }
 
 export async function removeMember(membershipId: string): Promise<Outcome<null>> {
-  return del(`/home-circle/members/${membershipId}`);
+  return deleteJson(`/home-circle/members/${membershipId}`);
 }
 
-export async function listSuggestions(candidateAccountId?: string): Promise<Suggestion[]> {
-  const query = candidateAccountId
-    ? `?candidate_account_id=${encodeURIComponent(candidateAccountId)}`
-    : '';
-  return (await getJson<Suggestion[]>(`/home-circle/suggestions${query}`)) ?? [];
+/** FR010 — a member leaves a circle themselves. */
+export async function leaveCircle(membershipId: string): Promise<Outcome<null>> {
+  return postJson(`/home-circle/members/${membershipId}/leave`);
+}
+
+export async function listSuggestions(forCandidate?: string): Promise<Suggestion[]> {
+  return (
+    (await getJson<Suggestion[]>(`/home-circle/suggestions${query({ for_candidate: forCandidate })}`)) ?? []
+  );
 }
 
 /* FR016 — private notes about a match. The author keeps and edits their own
@@ -169,9 +220,16 @@ export type SharedNote = {
   forwarded_at: string;
 };
 
+/* Notes and suggestions are addressed by the caller's MEMBERSHIP (which
+ * circle they write in), the API's `membership_id`. Every caller already
+ * passes `family.membership_id`; it used to go out as `for_candidate`, which
+ * the API does not read, so both features failed for every family member. */
 export async function listMyNotes(membershipId: string, subjectAccountId: string): Promise<FamilyNote[]> {
-  const query = new URLSearchParams({ membership_id: membershipId, subject_account_id: subjectAccountId });
-  return (await getJson<FamilyNote[]>(`/home-circle/notes?${query.toString()}`)) ?? [];
+  return (
+    (await getJson<FamilyNote[]>(
+      `/home-circle/notes${query({ membership_id: membershipId, subject_account_id: subjectAccountId })}`
+    )) ?? []
+  );
 }
 
 export async function addNote(
@@ -191,7 +249,7 @@ export async function editNote(noteId: string, content: string): Promise<Outcome
 }
 
 export async function deleteNote(noteId: string): Promise<Outcome<null>> {
-  return del(`/home-circle/notes/${noteId}`);
+  return deleteJson(`/home-circle/notes/${noteId}`);
 }
 
 export async function askToReadNote(noteId: string): Promise<Outcome<FamilyNote>> {
@@ -236,41 +294,16 @@ export async function declineContactRequest(id: string): Promise<Outcome<null>> 
   return postJson(`/home-circle/contact-requests/${id}/decline`);
 }
 
-/* FR097 — every search the member can act in. */
-
-export type LookingFor = 'bride' | 'groom';
-
-export type CircleContext = {
-  membership_id: string;
-  candidate_account_id: string;
-  candidate_name: string;
-  relationship_type: RelationshipType;
-  joined_at: string;
-  /* Whose side of the match this context searches on — always the CANDIDATE's
-   * answer, never the family member's. Null until they have answered, or while
-   * their profile is paused. */
-  looking_for: LookingFor | null;
-};
-
-export type Contexts = {
-  own_profile: { account_id: string; name: string; looking_for: LookingFor | null } | null;
-  circles: CircleContext[];
-};
-
-export async function getContexts(): Promise<Contexts | null> {
-  return await getJson<Contexts>('/home-circle/contexts');
-}
-
 /* FR014 — a family member suggests a profile to the candidate they help. */
 
 export async function suggestProfile(
   membershipId: string,
-  profileAccountId: string,
+  profileId: string,
   note?: string
 ): Promise<Outcome<{ suggestion_id: string }>> {
   return postJson('/home-circle/suggest', {
     membership_id: membershipId,
-    suggested_profile_id: profileAccountId,
+    suggested_profile_id: profileId,
     note: note ?? null,
   });
 }

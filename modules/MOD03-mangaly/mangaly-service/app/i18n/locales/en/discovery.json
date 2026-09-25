@@ -1,0 +1,112 @@
+{
+  "reason": {
+    "relocation": "Both have the same outlook on relocation ({value}).",
+    "diet": "Both share a {value} lifestyle.",
+    "education": "Both hold a {value} level of education.",
+    "locality": "Located in {locality}, matching the preferred area."
+  },
+  "value": {
+    "relocation_willingness": {
+      "open_to_discussion": "open to discussion",
+      "willing": "willing to relocate",
+      "not_willing": "prefers not to relocate",
+      "depends": "depends on the match"
+    },
+    "diet": {
+      "vegetarian": "vegetarian",
+      "non_vegetarian": "non-vegetarian",
+      "vegan": "vegan",
+      "eggetarian": "eggetarian",
+      "jain": "Jain"
+    },
+    "education_level": {
+      "high_school": "high school",
+      "diploma": "diploma",
+      "bachelors": "bachelor's",
+      "masters": "master's",
+      "doctorate": "doctorate",
+      "professional": "professional"
+    },
+    "mother_tongue": {
+      "telugu": "Telugu",
+      "tamil": "Tamil",
+      "kannada": "Kannada",
+      "hindi": "Hindi",
+      "punjabi": "Punjabi",
+      "marathi": "Marathi",
+      "gujarati": "Gujarati",
+      "english": "English"
+    },
+    "sub_community": {
+      "khatri": "Khatri",
+      "arora": "Arora",
+      "sood": "Sood",
+      "bhatia": "Bhatia"
+    },
+    "family_involvement": {
+      "close_knit": "closely involved",
+      "moderate": "involved in the big decisions",
+      "independent": "close but independent"
+    },
+    "relationship": {
+      "parent": "parent",
+      "guardian": "guardian",
+      "sibling": "sibling",
+      "relative": "relative"
+    },
+    "relation": {
+      "mother": "mother",
+      "father": "father",
+      "brother": "brother",
+      "sister": "sister",
+      "guardian": "guardian",
+      "grandmother": "grandmother",
+      "grandfather": "grandfather",
+      "paternal_uncle": "uncle (father's side)",
+      "maternal_uncle": "uncle (mother's side)",
+      "paternal_aunt": "aunt (father's side)",
+      "maternal_aunt": "aunt (mother's side)",
+      "cousin": "cousin",
+      "brother_in_law": "brother-in-law",
+      "sister_in_law": "sister-in-law",
+      "family_friend": "family friend"
+    }
+  },
+  "shelf": {
+    "reason": {
+      "sharedHobbies": "You both enjoy {list}",
+      "sameTongue": "Also speaks {value}",
+      "sameCommunity": "Also {value}",
+      "sameNative": "Family also from {place}",
+      "sameDiet": "Also {value}",
+      "sameCity": "In {city}, like you",
+      "openToMove": "In {city} · open to moving",
+      "suggestedBy": "Suggested by your {relation}",
+      "sameFamilyView": "Also wants family {value}",
+      "joined": "Joined {days} days ago",
+      "joinedToday": "Joined today",
+      "joinedYesterday": "Joined yesterday",
+      "suggestedByYou": "You suggested this",
+      "mutualFit": "You fit each other's preferences",
+      "wantsYourCity": "Also wants someone in {city}",
+      "wantsYourAge": "Looking for someone your age"
+    },
+    "reasonFor": {
+      "sharedHobbies": "Enjoys {list}, like {name}",
+      "sameTongue": "Speaks {value}, like {name}",
+      "sameCommunity": "{value}, like {name}",
+      "sameNative": "Family also from {place}",
+      "sameDiet": "{value}, like {name}",
+      "sameCity": "In {city}, like {name}",
+      "suggestedBy": "Suggested by {name}'s {relation}",
+      "suggestedByYou": "You suggested this",
+      "sameFamilyView": "Also wants family {value}",
+      "mutualFit": "{name} and they fit each other's preferences",
+      "wantsYourCity": "Wants someone in {city}, where {name} is",
+      "wantsYourAge": "Looking for someone {name}'s age"
+    }
+  },
+  "error": {
+    "lookingForMissing": "Tell us whether you are looking for a bride or a groom to see matches."
+  }
+}

@@ -14,6 +14,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, ApiError } from "@/lib/api";
+import Screen from "@/app/components/Screen";
 
 interface PrivacySettings {
   capability_visible: boolean;
@@ -126,10 +127,10 @@ export default function PrivacyPage() {
     }
   }
 
-  if (!settings) return <main className="vy-shell"><p className="vy-muted">{t("common:state.loading")}</p></main>;
+  if (!settings) return <Screen><p className="vy-muted">{t("common:state.loading")}</p></Screen>;
 
   const toggleRow = (labelKey: string, helpKey: string, field: keyof PrivacySettings, value: boolean) => (
-    <div className="vy-row" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
+    <div className="vy-row vy-toggle-row" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
       <div>
         <div>{t(`privacy:control.${labelKey}` as "control.discoverable")}</div>
         <p className="vy-muted" style={{ fontSize: 12, marginTop: 2 }}>{t(`privacy:control.${helpKey}` as "control.discoverableHelp")}</p>
@@ -138,17 +139,37 @@ export default function PrivacyPage() {
     </div>
   );
 
+  // [IMP39 — desktop layout] A settings layout at ≥900px: a sticky list of
+  // this screen's sections on the left (plain in-page anchors, so it works
+  // without script and keeps the one-screen rule of FR36), the settings on
+  // the right at a comfortable measure. Below 900px the nav is display:none
+  // and both wrappers are display:contents — the phone screen is unchanged.
+  const sections = [
+    { id: "privacy-controls", label: t("privacy:controlsTitle") },
+    { id: "privacy-analytics", label: t("privacy:analyticsTitle") },
+    { id: "privacy-data", label: t("privacy:dataRights.title") },
+    ...(preferences.length > 0 ? [{ id: "privacy-preferences", label: t("privacy:preferences.title") }] : []),
+  ];
+
   return (
-    <main className="vy-shell">
+    <Screen width="wide">
       <h1>{t("privacy:title")}</h1>
       {notice && <p className="vy-error">{notice}</p>}
 
-      <section className="vy-card vy-stack">
-        <h2 style={{ fontSize: 16 }}>{t("privacy:controlsTitle")}</h2>
+      <div className="vy-settings">
+      <nav className="vy-settings-nav" aria-label={t("common:layout.onThisPage")}>
+        <span className="vy-ctx-heading" style={{ padding: "0 12px 8px" }}>{t("common:layout.onThisPage")}</span>
+        {sections.map((sec) => (
+          <a key={sec.id} href={`#${sec.id}`}>{sec.label}</a>
+        ))}
+      </nav>
+      <div className="vy-settings-main">
+      <section id="privacy-controls" className="vy-card vy-stack">
+        <h2 className="vy-card-title">{t("privacy:controlsTitle")}</h2>
         {toggleRow("discoverable", "discoverableHelp", "discoverable", settings.discoverable)}
         {toggleRow("capabilityVisible", "capabilityVisibleHelp", "capability_visible", settings.capability_visible)}
         {toggleRow("seekingVisible", "seekingVisibleHelp", "seeking_visible", settings.seeking_visible)}
-        <div>
+        <div className="vy-toggle-row">
           <div>{t("privacy:control.contactDisclosure")}</div>
           <p className="vy-muted" style={{ fontSize: 12, marginTop: 2, marginBottom: 6 }}>{t("privacy:control.contactDisclosureHelp")}</p>
           <select className="vy-select" value={settings.contact_disclosure} disabled={busy} onChange={(e) => update("contact_disclosure", e.target.value)}>
@@ -161,14 +182,14 @@ export default function PrivacyPage() {
         {toggleRow("commercialComms", "commercialCommsHelp", "commercial_comms", settings.commercial_comms)}
       </section>
 
-      <section className="vy-card vy-stack">
-        <h2 style={{ fontSize: 16 }}>{t("privacy:analyticsTitle")}</h2>
+      <section id="privacy-analytics" className="vy-card vy-stack">
+        <h2 className="vy-card-title">{t("privacy:analyticsTitle")}</h2>
         {toggleRow("behavioralAnalytics", "behavioralAnalyticsHelp", "behavioral_analytics", settings.behavioral_analytics)}
         {toggleRow("digestEnabled", "digestEnabledHelp", "digest_enabled", settings.digest_enabled)}
       </section>
 
-      <section className="vy-stack">
-        <h2 style={{ fontSize: 16 }}>{t("privacy:dataRights.title")}</h2>
+      <section id="privacy-data" className="vy-stack">
+        <h2 className="vy-card-title">{t("privacy:dataRights.title")}</h2>
         <div className="vy-row" style={{ flexWrap: "wrap" }}>
           <button className="vy-btn vy-btn-secondary" disabled={busy} onClick={doExport}>{t("privacy:dataRights.export")}</button>
           {!confirmingDelete ? (
@@ -199,8 +220,8 @@ export default function PrivacyPage() {
       </section>
 
       {preferences.length > 0 && (
-        <section className="vy-stack">
-          <h2 style={{ fontSize: 16 }}>{t("privacy:preferences.title")}</h2>
+        <section id="privacy-preferences" className="vy-stack">
+          <h2 className="vy-card-title">{t("privacy:preferences.title")}</h2>
           {preferences.map((p) => (
             <div key={p.id} className="vy-card vy-stack" style={{ gap: 6 }}>
               <strong>{t(`privacy:preferences.key.${p.key}` as "preferences.key.max_distance_km", { defaultValue: p.key })}</strong>
@@ -221,6 +242,8 @@ export default function PrivacyPage() {
           ))}
         </section>
       )}
-    </main>
+      </div>
+      </div>
+    </Screen>
   );
 }

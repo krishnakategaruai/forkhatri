@@ -1,17 +1,30 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import Link from "next/link";
+import Icon from "@/components/Icon";
+import { useLoaderHold } from "@/lib/useLoaderHold";
+import SacredLoader from "@/components/SacredLoader";
+import MotionTitle from "@/components/MotionTitle";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
-import { resolveMediaUrl } from '@/lib/api';
-import ForKhatriHubLink from '@/components/ForKhatriHubLink';
-import { getSession, logOut, type Session } from '@/lib/auth';
-import { reportOutage } from '@/lib/outage';
-import { redirectToEntrance } from '@/lib/platform';
-import { getContexts } from '@/lib/homeCircle';
-import { getOwnProfile, type Profile } from '@/lib/profile';
+import { resolveMediaUrl } from "@/lib/api";
+import AccountButton from "@/components/AccountButton";
+import ForKhatriHubLink from "@/components/ForKhatriHubLink";
+import { Avatar } from "@/components/Avatar";
+import { getSession, type Session } from "@/lib/auth";
+import { reportOutage } from "@/lib/outage";
+import { redirectToEntrance } from "@/lib/platform";
+import { getContexts, listMembers, type Member } from "@/lib/homeCircle";
+import {
+  getCompleteness,
+  getOwnProfile,
+  type CompletenessReport,
+  type Profile,
+} from "@/lib/profile";
+import { search, type SearchResult } from "@/lib/discovery";
+import { listIncoming, type Connection } from "@/lib/connections";
 
 /* FR090 · TR090 · UX01 · UI01 · SP090
  *
@@ -31,14 +44,28 @@ import { getOwnProfile, type Profile } from '@/lib/profile';
  * gating behaviour of its own. */
 
 type State =
-  | { phase: 'checking' }
-  | { phase: 'in'; session: Session; profile: Profile }
-  | { phase: 'out' };
+  | { phase: "checking" }
+  | {
+      phase: "in";
+      session: Session;
+      profile: Profile;
+      completeness: CompletenessReport | null;
+      matches: SearchResult[];
+      matchTotal: number;
+      incoming: Connection[];
+      members: Member[];
+    }
+  | { phase: "out" };
 
 export default function HomePage() {
-  const { t } = useTranslation(['common', 'auth']);
+  // [owner 2026-09-25] The loader stays at least a second, never a flash.
+  const loaderHold = useLoaderHold();
+  const { t, i18n } = useTranslation(["common", "auth", "home", "profile", "discover"]);
+  const railRef = useRef<HTMLUListElement>(null);
+  // One press moves the rail by most of what is visible.
+  const railStep = () => Math.round((railRef.current?.clientWidth ?? 600) * 0.8);
   const router = useRouter();
-  const [state, setState] = useState<State>({ phase: 'checking' });
+  const [state, setState] = useState<State>({ phase: "checking" });
 
   useEffect(() => {
     let active = true;
@@ -66,49 +93,72 @@ export default function HomePage() {
         // their own; they belong in that candidate's circle, not the wizard.
         const contexts = await getContexts();
         if (!active) return;
-        router.replace(contexts?.circles.length ? '/circle' : '/profile/create');
+        router.replace(
+          contexts?.circles.length ? "/circle" : "/profile/create",
+        );
         return;
       }
-      setState({ phase: 'in', session, profile });
+      // Home shows people, so it loads people. Each call is optional: a
+      // failure leaves that section empty rather than blocking the screen.
+      const [completeness, found, incoming, members] = await Promise.all([
+        getCompleteness().catch(() => null),
+        search({}, { page: 1 }).catch(() => null),
+        listIncoming().catch(() => [] as Connection[]),
+        listMembers().catch(() => [] as Member[]),
+      ]);
+      if (!active) return;
+      setState({
+        phase: "in",
+        session,
+        profile,
+        completeness,
+        matches: found?.results ?? [],
+        matchTotal: found?.total ?? 0,
+        incoming,
+        members,
+      });
     })();
     return () => {
       active = false;
     };
   }, [router]);
 
-  if (state.phase === 'checking') {
+  if (state.phase === "checking" || loaderHold) {
     return (
       <main className="screen screen--centered">
-        <span className="brand-mark brand-mark--lg" aria-hidden="true">
-          m
-        </span>
-        <p className="caption">{t('common:state.loading')}</p>
+        <SacredLoader />
       </main>
     );
   }
 
-  if (state.phase === 'out') {
+  if (state.phase === "out") {
     return (
       <main className="screen screen--centered">
         <span className="brand-mark brand-mark--lg" aria-hidden="true">
           m
         </span>
-        <div style={{ textAlign: 'center' }}>
-          <h1 style={{ margin: '0 0 6px', fontSize: '1.75rem', lineHeight: '2.125rem' }}>
-            {t('common:app.name')}
+        <div style={{ textAlign: "center" }}>
+          <h1
+            style={{
+              margin: "0 0 6px",
+              fontSize: "1.75rem",
+              lineHeight: "2.125rem",
+            }}
+          >
+            {t("common:app.name")}
           </h1>
           <p className="muted" style={{ margin: 0 }}>
-            {t('common:app.tagline')}
+            {t("common:app.tagline")}
           </p>
         </div>
-        <div className="form__actions" style={{ width: '100%' }}>
+        <div className="form__actions" style={{ width: "100%" }}>
           <Link className="cta cta--link" href="/signup">
-            {t('auth:signup.submit')}
+            {t("auth:signup.submit")}
           </Link>
           <p className="form__alt">
-            {t('auth:signup.haveAccount')}{' '}
+            {t("auth:signup.haveAccount")}{" "}
             <Link className="link" href="/login">
-              {t('auth:signup.logInLink')}
+              {t("auth:signup.logInLink")}
             </Link>
           </p>
         </div>
@@ -116,60 +166,291 @@ export default function HomePage() {
     );
   }
 
+  const { profile, completeness, matches, matchTotal, incoming, members } =
+    state;
+  const firstName = profile.name.trim().split(/\s+/)[0] || profile.name;
+  /* The same three milestones /me shows, so Home and Me never disagree
+     about how far along a profile is. "0 of 8 answered" here beside
+     "Basics 2/3" there read as a contradiction, because they counted
+     different things. */
+  const answered = completeness
+    ? {
+        done: completeness.enhanced_filled_categories,
+        total: completeness.enhanced_total_categories,
+      }
+    : null;
+  const milestonesReached = completeness
+    ? 1 +
+      (completeness.discoverability_complete ? 1 : 0) +
+      (completeness.enhanced_filled_categories >=
+      completeness.enhanced_total_categories
+        ? 1
+        : 0)
+    : 0;
+  const enhancedShare = completeness
+    ? completeness.enhanced_filled_categories /
+      Math.max(1, completeness.enhanced_total_categories)
+    : 0;
+  const milestonePct = Math.round(((milestonesReached + enhancedShare) / 4) * 100);
+  const profileIncomplete = !!answered && answered.done < answered.total;
+  // The candidate's own Home Circle: the family helping *them*. (Circles the
+  // account belongs to for someone else live on the Circle screen.)
+  const circleCount = members.length;
+  const unread = state.session.counts.unread_messages;
+  const waiting = incoming.length;
+
   return (
     <>
-      <header className="topbar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-          <span className="brand-mark" aria-hidden="true">
-            m
-          </span>
-          <h1>{t('common:app.name')}</h1>
+      {/* The greeting is the page title: the date as a quiet eyebrow, the
+          name set in motion type. No wordmark (the navigation carries it)
+          and no banner — Home leads with people. */}
+      <header className="home-head">
+        <div className="home-head__text">
+          <p className="home-head__date">
+            {/* Indian order ("Thursday, 24 September") in every language. */}
+            {new Intl.DateTimeFormat(`${i18n.language}-IN`, {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+            }).format(new Date())}
+          </p>
+          <MotionTitle
+            as="h1"
+            className="home-head__title"
+            text={`${t("home:greetingWord")} ${firstName}`}
+            accent={[1]}
+          />
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div className="topbar__actions">
           <ForKhatriHubLink />
-          <button className="icon-btn icon-btn--text" onClick={() => void logOut()}>
-            {t('common:action.logOut')}
-          </button>
+          <AccountButton />
         </div>
       </header>
 
-      <main className="screen">
-        <div className="card">
-          {state.profile.photo_url && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={resolveMediaUrl(state.profile.photo_url) ?? undefined}
-              alt=""
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: 16,
-                objectFit: 'cover',
-                float: 'left',
-                marginRight: 12,
-              }}
-            />
-          )}
-          <h2 className="h2" style={{ margin: 0 }}>
-            {state.profile.name}
-          </h2>
-          <p className="caption" style={{ margin: 0 }}>
-            {state.profile.city_locality}
-          </p>
-          <p className="body-lg" style={{ margin: 0, clear: 'both' }}>
-            {t('common:app.tagline')}
-          </p>
-        </div>
+      <main className="home">
+        {/* Only what is waiting on this person, and only when something is.
+            A zero is not news, so nothing renders for it. */}
+        {(waiting > 0 || unread > 0) && (
+          <div className="home-alerts">
+            {waiting > 0 && (
+              <Link className="home-alert home-alert--req" href="/discover">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />
+                </svg>
+                <strong>{waiting}</strong>
+                <span>{t("home:tiles.requests")}</span>
+              </Link>
+            )}
+            {unread > 0 && (
+              <Link className="home-alert" href="/messages">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-4.4 3.3A.4.4 0 0 1 4 20z" />
+                </svg>
+                <strong>{unread}</strong>
+                <span>{t("home:tiles.unread", { count: unread })}</span>
+              </Link>
+            )}
+          </div>
+        )}
 
-        <div className="card">
-          <h2 className="h2">{t('common:build.title')}</h2>
-          <p className="caption" style={{ margin: 0 }}>
-            {t('common:build.explainer')}
-          </p>
-          <Link className="link" href="/status">
-            {t('common:build.title')} →
+        {/* NEW MATCHES — large immersive portraits, one filling most of a
+            phone screen with the next peeking: the face first, the name set
+            big on the photo, two or three facts as glass chips. */}
+        <section className="hfeed" aria-labelledby="home-matches">
+          <div className="hfeed__head">
+            <h2 className="hfeed__title" id="home-matches">
+              {t("home:matches.title")}
+              {matchTotal > 0 && <span className="hfeed__count">{matchTotal}</span>}
+            </h2>
+            <Link className="hfeed__all" href="/discover">
+              {t("home:matches.seeAll")}
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+            </Link>
+          </div>
+
+          {matches.length === 0 ? (
+            <p className="caption">{t("home:matches.empty")}</p>
+          ) : (
+            <div className="mrail-wrap">
+              <button
+                type="button"
+                className="mrail__nav mrail__nav--prev"
+                aria-label={t("home:matches.prev")}
+                onClick={() => railRef.current?.scrollBy({ left: -railStep(), behavior: "smooth" })}
+              >
+                ‹
+              </button>
+              <ul className="hrail" ref={railRef}>
+                {matches.slice(0, 16).map((match, i) => {
+                  const city = match.locality?.split(",")[0]?.trim();
+                  const name = match.open_name?.trim().split(/\s+/)[0];
+                  const photos = match.open_photo_urls?.length ?? 0;
+                  // Stored values are keys ("doctorate"); show their translated labels.
+                  const chips = [
+                    match.education_level
+                      ? t(`profile:option.highest_education_level.${match.education_level}`)
+                      : null,
+                    match.mother_tongue
+                      ? t(`profile:option.mother_tongue.${match.mother_tongue}`)
+                      : null,
+                  ].filter((c): c is string => !!c);
+                  return (
+                    <li
+                      key={match.candidate_account_id}
+                      className="hcard"
+                      style={{ "--i": Math.min(i, 6) } as React.CSSProperties}
+                    >
+                      <Link
+                        className="hcard__link"
+                        href={`/profile/${match.candidate_account_id}`}
+                        aria-label={[name, match.age, city, match.profession].filter(Boolean).join(", ")}
+                      >
+                        {match.photo_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            className="hcard__img"
+                            src={resolveMediaUrl(match.photo_url) ?? ""}
+                            alt=""
+                            loading={i < 2 ? "eager" : "lazy"}
+                            decoding="async"
+                          />
+                        ) : (
+                          <span className="hcard__empty">
+                            <Avatar anonymized size={88} />
+                          </span>
+                        )}
+                        <span className="hcard__top">
+
+                          {photos > 1 && (
+                            <span className="hcard__chip">
+                              {t("discover:tile.photos", { count: photos })}
+                            </span>
+                          )}
+                        </span>
+                        <span className="hcard__text">
+                          <span className="hcard__name">
+                            {name ?? t("profile:hub.ageYears", { age: match.age ?? "" })}
+                            {name && match.age ? <span className="hcard__age"> {match.age}</span> : null}
+                            {(match.verification?.length ?? 0) > 0 && (
+                              <Icon name="verified" size={16} className="seal" label={t("discover:verified.title")} />
+                            )}
+                          </span>
+                          <span className="hcard__meta">
+                            {[match.profession, city].filter(Boolean).join(" · ")}
+                          </span>
+                          {chips.length > 0 && (
+                            <span className="hcard__chips">
+                              {chips.map((c) => (
+                                <span key={c} className="hcard__chip">
+                                  {c}
+                                </span>
+                              ))}
+                            </span>
+                          )}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+                {matchTotal > 0 && (
+                  <li className="hcard hcard--more">
+                    <Link className="hcard__link hcard__link--more" href="/discover">
+                      <span className="hcard__more-n">{matchTotal}</span>
+                      <span>{t("home:matches.seeAllCount", { count: matchTotal })}</span>
+                    </Link>
+                  </li>
+                )}
+              </ul>
+              <button
+                type="button"
+                className="mrail__nav mrail__nav--next"
+                aria-label={t("home:matches.next")}
+                onClick={() => railRef.current?.scrollBy({ left: railStep(), behavior: "smooth" })}
+              >
+                ›
+              </button>
+            </div>
+          )}
+        </section>
+
+        {/* Two small tiles, side by side even on a phone: how ready your
+            profile is, and who is searching with you. */}
+        <div className="home-duo">
+          {/* Desktop only: the right column lists what is waiting even when
+              it is nothing, so the column is a complete status panel. On a
+              phone the alerts above say it only when something waits. */}
+          <Link className="duo duo--desk" href="/discover">
+            <span className={`duo__icon${waiting > 0 ? " is-live" : ""}`} aria-hidden="true">
+              <Icon name="heart" filled={waiting > 0} />
+            </span>
+            <span className="duo__label">{t("home:tiles.requests")}</span>
+            <span className="duo__body">
+              {waiting > 0
+                ? `${waiting} · ${t("home:tiles.requestsWaiting", { count: waiting })}`
+                : t("home:tiles.requestsNone")}
+            </span>
+          </Link>
+          <Link className="duo duo--desk" href="/messages">
+            <span className={`duo__icon${unread > 0 ? " is-live" : ""}`} aria-hidden="true">
+              <Icon name="chat" filled={unread > 0} />
+            </span>
+            <span className="duo__label">{t("home:tiles.messages")}</span>
+            <span className="duo__body">
+              {unread > 0
+                ? `${unread} ${t("home:tiles.unread", { count: unread })}`
+                : t("home:tiles.allRead")}
+            </span>
+          </Link>
+          <Link className="duo duo--profile" href="/me">
+            <span
+              className="duo-ring"
+              style={{ "--pct": profileIncomplete ? milestonePct : 100 } as React.CSSProperties}
+              aria-hidden="true"
+            >
+              <span className="duo-ring__n">{profileIncomplete ? milestonePct : 100}%</span>
+            </span>
+            <span className="duo__label">{t("home:tiles.profile")}</span>
+            <span className="duo__body">
+              {profileIncomplete
+                ? t(
+                    completeness?.discoverability_complete
+                      ? "profile:hub.milestone.nextEnhanced"
+                      : "profile:hub.milestone.nextDiscoverable",
+                  )
+                : t("home:tiles.profileDone")}
+            </span>
+          </Link>
+
+          <Link className="duo duo--circle" href="/circle">
+            {circleCount > 0 ? (
+              <span className="avatar-stack duo__faces">
+                {members.slice(0, 4).map((m) => (
+                  <Avatar
+                    key={m.membership_id}
+                    photoUrl={m.member_photo_url}
+                    name={m.member_name}
+                    size={40}
+                  />
+                ))}
+              </span>
+            ) : (
+              <span className="duo__plus" aria-hidden="true">
+                <Icon name="invite" />
+              </span>
+            )}
+            <span className="duo__label">{t("home:circle.title")}</span>
+            <span className="duo__body">
+              {circleCount > 0
+                ? t("home:circle.helping", { count: circleCount })
+                : t("home:circle.invite")}
+            </span>
           </Link>
         </div>
+
+        {/* The internal build tracker (/status) is not linked from a
+            member's Home: a real member has no use for it. */}
       </main>
     </>
   );

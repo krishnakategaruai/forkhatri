@@ -25,6 +25,11 @@ OUTBOX_TABLES = {
     "listing": "vyapar_listings.outbox_event",
     "opportunity": "vyapar_opportunities.outbox_event",
     "commercial": "vyapar_commercial.outbox_event",
+    # [IMP37] Added by migration 016, filled by domain-event triggers
+    # (enquiry/partnership and review events). Outbound webhooks fan out
+    # from every table here; see app/integrations/webhooks/dispatcher.py.
+    "enquiry": "vyapar_enquiries.outbox_event",
+    "review": "vyapar_reviews.outbox_event",
 }
 
 MAX_DISPATCH_ATTEMPTS = 5

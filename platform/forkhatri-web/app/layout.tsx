@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Noto_Sans_Devanagari, Noto_Sans_Telugu, Sora } from "next/font/google";
+import { SPLASH_BOOT_SCRIPT, SPLASH_IMAGE } from "@/lib/splash-script";
 import { THEME_BOOT_SCRIPT, THEME_COLORS } from "@/lib/theme-script";
 import "./globals.css";
 import "./arrival.css";
 import "./hub.css";
+import "./splash.css";
 
 // Latin UI face + a variable display face, with Noto faces that render
 // Devanagari and Telugu properly. The browser picks per glyph from the stack.
@@ -37,6 +39,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <head>
         {/* Sets data-theme before first paint so a reload never flashes the wrong appearance. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+        {/* Hides the first-load splash before paint when this tab has already seen it. */}
+        <script dangerouslySetInnerHTML={{ __html: SPLASH_BOOT_SCRIPT }} />
+        <link rel="preload" as="image" type="image/webp" href={SPLASH_IMAGE.src} fetchPriority="high" />
       </head>
       <body>{children}</body>
     </html>

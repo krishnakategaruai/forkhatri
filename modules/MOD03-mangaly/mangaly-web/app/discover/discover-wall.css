@@ -1,0 +1,487 @@
+/* ===================================================================
+   Discover — the photo wall (DEC-V1-030)
+   -------------------------------------------------------------------
+   The owner's model: "scroll through all the pictures, then pick one to
+   open the profile", for a parent and a candidate alike. The earlier
+   version stacked 5–8 themed rows that repeated people; now it is one
+   gallery. The row themes survive as lens chips above it.
+   Phone: two columns of tall portraits. Desktop: four to six.
+   Each portrait carries its words on the photo, like Home.
+   =================================================================== */
+
+/* Header: eyebrow + title, account on the right — one compact row. */
+.dhead {
+  align-items: flex-end;
+}
+.dhead__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dhead__for {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dhead h1 {
+  margin: 0;
+}
+.dscreen {
+  gap: 12px;
+  padding-top: 8px;
+}
+
+/* Lens chips */
+.dlens-wall {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.dlenses {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 0 6px;
+  scrollbar-width: none;
+}
+.dlenses::-webkit-scrollbar {
+  display: none;
+}
+.dlens {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 8px 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.875rem;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: var(--shadow-1);
+  transition: background var(--dur-1) var(--ease), transform var(--dur-2) var(--ease-spring);
+}
+.dlens:active {
+  transform: scale(0.95);
+}
+.dlens__n {
+  min-width: 26px;
+  height: 26px;
+  padding: 0 7px;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+.dlens.is-on {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--on-accent);
+  box-shadow: var(--shadow-accent);
+}
+.dlens.is-on .dlens__n {
+  background: var(--gold);
+  color: var(--on-gold);
+}
+.dlens__sub {
+  margin: -4px 0 0;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+@media (max-width: 1023px) {
+  .dlens-wall .srail {
+    margin: 0 calc(var(--gutter) * -1);
+  }
+  .dlenses {
+    padding-left: var(--gutter);
+    padding-right: var(--gutter);
+  }
+}
+
+/* The wall */
+.dwall,
+.dwall--lens {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (max-width: 639px) {
+  .dwall {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .dwall .dtile__photo {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    aspect-ratio: 3 / 4;
+    border-radius: 22px;
+  }
+}
+@media (min-width: 640px) {
+  .dwall {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+}
+@media (min-width: 1100px) {
+  .dwall {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+@media (min-width: 1440px) {
+  .dwall {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+.dtile {
+  container-type: inline-size;
+  animation: tile-in 600ms var(--ease-out) both;
+}
+.dwall > .dtile:nth-child(2) { animation-delay: 50ms; }
+.dwall > .dtile:nth-child(3) { animation-delay: 100ms; }
+.dwall > .dtile:nth-child(4) { animation-delay: 150ms; }
+.dwall > .dtile:nth-child(n + 5) { animation-delay: 200ms; }
+@keyframes tile-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+}
+.dtile__link {
+  gap: 0;
+}
+.dtile__photo {
+  aspect-ratio: 3 / 4;
+  border-radius: 22px;
+  box-shadow: var(--shadow-2);
+  isolation: isolate;
+}
+.dtile__photo::after {
+  content: '';
+  position: absolute;
+  inset: 45% 0 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(to top, rgba(42, 5, 5, 0.88), rgba(42, 5, 5, 0));
+}
+.dtile__link:hover .dtile__photo {
+  box-shadow: var(--shadow-3);
+}
+.dtile__text {
+  position: absolute;
+  z-index: 1;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0;
+  color: #fff6e0;
+}
+.dtile__title {
+  font-family: var(--font-display-stack);
+  font-weight: 800;
+  font-size: clamp(1.25rem, 13cqi, 2rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  color: #fff6e0;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+}
+.dtile__age {
+  font-weight: 400;
+  color: #ffd98a;
+}
+.dtile__line {
+  font-size: clamp(0.75rem, 6cqi, 0.875rem);
+  font-weight: 600;
+  line-height: 1.3;
+  color: rgba(255, 246, 224, 0.9);
+}
+.dtile__why {
+  align-self: flex-start;
+  max-width: 100%;
+  margin-bottom: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: #3b0a06;
+  background: rgba(251, 217, 70, 0.94);
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+.dtile__quote {
+  margin-top: 6px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #fff6e0;
+}
+/* Photo count moves to the top so the words below have the bottom. */
+.dtile__count {
+  top: 10px;
+  bottom: auto;
+  left: auto;
+  right: 54px;
+}
+.dtile__badge {
+  left: 10px;
+  top: 10px;
+}
+.dtile__state {
+  top: 44px;
+  bottom: auto;
+  left: 10px;
+  right: auto;
+}
+.dtile__save {
+  right: 10px;
+  top: 10px;
+}
+
+/* Today's single most compatible person leads the wall, twice the size. */
+.dtile--featured {
+  grid-column: span 2;
+}
+.dtile--featured .dtile__photo {
+  aspect-ratio: 4 / 5;
+}
+@media (min-width: 1100px) {
+  .dtile--featured {
+    grid-row: span 2;
+  }
+  .dtile--featured .dtile__photo {
+    aspect-ratio: auto;
+    height: 100%;
+    min-height: 100%;
+  }
+  .dtile--featured .dtile__link {
+    height: 100%;
+  }
+}
+.dtile--featured .dtile__title {
+  font-size: clamp(2rem, 11cqi, 3.25rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dtile {
+    animation: none;
+  }
+}
+
+/* The older one-per-screen phone rules pinned the count and state chips to
+   both edges; reset them so each chip is only as big as its words. */
+.dwall .dtile__count,
+.dwall .dtile__state,
+.dwall .dtile__badge,
+.dwall .dtile__save {
+  bottom: auto;
+}
+.dwall .dtile__count {
+  left: auto;
+  right: 56px;
+  top: 12px;
+  font-size: 0.6875rem;
+  padding: 4px 9px;
+}
+.dwall .dtile__state {
+  left: 10px;
+  right: auto;
+  top: 46px;
+}
+.dwall .dtile__badge {
+  left: 10px;
+  top: 10px;
+  width: 30px;
+  height: 30px;
+}
+.dwall .dtile__save {
+  right: 10px;
+  top: 10px;
+  width: 38px;
+  height: 38px;
+}
+
+/* Type scale on photo tiles (owner, 2026-09-24: "we can reduce the font
+   size"). The photo leads; the words are a quiet caption: name 17-20px,
+   one line of details at 12px, the reason pill at 11px. */
+.dwall .dtile__title {
+  font-size: clamp(1rem, 9.5cqi, 1.3125rem);
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+.dwall .dtile__line {
+  font-size: clamp(0.6875rem, 5cqi, 0.75rem);
+  font-weight: 500;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  opacity: 0.88;
+}
+.dwall .dtile__why {
+  font-size: 0.625rem;
+  padding: 3px 8px;
+  margin-bottom: 4px;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+.dwall .dtile__text {
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  gap: 1px;
+}
+.dwall .dtile__count {
+  font-size: 0.625rem;
+  padding: 3px 8px;
+}
+.dwall .dtile--featured .dtile__title {
+  font-size: clamp(1.5rem, 8cqi, 2.25rem);
+}
+.dwall .dtile--featured .dtile__line {
+  font-size: 0.875rem;
+}
+.dhead__for {
+  font-size: 0.6875rem;
+}
+.dlens {
+  min-height: 36px;
+  font-size: 0.8125rem;
+  padding: 0 6px 0 14px;
+}
+.dlens__n {
+  min-width: 22px;
+  height: 22px;
+  font-size: 0.6875rem;
+}
+
+/* ---- Round 2 --------------------------------------------------------- */
+/* The profession wraps to two lines instead of being cut off; the city is
+   a small glass chip at the top; verified is a tick after the name, not a
+   second button on the photo. */
+.dwall .dtile__line {
+  font-size: 0.71875rem;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  line-height: 1.3;
+}
+.dtile__city {
+  position: absolute;
+  z-index: 1;
+  left: 10px;
+  top: 10px;
+  max-width: calc(100% - 64px);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #fff6e0;
+  background: rgba(40, 8, 8, 0.34);
+  border: 1px solid rgba(255, 240, 210, 0.22);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  backdrop-filter: blur(12px) saturate(1.4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dtile__tick {
+  display: inline-block;
+  width: 0.8em;
+  height: 0.8em;
+  margin-left: 4px;
+  vertical-align: 0.02em;
+}
+.dtile__tick path:first-child {
+  fill: #fbd946;
+}
+.dtile__tick-mark {
+  fill: none;
+  stroke: #3b0a06;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.dwall .dtile__save {
+  width: 34px;
+  height: 34px;
+  background: rgba(40, 8, 8, 0.34);
+  color: #fff6e0;
+  border: 1px solid rgba(255, 240, 210, 0.22);
+}
+.dwall .dtile__save svg {
+  width: 16px;
+  height: 16px;
+}
+.dwall .dtile__save.is-on {
+  background: var(--gold);
+  color: var(--on-gold);
+}
+.dwall .dtile__why {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* One row of choices, compact header: the first photo arrives sooner. */
+.dnav {
+  padding-top: 0;
+}
+.dscreen {
+  gap: 10px;
+}
+@media (min-width: 1024px) {
+  .discover__bar {
+    max-width: 560px;
+  }
+}
+@media (max-width: 1023px) {
+  .dscreen > .srail {
+    margin: 0 calc(var(--gutter) * -1);
+  }
+  .dscreen > .srail .dnav {
+    padding-left: var(--gutter);
+    padding-right: var(--gutter);
+  }
+}
+
+/* ---- Lavish ---------------------------------------------------------- */
+.dwall .dtile__title {
+  font-family: var(--font-display-stack);
+  font-weight: 600;
+  font-size: clamp(1.25rem, 11.5cqi, 1.625rem);
+  letter-spacing: -0.005em;
+  font-variation-settings: normal;
+}
+.dtile__age {
+  font-style: italic;
+  font-weight: 500;
+}
+.dwall .dtile--featured .dtile__title {
+  font-size: clamp(2rem, 9cqi, 2.75rem);
+}
+.dtile__city {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}

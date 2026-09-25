@@ -1,22 +1,30 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import "./circle.css";
+import { useLoaderHold } from "@/lib/useLoaderHold";
+import MotionTitle from "@/components/MotionTitle";
 
-import { Avatar } from '@/components/Avatar';
-import ForKhatriHubLink from '@/components/ForKhatriHubLink';
-import ContextChip from '@/components/ContextChip';
-import { useActiveContext } from '@/lib/activeContext';
-import { requireSession } from '@/lib/auth';
-import { listSent, type Connection } from '@/lib/connections';
-import { getSnippet, type Snippet } from '@/lib/discovery';
+import Link from "next/link";
+import SacredLoader from "@/components/SacredLoader";
+import Vignette from "@/components/Vignette";
+import CircleInvite from "@/components/CircleInvite";
+import RelationChips from "@/components/RelationChips";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import { Avatar } from "@/components/Avatar";
+import AccountButton from "@/components/AccountButton";
+import ForKhatriHubLink from "@/components/ForKhatriHubLink";
+import ContextChip from "@/components/ContextChip";
+import { useActiveContext } from "@/lib/activeContext";
+import { requireSession } from "@/lib/auth";
+import { listSent, type Connection } from "@/lib/connections";
+import { getSnippet, type Snippet } from "@/lib/discovery";
 import {
   acceptInvitation,
   declineInvitation,
   declineNote,
-  invite,
   listMembers,
   listNoteRequests,
   listPendingInvitations,
@@ -30,11 +38,14 @@ import {
   removeMember,
   type Member,
   type NoteReadRequest,
+  relationKey,
+  setMemberRelation,
+  type Relation,
   type PendingInvitation,
   type RelationshipType,
   type SharedNote,
   type Suggestion,
-} from '@/lib/homeCircle';
+} from "@/lib/homeCircle";
 
 /* FR007/FR008/FR009/FR010/FR014/FR016 · UX12/UI12/UX13 (Home Circle)
  *
@@ -51,7 +62,7 @@ import {
  * match it is about; its words appear only once the candidate chooses to read. */
 
 type State = {
-  phase: 'checking' | 'ready';
+  phase: "checking" | "ready";
   pendingInvitations: PendingInvitation[];
   contactRequests: ContactRequest[];
   members: Member[];
@@ -64,14 +75,14 @@ type State = {
   snippets: Record<string, Snippet | null>;
 };
 
-const RELATIONSHIPS: RelationshipType[] = ['parent', 'sibling', 'relative'];
-
 export default function CirclePage() {
-  const { t, i18n } = useTranslation(['common', 'circle', 'profile']);
+  // [owner 2026-09-25] The loader stays at least a second, never a flash.
+  const loaderHold = useLoaderHold();
+  const { t, i18n } = useTranslation(["common", "circle", "profile"]);
   const { contexts, active, choose, loaded } = useActiveContext();
   const router = useRouter();
   const [state, setState] = useState<State>({
-    phase: 'checking',
+    phase: "checking",
     pendingInvitations: [],
     contactRequests: [],
     members: [],
@@ -84,11 +95,8 @@ export default function CirclePage() {
   // Who "you" are in a list of other people — used to mark your own row in the
   // circle and to say which requests you sent yourself.
   const [meAccountId, setMeAccountId] = useState<string | null>(null);
-  const [identifier, setIdentifier] = useState('');
-  const [relationship, setRelationship] = useState<RelationshipType>('relative');
-  const [inviting, setInviting] = useState(false);
-  const [inviteError, setInviteError] = useState<string | null>(null);
-  const [inviteSuccess, setInviteSuccess] = useState(false);
+  const [relBusy, setRelBusy] = useState(false);
+  const [ownMode, setOwnMode] = useState<"own" | "join">("own");
   const [decidingNote, setDecidingNote] = useState<string | null>(null);
 
   /* `circleOf` is whose Home Circle this screen is about: the signed-in
@@ -96,24 +104,33 @@ export default function CirclePage() {
    * candidate's. Everything below reads through it, so the parent role shows
    * the candidate's real circle rather than an emptier version of the
    * candidate's screen. */
-  const family = active?.kind === 'family' ? active.circle : null;
+  const family = active?.kind === "family" ? active.circle : null;
   const circleOf = family?.candidate_account_id;
 
   async function refresh() {
-    const [pendingInvitations, members, noteRequests, sharedNotes, suggestions, contactRequests, sent] =
-      await Promise.all([
-        listPendingInvitations(),
-        listMembers(circleOf),
-        // Notes and contact requests are always addressed to the signed-in
-        // member personally, in either role — they are never read "for" someone.
-        listNoteRequests(),
-        listSharedNotes(),
-        listSuggestions(circleOf),
-        listContactRequests(),
-        listSent(),
-      ]);
+    const [
+      pendingInvitations,
+      members,
+      noteRequests,
+      sharedNotes,
+      suggestions,
+      contactRequests,
+      sent,
+    ] = await Promise.all([
+      listPendingInvitations(),
+      listMembers(circleOf),
+      // Notes and contact requests are always addressed to the signed-in
+      // member personally, in either role — they are never read "for" someone.
+      listNoteRequests(),
+      listSharedNotes(),
+      listSuggestions(circleOf),
+      listContactRequests(),
+      listSent(),
+    ]);
     const subject = circleOf;
-    const sentForCandidate = subject ? sent.filter((c) => c.subject_account_id === subject) : [];
+    const sentForCandidate = subject
+      ? sent.filter((c) => c.subject_account_id === subject)
+      : [];
     const profileIds = [
       ...new Set([
         ...suggestions.map((s) => s.suggested_profile_id),
@@ -122,9 +139,11 @@ export default function CirclePage() {
         ...sentForCandidate.map((c) => c.target_account_id),
       ]),
     ];
-    const snippetEntries = await Promise.all(profileIds.map(async (id) => [id, await getSnippet(id)] as const));
+    const snippetEntries = await Promise.all(
+      profileIds.map(async (id) => [id, await getSnippet(id)] as const),
+    );
     setState({
-      phase: 'ready',
+      phase: "ready",
       pendingInvitations,
       contactRequests,
       members,
@@ -155,41 +174,31 @@ export default function CirclePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, loaded, circleOf]);
 
-  if (state.phase === 'checking') {
+  if (state.phase === "checking" || loaderHold) {
     return (
       <main className="screen screen--centered">
-        <p className="caption">{t('common:state.loading')}</p>
+        <SacredLoader />
       </main>
     );
   }
 
-  async function onInvite() {
-    if (!identifier.trim()) return;
-    setInviting(true);
-    setInviteError(null);
-    setInviteSuccess(false);
-    const outcome = await invite(identifier.trim(), relationship);
-    setInviting(false);
-    if (!outcome.ok) {
-      setInviteError(
-        outcome.message ??
-          (outcome.status === 0 ? t('circle:error.network') : t('circle:error.alreadyInvited'))
-      );
-      return;
-    }
-    setIdentifier('');
-    setInviteSuccess(true);
-    await refresh();
-  }
-
   async function onAccept(id: string) {
     await acceptInvitation(id);
-    await refresh();
+    // Accepting can create a new context (you now help someone) — reload the
+    // session-level contexts as well as this screen.
+    window.location.reload();
   }
 
   async function onDecline(id: string) {
     await declineInvitation(id);
     await refresh();
+  }
+
+  async function onSetRelation(membershipId: string, relation: Relation) {
+    setRelBusy(true);
+    const outcome = await setMemberRelation(membershipId, relation);
+    setRelBusy(false);
+    if (outcome.ok) await refresh();
   }
 
   async function onRemove(membershipId: string) {
@@ -208,28 +217,42 @@ export default function CirclePage() {
     if (!level) return null;
     const key = `profile:option.highest_education_level.${level}`;
     const label = t(key);
-    return label === key || label === `option.highest_education_level.${level}` ? level : label;
+    return label === key || label === `option.highest_education_level.${level}`
+      ? level
+      : label;
   }
 
-  function authorLabel(name: string | null, relationshipType: RelationshipType): string {
+  function authorLabel(
+    name: string | null,
+    relationshipType: RelationshipType,
+  ): string {
     const relation = t(`circle:invite.relationshipOption.${relationshipType}`);
-    return name ? t('circle:notes.author', { name, relationship: relation }) : relation;
+    return name
+      ? t("circle:notes.author", { name, relationship: relation })
+      : relation;
   }
 
   function matchSummary(accountId: string) {
     const snippet = state.snippets[accountId];
     const headline = [
-      snippet?.age ? t('profile:hub.ageYears', { age: snippet.age }) : null,
+      snippet?.age ? t("profile:hub.ageYears", { age: snippet.age }) : null,
       snippet?.locality,
     ]
       .filter(Boolean)
-      .join(' · ');
-    const detail = [educationLabel(snippet?.education_level), snippet?.profession].filter(Boolean).join(' · ');
+      .join(" · ");
+    const detail = [
+      educationLabel(snippet?.education_level),
+      snippet?.profession,
+    ]
+      .filter(Boolean)
+      .join(" · ");
     return (
       <Link href={`/profile/${accountId}`} className="req__main note-match">
         <Avatar photoUrl={snippet?.photo_url} anonymized size={48} />
         <span className="note-match__text">
-          <span className="note-match__headline">{headline || t('circle:notes.match')}</span>
+          <span className="note-match__headline">
+            {headline || t("circle:notes.match")}
+          </span>
           {detail && <span className="caption">{detail}</span>}
         </span>
       </Link>
@@ -237,79 +260,127 @@ export default function CirclePage() {
   }
 
   async function onContactDecision(id: string, approve: boolean) {
-    const outcome = approve ? await approveContactRequest(id) : await declineContactRequest(id);
+    const outcome = approve
+      ? await approveContactRequest(id)
+      : await declineContactRequest(id);
     if (outcome.ok) await refresh();
+  }
+
+  /* Who asked what, in words. `to_candidate`: someone asks to join YOUR
+     circle. `to_member`: you are asked into a candidate's circle — by the
+     candidate themself, or by someone already helping them. */
+  function invitationText(inv: PendingInvitation): string {
+    const relationship = t(
+      relationKey(inv.relation, inv.relationship_type),
+    ).toLowerCase();
+    const inviter = inv.inviter_name ?? t("circle:pendingInvitations.someone");
+    if (inv.direction === "to_candidate") {
+      return t("circle:pendingInvitations.asksToJoin", {
+        name: inviter,
+        relationship,
+      });
+    }
+    if (
+      inv.candidate_name &&
+      inv.inviter_account_id !== inv.candidate_account_id
+    ) {
+      return t("circle:pendingInvitations.addsYouTo", {
+        name: inviter,
+        candidate: inv.candidate_name,
+        first: inv.candidate_name.split(" ")[0],
+        relationship,
+      });
+    }
+    return t("circle:pendingInvitations.invitesYou", {
+      name: inviter,
+      relationship,
+    });
   }
 
   const pendingInvitationsCard =
     state.pendingInvitations.length > 0 ? (
-
-          <div className="card">
-            <h2 className="h2">{t('circle:pendingInvitations.title')}</h2>
-            <ul className="category-list">
-              {state.pendingInvitations.map((inv) => (
-                <li key={inv.id} className="req req--stacked">
-                  <div className="req__main">
-                    <Avatar anonymized size={40} />
-                    <span className="req__title">
-                      {t('circle:pendingInvitations.from', {
-                        relationship: t(`circle:invite.relationshipOption.${inv.relationship_type}`),
-                      })}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="cta" style={{ minHeight: 40 }} onClick={() => onAccept(inv.id)}>
-                      {t('circle:pendingInvitations.accept')}
-                    </button>
-                    <button
-                      className="icon-btn icon-btn--text"
-                      onClick={() => onDecline(inv.id)}
-                    >
-                      {t('circle:pendingInvitations.decline')}
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
+      <div className="card">
+        <h2 className="h2">{t("circle:pendingInvitations.title")}</h2>
+        <ul className="category-list">
+          {state.pendingInvitations.map((inv) => (
+            <li key={inv.id} className="req req--stacked">
+              <div className="req__main">
+                <Avatar
+                  name={inv.inviter_name ?? undefined}
+                  anonymized={!inv.inviter_name}
+                  size={40}
+                />
+                <span className="req__title">{invitationText(inv)}</span>
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  className="cta"
+                  style={{ minHeight: 40 }}
+                  onClick={() => onAccept(inv.id)}
+                >
+                  {t("circle:pendingInvitations.accept")}
+                </button>
+                <button
+                  className="icon-btn icon-btn--text"
+                  onClick={() => onDecline(inv.id)}
+                >
+                  {t("circle:pendingInvitations.decline")}
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
     ) : null;
 
   const contactRequestsCard =
     state.contactRequests.length > 0 ? (
-
-          <div className="card">
-            <h2 className="h2">{t('circle:contactRequests.title')}</h2>
-            <ul className="category-list">
-              {state.contactRequests.map((r) => (
-                <li key={r.id} className="req req--stacked">
-                  <div className="req__main">
-                    <span className="req__title">
-                      {t('circle:contactRequests.ask', { name: r.candidate_name ?? t('circle:contactRequests.someone') })}
-                    </span>
-                  </div>
-                  <p className="caption" style={{ margin: 0 }}>
-                    {t('circle:contactRequests.explain')}
-                  </p>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="cta" style={{ minHeight: 40 }} onClick={() => onContactDecision(r.id, true)}>
-                      {t('circle:contactRequests.approve')}
-                    </button>
-                    <button className="icon-btn icon-btn--text" onClick={() => onContactDecision(r.id, false)}>
-                      {t('circle:contactRequests.decline')}
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
+      <div className="card">
+        <h2 className="h2">{t("circle:contactRequests.title")}</h2>
+        <ul className="category-list">
+          {state.contactRequests.map((r) => (
+            <li key={r.id} className="req req--stacked">
+              <div className="req__main">
+                <span className="req__title">
+                  {t("circle:contactRequests.ask", {
+                    name:
+                      r.candidate_name ?? t("circle:contactRequests.someone"),
+                  })}
+                </span>
+              </div>
+              <p className="caption" style={{ margin: 0 }}>
+                {t("circle:contactRequests.explain")}
+              </p>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  className="cta"
+                  style={{ minHeight: 40 }}
+                  onClick={() => onContactDecision(r.id, true)}
+                >
+                  {t("circle:contactRequests.approve")}
+                </button>
+                <button
+                  className="icon-btn icon-btn--text"
+                  onClick={() => onContactDecision(r.id, false)}
+                >
+                  {t("circle:contactRequests.decline")}
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
     ) : null;
 
   const header = (
     <header className="topbar">
-      <h1>{t('circle:title')}</h1>
+      <MotionTitle as="h1" className="royal-title" text={t("circle:title")} />
       <div className="topbar__actions">
-        {contexts && active && <ContextChip contexts={contexts} active={active} onChoose={choose} />}
+        {contexts && active && (
+          <ContextChip contexts={contexts} active={active} onChoose={choose} />
+        )}
         <ForKhatriHubLink />
+        <AccountButton />
       </div>
     </header>
   );
@@ -318,12 +389,14 @@ export default function CirclePage() {
      Circle screen, and never editable from the family side: it is the
      candidate's own answer, and it is what the server ranks matches by and
      routes a family-sent request under. */
-  function lookingForChip(value: 'bride' | 'groom' | null | undefined) {
+  function lookingForChip(value: "bride" | "groom" | null | undefined) {
     return (
-      <span className={`circle-chip${value ? '' : ' circle-chip--muted'}`}>
+      <span className={`circle-chip${value ? "" : " circle-chip--muted"}`}>
         {value
-          ? t('circle:lookingFor.chip', { value: t(`profile:option.looking_for.${value}`) })
-          : t('circle:lookingFor.unset')}
+          ? t("circle:lookingFor.chip", {
+              value: t(`profile:option.looking_for.${value}`),
+            })
+          : t("circle:lookingFor.unset")}
       </span>
     );
   }
@@ -334,49 +407,133 @@ export default function CirclePage() {
   function membersCard(canRemove: boolean, emptyText: string) {
     return (
       <div className="card">
-        <h2 className="h2">{t('circle:members.title')}</h2>
+        <h2 className="h2">{t("circle:members.title")}</h2>
         {state.members.length === 0 ? (
-          <p className="caption">{emptyText}</p>
+          <div className="empty-art">
+            <Vignette id="family" className="empty-art__pic" />
+            <p className="caption">{emptyText}</p>
+          </div>
         ) : (
-          <ul className="category-list">
-            {state.members.map((m) => {
-              const isYou = !canRemove && m.member_account_id === meAccountId;
-              return (
-                <li key={m.membership_id} className="category-card" style={{ width: '100%' }}>
-                  <Avatar name={m.member_name ?? undefined} anonymized={!m.member_name} size={44} />
-                  <span className="category-card__body">
-                    <span className="category-card__title">
-                      {m.member_name ?? t(`circle:invite.relationshipOption.${m.relationship_type}`)}
-                      {isYou && <span className="circle-chip circle-chip--inline">{t('circle:members.you')}</span>}
-                    </span>
-                    <span className="category-card__preview">
-                      {[
-                        m.member_name ? t(`circle:invite.relationshipOption.${m.relationship_type}`) : null,
-                        t('circle:members.joined', {
-                          date: new Date(m.joined_at).toLocaleDateString(i18n.language),
-                        }),
-                      ]
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </span>
-                  </span>
-                  {canRemove && (
-                    <button className="icon-btn icon-btn--text" onClick={() => onRemove(m.membership_id)}>
-                      {t('circle:members.remove')}
-                    </button>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+          <>
+            {/* Two groups by relation, one circle and one set of permissions:
+                Home is the household (parents, guardian, siblings), Relatives
+                is everyone else. The relation stays a label on each person. */}
+            {(
+              [
+                [
+                  "home",
+                  state.members.filter(
+                    (m) => m.relationship_type !== "relative",
+                  ),
+                ],
+                [
+                  "relatives",
+                  state.members.filter(
+                    (m) => m.relationship_type === "relative",
+                  ),
+                ],
+              ] as const
+            )
+              .filter(([, group]) => group.length > 0)
+              .map(([groupKey, group]) => (
+                <section key={groupKey} className="member-group">
+                  <h3 className="member-group__title">
+                    {t(`circle:members.group.${groupKey}`)}
+                    <span className="member-group__count">{group.length}</span>
+                  </h3>
+                  <ul className="category-list">
+                    {group.map((m) => {
+                      const isYou =
+                        !canRemove && m.member_account_id === meAccountId;
+                      return (
+                        <li
+                          key={m.membership_id}
+                          className="category-card"
+                          style={{ width: "100%" }}
+                        >
+                          <Avatar
+                            name={m.member_name ?? undefined}
+                            anonymized={!m.member_name}
+                            size={44}
+                          />
+                          <span className="category-card__body">
+                            <span className="category-card__title">
+                              {m.member_name ??
+                                t(relationKey(m.relation, m.relationship_type))}
+                              {isYou && (
+                                <span className="circle-chip circle-chip--inline">
+                                  {t("circle:members.you")}
+                                </span>
+                              )}
+                            </span>
+                            <span className="category-card__preview">
+                              {[
+                                m.member_name
+                                  ? t(
+                                      relationKey(
+                                        m.relation,
+                                        m.relationship_type,
+                                      ),
+                                    )
+                                  : null,
+                                t("circle:members.joined", {
+                                  date: new Date(
+                                    m.joined_at,
+                                  ).toLocaleDateString(`${i18n.language}-IN`, {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                  }),
+                                }),
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </span>
+                            {/* Rows from before exact relations recorded only a
+                                role ("Parent"). The candidate, or the member
+                                themselves, answers the one question left —
+                                "Mother or father?" — with a single tap. */}
+                            {!m.relation && (canRemove || isYou) && (
+                              <>
+                                <span className="caption member-rel">
+                                  {t(`circle:members.which.${m.relationship_type}`)}
+                                </span>
+                                <RelationChips
+                                  value={null}
+                                  role={m.relationship_type}
+                                  busy={relBusy}
+                                  onPick={(r) =>
+                                    void onSetRelation(m.membership_id, r)
+                                  }
+                                />
+                              </>
+                            )}
+                          </span>
+                          {canRemove && (
+                            <button
+                              className="icon-btn icon-btn--text"
+                              onClick={() => onRemove(m.membership_id)}
+                            >
+                              {t("circle:members.remove")}
+                            </button>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              ))}
+          </>
         )}
       </div>
     );
   }
 
   if (family) {
-    const firstName = family.candidate_name.split(' ')[0];
-    const relationship = t(`circle:invite.relationshipOption.${family.relationship_type}`);
+    const firstName = family.candidate_name.split(" ")[0];
+    const relationship = t(
+      relationKey(family.relation, family.relationship_type),
+    );
     return (
       <>
         {header}
@@ -388,20 +545,28 @@ export default function CirclePage() {
             <div className="req__main">
               <Avatar name={family.candidate_name} size={52} />
               <span className="note-match__text">
-                <span className="h2" style={{ margin: 0 }}>{family.candidate_name}</span>
-                <span className="caption">{t('circle:family.role', { name: firstName, relationship })}</span>
+                <span className="h2" style={{ margin: 0 }}>
+                  {family.candidate_name}
+                </span>
+                <span className="caption">
+                  {t("circle:family.role", { name: firstName, relationship })}
+                </span>
               </span>
             </div>
             <div className="circle-chips">
               {lookingForChip(family.looking_for)}
               <span className="circle-chip circle-chip--muted">
-                {t('circle:family.memberCount', { count: state.members.length })}
+                {t("circle:family.memberCount", {
+                  count: state.members.length,
+                })}
               </span>
             </div>
-            <p style={{ margin: '4px 0 0' }}>{t('circle:family.about', { name: firstName })}</p>
+            <p style={{ margin: "4px 0 0" }}>
+              {t("circle:family.about", { name: firstName })}
+            </p>
             <div className="form__actions" style={{ marginTop: 12 }}>
               <Link href="/discover" className="cta">
-                {t('circle:family.findMatches', { name: firstName })}
+                {t("circle:family.findMatches", { name: firstName })}
               </Link>
             </div>
           </div>
@@ -413,12 +578,28 @@ export default function CirclePage() {
           {/* The owner's requirement, plainly: the Circle screen contains the
               Home Circle people, always — in the family role too, not only the
               candidate's own. */}
-          {membersCard(false, t('circle:members.emptyFamily', { name: firstName }))}
+          {membersCard(
+            false,
+            t("circle:members.emptyFamily", { name: firstName }),
+          )}
+
+          {/* A member can bring another relative in — the circle grows the way
+              a real family does, not only through the candidate. */}
+          <CircleInvite
+            mode="forCandidate"
+            candidateAccountId={family.candidate_account_id}
+            candidateName={family.candidate_name}
+            onSent={() => void refresh()}
+          />
 
           <div className="card">
-            <h2 className="h2">{t('circle:sent.title', { name: firstName })}</h2>
+            <h2 className="h2">
+              {t("circle:sent.title", { name: firstName })}
+            </h2>
             {state.sentForCandidate.length === 0 ? (
-              <p className="caption">{t('circle:sent.empty', { name: firstName })}</p>
+              <p className="caption">
+                {t("circle:sent.empty", { name: firstName })}
+              </p>
             ) : (
               <ul className="category-list">
                 {state.sentForCandidate.map((c) => (
@@ -428,12 +609,15 @@ export default function CirclePage() {
                       {[
                         t(`circle:sent.status.${c.status}`),
                         c.acting_account_id === meAccountId
-                          ? t('circle:sent.byYou')
+                          ? t("circle:sent.byYou")
                           : c.sent_by_family
-                            ? t('circle:sent.byFamily')
-                            : t('circle:sent.byCandidate', { name: firstName }),
-                        new Date(c.requested_at).toLocaleDateString(i18n.language),
-                      ].join(' · ')}
+                            ? t("circle:sent.byFamily")
+                            : t("circle:sent.byCandidate", { name: firstName }),
+                        new Date(c.requested_at).toLocaleDateString(
+                          `${i18n.language}-IN`,
+                          { day: "numeric", month: "short", year: "numeric" },
+                        ),
+                      ].join(" · ")}
                     </p>
                   </li>
                 ))}
@@ -441,39 +625,49 @@ export default function CirclePage() {
             )}
           </div>
 
-          {state.suggestions.length > 0 && suggestionsCard(t('circle:suggestions.titleFamily', { name: firstName }))}
+          {state.suggestions.length > 0 &&
+            suggestionsCard(
+              t("circle:suggestions.titleFamily", { name: firstName }),
+              firstName,
+            )}
         </main>
       </>
     );
   }
 
+  const hasOwnProfile = !!contexts?.own_profile;
+
   const familyNotesCard =
     state.noteRequests.length > 0 || state.sharedNotes.length > 0 ? (
       <div className="card">
-        <h2 className="h2">{t('circle:notes.title')}</h2>
+        <h2 className="h2">{t("circle:notes.title")}</h2>
         <ul className="category-list">
           {state.noteRequests.map((r) => (
             <li key={r.id} className="req req--stacked">
               {matchSummary(r.subject_account_id)}
-              <p style={{ margin: 0 }}>{t('circle:notes.request', { name: authorLabel(r.author_name, r.relationship_type) })}</p>
-              <p className="caption" style={{ margin: 0 }}>
-                {t('circle:notes.requestExplain')}
+              <p style={{ margin: 0 }}>
+                {t("circle:notes.request", {
+                  name: authorLabel(r.author_name, r.relationship_type),
+                })}
               </p>
-              <div style={{ display: 'flex', gap: 8 }}>
+              <p className="caption" style={{ margin: 0 }}>
+                {t("circle:notes.requestExplain")}
+              </p>
+              <div style={{ display: "flex", gap: 8 }}>
                 <button
                   className="cta"
                   style={{ minHeight: 40 }}
                   disabled={decidingNote === r.id}
                   onClick={() => onNoteDecision(r.id, true)}
                 >
-                  {t('circle:notes.read')}
+                  {t("circle:notes.read")}
                 </button>
                 <button
                   className="icon-btn icon-btn--text"
                   disabled={decidingNote === r.id}
                   onClick={() => onNoteDecision(r.id, false)}
                 >
-                  {t('circle:notes.notNow')}
+                  {t("circle:notes.notNow")}
                 </button>
               </div>
             </li>
@@ -483,9 +677,12 @@ export default function CirclePage() {
               {matchSummary(n.subject_account_id)}
               <p className="note-text">{n.content}</p>
               <p className="caption" style={{ margin: 0 }}>
-                {t('circle:notes.from', {
+                {t("circle:notes.from", {
                   name: authorLabel(n.author_name, n.relationship_type),
-                  date: new Date(n.forwarded_at).toLocaleDateString(i18n.language),
+                  date: new Date(n.forwarded_at).toLocaleDateString(
+                    `${i18n.language}-IN`,
+                    { day: "numeric", month: "short", year: "numeric" },
+                  ),
                 })}
               </p>
             </li>
@@ -500,11 +697,15 @@ export default function CirclePage() {
 
       <main className="screen">
         <p className="caption" style={{ margin: 0 }}>
-          {t('circle:blurb')}
+          {t("circle:blurb")}
         </p>
         {/* The same always-on "Looking for" the family role sees, so both roles
             read the one answer the engine actually matches on. */}
-        <div className="circle-chips">{lookingForChip(contexts?.own_profile?.looking_for)}</div>
+        {hasOwnProfile && (
+          <div className="circle-chips">
+            {lookingForChip(contexts?.own_profile?.looking_for)}
+          </div>
+        )}
 
         {pendingInvitationsCard}
 
@@ -512,48 +713,45 @@ export default function CirclePage() {
 
         {familyNotesCard}
 
-        <div className="card">
-          <h2 className="h2">{t('circle:invite.title')}</h2>
-          <div className="field__box">
-            <input
-              className="field__input"
-              placeholder=" "
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
-            />
-            <label className="field__label">{t('circle:invite.identifier')}</label>
-          </div>
-          <div className="label" style={{ marginTop: 12 }}>
-            {t('circle:invite.relationship')}
-          </div>
-          <div className="segmented segmented--3" role="radiogroup">
-            {RELATIONSHIPS.map((r) => (
-              <button
-                key={r}
-                type="button"
-                className={`segmented__opt${relationship === r ? ' is-active' : ''}`}
-                aria-pressed={relationship === r}
-                onClick={() => setRelationship(r)}
-              >
-                {t(`circle:invite.relationshipOption.${r}`)}
-              </button>
-            ))}
-          </div>
-          <p className="form__error">{inviteError ?? ''}</p>
-          {inviteSuccess && <p className="caption">{t('circle:invite.success')}</p>}
-          <div className="form__actions" style={{ marginTop: 12 }}>
-            <button className="cta" disabled={inviting || !identifier.trim()} onClick={onInvite}>
-              <span className={inviting ? 'cta__label--hidden' : undefined}>
-                {t('circle:invite.submit')}
-              </span>
-              {inviting && <span className="cta__spinner" aria-hidden="true" />}
-            </button>
-          </div>
+        {/* People first, then the way to add more — the order WhatsApp's
+            group info and Google Family both use. */}
+        {/* [DEC-V1-030] Desktop: members beside the way to add more. An
+            empty members card is not rendered — the invite's own heading
+            already says there is nobody yet. */}
+        <div className="circle-grid">
+          {hasOwnProfile &&
+            state.members.length > 0 &&
+            membersCard(true, t("circle:members.empty"))}
+
+          {/* A candidate adds family to their own circle, or joins someone
+              else's (a candidate can also be a sibling) — the rarer path is a
+              quiet link under the form, not half of a switch. Someone with no
+              profile of their own — typically a parent — starts by asking
+              their child to let them in. */}
+          {(hasOwnProfile || state.pendingInvitations.length === 0) && (
+            <div className="circle-invite-wrap">
+              <CircleInvite
+                key={hasOwnProfile ? ownMode : "join"}
+                mode={hasOwnProfile ? ownMode : "join"}
+                onSent={() => void refresh()}
+              />
+              {hasOwnProfile && (
+                <button
+                  type="button"
+                  className="link link--button circle-switch"
+                  onClick={() => setOwnMode(ownMode === "own" ? "join" : "own")}
+                >
+                  {ownMode === "own"
+                    ? t("circle:invite.switchJoin")
+                    : t("circle:invite.switchOwn")}
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
-        {membersCard(true, t('circle:members.empty'))}
-
-        {state.suggestions.length > 0 && suggestionsCard(t('circle:suggestions.title'))}
+        {state.suggestions.length > 0 &&
+          suggestionsCard(t("circle:suggestions.title"))}
       </main>
     </>
   );
@@ -561,37 +759,72 @@ export default function CirclePage() {
   /* Shared by both roles: the candidate reads it as "suggestions from your
      circle", a family member as "what your circle has suggested to <name>" —
      same rows, same pre-connection-safe snippet, only the heading differs. */
-  function suggestionsCard(title: string) {
+  function suggestionsCard(title: string, candidateFirst?: string) {
     return (
       <div className="card">
         <h2 className="h2">{title}</h2>
         <ul className="category-list">
           {state.suggestions.map((s) => {
             const snippet = state.snippets[s.suggested_profile_id];
+            // Who they are first (open first name, age), then what they do.
+            const who = [
+              snippet?.name,
+              snippet?.age ? t("profile:hub.ageYears", { age: snippet.age }) : null,
+            ].filter(Boolean);
+            const work = [
+              educationLabel(snippet?.education_level),
+              snippet?.profession,
+            ].filter(Boolean);
+            const relationship = t(
+              `profile:view.share.relationship.${s.suggested_by_relationship_type}`,
+            );
             return (
               <li key={s.id} className="req req--stacked">
                 <div className="req__main">
                   <Avatar photoUrl={snippet?.photo_url} anonymized size={56} />
-                  <span className="req__title" style={{ flexDirection: 'column', display: 'flex' }}>
+                  <span
+                    className="req__title"
+                    style={{ flexDirection: "column", display: "flex" }}
+                  >
                     <span style={{ fontWeight: 600 }}>
-                      {[educationLabel(snippet?.education_level), snippet?.profession].filter(Boolean).join(' · ') ||
-                        t('circle:suggestions.unknownProfile')}
+                      {(who.length ? who : work).join(" · ") ||
+                        t("circle:suggestions.unknownProfile")}
                     </span>
-                    <span className="caption">{snippet?.locality ?? ''}</span>
+                    <span className="caption">
+                      {[...(who.length ? work : []), snippet?.locality]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
                   </span>
                 </div>
                 <p className="caption" style={{ margin: 0 }}>
-                  {t('circle:suggestions.from', {
-                    relationship: t(`profile:view.share.relationship.${s.suggested_by_relationship_type}`),
-                  })}
+                  {/* Worded from the reader's seat: the member who suggested
+                      it, another member of the circle, or the candidate. */}
+                  {s.suggested_by_is_you
+                    ? candidateFirst
+                      ? t("circle:suggestions.fromYou", { name: candidateFirst })
+                      : t("circle:suggestions.fromYouSelf")
+                    : candidateFirst
+                      ? t("circle:suggestions.fromFamily", {
+                          name: candidateFirst,
+                          relationship,
+                        })
+                      : t("circle:suggestions.from", { relationship })}
                 </p>
                 {s.note && (
-                  <p className="caption" style={{ margin: 0, fontStyle: 'italic' }}>
+                  <p
+                    className="caption"
+                    style={{ margin: 0, fontStyle: "italic" }}
+                  >
                     “{s.note}”
                   </p>
                 )}
                 <p className="caption" style={{ margin: 0, opacity: 0.75 }}>
-                  {t('circle:suggestions.noActionTaken')}
+                  {candidateFirst
+                    ? t("circle:suggestions.noActionTakenFamily", {
+                        name: candidateFirst,
+                      })
+                    : t("circle:suggestions.noActionTaken")}
                 </p>
               </li>
             );

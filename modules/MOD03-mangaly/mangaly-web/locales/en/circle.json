@@ -2,23 +2,57 @@
   "title": "Home Circle",
   "blurb": "The family members helping with this search, and what each can see.",
   "invite": {
-    "title": "Invite a family member",
+    "title": "Add family to your circle",
     "identifier": "Their phone number or email",
     "relationship": "Relationship",
     "relationshipOption": {
       "parent": "Parent",
       "sibling": "Sibling",
-      "relative": "Relative"
+      "relative": "Relative",
+      "guardian": "Guardian"
     },
     "submit": "Send invitation",
     "sending": "Sending…",
-    "success": "Invitation sent."
+    "success": "Invitation sent.",
+    "ownHint": "Find them by name or phone. They join once they accept, and help with your search from then on.",
+    "joinTitle": "Join your family's Home Circle",
+    "joinHint": "Find your son or daughter — or the person whose search you help — and say how you are related. They confirm, and you can search and send requests for them.",
+    "forTitle": "Add someone to {{name}}'s circle",
+    "forHint": "A sibling, an aunt, a family friend who knows the families. They join once they accept.",
+    "mode": {
+      "own": "Add to my circle",
+      "join": "Join someone's circle"
+    },
+    "search": "Name or phone number",
+    "searchCandidate": "Their name or phone number",
+    "hasProfile": "has a Mangaly profile",
+    "noOne": "No one on ForKhatri matches that. You can type their phone number instead.",
+    "noCandidate": "No Mangaly profile matches that.",
+    "inviteNumber": "Not on ForKhatri yet — we will invite {{number}} by phone.",
+    "change": "Change",
+    "youAreTheir": "You are their",
+    "theyAreYour": "They are your",
+    "theyAreCandidates": "They are {{name}}'s",
+    "joinSubmit": "Ask to join",
+    "sentTo": "Invitation sent to {{name}}.",
+    "joinSent": "Asked {{name}}. You join their circle once they confirm.",
+    "askJoin": "How are you related to them?",
+    "askOwn": "How are they related to you?",
+    "askFor": "How are they related to {{name}}?",
+    "createForThem": "Create their profile for them →",
+    "moreRelatives": "More relatives",
+    "switchJoin": "Joining someone else's circle instead?",
+    "switchOwn": "Adding family to your own circle instead?"
   },
   "pendingInvitations": {
     "title": "Invitations for you",
     "from": "Invited as {{relationship}}",
     "accept": "Accept",
-    "decline": "Decline"
+    "decline": "Decline",
+    "asksToJoin": "{{name}} asks to join your Home Circle as your {{relationship}}",
+    "invitesYou": "{{name}} invites you into their Home Circle as their {{relationship}}",
+    "addsYouTo": "{{name}} invites you into {{candidate}}'s Home Circle, as {{first}}'s {{relationship}}",
+    "someone": "Someone"
   },
   "lookingFor": {
     "chip": "Looking for {{value}}",
@@ -42,15 +76,31 @@
     "titleFamily": "Suggested to {{name}}",
     "from": "Suggested by your {{relationship}}",
     "noActionTaken": "Suggestion — no action has been taken on your behalf.",
+    "fromYou": "You suggested this to {{name}}",
+    "fromYouSelf": "You suggested this",
+    "fromFamily": "Suggested by {{name}}'s {{relationship}}",
+    "noActionTakenFamily": "Only a suggestion. No request has been sent for {{name}}.",
     "unknownProfile": "A profile"
   },
   "members": {
     "title": "Members",
-    "empty": "No one has joined this Home Circle yet — invite a family member above.",
+    "empty": "No one has joined this Home Circle yet. Invite a family member to join.",
     "emptyFamily": "You're the only one in {{name}}'s Home Circle so far.",
     "you": "You",
     "remove": "Remove",
-    "joined": "Joined {{date}}"
+    "joined": "Joined {{date}}",
+    "group": {
+      "home": "Home",
+      "relatives": "Relatives"
+    },
+    "stateRelation": "State the exact relation",
+    "statePersonal": "Add your exact relation",
+    "which": {
+      "parent": "Mother or father?",
+      "sibling": "Brother or sister?",
+      "relative": "Which relative?",
+      "guardian": "Guardian"
+    }
   },
   "notes": {
     "title": "Notes from family",
@@ -82,5 +132,22 @@
     "memberCount_one": "{{count}} person helping",
     "memberCount_other": "{{count}} people helping",
     "findMatches": "Find matches for {{name}}"
+  },
+  "relation": {
+    "mother": "Mother",
+    "father": "Father",
+    "brother": "Brother",
+    "sister": "Sister",
+    "guardian": "Guardian",
+    "grandmother": "Grandmother",
+    "grandfather": "Grandfather",
+    "paternal_uncle": "Uncle (father's side)",
+    "maternal_uncle": "Uncle (mother's side)",
+    "paternal_aunt": "Aunt (father's side)",
+    "maternal_aunt": "Aunt (mother's side)",
+    "cousin": "Cousin",
+    "brother_in_law": "Brother-in-law",
+    "sister_in_law": "Sister-in-law",
+    "family_friend": "Family friend"
   }
 }

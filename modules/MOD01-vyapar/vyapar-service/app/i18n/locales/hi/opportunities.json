@@ -6,6 +6,14 @@
     "contact": "संपर्क करें",
     "register": "रजिस्टर करें"
   },
+  "type": {
+    "employment": "नौकरी",
+    "freelance": "फ्रीलांस",
+    "local_service": "स्थानीय सेवा",
+    "partnership": "साझेदारी",
+    "training": "प्रशिक्षण",
+    "community": "समुदाय"
+  },
   "error": {
     "untitled": "बिना शीर्षक का अवसर",
     "sourceRequired": "हमें बताएं आपको यह कहाँ मिला — स्रोत का नाम या लिंक आवश्यक है।",

@@ -1,0 +1,212 @@
+/* ===================================================================
+   Editorial type (owner, 2026-09-25: "font should be improved, there is
+   no classy", "minimalist, modern")
+   -------------------------------------------------------------------
+   Instrument Serif has one weight, regular. Its elegance comes from size
+   and contrast, not boldness, so every heading and name is set at 400 —
+   a synthesised bold would look cheap. Hindi and Telugu headings (Noto
+   Serif) sit at 500 so they match its colour on the page.
+   Prefixed with :root so these win over the route stylesheets, which load
+   after the shared ones.
+   =================================================================== */
+:root {
+  --font-display-stack: var(--font-display), var(--font-display-devanagari), var(--font-display-telugu),
+    Georgia, serif;
+  --font-serif: var(--font-display-stack);
+}
+:root :is(.display, .h1, .h2, .h3, .page__title, .topbar h1, .home-head__title, .royal-title,
+    .inbox__title, .pview__name, .pview__bigname, .profile-hero__name, .pcard__name, .game__q,
+    .sidebar__brand, .mtop__brand, .shelf__title, .hfeed__title, .part-head__title, .sealed__title,
+    .member__name, .member__h, .sheet__title, .section-card__title, .fgroup__title, .openly__title,
+    .account__name, .reqpop__title, .convo__name, .thread-top__name, .chat__intro-name, .chat__name,
+    .olook__a, .game__choice-label, .managed-note strong, .invite .h2, .hcard__name, .dtile__title,
+    .mcard__title, .me-tile__title, .inbox__empty-title, .mpane__empty-title, .msplash__name,
+    .hcard__more-n) {
+  font-family: var(--font-display-stack);
+  font-weight: 400;
+  font-synthesis: none;
+  font-variation-settings: normal;
+  letter-spacing: -0.01em;
+}
+:root :is(.pview__prompt-a, .prompt-card__a) {
+  font-family: var(--font-display-stack);
+  font-weight: 400;
+  font-style: italic;
+  font-synthesis: none;
+}
+html:is([lang='hi'], [lang='te']) :is(.h1, .h2, .h3, .topbar h1, .home-head__title, .royal-title,
+    .profile-hero__name, .hcard__name, .dtile__title, .pview__bigname, .part-head__title,
+    .section-card__title, .me-tile__title, .convo__name) {
+  font-weight: 500;
+}
+/* Instrument Serif runs narrower and lighter than the old face: sizes step
+   up a little so headings keep their presence. */
+:root :is(.topbar h1, .page__title, .h1, .inbox__title, .royal-title) {
+  font-size: clamp(2.125rem, 1.8rem + 1.5vw, 3rem);
+  line-height: 1;
+}
+:root .home-head__title {
+  font-size: clamp(2.5rem, 2rem + 2vw, 3.5rem);
+  line-height: 1;
+}
+:root .home-head__title .mt--accent {
+  font-style: italic;
+  font-weight: 400;
+}
+:root :is(.hcard__name) {
+  font-size: clamp(1.75rem, 12cqi, 2.375rem);
+}
+:root .dwall .dtile__title {
+  font-size: clamp(1.375rem, 12cqi, 1.75rem);
+}
+:root .pview__bigname {
+  font-size: clamp(2.75rem, 2.2rem + 2.6vw, 4rem);
+}
+:root .sidebar__brand {
+  font-size: 2rem;
+}
+
+/* Body: Instrument Sans, calm weights. */
+body {
+  font-family: var(--font-body), var(--font-body-devanagari), var(--font-body-telugu), system-ui, sans-serif;
+}
+:root :is(.btn, .cta, .dlens, .relchip, .chip, .fchip, .quick-pick__chip, .sidebar__item, .bottombar__item) {
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+/* ---- One icon language (critique agent, 2026-09-25) --------------------
+   Phosphor light, currentColor, no containers at rest. A 36px circle of
+   surface colour appears only on hover or press of an icon button. */
+.icon {
+  flex: none;
+}
+:root :is(.duo__icon, .duo__plus, .me-next__dot, .me-openly__icon, .bento__icon) {
+  width: 28px;
+  height: 28px;
+  background: none !important;
+  box-shadow: none !important;
+  border-radius: 0;
+  color: var(--ink-2);
+}
+:root .duo__icon.is-live {
+  color: var(--accent);
+}
+:root :is(.icon-btn, .me-top .icon-btn, .menu-btn, .inbox__new, .chat__head .icon-btn) {
+  background: transparent;
+  box-shadow: none;
+  border: 0;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  color: var(--ink);
+}
+:root :is(.icon-btn, .menu-btn, .inbox__new):hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+/* The menu button floats over scrolling content, so it keeps a whisper of
+   frosted ground — but no border or shadow. */
+:root .menu-btn {
+  background: color-mix(in srgb, var(--paper) 60%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+/* Verified: a thin gold seal beside the name, never a sticker on the photo. */
+:root .seal {
+  display: inline-block;
+  margin-left: 6px;
+  vertical-align: -0.1em;
+  color: #e9bf3a;
+}
+/* Bookmark on photos: a white glyph with a soft shadow, no glass bubble;
+   on a desktop it appears on hover or when saved. */
+:root .dwall .dtile__save,
+:root .dtile__save {
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  color: #fff;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+}
+:root .dtile__save.is-on {
+  background: none;
+  color: var(--gold);
+}
+@media (hover: hover) and (min-width: 1024px) {
+  :root .dtile__save:not(.is-on) {
+    opacity: 0;
+    transition: opacity var(--dur-2) var(--ease);
+  }
+  :root .dtile:hover .dtile__save,
+  :root .dtile__save:focus-visible {
+    opacity: 1;
+  }
+}
+/* Private-chat lock: a small outline glyph on the avatar corner, quiet. */
+:root :is(.convo__lock, .chat__lock) {
+  background: var(--surface);
+  color: var(--ink-2);
+  width: 18px;
+  height: 18px;
+}
+/* Empty states: one thin glyph, no disc. */
+:root .inbox__empty-mark {
+  width: auto;
+  height: auto;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  color: var(--ink-3);
+}
+/* Instrument Serif's tall ascenders need room: no clipping of names. */
+:root :is(.dtile__title, .profile-hero__name, .hcard__name, .pview__bigname) {
+  line-height: 1.2;
+  padding-bottom: 1px;
+}
+:root :is(.duo__icon, .duo__plus) {
+  color: var(--ink);
+}
+:root .duo__icon svg,
+:root .duo__plus svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Phosphor glyphs are filled shapes: older hand-drawn-icon rules set
+   `fill: none; stroke: …` on any svg in these places, which turned them
+   into ghostly outlines. The icon set always paints with its own fill. */
+:root svg.icon {
+  fill: currentColor !important;
+  stroke: none !important;
+  stroke-width: 0 !important;
+}
+
+/* Circle (both themes): the "Looking for" chip is readable ink on a soft
+   surface, beating circle.css. */
+:root .circle-chip {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+:root .circle-chip--muted {
+  color: var(--ink-2);
+}
+
+/* Circle desktop: a lone card aligns with the page title, not centred. */
+@media (min-width: 1024px) {
+  :root .circle-grid:has(> :only-child) {
+    justify-content: start;
+  }
+}
+/* Overlapping faces: the gentler overlap plus a page-coloured ring, and
+   initials sized so two letters never touch the next circle. */
+:root .chat__faces > *,
+:root .chat__faces--lg > * {
+  box-shadow: 0 0 0 2px var(--chat-bg, var(--surface));
+}
+:root .chat__faces > * + *,
+:root .chat__faces--lg > * + * {
+  margin-left: -6px;
+}

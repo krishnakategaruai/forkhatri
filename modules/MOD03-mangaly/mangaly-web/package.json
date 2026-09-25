@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
+    "@vladmandic/face-api": "^1.7.15",
     "i18next": "^26.4.2",
     "next": "16.3.5",
     "react": "19.2.8",

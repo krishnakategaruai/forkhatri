@@ -2,6 +2,9 @@
   "error": {
     "listingNotFound": "Listing not found or no longer available",
     "opportunityNotFound": "This opportunity is no longer available",
-    "operatorPermissionRequired": "Operator permission required"
+    "operatorPermissionRequired": "Operator permission required",
+    "validation": "The request has missing or invalid fields.",
+    "generic": "Something went wrong. Please try again.",
+    "invalidCursor": "This page link is no longer valid. Start again from the first page."
   }
 }

@@ -41,6 +41,11 @@ class ConnectionStatus(StrEnum):
     PENDING = "pending"
     ACCEPTED = "accepted"
     DECLINED = "declined"
+    # [2026-09-21] Added by migration 036 alongside the withdraw endpoint, but
+    # never mirrored here — so the moment any row actually held it, every read
+    # of that row raised LookupError. Reading a status the database can store
+    # is not optional.
+    WITHDRAWN = "withdrawn"
 
 
 class ConnectionRequest(Base):

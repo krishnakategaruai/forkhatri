@@ -1,0 +1,39 @@
+{
+  "title": "My profile",
+  "role": "Family member on Mangaly",
+  "photo": {
+    "add": "Add your photo",
+    "change": "Change your photo",
+    "why": "Add a clear photo of yourself. It is how the families you talk to know who they are speaking with, and it is needed before you can make a profile for your child.",
+    "whyShort": "Add a clear photo so families know who they are talking to."
+  },
+  "about": {
+    "title": "About you",
+    "hint": "A few words the families you meet will see. This is not a match profile and is never shown in search.",
+    "about": "About you",
+    "aboutPlaceholder": "e.g. Retired bank manager, love Carnatic music and long walks at Tank Bund.",
+    "city": "City",
+    "cityPlaceholder": "e.g. Hyderabad",
+    "occupation": "Work",
+    "occupationPlaceholder": "e.g. Teacher, business, retired…",
+    "save": "Save",
+    "saved": "Saved",
+    "error": "Could not save. Try again.",
+    "aboutLabel": "A few lines about you"
+  },
+  "families": {
+    "title": "Your families",
+    "none": "You are not in anyone’s Home Circle yet. When a candidate invites you, they appear here.",
+    "youAre": "You are the {{relation}} of {{name}}",
+    "circle": "Circle",
+    "matches": "Matches for {{name}}"
+  },
+  "made": {
+    "title": "Profiles you made",
+    "waiting": "Waiting for them to sign in and take it over",
+    "edit": "Edit",
+    "hint": "Make a profile for your son or daughter. They take it over when they sign in with their own number.",
+    "cta": "Make a profile for my child"
+  },
+  "signOut": "Sign out"
+}

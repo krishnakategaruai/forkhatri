@@ -4,10 +4,40 @@
   "thread": {
     "placeholder": "Type a message…",
     "send": "Send",
-    "privacyTag": "Private · Not saved",
+    "privacyTag": "Private · not saved",
     "empty": "No messages yet. Say hello!",
-    "sessionNote": "This chat is a session, not a history. When either of you leaves, everything written here is deleted for both. Screenshots cannot be prevented in a browser, so treat anything you send as capturable.",
-    "endSession": "End chat and delete"
+    "sessionNote": "A private session. Leave it, or stay quiet for 30 minutes, and everything here is deleted for both of you. A browser cannot stop screenshots, so write what you would say in person.",
+    "endSession": "End chat",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "familyTag": "Both families",
+    "familyTitle": "{{a}} & {{b}}",
+    "familySubtitle": "{{count}} people · both families",
+    "familyNote": "The families’ conversation. Everyone in both Home Circles can read it, and it is kept for as long as the two of you are connected.",
+    "bringFamilies": "Family chat",
+    "bringFamiliesHint": "Open a chat with both families",
+    "relationOf": "{{relation}} of {{name}}",
+    "more": "More",
+    "viewProfile": "View profile",
+    "report": "Report",
+    "block": "Block",
+    "blockConfirm": "Block {{name}}? They will not see you or message you again, and this chat closes.",
+    "blockYes": "Block",
+    "cancel": "Cancel",
+    "reportTitle": "Report {{name}}",
+    "reportWho": "Who are you reporting?",
+    "reportNote": "This chat, as it is right now, goes to Mangaly’s safety team with your report. {{name}} is not told who reported.",
+    "reportDetails": "Anything we should know (optional)",
+    "reportSend": "Send report",
+    "reportSent": "Thank you. Our safety team will look at this.",
+    "incognitoSub": "Incognito · disappears when you leave",
+    "directNote": "Your conversation, kept like any chat. Only the two of you can read it.",
+    "endSessionHint": "Deletes everything here for both of you",
+    "placeholderIncognito": "Message in incognito…",
+    "starter1": "Namaste! 🙏",
+    "starter2": "Hi {{name}}, your profile made me smile",
+    "starter3": "What does a perfect Sunday look like for you?",
+    "familyWithYou": "{{name}}'s family & yours"
   },
   "error": {
     "network": "We couldn't reach Mangaly. Check your connection and try again.",
@@ -15,6 +45,36 @@
     "rateLimited": "You're sending messages too quickly. Please slow down."
   },
   "system": {
-    "connected": "You are connected. Only the two of you can read this conversation."
+    "connected": "You are connected. Only the two of you can read this conversation.",
+    "family_opened": "The families’ chat is open. Everyone in both Home Circles can read it."
+  },
+  "reason": {
+    "harassment": "Harassment",
+    "fake_profile": "Fake profile",
+    "inappropriate_content": "Inappropriate messages",
+    "scam_or_money": "Asking for money",
+    "already_married": "Already married",
+    "underage": "Under age",
+    "other": "Something else"
+  },
+  "kind": {
+    "family": "Families",
+    "candidate": "Incognito",
+    "direct": "Chat"
+  },
+  "list": {
+    "newMessage": "New message",
+    "searchPeople": "Search people",
+    "yourFamily": "Your family",
+    "familyOf": "{{name}}'s family",
+    "candidate": "Looking for a match",
+    "you": "You: ",
+    "noContacts": "No one to message yet. People appear here once they are in your Home Circle, or in the family of someone you are connected with.",
+    "whoCanNote": "You can message your own family, and the family of anyone you are connected with. Two connected candidates talk in their private session instead.",
+    "emptyTitle": "No messages yet",
+    "emptyBody": "Write to someone in your family, or to the family of a match you are connected with.",
+    "pickTitle": "Your messages",
+    "pickBody": "Choose a conversation, or start a new one.",
+    "inviteFamily": "Invite family to your circle"
   }
 }

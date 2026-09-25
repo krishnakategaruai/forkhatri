@@ -9,7 +9,10 @@ import { resolveMediaUrl } from '@/lib/api';
  * omit a name, so the state itself communicates "not yet revealed" rather
  * than reading as a broken image). */
 
-const PALETTE = ['#c57a1e', '#1f7a55', '#7a4fc5', '#c54f6b', '#2b6fc5', '#8a8a1f'];
+// Initials sit on warm tones drawn from the two brand colours (kumkum and
+// turmeric) — deep enough for cream letters, calm beside each other, and
+// nothing outside the palette (DEC-V1-030).
+const PALETTE = ['#8e1b1b', '#a8321f', '#7a2e22', '#9a6a12', '#6e3b31', '#8a4a1c'];
 
 function colorFor(seed: string): string {
   let hash = 0;
@@ -46,7 +49,7 @@ export function Avatar({
     overflow: 'hidden',
     fontWeight: 700,
     fontSize: size * 0.38,
-    color: '#fffdf9',
+    color: '#fff3d6',
   };
 
   if (resolved) {

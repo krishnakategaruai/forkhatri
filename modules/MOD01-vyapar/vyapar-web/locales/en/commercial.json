@@ -1,5 +1,7 @@
 {
-  "action": { "boost": "Boost" },
+  "action": {
+    "boost": "Boost"
+  },
   "why": {
     "sponsored": "Sponsored: the poster paid for extra reach among people this already fits. It didn't change why it matches you."
   },
@@ -12,7 +14,12 @@
     "audienceHelp": "Boost shows this to more of the people it already fits. It never changes who is eligible or your organic position.",
     "onlyLocality": "Only in {{locality}}",
     "onlyCategory": "Only for {{category}}",
-    "chooseDuration": "Choose a duration to see the full price."
+    "chooseDuration": "Choose a duration to see the full price.",
+    "custom": "Custom",
+    "customRange": "{{min}} to {{max}} days",
+    "customDays": "How many days",
+    "customHelp": "Priced per day at the rate of the closest pack, so a longer boost never costs more per day.",
+    "customProduct": "Custom boost, {{n}} days"
   },
   "disclosure": {
     "title": "Confirm your boost",

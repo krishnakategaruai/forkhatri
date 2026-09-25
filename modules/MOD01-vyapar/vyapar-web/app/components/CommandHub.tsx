@@ -9,16 +9,19 @@
 // screen's own primary content, and expands only on deliberate tap.
 // Traces to: task brief's Design direction section
 import { useState } from "react";
+import Link from "next/link";
+import Icon from "@/app/components/Icon";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { useTranslation } from "react-i18next";
+import { useHost } from "@/app/host/HostProvider";
 
 const DESTINATIONS = [
-  { href: "/", labelKey: "nav.discover", icon: "✦" },
-  { href: "/businesses", labelKey: "nav.businesses", icon: "▤" },
-  { href: "/post", labelKey: "nav.post", icon: "+" },
-  { href: "/activity", labelKey: "nav.activity", icon: "◔" },
-  { href: "/profile", labelKey: "nav.profile", icon: "◍" },
+  { href: "/", labelKey: "nav.discover", icon: "discover" },
+  { href: "/businesses", labelKey: "nav.businesses", icon: "businesses" },
+  { href: "/post", labelKey: "nav.post", icon: "post" },
+  { href: "/activity", labelKey: "nav.activity", icon: "activity" },
+  { href: "/profile", labelKey: "nav.profile", icon: "profile" },
 ] as const;
 
 export default function CommandHub() {
@@ -26,20 +29,60 @@ export default function CommandHub() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  // [IMP38] The rail brand comes from the host ("Vyapar ForKhatri" on the
+  // ForKhatri host, plain "Vyapar" standalone) — the core never names it.
+  const { brand } = useHost();
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        bottom: 20,
-        left: 0,
-        right: 0,
-        display: "flex",
-        justifyContent: "center",
-        zIndex: 50,
-        pointerEvents: "none",
-      }}
-    >
+    <>
+      {/* [IMP33 — 04-ui.md F4 `--fk-bp-desktop`] "≥900 px: bottom nav
+          becomes a 240 px left rail with the same five items and labels."
+          This was in the sealed spec and never built; at 1440px the app
+          had no navigation chrome at all beyond a floating orb designed
+          for a thumb. Same five DESTINATIONS array as the floating hub —
+          one source of truth, so the two presentations can never drift.
+          The swap is pure CSS (`.vy-rail` / `.vy-hub-float` in
+          globals.css) rather than a `window.innerWidth` read, so there is
+          no hydration mismatch and no resize listener. */}
+      <nav className="vy-rail" aria-label={t("nav.primary", { defaultValue: "Primary" })}>
+        <Link href="/" className="vy-rail-brand">
+          {brand.qualifier ? `${brand.name} ` : brand.name}
+          {brand.qualifier && <span>{brand.qualifier}</span>}
+        </Link>
+        {DESTINATIONS.map((d) => {
+          const active = pathname === d.href;
+          return (
+            <Link
+              key={d.href}
+              href={d.href}
+              className="vy-rail-link"
+              aria-current={active ? "page" : undefined}
+            >
+              <span className="vy-rail-mark" aria-hidden="true">
+                <Icon name={d.icon} size={18} />
+              </span>
+              {t(d.labelKey)}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div
+        className="vy-hub-float"
+        style={{
+          position: "fixed",
+          bottom: 20,
+          left: 0,
+          right: 0,
+          // [Fix] no inline `display` here: an inline style beats the
+          // stylesheet, so the ≥900px `display: none` (the left rail takes
+          // over on desktop) never applied and this button floated over
+          // desktop content. `display: flex` now lives on .vy-hub-float.
+          justifyContent: "center",
+          zIndex: 50,
+          pointerEvents: "none",
+        }}
+      >
       <motion.div
         layout
         style={{ pointerEvents: "auto" }}
@@ -84,7 +127,7 @@ export default function CommandHub() {
                       minWidth: 60,
                     }}
                   >
-                    <span style={{ fontSize: 16 }}>{d.icon}</span>
+                    <Icon name={d.icon} size={18} />
                     <span style={{ fontSize: 11, fontWeight: 600 }}>{t(d.labelKey)}</span>
                   </button>
                 );
@@ -124,6 +167,7 @@ export default function CommandHub() {
           )}
         </AnimatePresence>
       </motion.div>
-    </div>
+      </div>
+    </>
   );
 }

@@ -392,7 +392,11 @@ img { max-width: 100%; display: block; }
 .date-strip button[aria-pressed='true'] { background: var(--accent-primary); color: var(--text-on-accent); border-color: var(--accent-primary); }
 .date-strip small { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.8; }
 .date-strip b { font-size: 1.125rem; }
-.map { height: 58vh; border-radius: var(--radius-md); overflow: hidden; border: var(--card-border); }
+/* isolation: isolate traps Leaflet's own internal z-index scale (panes up to
+   700, .leaflet-top/.leaflet-bottom controls at 1000) inside this box, so
+   the map's zoom control can never out-rank the app's scrim/sheet layers
+   (z-index 40/41) and swallow taps meant for the preview sheet above it. */
+.map { position: relative; z-index: 0; isolation: isolate; height: 58vh; border-radius: var(--radius-md); overflow: hidden; border: var(--card-border); }
 .leaflet-container { height: 100%; width: 100%; background: var(--surface-sunken); font: inherit; }
 .muted-tiles { filter: saturate(0.75) contrast(0.95); }
 :root[data-theme='dark'] .muted-tiles { filter: invert(1) hue-rotate(195deg) brightness(0.86) contrast(0.92) saturate(0.55); }

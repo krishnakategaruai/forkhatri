@@ -6,6 +6,13 @@
     "rateLimited": "Too many connection requests. Please try again later.",
     "onBehalfNotAllowed": "Only someone in this candidate's Home Circle can send a request for them.",
     "shareUnavailable": "There is nothing to share in this category yet.",
-    "notAMember": "Choose someone who is in your Home Circle."
+    "notAMember": "Choose someone who is in your Home Circle.",
+    "alreadyConnected": "You are already connected with this person.",
+    "onlyParentsDecide": "Only the candidate or their parents can answer a request.",
+    "blocked": "You can't send a request to this person.",
+    "notLookingFor": "This profile isn't who you're looking for, so a request can't be sent.",
+    "onBehalfParentsOnly": "Only the candidate, a parent or a guardian can send a request. You can suggest this profile to them instead.",
+    "cooldown_declined": "This person said not now to an earlier request. You can send a new request from {date}.",
+    "cooldown_withdrawn": "You withdrew a request to this person recently. You can send a new request from {date}."
   }
 }

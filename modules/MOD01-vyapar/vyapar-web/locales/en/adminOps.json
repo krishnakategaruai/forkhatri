@@ -42,6 +42,15 @@
     "done": "{{n}} items updated."
   },
   "taxonomy": {
-    "title": "Taxonomy"
+    "title": "Taxonomy",
+    "kind": {
+      "category": "Category",
+      "capability": "Capability"
+    },
+    "status": {
+      "active": "Active",
+      "unmapped": "Unmapped",
+      "merged": "Merged"
+    }
   }
 }

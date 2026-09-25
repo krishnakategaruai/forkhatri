@@ -75,5 +75,15 @@
     "pause": "Pause all items",
     "resume": "Resume items",
     "notFound": "Campaign not found"
+  },
+  "dash": {
+    "role": "Your role",
+    "plan": "Plan",
+    "team": "Team",
+    "campaigns": "Campaigns",
+    "noPlan": "No plan yet",
+    "withPlan": "With a plan",
+    "planOn": "Active",
+    "whatYouGet": "What a plan gives this business"
   }
 }

@@ -10,7 +10,7 @@ from datetime import date
 from typing import Annotated, Literal, cast
 from uuid import UUID
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile, status
 from pydantic import BaseModel
 
 from app.api.deps import AuthenticatedAccount, DbSession, Locale
@@ -99,7 +99,202 @@ async def create_profile(
             detail=translate("profile.error.unsupportedPhoto", lang),
         ) from exc
 
+    # [DEC-V1-028 minor safety] The wizard refused anyone under the marriage
+    # age above; this is the independent under-18 flag (Tier 4) for anything
+    # that ever gets past it. Reads the row just written, under this context.
+    from app.components.safety import interface as safety
+
+    await safety.check_profile_age(session, account_id=account_id)
     return _to_response(result)
+
+
+@router.post("/managed", status_code=status.HTTP_201_CREATED)
+async def create_profile_for_child(
+    session: DbSession,
+    account_id: AuthenticatedAccount,
+    lang: Locale,
+    child_phone: str = Form(..., min_length=6, max_length=32),  # noqa: B008
+    relation: str = Form(...),  # noqa: B008
+    name: str = Form(..., min_length=1, max_length=200),  # noqa: B008
+    date_of_birth: date = Form(...),  # noqa: B008
+    gender: str = Form(..., min_length=1, max_length=50),  # noqa: B008
+    looking_for: str = Form(..., pattern="^(bride|groom)$"),  # noqa: B008
+    city_locality: str = Form(..., min_length=1, max_length=200),  # noqa: B008
+    photo: UploadFile = File(...),  # noqa: B008
+) -> dict[str, str]:
+    """[DEC-V1-019] A parent (or other relation) creates a candidate profile for
+    their son or daughter — the Shaadi.com "profile for: son / daughter" model.
+
+    1. ForKhatri provisions a member for the child's mobile number (refused if
+       that number already belongs to someone: then the parent asks to join
+       the child's circle instead — it is their account).
+    2. Mangaly makes the child's account on that same id, and builds the
+       profile with the child's account bound — so every write is the child's.
+    3. The creator becomes the circle's first member, as their exact relation.
+    When the child signs in with an OTP to that number, the profile is theirs."""
+    from sqlalchemy import text
+
+    from app.components.home_circle import interface as home_circle
+    from app.components.home_circle.models import RELATION_ROLE
+    from app.components.identity_bridge import platform
+    from app.components.trust import interface as trust
+    from app.db.session import set_account_context, set_authz_context
+
+    if relation not in RELATION_ROLE:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="unknown relation")
+    # [DEC-V1-025] The owner's rule (2026-09-21): "a person who could create an
+    # account [for someone] should always be an email, phone, photo verified
+    # person only." Phone is proven by the ForKhatri sign-in OTP; photo means a
+    # current live face match (DEC-V1-016). Email verification does not exist
+    # in the platform identity service yet — a platform blocker, not checked
+    # here. Checked before anything is provisioned, so a refused maker leaves
+    # no half-made member behind.
+    if not await trust.is_face_verified(session, account_id=account_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "verification_required",
+                "message": translate("verification.error.required", lang),
+            },
+        )
+    try:
+        child_id, digits = await platform.provision_member(
+            phone=child_phone, display_name=name, preferred_language=lang
+        )
+    except platform.MemberExists as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=translate("profile.error.childAlreadyJoined", lang),
+        ) from exc
+    except platform.InvalidPhone as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=translate("profile.error.childPhone", lang),
+        ) from exc
+    except platform.PlatformIdentityUnavailable as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="identity unavailable") from exc
+
+    await session.execute(
+        text("SELECT mangaly_identity.create_account_for_child(:id, :phone, :name)"),
+        {"id": child_id, "phone": digits, "name": name},
+    )
+
+    # Everything below is the child's: their profile, their circle.
+    await set_account_context(session, child_id)
+    await set_authz_context(session, child_id)
+    try:
+        await profile.create_profile(
+            session,
+            account_id=child_id,
+            name=name,
+            date_of_birth=date_of_birth,
+            gender=gender,
+            city_locality=city_locality,
+            photo=photo,
+            looking_for=looking_for,
+        )
+    except profile.TooYoung as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=translate("profile.error.tooYoung", lang, years=exc.required_years),
+        ) from exc
+    except UnsupportedMedia as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=translate("profile.error.unsupportedPhoto", lang),
+        ) from exc
+    await session.execute(
+        text(
+            "UPDATE mangaly_profile.profile SET created_by_account_id = :creator, updated_at = now() "
+            "WHERE account_id = :child"
+        ),
+        {"creator": account_id, "child": child_id},
+    )
+    await home_circle.add_founding_member(
+        session, candidate_account_id=child_id, member_account_id=account_id, relation=relation
+    )
+    await set_account_context(session, account_id)
+    await set_authz_context(session, account_id)
+    return {"account_id": str(child_id)}
+
+
+class ManagedProfileResponse(BaseModel):
+    account_id: str
+    name: str
+    photo_url: str | None
+    phone_masked: str | None
+
+
+@router.get("/managed", response_model=list[ManagedProfileResponse])
+async def list_managed(session: DbSession, account_id: AuthenticatedAccount) -> list[ManagedProfileResponse]:
+    """[DEC-V1-019] Profiles the caller created that their son or daughter has
+    not taken over yet — the ones the caller may still fill in."""
+    from sqlalchemy import text
+
+    rows = await session.execute(
+        text("SELECT * FROM mangaly_profile.managed_profiles_of(:me)"), {"me": account_id}
+    )
+    return [
+        ManagedProfileResponse(
+            account_id=str(r["account_id"]),
+            name=r["name"],
+            photo_url=profile.resolve_photo_url(r["primary_photo_ref"]) if r["primary_photo_ref"] else None,
+            phone_masked=r["phone_masked"],
+        )
+        for r in rows.mappings()
+    ]
+
+
+@router.post("/disown", status_code=status.HTTP_204_NO_CONTENT)
+async def disown(session: DbSession, account_id: AuthenticatedAccount) -> None:
+    """[DEC-V1-019] "This isn't me": the owner of a mobile number finds a
+    profile someone else made with it and removes it. Only while it is still
+    unclaimed; the person keeps their own ForKhatri account. The one who made
+    it is told."""
+    from sqlalchemy import text
+
+    from app.components.notification_bridge import interface as notifications
+
+    creator = (
+        await session.execute(
+            text(
+                "SELECT created_by_account_id FROM mangaly_profile.profile "
+                "WHERE account_id = :me AND claimed_at IS NULL"
+            ),
+            {"me": account_id},
+        )
+    ).scalar_one_or_none()
+    if creator is None:
+        return
+    removed = (
+        await session.execute(
+            text("SELECT mangaly_profile.disown_profile_made_for_me(:me)"), {"me": account_id}
+        )
+    ).scalar_one()
+    if removed:
+        await notifications.notify(
+            session,
+            recipients=[creator],
+            subject_account_id=None,
+            kind="profile_disowned",
+            payload={},
+            link="/circle",
+        )
+
+
+@router.post("/claim", status_code=status.HTTP_204_NO_CONTENT)
+async def claim(session: DbSession, account_id: AuthenticatedAccount) -> None:
+    """[DEC-V1-019] The candidate takes over a profile made for them. From now
+    on only they may edit it; the creator stays in the circle."""
+    from sqlalchemy import text
+
+    await session.execute(
+        text(
+            "UPDATE mangaly_profile.profile SET claimed_at = now(), updated_at = now() "
+            "WHERE account_id = :me AND created_by_account_id IS NOT NULL AND claimed_at IS NULL"
+        ),
+        {"me": account_id},
+    )
 
 
 @router.get("/me", response_model=ProfileResponse | None)
@@ -260,6 +455,39 @@ class PublicProfileResponse(BaseModel):
     education_level: str | None
     profession: str | None
     attributes: dict[str, dict[str, dict | list | str | int | float | bool | None]]
+    # [Migration 043] What this person chose to show openly.
+    open_name: str | None = None
+    open_photo_urls: list[str] = []
+    # [Owner, 2026-09-25] The full name, for a parent or guardian whose
+    # candidate has an ACCEPTED connection with this person. Contact details
+    # still follow the candidate's own sharing (FR046/FR048).
+    name: str | None = None
+
+
+async def _connected_name_for_parent(
+    session: DbSession, viewer_account_id: UUID, target_account_id: UUID
+) -> str | None:
+    from app.components.authorization import interface as authz_engine
+    from app.components.authorization.context import Action
+    from app.components.connection import interface as connection
+    from app.components.connection.models import ConnectionStatus
+    from app.components.home_circle import interface as home_circle
+
+    # The circle and connection reads are RLS-scoped to the viewer.
+    await authz_engine.resolve_self(session, account_id=viewer_account_id, action=Action.READ)
+    for ctx in await home_circle.list_member_contexts(session, account_id=viewer_account_id):
+        if ctx.relationship_type.value not in ("parent", "guardian"):
+            continue
+        between = await connection.connection_between(
+            session, account_id=ctx.candidate_account_id, other_account_id=target_account_id
+        )
+        if between is None or between.status is not ConnectionStatus.ACCEPTED:
+            continue
+        info = await connection.sender_info(session, connection_id=between.id)
+        if info is None:
+            continue
+        return info.target_name if info.subject_account_id == ctx.candidate_account_id else info.subject_name
+    return None
 
 
 @router.get("/view/{target_account_id}/public", response_model=PublicProfileResponse | None)
@@ -277,7 +505,13 @@ async def get_public_profile(
     cards = await discovery.cards_for(session, account_ids=[target_account_id])
     card = cards.get(target_account_id)
     biodata = await profile.public_biodata(session, account_id=target_account_id)
+    opened = (await discovery.open_cards_for(session, account_ids=[target_account_id])).get(
+        target_account_id
+    )
     return PublicProfileResponse(
+        name=await _connected_name_for_parent(session, account_id, target_account_id),
+        open_name=opened.first_name if opened else None,
+        open_photo_urls=opened.photo_urls if opened else [],
         account_id=str(target_account_id),
         age=card.age if card else None,
         locality=snippet.locality,
@@ -452,10 +686,18 @@ async def get_category(
 async def update_category(
     category: str,
     attributes: dict[str, AttributeInput],
+    request: Request,
     session: DbSession,
     account_id: AuthenticatedAccount,
     lang: Locale,
 ) -> None:
+    # [DEC-V1-019] Only the candidate speaks in their own words: a parent
+    # filling in a profile they created may not write the prompts or the ten
+    # choices, even before the candidate takes the profile over.
+    if category in ("in_my_words", "outlook", "openly") and getattr(
+        request.state, "managing_for", None
+    ):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="candidate only")
     """[FR002/TR002] Set or decline any number of attributes within one
     category in a single request — one PATCH per category (matching UX02's
     per-category editing screens), not one PATCH per field."""
@@ -470,3 +712,67 @@ async def update_category(
         )
     except profile.ProfileNotFound as exc:
         raise _profile_not_found(lang) from exc
+
+
+
+# ---------------------------------------------------------------------------
+# [Migration 047 / DEC-V1-027] "My profile" for a parent, sibling or relative
+# ---------------------------------------------------------------------------
+
+
+class MemberProfileResponse(BaseModel):
+    photo_url: str | None = None
+    about: str | None = None
+    city: str | None = None
+    occupation: str | None = None
+
+
+class MemberProfileRequest(BaseModel):
+    about: str | None = None
+    city: str | None = None
+    occupation: str | None = None
+
+
+def _member_response(m: profile.MemberProfile | None) -> MemberProfileResponse:
+    if m is None:
+        return MemberProfileResponse()
+    return MemberProfileResponse(
+        photo_url=m.photo_url, about=m.about, city=m.city, occupation=m.occupation
+    )
+
+
+@router.get("/member/me", response_model=MemberProfileResponse)  # "/member" alone is taken by GET /{category}
+async def get_member(session: DbSession, account_id: AuthenticatedAccount) -> MemberProfileResponse:
+    return _member_response(await profile.get_member_profile(session, account_id=account_id))
+
+
+@router.patch("/member/me", response_model=MemberProfileResponse)
+async def put_member(
+    body: MemberProfileRequest, session: DbSession, account_id: AuthenticatedAccount
+) -> MemberProfileResponse:
+    return _member_response(
+        await profile.save_member_profile(
+            session,
+            account_id=account_id,
+            about=body.about,
+            city=body.city,
+            occupation=body.occupation,
+        )
+    )
+
+
+@router.post("/member/photo", response_model=MemberProfileResponse)
+async def put_member_photo(
+    session: DbSession,
+    account_id: AuthenticatedAccount,
+    lang: Locale,
+    photo: UploadFile = File(...),  # noqa: B008
+) -> MemberProfileResponse:
+    try:
+        m = await profile.set_member_photo(session, account_id=account_id, photo=photo)
+    except UnsupportedMedia as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=translate("profile.error.unsupportedPhoto", lang),
+        ) from exc
+    return _member_response(m)

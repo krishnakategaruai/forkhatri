@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, ApiError } from "@/lib/api";
+import Screen from "@/app/components/Screen";
 
 interface Evidence {
   reason: string;
@@ -31,6 +32,9 @@ interface CaseItem {
   target_due_at: string;
   overdue: boolean;
   prior_cases: number;
+  // [Critique agent finding, fixed here] FR40 requires the operator to
+  // actually weigh history, not just see a count — real per-case detail.
+  prior_case_history: { action: string | null; reason_code: string | null; primary_reason: string | null; state: string; date: string }[];
   evidence: Evidence[];
 }
 
@@ -59,6 +63,7 @@ function CaseCard({ item, onDone }: { item: CaseItem; onDone: () => void }) {
   const [reasonCode, setReasonCode] = useState("");
   const [days, setDays] = useState(30);
   const [busy, setBusy] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const urgent = item.severity === "high" || item.severity === "critical";
 
   async function apply() {
@@ -97,8 +102,25 @@ function CaseCard({ item, onDone }: { item: CaseItem; onDone: () => void }) {
         {t(`trustSafety:source.${item.source}` as "source.report")}
         {item.reporter_count > 0 ? ` · ${t("trustSafety:queue.reporters", { n: item.reporter_count })}` : ""}
         {item.primary_reason ? ` · ${t(`trustSafety:primaryReason.${item.primary_reason}` as "primaryReason.scam", { defaultValue: item.primary_reason })}` : ""}
-        {item.prior_cases > 0 ? ` · ${t("trustSafety:queue.priorCases", { n: item.prior_cases })}` : ""}
       </p>
+      {item.prior_cases > 0 && (
+        <div>
+          <button type="button" className="vy-btn vy-btn-ghost" style={{ fontSize: 13, padding: "4px 0" }} onClick={() => setShowHistory((v) => !v)}>
+            {t("trustSafety:queue.priorCases", { n: item.prior_cases })} {showHistory ? "▲" : "▼"}
+          </button>
+          {showHistory && (
+            <div className="vy-stack" style={{ gap: 4, marginTop: 4 }}>
+              {item.prior_case_history.map((p, i) => (
+                <p key={i} className="vy-muted" style={{ fontSize: 13 }}>
+                  {p.action ? t(`trustSafety:action.${p.action}` as "action.limit") : t(`trustSafety:queue.caseState.${p.state}` as "queue.caseState.dismissed")}
+                  {p.reason_code ? ` — ${t(`trustSafety:reasonCode.${p.reason_code}` as "reasonCode.spam", { defaultValue: p.reason_code })}` : p.primary_reason ? ` — ${t(`trustSafety:primaryReason.${p.primary_reason}` as "primaryReason.scam", { defaultValue: p.primary_reason })}` : ""}
+                  {" · "}{new Date(p.date).toLocaleDateString(i18n.language)}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       {item.distribution_limited && <span className="vy-badge vy-badge-sponsored">{t("trustSafety:queue.distributionLimited")}</span>}
       {item.evidence.length > 0 && (
         <div className="vy-stack" style={{ gap: 4 }}>
@@ -117,10 +139,10 @@ function CaseCard({ item, onDone }: { item: CaseItem; onDone: () => void }) {
             key={a}
             className="vy-chip"
             style={{
-              border: "none",
+              border: `1px solid ${action === a ? "var(--accent)" : "var(--border-hairline)"}`,
               cursor: "pointer",
-              background: action === a ? "var(--accent)" : "var(--surface-overlay)",
-              color: action === a ? "var(--accent-ink)" : "var(--text-primary)",
+              background: action === a ? "var(--accent-soft)" : "var(--surface-overlay)",
+              color: action === a ? "var(--accent-strong)" : "var(--text-primary)",
             }}
             onClick={() => setAction(a)}
           >
@@ -227,15 +249,15 @@ export default function ModerationQueuePage() {
 
   if (forbidden) {
     return (
-      <main className="vy-shell">
+      <Screen width="console">
         <h1>{t("trustSafety:queue.title")}</h1>
         <p className="vy-muted">{t("trustSafety:queue.notOperator")}</p>
-      </main>
+      </Screen>
     );
   }
 
   return (
-    <main className="vy-shell">
+    <Screen width="console">
       <h1>{t("trustSafety:queue.title")}</h1>
       {cases === null && <p className="vy-muted">{t("common:state.loading")}</p>}
       {cases?.length === 0 && <p className="vy-muted">{t("trustSafety:queue.empty")}</p>}
@@ -247,6 +269,6 @@ export default function ModerationQueuePage() {
       <div className="vy-stack">
         {appeals.map((a) => <AppealCard key={a.id} item={a} onDone={load} />)}
       </div>
-    </main>
+    </Screen>
   );
 }

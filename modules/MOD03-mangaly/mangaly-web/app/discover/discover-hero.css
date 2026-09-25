@@ -1,0 +1,80 @@
+/* [DEC-V1-030] "Most compatible today": one person, one large card.
+ *
+ * The row keeps every class the other rows use (.shelf, .shelf__rail, .dtile)
+ * so the tile, its save button and its reason line are the same component;
+ * only the size and the framing change. A single tile in a rail would
+ * otherwise sit as a small photo with an empty track beside it, which reads
+ * as "a row with one result" rather than "today's one person".
+ *
+ * Phone: the card fills the column (the page's own 16px gutter, no
+ * horizontal scroll). Wider screens: a fixed, generous width, left-aligned
+ * with the other rows. No number anywhere — the reason line is the whole
+ * explanation. */
+
+.shelf--hero .shelf__rail {
+  grid-auto-columns: 100%;
+  overflow-x: visible;
+  scroll-snap-type: none;
+  padding-bottom: 2px;
+}
+
+.shelf--hero .dtile {
+  padding: 10px;
+  border-radius: calc(var(--radius-lg) + 8px);
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--accent) 14%, transparent), transparent 55%),
+    var(--surface);
+  box-shadow: var(--shadow-1);
+}
+
+.shelf--hero .dtile__photo {
+  aspect-ratio: 4 / 4.6;
+  border-radius: var(--radius-lg);
+}
+
+.shelf--hero .dtile__text {
+  gap: 3px;
+  padding: 8px 4px 4px;
+}
+
+.shelf--hero .dtile__title {
+  font-family: var(--font-serif);
+  font-variation-settings: var(--serif-name);
+  font-size: 1.375rem;
+  font-weight: 500;
+  line-height: 1.15;
+  white-space: normal;
+}
+
+.shelf--hero .dtile__why {
+  font-size: 0.9375rem;
+  white-space: normal;
+  line-height: 1.35;
+}
+
+.shelf--hero .dtile__line {
+  font-size: 0.9375rem;
+}
+
+.shelf--hero .dtile__save {
+  top: 20px;
+  right: 20px;
+}
+
+@media (min-width: 640px) {
+  .shelf--hero .shelf__rail {
+    grid-auto-columns: 360px;
+  }
+  .shelf--hero .dtile__photo {
+    aspect-ratio: 4 / 5;
+  }
+}
+
+@media (min-width: 1100px) {
+  .shelf--hero .shelf__rail {
+    grid-auto-columns: 400px;
+  }
+  .shelf--hero .dtile__title {
+    font-size: 1.5rem;
+  }
+}

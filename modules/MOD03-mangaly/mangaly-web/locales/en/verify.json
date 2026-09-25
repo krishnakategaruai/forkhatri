@@ -1,0 +1,110 @@
+{
+  "title": "Confirm your photos",
+  "intro": {
+    "eyebrow": "Photo check",
+    "heading": "Show that your photos are really you",
+    "body": "Look into your camera for a few seconds and make two small head turns. We compare you with the photos on your profile, and your profile then shows “Photos confirmed as you”.",
+    "point1Title": "Checked on this device",
+    "point1": "The camera picture is checked on your phone or computer and discarded the moment the check ends. Mangaly never receives it.",
+    "point2Title": "Only the outcome is kept",
+    "point2": "We keep whether the check passed and the date. No picture, no face data, no score.",
+    "point3Title": "You can take it back",
+    "point3": "Withdraw your consent at any time on this screen. The confirmation is removed straight away.",
+    "consent": "I agree that Mangaly may compare a live picture of my face with my own profile photos, only to confirm that the photos are me. The picture is discarded after the check, and I can withdraw this consent at any time.",
+    "tips": "Find soft, even light, take off sunglasses, and keep only your face in the frame.",
+    "start": "Start the camera"
+  },
+  "camera": {
+    "preparing": "Getting the camera ready…",
+    "videoLabel": "Your camera, shown like a mirror",
+    "denied": {
+      "title": "Camera permission is off",
+      "body": "Allow camera access for Mangaly in your browser’s site settings, then try again."
+    },
+    "unavailable": {
+      "title": "No camera found",
+      "body": "This check needs a camera. Try on your phone, or on a computer with a webcam."
+    },
+    "loadFailed": {
+      "title": "The check could not start",
+      "body": "Something went wrong while preparing the check. Please try again."
+    }
+  },
+  "step": {
+    "progress": "Step {{current}} of {{total}}",
+    "center": "Look straight at the camera",
+    "left": "Slowly turn your head to your left",
+    "right": "Slowly turn your head to your right",
+    "capture": "Look straight at the camera and hold still",
+    "noFace": "We can’t see your face. Move into the frame.",
+    "many": "Only you should be in the frame",
+    "cancel": "Cancel"
+  },
+  "comparing": "Comparing with your photos…",
+  "passed": {
+    "title": "Photos confirmed as you",
+    "body": "Your profile now shows this, with the month you did it. Nothing from the camera was kept.",
+    "continue": "Continue",
+    "done": "Back to my profile"
+  },
+  "failed": {
+    "noMatch": {
+      "title": "We couldn’t confirm it this time",
+      "body": "This happens in dim light, at an angle, or when a photo is old. Face a window or a lamp, look straight at the camera, and try again."
+    },
+    "liveness": {
+      "title": "The head turns weren’t seen",
+      "body": "Turn your head slowly, a little further each way, and keep your face in the frame."
+    },
+    "noFace": {
+      "title": "We couldn’t see one clear face",
+      "body": "Make sure only you are in the frame, in good light, and try again."
+    },
+    "noFaceInPhotos": {
+      "title": "Your main photo needs a clear face",
+      "body": "Choose a main photo that shows your face clearly, then try again.",
+      "cta": "Go to my photos"
+    },
+    "retry": "Try again",
+    "help": "Still not working? Write to Mangaly support and a person will look at it."
+  },
+  "noPhotos": {
+    "title": "Add a photo of yourself first",
+    "body": "The check compares you with the photos on your own profile, and your profile has no photo yet.",
+    "cta": "Add a photo"
+  },
+  "noProfile": {
+    "title": "Add a photo of yourself first",
+    "body": "The photo check compares you with the photo on your own Mangaly profile. Add a clear photo of yourself on My profile, then come back.",
+    "cta": "Go to My profile"
+  },
+  "rateLimited": {
+    "title": "Let’s try again tomorrow",
+    "body": "You have tried several times today. Please come back tomorrow, in good light."
+  },
+  "verified": {
+    "fact": "Photos confirmed as you · {{date}}",
+    "until": "Valid until {{date}}. Adding a new photo asks you to confirm again.",
+    "redo": "Check again",
+    "withdraw": "Withdraw consent",
+    "withdrawConfirm": "This removes the confirmation from your profile. Withdraw?",
+    "withdrawYes": "Yes, withdraw",
+    "withdrawNo": "Keep it",
+    "withdrawn": "Consent withdrawn. The confirmation has been removed."
+  },
+  "card": {
+    "title": "Confirm your photos are you",
+    "hint": "A one-minute camera check. Nothing from the camera is kept.",
+    "confirmed": "Photos confirmed as you",
+    "since": "Since {{date}}"
+  },
+  "gate": {
+    "title": "First, confirm your own photos",
+    "body": "Anyone who creates a profile for someone else must be a verified person. Your phone is confirmed by sign-in; a one-minute camera check confirms your photos are you.",
+    "cta": "Confirm my photos",
+    "later": "Not now"
+  },
+  "error": {
+    "network": "Couldn’t reach Mangaly. Check your connection and try again."
+  }
+}

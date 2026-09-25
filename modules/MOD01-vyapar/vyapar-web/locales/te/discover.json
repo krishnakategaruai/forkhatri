@@ -11,7 +11,12 @@
     "sectionNearYou": "మీ దగ్గర",
     "sectionCommunity": "సంఘం",
     "sectionPublic": "పబ్లిక్",
-    "seeAll": "అన్నీ {{count}} చూడండి"
+    "seeAll": "అన్నీ {{count}} చూడండి",
+    "emptyBody": "మీకు సరిపోయేది ఇంకా ఏదీ పోస్ట్ కాలేదు. మీకు కావలసినది పోస్ట్ చేయండి, మీ సమాజంలోని వారు దానిని చూస్తారు.",
+    "emptyAction": "ఏదైనా పోస్ట్ చేయండి"
+  },
+  "enrichment": {
+    "sparseProfile": "మెరుగైన మ్యాచ్‌ల కోసం మీ సామర్థ్యాలను జోడించండి — మేము ఇంకా మీ ఫీడ్‌ను ఎక్కువగా వ్యక్తిగతీకరించలేకపోతున్నాము."
   },
   "card": {
     "postedToday": "ఈరోజు పోస్ట్ చేయబడింది",
@@ -34,7 +39,34 @@
     "broadenIncludeUnverified": "వెరిఫై చేయని లిస్టింగ్‌లను చేర్చండి",
     "tooManySearches": "చాలా శోధనలు — దయచేసి నెమ్మదించండి.",
     "searchUnavailable": "శోధన తాత్కాలికంగా అందుబాటులో లేదు — బదులుగా ఇటీవల జోడించిన లిస్టింగ్‌లను చూపుతున్నాము.",
-    "recentlyAdded": "ఇటీవల జోడించినది"
+    "recentlyAdded": "ఇటీవల జోడించినది",
+    "filters": "ఫిల్టర్లు",
+    "filtersActive": "ఫిల్టర్లు ({{count}})",
+    "radius": "దూరం",
+    "radiusAny": "ఏ దూరమైనా",
+    "radiusKm": "{{km}} కి.మీ. లోపు",
+    "serviceMode": "సేవా మోడ్",
+    "serviceModeAny": "ఏదైనా",
+    "serviceModeOnSite": "ఆన్-సైట్",
+    "serviceModeRemote": "రిమోట్",
+    "serviceModeBoth": "ఆన్-సైట్ లేదా రిమోట్",
+    "availability": "అందుబాటు",
+    "availabilityAny": "ఏదైనా",
+    "availabilityNow": "ఇప్పుడు అందుబాటులో",
+    "availabilityThisWeek": "ఈ వారం",
+    "availabilityLater": "తర్వాత",
+    "verifiedOnly": "వెరిఫైడ్ మాత్రమే",
+    "sortBy": "క్రమం",
+    "sortRelevance": "సంబంధితత",
+    "sortDistance": "దూరం",
+    "sortFreshness": "కొత్తవి",
+    "sortVerifiedFirst": "వెరిఫైడ్ మొదట",
+    "skills": "నైపుణ్యాలు",
+    "skillsSearchPlaceholder": "నైపుణ్యాలను వెతకండి",
+    "clearFilters": "ఫిల్టర్లు తీసివేయండి",
+    "applyFilters": "అప్లై చేయండి",
+    "distanceAway": "{{km}} కి.మీ. దూరం",
+    "resultsCount": "{{count}} ఫలితాలు"
   },
   "post": {
     "title": "మీరు ఏమి పోస్ట్ చేస్తున్నారు?",
@@ -42,5 +74,18 @@
     "listingDesc": "ప్రజలు కనుగొని సంపర్కించగల శాశ్వత ఉనికి.",
     "opportunityTitle": "ఒక అవకాశం",
     "opportunityDesc": "ఒక ఉద్యోగం, గిగ్, లేదా షేర్ చేయదగిన సమయ-పరిమిత విషయం."
+  },
+  "profiles": {
+    "similarTitle": "ఇలాంటి ప్రొఫైల్‌లు",
+    "matchingTitle": "దీనికి సరిపోయే ప్రొఫైల్‌లు",
+    "matchingHelp": "మీరు అడిగిన నైపుణ్యాలు ఇప్పటికే ఉన్న వ్యాపార్‌లోని వ్యక్తులు మరియు వ్యాపారాలు.",
+    "hasSkills": "{{skills}} వచ్చు",
+    "availableNow": "ఇప్పుడు అందుబాటులో ఉన్నారు",
+    "experience_one": "{{count}} సంవత్సరం అనుభవం",
+    "experience_other": "{{count}} సంవత్సరాల అనుభవం",
+    "kind": {
+      "business": "వ్యాపారం",
+      "professional": "ప్రొఫెషనల్"
+    }
   }
 }

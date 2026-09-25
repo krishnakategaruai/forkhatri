@@ -81,6 +81,13 @@
     "due": "Due {{date}}",
     "reporters": "{{n}} reports",
     "priorCases": "{{n}} earlier cases",
+    "caseState": {
+      "open": "Case opened",
+      "in_review": "Under review",
+      "escalated": "Escalated",
+      "dismissed": "Dismissed",
+      "actioned": "Action taken"
+    },
     "openObject": "Open item",
     "distributionLimited": "Limited pending review",
     "evidence": "Evidence",
@@ -101,6 +108,7 @@
     "appealBy": "by {{date}}",
     "appeal": "Appeal",
     "appealPlaceholder": "Explain why this decision should change (up to 1000 characters)",
+    "evidenceLabel": "Add evidence (optional, up to 5 MB)",
     "windowClosed": "The appeal window has closed.",
     "appealState": {
       "open": "Appeal under review",

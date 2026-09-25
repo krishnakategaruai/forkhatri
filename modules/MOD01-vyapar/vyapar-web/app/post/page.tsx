@@ -8,23 +8,32 @@
 // [Product-owner i18n rule] Converted to useTranslation().
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import Screen from "@/app/components/Screen";
+import Icon from "@/app/components/Icon";
 
 export default function PostChooserPage() {
   const { t } = useTranslation("discover");
   const router = useRouter();
+  // [IMP39] On desktop the two choices sit side by side as real cards
+  // (glyph, title, description, arrow); on a phone the glyph and arrow are
+  // display:none and the stack is exactly as before.
   return (
-    <main className="vy-shell">
+    <Screen>
       <h1>{t("post.title")}</h1>
-      <div className="vy-stack">
-        <button className="vy-card" style={{ textAlign: "left", border: "none", cursor: "pointer" }} onClick={() => router.push("/listings/new")}>
+      <div className="vy-stack vy-choice-grid">
+        <button className="vy-card vy-choice" onClick={() => router.push("/listings/new")}>
+          <span className="vy-choice-mark" aria-hidden="true"><Icon name="listing" size={22} /></span>
           <h2 style={{ fontSize: 17 }}>{t("post.listingTitle")}</h2>
           <p>{t("post.listingDesc")}</p>
+          <span className="vy-choice-arrow" aria-hidden="true">→</span>
         </button>
-        <button className="vy-card" style={{ textAlign: "left", border: "none", cursor: "pointer" }} onClick={() => router.push("/opportunities/new")}>
+        <button className="vy-card vy-choice" onClick={() => router.push("/opportunities/new")}>
+          <span className="vy-choice-mark" aria-hidden="true"><Icon name="opportunity" size={22} /></span>
           <h2 style={{ fontSize: 17 }}>{t("post.opportunityTitle")}</h2>
           <p>{t("post.opportunityDesc")}</p>
+          <span className="vy-choice-arrow" aria-hidden="true">→</span>
         </button>
       </div>
-    </main>
+    </Screen>
   );
 }

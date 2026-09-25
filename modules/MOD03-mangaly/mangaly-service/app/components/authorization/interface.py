@@ -368,3 +368,45 @@ async def resolve_effective_account(
     )
     ctx.require_scope(GrantScope.FAMILY_INFO)
     return candidate_account_id
+
+
+async def resolve_context_account(
+    session: AsyncSession,
+    *,
+    acting_account_id: UUID,
+    for_candidate: UUID | None,
+) -> UUID:
+    """[Rework contract §1, 2026-09-17] The account a context-scoped call acts
+    for. `for_candidate` is the value the frontend carries from `/auth/me`'s
+    `circles[].candidate_profile_id` — a real `profile.id` — but every people
+    column in this module holds ACCOUNT ids and the older screens still pass
+    those, so both are accepted: a profile id is resolved to its account, and
+    anything else is taken as an account id. The caller must then be that
+    candidate themselves or hold `family_info` on them (an active Home Circle
+    membership); otherwise `AuthorizationDenied`, never a silent downgrade to
+    the caller's own context.
+    """
+    if for_candidate is None:
+        return acting_account_id
+
+    from app.components.profile import interface as profile_module
+
+    candidate_account_id = await profile_module.lookup_account_by_profile_id(
+        session, profile_id=for_candidate
+    )
+    if candidate_account_id is None:
+        candidate_account_id = for_candidate
+    if candidate_account_id == acting_account_id:
+        await resolve_self(session, account_id=acting_account_id, action=Action.READ)
+        return candidate_account_id
+
+    ctx = await resolve(
+        session,
+        subject_id=acting_account_id,
+        account_id=acting_account_id,
+        target_profile_id=candidate_account_id,
+        action=Action.READ,
+        capacity=Capacity.FAMILY,
+    )
+    ctx.require_scope(GrantScope.FAMILY_INFO)
+    return candidate_account_id

@@ -3,7 +3,49 @@
     "step": "Step {{current}} of {{total}}",
     "next": "Next",
     "save": "Save profile",
-    "saving": "Saving…"
+    "saving": "Saving…",
+    "steps": {
+      "1": {
+        "title": "What is your name?",
+        "hint": "This is how you will appear to families you connect with."
+      },
+      "2": {
+        "title": "A few basics",
+        "hint": "Your date of birth and who you are looking for. This shapes every match you see."
+      },
+      "3": {
+        "title": "Where do you live?",
+        "hint": "Your city helps families nearby find you first."
+      },
+      "4": {
+        "title": "Add a photo",
+        "hint": "Optional now, and private until you both connect. You can add up to six later."
+      }
+    },
+    "childPhone": "Their mobile number",
+    "childName": "Their full name",
+    "forSteps": {
+      "0": {
+        "title": "Who is this profile for?",
+        "hint": "Your son's or daughter's mobile number. When they sign in with it, the profile becomes theirs — until then you fill it in."
+      },
+      "1": {
+        "title": "What is their name?",
+        "hint": "Families see this once both sides connect."
+      },
+      "2": {
+        "title": "A few basics about them",
+        "hint": "Their date of birth, and who they are looking for."
+      },
+      "3": {
+        "title": "Where do they live?",
+        "hint": "Their city helps families nearby find them first."
+      },
+      "4": {
+        "title": "Add a photo of them",
+        "hint": "Private until both sides connect. They can change it when they take over."
+      }
+    }
   },
   "field": {
     "name": "Your full name",
@@ -55,7 +97,39 @@
       "preference": "Pets"
     },
     "horoscope": {
-      "matching_required": "Horoscope matching"
+      "matching_required": "Horoscope matching",
+      "manglik": "Manglik",
+      "rashi": "Rashi",
+      "nakshatra": "Nakshatra",
+      "birth_time": "Time of birth",
+      "birth_place": "Place of birth"
+    },
+    "community": {
+      "gotra": "Gotra",
+      "sub_community": "Sub-community",
+      "native_place": "Native place"
+    },
+    "education_career": {
+      "income_band": "Annual income",
+      "employer": "Employer",
+      "college": "College"
+    },
+    "family": {
+      "family_type": "Family type",
+      "family_values": "Family values",
+      "father_occupation": "Father's occupation",
+      "mother_occupation": "Mother's occupation",
+      "brothers": "Brothers",
+      "sisters": "Sisters",
+      "lives_with_parents": "Lives with parents",
+      "about_family": "About the family"
+    },
+    "basics": {
+      "height_cm": "Height (cm)",
+      "mother_tongue": "Mother tongue",
+      "have_children": "Children from an earlier marriage",
+      "about": "A few lines about you",
+      "aboutThem": "A few lines about them"
     }
   },
   "tag": {
@@ -127,8 +201,40 @@
       }
     },
     "familyHint": "Name and contact stay private until {{name}} and this match connect.",
+    "familyHintConnected": "{{name}} and this match are connected. Their name and contact are shared with {{name}}.",
     "publicHint": "Name and contact are shared only after you connect.",
-    "biodata": "Biodata"
+    "publicHintNamed": "Contact details are shared only after you connect.",
+    "biodata": "Biodata",
+    "noPrompts": "They have not written anything about themselves yet.",
+    "whyTitle": "Why you might work",
+    "youAnswered": "You answered this",
+    "promptsAfterConnect": "Their answers to the prompts are shared once you connect.",
+    "sealed": {
+      "eyebrow": "Sealed until you connect",
+      "title": "The rest opens when you both say yes",
+      "askedEyebrow": "They have asked to connect",
+      "askedTitle": "Accept, and the rest opens for both of you",
+      "name": "Their name",
+      "prompts": "Their answers, in their own words",
+      "promptsRest": "The rest of their answers",
+      "outlook": "Their ten quick choices, beside yours",
+      "photos": "The rest of their photos",
+      "note": "Nothing here is scored. A request is simply a question, and a no is a normal answer."
+    },
+    "link": {
+      "connect": "Send a request",
+      "connectFor": "Send a request for {{name}}",
+      "sent": "Request sent",
+      "sentFor": "Request sent for {{name}}",
+      "connected": "You are connected",
+      "connectedFor": "{{name}} and this match are connected",
+      "accept": "Accept",
+      "decline": "Not now",
+      "failed": "Couldn't send that. Try again."
+    },
+    "outlookTitle": "How {{name}} is, beside you",
+    "aboutName": "About {{name}}",
+    "familyChat": "Family chat"
   },
   "option": {
     "highest_education_level": {
@@ -147,7 +253,8 @@
     "relocation_willingness": {
       "yes": "Yes",
       "no": "No",
-      "open_to_discussion": "Open to discussion"
+      "open_to_discussion": "Open to discussion",
+      "open_to_relocate": "Open to relocating"
     },
     "diet": {
       "vegetarian": "Vegetarian",
@@ -186,6 +293,73 @@
     "looking_for": {
       "bride": "Bride",
       "groom": "Groom"
+    },
+    "income_band": {
+      "under_5": "Under ₹5 lakh",
+      "5_10": "₹5–10 lakh",
+      "10_20": "₹10–20 lakh",
+      "20_40": "₹20–40 lakh",
+      "40_plus": "₹40 lakh and above",
+      "prefer_not": "Prefer not to say"
+    },
+    "sub_community": {
+      "khatri": "Khatri",
+      "arora": "Arora",
+      "sood": "Sood",
+      "bhatia": "Bhatia",
+      "other": "Other"
+    },
+    "family_type": {
+      "joint": "Joint family",
+      "nuclear": "Nuclear family",
+      "extended": "Extended family"
+    },
+    "family_values": {
+      "traditional": "Traditional",
+      "moderate": "Moderate",
+      "liberal": "Liberal"
+    },
+    "manglik": {
+      "yes": "Manglik",
+      "no": "Not manglik",
+      "partial": "Partially manglik",
+      "dont_know": "Don't know"
+    },
+    "rashi": {
+      "mesh": "Mesh (Aries)",
+      "vrishabh": "Vrishabh (Taurus)",
+      "mithun": "Mithun (Gemini)",
+      "kark": "Kark (Cancer)",
+      "simha": "Simha (Leo)",
+      "kanya": "Kanya (Virgo)",
+      "tula": "Tula (Libra)",
+      "vrishchik": "Vrishchik (Scorpio)",
+      "dhanu": "Dhanu (Sagittarius)",
+      "makar": "Makar (Capricorn)",
+      "kumbh": "Kumbh (Aquarius)",
+      "meen": "Meen (Pisces)"
+    },
+    "mother_tongue": {
+      "telugu": "Telugu",
+      "tamil": "Tamil",
+      "kannada": "Kannada",
+      "hindi": "Hindi",
+      "punjabi": "Punjabi",
+      "marathi": "Marathi",
+      "gujarati": "Gujarati",
+      "english": "English",
+      "other": "Other"
+    },
+    "have_children": {
+      "no": "No",
+      "yes_living_with_me": "Yes, living with me",
+      "yes_not_living_with_me": "Yes, not living with me",
+      "yes_living_with_meThem": "Yes, living with them",
+      "yes_not_living_with_meThem": "Yes, not living with them"
+    },
+    "lives_with_parents": {
+      "yes": "Yes",
+      "no": "No"
     }
   },
   "photo": {
@@ -202,9 +376,14 @@
     "preview": {
       "before": "Before you connect",
       "after": "After you connect",
-      "beforeNote": "This is all anyone sees until you both accept — no name, no photo. They also see the facts you have in common.",
+      "beforeNote": "This is what anyone sees until you both accept: your main photo, age, city, education and work, plus anything you chose to show openly. Never your surname or contact. They also see the facts you have in common.",
       "afterNote": "Once you both accept, they see your full profile. Anything you chose to hide stays hidden.",
-      "noBasics": "Basics not added yet"
+      "noBasics": "Basics not added yet",
+      "noWork": "Education and work not added yet",
+      "viewingAs": "Viewing as",
+      "asBefore": "a new match",
+      "asAfter": "someone you have connected with",
+      "addPhotoHere": "Add a photo — this is where it appears"
     },
     "ageYears": "{{age}} yrs",
     "tabEdit": "Edit",
@@ -228,18 +407,23 @@
       "family": "Family & values",
       "future": "Future plans",
       "partner": "Partner preference",
-      "prompts": "In my words"
+      "prompts": "In my words",
+      "community": "Community",
+      "education_career": "Education & career",
+      "horoscope": "Horoscope"
     },
     "photos": {
       "title": "Photos",
       "main": "Main",
       "add": "Add photo",
+      "addFirst": "Add your photos",
       "makeMain": "Make main photo",
       "remove": "Remove photo",
       "uploading": "Uploading…",
       "moveEarlier": "Move earlier",
       "moveLater": "Move later",
-      "hint": "Add up to 6. Photos stay private until you both connect."
+      "hint": "Add up to 6. Photos stay private until you both connect.",
+      "firstPhoto": "Add your first photo"
     },
     "prompts": {
       "add": "Add a prompt",
@@ -248,13 +432,79 @@
       "remove": "Remove",
       "emptyHint": "Prompts give people something real to reply to.",
       "q": {
+        "living_with_family": "On living with family after marriage, I picture",
+        "which_city": "The city I see us settling in",
+        "moving_abroad": "On moving abroad",
+        "parents_nearby": "How near I want to be to my parents",
+        "our_first_home": "Our first home, as I imagine it",
+        "home_should_feel": "A home should feel",
+        "work_after_marriage": "On working after marriage, I think",
+        "my_work_means": "What my work actually means to me",
+        "working_towards": "What I am working towards right now",
+        "supporting_your_work": "I would support your work by",
+        "when_work_is_heavy": "When work gets heavy, I tend to",
+        "life_goal": "A life goal of mine",
+        "on_children": "On children, where I stand today",
+        "raising_children": "How I would want to raise them",
+        "family_means": "Family, to me, means",
+        "my_family_in_words": "My family, described honestly",
+        "in_laws_role": "The part I hope our parents play in our marriage",
+        "caring_for_parents": "On caring for our parents as they get older",
+        "about_money": "When it comes to money, I am the sort who",
+        "saving_or_spending": "Saving or spending, I lean towards",
+        "joint_or_separate": "On keeping money joint or separate",
+        "running_the_home": "Running a home, I would want us to",
+        "on_housework": "On who does what at home, I believe",
+        "big_decisions": "Big decisions should be made",
+        "non_negotiable": "One thing I will not compromise on",
+        "faith_looks_like": "In my life, faith looks like",
+        "when_we_disagree": "When we disagree, I hope we",
+        "feel_supported": "I feel most supported when",
+        "friends_say": "My closest friends would describe me as",
+        "quietly_proud": "Something I am quietly proud of",
         "ideal_weekend": "My ideal weekend",
-        "family_means": "Family to me means",
-        "looking_for": "I'm looking for someone who",
-        "non_negotiable": "One thing I won't compromise on",
         "simple_pleasures": "My simple pleasures",
-        "together_we": "Together, we could"
-      }
+        "at_my_table": "What is usually on my table",
+        "i_wind_down_by": "I wind down by",
+        "together_we": "Together we could",
+        "looking_for": "What I am looking for",
+        "perpetual_argument": "The argument we will probably keep having",
+        "difficult_about": "Something I know I am difficult about",
+        "when_i_am_upset": "When I am upset, what actually helps is",
+        "how_i_say_sorry": "How I say sorry",
+        "when_money_is_tight": "When money is tight, I",
+        "if_families_disagree": "If our families disagree with us, I would",
+        "daily_chores": "On a normal weekday, the cooking and cleaning at home will be",
+        "small_spending": "On small everyday spending, I am the sort who",
+        "money_i_owe": "What you should know about my finances early",
+        "joint_or_nuclear": "I grew up in a joint / nuclear home, and about living that way I",
+        "daily_routine_say": "Who should have a say in our daily routine",
+        "festivals_and_visits": "Festivals and visits to both families, I would want"
+      },
+      "group": {
+        "where_we_live": "Where we would live",
+        "work_and_ambition": "Work and ambition",
+        "children_and_family": "Children and family",
+        "money_and_home": "Money and running a home",
+        "who_i_am": "Who I am",
+        "everyday_life": "Everyday life",
+        "real_pressures": "When it is hard",
+        "easy_to_skip": "Easy to skip, hard later"
+      },
+      "coach": {
+        "tooShort": "Add a bit more detail",
+        "tooShortBody": "One or two words gives a reader nothing to reply to. A specific example says far more.",
+        "addSpecific": "Say it in your own words",
+        "addSpecificBody": "The answers people respond to name something concrete — a place, a habit, a reason.",
+        "good": "This reads well",
+        "goodBody": "Specific and in your own voice. That is exactly what gives someone a reason to write back."
+      },
+      "visibility": "Who can read this",
+      "connectedOnly": "Only after you connect",
+      "connectedOnlyHint": "The usual choice. Someone has to send a request and have it accepted before they can read this.",
+      "publicOne": "Anyone on Mangaly",
+      "publicOneHint": "Including parents and family members searching for someone else.",
+      "limit": "{{count}} of {{max}} written"
     },
     "state": {
       "filled": "Filled",
@@ -262,8 +512,12 @@
       "empty": "Not started"
     },
     "category": {
+      "basics": "About you",
+      "community": "Community",
       "education": "Education",
       "profession": "Profession",
+      "education_career": "Education & career",
+      "family": "Family",
       "marital_history": "Marital history",
       "relocation": "Relocation",
       "partner_preference": "Partner preferences",
@@ -275,6 +529,82 @@
       "career_children_living_financial": "Career, children & finances",
       "pets": "Pets",
       "horoscope": "Horoscope"
+    },
+    "sectionHint": {
+      "basics": "The essentials every family asks first.",
+      "community": "Gotra, sub-community and where your people are from.",
+      "education_career": "What you studied and what you do now.",
+      "family": "Who is at home and how your family lives.",
+      "lifestyle": "Food, habits and how you spend an ordinary week.",
+      "horoscope": "Optional. Only shown to people who use it themselves.",
+      "future": "Work, children and money — the things worth agreeing on early.",
+      "partner": "Only you see this. It shapes your matches, never your profile."
+    },
+    "milestone": {
+      "saved": "Saved",
+      "discoverable": "Discoverable",
+      "complete": "Well filled in",
+      "nextDiscoverable": "A few more details and you start appearing in other people's search.",
+      "nextEnhanced": "You appear in search. Everything from here makes your matches better.",
+      "reached": {
+        "saved": "Your profile is saved.",
+        "discoverable": "You are now appearing in search.",
+        "complete": "Your profile is as full as it gets. Nicely done."
+      }
+    },
+    "tabDetails": "Details",
+    "tabWords": "In my words",
+    "part": {
+      "details": {
+        "eyebrow": "Part 1 of 2",
+        "title": "Your details",
+        "hint": "The standard biodata a family reads. A match's parents see this part — and only what you choose to share."
+      },
+      "words": {
+        "eyebrow": "Part 2 of 2",
+        "title": "In your own words",
+        "hint": "Prompts, your voice and ten quick choices — written for the person you might marry. Only candidates you connect with see this part, never their parents, unless you publish an answer."
+      },
+      "toWords": "Next: in your own words →",
+      "toPreview": "See how it reads →"
+    },
+    "for": {
+      "category": {
+        "basics": "About {{name}}"
+      },
+      "sectionHint": {
+        "basics": "The essentials every family asks first — and a few lines introducing {{name}}.",
+        "community": "Gotra, sub-community and where {{name}}'s people are from.",
+        "education_career": "What {{name}} studied and does now.",
+        "family": "Who is at home and how {{name}}'s family lives.",
+        "lifestyle": "Food, habits and how {{name}} spends an ordinary week.",
+        "horoscope": "Optional. Only shown to families who use it themselves.",
+        "future": "Work, children and money — what {{name}} would want agreed early.",
+        "partner": "Who {{name}} is looking for. Only your circle sees this; it shapes matches, never the profile."
+      },
+      "partnerPrivate": "Only {{name}}'s circle sees this. It's used to find matches, never shown on the profile."
+    },
+    "addDetails": "Add details",
+    "addMore_one": "Add {{count}} more detail",
+    "addMore_other": "Add {{count}} more details",
+    "edit": "Edit",
+    "whoSees": "Who sees what",
+    "complete": "{{pct}}% complete",
+    "addShort": "Add",
+    "seeInPreview": "See it in Preview →",
+    "sectionShortTitle": {
+      "education_career": "Education",
+      "partner": "Partner"
+    },
+    "sectionShortHint": {
+      "basics": "The essentials",
+      "education_career": "Study and work",
+      "community": "Gotra, sub-community",
+      "lifestyle": "Food and habits",
+      "family": "Who is at home",
+      "horoscope": "Optional",
+      "future": "Work, children, money",
+      "partner": "Private to you"
     }
   },
   "completeness": {
@@ -340,5 +670,83 @@
     "error": "That recording could not be saved. Try again.",
     "noMicrophone": "No microphone available in this browser.",
     "theirs": "{{name}} recorded an introduction"
+  },
+  "outlook": {
+    "title": "Ten quick choices",
+    "intro": "No right answers — just which one is more you. Takes about five minutes, and you can change any of it later.",
+    "cta": "Start",
+    "resume": "Continue",
+    "redo": "Do it again",
+    "progress": "{{done}} of {{total}}",
+    "done": "That is you, in {{count}} words",
+    "doneBody": "These sit on your profile. Someone reading it sees their own answer beside yours, so a difference becomes something to talk about.",
+    "save": "Save to my profile",
+    "profileTitle": "How I am",
+    "sameAsYou": "Same as you",
+    "differentFromYou": "You said {{mine}}",
+    "notAnswered": "You have not answered this one",
+    "nudge": "Answer these and you will see how your answers line up with everyone you read.",
+    "disclaimer": "This is not a test and there is no score. Neither answer is the better one.",
+    "q": {
+      "conflict_timing": "After a disagreement, you would rather",
+      "repair": "When you have both said too much, you are usually",
+      "closeness": "On an ordinary evening at home, you would rather",
+      "planning": "A free Sunday works better when it is",
+      "family_voice": "A big decision about your life should be made",
+      "deciding": "Faced with a hard choice, you tend to",
+      "money": "An unexpected bonus lands in your account. You",
+      "people": "The evening you would actually enjoy is",
+      "change": "When something has been done the same way for years, you",
+      "work": "Your work, honestly, is"
+    },
+    "pole": {
+      "talk_now": "Sort it out now",
+      "need_time": "Take some time first",
+      "say_sorry_first": "The first to say sorry",
+      "heard_first": "Needing to be heard first",
+      "mostly_together": "In the same room",
+      "own_space": "Doing your own things",
+      "plan_it": "Planned in advance",
+      "as_we_go": "Decided that morning",
+      "family_in_the_room": "With family in the room",
+      "us_first": "By the two of you first",
+      "decide_and_move": "Decide and move on",
+      "sit_with_it": "Sit with it a while",
+      "save_first": "Put most of it away",
+      "spend_on_now": "Spend some on now",
+      "full_house": "A house full of people",
+      "few_close": "Two or three close friends",
+      "try_the_new": "Try the new way",
+      "keep_what_works": "Keep what works",
+      "work_is_me": "A big part of who you are",
+      "work_funds_life": "What pays for the rest of life",
+      "depends": "It depends"
+    },
+    "skip": "Skip this one",
+    "skipHint": "Skipped questions show nothing on your profile."
+  },
+  "managed": {
+    "editingTitle": "You are filling in {{name}}'s profile",
+    "editingBody": "{{name}} takes it over by signing in with their own mobile number. The prompts and ten choices are left for {{name}} to write — only a candidate speaks in their own words.",
+    "claimTitle": "{{name}} ({{relation}}) created this profile for you",
+    "claimBody": "Look it over and change anything that is not right. Once you make it yours, only you can edit it — they stay in your Home Circle.",
+    "claimCta": "Make it mine",
+    "disownCta": "This isn't me — remove this profile",
+    "disownConfirm": "Remove the profile made with your number? It is deleted for everyone. Your ForKhatri account stays.",
+    "disownYes": "Yes, remove it",
+    "disownNo": "Keep it"
+  },
+  "openly": {
+    "title": "Shown openly",
+    "hint": "Before anyone connects with you. Everything else waits until you both say yes.",
+    "always": "Always shown, once you have added them: your main photo, age, city, education and work.",
+    "first_name": "First name",
+    "first_nameHint": "Only your first name — never your surname or contact.",
+    "photos": "All my photos",
+    "photosHint": "Otherwise only your main photo is shown.",
+    "prompts": "Answers I published",
+    "promptsCount_one": "{{count}} answer published. Choose which ones show in the “In my words” section.",
+    "promptsCount_other": "{{count}} answers published. Choose which ones show in the “In my words” section.",
+    "photosLabel": "More photos"
   }
 }

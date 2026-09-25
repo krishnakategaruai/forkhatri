@@ -81,6 +81,13 @@
     "due": "{{date}} तक",
     "reporters": "{{n}} रिपोर्ट",
     "priorCases": "{{n}} पिछले मामले",
+    "caseState": {
+      "open": "मामला खोला गया",
+      "in_review": "समीक्षा में",
+      "escalated": "आगे बढ़ाया गया",
+      "dismissed": "खारिज किया गया",
+      "actioned": "कार्रवाई की गई"
+    },
     "openObject": "आइटम खोलें",
     "distributionLimited": "समीक्षा तक पहुँच सीमित",
     "evidence": "प्रमाण",
@@ -101,6 +108,7 @@
     "appealBy": "{{date}} तक",
     "appeal": "अपील करें",
     "appealPlaceholder": "बताएँ कि यह निर्णय क्यों बदलना चाहिए (अधिकतम 1000 अक्षर)",
+    "evidenceLabel": "सबूत जोड़ें (वैकल्पिक, 5 MB तक)",
     "windowClosed": "अपील की अवधि समाप्त हो चुकी है।",
     "appealState": {
       "open": "अपील समीक्षा में",

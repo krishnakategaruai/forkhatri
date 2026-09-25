@@ -1,0 +1,73 @@
+{
+  "title": "Plans",
+  "eyebrow": "Your search, your pace",
+  "intro": "Free lets you browse everyone and send a few requests a day. Gold and Assisted give you more room to act.",
+  "valuesLine": "Mangaly never sells a place in anyone's results. A plan changes what you can do, not where you appear.",
+  "gstNote": "Prices before 18% GST, shown separately at checkout.",
+  "loading": "Loading plans…",
+  "unavailable": "Plans cannot be loaded right now.",
+  "term": {
+    "label": "Term",
+    "months": "{{count}} months"
+  },
+  "price": {
+    "free": "Free",
+    "forTerm": "for {{term}}",
+    "gst": "+ {{gst}} GST",
+    "total": "{{total}} all inclusive",
+    "perMonth": "about {{amount}} a month"
+  },
+  "included": "What's included",
+  "includesPlan": "Everything in {{plan}}, and",
+  "action": {
+    "choose": "Choose {{plan}}",
+    "current": "Your current plan",
+    "renew": "Extend {{plan}}",
+    "pay": "Pay {{total}}",
+    "paySandbox": "Pay {{total}} (development sandbox)",
+    "cancel": "Turn off auto-renew",
+    "seePlans": "See plans",
+    "notNow": "Not now"
+  },
+  "checkout": {
+    "creating": "Preparing your order…",
+    "ready": "Order ready: {{plan}}, {{term}}.",
+    "sandboxNote": "Development only. No money moves; real payments open Razorpay once its keys are set.",
+    "opening": "Opening secure checkout…",
+    "dismissed": "Checkout closed. Nothing was charged.",
+    "failed": "The payment did not go through. Nothing was charged.",
+    "paid": "You are on {{plan}} until {{date}}.",
+    "gatewayMissing": "Secure checkout could not be opened. Please try again."
+  },
+  "me": {
+    "row": "Your plan",
+    "until": "until {{date}}",
+    "autoRenewOff": "Auto-renew is off",
+    "requestsToday": "{{used}} of {{limit}} requests sent today",
+    "requestsUnlimited": "Unlimited requests"
+  },
+  "planName": {
+    "FREE": "Free",
+    "GOLD": "Gold",
+    "ASSISTED": "Assisted"
+  },
+  "nudge": {
+    "dailyTitle": "Today's requests are used up",
+    "dailyBody": "Free members send {{limit}} requests a day. Gold lifts the limit, or send more tomorrow.",
+    "title": "This needs {{plan}}",
+    "body": "{{plan}} unlocks this and more for your search.",
+    "cta": "See {{plan}}"
+  },
+  "interested": {
+    "title": "Interested in you",
+    "intro": "People who kept your profile, and people who opened it.",
+    "shortlisted": "Shortlisted you",
+    "viewed": "Viewed your profile",
+    "count_one": "{{count}} person",
+    "count_other": "{{count}} people",
+    "locked": "See who with {{plan}}",
+    "empty": "No one yet. A fuller profile gets more attention.",
+    "open": "Open profile",
+    "homeRow": "See who is interested in you"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "report": {
+    "received": "Thank you. Your report has been received and will be reviewed by our safety team."
+  },
+  "error": {
+    "cannotBlockSelf": "You cannot block yourself.",
+    "invalidReason": "Please choose a valid reason for the report.",
+    "rateLimited": "You have reached today's limit for this action. Please try again tomorrow.",
+    "suspended": "This account has been suspended after a safety review. If you believe this is a mistake, contact ForKhatri support."
+  },
+  "ops": {
+    "error": {
+      "notChanged": "This case is not in a state that allows that action.",
+      "invalidOutcome": "Please choose a valid outcome."
+    }
+  }
+}

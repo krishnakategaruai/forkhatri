@@ -58,6 +58,9 @@ class RateLimitScope(StrEnum):
     passing a free-text prefix, so every key in the table is greppable to a
     named requirement."""
 
+    SAFETY_REPORT = "safety_report"  # DEC-V1-028 - each report opens a human-reviewed case
+    SAFETY_BLOCK = "safety_block"  # DEC-V1-028
+
     VERIFIER_INVITE = "verifier_invite"  # TR037
     LOGIN_FAILURE = "login_failure"  # TR093
     OTP_RESEND = "otp_resend"  # TR095
@@ -68,6 +71,7 @@ class RateLimitScope(StrEnum):
     HOME_CIRCLE_INVITE = "home_circle_invite"  # TR007/SP007
     CONNECTION_REQUEST = "connection_request"  # SP042 — flagged gap, not in TR042 itself
     MESSAGE_SEND = "message_send"  # SP049 — flagged gap, not in TR049 itself
+    FACE_MATCH_ATTEMPT = "face_match_attempt"  # DEC-V1-016 — bounds retries of a client-side check
 
 
 @dataclass(frozen=True, slots=True)

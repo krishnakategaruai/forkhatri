@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";
 import LivingCard from "@/app/components/LivingCard";
+import Screen from "@/app/components/Screen";
 
 interface Listing {
   id: string;
@@ -39,15 +40,17 @@ export default function MyListingsPage() {
   }, []);
 
   return (
-    <main className="vy-shell">
+    <Screen width="wide">
       <h1>{t("listings:mine.title")}</h1>
       {listings === null && <p>{t("common:state.loading")}</p>}
       {listings?.length === 0 && (
         <p className="vy-muted">{t("listings:mine.empty")}</p>
       )}
-      <div className="vy-stack">
-        {listings?.map((l) => (
+      {/* [IMP33] F4 "2-column result lists" at ≥600px. */}
+      <div className="vy-grid vy-grid-3">
+        {listings?.map((l, i) => (
           <LivingCard
+            index={i}
             key={l.id}
             href={`/listings/${l.id}`}
             title={l.name}
@@ -59,6 +62,6 @@ export default function MyListingsPage() {
           />
         ))}
       </div>
-    </main>
+    </Screen>
   );
 }

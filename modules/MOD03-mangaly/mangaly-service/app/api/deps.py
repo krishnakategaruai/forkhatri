@@ -102,6 +102,8 @@ class AuthenticatedSessionInfo:
 
     account_id: UUID
     expires_at: datetime | None
+    display_name: str | None = None
+    preferred_language: str | None = None
 
 
 async def get_authenticated_session(
@@ -134,7 +136,13 @@ async def get_authenticated_session(
     if platform_token:
         try:
             resolved = await identity.resolve_platform_session(session, platform_token)
-            return AuthenticatedSessionInfo(resolved.account_id, resolved.expires_at)
+            await _refuse_if_suspended(session, resolved.account_id, request)
+            return AuthenticatedSessionInfo(
+                resolved.account_id,
+                resolved.expires_at,
+                resolved.display_name,
+                resolved.preferred_language,
+            )
         except identity.PlatformSessionInvalid:
             raise _not_authenticated() from None
         except identity.PlatformIdentityUnavailable:
@@ -159,18 +167,81 @@ async def get_authenticated_session(
     if settings.interim_identity_enabled and legacy_token:
         account_id = await identity.validate_session(session, legacy_token)
         if account_id is not None:
+            await _refuse_if_suspended(session, account_id, request)
             return AuthenticatedSessionInfo(account_id, None)
 
     raise _not_authenticated()
 
 
+async def _refuse_if_suspended(session: AsyncSession, account_id: UUID, request: Request) -> None:
+    """[DEC-V1-028] A moderator-suspended account is refused on every request
+    with a translated 403. One indexed SECURITY DEFINER lookup (migration 048),
+    so the cost is a primary-key-shaped read, not a policy evaluation."""
+    from sqlalchemy import text
+
+    suspended = (
+        await session.execute(
+            text("SELECT mangaly_operations.is_suspended(:id)"), {"id": account_id}
+        )
+    ).scalar_one()
+    if suspended:
+        from app.i18n import translate
+
+        lang = resolve_language(
+            request.headers.get("x-mangaly-language") or request.headers.get("accept-language")
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "account_suspended", "message": translate("safety.error.suspended", lang)},
+        )
+
+
 AuthenticatedSession = Annotated[AuthenticatedSessionInfo, Depends(get_authenticated_session)]
 
 
-async def get_authenticated_account(caller: AuthenticatedSession) -> UUID:
+# [DEC-V1-019] Paths a parent may act on for a profile they created and the
+# candidate has not taken over yet: the profile itself and its photos. Nothing
+# else — not requests, not messages, not the candidate's own words — ever runs
+# as the candidate on someone else's behalf.
+_MANAGE_PATH_PREFIXES = ("/profile", "/media")
+_MANAGE_EXCLUDED = ("/profile/managed", "/profile/claim")
+
+
+async def get_authenticated_account(
+    caller: AuthenticatedSession, request: Request, session: DbSession
+) -> UUID:
     """The caller's account id. FastAPI caches `get_authenticated_session` per
-    request, so a route using both resolves the session once."""
-    return caller.account_id
+    request, so a route using both resolves the session once.
+
+    With `X-Mangaly-Manage: <candidate id>` on a /profile or /media request, a
+    parent editing a profile they created (and which is not yet claimed) acts
+    as that candidate for this one request: `can_manage()` is checked in the
+    database, then both RLS variables are rebound to the candidate. Any other
+    path, or a failed check, ignores the header entirely."""
+    target = request.headers.get("x-mangaly-manage")
+    path = request.url.path
+    if not target or not path.startswith(_MANAGE_PATH_PREFIXES) or path.startswith(_MANAGE_EXCLUDED):
+        return caller.account_id
+    from sqlalchemy import text
+
+    from app.db.session import set_account_context, set_authz_context
+
+    try:
+        candidate = UUID(target)
+    except ValueError:
+        return caller.account_id
+    allowed = (
+        await session.execute(
+            text("SELECT mangaly_profile.can_manage(:creator, :candidate)"),
+            {"creator": caller.account_id, "candidate": candidate},
+        )
+    ).scalar_one()
+    if not allowed:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not managed by you")
+    await set_account_context(session, candidate)
+    await set_authz_context(session, candidate)
+    request.state.managing_for = candidate
+    return candidate
 
 
 AuthenticatedAccount = Annotated[UUID, Depends(get_authenticated_account)]

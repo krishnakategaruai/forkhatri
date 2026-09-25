@@ -6,12 +6,16 @@
 // sandbox, collects no card or bank data, and its two buttons push a signed,
 // gateway-shaped webhook through the API's real verification path
 // (POST /v1/payments/orders/{id}/simulate — rejected unless DEV_MODE).
+// [IMP39 — desktop layout] ≥900px: the sandbox explanation on the left and
+// a wider amount card on the right; phone order unchanged (wrappers are
+// display:contents below the breakpoint).
 // Traces to: FR51, TR051, SP051
 import { useEffect, useState, use as useParamsPromise } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { api, ApiError } from "@/lib/api";
 import { formatPaise } from "@/lib/money";
+import Screen from "@/app/components/Screen";
 
 interface Order {
   id: string;
@@ -51,10 +55,13 @@ export default function SandboxCheckoutPage({ params }: { params: Promise<{ orde
   }
 
   return (
-    <main className="vy-shell">
+    <Screen width="wide">
+      <div className="vy-checkout">
+      <div className="vy-checkout-intro">
       <span className="vy-badge vy-badge-sponsored" style={{ alignSelf: "flex-start" }}>{t("commercial:checkout.title")}</span>
       <p className="vy-muted">{t("commercial:checkout.note")}</p>
       {error && <p className="vy-error">{error}</p>}
+      </div>
       {order && (
         <div className="vy-card vy-stack">
           <strong style={{ fontSize: 22 }}>{t("commercial:checkout.amount", { amount: formatPaise(order.amount_paise + order.tax_paise, i18n.language) })}</strong>
@@ -75,6 +82,7 @@ export default function SandboxCheckoutPage({ params }: { params: Promise<{ orde
           )}
         </div>
       )}
-    </main>
+      </div>
+    </Screen>
   );
 }

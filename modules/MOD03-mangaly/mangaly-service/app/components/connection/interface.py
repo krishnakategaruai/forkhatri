@@ -61,13 +61,23 @@ __all__ = [
     "ConnectionNotFound",
     "ConnectionSummary",
     "InvalidTarget",
+    "NotLookingFor",
+    "OnBehalfRoleNotAllowed",
+    "RequestCooldown",
+    "declined_ids",
     "RateLimited",
     "ShareState",
     "ShareUnavailable",
     "SharingOverview",
     "OnBehalfNotAllowed",
+    "Blocked",
+    "SentBy",
     "accept",
+    "connected_ids",
+    "connection_between",
     "decline",
+    "sender_info",
+    "withdraw",
     "get_request",
     "has_active_share",
     "list_incoming",
@@ -93,6 +103,26 @@ class InvalidTarget(Exception):
     no profile at all."""
 
 
+class NotLookingFor(Exception):
+    """The two are not what each other is looking for (bride / groom): a
+    request may only reach someone search would show."""
+
+
+class RequestCooldown(Exception):
+    """[Owner, 2026-09-25] This side was declined (or withdrew) recently and
+    may not ask the same person again until `until`."""
+
+    def __init__(self, until: datetime, reason: str) -> None:
+        super().__init__(f"{reason} until {until.isoformat()}")
+        self.until = until
+        self.reason = reason  # "declined" | "withdrawn"
+
+
+class OnBehalfRoleNotAllowed(Exception):
+    """[Owner, 2026-09-25] Only a parent or guardian may send a request on a
+    candidate's behalf; siblings and relatives suggest instead."""
+
+
 class OnBehalfNotAllowed(Exception):
     """[FR042, DEC-V1-019] A request named an `on_behalf_of_profile_id`. Family
     members suggest a profile to the candidate (FR014); only the candidate
@@ -101,10 +131,26 @@ class OnBehalfNotAllowed(Exception):
     not decision authority)."""
 
 
+class Blocked(Exception):
+    """[Contract §3] One of the two people has blocked the other; nothing
+    may be sent between them, in either direction, by anyone."""
+
+
 class AlreadyPending(Exception):
     """[FR045] Not a "no repeat connections" rule (FR045 explicitly allows
     many) — just a spam guard: an already-pending request to the SAME target
     should not be duplicated by a second tap of the same button."""
+
+
+class AlreadyConnected(Exception):
+    """The two are already connected, so there is nothing to request.
+
+    [2026-09-21] The pending-only guard above let a SECOND request through
+    once the first had been accepted, and acceptance opens a conversation per
+    connection — so two people could accumulate several live connections and
+    several parallel threads with each other. A connection is a state between
+    two people, not a log of attempts: at most one may be live at a time, in
+    either direction."""
 
 
 class ConnectionNotFound(Exception):
@@ -193,6 +239,16 @@ async def send_request(
             context.require_scope(GrantScope.FAMILY_INFO)
         except AuthorizationDenied as exc:
             raise OnBehalfNotAllowed from exc
+        # [Owner, 2026-09-25] Sending is a decision: the candidate, a parent
+        # or a guardian. Siblings and relatives suggest (FR014) instead.
+        from app.components.home_circle import interface as home_circle
+
+        contexts = await home_circle.list_member_contexts(session, account_id=acting_account_id)
+        mine = next(
+            (c for c in contexts if c.candidate_account_id == on_behalf_of_account_id), None
+        )
+        if mine is None or mine.relationship_type.value not in ("parent", "guardian"):
+            raise OnBehalfRoleNotAllowed
         subject_account_id = on_behalf_of_account_id
         # Stored as the candidate's real `profile.id`: that is the id space the row's
         # own RLS policy reads (`has_scope(on_behalf_of_profile_id, 'candidate_info')`).
@@ -205,6 +261,21 @@ async def send_request(
     if subject_account_id == target_account_id or acting_account_id == target_account_id:
         raise InvalidTarget
 
+    from app.components.discovery import interface as discovery
+
+    if not await discovery.looking_for_allows(
+        session, seeker_account_id=subject_account_id, target_account_id=target_account_id
+    ):
+        raise NotLookingFor
+
+    from app.components.safety import interface as safety
+
+    if await safety.is_blocked_between(session, subject_account_id, target_account_id) or (
+        acting_account_id != subject_account_id
+        and await safety.is_blocked_between(session, acting_account_id, target_account_id)
+    ):
+        raise Blocked
+
     settings = get_settings()
     try:
         await limiter.enforce_durable(
@@ -216,17 +287,41 @@ async def send_request(
     except limiter.RateLimitExceeded as exc:
         raise RateLimited(exc.result.retry_after_seconds) from exc
 
-    existing = (
+    # One live connection per pair, whichever side opened it. Declined and
+    # withdrawn rows are not live, so FR045's "ask again later" still works.
+    pair = or_(
+        and_(
+            ConnectionRequest.subject_account_id == subject_account_id,
+            ConnectionRequest.target_profile_id == target_account_id,
+        ),
+        and_(
+            ConnectionRequest.subject_account_id == target_account_id,
+            ConnectionRequest.target_profile_id == subject_account_id,
+        ),
+    )
+    live = (
         await session.execute(
-            select(ConnectionRequest.id).where(
-                ConnectionRequest.subject_account_id == subject_account_id,
-                ConnectionRequest.target_profile_id == target_account_id,
-                ConnectionRequest.status == ConnectionStatus.PENDING,
+            select(ConnectionRequest.status).where(
+                pair,
+                ConnectionRequest.status.in_(
+                    (ConnectionStatus.PENDING, ConnectionStatus.ACCEPTED)
+                ),
             )
         )
-    ).scalar_one_or_none()
-    if existing is not None:
+    ).scalars().first()
+    if live is ConnectionStatus.ACCEPTED:
+        raise AlreadyConnected
+    if live is ConnectionStatus.PENDING:
         raise AlreadyPending
+
+    # [Owner, 2026-09-25] Cool-downs apply to the side that asked: after a
+    # decline (90 days) or its own withdrawal (21 days). The person who
+    # declined may still ask the other way at any time.
+    until = await _cooldown_until(
+        session, subject_account_id=subject_account_id, target_account_id=target_account_id
+    )
+    if until is not None:
+        raise RequestCooldown(*until)
 
     connection_id = uuid4()
     await session.execute(
@@ -259,6 +354,31 @@ async def send_request(
             "target_account_id": str(target_account_id),
             "on_behalf_of_profile_id": on_behalf_str,
         },
+    )
+
+    # [Contract §3] The recipient — and their circle — learn an interest
+    # arrived. Only the demographic snippet travels (never a name).
+    from app.components.discovery import interface as discovery
+    from app.components.notification_bridge import interface as notifications
+
+    snippet = await discovery.get_snippet(session, account_id=subject_account_id)
+    card = (await discovery.cards_for(session, account_ids=[subject_account_id])).get(
+        subject_account_id
+    )
+    sent_by = await sender_info(session, connection_id=connection_id)
+    await notifications.notify_circle(
+        session,
+        candidate_account_id=target_account_id,
+        kind="request_received",
+        payload={
+            "connection_id": connection_id,
+            "subject_account_id": subject_account_id,
+            "sent_by_relationship": sent_by.relationship if sent_by else "self",
+            "locality": snippet.locality if snippet else None,
+            "profession": snippet.profession if snippet else None,
+            "age": card.age if card else None,
+        },
+        link=f"/requests/{connection_id}",
     )
     return connection_id
 
@@ -298,6 +418,74 @@ async def list_sent(session: AsyncSession, *, account_id: UUID) -> list[Connecti
     return [_to_summary(r) for r in rows]
 
 
+async def _cooldown_until(
+    session: AsyncSession, *, subject_account_id: UUID, target_account_id: UUID
+) -> tuple[datetime, str] | None:
+    """When this candidate may next ask this person, if a cool-down applies."""
+    from datetime import timedelta
+
+    settings = get_settings()
+    rows = (
+        await session.execute(
+            select(ConnectionRequest.status, ConnectionRequest.decided_at).where(
+                ConnectionRequest.subject_account_id == subject_account_id,
+                ConnectionRequest.target_profile_id == target_account_id,
+                ConnectionRequest.status.in_((ConnectionStatus.DECLINED, ConnectionStatus.WITHDRAWN)),
+                ConnectionRequest.decided_at.is_not(None),
+            )
+        )
+    ).all()
+    now = datetime.now(UTC)
+    best: tuple[datetime, str] | None = None
+    for status_, decided_at in rows:
+        days = (
+            settings.request_cooldown_after_decline_days
+            if status_ is ConnectionStatus.DECLINED
+            else settings.request_cooldown_after_withdraw_days
+        )
+        until = decided_at + timedelta(days=days)
+        if until > now and (best is None or until > best[0]):
+            best = (until, status_.value)
+    return best
+
+
+async def declined_ids(session: AsyncSession, *, account_id: UUID) -> set[UUID]:
+    """People who declined this candidate within the decline cool-down: they
+    stay out of this candidate's Discover and New matches until it ends."""
+    from datetime import timedelta
+
+    cutoff = datetime.now(UTC) - timedelta(days=get_settings().request_cooldown_after_decline_days)
+    rows = (
+        await session.execute(
+            select(ConnectionRequest.target_profile_id).where(
+                ConnectionRequest.subject_account_id == account_id,
+                ConnectionRequest.status == ConnectionStatus.DECLINED,
+                ConnectionRequest.decided_at > cutoff,
+            )
+        )
+    ).scalars()
+    return set(rows)
+
+
+async def connected_ids(session: AsyncSession, *, account_id: UUID) -> set[UUID]:
+    """Everyone this candidate has an ACCEPTED connection with, in either
+    direction. Discovery leaves them out: the relationship already lives in
+    Messages and on their profile, so they are no longer "new matches"
+    (pending requests stay, with their state on the card)."""
+    rows = (
+        await session.execute(
+            select(ConnectionRequest.subject_account_id, ConnectionRequest.target_profile_id).where(
+                ConnectionRequest.status == ConnectionStatus.ACCEPTED,
+                or_(
+                    ConnectionRequest.subject_account_id == account_id,
+                    ConnectionRequest.target_profile_id == account_id,
+                ),
+            )
+        )
+    ).all()
+    return {target if subject == account_id else subject for subject, target in rows}
+
+
 async def get_request(session: AsyncSession, *, connection_id: UUID) -> ConnectionSummary | None:
     """[FR043] One request's full detail, for the review screen. RLS alone
     decides visibility — a caller who is neither party sees nothing, the
@@ -311,27 +499,24 @@ async def get_request(session: AsyncSession, *, connection_id: UUID) -> Connecti
     return _to_summary(row) if row else None
 
 
-async def accept(session: AsyncSession, *, connection_id: UUID, account_id: UUID) -> None:
+async def accept(
+    session: AsyncSession,
+    *,
+    connection_id: UUID,
+    account_id: UUID,
+    acting_account_id: UUID | None = None,
+) -> None:
     """[FR043/FR044/TR043/TR044] Accept: flips status and grants each party
     `candidate_info` visibility into the other's real profile — the two
-    grants ARE the meaning of "accepted", not a downstream side effect
-    FR044's "triggers nothing else" forbids (that clause is about NOT
-    auto-exchanging contact info, NOT auto-exposing Home Circle, and NOT
-    creating unrelated event subscribers — see this module's own docstring).
-    Creating the conversation row is deliberately NOT done here: it happens
-    lazily on the first message send (`communication.interface.send_message`),
-    which is what actually keeps this endpoint's side effects to exactly the
-    entitlement change acceptance itself represents.
+    grants ARE the meaning of "accepted". `account_id` is the recipient
+    CANDIDATE; `acting_account_id` is whoever pressed the button (the
+    candidate, or a circle member acting for them under `family_info`,
+    contract §6), recorded as `decided_by_account_id`.
 
     The two grants are created through `mangaly_authz
-    .grant_connection_candidate_info()`, a SECURITY DEFINER function, NOT
-    through `authorization.interface.grant()` — see
-    `migrations/010-authz-grant-connection-candidate-info-function.sql` for
-    why: one of the two grants (subject = the OTHER party, target = this
-    party's own real `profile.id`) cannot be inserted by EITHER party's own
-    session under `mangaly_authz.grant`'s own RLS at all, a genuine
-    structural id-space mismatch in the sealed schema, not a permissions gap
-    this module can close by calling the sanctioned function correctly.
+    .grant_connection_candidate_info()`, a SECURITY DEFINER function — see
+    `migrations/010` for why one of them cannot be inserted by either party's
+    own session under RLS.
     """
     row = (
         await session.execute(
@@ -349,10 +534,10 @@ async def accept(session: AsyncSession, *, connection_id: UUID, account_id: UUID
     await session.execute(
         text(
             "UPDATE mangaly_connection.connection_request "
-            "SET status = 'accepted', decided_at = :now, decided_by_account_id = :account_id, "
+            "SET status = 'accepted', decided_at = :now, decided_by_account_id = :decided_by, "
             "updated_at = :now WHERE id = :id"
         ),
-        {"now": now, "account_id": account_id, "id": connection_id},
+        {"now": now, "decided_by": acting_account_id or account_id, "id": connection_id},
     )
 
     await session.execute(
@@ -361,9 +546,8 @@ async def accept(session: AsyncSession, *, connection_id: UUID, account_id: UUID
     )
 
     # [FR049, migration 026] Acceptance opens the private conversation with one
-    # system line, so both people — the candidate above all — learn the request
-    # succeeded where they will actually talk, not by re-reading a status word
-    # on another screen.
+    # system line, so both people learn the request succeeded where they will
+    # actually talk.
     from app.components.communication import interface as communication
 
     await communication.open_conversation_on_accept(
@@ -379,11 +563,35 @@ async def accept(session: AsyncSession, *, connection_id: UUID, account_id: UUID
             "connection_id": str(connection_id),
             "acting_account_id": str(row.acting_account_id),
             "target_account_id": str(account_id),
+            "decided_by_account_id": str(acting_account_id or account_id),
         },
     )
 
+    # [Contract §3] The sending candidate and their circle learn it succeeded.
+    from app.components.notification_bridge import interface as notifications
+    from app.components.profile import interface as profile_module
 
-async def decline(session: AsyncSession, *, connection_id: UUID, account_id: UUID) -> None:
+    me = await profile_module.get_own_profile(session, account_id=account_id)
+    await notifications.notify_circle(
+        session,
+        candidate_account_id=row.subject_account_id,
+        kind="request_accepted",
+        payload={
+            "connection_id": connection_id,
+            "other_account_id": account_id,
+            "other_name": me.name if me else None,
+        },
+        link=f"/messages/{connection_id}",
+    )
+
+
+async def decline(
+    session: AsyncSession,
+    *,
+    connection_id: UUID,
+    account_id: UUID,
+    acting_account_id: UUID | None = None,
+) -> None:
     """[FR043] Decline: an explicit status, never a silent non-response —
     there is no auto-expiry transition on this endpoint or any other
     (FR043's own explicit failure-outcome requirement)."""
@@ -402,11 +610,123 @@ async def decline(session: AsyncSession, *, connection_id: UUID, account_id: UUI
     await session.execute(
         text(
             "UPDATE mangaly_connection.connection_request "
-            "SET status = 'declined', decided_at = :now, decided_by_account_id = :account_id, "
+            "SET status = 'declined', decided_at = :now, decided_by_account_id = :decided_by, "
             "updated_at = :now WHERE id = :id"
         ),
-        {"now": datetime.now(UTC), "account_id": account_id, "id": connection_id},
+        {"now": datetime.now(UTC), "decided_by": acting_account_id or account_id, "id": connection_id},
     )
+
+
+async def withdraw(
+    session: AsyncSession,
+    *,
+    connection_id: UUID,
+    account_id: UUID,
+    acting_account_id: UUID | None = None,
+) -> None:
+    """[Contract §3] Take back a pending request. `account_id` is the SUBJECT
+    candidate (self, or the candidate a circle member acts for). The
+    recipient's incoming list no longer shows it; nothing else changes."""
+    row = (
+        await session.execute(
+            select(ConnectionRequest.id).where(
+                ConnectionRequest.id == connection_id,
+                ConnectionRequest.subject_account_id == account_id,
+                ConnectionRequest.status == ConnectionStatus.PENDING,
+            )
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        raise ConnectionNotFound
+    now = datetime.now(UTC)
+    await session.execute(
+        text(
+            "UPDATE mangaly_connection.connection_request "
+            "SET status = 'withdrawn', decided_at = :now, decided_by_account_id = :decided_by, "
+            "updated_at = :now WHERE id = :id"
+        ),
+        {"now": now, "decided_by": acting_account_id or account_id, "id": connection_id},
+    )
+    await bus.publish(
+        session,
+        schema="mangaly_connection",
+        aggregate_id=connection_id,
+        event_type="ConnectionWithdrawn",
+        payload={
+            "connection_id": str(connection_id),
+            "subject_account_id": str(account_id),
+            "withdrawn_by_account_id": str(acting_account_id or account_id),
+        },
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class SentBy:
+    """[Contract §2] Who pressed send, in relation to the candidate it is for.
+    `relationship` is `self` when the candidate sent it themselves, else the
+    member's relation (`parent|guardian|sibling|relative`). `subject_name` /
+    `target_name` are present only where identity is already disclosed
+    (the sending side, or an accepted connection)."""
+
+    acting_account_id: UUID
+    subject_account_id: UUID
+    relationship: str
+    acting_name: str | None
+    subject_name: str | None
+    subject_profile_id: UUID | None
+    target_name: str | None
+
+
+async def sender_info(session: AsyncSession, *, connection_id: UUID) -> SentBy | None:
+    row = (
+        await session.execute(
+            text("SELECT * FROM mangaly_connection.request_sender_info(:id)"), {"id": connection_id}
+        )
+    ).mappings().first()
+    if row is None:
+        return None
+    return SentBy(
+        acting_account_id=row["acting_account_id"],
+        subject_account_id=row["subject_account_id"],
+        relationship=row["relationship_type"],
+        acting_name=row["acting_name"],
+        subject_name=row["subject_name"],
+        subject_profile_id=row["subject_profile_id"],
+        target_name=row["target_name"],
+    )
+
+
+async def connection_between(
+    session: AsyncSession, *, account_id: UUID, other_account_id: UUID
+) -> ConnectionSummary | None:
+    """The request that describes where two candidates stand, in either
+    direction: a live one (accepted, then pending) before any ended one, then
+    the most recent — what a profile screen needs to offer the right next
+    action. (A newer withdrawn or declined row must never hide a live one.)"""
+    row = (
+        await session.execute(
+            select(ConnectionRequest)
+            .where(
+                or_(
+                    and_(
+                        ConnectionRequest.subject_account_id == account_id,
+                        ConnectionRequest.target_profile_id == other_account_id,
+                    ),
+                    and_(
+                        ConnectionRequest.subject_account_id == other_account_id,
+                        ConnectionRequest.target_profile_id == account_id,
+                    ),
+                )
+            )
+            .order_by(
+                (ConnectionRequest.status == ConnectionStatus.ACCEPTED).desc(),
+                (ConnectionRequest.status == ConnectionStatus.PENDING).desc(),
+                ConnectionRequest.requested_at.desc(),
+            )
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    return _to_summary(row) if row else None
 
 
 # [FR046] Categories a participant can share today. A video introduction and
@@ -447,7 +767,7 @@ async def _accepted_connection(
             )
         )
     ).scalar_one_or_none()
-    if row is None or account_id not in (row.acting_account_id, row.target_profile_id):
+    if row is None or account_id not in (row.subject_account_id, row.target_profile_id):
         raise ConnectionNotFound
     return row
 
@@ -473,7 +793,7 @@ async def sharing_overview(
     the other participant has shared back. Every visible item traces to a
     timestamped grant written by its owner."""
     row = await _accepted_connection(session, connection_id=connection_id, account_id=account_id)
-    other = row.target_profile_id if row.acting_account_id == account_id else row.acting_account_id
+    other = row.target_profile_id if row.subject_account_id == account_id else row.subject_account_id
     grants = (
         (
             await session.execute(
@@ -608,11 +928,11 @@ async def has_active_share(
                 ConnectionRequest.status == ConnectionStatus.ACCEPTED,
                 or_(
                     and_(
-                        ConnectionRequest.acting_account_id == owner_account_id,
+                        ConnectionRequest.subject_account_id == owner_account_id,
                         ConnectionRequest.target_profile_id == viewer_account_id,
                     ),
                     and_(
-                        ConnectionRequest.acting_account_id == viewer_account_id,
+                        ConnectionRequest.subject_account_id == viewer_account_id,
                         ConnectionRequest.target_profile_id == owner_account_id,
                     ),
                 ),
@@ -651,7 +971,7 @@ async def family_contact_overview(
     from app.components.home_circle import interface as home_circle
 
     row = await _accepted_connection(session, connection_id=connection_id, account_id=account_id)
-    other = row.target_profile_id if row.acting_account_id == account_id else row.acting_account_id
+    other = row.target_profile_id if row.subject_account_id == account_id else row.subject_account_id
     members = await home_circle.list_home_circle(session, candidate_account_id=account_id)
     relationship_by_member = {m.member_account_id: m.relationship_type.value for m in members}
 
@@ -738,8 +1058,8 @@ async def request_family_contact(
     )
     match_account_id = (
         connection_row.target_profile_id
-        if connection_row.acting_account_id == account_id
-        else connection_row.acting_account_id
+        if connection_row.subject_account_id == account_id
+        else connection_row.subject_account_id
     )
     if member is None or member.member_account_id == match_account_id:
         raise NotAHomeCircleMember

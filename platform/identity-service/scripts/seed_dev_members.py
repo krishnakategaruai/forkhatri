@@ -9,7 +9,7 @@ Creates or refreshes:
 - Lakshmi Reddy (+919999900003): Ananya Reddy's mother, a family member (not a
   candidate) for Mangaly Home Circle tests. Joins Ananya's circle through the app.
 And sets the development password on member 11111111-1111-1111-1111-111111111111
-(imported; Asha Reddy in Milavn, "Seed Candidate One" in Mangaly).
+(imported; Asha Reddy in Milavn and in Mangaly).
 
 Development personas (app/dev_tools/personas.py; switch with the entrance's
 "Act as" row or scripts/dev_session.py, no password needed): krishna, asha,

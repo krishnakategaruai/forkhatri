@@ -17,39 +17,15 @@
 from __future__ import annotations
 
 import json
-from typing import Protocol
 
 import asyncpg
 
-from app.config import get_settings
 from app.i18n import translate
 
 
-class NotificationChannel(Protocol):
-    async def deliver(self, conn: asyncpg.Connection, member_id: str, title: str, body: str | None, link: str | None) -> None: ...
-
-
-class InAppChannel:
-    """[TR021] The one real, always-available channel — writes the inbox
-    row every /v1/notifications read serves. `idempotency_key` is UNIQUE at
-    the DB level (already modeled), so a retried send is a no-op, never a
-    duplicate — TR052's own delivery contract, enforced structurally."""
-
-    async def deliver(self, conn: asyncpg.Connection, member_id: str, title: str, body: str | None, link: str | None) -> None:
-        pass  # writing happens in send_notification() itself (needs kind/template/idempotency_key too)
-
-
-class WebPushChannel:
-    """[Decision] Structural stub behind placeholder VAPID keys — no
-    push-subscription table/flow exists yet, so this is never actually
-    invoked by `send_notification()`'s default channel list. Exists so a
-    future real Web Push integration is a channel addition, not a redesign
-    of every call site that sends a notification today."""
-
-    async def deliver(self, conn: asyncpg.Connection, member_id: str, title: str, body: str | None, link: str | None) -> None:
-        settings = get_settings()
-        if settings.vapid_public_key.startswith("CHANGE_ME"):
-            return  # no real subscription/push infra wired yet — honest no-op
+# [IMP37] The channel adapters moved to app/integrations/notifications/;
+# re-exported here so existing imports keep working.
+from app.integrations.notifications.channels import InAppChannel, NotificationChannel, WebPushChannel  # noqa: E402,F401
 
 
 async def send_notification(

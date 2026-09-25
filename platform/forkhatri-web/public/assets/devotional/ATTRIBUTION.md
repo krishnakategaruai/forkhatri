@@ -29,3 +29,14 @@ replace it with an image the Khatri community provides or commissions with writt
 permission. The other Commons portrait (`File:Kartavirya_Arjuna.jpg`) was not used:
 it is an edited version of this same artwork set against a battlefield with fire and
 lightning, which is not suitable for a calm devotional presence.
+
+## SSK portrait for the splash and app icon (2026-09-24)
+
+| Field | Value |
+|---|---|
+| Files | `ssk-sahasrarjun.webp` (480 × 737, transparent cut-out); `app/icon.png`, `app/apple-icon.png` (crowned head on a turmeric-to-kumkum tile) |
+| Source | `docs/images/sskicon.png`, supplied by the product owner |
+| Used on | The first-load splash (once per browser session) and the favicon / apple touch icon |
+
+The owner asked for this image as the ForKhatri icon and first-load splash. Confirm its
+rights with the community before public launch, as for the photo above.

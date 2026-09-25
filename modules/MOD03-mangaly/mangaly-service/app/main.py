@@ -25,13 +25,20 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import (
+    operations,
     auth,
+    billing,
+    rm,
     communication,
     connection,
     discovery,
     home_circle,
     media,
+    notifications,
     profile,
+    safety,
+    shortlist,
+    verification,
 )
 from app.config.settings import get_settings
 from app.db.engine import (
@@ -110,9 +117,16 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_allowed_origins,
+        allow_origin_regex=settings.cors_allowed_origin_regex,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=["Content-Type", "Authorization", "Idempotency-Key", "X-Mangaly-Language"],
+        allow_headers=[
+            "Content-Type",
+            "Authorization",
+            "Idempotency-Key",
+            "X-Mangaly-Language",
+            "X-Mangaly-Manage",
+        ],
     )
 
     # Feature routers are registered here as each TR lands.
@@ -120,9 +134,30 @@ def create_app() -> FastAPI:
     app.include_router(profile.router)
     app.include_router(home_circle.router)
     app.include_router(discovery.router)
-    app.include_router(connection.router)
-    app.include_router(communication.router)
+    # Both routers declare no prefix of their own and are mounted twice: once
+    # on the path existing clients call, once on the rework contract's path.
+    app.include_router(connection.router, prefix="/connections")
+    app.include_router(connection.router, prefix="/connection")
+    app.include_router(communication.router, prefix="/messages")
+    app.include_router(communication.router, prefix="/conversations")
     app.include_router(media.router)
+    # [DEC-V1-028] Moderator review queue, Tier 3/4 exits, suspension.
+    app.include_router(operations.router)
+    # [2026-09-21] These three shipped written but were never registered, so
+    # nine endpoints were unreachable — including block and report. A
+    # matrimonial product with no way to block or report someone fails §22
+    # (Safety Intelligence) outright, whatever the rest of it does.
+    app.include_router(safety.router)
+    app.include_router(shortlist.router)
+    app.include_router(notifications.router)
+    # [DEC-V1-016/025] The live face match: status, attempt, withdraw.
+    app.include_router(verification.router)
+    # [2026-09-24] Written with their migrations and web screens (/plans, the
+    # upgrade nudge, /rm, /rm/console) but never registered, so every call
+    # answered 404 — the same miss as the three routers above.
+    app.include_router(billing.router)
+    # [DEC-V1-032] Assisted matching: a member's relationship manager and the RM console.
+    app.include_router(rm.router)
 
     return app
 

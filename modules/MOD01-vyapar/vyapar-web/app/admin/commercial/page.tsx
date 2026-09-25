@@ -14,6 +14,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, ApiError } from "@/lib/api";
 import { formatPaise } from "@/lib/money";
+import Screen from "@/app/components/Screen";
 
 interface Product {
   id: string;
@@ -125,10 +126,10 @@ export default function AdminCommercialPage() {
 
   if (forbidden) {
     return (
-      <main className="vy-shell">
+      <Screen width="console">
         <h1>{t("adminCommercial:title")}</h1>
         <p className="vy-muted">{t("adminCommercial:notOperator")}</p>
-      </main>
+      </Screen>
     );
   }
 
@@ -189,13 +190,13 @@ export default function AdminCommercialPage() {
   }
 
   return (
-    <main className="vy-shell">
+    <Screen width="console">
       <h1>{t("adminCommercial:title")}</h1>
       <p className="vy-muted">{t("adminCommercial:scopeNote")}</p>
       {notice && <p className="vy-error">{notice}</p>}
 
       <section className="vy-stack">
-        <h2 style={{ fontSize: 16 }}>{t("adminCommercial:products.title")}</h2>
+        <h2 className="vy-card-title">{t("adminCommercial:products.title")}</h2>
         <p className="vy-muted" style={{ fontSize: 13 }}>{t("adminCommercial:products.insertOnly")}</p>
         {products?.map((p) => (
           <div key={`${p.id}-${p.version}`} className="vy-card vy-stack" style={{ gap: 6 }}>
@@ -218,11 +219,11 @@ export default function AdminCommercialPage() {
       </section>
 
       <section className="vy-stack">
-        <h2 style={{ fontSize: 16 }}>{t("adminCommercial:orders.title")}</h2>
+        <h2 className="vy-card-title">{t("adminCommercial:orders.title")}</h2>
         <div className="vy-row" style={{ flexWrap: "wrap" }}>
           {(["promotion", "entitlement", "campaign"] as const).map((k) => (
             <button key={k} className="vy-chip" aria-pressed={orderKind === k}
-                    style={{ border: "none", cursor: "pointer", background: orderKind === k ? "var(--accent)" : "var(--surface-overlay)", color: orderKind === k ? "var(--accent-ink)" : "var(--text-primary)" }}
+                style={{ cursor: "pointer" }}
                     onClick={() => setOrderKind(k)}>
               {t(`adminCommercial:orders.kind.${k}` as "orders.kind.promotion")}
             </button>
@@ -246,7 +247,11 @@ export default function AdminCommercialPage() {
               </button>
             )}
             {refundFor?.id === o.id && (
-              <div className="vy-stack" style={{ gap: 6 }}>
+              // [Design-enhancement pass, DESIGN-ENHANCEMENT.md — named
+              // example] the refund form nested inside this order card
+              // steps to --surface-nested, distinguishing it as its own
+              // sub-panel rather than blending into the order card's flow.
+              <div className="vy-card vy-card-nested vy-stack" style={{ gap: 6 }}>
                 <label className="vy-field">
                   <span className="vy-label">{t("adminCommercial:refund.amount")}</span>
                   <input className="vy-input" inputMode="decimal" value={refundAmount} onChange={(e) => setRefundAmount(e.target.value)} />
@@ -267,12 +272,12 @@ export default function AdminCommercialPage() {
       </section>
 
       <section className="vy-stack">
-        <h2 style={{ fontSize: 16 }}>{t("adminCommercial:diagnostics.title")}</h2>
+        <h2 className="vy-card-title">{t("adminCommercial:diagnostics.title")}</h2>
         <p className="vy-muted" style={{ fontSize: 13 }}>{t("adminCommercial:diagnostics.help")}</p>
         <div className="vy-row" style={{ flexWrap: "wrap" }}>
           {(["listing", "opportunity"] as const).map((k) => (
             <button key={k} className="vy-chip" aria-pressed={diagKind === k}
-                    style={{ border: "none", cursor: "pointer", background: diagKind === k ? "var(--accent)" : "var(--surface-overlay)", color: diagKind === k ? "var(--accent-ink)" : "var(--text-primary)" }}
+                style={{ cursor: "pointer" }}
                     onClick={() => setDiagKind(k)}>
               {t(`trustSafety:objectKind.${k}` as "objectKind.listing")}
             </button>
@@ -309,7 +314,7 @@ export default function AdminCommercialPage() {
       </section>
 
       <section className="vy-stack">
-        <h2 style={{ fontSize: 16 }}>{t("adminCommercial:audit.title")}</h2>
+        <h2 className="vy-card-title">{t("adminCommercial:audit.title")}</h2>
         <div className="vy-row" style={{ flexWrap: "wrap" }}>
           <input className="vy-input" value={auditActor} onChange={(e) => setAuditActor(e.target.value)} placeholder={t("adminCommercial:audit.actorPlaceholder")} />
           <input className="vy-input" value={auditAction} onChange={(e) => setAuditAction(e.target.value)} placeholder={t("adminCommercial:audit.actionPlaceholder")} />
@@ -325,6 +330,6 @@ export default function AdminCommercialPage() {
           ))}
         </ol>
       </section>
-    </main>
+    </Screen>
   );
 }

@@ -45,14 +45,14 @@ PGPASSWORD=$DB_ADMIN_PASSWORD psql -h localhost -p 5433 -U postgres -c "DROP DAT
 | `vyapar_identity` | Identity Bridge | Yes | members |
 | `vyapar_listings` | Listings & Verification | Yes | listings, listing_contacts, otp_challenges, verification_records, taxonomy_terms, member_listing, outbox_event |
 | `vyapar_opportunities` | Opportunities | Yes | opportunities, member_opportunity, outbox_event |
-| `vyapar_enquiries` | Enquiries & Partnerships | Yes | enquiries, enquiry_messages, blocks, partnership_requests |
-| `vyapar_reviews` | Reviews & Reputation | Yes | review_invites, reviews, review_disputes |
+| `vyapar_enquiries` | Enquiries & Partnerships | Yes | enquiries, enquiry_messages, blocks, partnership_requests, outbox_event (016) |
+| `vyapar_reviews` | Reviews & Reputation | Yes | review_invites, reviews, review_disputes, outbox_event (016) |
 | `vyapar_commercial` | Commercial | Yes (products/no) | products, campaigns, promotions, commercial_order_history, entitlements, workspace_members, impressions, outbox_event |
 | `vyapar_payments` | Payment Bridge | Yes | payment_orders |
 | `vyapar_privacy` | Privacy & Consent | Yes (legal_documents/no) | privacy_settings, legal_documents, acceptances, data_requests, derived_preferences |
 | `vyapar_trust_safety` | Trust & Safety | Yes | moderation_cases, reports, appeals |
 | `vyapar_analytics` | Analytics | Yes | analytics_events |
-| `vyapar_integration` | Integration Bridges | Yes (config/no) | dead_letters, config, counsel_referrals, notifications, audit_events |
+| `vyapar_integration` | Integration Bridges | Yes (config/no) | dead_letters, config, counsel_referrals, notifications, audit_events, access_tokens (015), webhook_subscriptions, webhook_deliveries, webhook_cursors (016) |
 | `vyapar_platform` | (shared infra, not a business component) | Yes (idempotency_key only) | idempotency_key, rate_limit_counter |
 
 **Discovery & Ranking** and the **Authorization Engine** (components #4 and

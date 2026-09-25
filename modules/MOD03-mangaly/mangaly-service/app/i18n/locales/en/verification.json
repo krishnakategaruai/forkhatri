@@ -1,0 +1,7 @@
+{
+  "error": {
+    "noPhotos": "A face check compares you with the photos on your own profile. Add a photo of yourself first.",
+    "rateLimited": "You have tried several times today. Please try again tomorrow, in good light.",
+    "required": "To create a profile for someone else, first confirm that your own photos are you. It takes under a minute."
+  }
+}

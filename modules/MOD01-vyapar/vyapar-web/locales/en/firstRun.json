@@ -7,7 +7,28 @@
   "step1": {
     "title": "Where are you based?",
     "help": "Used for discovery radius — you can change this anytime. If location access is unavailable, type it below.",
-    "placeholder": "Locality, e.g. Ameerpet"
+    "placeholder": "Locality, e.g. Ameerpet",
+    "radiusLabel": "How far should we look?",
+    "workModeLabel": "How do you work?"
+  },
+  "step2cat": {
+    "title": "What kind of work do you do?",
+    "help": "Pick one or more — we'll suggest specific skills next based on what you choose.",
+    "searchPlaceholder": "Search categories"
+  },
+  "step2cap": {
+    "title": "What can you offer?",
+    "help": "Pick what applies — this helps others find you and helps us match you to relevant opportunities. Add anything not listed below.",
+    "helpScoped": "Based on what you picked — tap what applies, or search to add something else.",
+    "otherLabel": "Search or add a skill",
+    "otherPlaceholder": "e.g. Handmade jewellery, tailoring",
+    "searchPlaceholder": "Search skills",
+    "addOther": "Add \"{{text}}\"",
+    "otherAdded": "Added: {{text}}",
+    "skip": "Skip for now"
+  },
+  "progress": {
+    "label": "Step {{step}} of {{total}}"
   },
   "step2": {
     "title": "What brings you here?",

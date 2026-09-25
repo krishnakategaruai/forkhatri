@@ -10,7 +10,8 @@
     "activity": "Activity",
     "profile": "Profile",
     "collapse": "Collapse navigation",
-    "open": "Open navigation"
+    "open": "Open navigation",
+    "primary": "Primary"
   },
   "action": {
     "save": "Save",
@@ -21,7 +22,16 @@
     "cancel": "Cancel",
     "retry": "Retry",
     "myListings": "My listings",
-    "linkCopied": "Link copied."
+    "linkCopied": "Link copied.",
+    "remove": "Remove",
+    "close": "Close",
+    "moreOptions": "More options",
+    "notInterested": "Not interested",
+    "report": "Report"
+  },
+  "upload": {
+    "uploading": "Uploading…",
+    "failed": "Upload failed — try a smaller file (up to 5 MB)."
   },
   "state": {
     "loading": "Loading…",
@@ -46,5 +56,16 @@
     "switcherLabel": "Choose dev member",
     "notSignIn": "Dev-only member switcher — not sign-in.",
     "operator": "operator"
+  },
+  "preview": {
+    "label": "Live preview",
+    "caption": "This is how your post will look to other members.",
+    "titlePlaceholder": "Your title appears here",
+    "guideTitle": "Tips for a good response",
+    "postedToday": "Posted today"
+  },
+  "layout": {
+    "actions": "Actions",
+    "onThisPage": "On this page"
   }
 }

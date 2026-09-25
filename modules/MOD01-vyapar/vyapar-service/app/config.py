@@ -78,6 +78,38 @@ class Settings(BaseSettings):
     # [TR045] HMAC key for member_pseudo — never the verification key, never logged
     analytics_pseudonym_secret: str = "CHANGE_ME_dev_analytics_pseudonym_secret"
 
+    # [IMP37 — Refactor B] Identity adapters. Comma-separated, tried in order
+    # (e.g. IDENTITY_PROVIDERS=bearer,forkhatri or bearer,dev). Empty keeps
+    # the historic behaviour: "bearer,dev" when DEV_MODE is on, otherwise
+    # "bearer,forkhatri". See app/integrations/identity/.
+    identity_providers: str = ""
+
+    # [IMP37] Personal access tokens for agents and API clients.
+    access_token_default_days: int = 90
+    access_token_max_days: int = 365
+    access_token_max_active_per_member: int = 20
+
+    # [IMP37] Outbound webhooks. The secret key encrypts stored signing
+    # secrets (AES-GCM); private targets (localhost, 10.x, 192.168.x ...) are
+    # allowed only in development — turn off in any shared deployment.
+    integration_secret_key: str = "CHANGE_ME_dev_integration_secret_key"
+    webhook_allow_private_targets: bool = True
+    webhook_dispatch_interval_seconds: int = 10
+    webhook_timeout_seconds: float = 5.0
+    webhook_max_attempts: int = 6
+    webhook_disable_after_failures: int = 25
+    webhook_max_per_member: int = 10
+
+    # [IMP37] Idempotency-Key middleware: how long a first response is kept for replay.
+    idempotency_ttl_hours: int = 24
+
+    @property
+    def identity_provider_names(self) -> list[str]:
+        names = [n.strip().lower() for n in self.identity_providers.split(",") if n.strip()]
+        if names:
+            return names
+        return ["bearer", "dev" if self.dev_mode else "forkhatri"]
+
 
 @lru_cache
 def get_settings() -> Settings:

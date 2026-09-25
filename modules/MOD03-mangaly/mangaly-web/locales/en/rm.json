@@ -1,0 +1,133 @@
+{
+  "card": {
+    "title": "Your relationship manager",
+    "seeAll": "See all",
+    "speaks": "Speaks {{languages}}",
+    "message": "Message",
+    "suggestions_one": "{{count}} suggestion for you",
+    "suggestions_other": "{{count}} suggestions for you",
+    "log": "Calls and notes",
+    "suggestedBy": "Suggested by your relationship manager"
+  },
+  "page": {
+    "title": "Relationship manager",
+    "none": {
+      "title": "No relationship manager yet",
+      "body": "A relationship manager is a person from Mangaly who gets to know your family, suggests matches and speaks with the other family for you."
+    },
+    "role": "Your relationship manager",
+    "promise": "Suggestions come from people who match what you are looking for. You decide on each one; nothing is sent without you.",
+    "suggestions": {
+      "title": "Suggested for you",
+      "count_one": "{{count}} person",
+      "count_other": "{{count}} people",
+      "empty": "No suggestions yet. They will appear here once your relationship manager has found someone.",
+      "noteBy": "{{name}} says:"
+    },
+    "log": {
+      "title": "Calls and notes",
+      "empty": "Nothing recorded yet.",
+      "upcoming": "upcoming"
+    }
+  },
+  "decision": {
+    "like": "Interested",
+    "pass": "Not for us",
+    "liked": "Interested",
+    "passed": "Not for us",
+    "waiting": "Waiting for the family"
+  },
+  "interaction": {
+    "kind": {
+      "call": "Call",
+      "meeting": "Meeting",
+      "note": "Note"
+    }
+  },
+  "language": {
+    "en": "English",
+    "hi": "Hindi",
+    "te": "Telugu",
+    "english": "English",
+    "hindi": "Hindi",
+    "telugu": "Telugu",
+    "tamil": "Tamil",
+    "kannada": "Kannada",
+    "malayalam": "Malayalam",
+    "marathi": "Marathi",
+    "punjabi": "Punjabi"
+  },
+  "console": {
+    "title": "Families I help",
+    "intro": "The families you are working with. Open one to see their details, search for matches and record your calls.",
+    "notRm": {
+      "title": "This page is for relationship managers",
+      "body": "Your account is not set up as a relationship manager."
+    },
+    "notFound": "This family could not be found.",
+    "families": {
+      "title": "Current families",
+      "empty": "You are not helping any family yet.",
+      "unnamed": "Member without a profile",
+      "since": "Since {{date}}",
+      "ended": "Past families",
+      "endedOn": "Ended {{date}}"
+    },
+    "take": {
+      "title": "Take on a family",
+      "hint": "Enter the member's ID from the assisted-matching request.",
+      "member": "Member ID",
+      "memberPlaceholder": "For example 1f2e3d4c-…",
+      "note": "Note (optional)",
+      "notePlaceholder": "What the family asked for",
+      "submit": "Take on this family",
+      "failed": "Could not assign this member. Check the ID and try again."
+    },
+    "member": {
+      "age": "Age",
+      "city": "City",
+      "lookingFor": "Looking for",
+      "motherTongue": "Mother tongue",
+      "appLanguage": "App language",
+      "work": "Work",
+      "partner": "Partner preferences",
+      "family": "Family",
+      "circle": "Home Circle",
+      "message": "Message the member"
+    },
+    "end": {
+      "button": "Stop helping this family",
+      "confirm": "Yes, stop"
+    },
+    "search": {
+      "title": "Find matches for {{name}}",
+      "count_one": "{{count}} match",
+      "count_other": "{{count}} matches",
+      "hint": "Only people who match what this member is looking for are shown.",
+      "q": "Search",
+      "qPlaceholder": "City, profession, community…",
+      "ageMin": "Age from",
+      "ageMax": "Age to",
+      "submit": "Search",
+      "empty": "No one matches this search.",
+      "failed": "The search did not work. Please try again."
+    },
+    "suggest": {
+      "button": "Suggest",
+      "done": "Suggested",
+      "notePlaceholder": "Why this person could suit {{name}}",
+      "send": "Send suggestion"
+    },
+    "suggested": {
+      "title": "Already suggested",
+      "empty": "You have not suggested anyone yet."
+    },
+    "log": {
+      "hint": "Record a call, a meeting or a note, or schedule the next call.",
+      "kind": "Type",
+      "when": "When",
+      "summary": "Summary",
+      "submit": "Save"
+    }
+  }
+}

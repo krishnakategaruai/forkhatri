@@ -19,7 +19,15 @@
       "Bash(curl -s -o /dev/null -w \"api:%{http_code}\\\\n\" --max-time 20 http://127.0.0.1:8001/health)",
       "Bash(curl -s -o /dev/null -w \"web:%{http_code}\\\\n\" --max-time 20 http://127.0.0.1:3001/)",
       "Bash(curl -s -o /dev/null -w \"identity:%{http_code}\\\\n\" --max-time 20 http://127.0.0.1:8100/health)",
-      "mcp__chrome-devtools-milavn__navigate_page"
+      "mcp__chrome-devtools-milavn__navigate_page",
+      "Bash(npm run *)",
+      "Bash(Start-Sleep -Seconds 8)",
+      "Bash(\"Servers should *)",
+      "mcp__chrome-devtools-mangaly__new_page",
+      "mcp__chrome-devtools-mangaly__take_screenshot",
+      "mcp__chrome-devtools-mangaly__navigate_page",
+      "mcp__chrome-devtools-mangaly__list_console_messages",
+      "mcp__chrome-devtools-mangaly__list_network_requests"
     ]
   }
 }

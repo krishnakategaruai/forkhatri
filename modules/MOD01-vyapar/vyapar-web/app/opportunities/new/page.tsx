@@ -1,12 +1,13 @@
 "use client";
 
 // [TR011] Opportunity Composer: create, share, or upload (FR11). Three
-// entry modes with one mandatory segment tag (Community/Public). "Upload
-// a screenshot" accepts a pasted image URL rather than a real file-upload
-// widget in this session — no Object Storage integration exists yet
-// (SP008/TR008's signed-URL flow is only wired for verification documents
-// so far, not opportunity screenshots); an honest, working substitute
-// instead of a fake file picker that goes nowhere.
+// entry modes with one mandatory segment tag (Community/Public).
+// [Critique agent finding, fixed] "Upload a screenshot" now uses a real
+// file-picker (app/components/FileUpload.tsx → POST /v1/uploads →
+// dev-environment local-disk storage, served back statically) instead of
+// a pasted-URL field — FR11's own named scenario (forwarding a WhatsApp
+// screenshot) has no URL to paste for a gallery photo, so the earlier
+// substitute was honestly documented but genuinely unusable for that case.
 // Traces to: FR11, FR14, TR011, TR014
 //
 // [Product-owner reference check, 2026-09-15] "Vyapar is inspired from
@@ -23,20 +24,40 @@
 // opportunities are the WorkIndia-shaped case and shouldn't be forced
 // through an Upwork-weight form.
 // [Product-owner i18n rule] Converted to useTranslation().
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, resolveAttachmentUrl } from "@/lib/api";
+import FileUpload from "@/app/components/FileUpload";
+import Screen from "@/app/components/Screen";
+import ProfileSetup from "@/app/components/ProfileSetup";
+import type { Me } from "@/lib/sdk";
+import ComposerPreview, { PreviewCard } from "@/app/post/_components/ComposerPreview";
 
 type EntryMode = "create" | "share" | "upload";
 
 const V1_TYPE_IDS = ["employment", "freelance", "local_service"];
 const OTHER_TYPE_IDS = ["partnership", "training", "community"];
+// [IMP39] Mirrors TYPE_ACTION_LABEL in the API (services/opportunities.py),
+// used ONLY to label the live preview the way the feed card will.
+const TYPE_ACTION: Record<string, string> = {
+  employment: "apply",
+  freelance: "submitProposal",
+  local_service: "enquireNow",
+  partnership: "contact",
+  training: "register",
+  community: "register",
+};
 
 export default function NewOpportunityPage() {
-  const { t } = useTranslation(["opportunities", "common"]);
+  const { t, i18n } = useTranslation(["opportunities", "common", "discover"]);
   const router = useRouter();
   const [mode, setMode] = useState<EntryMode | null>(null);
+  // [Owner, 2026-09-22] no profile of either kind → setup first.
+  const [me, setMe] = useState<Me | null>(null);
+  useEffect(() => {
+    api.get<Me>("/v1/members/me").then(setMe).catch(() => setMe(null));
+  }, [i18n.language]);
   // [Coordinator's "fewer taps" refinement, applied here] Segment
   // (Community/Public) is still an explicit, mandatory, independently-
   // changeable choice per FR11 — but it no longer forces its own screen.
@@ -55,6 +76,13 @@ export default function NewOpportunityPage() {
   const [imageUrl, setImageUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // [IMP39] the poster's own name, shown on the live preview exactly where
+  // the feed card shows the submitter line
+  const [myName, setMyName] = useState("");
+
+  useEffect(() => {
+    api.get<{ display_name: string }>("/v1/members/me").then((m) => setMyName(m.display_name)).catch(() => undefined);
+  }, []);
 
   async function submit() {
     if (!mode) return;
@@ -82,52 +110,78 @@ export default function NewOpportunityPage() {
     }
   }
 
+  if (me?.profiles && !me.profiles.complete) {
+    return (
+      <Screen width="wide">
+        <h1>{t("opportunities:new.chooseModeTitle")}</h1>
+        <ProfileSetup profiles={me.profiles} required />
+      </Screen>
+    );
+  }
+
   if (!mode) {
     return (
-      <main className="vy-shell">
+      <Screen width="wide">
         <h1>{t("opportunities:new.chooseModeTitle")}</h1>
-        <div className="vy-stack">
+        <div className="vy-stack vy-choice-grid vy-choice-grid-3">
           <button
-            className="vy-card"
-            style={{ textAlign: "left", border: "none", cursor: "pointer" }}
+            className="vy-card vy-choice"
             onClick={() => {
               setMode("create");
               setSegment("community");
             }}
           >
+            <span className="vy-choice-mark" aria-hidden="true">¶</span>
             <h2 style={{ fontSize: 17 }}>{t("opportunities:new.modeCreate")}</h2>
             <p>{t("opportunities:new.modeCreateDesc")}</p>
+            <span className="vy-choice-arrow" aria-hidden="true">→</span>
           </button>
           <button
-            className="vy-card"
-            style={{ textAlign: "left", border: "none", cursor: "pointer" }}
+            className="vy-card vy-choice"
             onClick={() => {
               setMode("share");
               setSegment("public");
             }}
           >
+            <span className="vy-choice-mark" aria-hidden="true">⇪</span>
             <h2 style={{ fontSize: 17 }}>{t("opportunities:new.modeShare")}</h2>
             <p>{t("opportunities:new.modeShareDesc")}</p>
+            <span className="vy-choice-arrow" aria-hidden="true">→</span>
           </button>
           <button
-            className="vy-card"
-            style={{ textAlign: "left", border: "none", cursor: "pointer" }}
+            className="vy-card vy-choice"
             onClick={() => {
               setMode("upload");
               setSegment("public");
             }}
           >
+            <span className="vy-choice-mark" aria-hidden="true">▣</span>
             <h2 style={{ fontSize: 17 }}>{t("opportunities:new.modeUpload")}</h2>
             <p>{t("opportunities:new.modeUploadDesc")}</p>
+            <span className="vy-choice-arrow" aria-hidden="true">→</span>
           </button>
         </div>
-      </main>
+      </Screen>
     );
   }
 
+  // [IMP39] Live preview (desktop): the Discover card other members will
+  // see, from the values typed so far. For share/upload the server derives
+  // the title from the pasted text, so the preview shows the first line and
+  // says so, rather than inventing what the parser will produce.
+  const firstLine = rawInput.split(/\r?\n/).map((l) => l.trim()).find(Boolean) ?? "";
+  const previewTitle = mode === "create" ? title.trim() : firstLine.slice(0, 90);
+  const previewMeta = [
+    t(`opportunities:actionLabel.${TYPE_ACTION[type] ?? "contact"}` as "actionLabel.apply"),
+    segment === "community" ? t("discover:home.sectionCommunity") : t("discover:home.sectionPublic"),
+    t("common:preview.postedToday"),
+  ].join(" · ");
+
   return (
-    <main className="vy-shell">
+    <Screen width="wide">
       <h1>{mode === "create" ? t("opportunities:new.titleCreate") : mode === "share" ? t("opportunities:new.titleShare") : t("opportunities:new.titleUpload")}</h1>
+      <div className="vy-compose">
+      <div className="vy-compose-main">
       <div className="vy-stack">
         <div className="vy-row">
           <button
@@ -175,13 +229,18 @@ export default function NewOpportunityPage() {
 
         {mode === "upload" && (
           <div className="vy-field">
+            {/* [Critique agent finding, fixed here] FR11's own named scenario
+                is forwarding a WhatsApp screenshot — a pasted-URL field is
+                unusable for a photo sitting in a gallery with no URL. Real
+                file upload via the one shared FileUpload component. */}
             <label className="vy-label">{t("opportunities:new.screenshotLinkLabel")}</label>
-            <input className="vy-input" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder={t("opportunities:new.screenshotLinkPlaceholder")} />
+            <FileUpload value={imageUrl} onChange={setImageUrl} accept="image/*" />
             <label className="vy-label" style={{ marginTop: 8 }}>{t("opportunities:new.screenshotNotesLabel")}</label>
             <textarea className="vy-textarea" rows={3} value={rawInput} onChange={(e) => setRawInput(e.target.value)} placeholder={t("opportunities:new.screenshotNotesPlaceholder")} />
           </div>
         )}
 
+        <div className="vy-field-pair">
         <div className="vy-field">
           <label className="vy-label">{t("opportunities:new.typeLabel")}</label>
           <select className="vy-select" value={type} onChange={(e) => setType(e.target.value)}>
@@ -202,6 +261,7 @@ export default function NewOpportunityPage() {
           <label className="vy-label">{t("opportunities:new.compensationLabel")}</label>
           <input className="vy-input" value={compensation} onChange={(e) => setCompensation(e.target.value)} placeholder={t("opportunities:new.compensationPlaceholder")} />
         </div>
+        </div>
 
         <div className="vy-field">
           <label className="vy-label">{t("opportunities:new.skillsLabel")}</label>
@@ -211,13 +271,26 @@ export default function NewOpportunityPage() {
         {error && <p className="vy-error">{error}</p>}
 
         <button
-          className="vy-btn vy-btn-primary"
+          className="vy-btn vy-btn-primary vy-submit"
           disabled={saving || (mode === "create" && (!title || !location)) || (mode !== "create" && !rawInput) || (segment === "public" && !sourceName)}
           onClick={submit}
         >
           {saving ? t("common:state.saving") : t("common:action.continue")}
         </button>
       </div>
-    </main>
+      </div>
+      <ComposerPreview guide={[t("opportunities:new.guide1"), t("opportunities:new.guide2"), t("opportunities:new.guide3")]}>
+        <PreviewCard
+          image={mode === "upload" && imageUrl ? resolveAttachmentUrl(imageUrl) : undefined}
+          title={previewTitle}
+          subtitle={[mode === "create" ? location.trim() : "", compensation.trim()].filter(Boolean).join(" · ") || undefined}
+          chips={skills.split(",").map((x) => x.trim()).filter(Boolean)}
+          submitter={segment === "public" && sourceName.trim() ? sourceName.trim() : myName || undefined}
+          meta={previewMeta}
+        />
+        {mode !== "create" && <p className="vy-muted">{t("opportunities:new.previewFromText")}</p>}
+      </ComposerPreview>
+      </div>
+    </Screen>
   );
 }

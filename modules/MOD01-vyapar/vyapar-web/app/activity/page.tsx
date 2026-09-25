@@ -6,80 +6,50 @@
 // noted gap; the other five groups are real, backed by
 // member_opportunity/member_listing.
 // [Product-owner i18n rule] Converted to useTranslation().
+// [IMP38 — Refactor C] Now only the route: the useActivity data hook (SDK,
+// re-fetched on a live language switch) and <ActivityView>. The
+// "To review" / "Partnerships" groups (FR27/FR26, slice 7) and the
+// translated status badge are rendered by the view.
 // Traces to: FR55, TR055, FR22-FR24
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { api } from "@/lib/api";
-
-// [FR27/FR26 — slice 7] "To review" (open review invites, first — they
-// expire in 30 days) and "Partnerships" (sent/received requests). Each row
-// opens the thread, where the review composer sits in place.
-interface ActivityItem {
-  kind: "listing" | "opportunity" | "enquiry" | "partnership";
-  id: string;
-  title: string;
-  group: string;
-}
-
-interface ActivityResponse {
-  saved: ActivityItem[];
-  posted: ActivityItem[];
-  recently_viewed: ActivityItem[];
-  shared: ActivityItem[];
-  completed: ActivityItem[];
-  responded: ActivityItem[];
-  to_review: ActivityItem[];
-  partnerships: ActivityItem[];
-}
-
-const GROUP_KEYS: [keyof ActivityResponse, string][] = [
-  ["to_review", "groupToReview"],
-  ["responded", "groupResponded"],
-  ["partnerships", "groupPartnerships"],
-  ["saved", "groupSaved"],
-  ["posted", "groupPosted"],
-  ["recently_viewed", "groupRecentlyViewed"],
-  ["shared", "groupShared"],
-  ["completed", "groupCompleted"],
-];
-
-const KIND_PATH: Record<ActivityItem["kind"], string> = {
-  listing: "listings",
-  opportunity: "opportunities",
-  enquiry: "enquiries",
-  partnership: "partnerships",
-};
+import Screen from "@/app/components/Screen";
+import { SkeletonGrid } from "@/app/components/States";
+import ActivityView from "@/app/components/activity/ActivityView";
+import { useActivity } from "@/app/hooks/engagement";
 
 export default function ActivityPage() {
-  const { t } = useTranslation(["activity", "common"]);
-  const [data, setData] = useState<ActivityResponse | null>(null);
+  const { data } = useActivity();
 
-  useEffect(() => {
-    api.get<ActivityResponse>("/v1/activity").then(setData);
-  }, []);
-
-  if (!data) return <main className="vy-shell"><p>{t("common:state.loading")}</p></main>;
-
-  const isEmpty = GROUP_KEYS.every(([key]) => (data[key] ?? []).length === 0);
+  if (!data)
+    return (
+      <Screen width="wide">
+        <div className="vy-skeleton" style={{ height: 40, width: 220, maxWidth: "60%" }} aria-hidden="true" />
+        <SkeletonGrid count={4} />
+      </Screen>
+    );
 
   return (
-    <main className="vy-shell">
-      <h1>{t("activity:title")}</h1>
-      {isEmpty && <p className="vy-muted">{t("activity:empty")}</p>}
-      {GROUP_KEYS.map(([key, labelKey]) =>
-        (data[key] ?? []).length > 0 ? (
-          <div key={key} className="vy-stack">
-            <h2 style={{ fontSize: 16, color: "var(--text-secondary)" }}>{t(`activity:${labelKey}` as "groupSaved")}</h2>
-            <div className="vy-stack">
-              {data[key].map((item) => (
-                <a key={`${item.kind}-${item.id}`} className="vy-card" style={{ textDecoration: "none" }} href={`/${KIND_PATH[item.kind]}/${item.id}`}>
-                  {item.title || t("activity:untitled")}
-                </a>
-              ))}
-            </div>
-          </div>
-        ) : null
-      )}
-    </main>
+    // ==================================================================
+    // [IMP33 — desktop layout for Activity]
+    // REQUIREMENT: same complaint, same fix — at 1440px this screen was a
+    // single narrow column of eight stacked groups, most of them two or
+    // three rows long, requiring a long scroll to see a page's worth of
+    // content that fits easily side by side.
+    // DECISION — a group grid, NOT a list+detail split pane: the owner's
+    // direction named Enquiries and Activity together, and the split pane
+    // is right for Enquiries because every row there opens the same kind
+    // of thing (a thread). Activity's rows are deliberately heterogeneous
+    // — a row can be a listing, an opportunity, an enquiry or a
+    // partnership, each with its own full screen — so a shared right pane
+    // would have to be four different detail views, and choosing one
+    // would make the others feel wrong. Columns of grouped cards use the
+    // width honestly without inventing a pane that cannot exist. This
+    // divergence from the letter of the direction is recorded here
+    // rather than applied silently.
+    // Traces to: FR55, TR055, 04-ui.md F4, product-owner direction
+    // 2026-09-17.
+    // ==================================================================
+    <Screen width="wide">
+      <ActivityView data={data} />
+    </Screen>
   );
 }

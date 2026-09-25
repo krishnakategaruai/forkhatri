@@ -27,7 +27,8 @@
     "otpLocked": "Locked — too many failed attempts",
     "otpExpired": "Code expired — request a new one",
     "otpLockedNow": "Too many failed attempts — locked for 15 minutes",
-    "otpIncorrect": "Incorrect code ({attempts}/5 attempts)"
+    "otpIncorrect": "Incorrect code ({attempts}/5 attempts)",
+    "profileRequired": "Set up a business or professional profile first — either one is enough."
   },
   "success": {
     "otpSent": "OTP sent",

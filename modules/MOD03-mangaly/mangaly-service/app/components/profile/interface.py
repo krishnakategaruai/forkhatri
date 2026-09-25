@@ -36,6 +36,7 @@ from app.components.profile.models import (
     ProfileAttribute,
     ProfileMedia,
 )
+from app.config.profile_schema import CATEGORY_KEYS, PRIVATE_KEYS
 from app.config.profile_tiers import (
     DISCOVERABILITY_TIER_ATTRIBUTES,
     DISCOVERABILITY_TIER_PARTNER_PREFERENCE_ANY_OF,
@@ -57,6 +58,10 @@ __all__ = [
     "ProfileView",
     "ProfileNotFound",
     "TooYoung",
+    "UnknownAttributes",
+    "ProfileLensData",
+    "lens_data",
+    "resolve_account_id",
     "add_photo",
     "completeness",
     "create_profile",
@@ -64,6 +69,11 @@ __all__ = [
     "get_all_attribute_values",
     "get_all_attributes",
     "list_own_photos",
+    "MemberProfile",
+    "get_member_profile",
+    "save_member_profile",
+    "set_member_photo",
+    "member_photo_refs",
     "reorder_photos",
     "resolve_photo_url",
     "set_primary_photo",
@@ -111,6 +121,17 @@ class AlreadyExists(Exception):
 class ProfileNotFound(Exception):
     """[FR002/FR005] Raised by every non-creation profile operation when the
     caller has no saved profile yet — FR001 must run first."""
+
+
+class UnknownAttributes(Exception):
+    """[Contract §3] A PATCH named a category, or keys within it, that the
+    profile vocabulary (`config/profile_schema.CATEGORY_KEYS`) does not know.
+    Carries them so the caller can render exactly which."""
+
+    def __init__(self, category: str, keys: list[str]) -> None:
+        super().__init__(f"unknown attributes in {category}: {keys}")
+        self.category = category
+        self.keys = keys
 
 
 @dataclass(frozen=True, slots=True)
@@ -526,6 +547,11 @@ async def public_biodata(session: AsyncSession, *, account_id: UUID) -> dict[str
     )
     biodata: dict[str, dict] = {}
     for row in rows:
+        # [FR020] A person's partner preferences are their own matching
+        # filters, never shown to anyone they are shown to — the same rule
+        # `view_profile_full` applies.
+        if row.category in _PRIVATE_CATEGORIES:
+            continue
         biodata.setdefault(row.category, {})[row.attribute_key] = row.value
     return biodata
 
@@ -656,13 +682,22 @@ async def media_path_for_viewer(
     ).first()
     if row is None:
         # [DEC-V1-016] A searchable candidate's main photo is shown on Discover.
-        discoverable = (
+        # [Migrations 030/035] A circle member may load their own candidate's
+        # main photo (context switcher), and a participant of a conversation
+        # may load either candidate's main photo (conversation list).
+        allowed = (
             await session.execute(
-                text("SELECT mangaly_profile.is_discoverable_primary_photo(:ref)"),
+                text(
+                    "SELECT mangaly_profile.is_discoverable_primary_photo(:ref) "
+                    "OR mangaly_profile.is_openly_shared_photo(:ref) "
+                    "OR mangaly_profile.is_member_photo_visible(:ref) "
+                    "OR mangaly_home_circle.is_candidate_primary_photo_for_member(:ref) "
+                    "OR mangaly_communication.is_conversation_photo(:ref)"
+                ),
                 {"ref": storage_ref},
             )
         ).scalar_one()
-        return storage.local_path(storage_ref) if discoverable else None
+        return storage.local_path(storage_ref) if allowed else None
     if row.media_type is MediaType.AUDIO:
         # Hearing someone speak is identity-revealing, so a voice introduction
         # is never part of the pre-connection card: RLS admitting this row
@@ -677,7 +712,16 @@ async def media_path_for_viewer(
             viewer_account_id=viewer_account_id,
             category="additional_photos",
         ):
-            return None
+            # [Migration 043] A photo its owner shows openly to everyone must
+            # not be hidden from the one person they are connected with.
+            openly = (
+                await session.execute(
+                    text("SELECT mangaly_profile.is_openly_shared_photo(:ref)"),
+                    {"ref": storage_ref},
+                )
+            ).scalar_one()
+            if not openly:
+                return None
     return storage.local_path(storage_ref)
 
 
@@ -763,6 +807,13 @@ async def update_category(
     profile_id = await _own_profile_id(session, account_id=account_id)
     if profile_id is None:
         raise ProfileNotFound
+
+    allowed = CATEGORY_KEYS.get(category)
+    if allowed is None:
+        raise UnknownAttributes(category, sorted(attributes))
+    unknown = sorted(k for k in attributes if k not in allowed)
+    if unknown:
+        raise UnknownAttributes(category, unknown)
 
     for attribute_key, (state, value) in attributes.items():
         stored_value = value if state is FieldState.VALUE else None
@@ -955,3 +1006,226 @@ async def completeness(session: AsyncSession, *, account_id: UUID) -> Completene
 def resolve_photo_url(storage_ref: str) -> str:
     """The client-loadable URL for a stored photo (served by the authorized media route)."""
     return storage.resolve_url(storage_ref)
+
+
+async def resolve_account_id(session: AsyncSession, person_id: UUID) -> UUID:
+    """[Contract §1] Accept a real `profile.id` OR an account id for "a
+    person": the identity payload carries profile ids, every people column in
+    this module carries account ids, and the older screens pass the latter."""
+    account_id = await lookup_account_by_profile_id(session, profile_id=person_id)
+    return account_id if account_id is not None else person_id
+
+
+@dataclass(frozen=True, slots=True)
+class ProfileLensData:
+    """[DEC-V1-023] Everything a lens is built from, after disclosure rules.
+
+    `disclosed` is true for the owner and for an accepted connection: then
+    `name`, every photo the owner shares, and the voice introduction are
+    present. Otherwise only the main photo, age, locality and the public
+    biodata (`public_biodata()`, migration 027) — never the name or contact.
+    `attributes` is `{category: {key: value}}`, value-state rows only, with
+    matching-only keys removed."""
+
+    account_id: UUID
+    profile_id: UUID | None
+    disclosed: bool
+    name: str | None
+    age: int | None
+    gender: str | None
+    locality: str | None
+    photos: list[PhotoSummary]
+    voice_intro_url: str | None
+    attributes: dict[str, dict[str, object]]
+    searchable: bool
+
+
+def _strip_private(attributes: dict[str, dict[str, object]]) -> dict[str, dict[str, object]]:
+    cleaned: dict[str, dict[str, object]] = {}
+    for category, values in attributes.items():
+        kept = {k: v for k, v in values.items() if (category, k) not in PRIVATE_KEYS}
+        if kept:
+            cleaned[category] = kept
+    return cleaned
+
+
+async def lens_data(
+    session: AsyncSession, *, viewer_account_id: UUID, target_account_id: UUID
+) -> ProfileLensData | None:
+    """[Contract §2] The disclosed-or-public facts of one candidate for either
+    lens. `None` when the viewer may see nothing at all (not searchable and
+    not connected), indistinguishable from "no such profile"."""
+    from app.components.discovery import interface as discovery
+
+    full = await view_profile_full(
+        session, viewer_account_id=viewer_account_id, target_account_id=target_account_id
+    )
+    searchable_row = await session.execute(
+        text(
+            "SELECT searchable FROM mangaly_discovery.discovery_profile_index "
+            "WHERE profile_id = :id"
+        ),
+        {"id": target_account_id},
+    )
+    searchable = bool(searchable_row.scalar_one_or_none())
+
+    if full is not None:
+        rows = (
+            await session.execute(
+                select(
+                    ProfileAttribute.category, ProfileAttribute.attribute_key, ProfileAttribute.value
+                ).where(
+                    ProfileAttribute.profile_id == full.profile.id,
+                    ProfileAttribute.state == FieldState.VALUE,
+                )
+            )
+        ).all()
+        attributes: dict[str, dict[str, object]] = {}
+        for category, key, value in rows:
+            attributes.setdefault(category, {})[key] = value
+        return ProfileLensData(
+            account_id=target_account_id,
+            profile_id=full.profile.id,
+            disclosed=True,
+            name=full.profile.name,
+            age=_age_years(full.profile.date_of_birth, date.today()),
+            gender=full.profile.gender,
+            locality=full.profile.city_locality,
+            photos=full.photos,
+            voice_intro_url=await voice_intro_url(session, profile_id=full.profile.id),
+            attributes=_strip_private(attributes),
+            searchable=searchable,
+        )
+
+    snippet = await discovery.get_snippet(session, account_id=target_account_id)
+    if snippet is None:
+        return None
+    card = (await discovery.cards_for(session, account_ids=[target_account_id])).get(
+        target_account_id
+    )
+    biodata = await public_biodata(session, account_id=target_account_id)
+    gender = None
+    snapshot = await discovery.get_snapshot(session, account_id=target_account_id) or {}
+    gender = snapshot.get("gender")
+    photos = (
+        [PhotoSummary(id=target_account_id, url=card.photo_url, is_primary=True)]
+        if card and card.photo_url
+        else []
+    )
+    return ProfileLensData(
+        account_id=target_account_id,
+        profile_id=await lookup_profile_id_by_account(session, account_id=target_account_id),
+        disclosed=False,
+        name=None,
+        age=card.age if card else None,
+        gender=str(gender) if gender else None,
+        locality=snippet.locality,
+        photos=photos,
+        voice_intro_url=None,
+        attributes=_strip_private({c: dict(v) for c, v in biodata.items()}),
+        searchable=searchable,
+    )
+
+
+
+# ---------------------------------------------------------------------------
+# [Migration 047 / DEC-V1-027] The Mangaly profile of an account that is not a
+# candidate: a parent, sibling or relative. Owner: "basic authentication of
+# login happens in ForKhatri and each module has its own way of my profile."
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class MemberProfile:
+    account_id: UUID
+    photo_url: str | None
+    photo_ref: str | None
+    about: str | None
+    city: str | None
+    occupation: str | None
+
+
+async def get_member_profile(session: AsyncSession, *, account_id: UUID) -> MemberProfile | None:
+    await _bind_viewer(session, account_id)
+    row = (
+        await session.execute(
+            text(
+                "SELECT account_id, photo_ref, about, city, occupation "
+                "FROM mangaly_profile.member_profile WHERE account_id = :a"
+            ),
+            {"a": account_id},
+        )
+    ).mappings().first()
+    if row is None:
+        return None
+    return MemberProfile(
+        account_id=row["account_id"],
+        photo_ref=row["photo_ref"],
+        photo_url=storage.resolve_url(row["photo_ref"]) if row["photo_ref"] else None,
+        about=row["about"],
+        city=row["city"],
+        occupation=row["occupation"],
+    )
+
+
+def _clean(value: str | None, limit: int) -> str | None:
+    value = (value or "").strip()
+    return value[:limit] or None
+
+
+async def save_member_profile(
+    session: AsyncSession,
+    *,
+    account_id: UUID,
+    about: str | None,
+    city: str | None,
+    occupation: str | None,
+) -> MemberProfile:
+    await _bind_viewer(session, account_id)
+    await session.execute(
+        text(
+            "INSERT INTO mangaly_profile.member_profile (account_id, about, city, occupation) "
+            "VALUES (:a, :about, :city, :occ) "
+            "ON CONFLICT (account_id) DO UPDATE SET about = EXCLUDED.about, "
+            "city = EXCLUDED.city, occupation = EXCLUDED.occupation, updated_at = now()"
+        ),
+        {
+            "a": account_id,
+            "about": _clean(about, 500),
+            "city": _clean(city, 200),
+            "occ": _clean(occupation, 200),
+        },
+    )
+    result = await get_member_profile(session, account_id=account_id)
+    assert result is not None
+    return result
+
+
+async def set_member_photo(
+    session: AsyncSession, *, account_id: UUID, photo: UploadFile
+) -> MemberProfile:
+    """Store the member's own photo (one; a new one replaces the old, and a
+    new photo removes a face-check confirmation, migration 047's trigger)."""
+    await _bind_viewer(session, account_id)
+    ref = await storage.save_photo(account_id, photo)
+    await session.execute(
+        text(
+            "INSERT INTO mangaly_profile.member_profile (account_id, photo_ref) VALUES (:a, :r) "
+            "ON CONFLICT (account_id) DO UPDATE SET photo_ref = EXCLUDED.photo_ref, updated_at = now()"
+        ),
+        {"a": account_id, "r": ref},
+    )
+    result = await get_member_profile(session, account_id=account_id)
+    assert result is not None
+    return result
+
+
+async def member_photo_refs(session: AsyncSession, *, account_ids: list[UUID]) -> dict[UUID, str]:
+    """Member photos the caller may see, for putting faces on lists."""
+    if not account_ids:
+        return {}
+    rows = await session.execute(
+        text("SELECT account_id, photo_ref FROM mangaly_profile.member_photos(CAST(:ids AS uuid[]))"),
+        {"ids": [str(a) for a in account_ids]},
+    )
+    return {r["account_id"]: r["photo_ref"] for r in rows.mappings()}

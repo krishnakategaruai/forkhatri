@@ -1,0 +1,143 @@
+/* ===================================================================
+   Circle (DEC-V1-030)
+   People first, then the way to add more. Phone: one column, compact.
+   Desktop: members (5/12) beside the invite (7/12); inputs stop at a
+   readable width; buttons size to their words.
+   =================================================================== */
+.circle-grid {
+  display: grid;
+  gap: 14px;
+  align-items: start;
+}
+@media (min-width: 1024px) {
+  .circle-grid {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 20px;
+  }
+  .circle-grid > :only-child {
+    grid-column: 1 / -1;
+    max-width: 720px;
+  }
+  .circle-grid .field__box,
+  .circle-grid .people {
+    max-width: 480px;
+  }
+  .circle-grid .form__actions {
+    align-items: flex-start;
+  }
+  .circle-grid .form__actions .cta {
+    width: auto;
+    padding: 0 28px;
+  }
+}
+.circle-invite-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.circle-switch {
+  align-self: center;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--accent-ink);
+}
+
+/* Calmer type. */
+.invite .h2,
+.circle-grid .card .h2 {
+  font-size: 1.125rem;
+}
+.invite .caption {
+  font-size: 0.8125rem;
+}
+.relpick__q {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+.relpick__group-title {
+  font-size: 0.6875rem;
+  color: var(--ink-3);
+}
+
+/* One chip size across the app: 13px / 600, 34px tall. */
+.relchip {
+  min-height: 34px;
+  padding: 0 14px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+}
+.relchip.is-on {
+  background: var(--pick);
+  border-color: var(--pick-edge);
+  color: var(--on-pick);
+}
+.relchip--more {
+  border-style: dashed;
+  color: var(--accent-ink);
+  background: transparent;
+  box-shadow: none;
+}
+.relpick__chips {
+  gap: 6px;
+}
+.relpick {
+  gap: 8px;
+}
+
+/* A disabled primary is quiet, not washed-out salmon. */
+.cta:disabled,
+.btn--primary:disabled {
+  opacity: 1;
+  background: var(--surface-3);
+  color: var(--ink-3);
+  box-shadow: none;
+}
+
+/* The "Looking for" chip and counts in the palette. */
+.circle-chip {
+  min-height: 26px;
+  padding: 0 10px;
+  background: var(--gold-tint);
+  color: var(--on-gold);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.circle-chip--muted {
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+.family-context p {
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+
+/* Members: compact rows. */
+.member-group__title {
+  font-size: 0.6875rem;
+}
+.category-card {
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: var(--surface-2);
+}
+.category-card__title {
+  font-size: 0.9375rem;
+}
+.category-card__preview {
+  font-size: 0.75rem;
+}
+.member-rel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent-ink);
+}
+.cta:disabled,
+.btn--primary:disabled {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink-3);
+}

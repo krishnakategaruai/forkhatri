@@ -46,7 +46,7 @@ PERSONAS: tuple[Persona, ...] = (
     Persona(
         "mangaly-family",
         UUID("22222222-2222-2222-2222-222222222222"),
-        "Vikram Rao: Home Circle family member on Asha's Mangaly profile; also in Milavn.",
+        "Vikram Rao: father in his daughter Kavya Rao's Mangaly Home Circle; also in Milavn.",
         for_automated_tests=True,
     ),
     Persona(

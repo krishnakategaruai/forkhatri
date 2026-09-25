@@ -12,12 +12,15 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { api, apiFetch, ApiError } from "@/lib/api";
+import Screen from "@/app/components/Screen";
+import ComposerPreview, { PreviewCard } from "@/app/post/_components/ComposerPreview";
 
 interface ListingLite {
   id: string;
   name: string;
   locality: string;
   categories: string[];
+  category_labels?: string[];
   state: string;
 }
 
@@ -51,7 +54,9 @@ function ComposeInner() {
     if (!listingId) return;
     api.get<ListingLite>(`/v1/listings/${listingId}`).then((l) => {
       setTarget(l);
-      setCategory((c) => c || l.categories[0] || "");
+      // [IMP39] prefill the readable label ("Food & Catering"), not the
+      // taxonomy slug ("food_catering") the recipient would otherwise read
+      setCategory((c) => c || l.category_labels?.[0] || l.categories[0] || "");
       setLocality((v) => v || l.locality);
     });
     api.get<ListingLite[]>("/v1/listings/mine").then((ls) => {
@@ -63,7 +68,7 @@ function ComposeInner() {
 
   if (mine !== null && mine.length === 0) {
     return (
-      <main className="vy-shell">
+      <Screen>
         <h1>{t("partnerships:compose.title")}</h1>
         <div className="vy-card vy-stack">
           <p>{t("partnerships:compose.needListing")}</p>
@@ -71,7 +76,7 @@ function ComposeInner() {
             {t("partnerships:compose.createListing")}
           </a>
         </div>
-      </main>
+      </Screen>
     );
   }
 
@@ -103,10 +108,19 @@ function ComposeInner() {
     }
   }
 
+  // [IMP39] Desktop live preview: the request as the recipient will read it
+  // on their side — from your listing, with each field you have filled.
+  const fromListing = mine?.find((l) => l.id === fromId) ?? null;
+  const previewBody = LONG_FIELDS.filter((f) => values[f].trim())
+    .map((f) => `${t(`partnerships:compose.${LABEL_KEY[f]}` as "compose.need")}: ${values[f].trim()}`)
+    .join("\n\n");
+
   return (
-    <main className="vy-shell">
+    <Screen width="wide">
       <h1>{t("partnerships:compose.title")}</h1>
       {target && <p className="vy-muted">{t("partnerships:compose.to", { name: target.name })}</p>}
+      <div className="vy-compose">
+      <div className="vy-compose-main">
       <div className="vy-stack">
         {mine && mine.length > 1 && (
           <label className="vy-field">
@@ -149,11 +163,24 @@ function ComposeInner() {
         {showPendingLink && (
           <a href="/activity" className="vy-muted">{t("partnerships:compose.viewPending")} →</a>
         )}
-        <button className="vy-btn vy-btn-primary" disabled={!valid || sending} onClick={send}>
+        <button className="vy-btn vy-btn-primary vy-submit" disabled={!valid || sending} onClick={send}>
           {sending ? t("common:state.saving") : t("partnerships:compose.send")}
         </button>
       </div>
-    </main>
+      </div>
+      <ComposerPreview
+        caption={t("partnerships:compose.previewCaption", { name: target?.name ?? "" })}
+        guide={[t("partnerships:compose.guide1"), t("partnerships:compose.guide2")]}
+      >
+        <PreviewCard
+          title={fromListing?.name ?? ""}
+          subtitle={[category.trim(), locality.trim()].filter(Boolean).join(" · ") || undefined}
+          body={previewBody}
+          bodyEmpty={t("partnerships:compose.minHint")}
+        />
+      </ComposerPreview>
+      </div>
+    </Screen>
   );
 }
 

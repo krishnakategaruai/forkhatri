@@ -1,0 +1,112 @@
+{
+  "reason": {
+    "relocation": "स्थानांतरण पर दोनों का दृष्टिकोण एक जैसा है ({value})।",
+    "diet": "दोनों की जीवनशैली {value} है।",
+    "education": "दोनों की शिक्षा {value} स्तर की है।",
+    "locality": "{locality} में हैं, जो पसंदीदा क्षेत्र से मेल खाता है।"
+  },
+  "value": {
+    "relocation_willingness": {
+      "open_to_discussion": "बातचीत के लिए तैयार",
+      "willing": "स्थानांतरण के लिए तैयार",
+      "not_willing": "स्थानांतरण नहीं चाहते",
+      "depends": "रिश्ते पर निर्भर"
+    },
+    "diet": {
+      "vegetarian": "शाकाहारी",
+      "non_vegetarian": "मांसाहारी",
+      "vegan": "वीगन",
+      "eggetarian": "अंडाहारी",
+      "jain": "जैन"
+    },
+    "education_level": {
+      "high_school": "हाई स्कूल",
+      "diploma": "डिप्लोमा",
+      "bachelors": "स्नातक",
+      "masters": "स्नातकोत्तर",
+      "doctorate": "डॉक्टरेट",
+      "professional": "व्यावसायिक"
+    },
+    "mother_tongue": {
+      "telugu": "तेलुगु",
+      "tamil": "तमिल",
+      "kannada": "कन्नड़",
+      "hindi": "हिंदी",
+      "punjabi": "पंजाबी",
+      "marathi": "मराठी",
+      "gujarati": "गुजराती",
+      "english": "अंग्रेज़ी"
+    },
+    "sub_community": {
+      "khatri": "खत्री",
+      "arora": "अरोड़ा",
+      "sood": "सूद",
+      "bhatia": "भाटिया"
+    },
+    "family_involvement": {
+      "close_knit": "पूरी तरह शामिल",
+      "moderate": "बड़े फ़ैसलों में शामिल",
+      "independent": "पास पर स्वतंत्र"
+    },
+    "relationship": {
+      "parent": "माता-पिता",
+      "guardian": "अभिभावक",
+      "sibling": "भाई-बहन",
+      "relative": "रिश्तेदार"
+    },
+    "relation": {
+      "mother": "माँ",
+      "father": "पिता",
+      "brother": "भाई",
+      "sister": "बहन",
+      "guardian": "अभिभावक",
+      "grandmother": "दादी/नानी",
+      "grandfather": "दादा/नाना",
+      "paternal_uncle": "चाचा/ताऊ",
+      "maternal_uncle": "मामा",
+      "paternal_aunt": "बुआ",
+      "maternal_aunt": "मौसी",
+      "cousin": "चचेरे/ममेरे भाई-बहन",
+      "brother_in_law": "जीजा/साला",
+      "sister_in_law": "भाभी/ननद",
+      "family_friend": "पारिवारिक मित्र"
+    }
+  },
+  "shelf": {
+    "reason": {
+      "sharedHobbies": "आप दोनों को {list} पसंद है",
+      "sameTongue": "वे भी {value} बोलते हैं",
+      "sameCommunity": "वे भी {value} हैं",
+      "sameNative": "परिवार भी {place} से",
+      "sameDiet": "वे भी {value} हैं",
+      "sameCity": "आपकी तरह {city} में",
+      "openToMove": "{city} में · स्थान बदलने को तैयार",
+      "suggestedBy": "आपके {relation} ने सुझाया",
+      "sameFamilyView": "वे भी परिवार को {value} चाहते हैं",
+      "joined": "{days} दिन पहले जुड़े",
+      "joinedToday": "आज जुड़े",
+      "joinedYesterday": "कल जुड़े",
+      "suggestedByYou": "आपने सुझाया",
+      "mutualFit": "आप दोनों एक-दूसरे की पसंद पर खरे उतरते हैं",
+      "wantsYourCity": "वे भी {city} में किसी को चाहते हैं",
+      "wantsYourAge": "आपकी उम्र का साथी चाहते हैं"
+    },
+    "reasonFor": {
+      "sharedHobbies": "{name} की तरह {list} पसंद",
+      "sameTongue": "{name} की तरह {value} बोलते हैं",
+      "sameCommunity": "{name} की तरह {value}",
+      "sameNative": "परिवार भी {place} से",
+      "sameDiet": "{name} की तरह {value}",
+      "sameCity": "{name} की तरह {city} में",
+      "suggestedBy": "{name} के {relation} ने सुझाया",
+      "suggestedByYou": "आपने सुझाया",
+      "sameFamilyView": "वे भी परिवार को {value} चाहते हैं",
+      "mutualFit": "{name} और वे एक-दूसरे की पसंद पर खरे उतरते हैं",
+      "wantsYourCity": "{city} में किसी को चाहते हैं, जहाँ {name} हैं",
+      "wantsYourAge": "{name} की उम्र का साथी चाहते हैं"
+    }
+  },
+  "error": {
+    "lookingForMissing": "मैच देखने के लिए बताएँ कि आप दुल्हन ढूँढ रहे हैं या दूल्हा।"
+  }
+}

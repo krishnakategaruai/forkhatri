@@ -17,6 +17,8 @@ updated: 2026-09-14
 | 2026-09-12 | Impact Analysis follow-up: addressed every actionable finding `06-impact-analysis.md` (Step 6) raised against this file's own decisions before Step 7/implementation begins. Added the personality-assessment instrument (IA033) to "What stays open," which had been a genuine omission. Added DEC-V1-009, resolving IA065/IA068/IA074's finding that DEC-V1-006's severity taxonomy had no actual mechanism to reach its Tier 3/4 exits — named a concrete on-call paging category and, via live research, the actual legally-specified CSAM reporting channel (POCSO Rules 2020 Rule 11: SJPU/local police/cybercrime.gov.in, including the Rule 11(2) source-material handover obligation). Added a "Known technical debt" section recording IA092's interim-account-system migration risk explicitly rather than leaving it as a floating Impact Analysis note. | Impact Analysis follow-up — krishna kategaru (autonomous), 2026-09-12. |
 | 2026-09-13 | **Step 8 (Security & Performance) follow-up.** Step 8's own review found two items this file had left as "genuinely external, not resolved here" (message/evidence retention window; the CSAM packet schema/paging vendor's remaining implementation-stage detail) were actually resolvable now, per this file's own established convention (DEC-V1-005's marriageable-age research, DEC-V1-006's safety-severity SLA table) of deriving V1 values from real law and named-competitor precedent rather than waiting on an external actor this pipeline has no seat for ("legal counsel," an unselected procurement vendor). Added **DEC-V1-010** (message/profile data retention and erasure windows, grounded in the DPDP Act 2023 + DPDP Rules 2025's actual retention/erasure provisions — Rule 8's purpose-fulfilled erasure test, the Seventh Schedule's 1-year log-retention floor, the Third Schedule's 3-year large-platform inactivity ceiling with its mandatory 48-hour pre-erasure notice — cross-checked against BharatMatrimony's and Shaadi.com's own published privacy-policy retention practice) and **DEC-V1-011** (CSAM report packet field schema, modeled on NCMEC's real CyberTipline ESP reporting-schema field categories per POCSO Rule 11(2)'s own source-material handover requirement, plus naming PagerDuty concretely as the on-call paging vendor, per this project's config-placeholder convention). Removed the message/evidence-retention row from "What stays open" (resolved) — legal-hold *duration* itself remains inherently case-specific (a legal hold lasts as long as the actual legal matter requires, in any jurisdiction; that is a structural property of what a legal hold is, not an unresolved external dependency), recorded explicitly rather than left ambiguous. The verification-vendor selection and personality-assessment-instrument rows remain genuinely open — both require an actual third-party contracting decision this pipeline has no mechanism to make, unlike retention windows and packet schema, which required only research this pass performed. | Step 8 Security & Performance follow-up — krishna kategaru (autonomous), 2026-09-13. |
 | 2026-09-14 | **DEC-V1-015 added: the interim identity system is retired into the ForKhatri platform identity.** The product owner decided ForKhatri is one app with one sign-in and one member identity; the platform Identity & Trust Service (`platform/identity-service`) now exists, so the IA092 technical debt recorded under "Known technical debt" is paid down rather than carried. `mangaly_identity.account` becomes Mangaly's member-link table (migration 014), the interim credential routes answer `410 moved_to_forkhatri` behind `INTERIM_IDENTITY_ENABLED=false`, and the web client hands sign-in/sign-out to the ForKhatri entrance. BR/FR files untouched (documentation corrections are a separate pass). | Product owner decision (one ForKhatri sign-in); binding contract `docs/ParentApp/07-tech-reqs.md` TR10–TR17, TR23 — krishna kategaru (autonomous), 2026-09-14. |
+| 2026-09-21 | Added **DEC-V1-017**: the §12 assessment is Mangaly's own ten drawn, South-Indian-specific choices with "It depends" on every question (Olson/PREPARE-ENRICH/Gottman-mapped, no score, unanswered renders nothing), closing the "Personality-assessment instrument selection" open item (IA033); recorded the owner's standing rule that all Mangaly art must be Mangaly-specific and mostly South Indian; recorded that the candidate profile page now carries the connection action and a "sealed" card. | Owner review session — krishna kategaru (autonomous), 2026-09-21. |
+| 2026-09-21 | **Owner scenario recorded (DEC-V1-018, below DEC-V1-017).** The profile builder is now two parts — "Details" (the standard biodata a family reads; what a match's parents see, only as shared) and "In my words" (prompts, voice, ten choices; seen only by connected candidates unless published) — with Preview as the third tab. The connected candidate lens shows all formal details *and* the prompts, per the owner: "once both sides accept, the child can see all the formal information and also the prompts / psychological test." Still to build from the same scenario: an incognito, non-persisted candidate↔candidate chat; a persistent, circle-visible parent chat; Discover as a photo wall. | Owner review session — krishna kategaru (autonomous), 2026-09-21. |
 
 ## Purpose
 
@@ -50,10 +52,9 @@ said was "implementation-stage," which is exactly the stage this now is.
 
 | Item | BR/FR | Why it stays open | What actually unblocks it |
 |---|---|---|---|
-| Verification vendor/process selection | BR08, FR035/FR037 (vendor selection specifically, not the anti-abuse mechanics — see DEC-V1-004 below, which *is* resolved) | Selecting and contracting an actual KYC/verification vendor is a procurement decision outside engineering's control. | Business development selects a vendor; the *mechanism* Mangaly builds against it (evidence display, provenance, freshness) is already fully specified and does not change based on which vendor is picked. |
+| Verification Circle (community confirmation) | BR08, FR037 | Still specified in M01-F §5 and not built. Not vendor-gated — it is community members answering Yes / No / Don't know / Cannot confirm, with the §5 safeguards against gossip, retaliation and fabricated witnesses. | Engineering time. It is the next verification layer after the face match, and needs no external party. |
 | Future Mangaly Agent layer | BR17, FR077/FR078 | Not a gap — a deliberate, explicit sequencing rule ("must not be implemented before the core product is proven"). Resolving it now would violate the BR itself. | Time and adoption data, per BR17's own condition — not an engineering blocker. |
 | AI-based ranking/safety-signal specifics | BR06/BR14 conditional AI language (FR028, FR064) | Gated on the AI Service existing at all (ADR-009), which is correctly deferred platform-wide. | A module actually committing to an AI surface, triggering ADR-009's own resolution process. |
-| Personality-assessment instrument selection | BR07, FR033 | Structurally identical to the row above — a licensed third-party psychometric tool or a custom-built questionnaire is a procurement/product decision outside what an engineering-only design pass can resolve, and `06-impact-analysis.md` IA033 flagged that this was missing from this table despite belonging here. | Product selects and (if licensed) contracts an instrument; FR033's own skip/non-blocking mechanics (already specified, BR07 core capability works without it) are unaffected by which instrument is eventually chosen. |
 
 **Resolved as of 2026-09-13 (moved out of this table — see DEC-V1-010/DEC-V1-011):** exact message/evidence retention window (was: BR11, FR050/FR053/FR054); CSAM report packet schema and on-call paging vendor's remaining implementation-stage detail (was: an open detail under DEC-V1-009). Both had been filed here as requiring external input; both actually only required the research this file's own established method (DEC-V1-005/DEC-V1-006's precedent) already performs for exactly this class of question.
 
@@ -552,6 +553,207 @@ sign-out takes up to 30 seconds to reach Mangaly (the contract's own bound).
 sign-in with an optional password now lives in the platform (TR13/TR19), not
 here.
 
+### DEC-V1-016 — Verification is a live face match against the member's own photos. Document/ID verification is dropped, not deferred
+
+**Date:** 2026-09-21 · **Decided by:** Product owner (direct instruction) · **Status:** Accepted
+**Supersedes:** the "Verification vendor/process selection" open item carried since 2026-09-12
+
+**In the context of** BR08/FR035/FR037 verification, where selecting a KYC
+vendor had been open since 2026-09-12 and was blocking every form of identity
+evidence, including forms that need no vendor at all,
+
+**facing** the product owner's decision that Mangaly will not do document or
+ID-scanner verification — *"forget doc verification ID scanner, let's keep face
+scanner only"* — and that a live face check is the verification mechanism,
+
+**we decided to** make the **live face match against the member's own uploaded
+photos** Mangaly's verification mechanism, and to **drop** government-document
+verification, ID scanning and DigiLocker integration from the product rather
+than carry them as a backlog item that implies eventual delivery.
+
+**to achieve** verification that ships with no vendor, no procurement cycle and
+no custody of government identity documents — which also removes an entire
+category of DPDP liability, since the most sensitive data Mangaly would ever
+have held is the data it now never collects.
+
+**accepting that** this is a real and deliberate reduction in evidence
+strength, recorded here so it reads as a decision rather than a gap:
+
+- **Age is self-declared and never verified.** A face match establishes that
+  the photos and the account holder are the same person. It establishes
+  nothing about age. DEC-V1-005's marriageable-age threshold therefore rests
+  on the date of birth a member types in, and §22's minor-safety and POCSO
+  obligations are served by Safety Intelligence and reporting rather than by
+  any check at the door. Flagged to the product owner on 2026-09-21; decision
+  reaffirmed.
+- **Name and legal identity are never verified.** No layer asserts that a
+  member is who they say they are in the civil sense.
+- Consequently the `identity_age` and `operational_verification` layers of
+  M01-F §4 are **not populated in this product**. The enum retains them
+  because the conceptual model is sealed and a future owner may revisit this;
+  nothing writes them.
+
+#### What the face match actually is
+
+A live capture, compared against the photos the member has already uploaded,
+confirming the claim *"the person in these photos is the person using this
+account."* It records as the **`profile_facts`** layer with
+`source_category = 'face_match'` — the correct layer under M01-F §4.3, because
+the verification attaches to a **claim about the photos**, not to the person's
+identity or character.
+
+Verified as buildable by live research (2026-09-21), in a mobile-first web app
+with no native shell:
+
+| Capability | Available in the browser | Note |
+|---|---|---|
+| Camera capture | Yes — `getUserMedia` | Already available to the PWA |
+| Face detection + landmarks | Yes — MediaPipe FaceMesh, 468 landmarks, on-device | No server round-trip to detect |
+| **Active** liveness (head turn, blink, mouth-open) | Yes | Defeatable by a good video replay — a known, accepted limit |
+| **Passive** liveness (anti-spoof, no challenge) | No — would need a vendor | Out of scope with this decision |
+| Embedding + comparison | Yes — 128-float descriptor, Euclidean/cosine distance | The descriptor travels, not the image |
+
+#### The similarity score is an internal threshold, never a displayed number
+
+A face match *is* a similarity computation: each face becomes a 128-float
+descriptor, the two are compared by distance, and a threshold decides
+same-person or not. face-api.js's own guidance is a 0.6 Euclidean threshold for
+150x150 faces, on a ResNet-34-style model reporting 99.38% on LFW. This is
+**1:1 verification** ("is this the same person as the photo?"), a far easier
+and more accurate problem than 1:N identification against a population.
+
+Two decisions follow, and they matter more than the model choice.
+
+**1. The score never reaches a member.** Surfacing "87% face match" would be
+precisely the number this product refuses to produce — §3 forbids a trust
+score, §4.8 makes trust evidence rather than a score, and §11.3 already
+rejects the identical pattern on the compatibility side ("no universal '87%
+compatible'"). The distance is an internal threshold input, like a spam
+filter's. A member sees a fact with provenance: *Photos confirmed as you ·
+Sep 2026*. Pass or fail, with a date and a method, and nothing else.
+
+**2. The threshold is set strict, biased toward false rejection.** Threshold
+choice is a direct FAR/FRR trade: loosening it admits more distant faces as
+the same person (FAR up, FRR down); tightening does the reverse. For a
+matrimonial product these errors are not symmetric. A false *accept* means
+someone verified an account using another person's photographs — the exact
+deception §22 exists to prevent, now shipping with a confirming badge
+attached. A false *reject* means an honest member retries in better light.
+The first is a safety failure, the second an inconvenience. Mangaly therefore
+tightens below the library default and offers easy retry plus a route to human
+review, rather than loosening to reduce support contacts. This bias matters
+more than it normally would, because with documents dropped the face match is
+the only identity-adjacent evidence the product has.
+
+#### The constraint that shapes the design
+
+A face embedding is **biometric data** under the DPDP Act 2023 and the DPDP
+Rules notified 14 November 2025, which carry the highest compliance
+obligations in that framework. These are design constraints, not paperwork:
+
+- Consent must be **specific and unbundled** — a face check cannot ride on the
+  general terms accepted at sign-up. It needs its own consent, with a stated
+  purpose and duration, and must be withdrawable.
+- Consent must be **logged, timestamped and auditable**. M01-F §8 already
+  requires exactly this record shape ("what consent was required and whether
+  it was present"), so this reuses the accountability model rather than
+  adding a parallel one.
+- **Retention schedules are mandatory for raw frames, embeddings and logs,
+  with automated purging.** DEC-V1-010 already sets Mangaly's retention
+  method; these artefacts extend it.
+- Therefore: **discard the captured frames once the comparison completes and
+  keep only the outcome**, plus the verification row. Retaining face images to
+  re-check later converts a one-off check into a standing biometric database —
+  a materially different product and a materially different liability.
+
+#### What remains of the layered model
+
+| Layer | Populated? | By what |
+|---|---|---|
+| `account_authenticity` | Yes | Phone/OTP at ForKhatri sign-in |
+| `profile_facts` | Yes | The live face match (`source_category = 'face_match'`) |
+| `community_verification` | Future | Verification Circle (M01-F §5) — still specified, not built |
+| `home_circle_relationship` | Future | Implied by an accepted Home Circle invitation |
+| `identity_age` | **No — dropped** | Would have required documents |
+| `operational_verification` | **No — dropped** | Would have required an admin document queue |
+
+
+### DEC-V1-017 — The §12 assessment is Mangaly's own ten drawn choices, not a licensed instrument; every drawing is South Indian and specific
+
+**Date:** 2026-09-21 · **Decided by:** Product owner (direct instruction) with autonomous implementation · **Status:** Accepted
+**Supersedes:** the "Personality-assessment instrument selection" open item carried since 2026-09-12 (IA033)
+
+**In the context of** BR07/FR033 (baseline §12: a game-like assessment of five minutes or less, no score), **facing** the open question of which psychometric instrument to license, **we decided** not to license one. The activity is ten forced choices with a third "It depends" answer on every question, each dimension mapped to an axis of an instrument that actually predicts marital outcomes (Olson's Circumplex cohesion/flexibility as used by PREPARE/ENRICH; PREPARE/ENRICH's SCOPE scales; Gottman's conflict-start and repair-attempt findings) — the mapping is recorded in `mangaly-web/lib/outlook.ts`. Nothing is summed: the result is ten answers, shown on a connected candidate's profile beside the reader's own answer to the same question ("Same as you" / "You said …"), never a total, never a grade, and a skipped question renders nothing (§3, §4.8; the owner's rule that the product must never assert something a person did not say).
+
+**Presentation.** Each choice is a line drawing, not a text button (`mangaly-web/components/OutlookScene.tsx`). The owner's standing rule for all Mangaly art, given the same day: it must be based on Mangaly and "mostly South Indian culture", never vague or generic. The scenes are therefore the filter-coffee tumbler and dabara, the pillared verandah, the oonjal in the hall, a banana-leaf meal, the temple-pond steps, a brass kalasam, the terrace at night, the ammikallu, a scooter for two. Both sides of every pair get the same warmth and detail on purpose (the Circumplex model treats both extremes as the unhealthy ones, so a prettier picture would bias the answer). The drawings are one ink, one accent, no gradients, and are `currentColor`-based so they hold in dark mode and beside Devanagari/Telugu labels. They are a first version; any scene can be replaced by an exported SVG from a designer without touching the activity.
+
+**Also decided in the same pass (profile page).** Before a connection, a candidate's profile page now carries the connection action itself (send / request sent / accept–decline when they asked first; "send for {candidate}" in Home-Circle context) and a "sealed" card naming exactly what opens on connection. The page previously said answers were "shared once you connect" and offered no way to connect.
+
+**Consequences.** IA033 closes. FR033's skip/non-blocking mechanics are unchanged. No third-party data-sharing or licence obligations arise. If a licensed instrument is ever adopted, it must still satisfy §3 (no score displayed) — which is most of why none was chosen.
+
+
+### DEC-V1-018 — The owner's reference scenario: who connects, what each role sees after acceptance, two kinds of chat, Discover as a photo wall
+
+**Date:** 2026-09-21 · **Decided by:** Product owner (dictated scenario) · **Status:** Accepted
+
+**Scenario.** A parent P has a candidate child C searching for a groom G. C may connect with G directly; P may search and suggest G to C; or P may send the request to G on C's behalf. What P and C see on G's page before acceptance is G's own choice (his publish/sharing settings). After acceptance on both sides, P sees all of G's formal information; C sees the formal information and everything in the Hinge/Bumble-style part (prompts, voice, ten choices). Candidate↔candidate chat is incognito: opened together, ended together, and gone once the session closes. Parent chat is always available, persistent, and completely monitored (retained and visible to the family side). Circles exist so that, once a relation is made, every role is explicit. Discover reads as a photo wall: scroll all the pictures, pick one, open the profile — for parents and candidates alike.
+
+**Implemented in this pass.** The profile builder in two parts (Details / In my words / Preview); the connected candidate lens carrying formal details plus prompts.
+
+**Open from this decision (next).** Incognito candidate chat (session-scoped, nothing stored — a change to the communication component and the shared chat utility); persistent circle-visible parent chat; Discover photo wall. The chat retention rule interacts with DEC-V1-010 (retention windows) — an incognito session stores nothing, so nothing falls under those windows; safety reporting must therefore capture evidence at report time, inside the session.
+
+
+### DEC-V1-019 — Home Circle relations have two levels: the role, and the exact relation inside it
+
+**Date:** 2026-09-21 · **Decided by:** Product owner · **Status:** Accepted
+
+**Owner's words:** "I am looking for profile relation (mother, father, etc.), while relative is a role and inside we have exact relations." The existing `relationship_type` (parent / guardian / sibling / relative) stays the ROLE: it groups the circle into **Home** (parents, guardian, siblings) and **Relatives**, and is all any permission reads — unchanged, per the standing rule that only profile-viewing style and messaging vary by role. Migration 040 adds `relation`: the member's exact relation to the candidate — mother, father, brother, sister, guardian, grandmother, grandfather, father's-side uncle (chacha/tau; babai/pedananna), mother's-side uncle (mama; mavayya), father's-side aunt (bua; atta), mother's-side aunt (mausi; pinni/peddamma), cousin, brother-in-law, sister-in-law, family friend. The service derives the role from the relation, so the two cannot disagree. Rows from before 040 keep only their role and are never assigned a guessed relation; the candidate, or the member themselves, states it in place on the Members list, choosing only among the relations inside that row's role (a Parent row offers Mother / Father). The invite card asks "How are they related to you?" with the relations as chips in the two groups, nothing pre-selected.
+
+**Also decided (2026-09-21), and built:** a parent (or any relation) may create a candidate profile for their son or daughter — the Shaadi.com "profile for: son / daughter" model — and the child takes it over on first sign-in.
+
+- *Identity stays the platform's.* Mangaly asks the ForKhatri Identity & Trust Service to provision a member for the child's mobile number (`POST /internal/v1/members/provision`, identity level 0, no credential). A number that already belongs to someone who has ever signed in or has a password is refused ("ask to join their circle instead"); an untouched member provisioned earlier is handed back, so a failed attempt can be retried. The child's Mangaly account is created on that same id (migration 041), so when the child signs in with an OTP to the number the profile is simply theirs — nothing is re-keyed.
+- *The creator is the circle's first member,* as their exact relation (DEC-V1-019 above), with the same `family_info` grant an accepted invitation gives.
+- *Editing before takeover:* profile and photo requests carrying `X-Mangaly-Manage` run as the child only after `can_manage()` confirms the caller created that profile and the child has not taken it over. Every other path ignores the header. The candidate's own words (prompts, ten choices) return 403 to the creator even then.
+- *Formal details are fully fillable by the parent,* as on a Shaadi.com parent-made profile, including a new formal **About** paragraph (`basics.about`) that families write on a biodata. The Details tab names the child ("What Rohit studied", "About Rohit", "Yes, living with them") instead of "you".
+- *Takeover:* the child sees "Sunil Kapoor (Father) created this profile for you — Make it mine". After that only the child may edit; the creator stays in the circle.
+- *Open:* incoming connection requests to a not-yet-claimed profile have no one who can accept them (the parent may send on the child's behalf, not accept). A "this isn't me" path for someone whose number was used without their knowledge.
+
+
+### DEC-V1-020 — Requests: the candidate, mother, father or guardian may answer; everyone who may answer gets a popup; unused made-for profiles are removed after six months
+
+**Date:** 2026-09-21 · **Decided by:** Product owner · **Status:** Accepted
+
+**Answering requests.** Owner: "For profile requests there will always be a popup for the parent and the candidate — mother, father, candidate — and any one can accept." A request to a candidate appears as a popup, on every screen, to the candidate and to each member of their circle whose role is parent or guardian (a guardian stands in for a parent, DEC-V1-022). Whoever answers first answers for the family: the request stops being pending and leaves everyone else's popup. Siblings and relatives still see requests on the Circle screen but may not accept or decline (the API returns 403). The popup shows what that reader may see before a connection — the pre-connection-safe card (photo, age, city, education, work) and who sent it — and "View profile" opens the reader's own lens (biodata for a parent, candidate view for the candidate). The person who pressed the button is recorded (`decided_by_account_id`).
+
+**"This isn't me".** The owner of a number that someone used to make a profile can remove it from the takeover banner, confirmed in place. The profile, its discovery entry, trust rows and circle are erased (migration 042); grants are revoked and requests withdrawn; the person keeps their own ForKhatri account; the maker is notified.
+
+**Six months.** Owner: "we should delete unused accounts for almost 6 months." Applied to profiles made for someone who never signs in to take them over: the maker is told on day 173 ("removed in 7 days unless they sign in"), and on day 180 — never less than 48 hours after that notice, per DPDP Rules 2025 Third Schedule — the profile is erased and the platform member provisioned for the child is retired if nobody ever used it. Job: `mangaly-service/scripts/retire_unused_made_for_profiles.py` (dry run unless `--apply`). This narrows DEC-V1-010 for this one case only; accounts people actually use keep DEC-V1-010's windows.
+
+**Open (needs the owner):** "A person who could create an account should always be an email, phone and photo verified person only." Phone is proven by OTP today; email is not separately verified on the platform; and photo verification (DEC-V1-016's live face match) has no capture flow yet and compares against profile photos — which a parent without a profile does not have. Decision needed on scope and on what a parent's photo check compares against.
+
+
+### DEC-V1-021 — Discover is a photo wall; each candidate chooses what is shown openly
+
+**Date:** 2026-09-22 · **Decided by:** Product owner · **Status:** Accepted
+
+**Owner's words:** "Now focus on discovery! Few people like to share few things openly — let them have that. The Discover tab should be matured and well crafted, well-established UI/UX, so smooth." Earlier (DEC-V1-018): "I want to just scroll and see all the pictures… then select one."
+
+**Discover.** A photo wall — two columns on a phone, up to five on a wide screen; the main photo and three short lines per tile; the profile opens on a tap. Tabs follow what established matrimony apps use, filtered through the baseline: Shaadi.com's Matches has Today's / My / New Matches, Near Me, Recently Viewed and Recent Visitors; Jeevansathi has Daily Recommendations and Just Joined. Mangaly keeps **For you · New · Near you · Saved** and deliberately has no visitor or view lists (the baseline rules out view counts and being watched). Search as you type; every filter the search supports, in one sheet grouped as a biodata is read, with a live count on the apply button ("Show 24 matches"); active filters as removable chips; skeleton tiles while loading; more people load before the end; returning from a profile restores the same tab, results and scroll position; a save (bookmark) on each tile; "Request sent" / "Connected" on the tile when true. "Suggest to {candidate}" moved from the Discover card to the profile page, where a parent has actually read the profile.
+
+**Shown openly (migration 043).** Before any connection, every tile shows the main photo, age, city, education and work (unchanged, DEC-V1-016/020). A candidate may additionally open, each separately and closed by default: their **first name** (never the surname; contact is never openable), **all their photos**, and — already possible since 039 — individual **prompt answers**. Discover then shows "Divya, 29", a photo count and the first published answer as a quote; the pre-connection profile shows the first name and a strip of the opened photos. Only the candidate may change these (a parent filling a profile they created cannot); only searchable profiles show anything openly; photo access is enforced in the database (`is_openly_shared_photo`), not by the screen.
+
+
+### DEC-V1-022 — "For you" is a set of titled rows, each face with one honest reason
+
+**Date:** 2026-09-22 · **Decided by:** Product owner ("think smartly how we can use this discovery page — recommended to you, based on location, based on same tastes… research… you are free to innovate") · **Status:** Accepted
+
+**Research.** Netflix's home is titled rows whose title is the explanation ("Because you watched…"), a disclosure that builds trust without exposing the algorithm. Bumble's Discover shows people with similar interests, goals and communities in common, refreshed daily. Tinder's Explore groups people by interests and intentions. Hinge's Most Compatible leads with mutual preferences; its Standouts ranks by attention — the one pattern not taken, since popularity weight is 0 by construction (DEC-V1-002).
+
+**Design.** Discover has three tabs: **For you** (rows), **All matches** (the full searchable wall with every filter), **Saved**. The rows, each shown only when it has people and does not repeat a row above it:
+Picked for you · Suggested by your family (the Home Circle's own picks — no dating app has this) · Close to home · Would move for the right person (other cities, open to relocating) · Same roots (mother tongue, community, native place) · Shares your way of life (interests or food) · Sees family life the way you do (same family-involvement answer) · In their own words (published answers) · New this month.
+Every photo in a row carries one reason, a fact both people can check ("Also speaks Telugu", "You both enjoy trekking", "Suggested by your mother") — never a score. Rows compare only biodata a searchable profile already shows before a connection; prompts and the ten choices are never used (migration 039). A parent searching for a candidate reads every row and reason from their own seat: "Best matches for Varun", "Your family's picks for Varun", "In Hyderabad, like Varun", "You suggested this". "See all" on a row opens All matches with that row's filter applied. Endpoint: `GET /discovery/shelves`.
+
+
 ## Known technical debt (tracked, not blocking V1)
 
 Per `06-impact-analysis.md` IA092: Mangaly is building its own interim account/credential system (FR092-FR095) because no Common Platform Identity & Trust Service exists yet, ahead of Mangaly in build order (ADR-016/017) — a fact FR092 itself already discloses honestly rather than silently. This is the correct and only viable choice given Mangaly's build-order position, not a mistake, but it creates a real, high-likelihood future obligation: whenever a platform-wide Identity module is eventually built, Mangaly's live candidate credentials and sessions will need migrating into it, and live credential/session migration is a genuinely high-risk operation class. Recording this now, explicitly, as a planned future migration rather than a surprise discovered later, is the entire value of naming it here — no action is required of V1 itself beyond building FR092-FR095 exactly as specified. **Credential hashing (2026-09-13, Step 8 note):** the interim `mangaly_identity.account.credential_hash` column names no algorithm in `schema.sql` — Step 9 must implement this using **Argon2id** (current OWASP-recommended default) or bcrypt with a work factor tuned to ~250–500ms verification cost, never an unsalted or fast general-purpose hash; this is a plain implementation instruction, not an open design question.
@@ -565,6 +767,75 @@ and `02-functional-requirements.md` are not rewritten — each affected BR/FR's
 own Confidence line gets one small addition pointing here, and nothing else
 in either file changes. See the Revision history entries added to both files
 for exactly what was touched.
+
+### DEC-V1-023 — The Mangalyam palette: the page carries the colour
+
+Owner, 2026-09-22: "I don't think we are actually representing Mangaly with [the colours]" and "background color is black and white … this looks like a 2017 year app, not a 2040 year app." Mangaly is named for the mangalyam, the thali tied on a turmeric-dyed thread (manjal kayiru). The palette is taken from a South Indian wedding and from ForKhatri's Brand Foundation (navy foundation, warm off-white, saffron accent, controlled green):
+
+- **Paper:** turmeric-warmed ivory (#F8F0DF) in light, midnight navy (#121D3A) in dark. No page, bar or sidebar is white, grey or black.
+- **Surfaces are tonal:** each is the paper with a little more of the one brand hue, so cards read as layers of one warm material.
+- **Ink:** midnight navy. **Accent:** manjal turmeric (#E0A21B) as a fill with navy words on it, deep turmeric (#875500) when it is text.
+- **Kumkum** red appears only as the small dot on the brand mark. **Pachai** green means verified or connected. **Peacock blue** marks family context.
+- A single-hue lamp-light wash falls from the top of the page. No multi-hue gradients and no glass.
+
+The same pass fixed what the screens showed a user: Home counted only circles the member helps in, so a candidate with three family members read "No one is helping yet"; the Messages list showed a nameless thread with the raw key "system.connected"; For you rows grew a gap under short tiles; Home's account controls sat on the left; the jaali behind the Home greeting read as grey boxes; the Next.js dev badge covered the Home tab.
+
+### DEC-V1-025 — Face match verification and the maker gate
+
+**Date:** 2026-09-22 · **Decided by:** Product owner (DEC-V1-016; the maker rule of 2026-09-21) with autonomous implementation · **Status:** Accepted
+**Resolves in part:** the "Open (needs the owner)" note under DEC-V1-020
+
+**Owner's rule:** "A person who could create an account [for someone] should always be an email, phone, photo verified person only."
+
+**Built.**
+- *Screen* `/me/verify` (`mangaly-web/app/me/verify/`): one explanation, one unbundled consent checkbox (purpose; the camera picture is discarded; withdrawable), then the camera (`getUserMedia`), an active liveness challenge (look straight, turn left and right in a random order, look straight), and a comparison of the live face with the member's own photos, all in the browser with `@vladmandic/face-api` (Tiny Face Detector for the challenge, SSD MobileNet v1 + 68 landmarks + the recognition model for descriptors; weights in `public/models/face-api/`). Each photo counts its closest face (group photos are fine); the result is the farthest of those, and the main photo must show a face. Only one number (that distance), the liveness flag and the number of photos compared are sent. The member sees "Photos confirmed as you · Sep 2026" or a kind retry message — never a number. Handled: no camera, permission denied, no face / more than one face, a main photo with no face, no photos, too many attempts. A quiet row on the Me screen links to it, or shows the fact with its month; it is not shown while a parent is filling in someone else's profile.
+- *API*: `GET /verification/me`, `POST /verification/face-match` (body `consent: true`, `distance`, `liveness_passed`, `photos_compared`), `POST /verification/withdraw` (`app/api/routes/verification.py`, `components/trust/interface.py`). Always the signed-in person; `X-Mangaly-Manage` never applies.
+- *Database* (migration 045): `record_face_match()`, `face_match_status()` and `withdraw_face_match()`, all SECURITY DEFINER and self-only (`is_self`); the new `mangaly_trust.biometric_consent` table (purpose, wording version, granted, withdrawn), read-only to the app role.
+
+**Threshold.** The server decides: pass only when the liveness challenge passed, at least one photo was compared, and the distance is **below 0.45** — tighter than face-api's own 0.6 (Euclidean, 128-d). DEC-V1-016 sets the bias: a false accept puts a confirming badge on someone else's photos; a false reject costs a retry in better light. Attempts: **10 per account per day** (shared durable limiter, `face_match_attempt`).
+
+**Retention.** Nothing biometric is stored anywhere — no frame, no descriptor, no distance. Kept: the `profile_facts` row (`source_category = 'face_match'`, `verified_at`, expiry) and the consent record. The confirmation **expires after two years** (faces and photos change; repeating a biometric check every season is its own privacy cost). **Adding a new photo removes it** (a trigger on `profile_media`): the claim is about the photos that were compared, and a picture added afterwards never was. A failed attempt writes nothing and does not remove a current confirmation.
+
+**Consent.** Its own checkbox, never ticked in advance and never part of the sign-up terms. It is recorded on the first attempt, with the wording version (`2026-09-22`). Withdrawing stamps `withdrawn_at` — the record has to show that consent was given and when it ended, and it holds no biometric data — and deletes the confirmation.
+
+**The gate.** `POST /profile/managed` answers 403 `{code: "verification_required"}` with a translated message unless the maker has a current face match, and it checks before anything is provisioned. Phone is proven by the ForKhatri sign-in OTP. `/profile/create?for=child` checks first and, when needed, offers "Confirm my photos", which returns to the create flow via `?next=`.
+
+**Accepted limits (honest).** The comparison runs in the browser, so someone who edits the page's code or replays the request can claim a pass. The v1 answer is the strict server-side threshold, the rate limit, a revocable confirmation, and human review. Human review has a table (`admin_verification_request`) but no Operations screen yet, so today a member who cannot pass is told to write to support. An active head-turn challenge can be beaten by a good video replay (DEC-V1-016).
+
+**Open.**
+- *Email verification (platform blocker).* The ForKhatri Identity & Trust Service has no email verification. Mangaly does not build email sending; the "email" part of the owner's rule waits for the platform.
+- *Parents without a profile of their own (needs the owner).* The face match compares against the maker's own profile photos. A parent with no candidate profile has none, so they cannot pass the gate and today cannot create a profile for their child. The screen says so plainly rather than sending them to make a candidate profile of themselves. The decision needed is what such a parent's check compares against, for example a verification-only photo of themselves.
+
+### DEC-V1-024 — The families' group chat is an optional extra, opened by a candidate or a parent
+
+**Date:** 2026-09-22 · **Status:** Accepted · **Migration:** 044
+
+The families' conversation (both candidates plus everyone active in both Home Circles) is kept, not deleted, and every message names its writer and their relation ("Harish · father of Divya"). A candidate, a parent or a guardian may open it; siblings and relatives join once it is open. A parent reaches it through the conversation roster, because RLS keeps the connection row from them; the roster check itself requires the connection to still be accepted, so ending a connection closes the thread for everyone. A report made from any thread stores the thread as it stood at that moment, because the candidates' incognito session is deleted when it ends. The owner confirmed on 2026-09-22 that this group is an addition, not the parent chat (see DEC-V1-026).
+
+### DEC-V1-026 — Three kinds of chat: incognito for the two candidates, ordinary one-to-one for everyone else, the families' group as an extra
+
+**Date:** 2026-09-22 · **Decided by:** Product owner · **Status:** Accepted · **Migration:** 046
+
+Owner: "we only offer incognito mode chat to candidate, and general chat for individual account like how chat present in Instagram / FB; now that we have option of family chat keep that as additional." This followed the owner asking "why do 8 people will be in chat?" when the families' group was presented as the parent chat.
+
+- **Candidate with candidate:** the incognito session only. It is deleted when either person leaves it, or after 30 minutes with nothing written. The screen takes a night mood with a lock so nobody forgets which chat they are in.
+- **Every other pair of people:** an ordinary, kept one-to-one chat (`kind = 'direct'`, no connection, one thread per pair). Mangaly is not an open network, so a direct chat needs a real link: the same family (a candidate and their circle, or two members of one circle), or the two families of an accepted connection. Never the two connected candidates, never anyone blocked. Sending re-checks the link, so a block or leaving a family stops new messages while the history stays readable.
+- **The families' group:** unchanged, optional (DEC-V1-024).
+
+The Messages screen became one inbox for all three, two panes on a desktop and full-screen threads on a phone, with "New message" listing the people you may write to by family.
+
+**Still open:** the face-match gate for making a profile for someone else cannot be passed by a parent who has no profile of their own, because the check compares against the maker's own photos (DEC-V1-025). The owner decides what such a parent's check compares against.
+
+### DEC-V1-027 — Every account has its own Mangaly "My profile"; a parent's face check compares against it
+
+**Date:** 2026-09-22 · **Decided by:** Product owner · **Status:** Accepted · **Migration:** 047
+
+Owner: "they need to sign up properly in ForKhatri and log into Mangaly, then only they can start a profile building for their child" and "basic authentication of login happens in ForKhatri and each module has its own way of my profile."
+
+- Sign-up, login and the phone check stay in ForKhatri. Signed-out people are sent to the ForKhatri sign-in, and the Mangaly API refuses to make a profile without a ForKhatri session.
+- An account without a candidate profile (a parent, sibling or relative) now has a Mangaly "My profile" of its own: one photo of themselves, a line about them, city and work, the families they belong to with their exact relation, and the profiles they made for a child. It is never searchable and has no biodata.
+- Their photo is shown to the people Mangaly lets them message (their own family, and the families of accepted connections), on chats, the "New message" list, circle members and the account button.
+- The face check for such a member compares the live capture against this photo, and a new photo removes an earlier confirmation. This lifts the block recorded in DEC-V1-025 and DEC-V1-026: a parent adds their photo, passes the check, then makes their child's profile.
 
 ## Definition of Done
 

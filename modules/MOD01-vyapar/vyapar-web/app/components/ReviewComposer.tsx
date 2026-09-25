@@ -104,7 +104,7 @@ export default function ReviewComposer({
 
   return (
     <div className="vy-card vy-stack">
-      <h2 style={{ fontSize: 16 }}>{t("reviews:composer.question")}</h2>
+      <h2 className="vy-card-title">{t("reviews:composer.question")}</h2>
       <div className="vy-row" role="radiogroup" aria-label={t("reviews:composer.question")}>
         <button role="radio" aria-checked={recommend === true} className="vy-btn" style={choiceStyle(recommend === true)} onClick={() => setRecommend(true)}>
           {recommend === true ? "✓ " : ""}{t("reviews:composer.yes")}
@@ -122,10 +122,10 @@ export default function ReviewComposer({
             aria-checked={tags.includes(tag)}
             className="vy-chip"
             style={{
-              border: "none",
+              border: `1px solid ${tags.includes(tag) ? "var(--accent)" : "var(--border-hairline)"}`,
               cursor: "pointer",
-              background: tags.includes(tag) ? "var(--accent)" : "var(--surface-overlay)",
-              color: tags.includes(tag) ? "var(--accent-ink)" : "var(--text-primary)",
+              background: tags.includes(tag) ? "var(--accent-soft)" : "var(--surface-overlay)",
+              color: tags.includes(tag) ? "var(--accent-strong)" : "var(--text-primary)",
             }}
             onClick={() => toggleTag(tag)}
           >

@@ -66,6 +66,46 @@ async def resolve_session(
     return member.claims(expires_at, include_identifiers=service in settings.services_receiving_identifiers)
 
 
+class ProvisionRequest(BaseModel):
+    phone: str = Field(min_length=6, max_length=32)
+    display_name: str = Field(min_length=1, max_length=80)
+    preferred_language: str = Field(default="en", pattern="^(en|hi|te)$")
+
+
+@router.post("/members/provision", status_code=201)
+async def provision_member(
+    body: ProvisionRequest, service: CallingService, db: DbSession, settings: AppSettings
+) -> dict[str, Any]:
+    """A module creates a not-yet-joined member for a mobile number (a parent
+    creating their child's profile). Only services trusted with identifiers may;
+    an existing member's number is refused, never reused."""
+    if service not in settings.services_receiving_identifiers:
+        raise DomainError("service_forbidden", "This service may not provision members.", 403)
+    try:
+        member_id, phone_e164 = await identity.provision_member(
+            db, raw_phone=body.phone, display_name=body.display_name, preferred_language=body.preferred_language
+        )
+    except identity.MemberExists:
+        raise DomainError("member_exists", "That number already belongs to a ForKhatri member.", 409) from None
+    except identity.InvalidIdentifier as exc:
+        raise DomainError("identifier_invalid", str(exc), 422) from exc
+    await db.commit()
+    return {"member_id": str(member_id), "phone_e164": phone_e164}
+
+
+@router.post("/members/{member_id}/retire-provisioned")
+async def retire_provisioned(
+    member_id: UUID, service: CallingService, db: DbSession, settings: AppSettings
+) -> dict[str, Any]:
+    """The six-month rule (owner, 2026-09-21): a member provisioned for someone
+    who never used it is removed. Used members are never touched."""
+    if service not in settings.services_receiving_identifiers:
+        raise DomainError("service_forbidden", "This service may not retire members.", 403)
+    removed = await identity.retire_provisioned_member(db, member_id)
+    await db.commit()
+    return {"removed": removed}
+
+
 @router.post("/members/lookup")
 async def lookup_members(body: LookupRequest, service: CallingService, db: DbSession) -> list[dict[str, Any]]:
     return await identity.lookup_members(db, list(dict.fromkeys(body.member_ids)))

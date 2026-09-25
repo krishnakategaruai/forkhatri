@@ -23,7 +23,7 @@ from app.api.deps import AuthenticatedAccount, DbSession, Locale
 from app.components.connection import interface as connection  # noqa: E402
 from app.components.discovery import interface as discovery  # noqa: E402
 from app.components.home_circle import interface as home_circle
-from app.components.home_circle.models import RelationshipType
+from app.components.home_circle.models import RELATION_ROLE, RelationshipType
 from app.components.profile import interface as profile  # noqa: E402
 from app.i18n import translate
 
@@ -38,8 +38,27 @@ def _not_found(lang: str) -> HTTPException:
 
 
 class InviteRequest(BaseModel):
-    invitee_identifier: str
-    relationship_type: Literal["parent", "sibling", "relative"]
+    """[Rework contract §3/§6, DEC-V1-018] Three invite paths, one request:
+
+    * candidate → family: no `for_candidate`, `direction` `to_member`.
+    * member → relative: `for_candidate` names a circle the caller is already
+      an active member of; the invitee joins THAT circle.
+    * family → candidate: `direction` `to_candidate`; the invitee is the
+      candidate, and the caller asks to join their circle as
+      `relationship_type` — how a parent starts their child's circle.
+
+    The invitee is a person found by `GET /home-circle/people` (account id) or
+    a typed phone/email."""
+
+    invitee_identifier: str | None = None
+    invitee_account_id: UUID | None = None
+    # [Migration 040] The exact relation (mother, paternal_uncle, …) of the
+    # MEMBER to the candidate. When given, the role is derived from it and any
+    # `relationship_type` sent alongside is ignored, so the two cannot disagree.
+    relation: str | None = None
+    relationship_type: Literal["parent", "guardian", "sibling", "relative"] | None = None
+    for_candidate: UUID | None = None
+    direction: Literal["to_member", "to_candidate"] = "to_member"
 
 
 class InviteResponse(BaseModel):
@@ -50,15 +69,37 @@ class InviteResponse(BaseModel):
 async def invite(
     body: InviteRequest, session: DbSession, account_id: AuthenticatedAccount, lang: Locale
 ) -> InviteResponse:
-    """[FR007/TR007] Invite someone into the caller's own Home Circle."""
+    """[FR007/TR007] Invite someone into a Home Circle (see `InviteRequest`)."""
+    if body.relation is not None and body.relation not in RELATION_ROLE:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="unknown relation")
+    role = RELATION_ROLE[body.relation] if body.relation else (
+        RelationshipType(body.relationship_type) if body.relationship_type else None
+    )
+    if role is None:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="relation required")
+    candidate_account_id = account_id
+    if body.direction == "to_member" and body.for_candidate and body.for_candidate != account_id:
+        # Member → relative: only someone already in that circle may add to it.
+        contexts = await home_circle.list_member_contexts(session, account_id=account_id)
+        if not any(c.candidate_account_id == body.for_candidate for c in contexts):
+            raise _not_found(lang)
+        candidate_account_id = body.for_candidate
     try:
         invitation_id = await home_circle.invite(
             session,
             inviter_account_id=account_id,
-            candidate_account_id=account_id,
+            candidate_account_id=candidate_account_id,
             invitee_identifier=body.invitee_identifier,
-            relationship_type=RelationshipType(body.relationship_type),
+            invitee_account_id=body.invitee_account_id,
+            relationship_type=role,
+            direction=body.direction,
+            relation=body.relation,
         )
+    except home_circle.CandidateNotOnForKhatri as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=translate("home_circle.error.candidateNotFound", lang),
+        ) from exc
     except home_circle.InviteSelf as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -85,6 +126,10 @@ class PendingInvitationResponse(BaseModel):
     relationship_type: str
     created_at: str
     expires_at: str | None
+    direction: str = "to_member"
+    inviter_name: str | None = None
+    candidate_name: str | None = None
+    relation: str | None = None
 
 
 @router.get("/invitations/pending", response_model=list[PendingInvitationResponse])
@@ -101,6 +146,36 @@ async def list_pending_invitations(
             relationship_type=r.relationship_type.value,
             created_at=r.created_at.isoformat(),
             expires_at=r.expires_at.isoformat() if r.expires_at else None,
+            direction=r.direction,
+            inviter_name=r.inviter_name,
+            candidate_name=r.candidate_name,
+            relation=r.relation,
+        )
+        for r in rows
+    ]
+
+
+class PersonResponse(BaseModel):
+    account_id: str
+    display_name: str | None
+    phone_masked: str | None
+    has_profile: bool
+
+
+@router.get("/people", response_model=list[PersonResponse])
+async def search_people(
+    q: str, session: DbSession, account_id: AuthenticatedAccount
+) -> list[PersonResponse]:
+    """[Rework contract §6] ForKhatri members by name or phone, to invite.
+    Never the caller; phone masked; at most 20 rows."""
+    del account_id  # authentication only
+    rows = await home_circle.search_people(session, q=q)
+    return [
+        PersonResponse(
+            account_id=str(r.account_id),
+            display_name=r.display_name,
+            phone_masked=r.phone_masked,
+            has_profile=r.has_profile,
         )
         for r in rows
     ]
@@ -146,6 +221,9 @@ class MemberResponse(BaseModel):
     status: str
     joined_at: str
     member_name: str | None = None
+    relation: str | None = None
+    # [Migration 047] The member's own Mangaly photo, when they have added one.
+    member_photo_url: str | None = None
 
 
 @router.get("/members", response_model=list[MemberResponse])
@@ -153,14 +231,23 @@ async def list_members(
     session: DbSession,
     account_id: AuthenticatedAccount,
     candidate_account_id: UUID | None = None,
+    for_candidate: UUID | None = None,
 ) -> list[MemberResponse]:
     """[FR012-adjacent read] One circle's active Home Circle members — the
     caller's own by default, or (via `candidate_account_id`) the circle of a
     candidate the caller is a family member of, which is what the parent-role
     Circle screen draws. Same parameter shape as `/suggestions` above."""
-    circle_of = candidate_account_id or account_id
+    # `for_candidate` is the name the web client sends (lib/homeCircle.ts);
+    # it was silently ignored, so a parent always read their own, empty circle.
+    circle_of = candidate_account_id or for_candidate or account_id
     members = await home_circle.list_circle_for(
         session, caller_account_id=account_id, candidate_account_id=circle_of
+    )
+    from app.components.profile import interface as profile_module
+    from app.components.profile.storage import resolve_url
+
+    photos = await profile_module.member_photo_refs(
+        session, account_ids=[m.member_account_id for m in members]
     )
     return [
         MemberResponse(
@@ -170,9 +257,36 @@ async def list_members(
             status="active",
             joined_at=m.joined_at.isoformat(),
             member_name=m.member_name,
+            relation=m.relation,
+            member_photo_url=(
+                resolve_url(photos[m.member_account_id]) if m.member_account_id in photos else None
+            ),
         )
         for m in members
     ]
+
+
+class RelationRequest(BaseModel):
+    relation: str
+
+
+@router.patch("/members/{membership_id}/relation", status_code=status.HTTP_204_NO_CONTENT)
+async def set_member_relation(
+    membership_id: UUID,
+    body: RelationRequest,
+    session: DbSession,
+    account_id: AuthenticatedAccount,
+    lang: Locale,
+) -> None:
+    """[Migration 040] The candidate, or the member themselves, states the exact
+    relation (mother, maternal_uncle, …); the role follows from it."""
+    if body.relation not in RELATION_ROLE:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="unknown relation")
+    changed = await home_circle.set_relation(
+        session, membership_id=membership_id, caller_account_id=account_id, relation=body.relation
+    )
+    if not changed:
+        raise _not_found(lang)
 
 
 @router.delete("/members/{membership_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -235,6 +349,10 @@ class SuggestionResponse(BaseModel):
     suggested_by_relationship_type: str
     note: str | None
     created_at: str
+    # So each reader gets their own wording: "You suggested this" for the
+    # member who made it, "Suggested by your mother" for the candidate.
+    suggested_by_is_you: bool = False
+    suggested_by_relation: str | None = None
 
 
 @router.get("/suggestions", response_model=list[SuggestionResponse])
@@ -242,6 +360,7 @@ async def list_suggestions(
     session: DbSession,
     account_id: AuthenticatedAccount,
     candidate_account_id: UUID | None = None,
+    for_candidate: UUID | None = None,
 ) -> list[SuggestionResponse]:
     """[FR014] Suggestions for one circle — the caller's own by default, or
     (via `candidate_account_id`) a circle the caller is a family member of.
@@ -252,7 +371,7 @@ async def list_suggestions(
     rows = await home_circle.list_suggestions(
         session,
         caller_account_id=account_id,
-        candidate_account_id=candidate_account_id or account_id,
+        candidate_account_id=candidate_account_id or for_candidate or account_id,
     )
     return [
         SuggestionResponse(
@@ -261,6 +380,8 @@ async def list_suggestions(
             suggested_by_relationship_type=s.suggested_by_relationship_type.value,
             note=s.note,
             created_at=s.created_at.isoformat(),
+            suggested_by_is_you=s.suggested_by_account_id == account_id,
+            suggested_by_relation=s.suggested_by_relation,
         )
         for s in rows
     ]
@@ -549,6 +670,7 @@ class CircleContextResponse(BaseModel):
     candidate_account_id: str
     candidate_name: str
     relationship_type: str
+    relation: str | None = None
     joined_at: str
     # [2026-09-17] Whose side of the match this context searches on. The owner
     # asked for the "looking for" answer to be present always, so every screen
@@ -596,6 +718,7 @@ async def list_contexts(session: DbSession, account_id: AuthenticatedAccount) ->
                 candidate_account_id=str(c.candidate_account_id),
                 candidate_name=c.candidate_name,
                 relationship_type=c.relationship_type.value,
+                relation=c.relation,
                 joined_at=c.joined_at.isoformat(),
                 looking_for=await looking_for(c.candidate_account_id),
             )

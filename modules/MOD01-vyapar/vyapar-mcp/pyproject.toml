@@ -1,0 +1,16 @@
+[project]
+name = "vyapar-mcp"
+version = "0.1.0"
+description = "Model Context Protocol server for Vyapar: agents act for one member through the public REST API with a personal access token."
+requires-python = ">=3.11"
+dependencies = ["mcp>=2.2,<3", "httpx>=0.27"]
+
+[project.scripts]
+vyapar-mcp = "vyapar_mcp.server:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["vyapar_mcp"]

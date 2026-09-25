@@ -50,6 +50,8 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.i18n import translate
+
 __all__ = ["Reason", "explain"]
 
 
@@ -65,6 +67,7 @@ async def explain(
     viewer_account_id: UUID,
     candidate_account_id: UUID,
     for_candidate_account_id: UUID | None = None,
+    lang: str | None = None,
 ) -> list[Reason]:
     """[FR030/FR031] 2-4 concrete reasons, or an empty list — never a
     fabricated one when nothing genuinely matches (FR030's own explicit
@@ -90,28 +93,60 @@ async def explain(
 
     reasons: list[Reason] = []
 
-    v_relo = viewer.get("relocation_willingness")
-    c_relo = candidate.get("relocation_willingness")
-    if v_relo and c_relo and v_relo == c_relo:
+    def label(enum_name: str, raw: object) -> str:
+        """A member-readable form of a stored enum. The stored token is the
+        fallback, so an enum added without a label degrades to something
+        odd-looking rather than to a crash — and is obvious in review."""
+        key = f"discovery.value.{enum_name}.{raw}"
+        text = translate(key, lang)
+        return str(raw) if text == key else text
+
+    def agree(field: str) -> object | None:
+        """The shared value when both sides answered the same, else None."""
+        mine, theirs = viewer.get(field), candidate.get(field)
+        return theirs if mine and theirs and mine == theirs else None
+
+    if (relo := agree("relocation_willingness")) is not None:
         reasons.append(
-            Reason(text=f"Both have the same outlook on relocation ({c_relo}).", source="fact")
+            Reason(
+                text=translate(
+                    "discovery.reason.relocation",
+                    lang,
+                    value=label("relocation_willingness", relo),
+                ),
+                source="fact",
+            )
         )
 
-    v_diet = viewer.get("lifestyle_diet")
-    c_diet = candidate.get("lifestyle_diet")
-    if v_diet and c_diet and v_diet == c_diet:
-        reasons.append(Reason(text=f"Both share a {c_diet} lifestyle.", source="fact"))
+    if (diet := agree("lifestyle_diet")) is not None:
+        reasons.append(
+            Reason(
+                text=translate("discovery.reason.diet", lang, value=label("diet", diet)),
+                source="fact",
+            )
+        )
 
-    v_edu = viewer.get("education_level")
-    c_edu = candidate.get("education_level")
-    if v_edu and c_edu and v_edu == c_edu:
-        reasons.append(Reason(text=f"Both hold a {c_edu} level of education.", source="fact"))
+    if (edu := agree("education_level")) is not None:
+        reasons.append(
+            Reason(
+                text=translate(
+                    "discovery.reason.education", lang, value=label("education_level", edu)
+                ),
+                source="fact",
+            )
+        )
 
     preferred_locality = viewer.get("partner_locality")
     candidate_locality = candidate.get("locality")
     if preferred_locality and candidate_locality:
         if str(preferred_locality).strip().lower() in str(candidate_locality).strip().lower():
-            text = f"Located in {candidate_locality}, matching your preferred area."
-            reasons.append(Reason(text=text, source="inference"))
+            reasons.append(
+                Reason(
+                    text=translate(
+                        "discovery.reason.locality", lang, locality=candidate_locality
+                    ),
+                    source="inference",
+                )
+            )
 
     return reasons[:4]

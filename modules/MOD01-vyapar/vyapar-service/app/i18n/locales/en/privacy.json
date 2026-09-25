@@ -1,0 +1,8 @@
+{
+  "error": {
+    "acceptanceRequired": "Please accept the latest privacy notice and terms to continue.",
+    "unknownControl": "This privacy control is not recognised.",
+    "deleteBlockedActiveOrder": "Your data can't be deleted while a paid promotion or plan is active. Cancel it or let it end, then try again.",
+    "preferenceNotFound": "This preference was not found."
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "plan": {
+    "FREE": { "name": "Free", "blurb": "Browse every profile, send a few requests a day, and receive as many as you like." },
+    "GOLD": { "name": "Gold", "blurb": "Unlimited requests, who shortlisted and viewed you, contact requests and the full kundli report." },
+    "ASSISTED": { "name": "Assisted", "blurb": "Everything in Gold, plus a relationship manager who works your search with your family." }
+  },
+  "feature": {
+    "daily_requests": "Requests a day",
+    "daily_requests_limited": "{limit} requests a day",
+    "daily_requests_unlimited": "Unlimited requests",
+    "see_who_shortlisted_you": "See who shortlisted you",
+    "see_who_viewed_you": "See who viewed your profile",
+    "contact_unlock": "Ask a connection for their phone and email",
+    "kundli_full_report": "Full kundli matching report",
+    "assisted_matching": "A dedicated relationship manager"
+  },
+  "term": { "months": "{months} months" },
+  "error": {
+    "upgradeRequired": "This needs the {plan} plan.",
+    "dailyLimit": "You have sent today's {limit} requests. Gold lifts the limit, or try again tomorrow.",
+    "unknownPlan": "That plan or term is not available.",
+    "orderNotFound": "We could not find that order.",
+    "paymentNotVerified": "The payment could not be verified. Nothing was charged twice; please try again.",
+    "sandboxUnavailable": "The development sandbox is off because real payment keys are set.",
+    "webhookRejected": "Webhook signature rejected.",
+    "contactNotAllowed": "Contact details can be asked for on an accepted connection only.",
+    "contactNotFound": "There is no contact request waiting for your answer."
+  }
+}

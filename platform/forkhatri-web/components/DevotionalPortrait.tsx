@@ -1,7 +1,12 @@
 /**
  * ForKhatri's own devotional emblem of Bhagwan Kartavirya Sahasrarjun, shown beside the
- * greeting on the signed-in hub ONLY. Never on module rows, loaders, logo/favicon,
- * notifications or sign-in screens.
+ * greeting on the signed-in hub.
+ *
+ * Where the deity may appear (owner decision, 2026-09-24, replacing the older
+ * "hub greeting only" rule): this emblem beside the hub greeting, the SSK portrait on
+ * the first-load splash (components/Splash.tsx), and the app icon / favicon
+ * (app/icon.png, app/apple-icon.png). Still never on module rows, notifications or
+ * the sign-in form, and never with glow or motion gimmicks outside the splash.
  *
  * It is decorative-devotional: not interactive, role="img" with the localized name,
  * and out of the tab order. The SVG file is drawn with `currentColor`; it is applied as

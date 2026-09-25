@@ -6,6 +6,14 @@
     "contact": "సంపర్కించండి",
     "register": "నమోదు చేయండి"
   },
+  "type": {
+    "employment": "ఉద్యోగం",
+    "freelance": "ఫ్రీలాన్స్",
+    "local_service": "స్థానిక సేవ",
+    "partnership": "భాగస్వామ్యం",
+    "training": "శిక్షణ",
+    "community": "సంఘం"
+  },
   "error": {
     "untitled": "శీర్షిక లేని అవకాశం",
     "sourceRequired": "మీకు ఇది ఎక్కడ దొరికిందో చెప్పండి — మూలం పేరు లేదా లింక్ అవసరం.",
