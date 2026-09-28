@@ -11,6 +11,7 @@ import AccountButton from "@/components/AccountButton";
 import ContextChip from "@/components/ContextChip";
 import DiscoverFiltersSheet from "@/components/DiscoverFilters";
 import ForKhatriHubLink from "@/components/ForKhatriHubLink";
+import MatchmakerEntry from "@/components/MatchmakerEntry";
 import Vignette from "@/components/Vignette";
 import {
   readBrowseLookingFor,
@@ -66,6 +67,7 @@ type Feed = {
   page: number;
   hasMore: boolean;
   lookingForMissing: boolean;
+  horoscopeChartMissing?: boolean;
 };
 
 /* Kept across client navigations so "back" from a profile lands exactly where
@@ -207,6 +209,7 @@ export default function DiscoverPage() {
         page,
         hasMore: found.hasMore,
         lookingForMissing: found.lookingForMissing,
+        horoscopeChartMissing: found.horoscopeChartMissing,
       };
     },
     [tab, filters, q, forCandidate, needsChoice, browseFor],
@@ -441,7 +444,16 @@ export default function DiscoverPage() {
               </span>
             )}
             <div className="dtile__text">
-              {reason && <span className="dtile__why">{reason}</span>}
+              {/* [DEC-V1-031] The engine's word for the pair, never its number. */}
+              {(r.match_label || reason) && (
+                <span className="dtile__why">
+                  {r.match_label && (
+                    <span className="dtile__match">{t(`discover:match.${r.match_label}`)}</span>
+                  )}
+                  {r.match_label && reason ? " · " : null}
+                  {reason}
+                </span>
+              )}
               <span className="dtile__title">
                 {firstName ?? (r.age ? t("profile:hub.ageYears", { age: r.age }) : "")}
                 {firstName && r.age ? <span className="dtile__age"> {r.age}</span> : null}
@@ -713,9 +725,11 @@ export default function DiscoverPage() {
               <Vignette id="community" className="dempty__art" />
               <h2 className="h2">{t("discover:empty.forYou.title")}</h2>
               <p className="caption">{t("discover:empty.forYou.body")}</p>
+              {!family && <MatchmakerEntry />}
             </div>
           ) : (
             <div className="dlens-wall">
+              {!family && <MatchmakerEntry />}
               {/* The row themes as lenses over one wall of photos. Each
                   person appears once, under the first theme that claims
                   them; the chip's count says how many that is. */}
@@ -774,6 +788,20 @@ export default function DiscoverPage() {
                 </div>
               </div>
             ))}
+          </div>
+        ) : feed.horoscopeChartMissing ? (
+          <div className="dempty">
+            <h2 className="h2">{t("horoscope:filter.needChartTitle")}</h2>
+            <p className="caption">
+              {family
+                ? t("horoscope:missing.NO_CHART_SELF_FAMILY", { name: familyName })
+                : t("horoscope:missing.NO_CHART_SELF")}
+            </p>
+            {!family && (
+              <Link className="btn btn--primary" href="/me">
+                {t("horoscope:addDetails")}
+              </Link>
+            )}
           </div>
         ) : feed.lookingForMissing ? (
           <div className="dempty">

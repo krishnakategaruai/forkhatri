@@ -89,7 +89,8 @@
       "suggestedByYou": "You suggested this",
       "mutualFit": "You fit each other's preferences",
       "wantsYourCity": "Also wants someone in {city}",
-      "wantsYourAge": "Looking for someone your age"
+      "wantsYourAge": "Looking for someone your age",
+      "nearby": "In {city} · about {km} km away"
     },
     "reasonFor": {
       "sharedHobbies": "Enjoys {list}, like {name}",
@@ -103,7 +104,8 @@
       "sameFamilyView": "Also wants family {value}",
       "mutualFit": "{name} and they fit each other's preferences",
       "wantsYourCity": "Wants someone in {city}, where {name} is",
-      "wantsYourAge": "Looking for someone {name}'s age"
+      "wantsYourAge": "Looking for someone {name}'s age",
+      "nearby": "In {city} · about {km} km from {name}"
     }
   },
   "error": {

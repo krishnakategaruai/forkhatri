@@ -2,6 +2,7 @@
 
 import { relationKey } from "@/lib/homeCircle";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 
 import type { ActiveContext } from "@/lib/activeContext";
@@ -85,7 +86,10 @@ export default function ContextChip({ contexts, active, onChoose }: Props) {
         {announcement}
       </span>
 
-      {open && (
+      {open &&
+        createPortal(
+        // Portaled to <body>: inside the blurred header a fixed sheet is
+        // positioned against the header, not the screen.
         <div className="sheet-backdrop" onClick={() => setOpen(false)}>
           <div
             className="sheet"
@@ -112,7 +116,7 @@ export default function ContextChip({ contexts, active, onChoose }: Props) {
                     <span className="context-row__name">
                       {t("common:context.you")}
                     </span>
-                    <span className="caption">
+                    <span className="caption context-row__role">
                       {t("common:context.yourProfile")}
                     </span>
                   </button>
@@ -135,7 +139,7 @@ export default function ContextChip({ contexts, active, onChoose }: Props) {
                     <span className="context-row__name">
                       {circle.candidate_name}
                     </span>
-                    <span className="caption">
+                    <span className="caption context-row__role">
                       {t("common:context.role", {
                         relationship: t(
                           relationKey(
@@ -150,7 +154,8 @@ export default function ContextChip({ contexts, active, onChoose }: Props) {
               ))}
             </ul>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

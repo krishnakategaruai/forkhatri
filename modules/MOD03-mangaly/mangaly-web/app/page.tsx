@@ -48,7 +48,7 @@ type State =
   | {
       phase: "in";
       session: Session;
-      profile: Profile;
+      profile: Profile | null;
       completeness: CompletenessReport | null;
       matches: SearchResult[];
       matchTotal: number;
@@ -56,6 +56,25 @@ type State =
       members: Member[];
     }
   | { phase: "out" };
+
+/* Requests this person may answer: their own, and — as a parent or guardian —
+   each candidate's they help (the same set the request popup offers). Home
+   used to count only their own, so a father with a request waiting for his
+   son read "None waiting right now" beside the popup asking him to answer. */
+async function waitingOnThisFamily(
+  session: { circles?: { relationship: string; candidate_account_id: string }[] },
+  ownProfile: boolean,
+): Promise<Connection[]> {
+  const jobs: Promise<Connection[]>[] = [];
+  if (ownProfile) jobs.push(listIncoming());
+  for (const c of session.circles ?? []) {
+    if (c.relationship === "parent" || c.relationship === "guardian") {
+      jobs.push(listIncoming(c.candidate_account_id));
+    }
+  }
+  const all = (await Promise.all(jobs.map((j) => j.catch(() => [] as Connection[])))).flat();
+  return all.filter((r) => r.status === "pending");
+}
 
 export default function HomePage() {
   // [owner 2026-09-25] The loader stays at least a second, never a flash.
@@ -89,21 +108,22 @@ export default function HomePage() {
       const profile = await getOwnProfile();
       if (!active) return;
       if (!profile) {
-        // A parent or relative helping someone else has no candidate profile of
-        // their own; they belong in that candidate's circle, not the wizard.
+        // No candidate profile of their own and no circle to belong to: the
+        // wizard is the only useful next step. A parent or relative who is in
+        // someone's circle is a full member and keeps Home.
         const contexts = await getContexts();
         if (!active) return;
-        router.replace(
-          contexts?.circles.length ? "/circle" : "/profile/create",
-        );
-        return;
+        if (!contexts?.circles.length) {
+          router.replace("/profile/create");
+          return;
+        }
       }
       // Home shows people, so it loads people. Each call is optional: a
       // failure leaves that section empty rather than blocking the screen.
       const [completeness, found, incoming, members] = await Promise.all([
-        getCompleteness().catch(() => null),
+        profile ? getCompleteness().catch(() => null) : Promise.resolve(null),
         search({}, { page: 1 }).catch(() => null),
-        listIncoming().catch(() => [] as Connection[]),
+        waitingOnThisFamily(session, !!profile),
         listMembers().catch(() => [] as Member[]),
       ]);
       if (!active) return;
@@ -168,7 +188,8 @@ export default function HomePage() {
 
   const { profile, completeness, matches, matchTotal, incoming, members } =
     state;
-  const firstName = profile.name.trim().split(/\s+/)[0] || profile.name;
+  const fullName = profile?.name || state.session.display_name || "";
+  const firstName = fullName.trim().split(/\s+/)[0] || fullName;
   /* The same three milestones /me shows, so Home and Me never disagree
      about how far along a profile is. "0 of 8 answered" here beside
      "Basics 2/3" there read as a contradiction, because they counted
@@ -403,25 +424,27 @@ export default function HomePage() {
                 : t("home:tiles.allRead")}
             </span>
           </Link>
-          <Link className="duo duo--profile" href="/me">
-            <span
-              className="duo-ring"
-              style={{ "--pct": profileIncomplete ? milestonePct : 100 } as React.CSSProperties}
-              aria-hidden="true"
-            >
-              <span className="duo-ring__n">{profileIncomplete ? milestonePct : 100}%</span>
-            </span>
-            <span className="duo__label">{t("home:tiles.profile")}</span>
-            <span className="duo__body">
-              {profileIncomplete
-                ? t(
-                    completeness?.discoverability_complete
-                      ? "profile:hub.milestone.nextEnhanced"
-                      : "profile:hub.milestone.nextDiscoverable",
-                  )
-                : t("home:tiles.profileDone")}
-            </span>
-          </Link>
+          {profile && (
+            <Link className="duo duo--profile" href="/me">
+              <span
+                className="duo-ring"
+                style={{ "--pct": profileIncomplete ? milestonePct : 100 } as React.CSSProperties}
+                aria-hidden="true"
+              >
+                <span className="duo-ring__n">{profileIncomplete ? milestonePct : 100}%</span>
+              </span>
+              <span className="duo__label">{t("home:tiles.profile")}</span>
+              <span className="duo__body">
+                {profileIncomplete
+                  ? t(
+                      completeness?.discoverability_complete
+                        ? "profile:hub.milestone.nextEnhanced"
+                        : "profile:hub.milestone.nextDiscoverable",
+                    )
+                  : t("home:tiles.profileDone")}
+              </span>
+            </Link>
+          )}
 
           <Link className="duo duo--circle" href="/circle">
             {circleCount > 0 ? (
@@ -446,6 +469,20 @@ export default function HomePage() {
                 ? t("home:circle.helping", { count: circleCount })
                 : t("home:circle.invite")}
             </span>
+          </Link>
+
+          {/* Kundli matching for any two people (a proposal from outside
+              Mangaly, relatives). A profile already shows its own match. */}
+          <Link className="duo duo--kundli" href="/horoscope/check">
+            <span className="duo__plus" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round">
+                <rect x="3.5" y="3.5" width="17" height="17" rx="1.5" />
+                <path d="M12 3.5 20.5 12 12 20.5 3.5 12Z" />
+                <path d="M3.5 3.5l17 17M20.5 3.5l-17 17" opacity=".45" />
+              </svg>
+            </span>
+            <span className="duo__label">{t("horoscope:check.title")}</span>
+            <span className="duo__body">{t("horoscope:check.homeBody")}</span>
           </Link>
         </div>
 

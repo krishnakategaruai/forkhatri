@@ -78,6 +78,18 @@ const PROCESSES = [
     describe: "MOD03 Mangaly",
   },
   {
+    // Guna Milan and Mangal Dosha calculation, called only by mangaly-api
+    // (loopback, shared token from horoscope-service/.env). Node, so it runs
+    // through `npm run dev` like the web apps.
+    group: "mangaly",
+    name: "horoscope",
+    color: 91,
+    dir: "modules/MOD03-mangaly/horoscope-service",
+    port: 8013,
+    kind: "web",
+    describe: "MOD03 Mangaly horoscope calculation (internal)",
+  },
+  {
     group: "milavn",
     name: "milavn-api",
     color: 34,

@@ -14,6 +14,7 @@ from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile, s
 from pydantic import BaseModel
 
 from app.api.deps import AuthenticatedAccount, DbSession, Locale
+from app.components.profile import horoscope_fields
 from app.components.profile import interface as profile
 from app.components.profile.models import FieldState
 from app.components.profile.storage import UnsupportedMedia
@@ -694,7 +695,7 @@ async def update_category(
     # [DEC-V1-019] Only the candidate speaks in their own words: a parent
     # filling in a profile they created may not write the prompts or the ten
     # choices, even before the candidate takes the profile over.
-    if category in ("in_my_words", "outlook", "openly") and getattr(
+    if category in ("in_my_words", "outlook", "openly", "self_scales") and getattr(
         request.state, "managing_for", None
     ):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="candidate only")
@@ -710,8 +711,50 @@ async def update_category(
                 key: (FieldState(item.state), item.value) for key, item in attributes.items()
             },
         )
+        if category == "horoscope":
+            # Recalculate the kundli from the new details. A calculation
+            # failure never loses the save: the chart is made on next view.
+            from app.components.horoscope import interface as horoscope
+
+            try:
+                await horoscope.refresh_chart(session, account_id=account_id)
+            except horoscope.HoroscopeUnavailable:
+                pass
     except profile.ProfileNotFound as exc:
         raise _profile_not_found(lang) from exc
+    except profile.UnknownAttributes as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": "unknown_attributes", "category": exc.category, "keys": exc.keys},
+        ) from exc
+    except horoscope_fields.InvalidAttributeValue as exc:
+        # Names the field and the rule, never the submitted value.
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": "invalid_value", "category": exc.category, "key": exc.key, "reason": exc.reason},
+        ) from exc
+
+
+class PlaceResponse(BaseModel):
+    id: str
+    label: str
+    name: str
+    region: str
+    country: str
+    timezone: str
+
+
+@router.get("/places/search", response_model=list[PlaceResponse])
+async def search_places(q: str, account_id: AuthenticatedAccount, limit: int = 8) -> list[PlaceResponse]:
+    """Place-of-birth search for the horoscope editor: type a few letters,
+    pick one. The chosen id is what the editor saves; coordinates and time
+    zone are resolved on the server (components/places)."""
+    from app.components.places import interface as places
+
+    return [
+        PlaceResponse(id=p.id, label=p.label, name=p.name, region=p.region, country=p.country, timezone=p.timezone)
+        for p in places.search(q[:80], limit=min(max(limit, 1), 12))
+    ]
 
 
 
@@ -776,3 +819,175 @@ async def put_member_photo(
             detail=translate("profile.error.unsupportedPhoto", lang),
         ) from exc
     return _member_response(m)
+
+
+# ---------------------------------------------------------------------------
+# [DEC-V1-031] The AI matchmaker: the family's own words, what was understood,
+# and the 1–10 scales. Under /profile so a parent editing a profile they made
+# (X-Mangaly-Manage, DEC-V1-019) can describe the partner they want for their
+# child; the candidate's ratings of themselves stay candidate-only.
+# Two path segments each, so nothing collides with GET/PATCH /{category}.
+# ---------------------------------------------------------------------------
+
+
+class UnderstandRequest(BaseModel):
+    text: str
+
+
+class ScaleWish(BaseModel):
+    want: int
+    importance: int
+
+
+class UnderstandResponse(BaseModel):
+    items: list[dict[str, object]]
+    scales: dict[str, ScaleWish]
+    # "ai" when Claude read the words; "basic" for the built-in keyword reader.
+    source: Literal["ai", "basic"]
+
+
+class MatchmakerBrief(BaseModel):
+    text: str = ""
+    items: list[dict[str, object]] = []
+    partner_scales: dict[str, ScaleWish] = {}
+    # Omitted (None) leaves the saved ratings as they are.
+    self_scales: dict[str, int] | None = None
+
+
+class MatchmakerBriefResponse(MatchmakerBrief):
+    # False for a parent managing a profile: only the candidate rates themselves.
+    can_rate_self: bool = True
+    ai_available: bool = False
+
+
+def _ai_available() -> bool:
+    from app.config.settings import get_settings
+
+    key = get_settings().anthropic_api_key
+    return bool(key) and not key.startswith("CHANGE_ME")
+
+
+@router.post("/matchmaker/understand", response_model=UnderstandResponse)
+async def matchmaker_understand(
+    body: UnderstandRequest, account_id: AuthenticatedAccount, lang: Locale
+) -> UnderstandResponse:
+    """Read the family's words into items and scale wishes. Saves nothing —
+    the "What we understood" card shows them for the family to adjust first."""
+    from app.components.compatibility import interface as compatibility
+    from app.config.settings import get_settings
+    from app.rate_limiting import limiter
+
+    try:
+        await limiter.enforce_durable(
+            scope=limiter.RateLimitScope.MATCHMAKER_UNDERSTAND,
+            subject=str(account_id),
+            limit_max=get_settings().rate_limit_matchmaker_max_per_day,
+            window_seconds=86400,
+        )
+    except limiter.RateLimitExceeded as exc:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={"code": "rate_limited", "retry_after_seconds": exc.result.retry_after_seconds},
+        ) from exc
+    result = await compatibility.understand(body.text)
+    return UnderstandResponse(
+        items=result.items,
+        scales={k: ScaleWish(**v) for k, v in result.scales.items()},
+        source="ai" if result.source == "ai" else "basic",
+    )
+
+
+@router.get("/matchmaker/brief", response_model=MatchmakerBriefResponse)
+async def matchmaker_get(
+    request: Request, session: DbSession, account_id: AuthenticatedAccount, lang: Locale
+) -> MatchmakerBriefResponse:
+    wanted = await profile.get_category(session, account_id=account_id, category="partner_preference")
+    if wanted is None:
+        raise _profile_not_found(lang)
+    own = await profile.get_category(session, account_id=account_id, category="self_scales") or {}
+    managing = bool(getattr(request.state, "managing_for", None))
+
+    def value(key: str) -> object:
+        entry = wanted.get(key)
+        return entry[1] if entry and entry[0] is FieldState.VALUE else None
+
+    brief = value("brief") if isinstance(value("brief"), dict) else {}
+    scales = value("scales") if isinstance(value("scales"), dict) else {}
+    from app.components.compatibility import interface as compatibility
+
+    return MatchmakerBriefResponse(
+        text=str(brief.get("text") or ""),
+        items=compatibility.clean_items(brief.get("items")),
+        partner_scales={k: ScaleWish(**v) for k, v in compatibility.clean_scales(scales).items()},
+        # A parent managing the profile never reads the candidate's own ratings.
+        self_scales=None
+        if managing
+        else {k: int(v) for k, (st, v) in own.items() if st is FieldState.VALUE and v is not None},
+        can_rate_self=not managing,
+        ai_available=_ai_available(),
+    )
+
+
+@router.patch("/matchmaker/brief", status_code=status.HTTP_204_NO_CONTENT)
+async def matchmaker_save(
+    body: MatchmakerBrief,
+    request: Request,
+    session: DbSession,
+    account_id: AuthenticatedAccount,
+    lang: Locale,
+) -> None:
+    """Save what the family confirmed. The items are re-validated here (the
+    client never decides what the engine may read) and places get their
+    coordinates on the server. The older partner-preference fields are kept
+    in step, so the biodata, the discoverability gate and the reasons that
+    read them agree with what was just said."""
+    from datetime import date
+
+    from app.components.compatibility import interface as compatibility
+    from app.components.compatibility.understand import resolve_places
+    from app.config.matching_engine import ENGINE_VERSION, MAX_BRIEF_CHARS, SCALES
+
+    managing = bool(getattr(request.state, "managing_for", None))
+    if body.self_scales is not None and managing:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="candidate only")
+
+    items = resolve_places(compatibility.clean_items(body.items))
+    scales = compatibility.clean_scales({k: v.model_dump() for k, v in body.partner_scales.items()})
+    by_field = {i["field"]: i for i in items}
+    attributes: dict[str, tuple[FieldState, object]] = {
+        "brief": (
+            FieldState.VALUE,
+            {
+                "text": body.text.strip()[:MAX_BRIEF_CHARS],
+                "items": items,
+                "engine": ENGINE_VERSION,
+                "saved_on": date.today().isoformat(),
+            },
+        ),
+        "scales": (FieldState.VALUE, scales),
+    }
+    if (age := by_field.get("age")) is not None:
+        attributes["age_range"] = (FieldState.VALUE, {"min": age.get("min"), "max": age.get("max")})
+    if (height := by_field.get("height_cm")) is not None:
+        attributes["height_range"] = (FieldState.VALUE, {"min": height.get("min"), "max": height.get("max")})
+    if (place := by_field.get("locality")) is not None:
+        attributes["locality"] = (FieldState.VALUE, " or ".join(place["values"]))
+    for name in ("education", "diet"):
+        if (item := by_field.get(name)) is not None:
+            attributes[name] = (FieldState.VALUE, item["values"])
+    try:
+        await profile.update_category(
+            session, account_id=account_id, category="partner_preference", attributes=attributes
+        )
+        if body.self_scales is not None:
+            own = {
+                k: (FieldState.VALUE, max(1, min(10, int(v))))
+                for k, v in body.self_scales.items()
+                if k in SCALES
+            }
+            if own:
+                await profile.update_category(
+                    session, account_id=account_id, category="self_scales", attributes=own
+                )
+    except profile.ProfileNotFound as exc:
+        raise _profile_not_found(lang) from exc

@@ -275,6 +275,47 @@ export default function DiscoverFiltersSheet({
             </div>
           </section>
 
+          {/* [Owner, 2026-09-27] Optional horoscope filter: a minimum Guna
+              Milan with the person searched for, and Mangal Dosha. Uses both
+              kundlis; people without birth details drop out while it is on. */}
+          <section className="fgroup">
+            <h3 className="fgroup__title">{t("horoscope:filter.title")}</h3>
+            <div className="fgroup__row">
+              <span className="fgroup__label">{t("horoscope:filter.minGuna")}</span>
+              <div className="fchips">
+                {[18, 21, 24, 28].map((v) =>
+                  chip(t("horoscope:filter.atLeast", { n: v }), draft.minGuna === v, () =>
+                    setDraft((d) => ({ ...d, minGuna: d.minGuna === v ? undefined : v })),
+                  ),
+                )}
+              </div>
+            </div>
+            <div className="fgroup__row">
+              <span className="fgroup__label">{t("horoscope:filter.porutham")}</span>
+              <div className="fchips">
+                {[6, 7, 8].map((v) =>
+                  chip(t("horoscope:filter.poruthamAtLeast", { n: v }), draft.minPorutham === v, () =>
+                    setDraft((d) => ({ ...d, minPorutham: d.minPorutham === v ? undefined : v })),
+                  ),
+                )}
+                {chip(t("horoscope:filter.essentials"), !!draft.poruthamEssentials, () =>
+                  setDraft((d) => ({ ...d, poruthamEssentials: d.poruthamEssentials ? undefined : true })),
+                )}
+              </div>
+            </div>
+            <div className="fgroup__row">
+              <span className="fgroup__label">{t("horoscope:mangal.title")}</span>
+              <div className="fchips">
+                {(["match", "none"] as const).map((v) =>
+                  chip(t(`horoscope:filter.mangal.${v}`), draft.mangal === v, () =>
+                    setDraft((d) => ({ ...d, mangal: d.mangal === v ? undefined : v })),
+                  ),
+                )}
+              </div>
+            </div>
+            <p className="caption">{t("horoscope:filter.help")}</p>
+          </section>
+
           <section className="fgroup">
             <h3 className="fgroup__title">
               {t("discover:filters.group.work")}

@@ -50,9 +50,32 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.components.compatibility.engine import breakdown, distance_km, fails_must, label_for, pair_score
+from app.components.compatibility.understand import (
+    Understood,
+    clean_items,
+    clean_scales,
+    understand,
+)
 from app.i18n import translate
 
-__all__ = ["Reason", "explain"]
+# [DEC-V1-031] The AI matching engine and the matchmaker's reading of a
+# family's own words are part of this component's public surface: Discovery
+# ranks with `pair_score`/`fails_must`, the profile routes call `understand`.
+__all__ = [
+    "Reason",
+    "Understood",
+    "breakdown",
+    "clean_items",
+    "fit_for",
+    "clean_scales",
+    "distance_km",
+    "explain",
+    "fails_must",
+    "label_for",
+    "pair_score",
+    "understand",
+]
 
 
 @dataclass(frozen=True, slots=True)
@@ -150,3 +173,31 @@ async def explain(
             )
 
     return reasons[:4]
+
+
+async def fit_for(
+    session: AsyncSession,
+    *,
+    viewer_account_id: UUID,
+    candidate_account_id: UUID,
+    for_candidate_account_id: UUID | None = None,
+) -> dict:
+    """[DEC-V1-031] The profile page's "How you fit each other": the engine's
+    word for the pair and `breakdown()`, read from the same pre-connection-safe
+    snapshots `explain()` reads. A circle member reading for their candidate
+    sees it from the candidate's seat."""
+    from app.components.discovery import interface as discovery_module
+
+    seat = viewer_account_id
+    if for_candidate_account_id is not None:
+        await discovery_module.authorize_family_viewer(
+            session,
+            viewer_account_id=viewer_account_id,
+            candidate_account_id=for_candidate_account_id,
+        )
+        seat = for_candidate_account_id
+    mine = await discovery_module.get_snapshot(session, account_id=seat) or {}
+    theirs = await discovery_module.get_snapshot(session, account_id=candidate_account_id) or {}
+    if not mine or not theirs:
+        return {"label": None, "yours": [], "theirs_met": []}
+    return {"label": label_for(pair_score(mine, theirs)), **breakdown(mine, theirs)}

@@ -27,7 +27,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.components.profile import storage
+from app.components.profile import horoscope_fields, storage
 from app.components.profile.models import (
     FieldState,
     MediaType,
@@ -528,7 +528,9 @@ class ProfileView:
 
 
 # Partner preferences are private matching filters, never shown to anyone else.
-_PRIVATE_CATEGORIES = ("partner_preference",)
+# [DEC-V1-031] So are a member's own 1–10 matchmaker scales: the engine reads
+# them, no other member ever does.
+_PRIVATE_CATEGORIES = ("partner_preference", "self_scales")
 
 
 async def public_biodata(session: AsyncSession, *, account_id: UUID) -> dict[str, dict]:
@@ -814,6 +816,9 @@ async def update_category(
     unknown = sorted(k for k in attributes if k not in allowed)
     if unknown:
         raise UnknownAttributes(category, unknown)
+    if category == "horoscope":
+        # The one category whose values feed a calculation (kundli matching).
+        attributes = horoscope_fields.normalize(attributes, FieldState.VALUE, FieldState.DECLINED)
 
     for attribute_key, (state, value) in attributes.items():
         stored_value = value if state is FieldState.VALUE else None

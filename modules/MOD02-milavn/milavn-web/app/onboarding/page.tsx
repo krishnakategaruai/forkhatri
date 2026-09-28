@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 
 import PlacePicker from '@/components/PlacePicker';
 import { api, ApiError, type Profile } from '@/lib/api';
-import { applyLanguage } from '@/lib/i18n/provider';
+import { chooseLanguage } from '@/lib/i18n/provider';
 import { LANGUAGE_NATIVE, SUPPORTED_LANGUAGES, type Language } from '@/lib/i18n/config';
 import { useIdentity } from '@/lib/identity';
 
@@ -63,7 +63,7 @@ export default function OnboardingPage() {
     setBusy(true); setError(null);
     try {
       const p = await api<Profile>('/profile', { body: { locality_city: city, locality_locality: locality || null, interests, language_preference: lang } });
-      applyLanguage(lang);
+      chooseLanguage(lang);
       setProfile(p);
       router.replace('/');
     } catch (e) {
@@ -136,7 +136,7 @@ export default function OnboardingPage() {
           </div>
           <div className="stack" role="radiogroup">
             {SUPPORTED_LANGUAGES.map((l) => (
-              <button key={l} type="button" role="radio" aria-checked={lang === l} className="radio" onClick={() => { setLang(l); applyLanguage(l); }}>
+              <button key={l} type="button" role="radio" aria-checked={lang === l} className="radio" onClick={() => { setLang(l); chooseLanguage(l); }}>
                 <span className="radio__dot" />{LANGUAGE_NATIVE[l]}
               </button>
             ))}

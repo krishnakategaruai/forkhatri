@@ -28,8 +28,9 @@ const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
   poweredByHeader: false,
   // Development: one signed-in family member per `*.localhost` host, as tabs
-  // of one Chrome window (see `resolveApiBase` in lib/api.ts).
-  allowedDevOrigins: ["*.localhost"],
+  // of one Chrome window (see `resolveApiBase` in lib/api.ts). The tunnel
+  // hostname is a temporary addition (2026-09-25) — remove once torn down.
+  allowedDevOrigins: ["*.localhost", "keyboard-relaxation-bidder-disclaimer.trycloudflare.com"],
   // The Next.js dev badge sat on top of the Home tab and the sidebar.
   devIndicators: false,
 };

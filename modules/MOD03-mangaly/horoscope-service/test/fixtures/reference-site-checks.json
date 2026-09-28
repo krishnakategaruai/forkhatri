@@ -1,0 +1,31 @@
+{
+  "note": "Guna Milan results read by hand from public calculators on 2026-09-27, one submission per pair, for synthetic births chosen so each Moon sits well inside its nakshatra. Place: Hyderabad, Telangana, India (Asia/Kolkata), Lahiri ayanamsha. 'obt' is the points the site showed for each koota. Drik prints the total rounded down; AstroSage keeps the half point.",
+  "births": {
+    "A": { "date": "1995-01-09", "time": "22:30", "moon": { "drik": 6.71 } },
+    "B": { "date": "1995-01-13", "time": "07:30", "moon": { "drik": 46.57 } },
+    "C": { "date": "1995-01-26", "time": "13:30", "moon": { "drik": 220.01 } },
+    "D": { "date": "1995-01-17", "time": "16:30", "moon": { "drik": 100.10 } },
+    "E": { "date": "1995-01-15", "time": "12:30", "moon": { "drik": 73.13 } },
+    "F": { "date": "1995-01-19", "time": "17:30", "moon": { "drik": 126.39 } },
+    "G": { "date": "1995-01-22", "time": "17:30", "moon": { "drik": 166.42 } },
+    "H": { "date": "1995-01-11", "time": "01:30", "moon": { "drik": 20.03 } },
+    "I": { "date": "1995-01-02", "time": "00:30", "moon": { "drik": 261.75 } },
+    "K": { "date": "1995-01-12", "time": "07:30", "moon": { "drik": 34.75 } }
+  },
+  "checks": [
+    { "site": "drikpanchang", "groom": "A", "bride": "B", "obt": { "VARNA": 1, "VASHYA": 2, "TARA": 1.5, "YONI": 1, "GRAHA_MAITRI": 3, "GANA": 6, "BHAKOOT": 0, "NADI": 8 }, "totalShown": 22 },
+    { "site": "drikpanchang", "groom": "A", "bride": "C", "obt": { "VARNA": 0, "VASHYA": 1, "TARA": 1.5, "YONI": 3, "GRAHA_MAITRI": 5, "GANA": 6, "BHAKOOT": 0, "NADI": 8 }, "totalShown": 24 },
+    { "site": "drikpanchang", "groom": "H", "bride": "D", "obt": { "VARNA": 0, "VASHYA": 1, "TARA": 1.5, "YONI": 2, "GRAHA_MAITRI": 4, "GANA": 5, "BHAKOOT": 7, "NADI": 0 }, "totalShown": 20 },
+    { "site": "drikpanchang", "groom": "E", "bride": "D", "obt": { "VARNA": 0, "VASHYA": 0.5, "TARA": 1.5, "YONI": 2, "GRAHA_MAITRI": 1, "GANA": 5, "BHAKOOT": 0, "NADI": 8 }, "totalShown": 18 },
+    { "site": "drikpanchang", "groom": "A", "bride": "F", "obt": { "VARNA": 1, "VASHYA": 0, "TARA": 3, "YONI": 3, "GRAHA_MAITRI": 5, "GANA": 0, "BHAKOOT": 0, "NADI": 8 }, "totalShown": 20 },
+    { "site": "drikpanchang", "groom": "F", "bride": "G", "obt": { "VARNA": 1, "VASHYA": 0, "TARA": 1.5, "YONI": 2, "GRAHA_MAITRI": 4, "GANA": 1, "BHAKOOT": 0, "NADI": 8 }, "totalShown": 17 },
+    { "site": "drikpanchang", "groom": "G", "bride": "B", "obt": { "VARNA": 1, "VASHYA": 1, "TARA": 3, "YONI": 2, "GRAHA_MAITRI": 5, "GANA": 6, "BHAKOOT": 0, "NADI": 8 }, "totalShown": 26 },
+    { "site": "drikpanchang", "groom": "B", "bride": "A", "obt": { "VARNA": 0, "VASHYA": 2, "TARA": 1.5, "YONI": 1, "GRAHA_MAITRI": 3, "GANA": 5, "BHAKOOT": 0, "NADI": 8 }, "totalShown": 20 },
+    { "site": "drikpanchang", "groom": "F", "bride": "A", "obt": { "VARNA": 1, "VASHYA": 0, "TARA": 3, "YONI": 3, "GRAHA_MAITRI": 5, "GANA": 1, "BHAKOOT": 0, "NADI": 8 }, "totalShown": 21 },
+    { "site": "drikpanchang", "groom": "I", "bride": "A", "obt": { "VARNA": 1, "VASHYA": 2, "TARA": 3, "YONI": 2, "GRAHA_MAITRI": 5, "GANA": 5, "BHAKOOT": 0, "NADI": 8 }, "totalShown": 26 },
+    { "site": "drikpanchang", "groom": "K", "bride": "B", "obt": { "VARNA": 1, "VASHYA": 2, "TARA": 3, "YONI": 1, "GRAHA_MAITRI": 5, "GANA": 0, "BHAKOOT": 7, "NADI": 8 }, "totalShown": 27 },
+    { "site": "astrosage", "groom": "A", "bride": "B", "obt": { "VARNA": 1, "VASHYA": 2, "TARA": 1.5, "YONI": 2, "GRAHA_MAITRI": 3, "GANA": 6, "BHAKOOT": 0, "NADI": 8 }, "totalShown": 23.5 },
+    { "site": "astrosage", "groom": "A", "bride": "C", "obt": { "VARNA": 0, "VASHYA": 1, "TARA": 1.5, "YONI": 3, "GRAHA_MAITRI": 5, "GANA": 6, "BHAKOOT": 0, "NADI": 8 }, "totalShown": 24.5 },
+    { "site": "astrosage", "groom": "F", "bride": "G", "obt": { "VARNA": 1, "VASHYA": 0, "TARA": 1.5, "YONI": 3, "GRAHA_MAITRI": 4, "GANA": 1, "BHAKOOT": 0, "NADI": 8 }, "totalShown": 18.5 }
+  ]
+}

@@ -24,6 +24,9 @@ dependencies = [
     "httpx==0.28.1",
     # [api/routes/profile.py, FR001] multipart/form-data for photo upload.
     "python-multipart==0.0.32",
+    # [components/compatibility/understand.py, DEC-V1-031] The AI matchmaker's
+    # reading of a family's own words (Claude Messages API).
+    "anthropic==1.8.0",
 ]
 
 [project.optional-dependencies]

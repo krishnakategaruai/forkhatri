@@ -19,7 +19,7 @@ import { Toast } from '@/components/States';
 import TopActions from '@/components/TopActions';
 import { api, ApiError, resolveMediaUrl, type Card, type Profile } from '@/lib/api';
 import { LANGUAGE_NATIVE, SUPPORTED_LANGUAGES, type Language } from '@/lib/i18n/config';
-import { applyLanguage } from '@/lib/i18n/provider';
+import { chooseLanguage } from '@/lib/i18n/provider';
 import { formatDateLong, formatInr } from '@/lib/format';
 import { useIdentity } from '@/lib/identity';
 import { FORKHATRI_ACCOUNT_URL, FORKHATRI_ENTRANCE_URL } from '@/lib/platform';
@@ -80,7 +80,7 @@ export default function MePage() {
     catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
   };
   const setLang = async (l: Language) => {
-    applyLanguage(l);
+    chooseLanguage(l);
     try { setProfile(await api<Profile>('/profile/language', { method: 'PATCH', body: { language_preference: l } })); } catch { /* local applies anyway */ }
   };
   const setPrec = async (lvl: string) => {

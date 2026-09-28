@@ -23,6 +23,7 @@
       "Bash(npm run *)",
       "Bash(Start-Sleep -Seconds 8)",
       "Bash(\"Servers should *)",
+      "PowerShell(taskkill /PID * /T /F)",
       "mcp__chrome-devtools-mangaly__new_page",
       "mcp__chrome-devtools-mangaly__take_screenshot",
       "mcp__chrome-devtools-mangaly__navigate_page",

@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
-from app.api.routes import auth, internal, members, modules
+from app.api.routes import auth, insights, internal, members, modules
 from app.config.settings import Settings, get_settings
 from app.db.engine import assert_non_owning_role, create_engine, create_session_factory
 from app.errors import DomainError
@@ -69,7 +69,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.middleware("http")
     async def origin_guard(request: Request, call_next):  # noqa: ANN001, ANN202
-        # [TR20] SameSite=Lax is the first CSRF layer; this is the second.
+        # [TR20] The session cookie's SameSite policy (configurable, "lax" by
+        # default) is the first CSRF layer; this Origin allow-list is the second.
         path = _app_path(request)
         origin = request.headers.get("origin")
         if (
@@ -120,6 +121,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(members.router)
     app.include_router(modules.router)
     app.include_router(internal.router)
+    app.include_router(insights.router)
     if settings.dev_tools_active:
         # Imported only here: the package is not shipped in the production image (.dockerignore).
         from app.dev_tools.router import router as dev_router

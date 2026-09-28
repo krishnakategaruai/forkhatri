@@ -13,6 +13,9 @@ import FamilyNotes from "@/components/FamilyNotes";
 import OutlookScene from "@/components/OutlookScene";
 import VoiceIntroPlayer from "@/components/VoiceIntroPlayer";
 import { useActiveContext } from "@/lib/activeContext";
+import HowYouFit from "@/components/HowYouFit";
+import SimilarProfiles from "@/components/SimilarProfiles";
+import HoroscopeMatch from "@/components/HoroscopeMatch";
 import { resolveMediaUrl } from "@/lib/api";
 import { requireSession } from "@/lib/auth";
 import {
@@ -558,6 +561,19 @@ export default function MemberProfilePage() {
       />
     ) : null;
 
+  // The traditional horoscope match for the candidate in context, when both
+  // have birth details; then the next few profiles worth reading.
+  const horoscopeMatch = (
+    <HoroscopeMatch
+      otherAccountId={accountId}
+      forCandidate={family ? { accountId: family.candidate_account_id, name: family.candidate_name } : undefined}
+    />
+  );
+  // After everything about this person: the next few worth reading.
+  const similar = (
+    <SimilarProfiles viewedId={accountId} forCandidate={family?.candidate_account_id} />
+  );
+
   if (view === undefined || loaderHold) {
     return (
       <main className="screen screen--centered">
@@ -686,6 +702,10 @@ export default function MemberProfilePage() {
                 </dl>
               </div>
             )}
+            <HowYouFit
+              candidateId={accountId}
+              forCandidate={{ accountId: family.candidate_account_id, name: family.candidate_name }}
+            />
             {(publicProfile?.open_photo_urls?.length ?? 0) > 1 && (
               <div
                 className="pview__strip"
@@ -731,6 +751,8 @@ export default function MemberProfilePage() {
             </button>
             )}
             {familyNotes}
+            {horoscopeMatch}
+            {similar}
           </main>
         </>
       );
@@ -779,6 +801,7 @@ export default function MemberProfilePage() {
               </span>
 
               {insight(snippet?.verification)}
+              <HowYouFit candidateId={accountId} />
 
               {/* Only what they chose to publish (migration 039). No claim
                   is made about what they have or have not written. */}
@@ -806,6 +829,8 @@ export default function MemberProfilePage() {
               {linkActions()}
             </div>
           </div>
+          {horoscopeMatch}
+            {similar}
         </main>
       </>
     );
@@ -996,6 +1021,7 @@ export default function MemberProfilePage() {
         // reader-facing insight (why this person, what is verified).
         <div key="identity" className="pview__head">
           {insight(snippet?.verification)}
+              <HowYouFit candidateId={accountId} />
         </div>
       );
     }
@@ -1406,6 +1432,8 @@ export default function MemberProfilePage() {
             )}
           </section>
         )}
+        {horoscopeMatch}
+            {similar}
       </main>
     </>
   );

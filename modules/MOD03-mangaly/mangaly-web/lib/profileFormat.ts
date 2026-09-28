@@ -48,6 +48,7 @@ export function tagLabel(t: Translate, tag: string): string {
 export function formatFieldValue(t: Translate, field: FieldDef, value: unknown): string | null {
   if (value === null || value === undefined || value === '') return null;
   if (field.kind === 'select') return t(`profile:option.${field.key}.${String(value)}`);
+  if (field.kind === 'time') return formatClockTime(String(value));
   if (field.kind === 'tags') {
     const tags = parseTags(value);
     return tags.length ? tags.map((tag) => tagLabel(t, tag)).join(', ') : null;
@@ -58,4 +59,14 @@ export function formatFieldValue(t: Translate, field: FieldDef, value: unknown):
     return t('profile:hub.ageRange', { min: min ?? '–', max: max ?? '–' });
   }
   return String(value);
+}
+
+/** "18:05" → "6:05 pm" in the reader's language; anything unparseable is shown as stored. */
+export function formatClockTime(value: string, language?: string): string {
+  const m = /^(\d{2}):(\d{2})$/.exec(value);
+  if (!m) return value;
+  const lang = language ?? (typeof document !== 'undefined' ? document.documentElement.lang : '') ?? 'en';
+  return new Intl.DateTimeFormat(`${lang || 'en'}-IN`, { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'UTC' }).format(
+    new Date(Date.UTC(2000, 0, 1, Number(m[1]), Number(m[2]))),
+  );
 }

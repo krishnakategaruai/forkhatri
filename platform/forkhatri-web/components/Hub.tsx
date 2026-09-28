@@ -232,6 +232,26 @@ export default function Hub({ t, lang, member, modules, stale, onEnter }: HubPro
           </motion.div>
         )}
 
+        {/* The members dashboard (owner, 2026-09-27): open to everyone, reached from here. */}
+        <motion.div className="community" {...rise} transition={{ duration: 0.28, delay: 0.18 }}>
+          <ul className="module-list">
+            <li>
+              <a className="module-row" href="/insights">
+                <span className="module-mark">
+                  <Sigil moduleKey="numbers" size={24} />
+                </span>
+                <span className="module-text">
+                  <span className="module-name">{t("membersDashboard")}</span>
+                  <span className="module-tagline">{t("membersDashboardNote")}</span>
+                </span>
+                <span className="module-go" aria-hidden="true">
+                  <ArrowIcon size={18} />
+                </span>
+              </a>
+            </li>
+          </ul>
+        </motion.div>
+
         <p className="trust-line">
           <LockIcon size={14} /> {t("trustLine")}
         </p>

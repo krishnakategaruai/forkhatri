@@ -11,7 +11,8 @@
  * college), `family` (family type/values, parents' occupations, siblings),
  * and the horoscope extras (manglik, rashi, nakshatra, birth time/place). */
 
-export type FieldKind = 'select' | 'text' | 'number' | 'textarea' | 'ageRange' | 'tags';
+/** `time` is a 24-hour HH:MM picker; `place` searches the place-of-birth list. */
+export type FieldKind = 'select' | 'text' | 'number' | 'textarea' | 'ageRange' | 'tags' | 'time' | 'place';
 
 export type FieldDef = {
   category: string;
@@ -38,6 +39,15 @@ export const INCOME_BANDS = ['under_5', '5_10', '10_20', '20_40', '40_plus', 'pr
 export const FAMILY_TYPES = ['joint', 'nuclear', 'extended'];
 export const FAMILY_VALUES = ['traditional', 'moderate', 'liberal'];
 export const MANGLIK = ['yes', 'no', 'partial', 'dont_know'];
+/* The 27 nakshatras in order, as stored keys (profile:option.nakshatra.*). */
+export const NAKSHATRAS = [
+  'ashwini', 'bharani', 'krittika', 'rohini', 'mrigashira', 'ardra', 'punarvasu', 'pushya', 'ashlesha',
+  'magha', 'purva_phalguni', 'uttara_phalguni', 'hasta', 'chitra', 'swati', 'vishakha', 'anuradha', 'jyeshtha',
+  'mula', 'purva_ashadha', 'uttara_ashadha', 'shravana', 'dhanishta', 'shatabhisha',
+  'purva_bhadrapada', 'uttara_bhadrapada', 'revati',
+];
+/* How sure the family is of the birth time (± minutes); "unknown" means no time. */
+export const BIRTH_TIME_ACCURACY = ['exact', 'about_15', 'about_30', 'about_60', 'about_120', 'unknown'];
 export const RASHIS = [
   'mesh',
   'vrishabh',
@@ -206,6 +216,22 @@ export const ENHANCED_CATEGORIES: CategoryDef[] = [
         labelKey: 'field.lifestyle.diet',
         options: ['vegetarian', 'non_vegetarian', 'eggetarian', 'vegan'],
       },
+      // [DEC-V1-031] Standard biodata facts the matchmaker checks against a
+      // family's "doesn't drink" / "no smoking".
+      {
+        category: 'lifestyle',
+        key: 'smoking',
+        kind: 'select',
+        labelKey: 'field.lifestyle.smoking',
+        options: ['never', 'occasionally', 'regularly'],
+      },
+      {
+        category: 'lifestyle',
+        key: 'drinking',
+        kind: 'select',
+        labelKey: 'field.lifestyle.drinking',
+        options: ['never', 'occasionally', 'regularly'],
+      },
     ],
   },
   {
@@ -330,11 +356,30 @@ export const ENHANCED_CATEGORIES: CategoryDef[] = [
         labelKey: 'field.horoscope.matching_required',
         options: ['yes', 'no', 'open'],
       },
-      { category: 'horoscope', key: 'manglik', kind: 'select', labelKey: 'field.horoscope.manglik', options: MANGLIK },
+      // Which traditional matching the family follows; unset means "by mother tongue".
+      {
+        category: 'horoscope',
+        key: 'matching_system',
+        kind: 'select',
+        labelKey: 'field.horoscope.matching_system',
+        options: ['ashtakoota', 'porutham', 'both'],
+      },
+      // [2026-09-27] What the kundli is calculated from: exact local time, how
+      // sure it is, and a place picked from the list (coordinates and time
+      // zone come with it). Visible to other members, by the owner's decision.
+      { category: 'horoscope', key: 'birth_time', kind: 'time', labelKey: 'field.horoscope.birth_time' },
+      {
+        category: 'horoscope',
+        key: 'birth_time_accuracy',
+        kind: 'select',
+        labelKey: 'field.horoscope.birth_time_accuracy',
+        options: BIRTH_TIME_ACCURACY,
+      },
+      { category: 'horoscope', key: 'birth_place', kind: 'place', labelKey: 'field.horoscope.birth_place' },
+      // What the family's own horoscope says, if they know it.
       { category: 'horoscope', key: 'rashi', kind: 'select', labelKey: 'field.horoscope.rashi', options: RASHIS },
-      { category: 'horoscope', key: 'nakshatra', kind: 'text', labelKey: 'field.horoscope.nakshatra' },
-      { category: 'horoscope', key: 'birth_time', kind: 'text', labelKey: 'field.horoscope.birth_time' },
-      { category: 'horoscope', key: 'birth_place', kind: 'text', labelKey: 'field.horoscope.birth_place' },
+      { category: 'horoscope', key: 'nakshatra', kind: 'select', labelKey: 'field.horoscope.nakshatra', options: NAKSHATRAS },
+      { category: 'horoscope', key: 'manglik', kind: 'select', labelKey: 'field.horoscope.manglik', options: MANGLIK },
     ],
   },
 ];

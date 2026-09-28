@@ -837,6 +837,29 @@ Owner: "they need to sign up properly in ForKhatri and log into Mangaly, then on
 - Their photo is shown to the people Mangaly lets them message (their own family, and the families of accepted connections), on chats, the "New message" list, circle members and the account button.
 - The face check for such a member compares the live capture against this photo, and a new photo removes an earlier confirmation. This lifts the block recorded in DEC-V1-025 and DEC-V1-026: a parent adds their photo, passes the check, then makes their child's profile.
 
+### DEC-V1-031 — The AI matching engine: the family's own words, 1–10 scales, and a score that is never shown
+
+**Date:** 2026-09-27 · **Decided by:** Product owner · **Status:** Accepted · **Migration:** none (profile attributes and the Discovery snapshot)
+
+**What the owner asked for.** The owner found preference forms, filters and even Hinge-style "must have / nice to have" switches "old school". They asked for both of these together: AI matching from the family's own words, and 1–10 scales that the member gives, "on bride or groom preference and also about themselves", to help the matching engine. They also showed Shaadi.com's "What she is looking for" panel ("You match 7/10 of her preferences") and asked that Mangaly do better.
+
+**Research.** In 2026, newer apps replace preference screens with an AI matchmaker the person talks to (Ditto, Known, Palaura, and Joey, which works by phone call); Hinge reports 15% more matches from its AI recommendations. Hinge's dealbreaker hides everyone who left the field blank, and that is the known flaw of hard filters. OkCupid's "answer, acceptable answers, importance" is the proven pattern for two-sided importance. A displayed match number steers people whether it is right or not: OkCupid's 2014 experiment told poor matches they were a 90% match, and they messaged more anyway.
+
+**Design.**
+- **Own words.** The family types or speaks what they want in English, Hindi or Telugu (`/me/matchmaker`). If an API key is configured, Claude reads the words (`components/compatibility/understand.py`). It receives only the typed text, never a name or profile, and its structured answer is validated against the engine's closed vocabulary (`config/matching_engine.py`). Without a key, a built-in keyword reader does the same job. Each point shows the words it came from and an importance from 1 to 10 that the family can slide. 10 means the point must be met. Nothing is saved until the family presses Save.
+- **The 1–10 scales.** There are six: faith and rituals, outlook, family life, career, social life and active life. Each member rates themselves (candidate only, per DEC-V1-019), and rates what they want in a partner along with how much it matters. These deliberately do not repeat the ten outlook choices of DEC-V1-017. They are private: only the engine reads them, and no endpoint returns them to anyone but their owner.
+- **The engine** (`components/compatibility/engine.py`) replaces DEC-V1-002's fixed formula.
+  - For each direction it takes an importance-weighted average of: how well the other person meets each wish (diet compatibility table; education and income as floors; smoking and drinking as ceilings; age and height with a gentle fall-off; place by distance from coordinates, with a floor for anyone willing to relocate); how close their self-ratings are to the wanted values; and two implicit terms, a shared kitchen and distance.
+  - The two directions are combined by harmonic mean (DEC-V1-030), and profile evidence breaks near-ties. The result is a 1–10 score.
+  - A must-have removes someone only when their stated fact clearly misses it, and it applies both ways. A blank never removes anyone.
+  - Popularity weight stays 0.
+  - People who have not used the matchmaker yet are scored on their older partner-preference fields, read at default importance.
+- **The score is never shown** (baseline §3/§4.8, PRODUCT-GUARDRAILS). It orders Discover. Members see only a word, "Strong match" (8 and above) or "Good match" (7.5 and above; both set from the real spread of development pairs so the word stays selective); below that no word is shown, never "weak". The number no longer leaves the server: the member-facing search and shelf responses dropped their `score` field.
+- **"How you fit each other"** on every profile, for the candidate and for their family from the candidate's seat. It lists each of the reader's own wishes as met, close, different or not shared, with must-haves marked. For the other person's wishes it shows only the topics the reader meets. Their values, their misses and how many wishes they have stay private (FR020). There is no fraction and no percentage, unlike Shaadi's "7/10".
+- **Also:** smoking and drinking became biodata fields in Lifestyle, and a "nearby" reason ("In Secunderabad · about 10 km away") replaces treating a neighbouring city as a miss.
+
+**Not taken (with reasons given to the owner):** learning from swipes or clicks (no data yet, and it would break DEC-V1-002), chat-speed matching (it would break the incognito chat promise), Spotify and Instagram links (the data is no longer available to new apps), college tiers, and "neighbouring community" lists.
+
 ## Definition of Done
 
 - Every open item from `01-business-requirements.md`/`02-functional-requirements.md`'s

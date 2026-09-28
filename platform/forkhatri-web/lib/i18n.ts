@@ -15,6 +15,8 @@ const en = {
   edit: "Edit",
   change: "Change",
   back: "Back",
+  membersDashboard: "ForKhatri in numbers",
+  membersDashboardNote: "How many we are, where we live, women and men, ages",
 
   // Arrival
   arrivalKicker: "Welcome to ForKhatri",
@@ -167,6 +169,8 @@ const hi: Dictionary = {
   edit: "बदलें",
   change: "बदलें",
   back: "वापस",
+  membersDashboard: "आँकड़ों में ForKhatri",
+  membersDashboardNote: "हम कितने हैं, कहाँ रहते हैं, महिलाएँ और पुरुष, उम्र",
 
   arrivalKicker: "ForKhatri में आपका स्वागत है",
   arrivalPromise: "आपका समुदाय। आपके अवसर। आपका साथ। आपकी प्रगति।",
@@ -310,6 +314,8 @@ const te: Dictionary = {
   edit: "మార్చండి",
   change: "మార్చండి",
   back: "వెనక్కి",
+  membersDashboard: "సంఖ్యల్లో ForKhatri",
+  membersDashboardNote: "మనం ఎంతమంది, ఎక్కడ ఉంటాం, మహిళలు-పురుషులు, వయస్సు",
 
   arrivalKicker: "ForKhatri కి స్వాగతం",
   arrivalPromise: "మీ సమాజం. మీ అవకాశాలు. మీ తోడు. మీ ఎదుగుదల.",

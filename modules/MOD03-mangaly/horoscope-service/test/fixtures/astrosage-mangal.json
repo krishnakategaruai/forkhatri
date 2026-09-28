@@ -1,0 +1,608 @@
+{
+ "bride": {
+  "date": "1996-06-15",
+  "time": "12:00"
+ },
+ "rows": [
+  {
+   "person": {
+    "date": "1993-03-13",
+    "time": "06:55"
+   },
+   "astro": "High Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 12,
+     "moonRashi": 8,
+     "marsRashi": 3,
+     "venusRashi": 12
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1992-08-09",
+    "time": "16:17"
+   },
+   "astro": "No Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 9,
+     "moonRashi": 9,
+     "marsRashi": 2,
+     "venusRashi": 5
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1988-11-22",
+    "time": "09:20"
+   },
+   "astro": "High Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 9,
+     "moonRashi": 1,
+     "marsRashi": 12,
+     "venusRashi": 7
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1993-10-23",
+    "time": "17:45"
+   },
+   "astro": "Low Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 1,
+     "moonRashi": 10,
+     "marsRashi": 7,
+     "venusRashi": 6
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1994-02-09",
+    "time": "23:20"
+   },
+   "astro": "High Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 7,
+     "moonRashi": 10,
+     "marsRashi": 10,
+     "venusRashi": 11
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1996-04-05",
+    "time": "20:12"
+   },
+   "astro": "No Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 7,
+     "moonRashi": 7,
+     "marsRashi": 12,
+     "venusRashi": 2
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1994-08-18",
+    "time": "02:11"
+   },
+   "astro": "High Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 3,
+     "moonRashi": 9,
+     "marsRashi": 3,
+     "venusRashi": 6
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1988-05-08",
+    "time": "02:12"
+   },
+   "astro": "High Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 11,
+     "moonRashi": 10,
+     "marsRashi": 10,
+     "venusRashi": 3
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1986-11-17",
+    "time": "04:27"
+   },
+   "astro": "No Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 7,
+     "moonRashi": 2,
+     "marsRashi": 11,
+     "venusRashi": 7
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1991-06-09",
+    "time": "13:29"
+   },
+   "astro": "Low Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 6,
+     "moonRashi": 1,
+     "marsRashi": 4,
+     "venusRashi": 4
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1998-11-05",
+    "time": "08:07"
+   },
+   "astro": "Low Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 8,
+     "moonRashi": 2,
+     "marsRashi": 5,
+     "venusRashi": 7
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1997-10-22",
+    "time": "01:39"
+   },
+   "astro": "No Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 4,
+     "moonRashi": 3,
+     "marsRashi": 8,
+     "venusRashi": 8
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1995-04-04",
+    "time": "07:50"
+   },
+   "astro": "Low Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 1,
+     "moonRashi": 2,
+     "marsRashi": 4,
+     "venusRashi": 11
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1985-05-10",
+    "time": "23:06"
+   },
+   "astro": "No Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 9,
+     "moonRashi": 10,
+     "marsRashi": 2,
+     "venusRashi": 12
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1992-04-29",
+    "time": "14:46"
+   },
+   "astro": "High Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 5,
+     "moonRashi": 12,
+     "marsRashi": 12,
+     "venusRashi": 1
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1992-02-09",
+    "time": "17:36"
+   },
+   "astro": "No Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 4,
+     "moonRashi": 1,
+     "marsRashi": 9,
+     "venusRashi": 9
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1999-03-05",
+    "time": "05:55"
+   },
+   "astro": "No Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 11,
+     "moonRashi": 6,
+     "marsRashi": 7,
+     "venusRashi": 12
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1999-11-21",
+    "time": "02:21"
+   },
+   "astro": "No Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 6,
+     "moonRashi": 1,
+     "marsRashi": 10,
+     "venusRashi": 6
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1996-07-02",
+    "time": "04:55"
+   },
+   "astro": "Low Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 3,
+     "moonRashi": 9,
+     "marsRashi": 2,
+     "venusRashi": 2
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1995-03-31",
+    "time": "15:12"
+   },
+   "astro": "Low Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 5,
+     "moonRashi": 12,
+     "marsRashi": 4,
+     "venusRashi": 11
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1997-01-09",
+    "time": "20:45"
+   },
+   "astro": "No Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 5,
+     "moonRashi": 10,
+     "marsRashi": 6,
+     "venusRashi": 9
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1995-08-16",
+    "time": "02:46"
+   },
+   "astro": "Low Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 3,
+     "moonRashi": 1,
+     "marsRashi": 6,
+     "venusRashi": 4
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1997-08-13",
+    "time": "10:51"
+   },
+   "astro": "High Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 7,
+     "moonRashi": 8,
+     "marsRashi": 7,
+     "venusRashi": 6
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1999-10-10",
+    "time": "04:47"
+   },
+   "astro": "High Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 6,
+     "moonRashi": 6,
+     "marsRashi": 9,
+     "venusRashi": 5
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1999-03-02",
+    "time": "16:45"
+   },
+   "astro": "Low Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 4,
+     "moonRashi": 5,
+     "marsRashi": 7,
+     "venusRashi": 12
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1993-12-30",
+    "time": "09:48"
+   },
+   "astro": "Low Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 11,
+     "moonRashi": 3,
+     "marsRashi": 9,
+     "venusRashi": 9
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1985-05-20",
+    "time": "08:40"
+   },
+   "astro": "High Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 3,
+     "moonRashi": 2,
+     "marsRashi": 2,
+     "venusRashi": 12
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1996-04-02",
+    "time": "04:25"
+   },
+   "astro": "Low Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 11,
+     "moonRashi": 5,
+     "marsRashi": 12,
+     "venusRashi": 2
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1994-11-25",
+    "time": "10:09"
+   },
+   "astro": "No Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 9,
+     "moonRashi": 4,
+     "marsRashi": 5,
+     "venusRashi": 7
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1995-06-11",
+    "time": "13:02"
+   },
+   "astro": "Low Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 6,
+     "moonRashi": 7,
+     "marsRashi": 5,
+     "venusRashi": 2
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1994-05-30",
+    "time": "23:16"
+   },
+   "astro": "High Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 10,
+     "moonRashi": 10,
+     "marsRashi": 1,
+     "venusRashi": 3
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1993-03-23",
+    "time": "21:38"
+   },
+   "astro": "Low Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 7,
+     "moonRashi": 12,
+     "marsRashi": 3,
+     "venusRashi": 12
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1985-03-12",
+    "time": "15:19"
+   },
+   "astro": "No Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 4,
+     "moonRashi": 8,
+     "marsRashi": 1,
+     "venusRashi": 12
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1996-03-25",
+    "time": "00:42"
+   },
+   "astro": "Low Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 9,
+     "moonRashi": 2,
+     "marsRashi": 12,
+     "venusRashi": 1
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1997-08-29",
+    "time": "20:41"
+   },
+   "astro": "High Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 12,
+     "moonRashi": 4,
+     "marsRashi": 7,
+     "venusRashi": 6
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1992-12-09",
+    "time": "00:51"
+   },
+   "astro": "No Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 6,
+     "moonRashi": 2,
+     "marsRashi": 4,
+     "venusRashi": 10
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1991-07-03",
+    "time": "18:49"
+   },
+   "astro": "Low Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 9,
+     "moonRashi": 11,
+     "marsRashi": 4,
+     "venusRashi": 5
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1998-01-02",
+    "time": "22:14"
+   },
+   "astro": "Low Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 5,
+     "moonRashi": 11,
+     "marsRashi": 10,
+     "venusRashi": 10
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1985-06-18",
+    "time": "11:28"
+   },
+   "astro": "Low Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 5,
+     "moonRashi": 3,
+     "marsRashi": 3,
+     "venusRashi": 1
+    }
+   }
+  },
+  {
+   "person": {
+    "date": "1998-01-26",
+    "time": "17:25"
+   },
+   "astro": "Low Mangal Dosha",
+   "mangaly": {
+    "input": {
+     "lagnaRashi": 4,
+     "moonRashi": 9,
+     "marsRashi": 11,
+     "venusRashi": 9
+    }
+   }
+  }
+ ]
+}

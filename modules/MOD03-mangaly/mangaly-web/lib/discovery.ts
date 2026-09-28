@@ -33,7 +33,8 @@ export type SearchResult = {
   /** Contract id for shortlist/safety/profile calls. Falls back to the account id. */
   profile_id: string;
   candidate_account_id: string;
-  score: number;
+  /** [DEC-V1-031] The engine's word for the pair; its 1–10 number stays on the server. */
+  match_label?: 'strong' | 'good' | null;
   name?: string | null;
   locality: string | null;
   education_level: string | null;
@@ -61,6 +62,8 @@ export type SearchOutcome = {
   total: number | null;
   lookingForMissing: boolean;
   hasMore: boolean;
+  /** The horoscope filter is on but the person searched for has no kundli yet. */
+  horoscopeChartMissing?: boolean;
 };
 
 export type SortOrder = "relevance" | "newest" | "recently_active";
@@ -84,6 +87,14 @@ export type DiscoverFilters = {
   openToRelocate?: boolean;
   q?: string;
   sort?: SortOrder;
+  /** Horoscope filter: minimum Guna Milan (out of 36) with the person searched for. */
+  minGuna?: number;
+  /** Horoscope filter: Mangal Dosha the same as the person searched for, or none. */
+  mangal?: "match" | "none";
+  /** South Indian: at least this many of the 10 poruthams. */
+  minPorutham?: number;
+  /** South Indian: Rajju and Vedha must agree. */
+  poruthamEssentials?: boolean;
 };
 
 export const EMPTY_FILTERS: DiscoverFilters = {};
@@ -105,6 +116,10 @@ export function countActiveFilters(f: DiscoverFilters): number {
     f.manglik,
     f.openToRelocate ? true : undefined,
     f.q?.trim() ? true : undefined,
+    f.minGuna,
+    f.mangal,
+    f.minPorutham,
+    f.poruthamEssentials ? true : undefined,
   ].filter((v) => v !== undefined).length;
 }
 
@@ -119,7 +134,6 @@ function normalizeResult(
     ...r,
     profile_id: r.profile_id ?? account,
     candidate_account_id: account,
-    score: r.score ?? 0,
     locality: r.locality ?? null,
     education_level: r.education_level ?? null,
     profession: r.profession ?? null,
@@ -158,6 +172,10 @@ export async function search(
     manglik: filters.manglik,
     open_to_relocate: filters.openToRelocate,
     q: filters.q?.trim(),
+    min_guna: filters.minGuna,
+    mangal: filters.mangal,
+    min_porutham: filters.minPorutham,
+    porutham_essentials: filters.poruthamEssentials,
     sort:
       filters.sort && filters.sort !== "relevance" ? filters.sort : undefined,
   });
@@ -168,6 +186,8 @@ export async function search(
     });
     if (res.status === 409)
       return { results: [], total: 0, lookingForMissing: true, hasMore: false };
+    if (res.status === 422 && (filters.minGuna !== undefined || filters.mangal || filters.minPorutham !== undefined || filters.poruthamEssentials))
+      return { results: [], total: 0, lookingForMissing: false, hasMore: false, horoscopeChartMissing: true };
     if (!res.ok)
       return {
         results: [],

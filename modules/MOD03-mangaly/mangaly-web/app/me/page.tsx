@@ -36,6 +36,7 @@ import {
 } from "@/lib/profileCategoryConfig";
 import {
   INTEREST_TAGS,
+  formatClockTime,
   MAX_TAGS,
   parseTags,
   toTagKey,
@@ -70,6 +71,7 @@ import {
 } from "@/lib/profileSections";
 import { getContexts } from "@/lib/homeCircle";
 import { getStoredTheme, setPreferredTheme, type Theme } from "@/lib/theme";
+import PlaceSearch, { type PlaceValue } from "@/components/PlaceSearch";
 
 /* FR001/FR002/FR003/FR005 · UX11 "Profile edit hub" — v3, built from
  * researched reference patterns rather than invented ones:
@@ -250,7 +252,19 @@ function buildDraft(defs: CategoryDef[], values: Values): Draft {
       if (!row) next[k] = { state: "unset", value: emptyValue(f) };
       else if (row.state !== "value")
         next[k] = { state: row.state, value: emptyValue(f) };
-      else
+      else if (f.kind === "place") {
+        // The label is what shows; the stored place id is what makes it usable for a chart.
+        const geo = saved["birth_place_geo"];
+        const placeId =
+          geo?.state === "value" && geo.value && typeof geo.value === "object"
+            ? // `id` as the server stores it; `place_id` as this screen sent it before a reload.
+              String((geo.value as { id?: unknown; place_id?: unknown }).id ?? (geo.value as { place_id?: unknown }).place_id ?? "")
+            : "";
+        next[k] = {
+          state: "value",
+          value: { label: String(row.value ?? ""), place_id: placeId || undefined },
+        };
+      } else
         next[k] = {
           state: "value",
           value: f.kind === "tags" ? parseTags(row.value) : row.value,
@@ -559,6 +573,7 @@ export default function ProfileHubPage() {
     if (value === null || value === undefined || value === "") return null;
     if (field.kind === "select")
       return t(`profile:option.${field.key}.${String(value)}`);
+    if (field.kind === "time") return formatClockTime(String(value), i18n.language);
     if (field.kind === "tags") {
       const tags = parseTags(value);
       return tags.length ? tags.map(tagLabel).join(", ") : null;
@@ -783,6 +798,20 @@ export default function ProfileHubPage() {
     for (const f of def.fields) {
       const entry = draft[dkey(def.category, f.key)];
       if (!entry || entry.state !== "value") continue;
+      if (f.kind === "place") {
+        // Only a place picked from the list is sent; the server fills in
+        // its label, coordinates and time zone.
+        const v = entry.value as PlaceValue | string;
+        if (typeof v === "object" && v?.place_id) {
+          payload.birth_place_geo = { state: "value", value: { place_id: v.place_id } };
+          payload[f.key] = { state: "value", value: v.label };
+        }
+        continue;
+      }
+      if (f.kind === "time" && draft[dkey(def.category, "birth_time_accuracy")]?.value === "unknown") {
+        payload[f.key] = { state: "declined", value: null };
+        continue;
+      }
       if (f.kind === "ageRange") {
         const v = (entry.value ?? {}) as { min?: unknown; max?: unknown };
         const min = Number(v.min) || null;
@@ -804,6 +833,18 @@ export default function ProfileHubPage() {
   /* One Save for the section; underneath, one PATCH per storage category
      that actually changed. */
   async function saveSection(defs: CategoryDef[]) {
+    // A stated accuracy needs a time, unless the time is unknown.
+    const accuracy = draft[dkey("horoscope", "birth_time_accuracy")];
+    const time = draft[dkey("horoscope", "birth_time")];
+    if (
+      defs.some((d) => d.category === "horoscope") &&
+      accuracy?.state === "value" &&
+      accuracy.value !== "unknown" &&
+      !(time?.state === "value" && typeof time.value === "string" && time.value)
+    ) {
+      setSheetError(t("profile:editor.birthTimeNeeded"));
+      return;
+    }
     const work = defs
       .map((def) => [def, payloadFor(def)] as const)
       .filter(([, payload]) => Object.keys(payload).length > 0);
@@ -1538,6 +1579,21 @@ export default function ProfileHubPage() {
                 {DETAILS_LAYOUT.map((block) =>
                   block.kind === "section" ? renderSectionEdit(block.id) : null,
                 )}
+                {/* [DEC-V1-031] The partner you hope for, in your own words —
+                    read by the AI matchmaker, private like the preferences. */}
+                <Link
+                  href={managing ? `/me/matchmaker?manage=${managing.account_id}` : "/me/matchmaker"}
+                  className="me-sec"
+                >
+                  <span className="me-sec__title">
+                    {t("discover:matchmaker.title")}
+                    <Icon name="lock" size={16} />
+                  </span>
+                  <span className="me-sec__text">{t("discover:matchmaker.entry.body")}</span>
+                  <span className="me-sec__side">
+                    <Icon name="caretRight" size={16} className="me-chev" />
+                  </span>
+                </Link>
               </div>
             )}
 
@@ -1896,7 +1952,71 @@ export default function ProfileHubPage() {
                       {sheetItems.length > 1 && (
                         <div className="label">{fieldLabel(f.labelKey)}</div>
                       )}
-                      {f.kind === "select" ? (
+                      {f.kind === "select" && (f.options?.length ?? 0) > 12 ? (
+                        // A long list (the 27 nakshatras) reads better as one dropdown than as chips.
+                        <select
+                          className="field__input"
+                          name={f.key}
+                          aria-label={fieldLabel(f.labelKey)}
+                          value={entry?.state === "value" && typeof entry.value === "string" ? entry.value : ""}
+                          disabled={saving}
+                          onChange={(e) =>
+                            setDraft((d) => ({
+                              ...d,
+                              [dk]: e.target.value
+                                ? { state: "value", value: e.target.value }
+                                : { state: "unset", value: "" },
+                            }))
+                          }
+                        >
+                          <option value="">{t("profile:editor.selectPlaceholder")}</option>
+                          {(f.options ?? []).map((opt) => (
+                            <option key={opt} value={opt}>
+                              {optionLabel(f.key, opt)}
+                            </option>
+                          ))}
+                        </select>
+                      ) : f.kind === "time" ? (
+                        draft[dkey("horoscope", "birth_time_accuracy")]?.value === "unknown" ? (
+                          <p className="caption">{t("profile:editor.birthTimeUnknown")}</p>
+                        ) : (
+                          <input
+                            className="field__input field__input--time"
+                            type="time"
+                            name={f.key}
+                            step={60}
+                            aria-label={fieldLabel(f.labelKey)}
+                            value={typeof entry?.value === "string" ? entry.value : ""}
+                            disabled={saving}
+                            onChange={(e) =>
+                              setDraft((d) => ({
+                                ...d,
+                                [dk]: { state: "value", value: e.target.value },
+                              }))
+                            }
+                          />
+                        )
+                      ) : f.kind === "place" ? (
+                        <PlaceSearch
+                          label={fieldLabel(f.labelKey)}
+                          disabled={saving}
+                          value={
+                            entry?.state === "value" && entry.value
+                              ? typeof entry.value === "string"
+                                ? { label: entry.value }
+                                : (entry.value as PlaceValue)
+                              : null
+                          }
+                          onChange={(next) =>
+                            setDraft((d) => ({
+                              ...d,
+                              [dk]: next
+                                ? { state: "value", value: next }
+                                : { state: "unset", value: "" },
+                            }))
+                          }
+                        />
+                      ) : f.kind === "select" ? (
                         <div className="quick-pick__chips">
                           {(f.options ?? []).map((opt) => {
                             const active =
@@ -2166,6 +2286,11 @@ export default function ProfileHubPage() {
                     </div>
                   );
                 })}
+                {sheetDefs.some((d) => d.category === "horoscope") && (
+                  <Link className="link" href="/horoscope/check">
+                    {t("horoscope:check.link")}
+                  </Link>
+                )}
                 <datalist id="occupation-suggestions">
                   {OCCUPATION_SUGGESTIONS.map((o) => (
                     <option key={o} value={o} />

@@ -35,6 +35,7 @@ __all__ = [
     "InvalidReason",
     "block",
     "blocked_ids",
+    "check_profile_age",
     "classify_and_escalate",
     "is_blocked_between",
     "list_blocks",
@@ -260,6 +261,46 @@ async def classify_and_escalate(
             classified_at=now,
         )
     return case_id
+
+
+async def check_profile_age(session: AsyncSession, *, account_id: UUID) -> UUID | None:
+    """[DEC-V1-028 minor safety] The independent under-18 check that runs
+    right after a profile is created. The wizard already refuses anyone under
+    the marriageable age; this catches anything that got past it and opens ONE
+    automated Tier 4 report (migration 048's `open_profile_signal_report`,
+    which never opens a second one while the first is unresolved). Returns the
+    report id, or None when the date of birth is 18 or over."""
+    from datetime import date
+
+    from app.components.profile import interface as profile_module
+
+    own = await profile_module.get_own_profile(session, account_id=account_id)
+    if own is None or own.date_of_birth is None:
+        return None
+    born, today = own.date_of_birth, date.today()
+    age = today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+    if age >= 18:
+        return None
+    rule = safety_taxonomy.classify_signal("underage_date_of_birth")
+    row = (
+        await session.execute(
+            text(
+                "SELECT report_id FROM mangaly_safety.open_profile_signal_report("
+                ":account, 'underage_date_of_birth', :category, CAST(:metadata AS jsonb))"
+            ),
+            {"account": account_id, "category": rule.report_category, "metadata": json.dumps({"age": age})},
+        )
+    ).first()
+    if row is None:  # already open for this person
+        return None
+    await classify_and_escalate(
+        session,
+        report_id=row.report_id,
+        classification=rule.classification,
+        category=rule.report_category,
+        reported_account_id=account_id,
+    )
+    return row.report_id
 
 
 async def scan_message(

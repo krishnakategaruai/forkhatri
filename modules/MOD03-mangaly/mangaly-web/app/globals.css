@@ -2540,6 +2540,12 @@ a {
 .preview-photo {
   overflow: hidden;
   aspect-ratio: 4 / 5;
+  /* A full-width 4:5 photo on a desktop screen is taller than the screen;
+     keep it a comfortable portrait, centred above the details. */
+  max-height: 60vh;
+  max-width: 480px;
+  width: 100%;
+  margin-inline: auto;
   border-radius: var(--radius-lg);
   background: var(--surface-2);
 }
@@ -2553,6 +2559,9 @@ a {
   flex-direction: column;
   gap: 4px;
   padding: 0 2px;
+  /* Sits under the centred photo, so it is centred with it. */
+  align-items: center;
+  text-align: center;
 }
 .preview-card {
   display: flex;
@@ -6239,3 +6248,36 @@ body {
 @media (min-width: 640px) { .dwall { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 20px; } }
 @media (min-width: 1100px) { .dwall { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (min-width: 1500px) { .dwall { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+/* Whose-search switcher: a plain list of people, name over role. */
+.context-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.context-row {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.context-row:hover { background: var(--surface-2); }
+.context-row[aria-current='true'] {
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+.context-row__name { font-weight: 600; }
+@media (min-width: 768px) {
+  .sheet-backdrop:has(.context-list) { align-items: center; }
+  .sheet-backdrop:has(.context-list) .sheet { max-width: 420px; }
+}

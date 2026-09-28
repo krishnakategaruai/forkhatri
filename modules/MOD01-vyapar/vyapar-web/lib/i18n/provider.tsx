@@ -14,6 +14,21 @@ import { DEFAULT_LANGUAGE, type Language, getI18n, isSupported } from "./config"
 
 const STORAGE_KEY = "vyapar.language";
 
+/** Optional host platform (ForKhatri) identity service; unset = standalone Vyapar. */
+const HOST_IDENTITY_API = (process.env.NEXT_PUBLIC_HOST_IDENTITY_API ?? "").replace(/\/+$/, "");
+
+async function hostLanguage(): Promise<Language | null> {
+  try {
+    const res = await fetch(`${HOST_IDENTITY_API}/v1/session`, { credentials: "include", cache: "no-store" });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { member?: { preferred_language?: string } };
+    const lang = body.member?.preferred_language;
+    return isSupported(lang) ? lang : null;
+  } catch {
+    return null;
+  }
+}
+
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [i18n] = useState(() => getI18n(DEFAULT_LANGUAGE));
 
@@ -33,6 +48,33 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     }
     if (i18n.language !== next) void i18n.changeLanguage(next);
     document.documentElement.lang = next;
+
+    // [Owner, 2026-09-27] Hosted in ForKhatri, the language chosen there is
+    // the person's language here too. Vyapar stays host-independent: this runs
+    // only when a host identity URL is configured, and reads the host
+    // account's language on open and whenever the tab comes back into view.
+    if (!HOST_IDENTITY_API) return;
+    let alive = true;
+    const sync = async () => {
+      const lang = await hostLanguage();
+      if (!alive || !lang || lang === i18n.language) return;
+      void i18n.changeLanguage(lang);
+      document.documentElement.lang = lang;
+      try {
+        localStorage.setItem(STORAGE_KEY, lang);
+      } catch {
+        // Non-fatal.
+      }
+    };
+    void sync();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void sync();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      alive = false;
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [i18n]);
 
   return <I18nextProvider i18n={i18n}>{children}</I18nextProvider>;
@@ -51,4 +93,13 @@ export function setPreferredLanguage(lang: Language): void {
   import("@/lib/sdk/default").then(({ defaultSdk }) => {
     defaultSdk.members.setLanguage(lang).catch(() => {});
   });
+  // Hosted in ForKhatri: the choice is also the person's ForKhatri language.
+  if (HOST_IDENTITY_API) {
+    void fetch(`${HOST_IDENTITY_API}/v1/me`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ preferred_language: lang }),
+    }).catch(() => {});
+  }
 }

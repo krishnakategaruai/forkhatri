@@ -89,7 +89,8 @@
       "suggestedByYou": "మీరు సూచించారు",
       "mutualFit": "మీరిద్దరూ ఒకరి ఇష్టాలకు మరొకరు సరిపోతారు",
       "wantsYourCity": "వారు కూడా {city}లో ఉన్నవారిని కోరుకుంటున్నారు",
-      "wantsYourAge": "మీ వయసు వారిని కోరుకుంటున్నారు"
+      "wantsYourAge": "మీ వయసు వారిని కోరుకుంటున్నారు",
+      "nearby": "{city}లో · సుమారు {km} కి.మీ. దూరం"
     },
     "reasonFor": {
       "sharedHobbies": "{name} లాగే {list} ఇష్టం",
@@ -103,7 +104,8 @@
       "sameFamilyView": "వారు కూడా కుటుంబం {value} ఉండాలనుకుంటారు",
       "mutualFit": "{name}, వారు ఒకరి ఇష్టాలకు మరొకరు సరిపోతారు",
       "wantsYourCity": "{name} ఉన్న {city}లో ఉన్నవారిని కోరుకుంటున్నారు",
-      "wantsYourAge": "{name} వయసు వారిని కోరుకుంటున్నారు"
+      "wantsYourAge": "{name} వయసు వారిని కోరుకుంటున్నారు",
+      "nearby": "{city}లో · {name} నుండి సుమారు {km} కి.మీ."
     }
   },
   "error": {

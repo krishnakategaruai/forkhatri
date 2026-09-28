@@ -37,17 +37,14 @@ from uuid import UUID
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.components.compatibility import interface as compatibility
 from app.components.discovery.models import DiscoveryProfileIndex
 from app.components.profile.models import FieldState, Profile
+from app.config.matching_engine import NEARBY_REASON_KM
 from app.config.profile_schema import FACT_SOURCES
 from app.config.ranking_weights import (
     DAILY_PICK_MAX_AGE_DAYS,
-    EVIDENCE_COMPLETENESS_WEIGHT,
-    LIFESTYLE_COMPATIBILITY_WEIGHT,
-    LOCALITY_RELOCATION_WEIGHT,
     MAX_SAME_BRACKET_RUN,
-    PARTNER_PREFERENCE_WEIGHT,
-    RECIPROCITY_WEIGHT,
     SCORE_BRACKETS,
 )
 
@@ -105,6 +102,9 @@ class SearchResult:
     verification: list[dict[str, str | None]] = field(default_factory=list)
     # [Migration 039/043] The first prompt answer this person published, if any.
     open_prompt: dict[str, str] | None = None
+    # [DEC-V1-031] "strong" / "good" / None — the word a member sees. The
+    # engine's 1–10 number stays internal.
+    match_label: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -152,6 +152,33 @@ def _int(value: Any) -> int | None:
         return None
 
 
+def _geo_of(locality: str | None) -> dict[str, float] | None:
+    """[DEC-V1-031] Coordinates of a member's city for the engine's distance
+    fall-off, from the GeoNames list — "Hyderabad, Telangana" narrows by the
+    state after the comma. None when the place is not in the list."""
+    from app.components.places import interface as places
+
+    if not locality or not locality.strip():
+        return None
+    found = places.search(locality, limit=1) or places.search(locality.split(",")[0], limit=1)
+    return {"lat": found[0].latitude, "lon": found[0].longitude} if found else None
+
+
+def _scales_of(entries: dict[str, tuple[FieldState, Any]]) -> dict[str, int]:
+    """A member's own 1–10 ratings (`self_scales`), answered ones only."""
+    out: dict[str, int] = {}
+    for key, (state, value) in entries.items():
+        number = _int(value) if state is FieldState.VALUE else None
+        if number is not None and 1 <= number <= 10:
+            out[key] = number
+    return out
+
+
+def _partner_value(attrs: _Attrs, key: str) -> Any:
+    entry = (attrs.get("partner_preference") or {}).get(key)
+    return entry[1] if entry and entry[0] is FieldState.VALUE else None
+
+
 async def refresh_index(session: AsyncSession, *, account_id: UUID) -> None:
     """[FR021/FR026/FR027] Recompute this candidate's Discovery row from
     their current profile state. Called synchronously by `profile.interface`
@@ -182,6 +209,8 @@ async def refresh_index(session: AsyncSession, *, account_id: UUID) -> None:
     partner_height_range = ((attrs.get("partner_preference") or {}).get("height_range") or (None, None))[1]
     partner_education = ((attrs.get("partner_preference") or {}).get("education") or (None, None))[1]
     partner_diet = ((attrs.get("partner_preference") or {}).get("diet") or (None, None))[1]
+    wanted_scales = _partner_value(attrs, "scales")
+    brief = _partner_value(attrs, "brief")
 
     evidence_completeness = (
         completeness.enhanced_filled_categories / completeness.enhanced_total_categories
@@ -227,6 +256,20 @@ async def refresh_index(session: AsyncSession, *, account_id: UUID) -> None:
                 account_id, []
             )
         ),
+        # [DEC-V1-031] What the matching engine reads. The facts are biodata
+        # a searchable profile already shows; the brief and both sets of 1–10
+        # scales are private and only ever read by the engine — no endpoint
+        # returns them for anyone but their owner.
+        "geo": _geo_of(own_profile.city_locality),
+        "smoking": _text(_fact(attrs, "smoking")),
+        "drinking": _text(_fact(attrs, "drinking")),
+        "income_band": _text(_fact(attrs, "income_band")),
+        "family_type": _text(_fact(attrs, "family_type")),
+        "family_values": _text(_fact(attrs, "family_values")),
+        "manglik": _text(_fact(attrs, "manglik")),
+        "self_scales": _scales_of(attrs.get("self_scales") or {}),
+        "partner_scales": wanted_scales if isinstance(wanted_scales, dict) else None,
+        "partner_brief": brief.get("items") if isinstance(brief, dict) else None,
     }
 
     # [Migration 039/043] The first prompt answer the candidate published —
@@ -332,41 +375,20 @@ async def refresh_index(session: AsyncSession, *, account_id: UUID) -> None:
 
 
 def _score(viewer: dict, candidate: dict) -> float:
-    """[TR026/DEC-V1-002] The fixed weighted formula. `POPULARITY_WEIGHT` is
-    0.0 by construction (`config/ranking_weights.py`) — no term below reads
-    any engagement/view metric, and none exists in `ranking_input_snapshot`.
-
-    Locality match is exact-string-equal OR general relocation willingness;
-    partner-preference match is two-way (each side's stated preferred locality
-    and age range checked against the other); lifestyle overlap checks diet;
-    evidence completeness reuses the enhanced-tier ratio `completeness()`
-    already computes. In browse mode the viewer dict is empty, so only the
-    candidate's own completeness and their preferences about an unknown
-    viewer contribute — a stable, explainable order rather than a random one.
+    """[DEC-V1-031] The AI matching engine's pair score, rescaled from its
+    1–10 to 0–1 for the diversity brackets. Both directions, the family's own
+    words and importance, both sides' 1–10 scales, diet and distance — see
+    `components/compatibility/engine.py`. `POPULARITY_WEIGHT` stays 0.0 by
+    construction (DEC-V1-002): the engine reads no engagement or view metric.
+    In browse mode the viewer dict is empty and every direction is neutral,
+    so profile evidence alone gives a stable, explainable order.
     """
-    locality_score = 0.0
-    if viewer.get("locality") and candidate.get("locality") == viewer.get("locality"):
-        locality_score = 1.0
-    elif candidate.get("relocation_willingness") == "yes":
-        locality_score = 0.5
+    return (compatibility.pair_score(viewer, candidate) - 1.0) / 9.0
 
-    forward = _preference_checks(viewer, candidate)
-    reverse = _preference_checks(candidate, viewer)
-    checks = forward + reverse
-    partner_pref_score = sum(checks) / len(checks) if checks else 0.0
 
-    viewer_diet = viewer.get("lifestyle_diet")
-    lifestyle_score = 1.0 if viewer_diet and viewer_diet == candidate.get("lifestyle_diet") else 0.0
-
-    evidence_score = float(candidate.get("evidence_completeness") or 0.0)
-
-    return (
-        locality_score * LOCALITY_RELOCATION_WEIGHT
-        + partner_pref_score * PARTNER_PREFERENCE_WEIGHT
-        + reciprocity(forward, reverse) * RECIPROCITY_WEIGHT
-        + lifestyle_score * LIFESTYLE_COMPATIBILITY_WEIGHT
-        + evidence_score * EVIDENCE_COMPLETENESS_WEIGHT
-    )
+def match_label(score: float) -> str | None:
+    """[DEC-V1-031] The word a member sees for a 0–1 `_score`, never the number."""
+    return compatibility.label_for(1.0 + 9.0 * score)
 
 
 # [DEC-V1-030] A side that stated no preference is neither a fit nor a
@@ -555,6 +577,15 @@ class DiscoverFilters:
     manglik: str | None = None
     q: str | None = None
     city: tuple[str, ...] = ()
+    # [Owner, 2026-09-27] Optional horoscope filter, switched on by the member:
+    # a minimum Guna Milan (out of 36) with the person searched for, and/or
+    # Mangal Dosha "match" (same presence) or "none". Needs that person's chart.
+    min_guna: float | None = None
+    mangal: str | None = None
+    # South Indian: at least this many of the 10 poruthams, and/or Rajju and
+    # Vedha (the essential two) must agree.
+    min_porutham: int | None = None
+    porutham_essentials: bool = False
 
 
 def _place(locality: str | None, part: str) -> str:
@@ -725,6 +756,33 @@ async def search(
         mine = _place(seeker.get("locality"), filters.nearby)
         rows = [r for r in rows if mine and _place(r["locality"], filters.nearby) == mine]
 
+    if (filters.min_guna is not None or filters.mangal or filters.min_porutham is not None or filters.porutham_essentials) and rows:
+        from app.components.horoscope import interface as horoscope
+
+        keep = await horoscope.filter_ids(
+            session,
+            seeker_account_id=ranking_account_id,
+            seeker_gender=str(seeker.get("gender") or ""),
+            candidate_ids=[r["profile_id"] for r in rows],
+            min_guna=filters.min_guna,
+            mangal=filters.mangal,
+            min_porutham=filters.min_porutham,
+            porutham_essentials=filters.porutham_essentials,
+        )
+        rows = [r for r in rows if r["profile_id"] in keep]
+
+    # [DEC-V1-031] Must-haves, both ways: anyone whose facts clearly miss an
+    # importance-10 wish of the seeker is left out, and so is anyone whose own
+    # must-have the seeker clearly misses (they would only decline). A blank
+    # fact never removes anyone.
+    if seeker:
+        rows = [
+            r
+            for r in rows
+            if not compatibility.fails_must(seeker, r["ranking_input_snapshot"] or {})
+            and not compatibility.fails_must(r["ranking_input_snapshot"] or {}, seeker)
+        ]
+
     scored = [(r, _score(seeker, r["ranking_input_snapshot"] or {})) for r in rows]
     if sort == "newest":
         scored.sort(key=lambda pair: (pair[0]["profile_created_at"] or pair[0]["updated_at"]), reverse=True)
@@ -752,6 +810,7 @@ async def search(
                 income_band=r["income_band"],
                 verification=list((r["ranking_input_snapshot"] or {}).get("verification") or []),
                 open_prompt=(r["ranking_input_snapshot"] or {}).get("open_prompt"),
+                match_label=match_label(score) if seeker else None,
             )
             for r, score in page_slice
         ],
@@ -1044,7 +1103,19 @@ async def shelves(
         # The city last: when everyone is local it says the least.
         if my_city and same(city_of(c.get("locality")), my_city):
             return t("sameCity", city=my_city)
-        return None
+        return nearby_reason(c)
+
+    def nearby_reason(c: dict) -> str | None:
+        """[DEC-V1-031] A different city close enough to matter ("In
+        Secunderabad · about 12 km away") — it used to count as "not
+        Hyderabad" at all."""
+        here, there = seeker.get("geo"), c.get("geo")
+        if not (isinstance(here, dict) and isinstance(there, dict)) or same(city_of(c.get("locality")), my_city):
+            return None
+        km = compatibility.distance_km((here["lat"], here["lon"]), (there["lat"], there["lon"]))
+        if km > NEARBY_REASON_KM:
+            return None
+        return t("nearby", city=city_of(c.get("locality")), km=max(5, int(round(km / 5.0)) * 5))
 
     out: list[Shelf] = []
 

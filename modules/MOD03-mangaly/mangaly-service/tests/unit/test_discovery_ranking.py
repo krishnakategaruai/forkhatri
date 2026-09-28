@@ -21,11 +21,8 @@ from app.components.discovery.interface import (
     reciprocity,
 )
 from app.components.discovery.stable_matching import compute_daily_picks, proposer_side
-from app.config.ranking_weights import (
-    MAX_SAME_BRACKET_RUN,
-    PARTNER_PREFERENCE_WEIGHT,
-    RECIPROCITY_WEIGHT,
-)
+from app.config.matching_engine import PAIR_WEIGHT
+from app.config.ranking_weights import MAX_SAME_BRACKET_RUN
 
 
 def born_years_ago(age: int) -> str:
@@ -96,10 +93,12 @@ def test_Given_a_one_way_fit_When_scored_Then_it_ranks_below_a_two_way_fit():
 
     assert _preference_checks(viewer, one_way) == [1.0]
     assert _preference_checks(one_way, viewer) == [0.0]
-    # [DEC-V1-030] The two-way term averages to a half; the reciprocity term
-    # (harmonic mean of 1.0 and 0.0) is zero — a one-way fit earns nothing there.
-    assert _score(viewer, one_way) == pytest.approx(0.5 * PARTNER_PREFERENCE_WEIGHT)
-    assert _score(viewer, two_way) == pytest.approx(PARTNER_PREFERENCE_WEIGHT + RECIPROCITY_WEIGHT)
+    # [DEC-V1-030/031] The engine combines both directions by harmonic mean,
+    # each shrunk toward neutral by the prior: one met wish each way is
+    # (6 + 3) / 12 = 0.75; a direction that misses (six years outside their
+    # range) is 3 / 12 = 0.25, and the harmonic mean pulls the pair down.
+    assert _score(viewer, two_way) == pytest.approx(PAIR_WEIGHT * 0.75, abs=0.002)
+    assert _score(viewer, one_way) == pytest.approx(PAIR_WEIGHT * 0.375, abs=0.002)
     assert _score(viewer, two_way) > _score(viewer, one_way)
 
 

@@ -20,6 +20,9 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // The floating Next dev badge sat on top of the Home tab in every screenshot.
   devIndicators: false,
+  // Temporary Cloudflare quick-tunnel override (2026-09-25): `next dev` otherwise
+  // rejects requests whose Host isn't localhost. Remove once the tunnel is torn down.
+  allowedDevOrigins: ["stages-passenger-examining-brunswick.trycloudflare.com"],
   // Media served by the API's local-disk Object Storage stand-in, and the
   // module's own static assets, are proxied so a `<img src="/media/...">`
   // works from either origin without hardcoding the API port in markup.

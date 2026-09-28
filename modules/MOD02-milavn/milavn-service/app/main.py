@@ -198,6 +198,7 @@ def _include_feature_routers(app: FastAPI) -> None:
         "safety",
         "feedback",
         "admin",
+        "insights",
         "conversation",
         "chat",
         "payments",

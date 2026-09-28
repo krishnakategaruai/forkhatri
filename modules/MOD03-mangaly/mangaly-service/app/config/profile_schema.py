@@ -30,7 +30,14 @@ CATEGORY_KEYS: Final[dict[str, frozenset[str]]] = {
     "marital_history": frozenset({"marital_status", "marital_history", "have_children"}),
     "relocation": frozenset({"relocation_willingness"}),
     "partner_preference": frozenset(
-        {"looking_for", "age_range", "locality", "height_range", "education", "diet", "notes"}
+        {
+            "looking_for", "age_range", "locality", "height_range", "education", "diet", "notes",
+            # [DEC-V1-031] The matchmaker: the family's own words and what was
+            # understood from them ({text, items}), and the wanted value and
+            # importance on each 1–10 scale ({scale: {want, importance}}).
+            "brief",
+            "scales",
+        }
     ),
     "lifestyle": frozenset({"diet", "hobbies", "smoking", "drinking"}),
     "food_travel_hobbies": frozenset({"hobbies", "food", "travel"}),
@@ -41,6 +48,12 @@ CATEGORY_KEYS: Final[dict[str, frozenset[str]]] = {
         {"wants_children", "living_arrangement", "financial_outlook", "career_plans"}
     ),
     "pets": frozenset({"preference"}),
+    # [DEC-V1-031] How the candidate rates themselves, 1–10, on the six
+    # matchmaker scales (config/matching_engine.SCALES). Private: read only by
+    # the engine, never shown to another member. Candidate only.
+    "self_scales": frozenset(
+        {"faith", "tradition", "family_closeness", "career", "social", "active"}
+    ),
     "in_my_words": frozenset({"prompt_1", "prompt_2", "prompt_3"}),
     "self_expression": frozenset({"about_me", "i_value", "weekend"}),
     # [Migration 043] What a candidate shows before any connection, beyond the
@@ -68,7 +81,22 @@ CATEGORY_KEYS: Final[dict[str, frozenset[str]]] = {
         }
     ),
     "horoscope": frozenset(
-        {"matching_required", "manglik", "rashi", "nakshatra", "birth_time", "birth_place"}
+        {
+            "matching_required",
+            "manglik",
+            "rashi",
+            "nakshatra",
+            "birth_time",
+            # [2026-09-27] How sure the family is of the time, and the chosen
+            # place's coordinates and time zone (server-resolved; see
+            # components/profile/horoscope_fields.py).
+            "birth_time_accuracy",
+            "birth_place",
+            "birth_place_geo",
+            # [2026-09-27] Which traditional matching the family follows:
+            # ashtakoota (36 gunas), porutham (10 poruthams) or both.
+            "matching_system",
+        }
     ),
     # [BR07/FR033, baseline §12] The short game-like assessment. Ten
     # forced-choice items, each storing which of two poles the member chose.
@@ -133,6 +161,8 @@ FACT_SOURCES: Final[dict[str, tuple[tuple[str, str], ...]]] = {
     "about_family": (("family", "about_family"),),
     "family_involvement": (("family_involvement_expectations", "level"),),
     "diet": (("lifestyle", "diet"),),
+    "smoking": (("lifestyle", "smoking"),),
+    "drinking": (("lifestyle", "drinking"),),
     "hobbies": (("food_travel_hobbies", "hobbies"), ("lifestyle", "hobbies")),
     "pets": (("pets", "preference"),),
     "communication_style": (("communication_style", "style"),),
@@ -142,6 +172,7 @@ FACT_SOURCES: Final[dict[str, tuple[tuple[str, str], ...]]] = {
     "rashi": (("horoscope", "rashi"),),
     "nakshatra": (("horoscope", "nakshatra"),),
     "birth_time": (("horoscope", "birth_time"),),
+    "birth_time_accuracy": (("horoscope", "birth_time_accuracy"),),
     "birth_place": (("horoscope", "birth_place"),),
     "horoscope_matching": (("horoscope", "matching_required"),),
     "partner_age_range": (("partner_preference", "age_range"),),
@@ -189,7 +220,7 @@ BIODATA_SECTIONS: Final[tuple[tuple[str, tuple[str, ...]], ...]] = (
         "lifestyle",
         ("diet", "hobbies", "pets", "communication_style", "independence", "wants_children"),
     ),
-    ("horoscope", ("manglik", "rashi", "nakshatra", "birth_time", "birth_place", "horoscope_matching")),
+    ("horoscope", ("manglik", "rashi", "nakshatra", "birth_time", "birth_time_accuracy", "birth_place", "horoscope_matching")),
     ("about", ("about",)),  # prompts are appended as items at read time
     ("partner_expectations", ("partner_age_range", "partner_locality", "partner_notes")),
 )
@@ -220,6 +251,9 @@ ENUM_FACTS: Final[frozenset[str]] = frozenset(
         "independence",
         "wants_children",
         "manglik",
+        "rashi",
+        "nakshatra",
+        "birth_time_accuracy",
         "horoscope_matching",
         "gender",
     }

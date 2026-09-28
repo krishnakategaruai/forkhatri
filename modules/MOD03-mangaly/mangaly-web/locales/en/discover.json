@@ -238,5 +238,133 @@
     "words": "In their words",
     "new": "New",
     "more": "More"
+  },
+  "match": {
+    "strong": "Strong match",
+    "good": "Good match"
+  },
+  "matchmaker": {
+    "entry": {
+      "title": "Tell us who you're looking for",
+      "body": "In your own words — type or speak. We'll understand it and show the people who fit first.",
+      "editTitle": "Who you're looking for",
+      "editBody": "Change it any time, in your own words.",
+      "open": "Describe"
+    },
+    "title": "Who you're looking for",
+    "intro": "Describe the partner you hope for, the way you would tell a family elder. Say what matters most, and what doesn't.",
+    "placeholder": "For example: a vegetarian family, Hyderabad or Bengaluru, doesn't drink. A master's degree would be nice. Height doesn't matter much.",
+    "wordsLabel": "In your own words",
+    "understand": "Understand",
+    "understanding": "Reading your words…",
+    "aiNote": "Our AI reads these words only to understand them. Nobody else sees them.",
+    "basicNote": "We picked out the points below from your words. Change anything we got wrong.",
+    "understood": "What we understood",
+    "understoodHint": "Slide to say how much each point matters. At 10 it is a must — people who clearly don't meet it are not shown.",
+    "nothing": "Nothing to match on yet. Name a city, a diet, an age or an education — or add a point below.",
+    "importance": "How much it matters",
+    "must": "Must have",
+    "importanceValue": "{{n}} of 10",
+    "remove": "Remove {{what}}",
+    "add": "Add a point",
+    "from": "From your words: “{{quote}}”",
+    "range": {
+      "from": "From",
+      "to": "To",
+      "years": "years",
+      "cm": "cm"
+    },
+    "places": "Cities, separated by commas",
+    "hobbies": "Interests, separated by commas",
+    "field": {
+      "age": "Age",
+      "height_cm": "Height",
+      "locality": "Where they live",
+      "relocation": "Willing to relocate",
+      "mother_tongue": "Mother tongue",
+      "sub_community": "Community",
+      "education": "Education",
+      "income_band": "Income",
+      "diet": "Diet",
+      "smoking": "Smoking",
+      "drinking": "Drinking",
+      "family_type": "Family type",
+      "family_values": "Family values",
+      "manglik": "Manglik",
+      "hobbies": "Interests"
+    },
+    "scales": {
+      "partnerTitle": "In your partner",
+      "partnerHint": "Where you would like them to be on each scale, and how much it matters. Leave a scale unset if it doesn't.",
+      "selfTitle": "About you",
+      "selfHint": "Where you are on each scale. Private — only the matching reads it.",
+      "selfManaged": "Only the candidate rates themselves, once they take over this profile.",
+      "set": "Set",
+      "clear": "Clear",
+      "wanted": "Wanted",
+      "you": "You",
+      "dim": {
+        "faith": {
+          "name": "Faith and rituals",
+          "low": "Rarely",
+          "high": "Daily prayer"
+        },
+        "tradition": {
+          "name": "Outlook",
+          "low": "Modern",
+          "high": "Traditional"
+        },
+        "family_closeness": {
+          "name": "Family life",
+          "low": "Own household",
+          "high": "Close to family"
+        },
+        "career": {
+          "name": "Career",
+          "low": "One part of life",
+          "high": "Central"
+        },
+        "social": {
+          "name": "Social life",
+          "low": "Quiet at home",
+          "high": "Out with people"
+        },
+        "active": {
+          "name": "Active life",
+          "low": "Relaxed",
+          "high": "Very active"
+        }
+      }
+    },
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved. Your matches now follow this.",
+    "error": "Couldn't save. Please try again.",
+    "rateLimited": "That's a lot for one day. Please try again tomorrow.",
+    "failed": "Couldn't read that just now. Please try again.",
+    "privacy": "Private to you and your family. Other members never see this.",
+    "back": "Back"
+  },
+  "fit": {
+    "title": "How you fit each other",
+    "titleFor": "How {{name}} and this match fit",
+    "yours": "What you're looking for",
+    "yoursFor": "What {{name}} is looking for",
+    "yoursEmptyFor": "{{name}} hasn't described who they're looking for yet.",
+    "theirs": "What they're looking for",
+    "theirsFor": "What this match is looking for",
+    "theirsMet": "You meet what they asked for on:",
+    "theirsMetFor": "{{name}} meets what this match asked for on:",
+    "theirsNone": "Nothing to compare here yet.",
+    "private": "Their preferences stay private — you only see where you fit.",
+    "edit": "Change what you're looking for",
+    "atLeast": "At least {{value}}",
+    "upTo": "Up to {{value}}",
+    "status": {
+      "met": "Yes",
+      "close": "Close",
+      "differs": "Different",
+      "unknown": "Not shared"
+    }
   }
 }

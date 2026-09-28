@@ -33,6 +33,8 @@ from app.api.routes import (
     connection,
     discovery,
     home_circle,
+    horoscope,
+    insights,
     media,
     notifications,
     profile,
@@ -149,6 +151,7 @@ def create_app() -> FastAPI:
     # (Safety Intelligence) outright, whatever the rest of it does.
     app.include_router(safety.router)
     app.include_router(shortlist.router)
+    app.include_router(horoscope.router)
     app.include_router(notifications.router)
     # [DEC-V1-016/025] The live face match: status, attempt, withdraw.
     app.include_router(verification.router)
@@ -158,6 +161,8 @@ def create_app() -> FastAPI:
     app.include_router(billing.router)
     # [DEC-V1-032] Assisted matching: a member's relationship manager and the RM console.
     app.include_router(rm.router)
+    # [2026-09-27] Facts for the platform's Members dashboard (server to server only).
+    app.include_router(insights.router)
 
     return app
 

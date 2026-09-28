@@ -53,15 +53,36 @@ class SignOutRequest(BaseModel):
     everywhere: bool = False
 
 
+def _cookie_host_kwargs(settings: Settings) -> dict[str, Any]:
+    """Host-binding options shared by set and delete, decoupled from any one deployment.
+
+    Domain is omitted entirely (not passed as "") when unset, so the cookie stays
+    host-only by default — identical to today's behaviour. A deployment that
+    tunnels every module under its own real domain can opt into cross-host
+    sharing purely through SESSION_COOKIE_DOMAIN / SESSION_COOKIE_SAMESITE, with
+    no change to this code.
+    """
+    kwargs: dict[str, Any] = {"path": "/", "secure": settings.session_cookie_secure, "samesite": settings.session_cookie_samesite}
+    if settings.session_cookie_domain:
+        kwargs["domain"] = settings.session_cookie_domain
+    return kwargs
+
+
 def _set_session_cookie(response: Response, settings: Settings, signed_in: identity.SignedIn) -> None:
     response.set_cookie(
         settings.session_cookie_name,
         signed_in.session_token,
         max_age=settings.session_ttl_days * 86400,
         httponly=True,
-        secure=settings.session_cookie_secure,
-        samesite="lax",
-        path="/",
+        **_cookie_host_kwargs(settings),
+    )
+
+
+def _clear_session_cookie(response: Response, settings: Settings) -> None:
+    response.delete_cookie(
+        settings.session_cookie_name,
+        httponly=True,
+        **_cookie_host_kwargs(settings),
     )
 
 
@@ -161,10 +182,4 @@ async def sign_out(
     if session is not None:
         await identity.sign_out(db, session.token, everywhere=bool(body and body.everywhere))
         await db.commit()
-    response.delete_cookie(
-        settings.session_cookie_name,
-        path="/",
-        httponly=True,
-        secure=settings.session_cookie_secure,
-        samesite="lax",
-    )
+    _clear_session_cookie(response, settings)

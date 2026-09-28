@@ -565,8 +565,15 @@
     cursor: pointer;
     transition: background 0.15s var(--ease);
   }
-  button.module-row:hover {
+  button.module-row:hover,
+  a.module-row:hover {
     background: var(--surface-2);
+  }
+  a.module-row {
+    text-decoration: none;
+  }
+  .community {
+    margin-top: 16px;
   }
   button.module-row:focus-visible {
     outline-offset: -2px;
@@ -1018,6 +1025,8 @@
     background: transparent;
     text-align: start;
     cursor: pointer;
+    color: inherit;
+    text-decoration: none;
   }
   .row-button:hover {
     background: var(--surface-2);

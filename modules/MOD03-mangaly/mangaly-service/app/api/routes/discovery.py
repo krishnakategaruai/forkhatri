@@ -18,6 +18,7 @@ from app.components.authorization import interface as authz
 from app.components.authorization.context import AuthorizationDenied
 from app.components.compatibility import interface as compatibility
 from app.components.discovery import interface as discovery
+from app.components.horoscope import interface as horoscope
 from app.components.trust import interface as trust
 from app.components.shortlist import interface as shortlist
 from app.i18n import translate
@@ -37,7 +38,9 @@ class VerifiedLayerResponse(BaseModel):
 
 class SearchResultResponse(BaseModel):
     candidate_account_id: str
-    score: float
+    # [DEC-V1-031] The engine's 1–10 score orders these results but never
+    # leaves the server; a member reads only this word, or nothing.
+    match_label: Literal["strong", "good"] | None = None
     locality: str | None
     education_level: str | None
     profession: str | None
@@ -97,6 +100,10 @@ async def search(
     mother_tongue: Annotated[list[str] | None, Query()] = None,
     manglik: str | None = None,
     open_to_relocate: bool = False,
+    min_guna: Annotated[float | None, Query(ge=0, le=36)] = None,
+    mangal: Literal["match", "none"] | None = None,
+    min_porutham: Annotated[int | None, Query(ge=0, le=10)] = None,
+    porutham_essentials: bool = False,
 ) -> SearchPageResponse:
     """[FR021/FR026] Ranked by DEC-V1-002's fixed weights, never popularity.
     `for_candidate` (a profile id or account id) searches for a candidate the
@@ -131,6 +138,10 @@ async def search(
                 manglik=manglik,
                 q=q,
                 city=tuple(city or ()),
+                min_guna=min_guna,
+                mangal=mangal,
+                min_porutham=min_porutham,
+                porutham_essentials=porutham_essentials,
             ),
             page=page,
             page_size=page_size,
@@ -147,6 +158,16 @@ async def search(
                 "message": translate("discovery.error.lookingForMissing", lang),
             },
         ) from exc
+    except horoscope.HoroscopeFilterUnavailable as exc:
+        # The horoscope filter needs the searched-for person's own chart.
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": "horoscope_chart_missing"},
+        ) from exc
+    except horoscope.HoroscopeUnavailable as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail={"code": "horoscope_unavailable"}
+        ) from exc
     results = page_result.results
     cards = await discovery.cards_for(session, account_ids=[r.candidate_account_id for r in results])
     opened = await discovery.open_cards_for(
@@ -158,7 +179,7 @@ async def search(
         results=[
             SearchResultResponse(
                 candidate_account_id=str(r.candidate_account_id),
-                score=r.score,
+                match_label=r.match_label,
                 locality=r.locality,
                 education_level=r.education_level,
                 profession=r.profession,
@@ -264,6 +285,50 @@ async def why_this_match(
 
 
 
+class FitWishResponse(BaseModel):
+    field: str
+    values: list[str] = []
+    min: float | None = None
+    max: float | None = None
+    must: bool = False
+    importance: int
+    status: Literal["met", "close", "differs", "unknown"]
+
+
+class FitResponse(BaseModel):
+    """[DEC-V1-031] How two people fit each other — words and ticks, never a
+    number. `yours` is the reader's own list; `theirs_met` names only the
+    topics of the other person's private wishes the reader meets."""
+
+    label: Literal["strong", "good"] | None = None
+    yours: list[FitWishResponse] = []
+    theirs_met: list[str] = []
+
+
+@router.get("/fit/{candidate_account_id}", response_model=FitResponse)
+async def how_you_fit(
+    candidate_account_id: UUID,
+    session: DbSession,
+    account_id: AuthenticatedAccount,
+    for_candidate: UUID | None = None,
+) -> FitResponse:
+    try:
+        context_account_id = await authz.resolve_context_account(
+            session, acting_account_id=account_id, for_candidate=for_candidate
+        )
+        fit = await compatibility.fit_for(
+            session,
+            viewer_account_id=account_id,
+            candidate_account_id=candidate_account_id,
+            for_candidate_account_id=(
+                context_account_id if context_account_id != account_id else None
+            ),
+        )
+    except AuthorizationDenied as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN) from exc
+    return FitResponse(**fit)
+
+
 class ShelfItemResponse(SearchResultResponse):
     reason: str | None = None
 
@@ -318,7 +383,7 @@ async def list_shelves(
             items.append(
                 ShelfItemResponse(
                     candidate_account_id=str(r.candidate_account_id),
-                    score=r.score,
+                    match_label=r.match_label,
                     locality=r.locality,
                     education_level=r.education_level,
                     profession=r.profession,

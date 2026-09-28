@@ -72,6 +72,7 @@ class RateLimitScope(StrEnum):
     CONNECTION_REQUEST = "connection_request"  # SP042 — flagged gap, not in TR042 itself
     MESSAGE_SEND = "message_send"  # SP049 — flagged gap, not in TR049 itself
     FACE_MATCH_ATTEMPT = "face_match_attempt"  # DEC-V1-016 — bounds retries of a client-side check
+    MATCHMAKER_UNDERSTAND = "matchmaker_understand"  # DEC-V1-031 — one model call each
 
 
 @dataclass(frozen=True, slots=True)

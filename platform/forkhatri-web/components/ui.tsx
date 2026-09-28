@@ -234,6 +234,15 @@ export function Sigil({ moduleKey, size = 24 }: { moduleKey: string; size?: numb
         </>
       );
       break;
+    case "numbers":
+      // ForKhatri in numbers (the members dashboard): three rising bars on a baseline.
+      art = (
+        <>
+          <path d="M10 52h44" {...line} />
+          <path d="M18 44V32M32 44V18M46 44V26" {...line} />
+        </>
+      );
+      break;
     default:
       art = <rect x="14" y="14" width="36" height="36" rx="8" {...line} />;
   }

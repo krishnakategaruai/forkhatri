@@ -9,6 +9,7 @@ import {
   getI18n,
   isSupported,
 } from './config';
+import { IDENTITY_API } from '../platform';
 
 const STORAGE_KEY = 'mangaly.language';
 
@@ -38,9 +39,49 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     }
     if (i18n.language !== next) void i18n.changeLanguage(next);
     document.documentElement.lang = next;
+
+    // [Owner, 2026-09-27] The language chosen in ForKhatri is the person's
+    // language everywhere: read it from their ForKhatri account (identity
+    // service) when Mangaly opens, and again whenever the tab comes back into
+    // view (they may have changed it in ForKhatri meanwhile). The local value
+    // above is only the first paint and the signed-out fallback.
+    let alive = true;
+    const syncFromAccount = async () => {
+      const lang = await accountLanguage();
+      if (!alive || !lang || lang === i18n.language) return;
+      void i18n.changeLanguage(lang);
+      document.documentElement.lang = lang;
+      try {
+        localStorage.setItem(STORAGE_KEY, lang);
+      } catch {
+        // Non-fatal.
+      }
+    };
+    void syncFromAccount();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void syncFromAccount();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      alive = false;
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [i18n]);
 
   return <I18nextProvider i18n={i18n}>{children}</I18nextProvider>;
+}
+
+/** The signed-in person's language from their ForKhatri account, or null. */
+async function accountLanguage(): Promise<Language | null> {
+  try {
+    const res = await fetch(`${IDENTITY_API}/v1/session`, { credentials: 'include', cache: 'no-store' });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { member?: { preferred_language?: string } };
+    const lang = body.member?.preferred_language;
+    return isSupported(lang) ? lang : null;
+  } catch {
+    return null;
+  }
 }
 
 export function setPreferredLanguage(lang: Language): void {
@@ -50,4 +91,13 @@ export function setPreferredLanguage(lang: Language): void {
     // Non-fatal: the choice just will not survive a reload.
   }
   document.documentElement.lang = lang;
+  // A choice made in Mangaly is the person's choice everywhere: save it to
+  // their ForKhatri account, which every module reads. Best effort — the
+  // visible switch never waits on it.
+  void fetch(`${IDENTITY_API}/v1/me`, {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ preferred_language: lang }),
+  }).catch(() => {});
 }

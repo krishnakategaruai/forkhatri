@@ -1,0 +1,27 @@
+{
+  "name": "@forkhatri/mangaly-horoscope-service",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mangaly horoscope matching engine V1: deterministic, explainable, provider-independent Ashtakoota and Mangal Dosha calculation.",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node src/server.ts",
+    "test": "node --test --test-reporter=spec \"test/**/*.test.ts\"",
+    "test:differential": "node --test --test-reporter=spec \"test/differential/*.test.ts\"",
+    "typecheck": "tsc --noEmit",
+    "licenses": "node scripts/license-inventory.ts",
+    "golden:update": "node scripts/update-golden.ts",
+    "differential:report": "node scripts/run-differential.ts",
+    "dev": "node src/server.ts"
+  },
+  "dependencies": {
+    "@prisri/jyotish": "1.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
+  }
+}

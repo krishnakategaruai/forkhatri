@@ -1,0 +1,14 @@
+ingress:
+  - hostname: f1.trycloudflare.com
+    service: http://localhost:3100
+  - hostname: f2.trycloudflare.com
+    service: http://localhost:3000
+  - hostname: f3.trycloudflare.com
+    service: http://localhost:3001
+  - hostname: b1.trycloudflare.com
+    service: http://localhost:8000
+  - hostname: b2.trycloudflare.com
+    service: http://localhost:8001
+  - hostname: b3.trycloudflare.com
+    service: http://localhost:8100
+  - service: http_status:404

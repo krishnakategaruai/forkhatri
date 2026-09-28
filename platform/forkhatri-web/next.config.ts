@@ -11,6 +11,9 @@ const nextConfig: NextConfig = {
   // local builds are unchanged. The entrance is the default zone at `/`, so it
   // has no basePath (docs/ParentApp/07-tech-reqs.md TR22).
   output: process.env.NEXT_OUTPUT_STANDALONE === "1" ? "standalone" : undefined,
+  // Temporary Cloudflare quick-tunnel override (2026-09-25): `next dev` otherwise
+  // rejects requests whose Host isn't localhost. Remove once the tunnel is torn down.
+  allowedDevOrigins: ["amendment-sleep-conducting-adjustment.trycloudflare.com"],
 };
 
 export default nextConfig;

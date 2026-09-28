@@ -76,7 +76,9 @@
       "looking_for": "ఎవరి కోసం వెతుకుతున్నారు"
     },
     "lifestyle": {
-      "diet": "ఆహారం"
+      "diet": "ఆహారం",
+      "smoking": "పొగతాగడం",
+      "drinking": "మద్యపానం"
     },
     "food_travel_hobbies": {
       "hobbies": "అభిరుచులు"
@@ -102,7 +104,9 @@
       "rashi": "రాశి",
       "nakshatra": "నక్షత్రం",
       "birth_time": "జన్మ సమయం",
-      "birth_place": "జన్మ స్థలం"
+      "birth_place": "జన్మ స్థలం",
+      "birth_time_accuracy": "సమయం ఎంత ఖచ్చితం?",
+      "matching_system": "పొంతన పద్ధతి"
     },
     "community": {
       "gotra": "గోత్రం",
@@ -234,7 +238,15 @@
     },
     "outlookTitle": "{{name}} ఎలా ఉంటారు, మీ పక్కన",
     "aboutName": "{{name}} గురించి",
-    "familyChat": "కుటుంబ సంభాషణ"
+    "familyChat": "కుటుంబ సంభాషణ",
+    "similar": "ఇలాంటి ప్రొఫైల్‌లు",
+    "similarWhy": "ఊరు, వయసు, ఉద్యోగంలో దగ్గరగా",
+    "similarReason": {
+      "sameCity": "ఒకే ఊరు",
+      "closeAge": "వయసులో దగ్గర",
+      "sameWork": "ఒకే ఉద్యోగం",
+      "sameEducation": "ఒకే చదువు"
+    }
   },
   "option": {
     "highest_education_level": {
@@ -360,6 +372,58 @@
     "lives_with_parents": {
       "yes": "అవును",
       "no": "కాదు"
+    },
+    "birth_time_accuracy": {
+      "exact": "ఖచ్చితం (జనన ధృవపత్రం నుండి)",
+      "about_15": "15 నిమిషాల లోపు",
+      "about_30": "30 నిమిషాల లోపు",
+      "about_60": "ఒక గంట లోపు",
+      "about_120": "రెండు గంటల లోపు",
+      "unknown": "సమయం తెలియదు"
+    },
+    "nakshatra": {
+      "ashwini": "అశ్విని",
+      "bharani": "భరణి",
+      "krittika": "కృత్తిక",
+      "rohini": "రోహిణి",
+      "mrigashira": "మృగశిర",
+      "ardra": "ఆర్ద్ర",
+      "punarvasu": "పునర్వసు",
+      "pushya": "పుష్యమి",
+      "ashlesha": "ఆశ్లేష",
+      "magha": "మఖ",
+      "purva_phalguni": "పుబ్బ (పూర్వ ఫల్గుణి)",
+      "uttara_phalguni": "ఉత్తర (ఉత్తర ఫల్గుణి)",
+      "hasta": "హస్త",
+      "chitra": "చిత్త",
+      "swati": "స్వాతి",
+      "vishakha": "విశాఖ",
+      "anuradha": "అనూరాధ",
+      "jyeshtha": "జ్యేష్ఠ",
+      "mula": "మూల",
+      "purva_ashadha": "పూర్వాషాఢ",
+      "uttara_ashadha": "ఉత్తరాషాఢ",
+      "shravana": "శ్రవణం",
+      "dhanishta": "ధనిష్ఠ",
+      "shatabhisha": "శతభిషం",
+      "purva_bhadrapada": "పూర్వాభాద్ర",
+      "uttara_bhadrapada": "ఉత్తరాభాద్ర",
+      "revati": "రేవతి"
+    },
+    "matching_system": {
+      "ashtakoota": "36 గుణాలు (గుణ మేళనం)",
+      "porutham": "10 పొరుత్తాలు (దక్షిణ భారత)",
+      "both": "రెండూ"
+    },
+    "smoking": {
+      "never": "పొగ తాగరు",
+      "occasionally": "అప్పుడప్పుడు పొగ తాగుతారు",
+      "regularly": "క్రమం తప్పకుండా పొగ తాగుతారు"
+    },
+    "drinking": {
+      "never": "మద్యం తాగరు",
+      "occasionally": "అప్పుడప్పుడు తాగుతారు",
+      "regularly": "క్రమం తప్పకుండా తాగుతారు"
     }
   },
   "photo": {
@@ -635,7 +699,17 @@
     "selectPlaceholder": "ఎంచుకోండి…",
     "ageRangeFrom": "నుండి",
     "ageRangeTo": "వరకు",
-    "saveError": "సేవ్ చేయలేకపోయాము — మీ కనెక్షన్‌ని తనిఖీ చేసి మళ్ళీ ప్రయత్నించండి."
+    "saveError": "సేవ్ చేయలేకపోయాము — మీ కనెక్షన్‌ని తనిఖీ చేసి మళ్ళీ ప్రయత్నించండి.",
+    "birthTimeUnknown": "సమయం సేవ్ కాలేదు. తేదీ నుండి రాశి, నక్షత్రం చాలాసార్లు తెలుస్తాయి; లగ్నం, కుజ దోషం తెలియవు.",
+    "birthTimeNeeded": "జన్మ సమయం ఇవ్వండి, లేదా \"సమయం తెలియదు\" ఎంచుకోండి.",
+    "place": {
+      "placeholder": "ఊరు లేదా నగరం పేరు టైప్ చేయండి, ఉదా. గుంటూరు",
+      "chosen": "స్థలం ఎంచుకున్నారు",
+      "repick": "జాతకం కోసం ఈ స్థలాన్ని జాబితా నుండి మళ్లీ వెతికి ఎంచుకోండి.",
+      "none": "సరిపోలలేదు. దగ్గరి పట్టణం లేదా వేరే స్పెల్లింగ్ ప్రయత్నించండి.",
+      "credit": "స్థలాలు: GeoNames (CC BY 4.0)",
+      "help": "గ్రామంలో పుట్టారా? దగ్గరి పట్టణాన్ని ఎంచుకోండి."
+    }
   },
   "notes": {
     "title": "మీ వ్యక్తిగత నోట్స్",

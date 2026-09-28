@@ -76,7 +76,9 @@
       "looking_for": "Looking for"
     },
     "lifestyle": {
-      "diet": "Diet"
+      "diet": "Diet",
+      "smoking": "Smoking",
+      "drinking": "Drinking"
     },
     "food_travel_hobbies": {
       "hobbies": "Hobbies"
@@ -102,7 +104,9 @@
       "rashi": "Rashi",
       "nakshatra": "Nakshatra",
       "birth_time": "Time of birth",
-      "birth_place": "Place of birth"
+      "birth_place": "Place of birth",
+      "birth_time_accuracy": "How sure is the time?",
+      "matching_system": "Matching style"
     },
     "community": {
       "gotra": "Gotra",
@@ -234,7 +238,15 @@
     },
     "outlookTitle": "How {{name}} is, beside you",
     "aboutName": "About {{name}}",
-    "familyChat": "Family chat"
+    "familyChat": "Family chat",
+    "similar": "Similar profiles",
+    "similarWhy": "Close in city, age and work",
+    "similarReason": {
+      "sameCity": "Same city",
+      "closeAge": "Close in age",
+      "sameWork": "Same work",
+      "sameEducation": "Same education"
+    }
   },
   "option": {
     "highest_education_level": {
@@ -360,6 +372,58 @@
     "lives_with_parents": {
       "yes": "Yes",
       "no": "No"
+    },
+    "birth_time_accuracy": {
+      "exact": "Exact (from the birth record)",
+      "about_15": "Within 15 minutes",
+      "about_30": "Within 30 minutes",
+      "about_60": "Within an hour",
+      "about_120": "Within two hours",
+      "unknown": "Don't know the time"
+    },
+    "nakshatra": {
+      "ashwini": "Ashwini",
+      "bharani": "Bharani",
+      "krittika": "Krittika",
+      "rohini": "Rohini",
+      "mrigashira": "Mrigashira",
+      "ardra": "Ardra",
+      "punarvasu": "Punarvasu",
+      "pushya": "Pushya",
+      "ashlesha": "Ashlesha",
+      "magha": "Magha",
+      "purva_phalguni": "Purva Phalguni",
+      "uttara_phalguni": "Uttara Phalguni",
+      "hasta": "Hasta",
+      "chitra": "Chitra",
+      "swati": "Swati",
+      "vishakha": "Vishakha",
+      "anuradha": "Anuradha",
+      "jyeshtha": "Jyeshtha",
+      "mula": "Mula",
+      "purva_ashadha": "Purva Ashadha",
+      "uttara_ashadha": "Uttara Ashadha",
+      "shravana": "Shravana",
+      "dhanishta": "Dhanishta",
+      "shatabhisha": "Shatabhisha",
+      "purva_bhadrapada": "Purva Bhadrapada",
+      "uttara_bhadrapada": "Uttara Bhadrapada",
+      "revati": "Revati"
+    },
+    "matching_system": {
+      "ashtakoota": "36 gunas (Guna Milan)",
+      "porutham": "10 poruthams (South Indian)",
+      "both": "Both"
+    },
+    "smoking": {
+      "never": "Doesn't smoke",
+      "occasionally": "Smokes occasionally",
+      "regularly": "Smokes regularly"
+    },
+    "drinking": {
+      "never": "Doesn't drink",
+      "occasionally": "Drinks occasionally",
+      "regularly": "Drinks regularly"
     }
   },
   "photo": {
@@ -635,7 +699,17 @@
     "selectPlaceholder": "Select…",
     "ageRangeFrom": "From",
     "ageRangeTo": "To",
-    "saveError": "Couldn't save — check your connection and try again."
+    "saveError": "Couldn't save — check your connection and try again.",
+    "birthTimeUnknown": "No time is saved. Rashi and nakshatra can often still be worked out from the date; the ascendant and Mangal dosha cannot.",
+    "birthTimeNeeded": "Add the time of birth, or choose \"Don't know the time\".",
+    "place": {
+      "placeholder": "Type the town or city, e.g. Guntur",
+      "chosen": "Place chosen",
+      "repick": "Search and choose this place again from the list so it can be used for the horoscope.",
+      "none": "No match. Try the nearest town or a different spelling.",
+      "credit": "Places: GeoNames (CC BY 4.0)",
+      "help": "Born in a village? Choose the nearest town."
+    }
   },
   "notes": {
     "title": "Your private notes",

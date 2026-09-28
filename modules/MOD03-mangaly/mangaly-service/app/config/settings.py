@@ -97,6 +97,20 @@ class Settings(BaseSettings):
     object_storage_secret_key: str = "CHANGE_ME"
     object_storage_signed_url_ttl_seconds: int = 300
 
+    # --- Horoscope calculation service (modules/MOD03-mangaly/horoscope-service) --
+    # Loopback only; the token is shared with that service's own .env.
+    horoscope_service_url: str = "http://127.0.0.1:8013"
+    horoscope_service_token: str = "CHANGE_ME"
+
+    # --- AI matchmaker (DEC-V1-031) -------------------------------------------
+    # Reads a family's own words about the partner they want. Without a real
+    # key the matchmaker uses its built-in keyword reader instead.
+    anthropic_api_key: str = "CHANGE_ME"
+    matchmaker_model: str = "claude-opus-5"
+    # Each "understand" is one model call; generous for real use, bounded
+    # against abuse.
+    rate_limit_matchmaker_max_per_day: int = 40
+
     # --- On-call paging (DEC-V1-009/DEC-V1-011, TR065) ------------------------
     paging_vendor: str = "pagerduty"
     pagerduty_events_api_url: str = "https://events.pagerduty.com/v2/enqueue"

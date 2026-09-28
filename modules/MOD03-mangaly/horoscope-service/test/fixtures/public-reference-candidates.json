@@ -1,0 +1,62 @@
+{
+  "charts": [
+    {
+      "name": "Rajinikanth",
+      "sourceUrls": ["https://jyothishai.com/horoscopes/rajinikanth"],
+      "roddenRating": "AA (claimed by the aggregator; astro.com page itself NOT verified)",
+      "date": "1950-12-12", "localTime": "23:45", "place": "Bangalore, Karnataka, India",
+      "latitude": null, "longitude": null, "ianaTimezone": null, "utcOffset": null,
+      "publishedMoonRashi": "Makara (Capricorn)", "publishedNakshatra": "Shravana", "publishedPada": null,
+      "publishedAscendant": "Simha (Leo)",
+      "caveat": "Source is an AI aggregator that COMPUTES values (Lahiri, 'Swiss Ephemeris-level'); not independent. No coordinates or tz given. Pada 2 quoted on page refers to ascendant nakshatra, not Moon. Must be cross-checked against Astro-Databank."
+    },
+    {
+      "name": "Ravindra Jadeja",
+      "sourceUrls": ["https://jyothishai.com/horoscopes/ravindra-jadeja"],
+      "roddenRating": "AA claimed by aggregator; unverified",
+      "date": "1988-12-06", "localTime": "12:00", "place": "Navagam-Ghed, Gujarat, India",
+      "latitude": null, "longitude": null, "ianaTimezone": "Asia/Kolkata (assumed, not stated)", "utcOffset": null,
+      "publishedMoonRashi": "Tula (Libra)", "publishedNakshatra": "Swati", "publishedPada": 3,
+      "publishedAscendant": "Kumbha (Aquarius)",
+      "caveat": "Exactly 12:00 suggests a default/rounded time, so the AA claim is doubtful. Aggregator-computed values, not independent."
+    },
+    {
+      "name": "Madhubala",
+      "sourceUrls": ["https://jyothishai.com/horoscopes/madhubala"],
+      "roddenRating": "claimed AA (page text also says 'A-rated'); unverified",
+      "date": "1933-02-14", "localTime": "12:00", "place": "Delhi, India",
+      "latitude": null, "longitude": null, "ianaTimezone": "Asia/Kolkata (assumed)", "utcOffset": null,
+      "publishedMoonRashi": "Kanya (Virgo)", "publishedNakshatra": "Hasta", "publishedPada": null,
+      "publishedAscendant": "Vrishabha (Taurus)",
+      "caveat": "Noon time suspicious; pre-1945 Indian time rules make it a poor fixture. Pada 4 on page is for ascendant. Aggregator-computed."
+    },
+    {
+      "name": "Pawan Kalyan",
+      "sourceUrls": ["https://jyothishai.com/horoscopes/pawan-kalyan"],
+      "roddenRating": "claimed AA; unverified",
+      "date": "1971-09-02", "localTime": "12:00", "place": "Bapatla, Andhra Pradesh, India",
+      "latitude": null, "longitude": null, "ianaTimezone": "Asia/Kolkata (assumed)", "utcOffset": null,
+      "publishedMoonRashi": "Makara (Capricorn)", "publishedNakshatra": "Uttara Ashadha", "publishedPada": null,
+      "publishedAscendant": "Vrishchika (Scorpio)",
+      "caveat": "Noon time suggests default; not genuinely AA. Aggregator-computed."
+    }
+  ],
+  "gunaMilanExamples": [
+    {
+      "sourceUrl": "https://nityapanchangam.com/compatibility/ashwini/bharani/",
+      "boy": "Ashwini (Mesha)", "girl": "Bharani (Mesha)",
+      "scores": {"varna": 1, "vashya": 2, "tara": 1.5, "yoni": 2, "grahaMaitri": 5, "gana": 5, "bhakoot": 7, "nadi": 8},
+      "publishedTotal": 32,
+      "tradition": "Cites Brihat Parashara Hora Shastra, Muhurta Chintamani, Kashyapa Samhita; site auto-computes from tables.",
+      "caveat": "Component sum is 31.5, not the published 32, so the page is internally inconsistent (possible rounding). Tara 1.5 implies half-point scoring. Auto-generated page, not a textbook."
+    },
+    {
+      "sourceUrl": "web search summary (AI-generated) of the same Ashwini boy / Bharani girl combination, from https://nityapanchangam.com and similar",
+      "boy": "Ashwini", "girl": "Bharani",
+      "scores": {"varna": 1, "vashya": 2, "tara": 1.5, "yoni": 2, "grahaMaitri": 5, "gana": 5, "bhakoot": 7, "nadi": null},
+      "publishedTotal": 23.5,
+      "caveat": "This is a search-engine summary that omitted Nadi, NOT a primary source. 23.5 + Nadi 8 = 31.5. Do not use as a fixture."
+    }
+  ],
+  "notes": "Research outcome is weak. Only 4 chart candidates found, none independently verified. astro.com Astro-Databank blocked WebFetch (bot check), so no Rodden rating was confirmed at source. Every chart came from one AI aggregator (jyothishai.com) that computes its own sidereal values, so it is NOT an independent reference; three of four have exactly 12:00 birth times, which usually signals a default time rather than a real AA record. No latitude/longitude/tz offsets published. Only 1 usable Guna Milan example (auto-generated, arithmetic inconsistency); gunmilan.in and vedicmarga.com returned 522/429 errors. The 15-chart target was NOT met. Recommend obtaining charts by manually downloading Astro-Databank pages (AA) and cross-checking with a second independent Vedic source, or a textbook (e.g. B.V. Raman) for Guna Milan examples."
+}

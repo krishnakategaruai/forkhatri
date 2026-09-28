@@ -76,7 +76,9 @@
       "looking_for": "किसकी तलाश है"
     },
     "lifestyle": {
-      "diet": "आहार"
+      "diet": "आहार",
+      "smoking": "धूम्रपान",
+      "drinking": "मदिरापान"
     },
     "food_travel_hobbies": {
       "hobbies": "शौक"
@@ -102,7 +104,9 @@
       "rashi": "राशि",
       "nakshatra": "नक्षत्र",
       "birth_time": "जन्म समय",
-      "birth_place": "जन्म स्थान"
+      "birth_place": "जन्म स्थान",
+      "birth_time_accuracy": "समय कितना पक्का है?",
+      "matching_system": "मिलान पद्धति"
     },
     "community": {
       "gotra": "गोत्र",
@@ -234,7 +238,15 @@
     },
     "outlookTitle": "{{name}} कैसे हैं, आपके साथ तुलना में",
     "aboutName": "{{name}} के बारे में",
-    "familyChat": "परिवार की बातचीत"
+    "familyChat": "परिवार की बातचीत",
+    "similar": "मिलते-जुलते प्रोफ़ाइल",
+    "similarWhy": "शहर, उम्र और काम में मिलते-जुलते",
+    "similarReason": {
+      "sameCity": "एक ही शहर",
+      "closeAge": "उम्र में करीब",
+      "sameWork": "एक जैसा काम",
+      "sameEducation": "एक जैसी पढ़ाई"
+    }
   },
   "option": {
     "highest_education_level": {
@@ -360,6 +372,58 @@
     "lives_with_parents": {
       "yes": "हाँ",
       "no": "नहीं"
+    },
+    "birth_time_accuracy": {
+      "exact": "बिल्कुल सही (जन्म प्रमाण से)",
+      "about_15": "15 मिनट के भीतर",
+      "about_30": "30 मिनट के भीतर",
+      "about_60": "एक घंटे के भीतर",
+      "about_120": "दो घंटे के भीतर",
+      "unknown": "समय पता नहीं"
+    },
+    "nakshatra": {
+      "ashwini": "अश्विनी",
+      "bharani": "भरणी",
+      "krittika": "कृत्तिका",
+      "rohini": "रोहिणी",
+      "mrigashira": "मृगशिरा",
+      "ardra": "आर्द्रा",
+      "punarvasu": "पुनर्वसु",
+      "pushya": "पुष्य",
+      "ashlesha": "आश्लेषा",
+      "magha": "मघा",
+      "purva_phalguni": "पूर्वा फाल्गुनी",
+      "uttara_phalguni": "उत्तरा फाल्गुनी",
+      "hasta": "हस्त",
+      "chitra": "चित्रा",
+      "swati": "स्वाति",
+      "vishakha": "विशाखा",
+      "anuradha": "अनुराधा",
+      "jyeshtha": "ज्येष्ठा",
+      "mula": "मूल",
+      "purva_ashadha": "पूर्वाषाढ़ा",
+      "uttara_ashadha": "उत्तराषाढ़ा",
+      "shravana": "श्रवण",
+      "dhanishta": "धनिष्ठा",
+      "shatabhisha": "शतभिषा",
+      "purva_bhadrapada": "पूर्वा भाद्रपद",
+      "uttara_bhadrapada": "उत्तरा भाद्रपद",
+      "revati": "रेवती"
+    },
+    "matching_system": {
+      "ashtakoota": "36 गुण (गुण मिलान)",
+      "porutham": "10 पोरुथम (दक्षिण भारतीय)",
+      "both": "दोनों"
+    },
+    "smoking": {
+      "never": "धूम्रपान नहीं करते",
+      "occasionally": "कभी-कभार धूम्रपान",
+      "regularly": "नियमित धूम्रपान"
+    },
+    "drinking": {
+      "never": "शराब नहीं पीते",
+      "occasionally": "कभी-कभार पीते हैं",
+      "regularly": "नियमित रूप से पीते हैं"
     }
   },
   "photo": {
@@ -635,7 +699,17 @@
     "selectPlaceholder": "चुनें…",
     "ageRangeFrom": "से",
     "ageRangeTo": "तक",
-    "saveError": "सहेज नहीं पाए — अपना कनेक्शन जाँचें और फिर कोशिश करें।"
+    "saveError": "सहेज नहीं पाए — अपना कनेक्शन जाँचें और फिर कोशिश करें।",
+    "birthTimeUnknown": "कोई समय सहेजा नहीं गया। तारीख से राशि और नक्षत्र अक्सर निकल आते हैं; लग्न और मांगलिक दोष नहीं।",
+    "birthTimeNeeded": "जन्म समय लिखें, या \"समय पता नहीं\" चुनें।",
+    "place": {
+      "placeholder": "शहर या कस्बे का नाम लिखें, जैसे गुंटूर",
+      "chosen": "स्थान चुना गया",
+      "repick": "कुंडली के लिए इस स्थान को सूची से फिर से खोजकर चुनें।",
+      "none": "कोई मेल नहीं मिला। पास का कस्बा या दूसरी वर्तनी आज़माएँ।",
+      "credit": "स्थान: GeoNames (CC BY 4.0)",
+      "help": "गाँव में जन्म? पास का कस्बा चुनें।"
+    }
   },
   "notes": {
     "title": "आपके निजी नोट्स",

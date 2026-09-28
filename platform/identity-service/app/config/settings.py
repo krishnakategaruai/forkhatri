@@ -41,11 +41,25 @@ class Settings(BaseSettings):
         "http://127.0.0.1:3100",
         "http://localhost:3000",
         "http://localhost:3001",
+        # Vyapar (MOD01), which follows the member's ForKhatri language.
+        "http://localhost:3011",
     ]
 
     session_cookie_name: str = "fk_session"
     session_cookie_secure: bool = False
     session_ttl_days: int = 30
+    # Optional, decoupled from any specific host: unset (the default) leaves the
+    # cookie host-only, exactly today's behaviour. Set only to let the session
+    # cookie ride across sibling hosts that share a real parent domain (e.g. every
+    # module tunnelled under one owned domain) — never a public suffix such as
+    # trycloudflare.com, which browsers refuse to accept as a cookie Domain.
+    session_cookie_domain: str = ""
+    # "lax" (default) matches today's behaviour. A deployment that fronts every
+    # module behind separate hostnames and needs cross-site fetch to carry the
+    # cookie can raise this to "none" (paired with SESSION_COOKIE_SECURE=true) —
+    # this stays a plain setting, not a code change, so any hosting arrangement
+    # can be supported without editing this service.
+    session_cookie_samesite: Literal["lax", "strict", "none"] = "lax"
 
     otp_pepper: str = "CHANGE_ME_dev_otp_pepper"
     otp_ttl_seconds: int = 300
@@ -98,6 +112,14 @@ class Settings(BaseSettings):
         "vyapar": "http://localhost:3011",
     }
 
+    # Members dashboard (GET /v1/insights, open to every signed-in member).
+    # Where the platform asks each module for the facts it owns (gender, age, city),
+    # server to server with that module's service key. Environment configuration only
+    # (MODULE_API_URLS in `.env`), never a code default: a module not configured is
+    # simply not asked, and the dashboard says its numbers are missing.
+    module_api_urls: dict[str, str] = {}
+    insights_timeout_seconds: float = 5.0
+
     @property
     def dev_tools_active(self) -> bool:
         """The development member switcher is mounted only here, never in production or a rehearsal."""
@@ -115,6 +137,10 @@ class Settings(BaseSettings):
                 problems.append("SESSION_COOKIE_SECURE must be true")
             if not self.session_cookie_name.startswith("__Host-"):
                 problems.append("SESSION_COOKIE_NAME must use the __Host- prefix")
+            if self.session_cookie_domain:
+                problems.append("SESSION_COOKIE_DOMAIN must be unset — the __Host- prefix forbids a Domain attribute")
+            if self.session_cookie_samesite == "none":
+                problems.append("SESSION_COOKIE_SAMESITE must not be none in production")
         if self.dev_expose_otp:
             problems.append("DEV_EXPOSE_OTP must be false")
         if (

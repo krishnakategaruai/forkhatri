@@ -47,6 +47,43 @@ export type CodeChallenge = {
   dev_code?: string;
 };
 
+/** GET /v1/insights: totals only, never a person. */
+export type Insights = {
+  generated_at: string;
+  totals: {
+    members: number;
+    joined: number;
+    not_yet_joined: number;
+    suspended: number;
+    new_7d: number;
+    new_30d: number;
+    active_7d: number;
+    active_30d: number;
+  };
+  growth: { date: string; new: number; total: number }[];
+  sign_in: Record<string, number>;
+  languages: Record<string, number>;
+  modules: { key: string; name: string; members: number }[];
+  gender: { candidates: number; counts: Record<string, number> };
+  age: {
+    bands: { band: string; by_gender: Record<string, number> }[];
+    median: number | null;
+    youngest: number | null;
+    oldest: number | null;
+    median_by_gender: Record<string, number | null>;
+  };
+  candidates: { looking_for: Record<string, number>; marital_status: Record<string, number>; mother_tongue: Record<string, number> };
+  location: {
+    located: number;
+    cities: { name: string; region: string; cc: string; lat: number; lon: number; members: number; by_gender: Record<string, number> }[];
+    india_states: { state: string; members: number }[];
+    countries: { cc: string; members: number; from_city: number; from_phone: number }[];
+    country_unknown: number;
+    unresolved: { text: string; members: number }[];
+  };
+  sources: { module: string; ok: boolean; error?: string | null }[];
+};
+
 export type SignedIn = { outcome: "signed_in"; member: Member };
 export type VerifyResult = SignedIn | { outcome: "name_required" };
 
@@ -149,6 +186,9 @@ export const identity = {
     request<Member>("/v1/me", { method: "PATCH", body: patch }),
 
   modules: (lang: Lang, signal?: AbortSignal) => request<ModuleEntry[]>("/v1/modules", { lang, signal }),
+
+  /** Members dashboard: totals only, for every signed-in member. */
+  insights: (signal?: AbortSignal) => request<Insights>("/v1/insights", { signal }),
 
   enter: (key: string) =>
     request<{ entry_url: string }>(`/v1/modules/${encodeURIComponent(key)}/enter`, { method: "POST" }),
