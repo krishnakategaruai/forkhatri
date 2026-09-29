@@ -13,7 +13,7 @@ updated: 2026-09-12
 |---|---|---|
 | 2026-09-06 | Initial draft: C4 Context + Container diagrams, module→container mapping, resolution of every dependency edge and every shared concern named in `/modules/modules.md`, 15 ADRs, non-functional baselines. | Step 1 (Solution Architecture), autonomous execution. Source: `/modules/modules.md` (Sealed), `/IMPLEMENTATION-TEST-STANDARDS.md` (tech stack fixed), source docs in `docs/PreStartResearch/` (Master PRD, Complete High-Level Business Requirements, Founder Execution Roadmap) as distilled into modules.md's Shared Concerns and per-module scope sections — the PDFs themselves could not be rendered by the local toolchain (`pdftoppm`/poppler not installed in this environment); modules.md's own distillation of the source material (Trust Identity Model, Level 1/2/3 verification tiers, reputation model, AI action-authorization tiers, multilingual requirement) was used as the primary architecture input in its place, since it was produced from a direct reading of those same PDFs one step upstream. This substitution is recorded here rather than silently made. |
 | 2026-09-06 | Reviewed against architecture-reviewer's Definition of Done (module→container coverage, every dependency edge resolved, every shared concern resolved with an ADR, no undeclared shared-database anti-pattern, every ADR in genuine Y-statement form with real accepted downsides, no open blockers). One gap found and fixed: Payments Infrastructure Service was described as owning "gateway/ledger/PCI" scope but had no database of its own drawn in the Container diagram — only Payment Services App's `PaymentsDB` was shown, leaving it ambiguous whether Payments Infrastructure silently shared that database (the exact anti-pattern ADR-002 rejects), undeclared and unargued. Fixed by adding a dedicated `PaymentsLedgerDB` node/edge for Payments Infrastructure Service, consistent with ADR-002's own rule that every isolated container gets a fully separate Postgres instance, and by updating ADR-008 and the Payments shared-concern resolution to state this explicitly. All other checks passed on first read. Sealed. | Step 1 gate, autonomous mode (architecture-reviewer). |
-| 2026-09-12 | **Relocation pass.** Moved this file from `docs/PreStartResearch/ARCHITECTURE.md` to the project root `/ARCHITECTURE.md`, matching this agent's own Input/Output convention (same placement as `/IMPLEMENTATION-TEST-STANDARDS.md`) and the path every downstream module's Tech Reqs/Impact Analysis step actually looks for. Checked the repository for other references to the old path before moving: three Sealed/in-progress module files cite it by that literal path — `modules/MOD01-vyapar/01-business-requirements.md` (source-traceability table), `modules/MOD03-mangaly/01-business-requirements.md` and `modules/MOD03-mangaly/02-functional-requirements.md` (both in their "Architecture cross-check" sections). This agent's own tool access (Read/Write/Grep/Glob/Task/WebSearch/WebFetch, no file-editing or delete capability) cannot safely make a small in-place correction inside those large, already-Sealed files without a full blind rewrite, which risks corrupting content this agent has not fully re-read. Rather than leave those three citations pointing at a path that no longer resolves, the old location (`docs/PreStartResearch/ARCHITECTURE.md`) has been overwritten with a short, permanent redirect stub pointing to this file, so existing citations remain resolvable. Flagged as a follow-up (see Open blockers) for whichever agent next touches those three files with in-place-edit tooling to update the citation to `/ARCHITECTURE.md` directly. | Relocation per explicit instruction — this pass, 2026-09-12. |
+| 2026-09-12 | **Relocation pass.** Moved this file from `docs/PreStartResearch/ARCHITECTURE.md` to the project root `/ARCHITECTURE.md`, matching this agent's own Input/Output convention (same placement as `/IMPLEMENTATION-TEST-STANDARDS.md`) and the path every downstream module's Tech Reqs/Impact Analysis step actually looks for. Checked the repository for other references to the old path before moving: three Sealed/in-progress module files cite it by that literal path — `modules/MOD01-vyapar/01-business-requirements.md` (source-traceability table), `modules/MOD03-mangalya/01-business-requirements.md` and `modules/MOD03-mangalya/02-functional-requirements.md` (both in their "Architecture cross-check" sections). This agent's own tool access (Read/Write/Grep/Glob/Task/WebSearch/WebFetch, no file-editing or delete capability) cannot safely make a small in-place correction inside those large, already-Sealed files without a full blind rewrite, which risks corrupting content this agent has not fully re-read. Rather than leave those three citations pointing at a path that no longer resolves, the old location (`docs/PreStartResearch/ARCHITECTURE.md`) has been overwritten with a short, permanent redirect stub pointing to this file, so existing citations remain resolvable. Flagged as a follow-up (see Open blockers) for whichever agent next touches those three files with in-place-edit tooling to update the citation to `/ARCHITECTURE.md` directly. | Relocation per explicit instruction — this pass, 2026-09-12. |
 | 2026-09-12 | **Mangaly build-order correction pass.** MOD03-Mangaly's Business Requirements, Functional Requirements, UX, UI, and Test Scenarios (Steps 1-5) are now all Sealed, and Mangaly is — in actual practice — the first module being carried into Impact Analysis/Tech Reqs, not the "V2/V3" module this file's Container diagram and ADR-007 assumed. This mismatch was flagged as a non-blocking finding by the Solution Architect cross-checks already recorded in `01-business-requirements.md` and `02-functional-requirements.md` for MOD03, explicitly left for this file to resolve rather than decided unilaterally downstream. Also confirmed directly against the current, Sealed `/modules/modules.md`: it no longer states any V1/V2/V3 wave assignment for any module at all (an earlier draft apparently did — see `docs/PreStartResearch/PROCESS-README.md`'s now-stale wave table — but the current Sealed `modules.md` carries no such section), so relabeling Mangaly here is not overriding a module-level decision; it is this file's own record, corrected against reality. Traced through the actual consequences (not just the label) and recorded three new ADRs: **ADR-016** (Container diagram/mapping label correction — Mangaly is the first module in actual build order); **ADR-017** (re-examines and re-confirms ADR-001's isolated-container topology decision for Mangaly holds even arriving first, since it was never justified by ship order but by Mangaly's own privacy/regulatory driver — while retiring ADR-001's "cheap monolith modules ship first" sequencing narrative, which no longer describes reality); **ADR-018** (re-examines and re-confirms ADR-007's decision to defer a dedicated Search Service, replacing its wave-based trigger with a capability/volume-based one, since Mangaly's actual Discovery/ranking need is rule-based, not full-text-relevance-based, and its realistic V1 scale is far below the threshold where Postgres full-text search stops being sufficient). ADR-001 and ADR-007 are marked superseded-in-part (sequencing narrative / trigger condition only — their core decisions are unchanged) rather than edited, per this file's append-only ADR convention. Updated the Container diagram's Mangaly label, the Module→Container mapping's MOD03 notes, and the Non-functional baselines' scalability rows to match. Research grounding: current (2026) industry guidance confirms regulatory/sensitivity-driven service extraction is legitimate to do early, independent of scaling triggers, and that Postgres full-text search remains sufficient below roughly 500K rows / 20K daily active users — both cited in ADR-017/ADR-018. Definition of Done re-verified at the end of this pass (see new "Revision reviewer notes" section); no open blockers introduced. Re-sealed. | Wave-sequencing correction, per explicit instruction tracing BR/FR-flagged finding — this pass, 2026-09-12. |
 | 2026-09-14 | **Post-seal correction: ForKhatri platform identity and entrance.** The Identity & Trust Service designed in ADR-004 is now being built (`platform/identity-service`, dev port 8100, database `forkhatri_identity`) together with a ForKhatri web entrance (`platform/forkhatri-web`, Next.js, dev port 3100). Container diagram: web client relabelled as the ForKhatri web entrance acting as the Multi-Zones host for module web apps; Identity/Trust DB labelled `forkhatri_identity`. "Unified member identity" shared-concern row updated. Appended **ADR-019** (opaque HttpOnly session cookie + server-side introspection by module Identity Bridges, refining ADR-004's JWT mechanism), **ADR-020** (web composition via Next.js Multi-Zones, not Module Federation) and **ADR-021** (canonical member + module member-link tables, just-in-time provisioning, preserved ids; trust/tier/role stay in modules). Earlier ADRs are not edited. Sources: `docs/ParentApp/00c-identity-and-entrance-decisions.md` (PA-DEC-01…09), `docs/ParentApp/07-tech-reqs.md` (TR10–TR24), `docs/ForKhatri-Unified-Umbrella-App-Interpretation.md`. This correction has not been re-sealed and awaits the owner's review. | Product-owner instruction, 2026-09-14: one ForKhatri app, one sign-in, one member identity, then the member chooses a module. |
 
@@ -83,7 +83,7 @@ graph TD
     Counsel[Counsel module - planned]
   end
 
-  MangalyService[Mangaly Service - FastAPI - own container/DB - first module in actual build order]
+  MangalyaService[Mangalya Service - FastAPI - own container/DB - first module in actual build order]
   PaymentServicesApp[Payment Services App - FastAPI - own container - planned]
   LoansFinanceService[Loans and Finance Service - FastAPI - own container/DB - planned]
 
@@ -98,7 +98,7 @@ graph TD
 
   CoreDB[(Core Platform DB - Postgres, schema-per-module: vyapar, milavn, dashboard, counsel)]
   IdentityDB[(Identity/Trust DB - Postgres, forkhatri_identity)]
-  MangalyDB[(Mangaly DB - Postgres, isolated)]
+  MangalyaDB[(Mangalya DB - Postgres, isolated)]
   PaymentsDB[(Payments DB - Postgres, isolated - Payment Services App only: bill-pay/coupon/benefit data, tokenized refs only, no raw gateway data)]
   PaymentsLedgerDB[(Payments Ledger DB - Postgres, isolated/PCI-scoped - Payments Infrastructure Service only: gateway tokens, transaction ledger)]
   LoansDB[(Loans and Finance DB - Postgres, isolated)]
@@ -109,7 +109,7 @@ graph TD
   WebClient -->|REST/JSON, HTTPS| Milavn
   WebClient -->|REST/JSON, HTTPS| Dashboard
   WebClient -->|REST/JSON, HTTPS| Counsel
-  WebClient -->|REST/JSON, HTTPS| MangalyService
+  WebClient -->|REST/JSON, HTTPS| MangalyaService
   WebClient -->|REST/JSON, HTTPS| PaymentServicesApp
   WebClient -->|REST/JSON, HTTPS| LoansFinanceService
   WebClient -->|sign-in, session cookie - ADR-019| IdentityTrust
@@ -127,7 +127,7 @@ graph TD
 
   Vyapar -.->|async event, optional| Broker
   Milavn -.->|async event, optional| Broker
-  MangalyService -.->|async event: activity summary, benefit-trigger| Broker
+  MangalyaService -.->|async event: activity summary, benefit-trigger| Broker
   LoansFinanceService -.->|async event: application status| Broker
   Broker -.-> Dashboard
   Broker -.-> NotificationSvc
@@ -138,14 +138,14 @@ graph TD
   PaymentsInfra --> PaymentsLedgerDB
   PaymentsInfra -->|gateway calls| PaymentGatewayExt[External Payment Gateway]
   LoansFinanceService -.->|REST, soft, once shipped| PaymentServicesApp
-  MangalyService --> MangalyDB
+  MangalyaService --> MangalyaDB
   LoansFinanceService --> LoansDB
 
   Vyapar --> IdentityTrust
   Milavn --> IdentityTrust
   Dashboard --> IdentityTrust
   Counsel --> IdentityTrust
-  MangalyService --> IdentityTrust
+  MangalyaService --> IdentityTrust
   PaymentServicesApp --> IdentityTrust
   LoansFinanceService --> IdentityTrust
   IdentityTrust --> IdentityDB
@@ -155,12 +155,12 @@ graph TD
   Milavn --> SearchSvc
   Dashboard --> SearchSvc
   Counsel -.-> SearchSvc
-  MangalyService -.-> SearchSvc
+  MangalyaService -.-> SearchSvc
 
   Vyapar -.-> NotificationSvc
   Milavn -.-> NotificationSvc
   Counsel -.-> NotificationSvc
-  MangalyService -.-> NotificationSvc
+  MangalyaService -.-> NotificationSvc
   PaymentServicesApp -.-> NotificationSvc
   LoansFinanceService -.-> NotificationSvc
   NotificationSvc -->|SMS/email/push| ExtComms[External SMS/Email/Push Providers]
@@ -169,7 +169,7 @@ graph TD
   Milavn -.->|audit events| AuditSvc
   Dashboard -.->|audit events| AuditSvc
   Counsel -.->|audit events| AuditSvc
-  MangalyService -.->|audit events| AuditSvc
+  MangalyaService -.->|audit events| AuditSvc
   PaymentServicesApp -.->|audit events| AuditSvc
   LoansFinanceService -.->|audit events| AuditSvc
   IdentityTrust -.->|audit events| AuditSvc
@@ -181,7 +181,7 @@ graph TD
 
   Vyapar --> ObjStore
   Milavn --> ObjStore
-  MangalyService --> ObjStore
+  MangalyaService --> ObjStore
   Counsel --> ObjStore
 
   AdminConsole --> IdentityTrust
@@ -189,7 +189,7 @@ graph TD
   AdminConsole -.-> Milavn
   AdminConsole -.-> Dashboard
   AdminConsole -.-> Counsel
-  AdminConsole -.-> MangalyService
+  AdminConsole -.-> MangalyaService
   AdminConsole -.-> PaymentServicesApp
   AdminConsole -.-> LoansFinanceService
 ```
@@ -204,9 +204,9 @@ Earlier revisions of this diagram tagged containers with wave numbers
 current, Sealed `/modules/modules.md` no longer states a wave assignment
 for any module. Rather than continue guessing at wave numbers this file has
 no authoritative source for, containers not yet built are now labeled
-"planned" (no ordering claim), except `MangalyService`, which is labeled
+"planned" (no ordering claim), except `MangalyaService`, which is labeled
 "first module in actual build order" because that is directly evidenced —
-MOD03-Mangaly's Steps 1-5 are Sealed and it is the module actually
+MOD03-Mangalya's Steps 1-5 are Sealed and it is the module actually
 proceeding into Impact Analysis/Tech Reqs. If a future module's actual
 build order is similarly evidenced, its label should be corrected the same
 way, on the same evidence standard — not by restoring guessed wave numbers.
@@ -217,7 +217,7 @@ way, on the same evidence standard — not by restoring guessed wave numbers.
 |---|---|---|
 | MOD01 — Vyapar | Core Platform (module package) + `vyapar` schema in Core Platform DB | Runs in-process alongside Milavn/Dashboard/Counsel; no dedicated container planned. |
 | MOD02 — Milavn | Core Platform (module package) + `milavn` schema in Core Platform DB | Same monolith as Vyapar. |
-| MOD03 — Mangaly | Mangaly Service (dedicated container) + dedicated Mangaly DB | Diverges deliberately from the monolith: highest privacy/regulatory load of any community-facing module (family data, controlled communication) justifies its own process, its own database, and its own network policy so a breach or bug elsewhere on the platform cannot reach matrimonial data by default. See ADR-002 and ADR-011. **Build-order note (2026-09-12, see ADR-016/ADR-017):** Mangaly is, in actual practice, the first module carried through this pipeline past Test Scenarios (Steps 1-5 all Sealed) — not the later-wave module an earlier draft assumed. Its isolated-container topology holds up arriving this early because it was justified by Mangaly's own privacy/regulatory driver, not by ship order (see ADR-017); its Discovery/search need remains servable by embedded Postgres full-text search at this stage regardless of build order (see ADR-018). |
+| MOD03 — Mangalya | Mangalya Service (dedicated container) + dedicated Mangalya DB | Diverges deliberately from the monolith: highest privacy/regulatory load of any community-facing module (family data, controlled communication) justifies its own process, its own database, and its own network policy so a breach or bug elsewhere on the platform cannot reach matrimonial data by default. See ADR-002 and ADR-011. **Build-order note (2026-09-12, see ADR-016/ADR-017):** Mangalya is, in actual practice, the first module carried through this pipeline past Test Scenarios (Steps 1-5 all Sealed) — not the later-wave module an earlier draft assumed. Its isolated-container topology holds up arriving this early because it was justified by Mangalya's own privacy/regulatory driver, not by ship order (see ADR-017); its Discovery/search need remains servable by embedded Postgres full-text search at this stage regardless of build order (see ADR-018). |
 | MOD04 — Counsel | Core Platform (module package) + `counsel` schema in Core Platform DB | Lives in the monolith (no privacy driver as strong as Mangaly's), but has a hard *runtime* dependency on the separately-deployed Payment Services App container — a module boundary and a container boundary diverging in the other direction: one module, two containers involved in its critical path. |
 | MOD05 — Dashboard | Core Platform (module package) + `dashboard` schema in Core Platform DB | Pure aggregator by design (per modules.md's own layer-alignment risk note) — reads from every other module's container as each ships, writes only its own `LocalInformationItem`/`PersonalizationProfile`/ranking-rule tables. No other module ever depends on Dashboard, so it sits at the "top" of every runtime call graph and the "bottom" of none. |
 | MOD06 — Payment Services | Payment Services App (dedicated container) + dedicated Payments DB | The module's own container is deliberately distinct from the shared Payments Infrastructure Service (rails/gateway/ledger/PCI tooling), which has its own dedicated Payments Ledger DB — see ADR-008. One module maps to one business-logic container plus a shared-infra container it depends on but does not own, and the two containers never share a database. |
@@ -235,12 +235,12 @@ Service, Admin & Governance Console, Message Broker, Object Storage.
 | MOD05 Dashboard | MOD01 Vyapar | Hard — "reads Vyapar listings/opportunities to surface them" | In-process call via an internal Python interface (both live in the Core Platform monolith); the interface's request/response shapes are the same Pydantic models that would back a future REST contract, so extracting Vyapar to its own container later is a lift-and-shift, not a redesign. Dashboard caches the read result in its own `DashboardFeedConfiguration`-adjacent read model with a short TTL so Vyapar is never a hard synchronous dependency for every Dashboard page render. |
 | MOD05 Dashboard | MOD02 Milavn | Hard — "reads events for registration reminders and community-activity surfacing" | Same in-process pattern as Vyapar above. |
 | MOD04 Counsel | MOD06 Payment Services | Hard — "paid consultation requires a payment capability to exist" | Synchronous REST/JSON call, Core Platform (Counsel) → Payment Services App container, authenticated service-to-service via a short-lived JWT issued by Identity & Trust. Counsel never touches raw payment/card data — it calls `POST /payments/consultation-charge`, receives a `PaymentTransaction` reference id, and stores only that reference (matches modules.md's own "Counsel only initiates a payment and stores the returned reference" boundary). |
-| MOD05 Dashboard | MOD03 Mangaly | Future/soft — "read-only, privacy-filtered activity summaries only" | Asynchronous event: Mangaly publishes a privacy-filtered `mangaly.activity_summary` event to the Message Broker (never raw match/profile data); Dashboard subscribes and renders only the pre-filtered summary. Dashboard is never given direct query access to the Mangaly DB — this is the one edge where an async, one-way event is chosen specifically *because* a synchronous pull would create an implicit read-path into the platform's most privacy-sensitive store. This pattern also means Mangaly's V1 build has zero dependency on Dashboard/the Core Platform monolith existing first — the edge only runs in the other direction (see ADR-017). |
+| MOD05 Dashboard | MOD03 Mangalya | Future/soft — "read-only, privacy-filtered activity summaries only" | Asynchronous event: Mangalya publishes a privacy-filtered `mangalya.activity_summary` event to the Message Broker (never raw match/profile data); Dashboard subscribes and renders only the pre-filtered summary. Dashboard is never given direct query access to the Mangalya DB — this is the one edge where an async, one-way event is chosen specifically *because* a synchronous pull would create an implicit read-path into the platform's most privacy-sensitive store. This pattern also means Mangalya's V1 build has zero dependency on Dashboard/the Core Platform monolith existing first — the edge only runs in the other direction (see ADR-017). |
 | MOD05 Dashboard | MOD04 Counsel | Future | Once Counsel ships, same in-process pattern as Vyapar/Milavn (Counsel lives in the same monolith as Dashboard). |
 | MOD05 Dashboard | MOD06 Payment Services | Future, read-only | Synchronous REST call, Core Platform (Dashboard) → Payment Services App, hitting a read-only endpoint (e.g., transaction-status summaries) that has no corresponding write capability exposed to Dashboard's service credential. |
 | MOD05 Dashboard | MOD07 Loans & Finance | Future — "application-status notifications" | Asynchronous event: Loans & Finance publishes `loans.application_status_changed` to the broker; both the Notification Service (to alert the member) and Dashboard (to surface it) subscribe independently. Chosen over a direct pull because the source material frames this specifically as a notification-style update, and because Loans & Finance is an isolated, high-regulatory container Dashboard should not depend on synchronously. |
 | MOD07 Loans & Finance | MOD06 Payment Services | Soft — "future disbursement/EMI integration" | Synchronous REST call, Loans & Finance Service → Payment Services App, invoked only at disbursement/EMI time (not on Loans & Finance's critical path for eligibility/application flows). Payment Services in turn calls Payments Infrastructure for the actual money movement. |
-| MOD03 Mangaly | MOD06 Payment Services | Optional — benefit-trigger events | Asynchronous event: Mangaly publishes `benefit_eligible` events to the broker; Payment Services App subscribes and mints the resulting `Coupon`/`Benefit` record. Mangaly never calls Payment Services synchronously and never writes a Coupon record itself (matches modules.md's "Payment Services is the sole owner of Coupon/Benefit" rule). Being asynchronous and optional, this edge does not block Mangaly's own launch if Payment Services App has not shipped yet — events queue on the broker (or are simply not emitted until the corresponding feature is built) rather than Mangaly depending synchronously on a container that does not yet exist (see ADR-017). |
+| MOD03 Mangalya | MOD06 Payment Services | Optional — benefit-trigger events | Asynchronous event: Mangalya publishes `benefit_eligible` events to the broker; Payment Services App subscribes and mints the resulting `Coupon`/`Benefit` record. Mangalya never calls Payment Services synchronously and never writes a Coupon record itself (matches modules.md's "Payment Services is the sole owner of Coupon/Benefit" rule). Being asynchronous and optional, this edge does not block Mangalya's own launch if Payment Services App has not shipped yet — events queue on the broker (or are simply not emitted until the corresponding feature is built) rather than Mangalya depending synchronously on a container that does not yet exist (see ADR-017). |
 | MOD01 Vyapar | MOD06 Payment Services | Optional — benefit-trigger events | Same async event pattern as Mangaly above. |
 | MOD02 Milavn | MOD06 Payment Services | Optional — benefit-trigger events | Same async event pattern as Mangaly above. |
 
@@ -560,12 +560,12 @@ ADR-002).
   layer.
 
 - **ADR-016** · In the context of `/ARCHITECTURE.md`'s Container diagram
-  and Module→Container mapping labeling `MangalyService` "V2/V3" while
-  MOD03-Mangaly's Business Requirements, Functional Requirements, UX, UI,
-  and Test Scenarios (Steps 1-5) are already Sealed — making Mangaly, in
+  and Module→Container mapping labeling `MangalyaService` "V2/V3" while
+  MOD03-Mangalya's Business Requirements, Functional Requirements, UX, UI,
+  and Test Scenarios (Steps 1-5) are already Sealed — making Mangalya, in
   practice, the first module actually proceeding into Impact Analysis/Tech
   Reqs — facing whether to correct the label now or leave it as a cosmetic
-  scheduling detail, we chose to **relabel `MangalyService` as the first
+  scheduling detail, we chose to **relabel `MangalyaService` as the first
   module in actual build order, relabel the other not-yet-built containers
   (Payment Services App, Loans & Finance Service, Counsel) as "planned"
   with no ordering claim, and explicitly record that the current, Sealed
@@ -579,7 +579,7 @@ ADR-002).
   remains genuinely unknown to this file until similarly evidenced (their
   labels are honestly "planned," not re-guessed).
   *Consequences:* + the one container whose build order is actually
-  evidenced (Mangaly) is described accurately · + no fabricated wave
+  evidenced (Mangalya) is described accurately · + no fabricated wave
   numbers are introduced for the remaining containers · − this file can no
   longer answer "what ships in V2" the way it previously (if inaccurately)
   claimed to · ~ re-run this same evidence-based correction, not a guess,
@@ -588,31 +588,31 @@ ADR-002).
 - **ADR-017** · In the context of ADR-001's deployment-topology reasoning
   being framed around low-regulatory modules (Vyapar, Milavn, Dashboard)
   shipping first inside the cheap Core Platform monolith, with isolated,
-  higher-overhead containers (Mangaly, Payment Services, Loans & Finance)
-  arriving later, facing the fact that Mangaly — one of the isolated
+  higher-overhead containers (Mangalya, Payment Services, Loans & Finance)
+  arriving later, facing the fact that Mangalya — one of the isolated
   containers — is actually shipping first, before any monolith-hosted
   module has reached Impact Analysis, we **re-examined whether isolated-
-  container/DB topology for Mangaly still makes sense arriving this early,
+  container/DB topology for Mangalya still makes sense arriving this early,
   and confirmed the topology decision requires no change**, because: (a)
-  Mangaly's isolation was never justified by ship order — it was justified
-  by Mangaly's own privacy/regulatory driver (family/matrimonial data,
-  controlled communication), which holds identically whether Mangaly ships
+  Mangalya's isolation was never justified by ship order — it was justified
+  by Mangalya's own privacy/regulatory driver (family/matrimonial data,
+  controlled communication), which holds identically whether Mangalya ships
   first or last, and current industry guidance confirms a genuine
   regulatory/compliance isolation requirement is a legitimate reason to
   extract a service early, independent of scaling triggers (2026
   architecture guidance: a module with "a regulatory isolation
   requirement... service isolation is sometimes a compliance requirement
-  rather than an architectural preference"); (b) Mangaly's actual
+  rather than an architectural preference"); (b) Mangalya's actual
   infrastructure dependencies — Identity & Trust Service, Object Storage,
   Notification Service, Audit Service — are foundational platform services
   every module needs from day one regardless of which business module
-  ships first, not monolith-internal capabilities Mangaly would otherwise
-  have had to wait for; and (c) Mangaly's dependency on the not-yet-built
-  Core Platform monolith is zero — Dashboard depends on Mangaly (one-way,
+  ships first, not monolith-internal capabilities Mangalya would otherwise
+  have had to wait for; and (c) Mangalya's dependency on the not-yet-built
+  Core Platform monolith is zero — Dashboard depends on Mangalya (one-way,
   async, optional, per the Dependency resolution table), never the
-  reverse, and Mangaly's only edge toward Payment Services (benefit-trigger
+  reverse, and Mangalya's only edge toward Payment Services (benefit-trigger
   events) is likewise asynchronous and optional, so no monolith-hosted or
-  not-yet-shipped container blocks Mangaly's path to production. We chose
+  not-yet-shipped container blocks Mangalya's path to production. We chose
   to **retire ADR-001's "cheap monolith modules ship first" sequencing
   narrative as no longer descriptive of actual build order, while leaving
   ADR-001's topology conclusion unchanged**, over rewriting ADR-001 itself
@@ -622,12 +622,12 @@ ADR-002).
   accepting that the "low V1 operational overhead" benefit ADR-001
   originally claimed is smaller than advertised for whichever module ships
   first when that module is an isolated one: the team must stand up
-  Kubernetes, Identity & Trust Service, Mangaly's own isolated Postgres
-  instance, Object Storage, Notification, and Audit before Mangaly ships —
+  Kubernetes, Identity & Trust Service, Mangalya's own isolated Postgres
+  instance, Object Storage, Notification, and Audit before Mangalya ships —
   a materially larger first build than "ship 3 modules in one monolith"
   implied, even though it remains far short of the full mesh ADR-001's
   rejected extreme described.
-  *Consequences:* + ADR-001's isolation decision for Mangaly is
+  *Consequences:* + ADR-001's isolation decision for Mangalya is
   re-confirmed on independent, sequencing-agnostic grounds (the privacy
   driver holds regardless of ship order) · + the true first-build cost is
   now stated honestly (a handful of foundational platform services plus
@@ -639,17 +639,17 @@ ADR-002).
   default.
 
 - **ADR-018** · In the context of ADR-007 justifying deferral of a
-  dedicated Search Service until "V2, once Mangaly and Counsel's content
-  and full multilingual indexing land," facing the fact that Mangaly is
+  dedicated Search Service until "V2, once Mangalya and Counsel's content
+  and full multilingual indexing land," facing the fact that Mangalya is
   shipping without that wave boundary ever being reached, we **re-examined
-  whether Mangaly's actual Discovery/ranking need requires a real
+  whether Mangalya's actual Discovery/ranking need requires a real
   full-text search engine now, and confirmed it does not, replacing
   ADR-007's wave-based trigger with a capability/volume-based one while
   leaving ADR-007's core decision (embedded Postgres full-text search per
-  module schema, extraction deferred) unchanged**, because: (a) Mangaly's
+  module schema, extraction deferred) unchanged**, because: (a) Mangalya's
   Discovery/ranking is explicitly rule-based and structured — locality,
   partner preferences, lifestyle relevance, compatibility relevance, and
-  verification/evidence context, per `modules/MOD03-mangaly/01-business-
+  verification/evidence context, per `modules/MOD03-mangalya/01-business-
   requirements.md` BR06 and `02-functional-requirements.md` FR025-FR029 —
   and its Compatibility feature (BR07/FR030-FR034) is explicitly required
   to use transparent, explainable rules rather than an opaque, relevance-
@@ -657,13 +657,13 @@ ADR-002).
   search-relevance problem a dedicated search engine specifically solves;
   (b) multilingual rendering is handled by the platform's shared
   translated-content model (ADR-010), not by a search engine's tokenizer,
-  so Mangaly's day-one English/Hindi/Telugu commitment does not itself
-  require Elasticsearch/OpenSearch-class tooling; and (c) Mangaly's
+  so Mangalya's day-one English/Hindi/Telugu commitment does not itself
+  require Elasticsearch/OpenSearch-class tooling; and (c) Mangalya's
   realistic V1 profile volume (a single community's matrimonial-candidate
   base) is far below the roughly 500,000-row / 20,000-daily-active-user
   range current guidance identifies as the point where Postgres full-text
   search alone stops being sufficient. We chose this over either
-  accelerating Search Service extraction to match Mangaly's new build-order
+  accelerating Search Service extraction to match Mangalya's new build-order
   position, or leaving ADR-007's stale wave-based trigger in place
   unexamined, to achieve a trigger condition that still makes sense now
   that a wave-agnostic build order is this project's reality, accepting
@@ -671,14 +671,14 @@ ADR-002).
   favor of a technical threshold (row count, query-latency, relevance
   complaints) that must be actively monitored rather than passively waited
   for.
-  *Consequences:* + Mangaly ships without needing to build or operate a
+  *Consequences:* + Mangalya ships without needing to build or operate a
   Search Service, consistent with ADR-007's original intent · + the
   re-evaluation trigger is now a real technical signal instead of a stale
   schedule label · − the team loses the free "V2 arrived" reminder and must
   instrument and actively watch the technical trigger conditions instead ·
   ~ Counsel's own eventual search need should be independently re-assessed
   against this same capability/volume trigger when Counsel's Tech Reqs step
-  runs, not assumed to arrive alongside Mangaly's.
+  runs, not assumed to arrive alongside Mangalya's.
 
 - **ADR-019** (2026-09-14, awaiting owner review) · In the context of
   actually building the Identity & Trust Service ADR-004 designed, for a

@@ -113,5 +113,13 @@
   "circle.cannotRemove": "You can't remove this person from the circle.",
   "circle.formedDescription": "Started by people who kept showing up together.",
   "notify.circleInvite.title": "{who} invited you to {circle}",
-  "notify.circleInvite.body": "Join if you'd like to. Nobody is told if you decline."
+  "notify.circleInvite.body": "Join if you'd like to. Nobody is told if you decline.",
+  "chat.closed": "This activity's chat has closed. You can still read it.",
+  "circle.pinLimit": "Up to {n} posts can be pinned. Unpin one first.",
+  "circle.announcementNoReplies": "Announcements take reactions, not replies.",
+  "circle.commentNotFound": "That comment is no longer here.",
+  "circle.notYourComment": "Only its author or the circle's organizers can remove this comment.",
+  "circle.organizersOnly": "Only the circle's organizers can do that.",
+  "notify.circleAnnouncement.title": "Announcement in {circle}",
+  "notify.circleAnnouncement.body": "The organizers shared an announcement."
 }

@@ -26,6 +26,19 @@ router = APIRouter(tags=["conversation"])
 
 class MessageRequest(BaseModel):
     body: str = Field(min_length=1, max_length=1000)
+    announcement: bool = False  # [049] circle board: organizer / assistant only
+
+
+class PinRequest(BaseModel):
+    pinned: bool
+
+
+class PostReactionRequest(BaseModel):
+    emoji: str
+
+
+class CommentRequest(BaseModel):
+    body: str = Field(min_length=1, max_length=500)
 
 
 def _msg(m: conversation.Message) -> dict:
@@ -40,6 +53,21 @@ def _msg(m: conversation.Message) -> dict:
         "photo_url": m.photo_url,
         "doc_url": m.doc_url,
         "doc_name": m.doc_name,
+        "is_announcement": m.is_announcement,
+        "pinned": m.pinned,
+        "reactions": m.reactions or {},
+        "comments": [
+            {
+                "id": str(c.id),
+                "member_id": str(c.member_id),
+                "display_name": c.display_name,
+                "avatar": c.avatar,
+                "body": c.body,
+                "created_at": c.created_at.isoformat(),
+                "mine": c.mine,
+            }
+            for c in m.comments
+        ],
     }
 
 
@@ -149,7 +177,8 @@ async def delete_photo(occurrence_id: UUID, photo_id: UUID, session: DbSession, 
 
 @router.get("/circles/{circle_id}/posts")
 async def list_posts(circle_id: UUID, session: DbSession, member: CurrentMember) -> dict:
-    return {"posts": [_msg(m) for m in await conversation.list_posts(session, circle_id=circle_id, viewer_member_id=member.member_id)]}
+    posts = await conversation.list_posts(session, circle_id=circle_id, viewer_member_id=member.member_id)
+    return {"posts": [_msg(m) for m in posts], "reactions": list(conversation.POST_REACTIONS), "max_pins": conversation.MAX_PINS}
 
 
 @router.post("/circles/{circle_id}/posts", status_code=status.HTTP_201_CREATED)
@@ -157,10 +186,10 @@ async def post_to_board(circle_id: UUID, body: MessageRequest, session: DbSessio
     await enforce(session, scope=RateLimitScope.MESSAGE_POST, subject=str(member.member_id), limit_max=60, window_seconds=600)
     try:
         async with idempotent(
-            session, actor_member_id=member.member_id, idempotency_key=idem, endpoint="POST /circles/posts", request_payload={"c": str(circle_id), "b": body.body}
+            session, actor_member_id=member.member_id, idempotency_key=idem, endpoint="POST /circles/posts", request_payload={"c": str(circle_id), "b": body.body, "a": body.announcement}
         ) as outcome:
             if not outcome.replayed:
-                pid = await conversation.post_to_board(session, circle_id=circle_id, member_id=member.member_id, body=body.body)
+                pid = await conversation.post_to_board(session, circle_id=circle_id, member_id=member.member_id, body=body.body, announcement=body.announcement)
                 outcome.set_result(201, {"id": str(pid)})
         return outcome.response
     except conversation.OrganizersOnly as exc:
@@ -180,13 +209,14 @@ async def post_photo_to_board(
     photo: UploadFile | None = File(default=None),
     document: UploadFile | None = File(default=None),
     body: str = Form(default=""),
+    announcement: bool = Form(default=False),
 ) -> dict:
     """An Instagram/FB-style post with a photo and/or a document; the write-up is optional."""
     await enforce(session, scope=RateLimitScope.MESSAGE_POST, subject=str(member.member_id), limit_max=60, window_seconds=600)
     if photo is None and document is None:
         raise HTTPException(status_code=422, detail={"fields": ["photo", "document"]})
     try:
-        pid = await conversation.post_to_board(session, circle_id=circle_id, member_id=member.member_id, body=body, photo=photo, document=document)
+        pid = await conversation.post_to_board(session, circle_id=circle_id, member_id=member.member_id, body=body, photo=photo, document=document, announcement=announcement)
     except conversation.OrganizersOnly as exc:
         raise HTTPException(status_code=403, detail=translate("circle.organizersPost", lang)) from exc
     except conversation.NotAllowed as exc:
@@ -210,3 +240,62 @@ async def delete_board_post(circle_id: UUID, post_id: UUID, session: DbSession, 
         raise HTTPException(status_code=404, detail=translate("circle.postNotFound", lang)) from exc
     except conversation.NotAllowed as exc:
         raise HTTPException(status_code=403, detail=translate("circle.notYourPost", lang)) from exc
+
+
+# --- [049] Pins, reactions, comments on circle posts ------------------------------------------
+
+
+@router.post("/circles/{circle_id}/posts/{post_id}/pin")
+async def pin_board_post(circle_id: UUID, post_id: UUID, body: PinRequest, session: DbSession, member: CurrentMember, lang: Locale) -> dict:
+    """Organizers and assistants pin (at most three) or unpin a post."""
+    try:
+        await conversation.pin_post(session, circle_id=circle_id, post_id=post_id, member_id=member.member_id, pinned=body.pinned)
+    except conversation.PostNotFound as exc:
+        raise HTTPException(status_code=404, detail=translate("circle.postNotFound", lang)) from exc
+    except conversation.PinLimit as exc:
+        raise HTTPException(status_code=409, detail=translate("circle.pinLimit", lang, n=conversation.MAX_PINS)) from exc
+    except conversation.NotAllowed as exc:
+        raise HTTPException(status_code=403, detail=translate("circle.organizersOnly", lang)) from exc
+    return {"pinned": body.pinned}
+
+
+@router.post("/circles/{circle_id}/posts/{post_id}/reactions")
+async def react_to_post(circle_id: UUID, post_id: UUID, body: PostReactionRequest, session: DbSession, member: CurrentMember, lang: Locale) -> dict:
+    """Toggle one reaction from the fixed set (reactions, not likes)."""
+    try:
+        on = await conversation.toggle_post_reaction(session, circle_id=circle_id, post_id=post_id, member_id=member.member_id, emoji=body.emoji)
+    except conversation.InvalidInput as exc:
+        raise HTTPException(status_code=422, detail={"fields": ["emoji"]}) from exc
+    except conversation.PostNotFound as exc:
+        raise HTTPException(status_code=404, detail=translate("circle.postNotFound", lang)) from exc
+    except conversation.NotAllowed as exc:
+        raise HTTPException(status_code=403, detail=translate("circle.notMember", lang)) from exc
+    return {"reacted": on}
+
+
+@router.post("/circles/{circle_id}/posts/{post_id}/comments", status_code=status.HTTP_201_CREATED)
+async def comment_on_post(circle_id: UUID, post_id: UUID, body: CommentRequest, session: DbSession, member: CurrentMember, lang: Locale) -> dict:
+    """Any member comments (the posting policy only limits new posts); announcements take no replies."""
+    await enforce(session, scope=RateLimitScope.MESSAGE_POST, subject=str(member.member_id), limit_max=60, window_seconds=600)
+    try:
+        cid = await conversation.add_comment(session, circle_id=circle_id, post_id=post_id, member_id=member.member_id, body=body.body)
+    except conversation.InvalidInput as exc:
+        raise HTTPException(status_code=422, detail={"fields": ["body"]}) from exc
+    except conversation.PostNotFound as exc:
+        raise HTTPException(status_code=404, detail=translate("circle.postNotFound", lang)) from exc
+    except conversation.AnnouncementNoReplies as exc:
+        raise HTTPException(status_code=409, detail=translate("circle.announcementNoReplies", lang)) from exc
+    except conversation.NotAllowed as exc:
+        raise HTTPException(status_code=403, detail=translate("circle.notMember", lang)) from exc
+    return {"id": str(cid)}
+
+
+@router.delete("/circles/{circle_id}/posts/{post_id}/comments/{comment_id}", status_code=204)
+async def delete_post_comment(circle_id: UUID, post_id: UUID, comment_id: UUID, session: DbSession, member: CurrentMember, lang: Locale) -> None:
+    """The comment's author, or the circle's organizer / an assistant."""
+    try:
+        await conversation.delete_comment(session, circle_id=circle_id, comment_id=comment_id, member_id=member.member_id)
+    except conversation.CommentNotFound as exc:
+        raise HTTPException(status_code=404, detail=translate("circle.commentNotFound", lang)) from exc
+    except conversation.NotAllowed as exc:
+        raise HTTPException(status_code=403, detail=translate("circle.notYourComment", lang)) from exc

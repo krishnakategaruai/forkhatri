@@ -1214,3 +1214,22 @@ a.room__who:hover { background: var(--surface-sunken); }
 /* Sheets used by the circle screens: the confirm row stays on screen; a quiet overlay scrollbar. */
 .cx-sheetfoot { position: sticky; bottom: calc(-1 * (var(--space-5) + env(safe-area-inset-bottom, 0px))); margin: 4px calc(-1 * var(--space-4)) calc(-1 * (var(--space-5) + env(safe-area-inset-bottom, 0px))); padding: 12px var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom, 0px)); background: var(--surface-raised); border-top: 1px solid var(--cx-line); }
 .sheet:has(.cx) { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text-primary) 25%, transparent) transparent; }
+
+/* [049] Circle posts: announcement / pinned flags, reactions, one level of comments. Calm: a hairline
+   accent rule and small caps labels, no filled banners. */
+.cx-post__flags { display: flex; gap: 12px; flex-wrap: wrap; }
+.cx-post__flag { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--cx-muted); }
+.cx-post__flag--announce { color: var(--cx-accent); }
+.cx-post--announce { box-shadow: inset 3px 0 0 var(--cx-accent); padding-left: 12px; }
+.cx-post__actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.cx-post__act { display: inline-flex; align-items: center; gap: 4px; min-width: 36px; min-height: 36px; justify-content: center; border-radius: 999px; color: var(--cx-muted); }
+.cx-post__act:hover { color: var(--cx-ink); }
+.cx-react { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--cx-line); background: none; color: var(--cx-ink); font: inherit; font-size: 0.875rem; cursor: pointer; }
+.cx-react[aria-pressed="true"] { border-color: var(--cx-accent); background: color-mix(in srgb, var(--cx-accent) 10%, transparent); font-weight: 600; }
+.cx-reactpick { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid var(--cx-line); border-radius: 999px; align-self: flex-start; }
+.cx-reactpick button { width: 40px; height: 40px; border-radius: 50%; font-size: 1.25rem; display: grid; place-items: center; }
+.cx-reactpick button[aria-pressed="true"] { background: color-mix(in srgb, var(--cx-accent) 14%, transparent); }
+.cx-comments { display: flex; flex-direction: column; gap: 10px; padding-left: 12px; border-left: 1px solid var(--cx-line); }
+.cx-comment { display: flex; gap: 8px; align-items: flex-start; }
+.cx-comment__main { flex: 1; min-width: 0; font-size: 0.875rem; }
+.cx-comment__body { margin: 2px 0 0; line-height: 1.45; color: var(--cx-ink); white-space: pre-wrap; overflow-wrap: anywhere; }

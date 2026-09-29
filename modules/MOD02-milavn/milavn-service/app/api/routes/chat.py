@@ -85,6 +85,9 @@ def _conv(c: chat.Conversation, me: UUID) -> dict:
         "active": any(p.active for p in others),
         "expression": others[0].expression if c.kind == "direct" and others else None,
         "context": _context(c.context),
+        "occurrence_id": str(c.occurrence_id) if c.occurrence_id else None,
+        "closed": c.closed,
+        "closes_at": c.closes_at.isoformat() if c.closes_at else None,
     }
 
 
@@ -137,6 +140,13 @@ async def create_group(body: GroupRequest, session: DbSession, member: CurrentMe
     return {"id": str(cid)}
 
 
+@router.get("/activity/{occurrence_id}")
+async def activity_chat(occurrence_id: UUID, session: DbSession, member: CurrentMember) -> dict:
+    """[049] The activity's group chat, for its host and the people going (null otherwise)."""
+    cid = await chat.activity_chat_for(session, occurrence_id=occurrence_id, me=member.member_id)
+    return {"conversation_id": str(cid) if cid else None}
+
+
 @router.get("/{conversation_id}")
 async def get_conversation(conversation_id: UUID, session: DbSession, member: CurrentMember, lang: Locale, after: datetime | None = None) -> dict:
     try:
@@ -171,6 +181,8 @@ async def send_message(conversation_id: UUID, body: SendRequest, session: DbSess
                     [i for i in await chat.member_ids(session, conversation_id) if i != member.member_id], {"type": "inbox", "conversation_id": str(conversation_id)}
                 )
         return outcome.response
+    except chat.ChatClosed as exc:
+        raise HTTPException(status_code=409, detail=translate("chat.closed", lang)) from exc
     except chat.NotAllowed as exc:
         raise HTTPException(status_code=403, detail=translate("chat.notAllowed", lang)) from exc
     except chat.InvalidInput as exc:
@@ -195,6 +207,8 @@ async def send_photo(conversation_id: UUID, session: DbSession, member: CurrentM
         m = await chat.send(session, conversation_id=conversation_id, me=member.member_id, kind="photo", body=None, expression=None, media_ref=ref)
     except (chat.NotAllowed, chat.InvalidInput) as exc:
         media_files.remove(ref)
+        if isinstance(exc, chat.ChatClosed):
+            raise HTTPException(status_code=409, detail=translate("chat.closed", lang)) from exc
         raise HTTPException(status_code=403, detail=translate("chat.notAllowed", lang)) from exc
     payload = _msg(m)
     chat.hub.publish(conversation_id, {"type": "message", "message": {**payload, "mine": False}})

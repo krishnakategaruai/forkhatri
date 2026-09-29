@@ -41,7 +41,7 @@ import { useIdentity } from '@/lib/identity';
 
 type Person = { member_id: string; display_name: string; avatar: string | null; active: boolean; here?: boolean; expression: string | null; last_seen_at: string | null };
 type SharedContext = { kind: 'activity' | 'circle'; title: string; ref: string; starts_at: string | null; locality: string | null };
-type Conv = { id: string; kind: string; title: string; members: Person[]; active: boolean; expression: string | null; context: SharedContext | null };
+type Conv = { id: string; kind: string; title: string; members: Person[]; active: boolean; expression: string | null; context: SharedContext | null; closed?: boolean };
 type Msg = { id: string; member_id: string; display_name: string; avatar: string | null; kind: string; body: string | null; media_url: string | null; expression: string | null; created_at: string; mine: boolean; reactions: Record<string, string[]> };
 type Ev = { type: string; message?: Msg; message_id?: string; member_id?: string; emoji?: string; present?: boolean; active?: boolean; expression?: string };
 // here = this chat is open on their device right now (socket); active = used Milavn in the last two minutes (heartbeat).
@@ -351,6 +351,11 @@ export default function ChatRoomPage() {
         <div ref={bottomRef} />
       </main>
 
+      {conv?.closed ? (
+        <footer className="room__foot">
+          <p className="caption" role="status" style={{ textAlign: 'center', margin: '12px 16px' }}>{t('activityChat.closed')}</p>
+        </footer>
+      ) : (
       <footer className="room__foot">
         {/* Presence dock: people here on the left; while you mirror your face, your own live avatar and a small camera preview on the right. */}
         <div className={`dock${here.length > 0 || camOn ? ' dock--on' : ''}`} aria-live="polite">
@@ -409,6 +414,7 @@ export default function ChatRoomPage() {
             : <button type="button" className="pill__tool" aria-label={t('chat.photo')} onClick={() => fileRef.current?.click()}><ImagePlus size={21} strokeWidth={1.8} aria-hidden="true" /></button>}
         </div>
       </footer>
+      )}
       <Toast text={toast} />
     </div>
   );

@@ -113,5 +113,13 @@
   "circle.cannotRemove": "మీరు ఈ వ్యక్తిని సర్కిల్ నుండి తొలగించలేరు.",
   "circle.formedDescription": "తరచూ కలిసి వచ్చిన వారు ప్రారంభించిన సర్కిల్.",
   "notify.circleInvite.title": "{who} మిమ్మల్ని {circle}కి ఆహ్వానించారు",
-  "notify.circleInvite.body": "ఇష్టమైతే చేరండి. మీరు తిరస్కరిస్తే ఎవరికీ చెప్పబడదు."
+  "notify.circleInvite.body": "ఇష్టమైతే చేరండి. మీరు తిరస్కరిస్తే ఎవరికీ చెప్పబడదు.",
+  "chat.closed": "ఈ కార్యక్రమం చాట్ ముగిసింది. మీరు ఇంకా చదవవచ్చు.",
+  "circle.pinLimit": "గరిష్టంగా {n} పోస్ట్‌లను పిన్ చేయవచ్చు. ముందు ఒకదాన్ని అన్‌పిన్ చేయండి.",
+  "circle.announcementNoReplies": "ప్రకటనలకు స్పందనలు మాత్రమే, జవాబులు కాదు.",
+  "circle.commentNotFound": "ఆ వ్యాఖ్య ఇప్పుడు ఇక్కడ లేదు.",
+  "circle.notYourComment": "ఈ వ్యాఖ్యను రాసినవారు లేదా సర్కిల్ నిర్వాహకులు మాత్రమే తీసివేయగలరు.",
+  "circle.organizersOnly": "ఇది సర్కిల్ నిర్వాహకులు మాత్రమే చేయగలరు.",
+  "notify.circleAnnouncement.title": "{circle}లో ప్రకటన",
+  "notify.circleAnnouncement.body": "నిర్వాహకులు ఒక ప్రకటనను పంచుకున్నారు."
 }

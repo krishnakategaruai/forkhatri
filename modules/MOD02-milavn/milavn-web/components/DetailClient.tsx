@@ -131,6 +131,14 @@ export default function DetailClient({ slug, initial }: { slug: string; initial:
 
   useEffect(() => { if (ready && identity) void loadAuth(); }, [ready, identity, loadAuth]);
 
+  // [049] The group chat in Messages for the host and everyone going; the server answers null for anyone else.
+  const [activityChat, setActivityChat] = useState<string | null>(null);
+  const detailId = detail?.id;
+  useEffect(() => {
+    if (!detailId) return;
+    api<{ conversation_id: string | null }>(`/chats/activity/${detailId}`).then((r) => setActivityChat(r.conversation_id)).catch(() => setActivityChat(null));
+  }, [detailId, status]);
+
   // [FR102] Back from checkout (?payment=return): confirmation arrives from Payment Services a moment later, so check a few times.
   useEffect(() => {
     if (!ready || !identity || !detail || detail.price_paise == null) return;
@@ -522,6 +530,9 @@ export default function DetailClient({ slug, initial }: { slug: string; initial:
         )}
         {status === 'going' && !cancelled && (
           <button type="button" className="btn btn--secondary btn--sm" style={{ alignSelf: 'flex-start' }} onClick={sharePlan}>{t('belong.sharePlan')}</button>
+        )}
+        {activityChat && !cancelled && (
+          <Link className="btn btn--secondary btn--sm" style={{ alignSelf: 'flex-start' }} href={`/chats/${activityChat}`}>{t('activityChat.open')}</Link>
         )}
 
         <div className="stack" style={{ gap: 8 }}>

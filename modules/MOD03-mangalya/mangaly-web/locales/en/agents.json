@@ -1,0 +1,438 @@
+{
+  "workspace": {
+    "title": "Agent workspace",
+    "eyebrow": "Mangaly for marriage agents",
+    "loading": "Opening your workspace…"
+  },
+  "join": {
+    "title": "Bring your marriage bureau to Mangaly",
+    "lede": "Keep your families, your fees and your way of working. Mangaly gives you one place for every biodata, the search, the numbers and the follow-ups.",
+    "benefit": {
+      "clients": "Add your families one by one, or a whole Excel sheet at once",
+      "search": "Search Mangaly for each family, their way, and share profiles in one tap",
+      "offline": "Share biodata of people who are not on Mangaly too",
+      "export": "Numbers, Excel and printable biodata for your own records"
+    },
+    "form": {
+      "title": "Your details",
+      "name": "Your name",
+      "business": "Bureau or business name",
+      "businessPlaceholder": "Sri Lakshmi Marriage Bureau",
+      "phone": "Number families can call",
+      "city": "City",
+      "languages": "Languages you work in",
+      "communities": "Communities you serve",
+      "communitiesPlaceholder": "Khatri, Kapu, Reddy",
+      "years": "Years as an agent",
+      "about": "About your work",
+      "aboutPlaceholder": "Families in Hyderabad and Vijayawada since 2008. I meet every family at home before I share their biodata.",
+      "submit": "Send for checking",
+      "save": "Save details",
+      "saved": "Saved.",
+      "promise": "Mangaly checks every agent before families can choose them. Your fees stay yours: Mangaly never takes a share and never collects them for you."
+    },
+    "language": {
+      "te": "Telugu",
+      "hi": "Hindi",
+      "en": "English",
+      "ta": "Tamil",
+      "kn": "Kannada",
+      "mr": "Marathi"
+    }
+  },
+  "status": {
+    "pending": {
+      "title": "We are checking your details",
+      "body": "A Mangaly moderator checks every agent, usually within two working days. You will get a notification as soon as it is done."
+    },
+    "rejected": {
+      "title": "We could not verify your details",
+      "body": "Correct your details below and send them again. We will check once more."
+    },
+    "verified": "Verified by Mangaly",
+    "editDetails": "Edit your details",
+    "suspended": "Suspended",
+    "contactSuspended": "Numbers closed after reports"
+  },
+  "membership": {
+    "title": "Choose your Agent membership",
+    "lede": "Your workspace opens as soon as the membership is active.",
+    "term": "{{months}} months",
+    "price": "{{amount}} + GST",
+    "pay": "Pay {{amount}}",
+    "paying": "Opening payment…",
+    "sandbox": "Development: payment is simulated.",
+    "failed": "The payment did not go through. Nothing was charged.",
+    "until": "Membership active until {{date}}",
+    "renew": "Renew"
+  },
+  "tabs": {
+    "clients": "Clients",
+    "add": "Add clients",
+    "offline": "Not on Mangaly",
+    "review": "Agent applications"
+  },
+  "stats": {
+    "clients": "Families",
+    "liked": "Profiles liked",
+    "married": "Married"
+  },
+  "stage": {
+    "all": "All",
+    "searching": "Searching",
+    "proposal_sent": "Proposal sent",
+    "meeting": "Meeting",
+    "engaged": "Engaged",
+    "married": "Married",
+    "paused": "Paused",
+    "label": "Stage"
+  },
+  "origin": {
+    "added_by_agent": "Added by you",
+    "family_chose": "Chose you",
+    "assigned": "Assigned",
+    "claimed": "Took over their profile"
+  },
+  "clients": {
+    "empty": "No families yet. Add your first family, or share your bureau's name so families can choose you on Mangaly.",
+    "searchPlaceholder": "Search by name or city",
+    "age": "{{age}} yrs",
+    "lookingFor": {
+      "bride": "Looking for a bride",
+      "groom": "Looking for a groom"
+    },
+    "open": "Open",
+    "edit": "Edit profile",
+    "showNumber": "Show number",
+    "numberLogged": "The family can see that you opened their number.",
+    "shared": "{{count}} shared",
+    "liked": "{{count}} liked",
+    "select": "Select {{name}}",
+    "selectAll": "Select all",
+    "selected_one": "{{count}} selected",
+    "selected_other": "{{count}} selected",
+    "withNumbers": "Include phone numbers",
+    "exportExcel": "Excel",
+    "printBiodata": "Biodata PDF",
+    "exported": "Downloaded. The families can see that you exported their biodata.",
+    "relation": {
+      "self": "self",
+      "mother": "mother",
+      "father": "father",
+      "guardian": "guardian",
+      "parent": "parent"
+    }
+  },
+  "add": {
+    "one": {
+      "title": "Add one family",
+      "lede": "Mangaly makes the profile with the candidate's own mobile number. They get a message and can take it over, or remove it if it is not them."
+    },
+    "mobile": "Candidate's mobile number",
+    "name": "Full name",
+    "dob": "Date of birth",
+    "gender": "Gender",
+    "male": "Male",
+    "female": "Female",
+    "lookingFor": "Looking for",
+    "bride": "A bride",
+    "groom": "A groom",
+    "city": "City",
+    "photo": "Photo",
+    "consent": "This family has given me permission to put their details on Mangaly.",
+    "submit": "Add family",
+    "added": "{{name}} is in your list. Open the family to fill in more of the biodata.",
+    "faceCheck": "Before you add families, confirm it is you with a quick face check.",
+    "faceCheckButton": "Do the face check",
+    "bulk": {
+      "title": "Add many families from Excel",
+      "step1": "Download the template",
+      "step1Body": "One row per person. Name, gender, date of birth, city, mobile and photo are needed; the other columns are optional.",
+      "step2": "Put each photo's file name in the Photo column",
+      "step2Body": "For example sravani.jpg. Dates like 14/08/1994 or 1994-08-14 both work.",
+      "step3": "Upload the sheet and the photos",
+      "sheet": "Sheet (.xlsx or .csv)",
+      "photos": "Photos",
+      "photosChosen_one": "{{count}} photo chosen",
+      "photosChosen_other": "{{count}} photos chosen",
+      "submit": "Add everyone",
+      "working": "Adding {{count}} people…",
+      "result": "{{created}} added, {{failed}} need attention",
+      "row": "Row {{row}}",
+      "warning": "Saved without: {{fields}}"
+    },
+    "error": {
+      "missing": "Missing: {{fields}}",
+      "bad:gender": "Gender should be male or female",
+      "bad:date_of_birth": "Date of birth not understood",
+      "bad:looking_for": "Looking for should be bride or groom",
+      "bad:mobile": "Mobile number not valid",
+      "bad:photo": "Photo must be JPG, PNG or WebP, up to 8 MB",
+      "photo_not_uploaded": "The photo named in this row was not uploaded",
+      "number_has_account": "This number already has an account: ask the family to choose you on Mangaly",
+      "too_young": "Below the legal marriage age",
+      "identity_unavailable": "Could not reach ForKhatri; try this row again",
+      "unexpected": "Could not add this row; try again"
+    }
+  },
+  "offline": {
+    "title": "Biodata of people not on Mangaly",
+    "lede": "The families you share these with see them marked \"Not on Mangaly\", with your name. Only you and those families can open them.",
+    "empty": "None yet.",
+    "add": "Add a biodata",
+    "name": "Full name",
+    "details": "Biodata details",
+    "occupation": "Occupation",
+    "education": "Education",
+    "motherTongue": "Mother tongue",
+    "height": "Height (cm)",
+    "community": "Caste or community",
+    "nativePlace": "Native place",
+    "family": "Family",
+    "rashi": "Rashi",
+    "nakshatra": "Nakshatra",
+    "about": "About",
+    "contactNote": "How families reach them",
+    "contactNotePlaceholder": "Through me: I will speak to the father first",
+    "photos": "Photos",
+    "biodata": "Biodata file (PDF or image)",
+    "consent": "This family has given me permission to share their biodata with other families.",
+    "submit": "Save biodata",
+    "archive": "Remove",
+    "shareWith": "Share with a family",
+    "viewFile": "Open biodata file"
+  },
+  "share": {
+    "title": "Share with {{name}}",
+    "offlineTitle": "Biodata not on Mangaly",
+    "offlineEmpty": "Add biodata of people not on Mangaly in your workspace, then share them here.",
+    "note": "A note for the family",
+    "notePlaceholder": "Why you think this could work",
+    "send": "Share",
+    "sent_one": "Shared {{count}} profile.",
+    "sent_other": "Shared {{count}} profiles.",
+    "none": "Already shared.",
+    "choose": "Choose at least one"
+  },
+  "tools": {
+    "title": "Agent tools",
+    "exportOne": "Biodata PDF",
+    "numbers": "Numbers",
+    "answers": "The family's answers",
+    "question": "Asked: \"{{question}}\"",
+    "noAnswers": "The family has not answered yet."
+  },
+  "family": {
+    "title": "Marriage agents",
+    "lede": "Trusted marriage agents search for you, on Mangaly and beyond, and share what they find here.",
+    "connect": {
+      "title": "Work with verified marriage agents",
+      "point1": "Agents search Mangaly for you, and share biodata of families who are not on Mangaly",
+      "point2": "Every agent is checked by Mangaly before you can choose them",
+      "point3": "You see who opened your number, and you can close it to agents at any time",
+      "point4": "Any agent's fee is between you and them. Mangaly never collects it.",
+      "buy": "Get Agent Connect",
+      "active": "Agent Connect active until {{date}}",
+      "onlyParents": "The candidate or a parent can get Agent Connect."
+    },
+    "directory": {
+      "title": "Choose an agent",
+      "empty": "No agents are taking families yet.",
+      "years": "{{count}} years",
+      "families_one": "{{count}} family",
+      "families_other": "{{count}} families",
+      "marriages_one": "{{count}} marriage",
+      "marriages_other": "{{count}} marriages",
+      "choose": "Choose",
+      "chosen": "Working for you",
+      "call": "Call"
+    },
+    "yours": "Your agents",
+    "stop": "Stop working with {{name}}",
+    "stopConfirm": "Stop",
+    "message": "Message",
+    "filter": {
+      "all": "All",
+      "new": "New",
+      "liked": "Interested",
+      "passed": "Not for us",
+      "ask": "Asked"
+    },
+    "today": "Today",
+    "todayEmpty": "Nothing new today.",
+    "earlier": "Earlier",
+    "empty": "When your agent shares a profile, it appears here.",
+    "onMangaly": "On Mangaly",
+    "notOnMangaly": "Not on Mangaly",
+    "sharedBy": "Shared by {{name}}",
+    "notVerified": "Not checked by Mangaly: ask your agent about this family.",
+    "age": "{{age}} yrs",
+    "view": "View profile",
+    "viewBiodata": "View biodata",
+    "hide": "Close",
+    "answer": {
+      "liked": "Interested",
+      "passed": "Not for us",
+      "ask": "Ask {{name}}",
+      "askPlaceholder": "Your question about this family",
+      "send": "Send question",
+      "yours": "You said: {{answer}}",
+      "asked": "You asked: \"{{question}}\""
+    },
+    "chat": {
+      "title": "Chat with {{name}}",
+      "empty": "Say hello, or ask about a profile.",
+      "placeholder": "Message {{name}}",
+      "send": "Send",
+      "open": "Open full chat",
+      "choose": "Choose an agent to chat with"
+    },
+    "tabs": {
+      "profiles": "Profiles",
+      "chat": "Chat"
+    },
+    "privacy": {
+      "title": "Your number and agents",
+      "toggle": "Verified agents may see our number",
+      "on": "Agents you have not chosen can call you about your profile. Each time one opens your number, it shows below.",
+      "off": "Only agents you chose can see your number."
+    },
+    "activity": {
+      "title": "What agents did with your profile",
+      "empty": "No agent has opened your number or exported your biodata.",
+      "contact": "{{name}} opened your number",
+      "excel": "{{name}} exported your biodata to Excel",
+      "biodata": "{{name}} printed your biodata",
+      "times_one": "once",
+      "times_other": "{{count}} times"
+    },
+    "for": "For {{name}}"
+  },
+  "review": {
+    "title": "Agent applications",
+    "empty": "No applications.",
+    "verify": "Verify",
+    "reject": "Reject",
+    "applied": "Applied {{date}}",
+    "membership": "Membership until {{date}}",
+    "noMembership": "No membership",
+    "prices": {
+      "title": "Plan prices",
+      "lede": "What members pay, before GST. A change applies to new orders only.",
+      "plan": "Plan",
+      "term": "Term",
+      "price": "Price (₹)",
+      "catalogue": "Default ₹{{amount}}",
+      "active": "On sale",
+      "save": "Save",
+      "saved": "Saved"
+    },
+    "notModerator": "This page is for Mangaly moderators."
+  },
+  "biodata": {
+    "title": "Biodata",
+    "print": "Print or save as PDF",
+    "stamp": "Shared by {{agent}} through Mangaly on {{date}}. For the families concerned only.",
+    "contacts": "Contact",
+    "loading": "Preparing biodata…",
+    "empty": "Nothing to print."
+  },
+  "menu": {
+    "workspace": "Agent workspace",
+    "agents": "Marriage agents",
+    "becomeAgent": "I am a marriage agent"
+  },
+  "section": {
+    "basics": "Basics",
+    "community": "Community",
+    "education_career": "Education and work",
+    "family": "Family",
+    "horoscope": "Horoscope",
+    "lifestyle": "Lifestyle",
+    "self_expression": "About",
+    "education": "Education",
+    "profession": "Work",
+    "marital_history": "Marital status",
+    "relocation": "Relocation",
+    "food_travel_hobbies": "Interests"
+  },
+  "reveal": {
+    "show": "Show contact",
+    "free": "Opened in the last 30 days: free to see again",
+    "client": "Your client: always open",
+    "call": "Call",
+    "whatsapp": "WhatsApp",
+    "email": "Email",
+    "logged": "The family can see that you opened their details.",
+    "none": "No number or email on this profile.",
+    "failed": "Could not open the details. Try again.",
+    "left_one": "You can open {{count}} more new family today. Your own clients never count.",
+    "left_other": "You can open {{count}} more new families today. Your own clients never count."
+  },
+  "quota": {
+    "title": "Fair use",
+    "contacts": "New families opened today: {{used}} of {{limit}}",
+    "month": "Last 30 days: {{used}} of {{limit}}",
+    "exports": "Non-client profiles exported today: {{used}} of {{limit}}",
+    "added": "{{used}} of {{limit}} profiles added today",
+    "clientsFree": "Your own clients never count.",
+    "suspended": "Several families reported unwanted calls, so other families' numbers are closed to you until a Mangaly moderator looks into it. Your own clients are not affected.",
+    "rules": "How fair use works",
+    "rule1": "Your clients' numbers, and their parents', are always open and never counted.",
+    "rule2": "Other families' details sit behind the eye. Each new family you open uses one of the day's opens; opening them again within 30 days is free.",
+    "rule3": "Exports carry only numbers you have opened. Profiles that are not your clients can be exported up to {{limit}} a day.",
+    "rule4": "Every open and every export is shown to that family. If families report unwanted calls after you opened their number, your eye closes until Mangaly looks into it.",
+    "rule5": "What you do in your own WhatsApp groups is your business. On Mangaly, families trust us to keep their number safe."
+  },
+  "suspendedStatus": {
+    "title": "Your agent workspace is suspended",
+    "body": "After families' reports, a Mangaly moderator suspended your workspace. Write to Mangaly support if you think this is a mistake."
+  },
+  "safety": {
+    "title": "Your number and agents",
+    "lede": "See which marriage agents opened your number, close it to agents, and tell us about unwanted calls.",
+    "link": "Who saw your number",
+    "report": {
+      "open": "Report an unwanted call",
+      "title": "Report an unwanted call or message",
+      "channel": "How did they contact you?",
+      "channels": {
+        "call": "Call",
+        "whatsapp": "WhatsApp",
+        "sms": "SMS",
+        "email": "Email"
+      },
+      "day": "When?",
+      "who": "Was it one of these agents?",
+      "whoLede": "These agents opened or exported your number in the 30 days before that day.",
+      "noSuspects": "No agent opened your number in the 30 days before that day. You can still tell us.",
+      "notSure": "I am not sure",
+      "note": "What happened (optional)",
+      "notePlaceholder": "For example: he kept calling after we said no",
+      "send": "Send report",
+      "sent": "Thank you. A Mangaly moderator will look into it and tell you what we did.",
+      "closeToo": "Also close our number to agents",
+      "mine": "Your reports",
+      "onDay": "{{channel}} on {{date}}",
+      "status": {
+        "open": "Mangaly is looking into it",
+        "dismissed": "Looked into: not linked to an agent",
+        "warned": "The agent was warned",
+        "suspended": "The agent was suspended"
+      }
+    }
+  },
+  "limits": {
+    "title": "Fair-use limits",
+    "lede": "How much an agent may take from families who are not their clients. Clients never count.",
+    "names": {
+      "contacts_per_day": "New families an agent may open a day",
+      "contacts_per_month": "New families an agent may open in 30 days",
+      "export_others_per_day": "Non-client profiles an agent may export a day",
+      "profiles_added_per_day": "Profiles an agent may add a day",
+      "reports_to_suspend": "Families' reports in 90 days that close an agent's eye"
+    },
+    "save": "Save",
+    "saved": "Saved"
+  }
+}

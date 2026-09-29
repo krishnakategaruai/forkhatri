@@ -113,5 +113,13 @@
   "circle.cannotRemove": "आप इस व्यक्ति को मंडली से नहीं हटा सकते।",
   "circle.formedDescription": "उन लोगों ने शुरू की जो बार-बार साथ आते रहे।",
   "notify.circleInvite.title": "{who} ने आपको {circle} में आमंत्रित किया है",
-  "notify.circleInvite.body": "मन हो तो जुड़ें। मना करने पर किसी को नहीं बताया जाता।"
+  "notify.circleInvite.body": "मन हो तो जुड़ें। मना करने पर किसी को नहीं बताया जाता।",
+  "chat.closed": "इस गतिविधि की चैट बंद हो गई है। आप इसे अब भी पढ़ सकते हैं।",
+  "circle.pinLimit": "अधिकतम {n} पोस्ट पिन की जा सकती हैं। पहले किसी एक को अनपिन करें।",
+  "circle.announcementNoReplies": "घोषणाओं पर प्रतिक्रिया दी जा सकती है, जवाब नहीं।",
+  "circle.commentNotFound": "यह टिप्पणी अब यहाँ नहीं है।",
+  "circle.notYourComment": "यह टिप्पणी केवल उसका लेखक या सर्कल के आयोजक हटा सकते हैं।",
+  "circle.organizersOnly": "यह केवल सर्कल के आयोजक कर सकते हैं।",
+  "notify.circleAnnouncement.title": "{circle} में घोषणा",
+  "notify.circleAnnouncement.body": "आयोजकों ने एक घोषणा साझा की है।"
 }

@@ -60,34 +60,34 @@ const PROCESSES = [
     describe: "ForKhatri entrance and hub",
   },
   {
-    group: "mangaly",
-    name: "mangaly-api",
+    group: "mangalya",
+    name: "mangalya-api",
     color: 35,
-    dir: "modules/MOD03-mangaly/mangaly-service",
+    dir: "modules/MOD03-mangalya/mangalya-service",
     port: 8000,
     kind: "api",
-    describe: "MOD03 Mangaly API",
+    describe: "MOD03 Mangalya API",
   },
   {
-    group: "mangaly",
-    name: "mangaly-web",
+    group: "mangalya",
+    name: "mangalya-web",
     color: 95,
-    dir: "modules/MOD03-mangaly/mangaly-web",
+    dir: "modules/MOD03-mangalya/mangalya-web",
     port: 3000,
     kind: "web",
-    describe: "MOD03 Mangaly",
+    describe: "MOD03 Mangalya",
   },
   {
-    // Guna Milan and Mangal Dosha calculation, called only by mangaly-api
+    // Guna Milan and Mangal Dosha calculation, called only by mangalya-api
     // (loopback, shared token from horoscope-service/.env). Node, so it runs
     // through `npm run dev` like the web apps.
-    group: "mangaly",
+    group: "mangalya",
     name: "horoscope",
     color: 91,
-    dir: "modules/MOD03-mangaly/horoscope-service",
+    dir: "modules/MOD03-mangalya/horoscope-service",
     port: 8013,
     kind: "web",
-    describe: "MOD03 Mangaly horoscope calculation (internal)",
+    describe: "MOD03 Mangalya horoscope calculation (internal)",
   },
   {
     group: "milavn",

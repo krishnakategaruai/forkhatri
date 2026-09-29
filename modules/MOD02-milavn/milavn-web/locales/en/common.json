@@ -856,7 +856,23 @@
     "noPhotos": "Photos shared in posts appear here.",
     "openDoc": "Open",
     "membersOnly": "Posts and photos are shared with members — join to see them.",
-    "noEventsAtAll": "No events yet — the first one starts here."
+    "noEventsAtAll": "No events yet — the first one starts here.",
+    "announcement": "Announcement",
+    "announceHint": "Pinned at the top and sent to every member. Members can react but not reply.",
+    "pinned": "Pinned",
+    "pin": "Pin to top",
+    "unpin": "Unpin",
+    "pinFull": "Up to {{count}} pinned posts",
+    "pinnedDone": "Pinned to the top",
+    "unpinned": "Unpinned",
+    "react": "React",
+    "reactWith": "{{emoji}} · {{count}}",
+    "comment": "Comments",
+    "addComment": "Write a comment",
+    "commentPlaceholder": "Write a comment…",
+    "reply": "Reply",
+    "deleteComment": "Delete comment",
+    "commentDeleted": "Comment deleted"
   },
   "manage": {
     "button": "Manage",
@@ -877,7 +893,12 @@
     "coverAdd": "Add a cover photo",
     "coverChange": "Change",
     "coverRemove": "Remove",
-    "coverHint": "A real photo of your people or your place works best."
+    "coverHint": "A real photo of your people or your place works best.",
+    "joinQuestions": "Questions for people who ask to join",
+    "joinQuestionsHint": "Up to {{count}} short questions. You will see the answers with each request.",
+    "joinQuestionN": "Question {{n}}",
+    "addQuestion": "Add a question",
+    "removeQuestion": "Remove question"
   },
   "invite": {
     "title": "Invitations",
@@ -930,5 +951,10 @@
     "invalidTitle": "This invite link no longer works",
     "invalidBody": "Ask whoever shared it for a new one, or look around for circles near you.",
     "browse": "Browse circles"
+  },
+  "activityChat": {
+    "open": "Chat with people going",
+    "closed": "This activity's chat has closed. You can still read it.",
+    "listHint": "Everyone going is here"
   }
 }

@@ -1,0 +1,99 @@
+{
+  "error": {
+    "notAgent": "This page is for marriage agents.",
+    "alreadyStaff": "You already work for Mangaly as a relationship manager.",
+    "consentRequired": "Confirm that each family gave you permission to put their details on Mangaly.",
+    "numberHasAccount": "This number already has a ForKhatri account. Ask the family to choose you as their agent from Mangaly.",
+    "sheetUnreadable": "We could not read this file. Upload the Excel template (.xlsx) or a .csv file.",
+    "sheetEmpty": "The sheet has no rows under the header.",
+    "sheetTooLong": "Add up to {limit} people at a time.",
+    "clientNotFound": "This client is not in your list.",
+    "contactClosed": "This family has closed their number to agents.",
+    "nothingToExport": "None of the chosen people can be exported.",
+    "offlineNeedsPhoto": "Add a photo or the biodata file.",
+    "unsupportedFile": "Use a JPG, PNG or WebP photo, or a PDF biodata, up to 10 MB.",
+    "needsAgentConnect": "Working with agents needs Agent Connect.",
+    "parentsDecide": "The candidate or a parent decides this.",
+    "agentNotLive": "This agent is not taking families right now.",
+    "questionRequired": "Write your question for the agent.",
+    "contactsPerDay": "You have opened {limit} new families' details today, the most for one day. Your own clients are not limited. You can open more tomorrow.",
+    "contactsPerMonth": "You have opened {limit} new families' details in the last 30 days, the most Mangaly allows. Your own clients are not limited.",
+    "contactSuspended": "Several families reported unwanted calls, so other families' numbers are closed to you until a Mangaly moderator looks into it. Your own clients are not affected.",
+    "exportOthersPerDay": "Profiles that are not your clients can be exported up to {limit} a day. You have {left} left today.",
+    "profilesAddedPerDay": "You can add up to {limit} profiles a day. Add the rest tomorrow.",
+    "reportDate": "Choose a day within the last 90 days.",
+    "familyReports": "Only the family can report this."
+  },
+  "export": {
+    "stamp": "Shared by {agent} through Mangaly on {date}. For the families concerned only.",
+    "name": "Name",
+    "age": "Age",
+    "gender": "Gender",
+    "city": "City",
+    "client": "Your client",
+    "phones": "Phone numbers",
+    "yes": "Yes"
+  },
+  "relation": {
+    "self": "self",
+    "mother": "mother",
+    "father": "father",
+    "guardian": "guardian",
+    "parent": "parent"
+  },
+  "admin": {
+    "title": "Marriage agents",
+    "summary": "{name}, {city}: applied to be a Mangaly agent",
+    "reason": "Agent application",
+    "field": {
+      "name": "Name",
+      "business": "Bureau",
+      "phone": "Phone",
+      "city": "City",
+      "years": "Years as an agent",
+      "communities": "Communities",
+      "languages": "Languages",
+      "status": "Status",
+      "membership": "Membership until",
+      "about": "About"
+    },
+    "status": {
+      "pending": "Waiting for the check",
+      "verified": "Verified",
+      "rejected": "Not verified",
+      "suspended": "Suspended",
+      "contact_suspended": "Numbers closed after reports"
+    },
+    "reports": {
+      "title": "Unwanted calls",
+      "summary": "{name}: unwanted {channel} on {day}",
+      "reason": "Report of an unwanted call or message",
+      "unknownAgent": "Agent not known",
+      "channel": {
+        "call": "call",
+        "whatsapp": "WhatsApp message",
+        "sms": "SMS",
+        "email": "email"
+      },
+      "status": {
+        "open": "Waiting",
+        "dismissed": "Dismissed",
+        "warned": "Agent warned",
+        "suspended": "Agent suspended"
+      },
+      "field": {
+        "family": "Family",
+        "reporter": "Reported by",
+        "channel": "How they were contacted",
+        "day": "On",
+        "named": "Agent the family named",
+        "suspects": "Agents who opened or exported their number in the 30 days before",
+        "noSuspects": "No agent opened their number in that time",
+        "reports90": "Families who reported this agent in 90 days",
+        "status": "Status",
+        "note": "What the family wrote",
+        "reviewNote": "Moderator's note"
+      }
+    }
+  }
+}

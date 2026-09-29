@@ -127,6 +127,10 @@ class Conversation:
     last_preview: str | None
     unread: int
     context: SharedContext | None = None
+    # [049] An activity's chat: its occurrence, and whether it has closed (read-only) ~24h after the end.
+    occurrence_id: UUID | None = None
+    closed: bool = False
+    closes_at: datetime | None = None
 
 
 @dataclass(slots=True)
@@ -218,15 +222,17 @@ async def list_conversations(session: AsyncSession, *, me: UUID) -> list[Convers
     rows = (
         await session.execute(
             text(
-                "SELECT c.id, c.kind, c.title, c.last_message_at FROM milavn_connect.conversation c "
+                "SELECT c.id, c.kind, c.title, c.last_message_at, c.occurrence_id FROM milavn_connect.conversation c "
                 "JOIN milavn_connect.conversation_member cm ON cm.conversation_id = c.id AND cm.member_id = :me AND cm.left_at IS NULL "
+                # [049] A closed activity chat leaves the list (it stays readable by link).
+                "WHERE NOT milavn_connect.is_conversation_closed(c.id) "
                 "ORDER BY c.last_message_at DESC NULLS LAST, c.created_at DESC LIMIT 100"
             ),
             {"me": str(me)},
         )
     ).all()
     out: list[Conversation] = []
-    for cid, kind, title, last_at in rows:
+    for cid, kind, title, last_at, occ in rows:
         ids = await member_ids(session, cid)
         others = [i for i in ids if i != me] or ids
         pres = await presence_of(session, others)
@@ -240,19 +246,48 @@ async def list_conversations(session: AsyncSession, *, me: UUID) -> list[Convers
         if prev:
             preview = prev[1] if prev[0] == "text" else ("📷" if prev[0] == "photo" else f"· {prev[2]}")
         unread = int((await session.execute(text("SELECT milavn_connect.unread_count(:c, :m)"), {"c": str(cid), "m": str(me)})).scalar_one() or 0)
-        out.append(Conversation(cid, kind, title, await _person_rows(others, pres), last_at, preview, unread))
+        out.append(Conversation(cid, kind, title, await _person_rows(others, pres), last_at, preview, unread, occurrence_id=occ))
     return out
 
 
 async def conversation(session: AsyncSession, *, conversation_id: UUID, me: UUID) -> Conversation:
-    row = (await session.execute(text("SELECT id, kind, title, last_message_at FROM milavn_connect.conversation WHERE id = :c"), {"c": str(conversation_id)})).first()
+    row = (
+        await session.execute(
+            text(
+                "SELECT id, kind, title, last_message_at, occurrence_id, milavn_connect.activity_chat_closes_at(id) "
+                "FROM milavn_connect.conversation WHERE id = :c"
+            ),
+            {"c": str(conversation_id)},
+        )
+    ).first()
     if row is None:
         raise NotFound()
     ids = await member_ids(session, conversation_id)
     pres = await presence_of(session, ids)
     others = [i for i in ids if i != me]
     context = await shared_context(session, me=me, other=others[0]) if row[1] == "direct" and others else None
-    return Conversation(row[0], row[1], row[2], await _person_rows(ids, pres), row[3], None, 0, context)
+    return Conversation(
+        row[0], row[1], row[2], await _person_rows(ids, pres), row[3], None, 0, context,
+        occurrence_id=row[4], closed=is_closed_at(row[5]), closes_at=row[5],
+    )
+
+
+def is_closed_at(closes_at: datetime | None, now: datetime | None = None) -> bool:
+    """[049] An activity chat is read-only once its closing time (end + ~24h) has passed."""
+    if closes_at is None:
+        return False
+    return (now or datetime.now(closes_at.tzinfo)) >= closes_at
+
+
+class ChatClosed(NotAllowed):
+    """The activity ended over a day ago: its chat is read-only now."""
+
+
+async def activity_chat_for(session: AsyncSession, *, occurrence_id: UUID, me: UUID) -> UUID | None:
+    """[049] The occurrence's chat, when `me` is in it (host or going)."""
+    return (
+        await session.execute(text("SELECT milavn_connect.activity_chat_for(:o, :m)"), {"o": str(occurrence_id), "m": str(me)})
+    ).scalar_one_or_none()
 
 
 # --- messages ------------------------------------------------------------------------
@@ -300,6 +335,8 @@ async def send(session: AsyncSession, *, conversation_id: UUID, me: UUID, kind: 
         raise InvalidInput()
     if not await is_member(session, conversation_id, me):
         raise NotAllowed()
+    if (await session.execute(text("SELECT milavn_connect.is_conversation_closed(:c)"), {"c": str(conversation_id)})).scalar_one():
+        raise ChatClosed()
     mid = uuid4()
     await session.execute(
         text("INSERT INTO milavn_connect.chat_message (id, conversation_id, member_id, kind, body, media_ref, expression) VALUES (:id, :c, :m, :k, :b, :r, :e)"),

@@ -77,6 +77,35 @@ class Message:
     photo_url: str | None = None
     doc_url: str | None = None
     doc_name: str | None = None
+    # [049] Circle board only: announcement / pin, reactions (emoji -> member ids) and comments.
+    is_announcement: bool = False
+    pinned: bool = False
+    reactions: dict | None = None
+    comments: tuple = ()
+
+
+@dataclass(frozen=True, slots=True)
+class Comment:
+    id: UUID
+    member_id: UUID
+    display_name: str
+    avatar: str | None
+    body: str
+    created_at: datetime
+    mine: bool
+
+
+# [049] "Reactions, not likes" (milavn-social-decisions): a small fixed set, same as migration 049's CHECK.
+POST_REACTIONS = ("❤️", "👏", "😂", "🙏", "🎉")
+MAX_PINS = 3
+MAX_COMMENT_LEN = 500
+
+
+def board_order_key(pinned_at: datetime | None, created_at: datetime) -> tuple:
+    """Pinned posts first (most recently pinned on top), then everything else newest first."""
+    if pinned_at is not None:
+        return (0, -pinned_at.timestamp())
+    return (1, -created_at.timestamp())
 
 
 @dataclass(frozen=True, slots=True)
@@ -248,22 +277,132 @@ async def request_photo_removal(session: AsyncSession, *, occurrence_id: UUID, p
 
 async def list_posts(session: AsyncSession, *, circle_id: UUID, viewer_member_id: UUID, limit: int = 100) -> list[Message]:
     # RLS returns nothing for non-members; the route turns "not a member" into an empty board.
+    # [049] Pinned posts always come back (even when older than the newest `limit`), and first.
     rows = (
         await session.execute(
-            text("SELECT id, member_id, body, created_at, photo_ref, doc_ref, doc_name FROM milavn_circle.circle_post WHERE circle_id = :c AND deleted_at IS NULL ORDER BY created_at DESC LIMIT :l"),
+            text(
+                "SELECT id, member_id, body, created_at, photo_ref, doc_ref, doc_name, is_announcement, pinned_at FROM milavn_circle.circle_post "
+                "WHERE circle_id = :c AND deleted_at IS NULL "
+                "ORDER BY (pinned_at IS NOT NULL) DESC, created_at DESC LIMIT :l"
+            ),
             {"c": str(circle_id), "l": limit},
         )
     ).all()
-    hidden = await _blocked_filter(session, viewer_member_id, [r[1] for r in rows])
-    names = await identity.display_names_for([r[1] for r in rows])
+    rows = sorted(rows, key=lambda r: board_order_key(r[8], r[3]))
+    post_ids = [str(r[0]) for r in rows]
+    reactions: dict[UUID, dict[str, list[str]]] = {}
+    comment_rows: list = []
+    if post_ids:
+        for pid, emoji, who in (
+            await session.execute(
+                text("SELECT post_id, emoji, member_id FROM milavn_circle.circle_post_reaction WHERE post_id = ANY(CAST(:ids AS uuid[])) ORDER BY created_at"),
+                {"ids": post_ids},
+            )
+        ).all():
+            reactions.setdefault(pid, {}).setdefault(emoji, []).append(str(who))
+        comment_rows = (
+            await session.execute(
+                text(
+                    "SELECT id, post_id, member_id, body, created_at FROM milavn_circle.circle_post_comment "
+                    "WHERE post_id = ANY(CAST(:ids AS uuid[])) AND deleted_at IS NULL ORDER BY created_at"
+                ),
+                {"ids": post_ids},
+            )
+        ).all()
+    people = [r[1] for r in rows] + [c[2] for c in comment_rows]
+    hidden = await _blocked_filter(session, viewer_member_id, people)
+    names = await identity.display_names_for(people)
+    comments: dict[UUID, list[Comment]] = {}
+    for c in comment_rows:
+        if c[2] in hidden:
+            continue
+        comments.setdefault(c[1], []).append(Comment(c[0], c[2], names[c[2]].display_name, names[c[2]].avatar, c[3], c[4], c[2] == viewer_member_id))
     return [
         Message(
             r[0], r[1], names[r[1]].display_name, names[r[1]].avatar, r[2], r[3], r[1] == viewer_member_id,
             f"/media/{r[4]}" if r[4] else None, f"/media/{r[5]}" if r[5] else None, r[6],
+            bool(r[7]), r[8] is not None, reactions.get(r[0], {}), tuple(comments.get(r[0], [])),
         )
         for r in rows
         if r[1] not in hidden
     ]
+
+
+class PinLimit(Exception):
+    """[049] Already three pinned posts: unpin one first."""
+
+
+class AnnouncementNoReplies(Exception):
+    """[049] Members react to an announcement; they do not reply to it."""
+
+
+class CommentNotFound(Exception):
+    pass
+
+
+async def pin_post(session: AsyncSession, *, circle_id: UUID, post_id: UUID, member_id: UUID, pinned: bool) -> None:
+    outcome = (
+        await session.execute(
+            text("SELECT milavn_circle.pin_circle_post(:c, :p, :m, :pin)"),
+            {"c": str(circle_id), "p": str(post_id), "m": str(member_id), "pin": pinned},
+        )
+    ).scalar_one()
+    if outcome == "not_found":
+        raise PostNotFound
+    if outcome == "limit":
+        raise PinLimit
+    if outcome not in ("pinned", "unpinned"):
+        raise NotAllowed
+
+
+async def toggle_post_reaction(session: AsyncSession, *, circle_id: UUID, post_id: UUID, member_id: UUID, emoji: str) -> bool:
+    """True when the reaction is now on, False when it was taken back."""
+    if emoji not in POST_REACTIONS:
+        raise InvalidInput()
+    outcome = (
+        await session.execute(
+            text("SELECT milavn_circle.toggle_post_reaction(:c, :p, :m, :e)"),
+            {"c": str(circle_id), "p": str(post_id), "m": str(member_id), "e": emoji},
+        )
+    ).scalar_one()
+    if outcome == "not_found":
+        raise PostNotFound
+    if outcome not in ("added", "removed"):
+        raise NotAllowed
+    return outcome == "added"
+
+
+async def add_comment(session: AsyncSession, *, circle_id: UUID, post_id: UUID, member_id: UUID, body: str) -> UUID:
+    body = (body or "").strip()
+    if not body or len(body) > MAX_COMMENT_LEN:
+        raise InvalidInput()
+    row = (
+        await session.execute(
+            text("SELECT r_outcome, r_comment_id FROM milavn_circle.add_post_comment(:c, :p, :m, :b)"),
+            {"c": str(circle_id), "p": str(post_id), "m": str(member_id), "b": body},
+        )
+    ).first()
+    outcome = row[0] if row else "not_found"
+    if outcome == "not_found":
+        raise PostNotFound
+    if outcome == "announcement":
+        raise AnnouncementNoReplies
+    if outcome != "added":
+        raise NotAllowed
+    return row[1]
+
+
+async def delete_comment(session: AsyncSession, *, circle_id: UUID, comment_id: UUID, member_id: UUID) -> None:
+    outcome = (
+        await session.execute(
+            text("SELECT milavn_circle.delete_post_comment(:c, :x, :m)"),
+            {"c": str(circle_id), "x": str(comment_id), "m": str(member_id)},
+        )
+    ).scalar_one()
+    if outcome == "not_found":
+        raise CommentNotFound
+    if outcome != "deleted":
+        raise NotAllowed
 
 
 class PostNotFound(Exception):
@@ -330,13 +469,28 @@ async def _may_post(session: AsyncSession, circle_id: UUID, member_id: UUID) -> 
     return policy != "organizers" or role in ("organizer", "assistant")
 
 
+async def _is_manager(session: AsyncSession, circle_id: UUID, member_id: UUID) -> bool:
+    role = (await session.execute(text("SELECT milavn_circle.current_role_of(:c, :m)"), {"c": str(circle_id), "m": str(member_id)})).scalar_one_or_none()
+    return role in ("organizer", "assistant")
+
+
 async def post_to_board(
-    session: AsyncSession, *, circle_id: UUID, member_id: UUID, body: str, photo: UploadFile | None = None, document: UploadFile | None = None
+    session: AsyncSession,
+    *,
+    circle_id: UUID,
+    member_id: UUID,
+    body: str,
+    photo: UploadFile | None = None,
+    document: UploadFile | None = None,
+    announcement: bool = False,
 ) -> UUID:
     body = (body or "").strip()
     if (not body and photo is None and document is None) or len(body) > 1000:
         raise InvalidInput()
     await check_may_post(session, circle_id, member_id)
+    # [049] Announcements are the organizer's / an assistant's voice only.
+    if announcement and not await _is_manager(session, circle_id, member_id):
+        raise OrganizersOnly()
     # [B6] Both attachments are validated before either is stored, so a bad document never leaves
     # an orphaned photo on disk (and vice versa).
     photo_ext = doc_ext = None
@@ -364,12 +518,38 @@ async def post_to_board(
     post_id = uuid4()
     await session.execute(
         text(
-            "INSERT INTO milavn_circle.circle_post (id, circle_id, member_id, body, photo_ref, doc_ref, doc_name) "
-            "VALUES (:id, :c, :m, :b, :p, :d, :dn)"
+            "INSERT INTO milavn_circle.circle_post (id, circle_id, member_id, body, photo_ref, doc_ref, doc_name, is_announcement) "
+            "VALUES (:id, :c, :m, :b, :p, :d, :dn, :a)"
         ),
-        {"id": str(post_id), "c": str(circle_id), "m": str(member_id), "b": body, "p": photo_ref, "d": doc_ref, "dn": doc_name},
+        {"id": str(post_id), "c": str(circle_id), "m": str(member_id), "b": body, "p": photo_ref, "d": doc_ref, "dn": doc_name, "a": announcement},
     )
+    if announcement:
+        # [049] An announcement goes to the top of Posts: it takes a pin, releasing the oldest pins
+        # when all three are in use. Then every member is told, in their own language.
+        pins = (
+            await session.execute(
+                text("SELECT id FROM milavn_circle.circle_post WHERE circle_id = :c AND pinned_at IS NOT NULL AND deleted_at IS NULL ORDER BY pinned_at ASC"),
+                {"c": str(circle_id)},
+            )
+        ).scalars().all()
+        for old in pins_to_release(len(pins), pins):
+            await pin_post(session, circle_id=circle_id, post_id=old, member_id=member_id, pinned=False)
+        await pin_post(session, circle_id=circle_id, post_id=post_id, member_id=member_id, pinned=True)
+        from app.events import bus
+
+        await bus.publish(
+            session,
+            schema="milavn_circle",
+            event_type="circle.announcement_posted",
+            aggregate_id=circle_id,
+            payload={"circle_id": circle_id, "post_id": post_id, "member_id": member_id},
+        )
     return post_id
+
+
+def pins_to_release(count: int, oldest_first: list) -> list:
+    """[049] Which existing pins a new announcement pushes out so at most MAX_PINS stay pinned."""
+    return list(oldest_first[: max(0, count - (MAX_PINS - 1))])
 
 
 # --- Circle-mates going -------------------------------------------------------

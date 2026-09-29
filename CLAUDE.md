@@ -11,7 +11,7 @@ closes another session's browser.
 | Platform, entrance, identity service, deployment, or coordinating across modules | `mcp__chrome-devtools-main__*` | `forkhatri-main-profile` |
 | `modules/MOD01-vyapar/` | `mcp__chrome-devtools-vyapar__*` | `forkhatri-mod01-vyapar-profile` |
 | `modules/MOD02-milavn/` | `mcp__chrome-devtools-milavn__*` | `forkhatri-mod02-milavn-profile` |
-| `modules/MOD03-mangaly/` | `mcp__chrome-devtools-mangaly__*` | `forkhatri-mod03-mangaly-profile` |
+| `modules/MOD03-mangalya/` | `mcp__chrome-devtools-mangalya__*` | `forkhatri-mod03-mangalya-profile` |
 | `modules/MOD04-counsel/` | `mcp__chrome-devtools-counsel__*` | `forkhatri-mod04-counsel-profile` |
 | `modules/MOD05-dashboard/` | `mcp__chrome-devtools-dashboard__*` | `forkhatri-mod05-dashboard-profile` |
 | `modules/MOD06-payment-services/` | `mcp__chrome-devtools-payments__*` | `forkhatri-mod06-payment-services-profile` |
@@ -31,10 +31,10 @@ Switching person takes one tap and no password:
 
 - **People testing by hand:** open http://localhost:3100, then avatar → "Act as (development)". Signed out, use the small "Development: act as…" link on the sign-in screen.
 - **Personas:**
-  - `asha`: data in Mangaly and Milavn.
+  - `asha`: data in Mangalya and Milavn.
   - `new-member`: no module data at seed time.
-  - `mangaly-family`: Vikram Rao, father in his daughter Kavya Rao's Home Circle (Kavya: Hyderabad architect, looking for a groom).
-  - `mangaly-parent`: Lakshmi Reddy, Ananya Reddy's mother, not a candidate.
+  - `mangalya-family`: Vikram Rao, father in his daughter Kavya Rao's Home Circle (Kavya: Hyderabad architect, looking for a groom).
+  - `mangalya-parent`: Lakshmi Reddy, Ananya Reddy's mother, not a candidate.
   - `milavn-moderator`.
   - `krishna`: the product owner's account, for people only, never automated tests.
 - **Automated tests:** don't drive the sign-in screens. Run `platform/identity-service/.venv/Scripts/python platform/identity-service/scripts/dev_session.py <persona> --storage-state <file>` for a Playwright storageState, or `--cookie-header` for curl.

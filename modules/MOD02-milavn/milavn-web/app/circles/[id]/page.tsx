@@ -17,7 +17,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { useTranslation } from 'react-i18next';
 
 import ActivityCard from '@/components/ActivityCard';
-import { ArrowLeft, BarChart3, Ellipsis, FileText, Image as ImageIcon, Paperclip, Settings2, UserPlus, X } from 'lucide-react';
+import { ArrowLeft, BarChart3, Ellipsis, FileText, Image as ImageIcon, Megaphone, MessageCircle, Paperclip, Pin, Settings2, SmilePlus, UserPlus, X } from 'lucide-react';
 
 import CircleCover from '@/components/CircleCover';
 import InvitePeopleSheet from '@/components/InvitePeopleSheet';
@@ -30,7 +30,10 @@ import { useIdentity } from '@/lib/identity';
 type Post = {
   id: string; member_id: string; display_name: string; avatar: string | null; body: string; created_at: string; mine: boolean;
   photo_url: string | null; doc_url: string | null; doc_name: string | null;
+  // [049] Announcements (organizers' voice, react-only), pins, reactions and one level of comments.
+  is_announcement?: boolean; pinned?: boolean; reactions?: Record<string, string[]>; comments?: PostComment[];
 };
+type PostComment = { id: string; member_id: string; display_name: string; avatar: string | null; body: string; created_at: string; mine: boolean };
 
 type Tab = 'posts' | 'events' | 'photos' | 'members';
 
@@ -63,6 +66,7 @@ type Detail = Circle & {
 type FeedItem = { at: string } & ({ kind: 'post'; post: Post } | { kind: 'poll'; poll: Poll });
 
 const MEMBER_PREVIEW = 8;
+const MAX_JOIN_QUESTIONS = 3;
 const FEED_PREVIEW = 20;
 
 export default function CircleDetailPage() {
@@ -80,6 +84,13 @@ export default function CircleDetailPage() {
     return () => clearTimeout(handle);
   }, [toast]);
   const [posts, setPosts] = useState<Post[] | null>(null);
+  const [reactionSet, setReactionSet] = useState<string[]>([]);
+  const [maxPins, setMaxPins] = useState(3);
+  const [announce, setAnnounce] = useState(false);
+  const [reactFor, setReactFor] = useState<string | null>(null);
+  const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
+  const [commentDraft, setCommentDraft] = useState<Record<string, string>>({});
+  const [mQuestions, setMQuestions] = useState<string[]>([]);
   const [polls, setPolls] = useState<Poll[]>([]);
   // Composer: one place to write a post, attach a photo, or ask a question (a poll IS a post).
   const [draft, setDraft] = useState('');
@@ -128,7 +139,11 @@ export default function CircleDetailPage() {
     setToast({ text, ms, actionLabel: action?.label, onAction: action ? () => { setToast(null); action.run(); } : undefined });
   };
 
-  const loadPosts = useCallback(() => { api<{ posts: Post[] }>(`/circles/${id}/posts`).then((r) => setPosts(r.posts)).catch(() => setPosts([])); }, [id]);
+  const loadPosts = useCallback(() => {
+    api<{ posts: Post[]; reactions?: string[]; max_pins?: number }>(`/circles/${id}/posts`)
+      .then((r) => { setPosts(r.posts); setReactionSet(r.reactions ?? []); setMaxPins(r.max_pins ?? 3); })
+      .catch(() => setPosts([]));
+  }, [id]);
   const loadPolls = useCallback(() => { api<Poll[]>(`/circles/${id}/polls`).then(setPolls).catch(() => setPolls([])); }, [id]);
   const loadDrives = useCallback(() => { api<Fundraiser[]>(`/circles/${id}/fundraisers`).then(setDrives).catch(() => setDrives([])); }, [id]);
   const load = useCallback(() => { setError(false); api<Detail>(`/circles/${id}`).then(setD).catch(() => setError(true)); loadPosts(); loadPolls(); loadDrives(); }, [id, loadPosts, loadPolls, loadDrives]);
@@ -144,7 +159,7 @@ export default function CircleDetailPage() {
     if (mode === 'doc') setTimeout(() => docInput.current?.click(), 0);
   };
 
-  const resetComposer = () => { setDraft(''); setPhotoFile(null); setDocFile(null); setPollMode(false); setPollOptions(['', '']); setComposing(false); };
+  const resetComposer = () => { setDraft(''); setPhotoFile(null); setDocFile(null); setPollMode(false); setPollOptions(['', '']); setAnnounce(false); setComposing(false); };
 
   const submitPost = async () => {
     if (posting) return;
@@ -160,17 +175,57 @@ export default function CircleDetailPage() {
         if (photoFile) form.append('photo', photoFile);
         if (docFile) form.append('document', docFile);
         form.append('body', draft.trim());
+        if (announce) form.append('announcement', 'true');
         await api(`/circles/${id}/posts/media`, { form });
         loadPosts();
       } else {
         const body = draft.trim();
         if (!body) return;
-        await api(`/circles/${id}/posts`, { body: { body }, idempotent: true });
+        await api(`/circles/${id}/posts`, { body: { body, announcement: announce }, idempotent: true });
         loadPosts();
       }
       resetComposer();
     } catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
     finally { setPosting(false); }
+  };
+
+  const togglePin = async (p: Post) => {
+    setPostMenu(null);
+    try {
+      await api(`/circles/${id}/posts/${p.id}/pin`, { body: { pinned: !p.pinned } });
+      say(p.pinned ? t('posts.unpinned') : t('posts.pinnedDone'));
+      loadPosts();
+    } catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
+  };
+
+  const react = async (p: Post, emoji: string) => {
+    setReactFor(null);
+    const me = identity?.member_id ?? '';
+    // Optimistic: the pill changes at once; the reload settles it.
+    setPosts((cur) => (cur ?? []).map((x) => {
+      if (x.id !== p.id) return x;
+      const who = x.reactions?.[emoji] ?? [];
+      const next = who.includes(me) ? who.filter((m) => m !== me) : [...who, me];
+      return { ...x, reactions: { ...(x.reactions ?? {}), [emoji]: next } };
+    }));
+    try { await api(`/circles/${id}/posts/${p.id}/reactions`, { body: { emoji } }); }
+    catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
+    loadPosts();
+  };
+
+  const sendComment = async (p: Post) => {
+    const body = (commentDraft[p.id] ?? '').trim();
+    if (!body) return;
+    try {
+      await api(`/circles/${id}/posts/${p.id}/comments`, { body: { body } });
+      setCommentDraft((cur) => ({ ...cur, [p.id]: '' }));
+      loadPosts();
+    } catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
+  };
+
+  const removeComment = async (p: Post, c: PostComment) => {
+    try { await api(`/circles/${id}/posts/${p.id}/comments/${c.id}`, { method: 'DELETE' }); say(t('posts.commentDeleted')); loadPosts(); }
+    catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
   };
 
   const removePost = async (p: Post) => {
@@ -274,6 +329,7 @@ export default function CircleDetailPage() {
     loadPendingInvites();
     if (!d) return;
     setMName(d.name); setMDesc(d.description ?? ''); setMJoin(d.join_policy ?? 'open'); setMPost(d.posting_policy); setConfirmDelete(false);
+    setMQuestions(d.join_questions?.length ? [...d.join_questions] : ['']);
     setManaging(true);
   };
 
@@ -309,7 +365,10 @@ export default function CircleDetailPage() {
     if (saving) return;
     setSaving(true);
     try {
-      await api(`/circles/${id}`, { method: 'PATCH', body: { name: mName, description: mDesc, join_policy: mJoin, posting_policy: mPost } });
+      await api(`/circles/${id}`, { method: 'PATCH', body: {
+        name: mName, description: mDesc, join_policy: mJoin, posting_policy: mPost,
+        ...(mJoin === 'approval' ? { join_questions: mQuestions.map((q) => q.trim()).filter(Boolean).slice(0, MAX_JOIN_QUESTIONS) } : {}),
+      } });
       setManaging(false);
       say(t('manage.saved'));
       load();
@@ -326,10 +385,16 @@ export default function CircleDetailPage() {
   const myAvatar = resolveMediaUrl(profile?.photo_url ?? identity?.avatar ?? null);
 
   // One feed, newest first: written posts and polls belong together (FB/WhatsApp model).
+  // [049] Pinned posts (announcements take a pin) stay on top, in the server's order.
+  const pinnedFeed: FeedItem[] = (posts ?? []).filter((p) => p.pinned).map((post) => ({ kind: 'post', at: post.created_at, post }));
   const feed: FeedItem[] = [
-    ...(posts ?? []).map((post): FeedItem => ({ kind: 'post', at: post.created_at, post })),
-    ...polls.map((poll): FeedItem => ({ kind: 'poll', at: poll.created_at, poll })),
-  ].sort((a, b) => b.at.localeCompare(a.at));
+    ...pinnedFeed,
+    ...[
+      ...(posts ?? []).filter((p) => !p.pinned).map((post): FeedItem => ({ kind: 'post', at: post.created_at, post })),
+      ...polls.map((poll): FeedItem => ({ kind: 'poll', at: poll.created_at, poll })),
+    ].sort((a, b) => b.at.localeCompare(a.at)),
+  ];
+  const pinnedCount = pinnedFeed.length;
   const shownFeed = allFeed ? feed : feed.slice(0, FEED_PREVIEW);
 
   // Events tab: what's ahead (soonest first), then what the circle has already done.
@@ -625,7 +690,10 @@ export default function CircleDetailPage() {
                           <div className="row" style={{ gap: 6 }}>
                             {!pollMode && <button className="cx-iconbtn cx-iconbtn--sm" aria-label={t('posts.addPhoto')} onClick={() => fileInput.current?.click()}><ImageIcon size={18} strokeWidth={1.75} /></button>}
                             {!pollMode && <button className="cx-iconbtn cx-iconbtn--sm" aria-label={t('posts.addDocument')} onClick={() => docInput.current?.click()}><Paperclip size={18} strokeWidth={1.75} /></button>}
-                            <button className="cx-iconbtn cx-iconbtn--sm" aria-pressed={pollMode} aria-label={t('posts.askQuestion')} onClick={() => { setPollMode((v) => !v); setPhotoFile(null); setDocFile(null); }}><BarChart3 size={18} strokeWidth={1.75} /></button>
+                            <button className="cx-iconbtn cx-iconbtn--sm" aria-pressed={pollMode} aria-label={t('posts.askQuestion')} onClick={() => { setPollMode((v) => !v); setAnnounce(false); setPhotoFile(null); setDocFile(null); }}><BarChart3 size={18} strokeWidth={1.75} /></button>
+                            {canManage && !pollMode && (
+                              <button className="cx-chip" aria-pressed={announce} title={t('posts.announceHint')} onClick={() => setAnnounce((v) => !v)}><Megaphone size={16} strokeWidth={1.75} aria-hidden="true" />{t('posts.announcement')}</button>
+                            )}
                             <span className="grow" />
                             <button className="cx-btn cx-btn--ghost" onClick={resetComposer}>{t('common.cancel')}</button>
                             <button className="cx-btn cx-btn--primary" disabled={posting || (!draft.trim() && !photoFile && !docFile)} onClick={submitPost}>{t('posts.post')}</button>
@@ -641,9 +709,15 @@ export default function CircleDetailPage() {
 
                   <div className="cx-feed">
                     {shownFeed.map((item) => item.kind === 'post' ? (
-                      <article key={`p-${item.post.id}`} className="cx-post">
+                      <article key={`p-${item.post.id}`} className={`cx-post${item.post.is_announcement ? ' cx-post--announce' : ''}${item.post.pinned ? ' cx-post--pinned' : ''}`}>
                         <Link href={`/p/${item.post.member_id}`} className="cx-post__av">{face(item.post.avatar, item.post.display_name, 'md')}</Link>
                         <div className="cx-post__main">
+                          {(item.post.is_announcement || item.post.pinned) && (
+                            <div className="cx-post__flags">
+                              {item.post.is_announcement && <span className="cx-post__flag cx-post__flag--announce"><Megaphone size={14} strokeWidth={1.75} aria-hidden="true" />{t('posts.announcement')}</span>}
+                              {item.post.pinned && <span className="cx-post__flag"><Pin size={14} strokeWidth={1.75} aria-hidden="true" />{t('posts.pinned')}</span>}
+                            </div>
+                          )}
                           <div className="cx-post__meta">
                             <span className="cx-strong">{item.post.mine ? t('circles.boardYou') : item.post.display_name}</span>
                             {roleText(item.post.member_id) && <span className="cx-caption">· {roleText(item.post.member_id)}</span>}
@@ -664,6 +738,64 @@ export default function CircleDetailPage() {
                               <span className="cx-textbtn">{t('posts.openDoc')}</span>
                             </a>
                           )}
+                          {(() => {
+                            const p = item.post;
+                            const me = identity?.member_id ?? '';
+                            const used = Object.entries(p.reactions ?? {}).filter(([, who]) => who.length > 0);
+                            const comments = p.comments ?? [];
+                            const showComments = openComments[p.id] || comments.length > 0;
+                            return (
+                              <>
+                                <div className="cx-post__actions">
+                                  {used.map(([emoji, who]) => (
+                                    <button key={emoji} className="cx-react" aria-pressed={who.includes(me)} aria-label={t('posts.reactWith', { emoji, count: who.length })} onClick={() => react(p, emoji)}>
+                                      <span aria-hidden="true">{emoji}</span><span>{who.length}</span>
+                                    </button>
+                                  ))}
+                                  <button className="cx-plain cx-post__act" aria-expanded={reactFor === p.id} aria-label={t('posts.react')} onClick={() => setReactFor((v) => (v === p.id ? null : p.id))}><SmilePlus size={18} strokeWidth={1.75} /></button>
+                                  {!p.is_announcement && (
+                                    <button className="cx-plain cx-post__act" aria-label={t('posts.comment')} onClick={() => setOpenComments((cur) => ({ ...cur, [p.id]: !cur[p.id] }))}>
+                                      <MessageCircle size={18} strokeWidth={1.75} />{comments.length > 0 && <span className="cx-caption">{comments.length}</span>}
+                                    </button>
+                                  )}
+                                </div>
+                                {reactFor === p.id && (
+                                  <div className="cx-reactpick" role="group" aria-label={t('posts.react')}>
+                                    {reactionSet.map((emoji) => (
+                                      <button key={emoji} className="cx-plain" aria-pressed={(p.reactions?.[emoji] ?? []).includes(me)} onClick={() => react(p, emoji)}>{emoji}</button>
+                                    ))}
+                                  </div>
+                                )}
+                                {!p.is_announcement && showComments && (
+                                  <div className="cx-comments">
+                                    {comments.map((c) => (
+                                      <div key={c.id} className="cx-comment">
+                                        <Link href={`/p/${c.member_id}`} className="cx-post__av">{face(c.avatar, c.display_name, 'sm')}</Link>
+                                        <div className="cx-comment__main">
+                                          <span className="cx-strong">{c.mine ? t('circles.boardYou') : c.display_name}</span>
+                                          <span className="cx-caption"> · {formatWhen(c.created_at, i18n.language)}</span>
+                                          <p className="cx-comment__body">{c.body}</p>
+                                        </div>
+                                        {(c.mine || canManage) && <button className="cx-plain cx-post__act" aria-label={t('posts.deleteComment')} onClick={() => removeComment(p, c)}><X size={14} /></button>}
+                                      </div>
+                                    ))}
+                                    {openComments[p.id] && (
+                                      <div className="row" style={{ gap: 8 }}>
+                                        <input
+                                          className="cx-input grow" name={`comment-${p.id}`} maxLength={500} placeholder={t('posts.commentPlaceholder')} aria-label={t('posts.commentPlaceholder')}
+                                          value={commentDraft[p.id] ?? ''}
+                                          onChange={(e) => setCommentDraft((cur) => ({ ...cur, [p.id]: e.target.value }))}
+                                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void sendComment(p); } }}
+                                        />
+                                        <button className="cx-btn cx-btn--primary" disabled={!(commentDraft[p.id] ?? '').trim()} onClick={() => sendComment(p)}>{t('posts.reply')}</button>
+                                      </div>
+                                    )}
+                                    {!openComments[p.id] && <button className="cx-textbtn" style={{ alignSelf: 'flex-start' }} onClick={() => setOpenComments((cur) => ({ ...cur, [p.id]: true }))}>{t('posts.addComment')}</button>}
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                       </article>
                     ) : (() => {
@@ -793,7 +925,12 @@ export default function CircleDetailPage() {
 
       <Sheet open={postMenu !== null} onClose={() => setPostMenu(null)} label={t('common.more')}>
         <div className="stack">
-          <button className="cx-btn cx-btn--danger cx-btn--lg" onClick={() => postMenu && removePost(postMenu)}>{t('common.delete')}</button>
+          {canManage && postMenu && (
+            <button className="cx-btn cx-btn--ghost cx-btn--lg" disabled={!postMenu.pinned && pinnedCount >= maxPins} onClick={() => togglePin(postMenu)}>
+              {postMenu.pinned ? t('posts.unpin') : pinnedCount >= maxPins ? t('posts.pinFull', { count: maxPins }) : t('posts.pin')}
+            </button>
+          )}
+          {postMenu && (postMenu.mine || canManage) && <button className="cx-btn cx-btn--danger cx-btn--lg" onClick={() => removePost(postMenu)}>{t('common.delete')}</button>}
           <button className="cx-btn cx-btn--quiet cx-btn--lg" onClick={() => setPostMenu(null)}>{t('common.cancel')}</button>
         </div>
       </Sheet>
@@ -845,6 +982,26 @@ export default function CircleDetailPage() {
               <button className="cx-chip" aria-pressed={mJoin === 'approval'} onClick={() => setMJoin('approval')}>{t('join.askFirst')}</button>
             </div>
           </div>
+          {mJoin === 'approval' && (
+            <div className="stack" style={{ gap: 8 }}>
+              <span className="cx-label">{t('manage.joinQuestions')}</span>
+              <span className="cx-caption">{t('manage.joinQuestionsHint', { count: MAX_JOIN_QUESTIONS })}</span>
+              {mQuestions.map((q, i) => (
+                <div key={i} className="row" style={{ gap: 8 }}>
+                  <input
+                    className="cx-input grow" name={`join-question-${i}`} maxLength={200} value={q}
+                    placeholder={t(i === 0 ? 'join.questionPlaceholder0' : 'join.questionPlaceholder1')}
+                    aria-label={t('manage.joinQuestionN', { n: i + 1 })}
+                    onChange={(e) => setMQuestions((prev) => prev.map((v, j) => (j === i ? e.target.value : v)))}
+                  />
+                  <button className="cx-iconbtn cx-iconbtn--sm" aria-label={t('manage.removeQuestion')} onClick={() => setMQuestions((prev) => prev.filter((_, j) => j !== i))}><X size={16} /></button>
+                </div>
+              ))}
+              {mQuestions.length < MAX_JOIN_QUESTIONS && (
+                <button className="cx-textbtn" style={{ alignSelf: 'flex-start' }} onClick={() => setMQuestions((prev) => [...prev, ''])}>{t('manage.addQuestion')}</button>
+              )}
+            </div>
+          )}
           <div className="stack" style={{ gap: 8 }}>
             <span className="cx-label">{t('manage.whoPosts')}</span>
             <div className="cx-chips">

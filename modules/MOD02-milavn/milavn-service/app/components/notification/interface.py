@@ -378,6 +378,40 @@ async def _on_circle_invited(event: DomainEvent) -> None:
             )
 
 
+async def _on_circle_announcement(event: DomainEvent) -> None:
+    """[049] An organizer's announcement reaches every member of the circle but its author, written
+    in each recipient's own language. "useful" class, so a member who mutes those is not pestered."""
+    from app.i18n import translate
+
+    circle_id = event.payload.get("circle_id")
+    poster = event.payload.get("member_id")
+    post_id = event.payload.get("post_id")
+    if not circle_id:
+        return
+    factory = get_process_session_factory()
+    async with factory() as s, s.begin():
+        name = (await s.execute(text("SELECT milavn_circle.circle_name(:c)"), {"c": str(circle_id)})).scalar_one_or_none()
+        if not name:
+            return
+        body = (
+            await s.execute(text("SELECT milavn_circle.announcement_text(:p)"), {"p": str(post_id)})
+        ).scalar_one_or_none() or ""
+        member_ids = (await s.execute(text("SELECT milavn_circle.active_member_ids(:c)"), {"c": str(circle_id)})).scalar_one()
+        for m in member_ids or []:
+            if str(m) == str(poster):
+                continue
+            lang = (await s.execute(text("SELECT milavn_profile.language_of(:m)"), {"m": str(m)})).scalar_one_or_none() or "en"
+            await deliver(
+                s,
+                member_id=m,
+                notification_class="useful",
+                title=translate("notify.circleAnnouncement.title", lang, circle=name),
+                body=body[:280] or translate("notify.circleAnnouncement.body", lang),
+                deep_link=f"/circles/{circle_id}",
+                occurrence_id=None,
+            )
+
+
 async def _on_group_update_posted(event: DomainEvent) -> None:
     """[FR126] One admin message, fanned out to every distinct member across every chapter — the same
     "class useful" (suppressible) treatment as everything else that is genuinely useful but not
@@ -578,6 +612,7 @@ def register_subscribers() -> None:
     bus.subscribe("participation.changed", _on_participation_changed)
     bus.subscribe("circle.suggestion", _on_circle_suggestion)
     bus.subscribe("circle_group.update_posted", _on_group_update_posted)
+    bus.subscribe("circle.announcement_posted", _on_circle_announcement)
     bus.subscribe("occurrence.created", _on_created)
 
 

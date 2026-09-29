@@ -67,7 +67,7 @@ export default function ChatsPage() {
                   )}
                   <span className="grow" style={{ minWidth: 0 }}>
                     <span className="row row--between"><b className="truncate">{c.title}</b>{c.last_message_at && <span className="caption">{formatRelative(c.last_message_at)}</span>}</span>
-                    <span className="caption truncate" style={{ display: 'block' }}>{c.last_preview ?? (c.active ? t('chat.activeNow') : t('chat.sayHello'))}</span>
+                    <span className="caption truncate" style={{ display: 'block' }}>{c.last_preview ?? (c.kind === 'activity' ? t('activityChat.listHint') : c.active ? t('chat.activeNow') : t('chat.sayHello'))}</span>
                   </span>
                   {c.unread > 0 && <span className="nav__badge nav__badge--inline">{c.unread > 9 ? '9+' : c.unread}</span>}
                 </Link>
