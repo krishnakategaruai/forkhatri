@@ -87,5 +87,11 @@
       "business": "వ్యాపారం",
       "professional": "ప్రొఫెషనల్"
     }
+  },
+  "broaden": {
+    "radius": "{{km}} కి.మీ.కు విస్తరించండి",
+    "adjacent_categories": "సంబంధిత విభాగాలు కూడా చూపండి",
+    "remove_filter": "ఒక ఫిల్టర్ తీసివేయండి",
+    "include_unverified": "ధృవీకరించని లిస్టింగ్‌లు కూడా చూపండి"
   }
 }

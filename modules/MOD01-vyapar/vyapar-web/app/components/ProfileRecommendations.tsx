@@ -26,6 +26,7 @@ import { useProfileRecommendations } from "@/app/hooks/opportunities";
 import { useRoutes } from "@/app/host/HostProvider";
 import LivingCard from "@/app/components/LivingCard";
 import { useReputationText } from "@/app/components/Reputation";
+import { BadgeList } from "@/app/components/trust/Badges";
 
 export type { ProfileCardData };
 
@@ -78,6 +79,7 @@ export function ProfileRecommendationsView({ cards, title, help }: { cards: Prof
                   )}
                 </div>
               )}
+              <BadgeList badges={c.badges} compact max={3} />
             </LivingCard>
           );
         })}

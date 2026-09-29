@@ -1,83 +1,325 @@
-/* [Design system — built once, reused everywhere per the task's design
-   direction] Near-monochrome, dark-first surfaces with exactly ONE accent
-   (saffron/amber, Brand Foundation §12) used with semantic restraint, never
-   as decoration. No gradients, no glassmorphism, no neon glow, no ambient
-   mesh — the product owner has twice rejected those as generic. "2040" here
-   means confident type + generous whitespace + calm surfaces + fluid
-   motion, not visual effects.
-   Traces to: task brief's Design direction section (not a numbered FR/TR —
-   applies across every screen this session and future sessions build). */
+/* [Design system — Palette 2026-09-29, supersedes every earlier colour rule]
+   The product owner rejected the saffron-on-near-black, dark-first look on
+   2026-09-29 ("i really hate the colors you used, and theme based
+   designs"). Structure, type, spacing and motion stay; only colour changed.
 
+   The rules (full research and every contrast ratio:
+   ../references/palette-2026-09-29.md; summary in DESIGN-ENHANCEMENT.md):
+   - LIGHT FIRST. The default is a light "chalk" canvas (#f6f5f1, a warm
+     off-white, not grey) with white cards, like ixigo, Upwork, Kite and
+     PhonePe. Dark mode is an option that follows the system setting
+     (prefers-color-scheme), and `<html data-theme="light|dark">` can force
+     either one.
+   - ONE BRAND COLOUR, "Neel" indigo (#2b4acb light / #8b9dff dark), for
+     primary actions, links, focus and the current page marker. Never on
+     card titles, never on every selected chip, never on large areas.
+   - Card titles and headings use --text-primary.
+   - Selected chips, tabs and options are NEUTRAL (--selected-*: ink
+     outline on a light fill), not brand-coloured.
+   - A restrained secondary, peacock teal (--secondary-*), for small
+     highlights only (icon tiles, the profile monogram).
+   - Semantic colours (success, warning, danger, info, verified) each have
+     -text, -soft (background tint) and a solid value; always pair them with
+     an icon or a word, never colour alone.
+   - Every text/background pair passes WCAG 2.2 AA in both themes (4.5:1
+     body text, 3:1 large text and UI). `node scripts/check-contrast.mjs`
+     proves it from this file.
+   - No gradients, no glass (backdrop blur), no glow.
+   - Components use only these tokens. The legacy names (--accent*,
+     --trust-*, --ink-*) are kept as aliases so existing components work;
+     new code should use the --brand-* / semantic names. */
+
+/* ---- Light theme (default) --------------------------------------------- */
 :root {
-  --ink-0: #05070a;
-  --ink-1: #0b0e13;
-  --ink-2: #11151b;
-  --ink-3: #1a1f27;
-  --ink-4: #262d38;
-  --ink-5: #3a4250;
-  --ink-6: #5b6472;
-  --ink-7: #8891a0;
-  --ink-8: #c3c9d2;
-  --ink-9: #f5f6f8;
+  /* @palette-light */
+  /* Neutral ramp, darkest (0) to lightest (9). Reference values only —
+     components use the semantic surface/text/border tokens below. */
+  --ink-0: #111318;
+  --ink-1: #1a1c24;
+  --ink-2: #2f333d;
+  --ink-3: #4b505c;
+  --ink-4: #5f6472;
+  --ink-5: #8c887e;
+  --ink-6: #cfccc3;
+  --ink-7: #e3e1da;
+  --ink-8: #f2f1ec;
+  --ink-9: #ffffff;
 
-  --surface: var(--ink-1);
-  --surface-raised: var(--ink-2);
-  --surface-overlay: var(--ink-3);
-  --border-subtle: var(--ink-4);
-  --text-primary: var(--ink-9);
-  --text-secondary: var(--ink-7);
-  --text-tertiary: var(--ink-6);
+  /* Surfaces: page canvas, cards, and the finer ladder for nested,
+     sunken and floating content. */
+  --surface: #f6f5f1;
+  --surface-raised: #ffffff;
+  --surface-overlay: #ffffff;
+  --surface-nested: #f2f1ec;
+  --surface-sunken: #eeede7;
+  --surface-floating: #ffffff;
 
-  --accent: #e8871e;
-  --accent-strong: #ffa542;
-  --accent-ink: #1c0f00;
-  --accent-soft: rgba(232, 135, 30, 0.14);
+  /* Borders: hairline (card edges, dividers), default (hover, inputs),
+     strong (3:1 against every surface — use where the edge must be seen). */
+  --border-hairline: #e3e1da;
+  --border-subtle: #e3e1da;
+  --border-default: #cfccc3;
+  --border-strong: #807c72;
+  /* [Design language 2026-09-29, critique P1] The edge of every
+     interactive control (inputs, selects, secondary buttons, chips,
+     switches): WCAG 1.4.11 needs 3:1, which --border-strong has on every
+     surface in both themes (checked as UI by check-contrast.mjs). */
+  --border-control: var(--border-strong);
 
-  --trust-verified: #3aa66b;
-  --trust-verified-soft: rgba(58, 166, 107, 0.14);
-  /* [Design-enhancement pass, DESIGN-ENHANCEMENT.md] now an alias for the
-     named --border-strong step (defined below in this same block; CSS
-     custom properties resolve lazily so referencing it here is safe)
-     instead of its own separately-named ink-6 value — one documented
-     border relationship instead of three ad hoc ones. */
+  /* Text, strongest to quietest. All four pass 4.5:1 on every surface. */
+  --text-primary: #1a1c24;
+  --text-quaternary: #2f333d;
+  --text-secondary: #4b505c;
+  --text-tertiary: #5f6472;
+
+  /* Brand: Neel indigo. Fill for the primary button, text for links. */
+  --brand: #2b4acb;
+  --brand-hover: #233dae;
+  --brand-pressed: #1c3290;
+  --brand-soft: #ebeffd;
+  --brand-text: #2b4acb;
+  --on-brand: #ffffff;
+  --focus-ring: #2b4acb;
+
+  /* Secondary: peacock teal, small highlights only. */
+  --secondary: #0e7470;
+  --secondary-soft: #e3f3f1;
+  --secondary-text: #0e6b67;
+
+  /* Semantic. */
+  --success: #1d7a3e;
+  --success-soft: #e6f4ea;
+  --success-text: #1b6f39;
+  --warning: #b86e00;
+  --warning-soft: #fdf1dc;
+  --warning-text: #8a5100;
+  --danger: #c4322a;
+  --danger-soft: #fdecea;
+  --danger-text: #b42318;
+  --info: #1f63a8;
+  --info-soft: #e7f0fa;
+  --info-text: #1d5b9b;
+  --verified: #16753b;
+  --verified-soft: #e5f3e9;
+  --verified-text: #146a36;
+
+  /* Selected state for chips, tabs, segmented options and picked rows:
+     neutral ink outline on a light fill, never the brand colour. */
+  --selected-bg: #ecebe5;
+  --selected-fg: #1a1c24;
+  --selected-border: #1a1c24;
+  /* Solid variant for segmented toggles that have no border of their own. */
+  --selected-solid-bg: #1a1c24;
+  --selected-solid-fg: #ffffff;
+
+  /* Scrim behind sheets and dialogs. */
+  --scrim: rgba(17, 19, 24, 0.45);
+
+  --shadow-card: 0 1px 2px rgba(26, 28, 36, 0.05), 0 4px 14px -8px rgba(26, 28, 36, 0.12);
+  --shadow-float: 0 10px 28px -10px rgba(26, 28, 36, 0.22);
+  --shadow-raise: 0 2px 4px rgba(26, 28, 36, 0.05), 0 12px 28px -12px rgba(26, 28, 36, 0.22);
+
+  /* [Design language 2026-09-29] Trade-family tile tints: a soft fill and
+     an ink that passes 4.5:1 on it. Meaning, not decoration: each family
+     of work keeps one tint (references/design-language-2026-09-29.md §8). */
+  --tile-amber-bg: #fcefd6;
+  --tile-amber-fg: #7f4a00;
+  --tile-sky-bg: #e1eefb;
+  --tile-sky-fg: #1b5794;
+  --tile-green-bg: #e2f2e6;
+  --tile-green-fg: #1a6a37;
+  --tile-indigo-bg: #e8ecfc;
+  --tile-indigo-fg: #2b43b8;
+  --tile-plum-bg: #f3e7f6;
+  --tile-plum-fg: #772d8c;
+  --tile-teal-bg: #ddf1ee;
+  --tile-teal-fg: #0d6763;
+
+  /* Legacy aliases, kept so existing components keep working. */
+  --accent: var(--brand);
+  --accent-strong: var(--brand-text);
+  --accent-pressed: var(--brand-pressed);
+  --accent-ink: var(--on-brand);
+  --accent-soft: var(--brand-soft);
+  --trust-verified: var(--verified-text);
+  --trust-verified-strong: var(--verified);
+  --trust-verified-soft: var(--verified-soft);
   --trust-sponsored-border: var(--border-strong);
-  /* [Design-enhancement pass, DESIGN-ENHANCEMENT.md, relayed by the
-     coordinator — research-grounded, additive-only, no new colours] a
-     second step for trust-green, matching the accent's existing soft/
-     strong pattern, reserved for VerificationBadge's pressed state only. */
-  --trust-verified-strong: #4fc384;
 
-  /* [Same pass] finer surface ladder (Linear's 4-step pattern, same ink
-     family) — --surface/--surface-raised/--surface-overlay above are
-     UNCHANGED; these three are new, inserted between/around them so
-     nested panels, floating overlays and pressed/sunken states each get
-     their own lightness step instead of collapsing onto one of the three
-     existing ones. */
-  --surface-sunken: var(--ink-0);
-  --surface-nested: var(--ink-3);
-  --surface-floating: var(--ink-4);
+  color-scheme: light;
+}
 
-  /* [Same pass] named border steps — replaces three ad hoc ink-value uses
-     (LivingCard's inline ink-5 hover border, --trust-sponsored-border's
-     separately-named ink-6) with one documented relationship between them.
-     --border-hairline is an alias for the existing --border-subtle value,
-     kept so nothing existing needs to change. */
-  --border-hairline: var(--ink-4);
-  --border-default: var(--ink-5);
-  --border-strong: var(--ink-6);
+/* ---- Dark theme: follows the system, or forced with data-theme="dark" ---
+   The two blocks below must stay identical; check-contrast.mjs verifies
+   that. Not near-black: a blue-slate night with clear surface steps. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    /* @palette-dark */
+    --surface: #121419;
+    --surface-raised: #1a1d24;
+    --surface-overlay: #1f232b;
+    --surface-nested: #242933;
+    --surface-sunken: #0d0f13;
+    --surface-floating: #292e39;
 
-  /* [Same pass] press feedback restored to the sealed 04-ui.md F6 spec
-     ("Pressed: transform scale(0.98) 100ms + fill darkens to #D97A12") —
-     only the scale half was ever implemented. */
-  --accent-pressed: #d97a12;
+    --border-hairline: #2c313c;
+    --border-subtle: #2c313c;
+    --border-default: #3c4250;
+    --border-strong: #767e8f;
 
-  /* [Same pass] fourth text-emphasis step, between secondary (ink-7) and
-     primary (ink-9), for content that's socially/trust-meaningful but not
-     a card's primary subject (submitter/community framing specifically —
-     closes the still-open UX-CRITIQUE finding on social-trust prominence
-     for this audience). */
-  --text-quaternary: var(--ink-8);
+    --text-primary: #eceef2;
+    --text-quaternary: #d3d7de;
+    --text-secondary: #b2b8c4;
+    --text-tertiary: #9aa1af;
 
+    --brand: #8b9dff;
+    --brand-hover: #a3b2ff;
+    --brand-pressed: #7486f0;
+    --brand-soft: #232b4a;
+    --brand-text: #a3b2ff;
+    --on-brand: #0e1330;
+    --focus-ring: #a3b2ff;
+
+    --secondary: #4fbfb6;
+    --secondary-soft: #14302e;
+    --secondary-text: #6fd0c7;
+
+    --success: #4cbf77;
+    --success-soft: #15301f;
+    --success-text: #6fd395;
+    --warning: #e9a23b;
+    --warning-soft: #33260f;
+    --warning-text: #f2bd6b;
+    --danger: #f0736a;
+    --danger-soft: #3a1b19;
+    --danger-text: #ff9a91;
+    --info: #6aa6ec;
+    --info-soft: #15263a;
+    --info-text: #8dbcf3;
+    --verified: #4cbf77;
+    --verified-soft: #15301f;
+    --verified-text: #6fd395;
+
+    --selected-bg: #2a303b;
+    --selected-fg: #eceef2;
+    --selected-border: #eceef2;
+  --selected-solid-bg: #eceef2;
+  --selected-solid-fg: #121419;
+
+    --scrim: rgba(0, 0, 0, 0.6);
+
+    --shadow-card: 0 1px 0 rgba(0, 0, 0, 0.3), 0 6px 20px -12px rgba(0, 0, 0, 0.5);
+    --shadow-float: 0 12px 32px -8px rgba(0, 0, 0, 0.55);
+    --shadow-raise: 0 2px 4px rgba(0, 0, 0, 0.35), 0 14px 30px -12px rgba(0, 0, 0, 0.6);
+
+    --tile-amber-bg: #34270f;
+    --tile-amber-fg: #f2bd6b;
+    --tile-sky-bg: #15263a;
+    --tile-sky-fg: #8dbcf3;
+    --tile-green-bg: #15301f;
+    --tile-green-fg: #6fd395;
+    --tile-indigo-bg: #232b4a;
+    --tile-indigo-fg: #a3b2ff;
+    --tile-plum-bg: #2f1d38;
+    --tile-plum-fg: #dba6ec;
+    --tile-teal-bg: #14302e;
+    --tile-teal-fg: #6fd0c7;
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --surface: #121419;
+  --surface-raised: #1a1d24;
+  --surface-overlay: #1f232b;
+  --surface-nested: #242933;
+  --surface-sunken: #0d0f13;
+  --surface-floating: #292e39;
+
+  --border-hairline: #2c313c;
+  --border-subtle: #2c313c;
+  --border-default: #3c4250;
+  --border-strong: #767e8f;
+
+  --text-primary: #eceef2;
+  --text-quaternary: #d3d7de;
+  --text-secondary: #b2b8c4;
+  --text-tertiary: #9aa1af;
+
+  --brand: #8b9dff;
+  --brand-hover: #a3b2ff;
+  --brand-pressed: #7486f0;
+  --brand-soft: #232b4a;
+  --brand-text: #a3b2ff;
+  --on-brand: #0e1330;
+  --focus-ring: #a3b2ff;
+
+  --secondary: #4fbfb6;
+  --secondary-soft: #14302e;
+  --secondary-text: #6fd0c7;
+
+  --success: #4cbf77;
+  --success-soft: #15301f;
+  --success-text: #6fd395;
+  --warning: #e9a23b;
+  --warning-soft: #33260f;
+  --warning-text: #f2bd6b;
+  --danger: #f0736a;
+  --danger-soft: #3a1b19;
+  --danger-text: #ff9a91;
+  --info: #6aa6ec;
+  --info-soft: #15263a;
+  --info-text: #8dbcf3;
+  --verified: #4cbf77;
+  --verified-soft: #15301f;
+  --verified-text: #6fd395;
+
+  --selected-bg: #2a303b;
+  --selected-fg: #eceef2;
+  --selected-border: #eceef2;
+  --selected-solid-bg: #eceef2;
+  --selected-solid-fg: #121419;
+
+  --scrim: rgba(0, 0, 0, 0.6);
+
+  --shadow-card: 0 1px 0 rgba(0, 0, 0, 0.3), 0 6px 20px -12px rgba(0, 0, 0, 0.5);
+  --shadow-float: 0 12px 32px -8px rgba(0, 0, 0, 0.55);
+  --shadow-raise: 0 2px 4px rgba(0, 0, 0, 0.35), 0 14px 30px -12px rgba(0, 0, 0, 0.6);
+
+  --tile-amber-bg: #34270f;
+  --tile-amber-fg: #f2bd6b;
+  --tile-sky-bg: #15263a;
+  --tile-sky-fg: #8dbcf3;
+  --tile-green-bg: #15301f;
+  --tile-green-fg: #6fd395;
+  --tile-indigo-bg: #232b4a;
+  --tile-indigo-fg: #a3b2ff;
+  --tile-plum-bg: #2f1d38;
+  --tile-plum-fg: #dba6ec;
+  --tile-teal-bg: #14302e;
+  --tile-teal-fg: #6fd0c7;
+
+  color-scheme: dark;
+}
+
+/* ---- High contrast (design language 2026-09-29) -----------------------
+   <html data-contrast="more">, set from the OS (prefers-contrast: more) or
+   the Text and display menu. Theme-independent: every value is an alias
+   of a token the contrast script already proves in both themes, so
+   secondary text becomes near-primary and every edge becomes a 3:1 edge. */
+html[data-contrast="more"]:root {
+  /* @palette-contrast */
+  --text-secondary: var(--text-quaternary);
+  --text-tertiary: var(--text-quaternary);
+  --border-hairline: var(--border-strong);
+  --border-subtle: var(--border-strong);
+  --border-default: var(--border-strong);
+  --selected-bg: var(--surface-sunken);
+}
+
+/* ---- Layout, type, motion, radius, spacing (unchanged by the palette) -- */
+:root {
   /* ==================================================================
      [IMP33 — desktop layout system + drastic visual/motion pass]
      REQUIREMENT: 04-ui.md F4 already sealed a four-breakpoint responsive
@@ -104,7 +346,7 @@
   --bp-desktop: 900px;
   --bp-console: 1024px;
   /* F4: "bottom nav becomes a 240 px left rail with the same five items" */
-  --rail-w: 240px;
+  --rail-w: 232px;
 
   /* [IMP33 — type] A fluid type scale. Research (web.dev "Responsive and
      fluid typography with Baseline CSS features"; fluid-type-scale.com;
@@ -116,12 +358,17 @@
      parallel set of rules to keep in sync. Values are px-based deliberately
      (not rem-based vw math) so they compose with the existing px spacing
      ramp already used throughout this codebase. */
-  --type-display: clamp(28px, 1.35rem + 1.7vw, 42px);
-  --type-title: clamp(21px, 1.15rem + 0.9vw, 30px);
-  --type-heading: clamp(16px, 0.9rem + 0.4vw, 19px);
-  --type-body: clamp(15px, 0.9rem + 0.12vw, 16px);
-  --type-sm: 13px;
-  --type-xs: 12px;
+  /* [Design language 2026-09-29] Every size in rem so the OS font-size
+     setting and Vyapar's own Text size control (html[data-text]) scale
+     the whole UI. At the default 16px root the values match the old px. */
+  --type-hero: clamp(2rem, 1.45rem + 2.2vw, 3.25rem);
+  --type-display: clamp(1.75rem, 1.35rem + 1.7vw, 2.625rem);
+  --type-title: clamp(1.3rem, 1.1rem + 0.8vw, 1.75rem);
+  --type-heading: clamp(1.0625rem, 0.95rem + 0.35vw, 1.1875rem);
+  --type-pay: clamp(1.25rem, 1.15rem + 0.3vw, 1.375rem);
+  --type-body: 1rem;
+  --type-sm: 0.875rem;
+  --type-xs: 0.8125rem;
 
   /* [IMP33 — motion] One shared motion vocabulary. Durations follow the
      asymmetric exit/enter pairing the Next.js 16 view-transitions guide
@@ -135,13 +382,22 @@
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 
-  --radius-sm: 10px;
+  --radius-xs: 8px;
+  --radius-sm: 12px;
   --radius-md: 16px;
-  --radius-lg: 24px;
+  --radius-tile: 20px;
+  --radius-card: 22px;
+  --radius-lg: 28px;
   --radius-pill: 999px;
 
-  --shadow-card: 0 1px 0 rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
-  --shadow-float: 0 12px 32px -8px rgba(0, 0, 0, 0.55);
+  /* Springy release for anything a finger or pointer presses. */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-press: 220ms;
+
+  /* Shell metrics (design language §11). */
+  --topbar-h: 56px;
+  --hub-clear: 112px;
+
 
   --font-sans: "Noto Sans", "Noto Sans Devanagari", "Noto Sans Telugu", system-ui, sans-serif;
 
@@ -153,39 +409,8 @@
   --space-6: 32px;
   --space-7: 48px;
   --space-8: 64px;
-
-  color-scheme: dark;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --surface: #faf8f5;
-    --surface-raised: #ffffff;
-    --surface-overlay: #ffffff;
-    --border-subtle: #e4e0d8;
-    --text-primary: #16130f;
-    --text-secondary: #565049;
-    --text-tertiary: #8a837a;
-    --accent-ink: #ffffff;
-    /* [Design-enhancement pass, DESIGN-ENHANCEMENT.md] light-mode values
-       for the new surface/border steps above — same additive, no-new-hue
-       rule applies in light mode too. */
-    --surface-sunken: #f0ece3;
-    --surface-nested: #f4f1ea;
-    --surface-floating: #ffffff;
-    --border-default: #d0cbc0;
-    --border-strong: #b8b2a4;
-    /* [Design-enhancement pass — gap noticed and closed while implementing,
-       not in the spec's own light-mode block] `--text-quaternary: var(
-       --ink-8)` in :root resolves to a light gray (#c3c9d2), correct only
-       for the dark palette; light mode needs its own darker step between
-       --text-secondary (#565049) and --text-primary (#16130f), or the
-       submitter/community line would render as low-contrast light text on
-       a light background. */
-    --text-quaternary: #3a352d;
-    color-scheme: light;
-  }
-}
 
 * {
   box-sizing: border-box;
@@ -638,7 +863,7 @@ button {
 
 /* [Design-enhancement pass, DESIGN-ENHANCEMENT.md] restores the fill-
    darken half of 04-ui.md F6's own sealed press spec ("Pressed: transform
-   scale(0.98) 100ms + fill darkens to #D97A12") — only the scale half was
+   scale(0.98) 100ms + fill darkens") — only the scale half was
    ever implemented (see .vy-btn:active above). Layered alongside it, not
    replacing it. */
 .vy-btn-primary:active {
@@ -672,7 +897,7 @@ button {
 .vy-chip:focus-visible,
 a:focus-visible,
 [role="button"]:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -692,7 +917,7 @@ a:focus-visible,
 .vy-input:focus,
 .vy-select:focus,
 .vy-textarea:focus {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 1px;
 }
 
@@ -756,7 +981,7 @@ a:focus-visible,
 }
 
 .vy-error {
-  color: #e2574c;
+  color: var(--danger-text);
   font-size: 13px;
 }
 
@@ -796,13 +1021,15 @@ a:focus-visible,
 
 .vy-chip[aria-pressed="true"],
 .vy-chip.vy-chip-selected {
-  background: var(--accent-soft);
-  color: var(--accent-strong);
+  /* [Palette 2026-09-29] selected = neutral ink outline on a light fill,
+     not the brand colour (the owner rejected accent on every chip). */
+  background: var(--selected-bg);
+  color: var(--selected-fg);
   /* [IMP33] A tinted fill alone is a weak selection cue at 13px on a dark
      surface. Adding a 1px accent edge (as a border colour, not a glow)
      makes "selected" unmistakable while keeping the chip far quieter than
      the screen's one real primary button — the restraint rule. */
-  border-color: var(--accent);
+  border-color: var(--selected-border);
 }
 
 /* ====================================================================== */
@@ -830,7 +1057,7 @@ a:focus-visible,
 
 @media (hover: hover) {
   .vy-btn-primary:hover:not(:disabled) {
-    background: var(--accent-strong);
+    background: var(--brand-hover);
   }
 
   .vy-btn-secondary:hover:not(:disabled) {
@@ -849,7 +1076,7 @@ a:focus-visible,
 
   .vy-chip[aria-pressed="true"]:hover,
   .vy-chip.vy-chip-selected:hover {
-    border-color: transparent;
+    border-color: var(--selected-border);
   }
 
   a.vy-card:hover,
@@ -868,7 +1095,7 @@ a:focus-visible,
 /* A selected row/card in a split pane: the accent marks the ONE selected
    thing, which is exactly the "accent means something specific" rule. */
 .vy-card-selected {
-  border-color: var(--accent);
+  border-color: var(--selected-border);
   background: var(--surface-nested);
 }
 
@@ -899,7 +1126,7 @@ a:focus-visible,
 }
 
 .vy-skeleton {
-  background: var(--surface-overlay);
+  background: var(--surface-sunken);
   border-radius: var(--radius-sm);
   animation: vy-pulse 1.6s var(--ease-in-out) infinite;
 }
@@ -1219,7 +1446,7 @@ a:focus-visible,
 /* Deadline urgency: the one place a detail screen earns the accent outside
    its primary button — only when three or fewer days remain. */
 .vy-deadline-soon {
-  color: var(--accent-strong);
+  color: var(--warning-text);
   font-weight: 600;
 }
 
@@ -1289,8 +1516,8 @@ a:focus-visible,
   display: flex;
   gap: var(--space-2);
   padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
-  backdrop-filter: blur(14px);
+  /* [Palette 2026-09-29] solid, no glass blur. */
+  background: var(--surface-raised);
   border-top: 1px solid var(--border-hairline);
   transform: translateY(110%);
   transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -1348,7 +1575,8 @@ body:has(.vy-actionbar-in) .vy-hub-float {
   height: 64px;
   z-index: 58;
   pointer-events: none;
-  background: linear-gradient(to bottom, var(--surface) 55%, color-mix(in srgb, var(--surface) 0%, transparent));
+  /* [Palette 2026-09-29] solid canvas, no gradient. */
+  background: var(--surface);
 }
 
 @media (min-width: 900px) {
@@ -1445,8 +1673,8 @@ body:has(.vy-actionbar-in) .vy-hub-float {
     border-radius: 50%;
     display: grid;
     place-items: center;
-    background: var(--accent-soft);
-    color: var(--accent-strong);
+    background: var(--secondary-soft);
+    color: var(--secondary-text);
     font-size: 26px;
     font-weight: 700;
     letter-spacing: -0.02em;
@@ -1610,7 +1838,7 @@ body:has(.vy-actionbar-in) .vy-hub-float {
     border-radius: var(--radius-sm);
     background: var(--surface-nested);
     border: 1px solid var(--border-hairline);
-    color: var(--accent-strong);
+    color: var(--secondary-text);
     font-size: 19px;
   }
 
@@ -2410,7 +2638,7 @@ body:has(.vy-actionbar-in) .vy-hub-float {
    profile, Report if asked): accent, no underline until hover. Classed
    anchors (buttons, cards, rail links) are untouched. */
 a:not([class]) {
-  color: var(--accent-strong);
+  color: var(--brand-text);
   text-decoration: none;
   font-weight: 600;
 }
@@ -2424,4 +2652,26 @@ a:not([class]):focus-visible {
 /* Section spacing carries structure now that borders do less of it. */
 .vy-hub-main > * + * {
   margin-top: var(--space-2);
+}
+
+/* ====================================================================== */
+/* [Palette 2026-09-29] Card titles use the text colour, never the brand   */
+/* ====================================================================== */
+/* Zero specificity (:where) so any component rule still wins; this only
+   guarantees that a title inside a card, or a link-wrapped title, never
+   picks up the link/brand colour. */
+:where(.vy-card h2:not([class]), .vy-card h3:not([class]), .vy-card-title, .vy-dcard-title, .vy-hub-tile-title) {
+  color: var(--text-primary);
+}
+
+/* The search action next to a search field: a normal-sized primary button,
+   not a full-width brand slab. Full width stays on phones, where a
+   thumb-sized target is right. */
+@media (min-width: 600px) {
+  .vy-search-action {
+    align-self: flex-start;
+    min-width: 160px;
+    padding-left: 28px;
+    padding-right: 28px;
+  }
 }

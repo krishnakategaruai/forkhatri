@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Literal
 from uuid import UUID
@@ -204,6 +205,71 @@ async def match_for(
     return MatchOutcome(result)
 
 
+async def _placements_and_scores(
+    session: AsyncSession,
+    *,
+    seeker_account_id: UUID,
+    seeker_gender: str,
+    candidate_ids: list[UUID],
+    keep: Callable[[dict[str, Any]], bool] | None = None,
+) -> list[tuple[dict[str, Any], dict[str, Any]]]:
+    """Moon placements of `candidate_ids` (those with a chart, and passing
+    `keep`) paired with their Ashtakoota/Porutham scores against the seeker,
+    in batches of 500. Raises HoroscopeFilterUnavailable when the seeker has
+    no chart."""
+    mine = await _current(session, seeker_account_id)
+    if mine is None or mine.get("rashi") is None or mine.get("nakshatra") is None:
+        raise HoroscopeFilterUnavailable
+    rows = (
+        await session.execute(
+            text("SELECT * FROM mangaly_horoscope.placements(CAST(:ids AS uuid[]))"),
+            {"ids": [str(i) for i in candidate_ids]},
+        )
+    ).mappings().all()
+    seeker_moon = {"rashi": mine["rashi"], "nakshatra": mine["nakshatra"], "signHalf": mine.get("moonSignHalf")}
+    kept = [
+        dict(r)
+        for r in rows
+        if r["rashi"] is not None and r["nakshatra"] is not None and (keep is None or keep({**r, "seeker": mine}))
+    ]
+    out: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    for start in range(0, len(kept), 500):
+        batch = kept[start : start + 500]
+        pairs = []
+        for r in batch:
+            other = {"rashi": r["rashi"], "nakshatra": r["nakshatra"], "signHalf": r["moon_sign_half"]}
+            groom, bride = (seeker_moon, other) if seeker_gender == "male" else (other, seeker_moon)
+            pairs.append({"groom": groom, "bride": bride})
+        scores = (await _call("/horoscope/calculate/scores", {"pairs": pairs}))["scores"]
+        out.extend(zip(batch, scores, strict=True))
+    return out
+
+
+async def guna_scores(
+    session: AsyncSession,
+    *,
+    seeker_account_id: UUID,
+    seeker_gender: str,
+    candidate_ids: list[UUID],
+) -> dict[UUID, float]:
+    """[Owner, 2026-09-28] Guna Milan (out of 36) between the seeker and each
+    of `candidate_ids` who has a chart — Discover's "Matched by horoscope"
+    row. Empty when the seeker has no chart."""
+    if not candidate_ids:
+        return {}
+    try:
+        scored = await _placements_and_scores(
+            session, seeker_account_id=seeker_account_id, seeker_gender=seeker_gender, candidate_ids=candidate_ids
+        )
+    except HoroscopeFilterUnavailable:
+        return {}
+    return {
+        r["account_id"]: float(sc["totalScore"])
+        for r, sc in scored
+        if sc.get("status") == "CALCULATED" and sc.get("totalScore") is not None
+    }
+
+
 async def filter_ids(
     session: AsyncSession,
     *,
@@ -221,47 +287,48 @@ async def filter_ids(
     presence as the seeker, or (mangal = "none") no Mangal Dosha. People
     without a chart cannot be scored and are not returned. Raises
     HoroscopeFilterUnavailable when the seeker has no chart."""
-    mine = await _current(session, seeker_account_id)
-    if mine is None or mine.get("rashi") is None or mine.get("nakshatra") is None:
-        raise HoroscopeFilterUnavailable
-    rows = (
-        await session.execute(
-            text("SELECT * FROM mangaly_horoscope.placements(CAST(:ids AS uuid[]))"),
-            {"ids": [str(i) for i in candidate_ids]},
-        )
-    ).mappings().all()
-    seeker_moon = {"rashi": mine["rashi"], "nakshatra": mine["nakshatra"], "signHalf": mine.get("moonSignHalf")}
-    seeker_mangal = (mine.get("mangal") or {}).get("status")
-    kept: list = []
-    for r in rows:
-        if r["rashi"] is None or r["nakshatra"] is None:
-            continue
+
+    def mangal_ok(r: dict[str, Any]) -> bool:
+        seeker_mangal = (r["seeker"].get("mangal") or {}).get("status")
         if mangal == "none" and r["mangal_status"] != "ABSENT":
-            continue
+            return False
         if mangal == "match":
             if seeker_mangal not in ("PRESENT", "ABSENT") or r["mangal_status"] not in ("PRESENT", "ABSENT"):
-                continue
+                return False
             if (seeker_mangal == "PRESENT") != (r["mangal_status"] == "PRESENT"):
-                continue
-        kept.append(r)
-    if (min_guna is None and min_porutham is None and not porutham_essentials) or not kept:
-        return {r["account_id"] for r in kept}
+                return False
+        return True
+
+    if min_guna is None and min_porutham is None and not porutham_essentials:
+        # Mangal only: no scores needed, the placements decide.
+        mine = await _current(session, seeker_account_id)
+        if mine is None or mine.get("rashi") is None or mine.get("nakshatra") is None:
+            raise HoroscopeFilterUnavailable
+        rows = (
+            await session.execute(
+                text("SELECT * FROM mangaly_horoscope.placements(CAST(:ids AS uuid[]))"),
+                {"ids": [str(i) for i in candidate_ids]},
+            )
+        ).mappings().all()
+        return {
+            r["account_id"]
+            for r in rows
+            if r["rashi"] is not None and r["nakshatra"] is not None and mangal_ok({**r, "seeker": mine})
+        }
 
     result: set[UUID] = set()
-    for start in range(0, len(kept), 500):
-        batch = kept[start : start + 500]
-        pairs = []
-        for r in batch:
-            other = {"rashi": r["rashi"], "nakshatra": r["nakshatra"], "signHalf": r["moon_sign_half"]}
-            groom, bride = (seeker_moon, other) if seeker_gender == "male" else (other, seeker_moon)
-            pairs.append({"groom": groom, "bride": bride})
-        scores = (await _call("/horoscope/calculate/scores", {"pairs": pairs}))["scores"]
-        for r, sc in zip(batch, scores, strict=True):
-            if min_guna is not None and not (sc.get("status") == "CALCULATED" and sc.get("totalScore") is not None and sc["totalScore"] >= min_guna):
-                continue
-            if min_porutham is not None and not (sc.get("poruthamAgreed") is not None and sc["poruthamAgreed"] >= min_porutham):
-                continue
-            if porutham_essentials and sc.get("essentialsAgree") is not True:
-                continue
-            result.add(r["account_id"])
+    for r, sc in await _placements_and_scores(
+        session,
+        seeker_account_id=seeker_account_id,
+        seeker_gender=seeker_gender,
+        candidate_ids=candidate_ids,
+        keep=mangal_ok,
+    ):
+        if min_guna is not None and not (sc.get("status") == "CALCULATED" and sc.get("totalScore") is not None and sc["totalScore"] >= min_guna):
+            continue
+        if min_porutham is not None and not (sc.get("poruthamAgreed") is not None and sc["poruthamAgreed"] >= min_porutham):
+            continue
+        if porutham_essentials and sc.get("essentialsAgree") is not True:
+            continue
+        result.add(r["account_id"])
     return result

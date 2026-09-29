@@ -7,9 +7,7 @@ builder. Every client-queueable mutation here honours `Idempotency-Key`
 
 from __future__ import annotations
 
-import shutil
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
@@ -624,14 +622,19 @@ async def checkin(occurrence_id: UUID, body: CheckinRequest, session: DbSession,
 
 
 @router.post("/cover", status_code=201)
-async def upload_cover(settings: AppSettings, member: CurrentMember, photo: UploadFile = File(...)) -> dict:  # noqa: B008
-    """[FR013] Optional cover image (local-disk stand-in for Object Storage); never blocks creation."""
-    ext = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}.get(photo.content_type or "")
-    if ext is None:
-        raise HTTPException(status_code=422, detail="unsupported image type")
-    media_id = uuid4()
-    root: Path = settings.media_root / "covers"
-    root.mkdir(parents=True, exist_ok=True)
-    with (root / f"{media_id}.jpg").open("wb") as fh:
-        shutil.copyfileobj(photo.file, fh)
+async def upload_cover(member: CurrentMember, lang: Locale, photo: UploadFile = File(...)) -> dict:  # noqa: B008
+    """[FR013] Optional cover image (local-disk stand-in for Object Storage); never blocks creation.
+    [045] Recognised by its first bytes (JPEG/PNG/WebP), capped at 5 MB while streaming. The file
+    keeps the `<media_id>.jpg` name the cover URL is derived from (browsers render by content)."""
+    from app import media_files
+
+    try:
+        media_files.sniff_image(photo)
+        media_files.check_size(photo, media_files.MAX_COVER_BYTES)
+        media_id = uuid4()
+        media_files.store(photo, "covers", "", ".jpg", media_files.MAX_COVER_BYTES, name=f"{media_id}.jpg")
+    except media_files.NotAnImage as exc:
+        raise HTTPException(status_code=415, detail=translate("moments.unsupported", lang)) from exc
+    except media_files.TooLarge as exc:
+        raise HTTPException(status_code=413, detail=translate("media.tooLarge", lang, mb=exc.limit_mb)) from exc
     return {"media_id": str(media_id), "url": f"/media/covers/{media_id}.jpg"}

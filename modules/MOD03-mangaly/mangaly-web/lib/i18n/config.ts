@@ -54,6 +54,9 @@ import teRm from "@/locales/te/rm.json";
 import enHoroscope from "@/locales/en/horoscope.json";
 import hiHoroscope from "@/locales/hi/horoscope.json";
 import teHoroscope from "@/locales/te/horoscope.json";
+import enBilling from "@/locales/en/billing.json";
+import hiBilling from "@/locales/hi/billing.json";
+import teBilling from "@/locales/te/billing.json";
 
 export const SUPPORTED_LANGUAGES = ["en", "hi", "te"] as const;
 export type Language = (typeof SUPPORTED_LANGUAGES)[number];
@@ -73,6 +76,7 @@ export const NAMESPACES = [
   "member",
   "rm",
   "horoscope",
+  "billing",
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 
@@ -89,6 +93,7 @@ const resources = {
     member: enMember,
     rm: enRm,
     horoscope: enHoroscope,
+    billing: enBilling,
   },
   hi: {
     common: hiCommon,
@@ -102,6 +107,7 @@ const resources = {
     member: hiMember,
     rm: hiRm,
     horoscope: hiHoroscope,
+    billing: hiBilling,
   },
   te: {
     common: teCommon,
@@ -115,6 +121,7 @@ const resources = {
     member: teMember,
     rm: teRm,
     horoscope: teHoroscope,
+    billing: teBilling,
   },
 } as const;
 

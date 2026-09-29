@@ -33,6 +33,10 @@ class ResolvedIdentity:
     auth_method: str
     scopes: frozenset[str] | None = None  # None = a member session: every scope
     credential_id: str | None = None      # access token id, for audit attribution
+    # [IMP-ADMIN] Operator permissions the HOST granted to this session
+    # (already mapped to Vyapar's names by admin_scopes.py). Only a provider
+    # that verified the session with the host may set it; access tokens never.
+    operator_permissions: frozenset[str] = frozenset()
 
 
 class IdentityProvider(Protocol):

@@ -6281,3 +6281,13 @@ body {
   .sheet-backdrop:has(.context-list) { align-items: center; }
   .sheet-backdrop:has(.context-list) .sheet { max-width: 420px; }
 }
+
+
+/* Text size (owner, 2026-09-29): one root size scales every rem on every
+   screen. Chosen by the person in Me > Settings, never set by age. */
+html[data-text-size='larger'] {
+  font-size: 112.5%;
+}
+html[data-text-size='largest'] {
+  font-size: 125%;
+}

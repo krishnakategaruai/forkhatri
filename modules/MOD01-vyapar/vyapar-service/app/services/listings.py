@@ -33,7 +33,7 @@ from app.identity import AuthzContext
 from app.services.privacy import require_accepted
 from app.impressions import boosted_ids, log_events
 from app.taxonomy_cache import labels_for
-from app.reputation import reputation_for_listings
+from app.reputation import badges_for_member, reputation_for_listings
 from app.profile_cards import ProfileCard, recommend_profiles
 from app.services.pagination import DEFAULT_LIMIT, MAX_LIMIT, Page, paginate
 
@@ -195,6 +195,10 @@ class ListingOut(BaseModel):
     reputation: dict | None = None
     # [FR30/FR54] true while a boost is active — rendered only via SponsoredBadge
     sponsored: bool = False
+    # [IMP-B/FR28] the owner's count-based badges (localized), set on detail
+    # and search reads; [IMP-B] priced service tiers, set on the detail read.
+    badges: list[dict] = []
+    packages: list[dict] = []
 
 
 async def require_profile(conn: asyncpg.Connection, member_id: str, lang: str) -> None:
@@ -380,6 +384,11 @@ async def get_listing(
     # [FR28/TR016] trust context composed on the detail read
     out.reputation = (await reputation_for_listings(conn, [row])).get(str(row["id"]))
     out.sponsored = str(row["id"]) in await boosted_ids(conn, "listing", [row["id"]])
+    # [IMP-B] owner badges and priced packages ride on the same detail read
+    out.badges = [b.model_dump() for b in await badges_for_member(conn, row["owner_id"], lang)]
+    from app.services.packages import list_listing_packages  # local import: packages imports enquiries, which imports this module
+
+    out.packages = [p.model_dump() for p in await list_listing_packages(conn, ctx, lang, str(row["id"]))]
     if not out.is_owner:  # [FR32] an owner viewing their own listing isn't a detail view
         await log_events(conn, "listing", [row["id"]], "view", "listing_detail", {str(row["id"])} if out.sponsored else set())
     return out

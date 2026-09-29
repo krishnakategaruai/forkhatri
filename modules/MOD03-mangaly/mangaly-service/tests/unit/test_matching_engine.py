@@ -240,3 +240,53 @@ def test_Given_two_people_When_broken_down_Then_my_list_is_full_and_theirs_is_to
     # be revealed, and neither may its value or how many wishes they have.
     assert fit["theirs_met"] == ["diet"]
     assert "doctorate" not in str(fit)
+
+
+# --- [Owner, 2026-09-28] What matters, and the generic points of match -------
+
+from app.components.compatibility.engine import (  # noqa: E402
+    breakdown as _breakdown,
+    common_points as _common_points,
+    pair_score as _pair_score,
+    wishes as _wishes,
+)
+
+
+def _telugu_family(**extra: object) -> dict:
+    return {
+        "locality": "Hyderabad, Telangana",
+        "mother_tongue": "telugu",
+        "sub_community": "khatri",
+        "lifestyle_diet": "vegetarian",
+        "family_values": "moderate",
+        "evidence_completeness": 0.0,
+        **extra,
+    }
+
+
+def test_Given_roots_matter_When_wishes_are_read_Then_they_come_from_the_seekers_own_facts() -> None:
+    seeker = _telugu_family(priorities={"roots": 8})
+    got = {w.field: (w.values, w.importance) for w in _wishes(seeker)}
+    assert got == {"mother_tongue": (("telugu",), 8), "sub_community": (("khatri",), 8)}
+
+
+def test_Given_a_theme_the_family_also_described_in_words_Then_their_words_win() -> None:
+    seeker = _telugu_family(
+        priorities={"roots": 8},
+        partner_brief=[{"field": "mother_tongue", "values": ["tamil"], "importance": 4}],
+    )
+    tongue = [w for w in _wishes(seeker) if w.field == "mother_tongue"]
+    assert len(tongue) == 1 and tongue[0].values == ("tamil",) and tongue[0].importance == 4
+
+
+def test_Given_roots_matter_Then_a_same_roots_match_outranks_a_different_one() -> None:
+    seeker = _telugu_family(priorities={"roots": 9})
+    same = _telugu_family()
+    other = _telugu_family(mother_tongue="punjabi", sub_community="arora")
+    assert _pair_score(seeker, same) > _pair_score(seeker, other)
+    assert [y["field"] for y in _breakdown(seeker, same)["yours"]] == ["mother_tongue", "sub_community"]
+
+
+def test_Given_no_stated_wishes_Then_common_points_list_what_both_share() -> None:
+    keys = [p["key"] for p in _common_points(_telugu_family(), _telugu_family(hobbies=["music"]))]
+    assert keys == ["sameTongue", "sameCommunity", "sameFamilyValues", "sameDiet", "sameCity"]

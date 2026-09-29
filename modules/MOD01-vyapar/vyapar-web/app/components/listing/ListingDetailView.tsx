@@ -15,6 +15,7 @@ import { VerificationBadge, TrustContextSheet } from "@/app/components/Verificat
 import { ReputationLine } from "@/app/components/Reputation";
 import SponsoredBadge from "@/app/components/SponsoredBadge";
 import { Morph } from "@/app/components/Screen";
+import { BadgeList } from "@/app/components/trust/Badges";
 import { useRoutes } from "@/app/host/HostProvider";
 
 export const LISTING_STATE_KEY: Record<string, string> = {
@@ -64,6 +65,10 @@ export interface ListingDetailViewProps extends ListingDetailActions {
   reportSlot?: React.ReactNode;
   verificationSlot?: React.ReactNode;
   performanceSlot?: React.ReactNode;
+  /** [FE2] service packages: the compare view for visitors, the editor for the owner */
+  packagesSlot?: React.ReactNode;
+  /** [FE2] owner only: this listing's calling hours (override of the account settings) */
+  contactPrefsSlot?: React.ReactNode;
 }
 
 export default function ListingDetailView(props: ListingDetailViewProps) {
@@ -101,6 +106,8 @@ export default function ListingDetailView(props: ListingDetailViewProps) {
         </div>
         {/* [FR28] reputation line — counts only, kept apart from the verification badge */}
         <ReputationLine rep={listing.reputation} />
+        {/* [FE2] earned, count-based badges — never a score */}
+        <BadgeList badges={listing.badges} />
         {listing.state_reason && <p className="vy-muted" style={{ marginTop: 6 }}>{t("listings:detail.reason", { reason: humanizeReason(listing.state_reason) })}</p>}
       </div>
 
@@ -132,6 +139,7 @@ export default function ListingDetailView(props: ListingDetailViewProps) {
       )}
 
       {notice && <p className="vy-error">{notice}</p>}
+      {props.packagesSlot}
       </div>
 
       {/* [IMP33] The sticky action column (desktop ≥900px). On phones this
@@ -252,6 +260,8 @@ export default function ListingDetailView(props: ListingDetailViewProps) {
             ))}
             {listing.contacts.length === 0 && <p className="vy-muted">{t("listings:detail.noContactsYet")}</p>}
           </div>
+
+          {props.contactPrefsSlot}
 
           {/* FR05 — capability visibility independent of seeking visibility (professional only) */}
           {listing.kind === "professional" && (

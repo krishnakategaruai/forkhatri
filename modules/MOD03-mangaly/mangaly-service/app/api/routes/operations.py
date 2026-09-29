@@ -32,7 +32,9 @@ class OperatorMeResponse(BaseModel):
 
 @router.get("/me", response_model=OperatorMeResponse)
 async def operator_me(caller: AuthenticatedSession, session: DbSession) -> OperatorMeResponse:
-    roles = await operations.operator_roles(session, caller.account_id)
+    from app.api.operator_deps import effective_roles
+
+    roles = effective_roles(await operations.operator_roles(session, caller.account_id), caller.admin_scopes)
     return OperatorMeResponse(is_operator=bool(roles), roles=roles)
 
 

@@ -22,7 +22,7 @@ import asyncpg
 from fastapi import Depends
 
 from app.config import get_settings
-from app.identity import AuthzContext, resolve_authz_context
+from app.identity import AuthzContext, authz_permissions_setting, resolve_authz_context
 
 _pool: asyncpg.Pool | None = None
 
@@ -64,6 +64,24 @@ async def get_conn(
                 "SELECT set_config('vyapar.authz_context', $1, true)",
                 ctx.member_id,
             )
+            # [IMP-ADMIN — migration 024] host-granted operator permissions,
+            # transaction-local like authz_context and bound to the same
+            # member. Always written (empty when none) so nothing can linger.
+            await conn.execute(
+                "SELECT set_config('vyapar.authz_permissions', $1, true)",
+                authz_permissions_setting(ctx),
+            )
+            yield conn
+
+
+async def get_internal_conn() -> AsyncIterator[asyncpg.Connection]:
+    """[IMP-ADMIN] For /internal/v1 bridges authenticated by the platform
+    service key: a transaction with NO member context and no service role, so
+    RLS shows nothing member-private — only SECURITY DEFINER allow-list
+    functions (e.g. dashboard_summary()) answer."""
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        async with conn.transaction():
             yield conn
 
 

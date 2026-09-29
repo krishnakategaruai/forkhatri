@@ -36,7 +36,7 @@ async def create_listing(
     body: ListingCreate,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> ListingOut:
     return await svc.create_listing(conn, ctx, lang, body=body)
 
@@ -45,7 +45,7 @@ async def create_listing(
 async def list_my_listings(
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[ListingOut]:
     return await svc.list_my_listings(conn, ctx, lang)
 
@@ -56,7 +56,7 @@ async def list_my_listings_page(
     limit: int = Query(default=DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     cursor: str | None = None,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> Page[ListingOut]:
     return await svc.list_my_listings_page(conn, ctx, lang, limit=limit, cursor=cursor)
 
@@ -66,7 +66,7 @@ async def get_listing(
     listing_id: str,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> ListingOut:
     return await svc.get_listing(conn, ctx, lang, listing_id=listing_id)
 
@@ -76,7 +76,7 @@ async def similar_profiles(
     listing_id: str,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[ProfileCard]:
     return await svc.list_similar_profiles(conn, ctx, lang, listing_id=listing_id)
 
@@ -86,7 +86,7 @@ async def save_listing(
     listing_id: str,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> ListingOut:
     return await svc.save_listing(conn, ctx, lang, listing_id=listing_id)
 
@@ -96,7 +96,7 @@ async def unsave_listing(
     listing_id: str,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> ListingOut:
     return await svc.unsave_listing(conn, ctx, lang, listing_id=listing_id)
 
@@ -107,7 +107,7 @@ async def patch_listing(
     body: ListingPatch,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> ListingOut:
     return await svc.update_listing(conn, ctx, lang, listing_id=listing_id, body=body)
 
@@ -118,7 +118,7 @@ async def patch_contacts(
     body: ContactsPatch,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> ListingOut:
     return await svc.update_listing_contacts(conn, ctx, lang, listing_id=listing_id, body=body)
 
@@ -129,7 +129,7 @@ async def patch_visibility(
     body: VisibilityPatch,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> ListingOut:
     return await svc.update_listing_visibility(conn, ctx, lang, listing_id=listing_id, body=body)
 
@@ -140,7 +140,7 @@ async def patch_intent(
     body: IntentPatch,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> ListingOut:
     return await svc.update_listing_intent(conn, ctx, lang, listing_id=listing_id, body=body)
 
@@ -150,7 +150,7 @@ async def submit_listing(
     listing_id: str,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> ListingOut:
     return await svc.submit_listing(conn, ctx, lang, listing_id=listing_id)
 
@@ -160,7 +160,7 @@ async def archive_listing(
     listing_id: str,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> ListingOut:
     return await svc.archive_listing(conn, ctx, lang, listing_id=listing_id)
 
@@ -171,7 +171,7 @@ async def suspend_listing(
     reason: str,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> ListingOut:
     return await svc.suspend_listing(conn, ctx, lang, listing_id=listing_id, reason=reason)
 
@@ -182,7 +182,7 @@ async def request_otp(
     body: OtpRequestIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> OtpRequestOut:
     return await svc.request_listing_contact_otp(conn, ctx, lang, listing_id=listing_id, body=body)
 
@@ -193,7 +193,7 @@ async def verify_otp(
     body: OtpVerifyIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> OtpVerifyOut:
     return await svc.verify_listing_contact_otp(conn, ctx, lang, listing_id=listing_id, body=body)
 
@@ -203,6 +203,6 @@ async def attach_credential_ref(
     listing_id: str,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> ListingOut:
     return await svc.attach_listing_credential_ref(conn, ctx, lang, listing_id=listing_id)

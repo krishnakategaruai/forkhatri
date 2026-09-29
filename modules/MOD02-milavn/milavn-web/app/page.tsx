@@ -59,7 +59,11 @@ export default function HomePage() {
     api<AroundYou>(`/discovery/around-you${qs}`).then(setData).catch(() => setError(true));
     api<{ lines: string[] }>(`/discovery/digest${qs}`).then((d) => setDigest(d.lines)).catch(() => setDigest(null));
   }, [here]);
-  useEffect(() => { if (identity && profile) load(); }, [identity, profile, load]);
+  // Refetch when the member or their home locality changes, not whenever the
+  // profile object is replaced (that fetched the same feed twice on launch).
+  const signedIn = Boolean(identity && profile);
+  const homeKey = profile ? `${profile.member_id}|${profile.locality_city}|${profile.locality_zone ?? ''}|${profile.locality_locality ?? ''}` : '';
+  useEffect(() => { if (signedIn) load(); }, [signedIn, homeKey, load]);
 
   const onMode = (m: Mode) => { if (m !== 'feed') router.push(`/discover?mode=${m}`); };
 

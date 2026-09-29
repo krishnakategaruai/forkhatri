@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, ApiError } from "@/lib/api";
 import Screen from "@/app/components/Screen";
+import { formatDate } from "@/lib/format"; // [FE2] Indian date order
 
 interface PrivacySettings {
   capability_visible: boolean;
@@ -212,7 +213,7 @@ export default function PrivacyPage() {
           <div className="vy-stack" style={{ gap: 4 }}>
             {requests.map((r) => (
               <p key={r.id} className="vy-muted" style={{ fontSize: 13 }}>
-                {t(`privacy:requestKind.${r.kind}` as "requestKind.export")} · {t(`privacy:requestState.${r.state}` as "requestState.completed")} · {new Date(r.created_at).toLocaleDateString(i18n.language)}
+                {t(`privacy:requestKind.${r.kind}` as "requestKind.export")} · {t(`privacy:requestState.${r.state}` as "requestState.completed")} · {formatDate(r.created_at, i18n.language)}
               </p>
             ))}
           </div>

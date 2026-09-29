@@ -852,12 +852,36 @@ class MatchmakerBrief(BaseModel):
     partner_scales: dict[str, ScaleWish] = {}
     # Omitted (None) leaves the saved ratings as they are.
     self_scales: dict[str, int] | None = None
+    # [Owner, 2026-09-28] How much each theme matters, 1–10
+    # (config/matching_engine.PRIORITY_THEMES). Omitted keeps what was saved.
+    priorities: dict[str, int] | None = None
 
 
 class MatchmakerBriefResponse(MatchmakerBrief):
     # False for a parent managing a profile: only the candidate rates themselves.
     can_rate_self: bool = True
     ai_available: bool = False
+    # [Owner, 2026-09-28] Nothing said yet: starting points read from the
+    # profile itself (an age range around the candidate's own age, their
+    # city), for the family to keep, change or remove — never re-asked.
+    suggested: list[dict[str, object]] = []
+    # The candidate's own values each theme would compare with, so the page
+    # can say "Same roots — Telugu, Khatri" instead of asking for them.
+    theme_facts: dict[str, list[str]] = {}
+
+
+def _clean_priorities(raw: dict[str, object] | None) -> dict[str, int]:
+    from app.config.matching_engine import PRIORITY_THEMES
+
+    out: dict[str, int] = {}
+    for theme, value in (raw or {}).items():
+        try:
+            n = int(value)  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            continue
+        if theme in PRIORITY_THEMES and 1 <= n <= 10:
+            out[theme] = n
+    return out
 
 
 def _ai_available() -> bool:
@@ -913,11 +937,61 @@ async def matchmaker_get(
 
     brief = value("brief") if isinstance(value("brief"), dict) else {}
     scales = value("scales") if isinstance(value("scales"), dict) else {}
+    saved_priorities = value("priorities") if isinstance(value("priorities"), dict) else {}
     from app.components.compatibility import interface as compatibility
+    from app.components.discovery import interface as discovery
+    from app.config.matching_engine import PRIORITY_THEMES
+
+    items = compatibility.clean_items(brief.get("items"))
+    snapshot = await discovery.get_snapshot(session, account_id=account_id) or {}
+
+    suggested: list[dict[str, object]] = []
+    if not items and not str(brief.get("text") or "").strip():
+        age = None
+        dob = snapshot.get("date_of_birth")
+        if dob:
+            from datetime import date
+
+            born = date.fromisoformat(str(dob)[:10])
+            today = date.today()
+            age = today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+        # What they already said in the older preference fields comes first.
+        said_age = snapshot.get("partner_age_range")
+        if isinstance(said_age, dict) and (said_age.get("min") or said_age.get("max")):
+            suggested.append(
+                {"field": "age", "importance": 6, "min": said_age.get("min"), "max": said_age.get("max"), "values": []}
+            )
+        elif age is not None:
+            # The customary gap: a groom a few years older than the bride.
+            low, high = (max(18, age - 5), age + 1) if snapshot.get("gender") == "male" else (max(21, age - 1), age + 5)
+            suggested.append({"field": "age", "importance": 6, "min": low, "max": high, "values": []})
+        said_places = [p.strip() for p in str(snapshot.get("partner_locality") or "").replace(" or ", ",").split(",") if p.strip()]
+        city = str(snapshot.get("locality") or "").split(",")[0].strip()
+        if said_places or city:
+            suggested.append({"field": "locality", "importance": 5, "values": said_places or [city]})
+
+    def shown(field: str) -> str | None:
+        raw = {
+            "mother_tongue": snapshot.get("mother_tongue"),
+            "sub_community": snapshot.get("sub_community"),
+            "locality": str(snapshot.get("locality") or "").split(",")[0].strip() or None,
+            "diet": snapshot.get("lifestyle_diet"),
+            "family_values": snapshot.get("family_values"),
+            "family_type": snapshot.get("family_type"),
+            "education": snapshot.get("education_level"),
+        }.get(field)
+        return str(raw) if raw else None
+
+    theme_facts = {
+        theme: [v for f in fields if (v := shown(f))] for theme, fields in PRIORITY_THEMES.items() if fields
+    }
 
     return MatchmakerBriefResponse(
         text=str(brief.get("text") or ""),
-        items=compatibility.clean_items(brief.get("items")),
+        items=items,
+        suggested=suggested,
+        theme_facts=theme_facts,
+        priorities=_clean_priorities(saved_priorities),
         partner_scales={k: ScaleWish(**v) for k, v in compatibility.clean_scales(scales).items()},
         # A parent managing the profile never reads the candidate's own ratings.
         self_scales=None
@@ -966,6 +1040,8 @@ async def matchmaker_save(
         ),
         "scales": (FieldState.VALUE, scales),
     }
+    if body.priorities is not None:
+        attributes["priorities"] = (FieldState.VALUE, _clean_priorities(body.priorities))
     if (age := by_field.get("age")) is not None:
         attributes["age_range"] = (FieldState.VALUE, {"min": age.get("min"), "max": age.get("max")})
     if (height := by_field.get("height_cm")) is not None:

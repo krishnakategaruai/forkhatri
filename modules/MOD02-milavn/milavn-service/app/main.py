@@ -18,7 +18,6 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import identity, profile
 from app.config.settings import get_settings
@@ -169,9 +168,15 @@ def create_app() -> FastAPI:
     app.include_router(profile.router)
     _include_feature_routers(app)
 
+    # [045] Private folders (circle posts/documents/covers, chat, moments) are answered by the gated
+    # routes in app/api/routes/media.py, registered before this mount so they match first; the
+    # mount itself refuses those folders, so nothing private is reachable by URL alone.
+    from app.api.routes import media
+
+    app.include_router(media.router)
     media_root: Path = settings.media_root
     media_root.mkdir(exist_ok=True)
-    app.mount("/media", StaticFiles(directory=media_root), name="media")
+    app.mount("/media", media.PublicMedia(directory=media_root), name="media")
     return app
 
 

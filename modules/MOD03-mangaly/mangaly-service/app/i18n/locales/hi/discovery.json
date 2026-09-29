@@ -70,6 +70,38 @@
       "brother_in_law": "जीजा/साला",
       "sister_in_law": "भाभी/ननद",
       "family_friend": "पारिवारिक मित्र"
+    },
+    "family_values": {
+      "traditional": "पारंपरिक",
+      "moderate": "संतुलित",
+      "liberal": "उदार"
+    },
+    "family_type": {
+      "joint": "संयुक्त",
+      "nuclear": "एकल",
+      "extended": "विस्तृत"
+    },
+    "hobby": {
+      "cooking": "खाना बनाना",
+      "street_food": "स्ट्रीट फ़ूड",
+      "trekking": "ट्रेकिंग",
+      "road_trips": "रोड ट्रिप",
+      "pilgrimages": "तीर्थ यात्रा",
+      "beaches": "समुद्र तट",
+      "cricket": "क्रिकेट",
+      "badminton": "बैडमिंटन",
+      "yoga": "योग",
+      "fitness": "फ़िटनेस",
+      "music": "संगीत",
+      "classical_dance": "शास्त्रीय नृत्य",
+      "movies": "फ़िल्में",
+      "reading": "पढ़ना",
+      "photography": "फ़ोटोग्राफ़ी",
+      "gardening": "बागवानी",
+      "volunteering": "स्वयंसेवा",
+      "spirituality": "आध्यात्मिकता",
+      "board_games": "बोर्ड गेम्स",
+      "art": "कला और शिल्प"
     }
   },
   "shelf": {
@@ -90,7 +122,11 @@
       "mutualFit": "आप दोनों एक-दूसरे की पसंद पर खरे उतरते हैं",
       "wantsYourCity": "वे भी {city} में किसी को चाहते हैं",
       "wantsYourAge": "आपकी उम्र का साथी चाहते हैं",
-      "nearby": "{city} में · लगभग {km} किमी दूर"
+      "nearby": "{city} में · लगभग {km} किमी दूर",
+      "sameFamilyValues": "यह भी {value} परिवार है",
+      "sameFamilyType": "यह भी {value} परिवार है",
+      "sameEducation": "यह भी {value} तक पढ़े हैं",
+      "horoscopeGuna": "{max} में से {n} गुण मिलते हैं"
     },
     "reasonFor": {
       "sharedHobbies": "{name} की तरह {list} पसंद",
@@ -102,13 +138,33 @@
       "suggestedBy": "{name} के {relation} ने सुझाया",
       "suggestedByYou": "आपने सुझाया",
       "sameFamilyView": "वे भी परिवार को {value} चाहते हैं",
-      "mutualFit": "{name} और वे एक-दूसरे की पसंद पर खरे उतरते हैं",
+      "mutualFit": "{name} जो चाहते हैं उसमें ये खरे हैं, और ये जो चाहते हैं उसमें {name}",
       "wantsYourCity": "{city} में किसी को चाहते हैं, जहाँ {name} हैं",
       "wantsYourAge": "{name} की उम्र का साथी चाहते हैं",
-      "nearby": "{city} में · {name} से लगभग {km} किमी"
+      "nearby": "{city} में · {name} से लगभग {km} किमी",
+      "sameFamilyValues": "{name} की तरह {value} परिवार",
+      "sameFamilyType": "{name} की तरह {value} परिवार",
+      "sameEducation": "{name} की तरह {value} तक पढ़े हैं",
+      "horoscopeGuna": "{name} से {max} में से {n} गुण मिलते हैं",
+      "openToMove": "{city} में · शहर बदलने को तैयार"
     }
   },
   "error": {
     "lookingForMissing": "मैच देखने के लिए बताएँ कि आप दुल्हन ढूँढ रहे हैं या दूल्हा।"
+  },
+  "because": {
+    "title": "{name} जैसे और",
+    "like": "ये भी: {facts}",
+    "anon": "यह {age} वर्षीय",
+    "anonWork": "यह {age} वर्षीय {work}",
+    "anonNone": "यह प्रोफ़ाइल",
+    "sub": {
+      "request": "क्योंकि आपने इन्हें अनुरोध भेजा",
+      "requestFor": "क्योंकि {name} के लिए इन्हें अनुरोध गया",
+      "suggested": "क्योंकि आपके परिवार ने इनका सुझाव दिया",
+      "suggestedBy": "क्योंकि {name} ने इनका सुझाव दिया",
+      "suggestedByYou": "क्योंकि आपने इनका सुझाव दिया",
+      "saved": "क्योंकि आपने इन्हें सहेजा"
+    }
   }
 }

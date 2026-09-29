@@ -1,172 +1,121 @@
 "use client";
 
-// [Design direction — replaces 04-ui.md's five-destination bottom tab bar]
-// A single small floating pill anchored bottom-center that expands into the
-// five destinations on tap, spring-physics driven via `motion`. Rejected
-// alternatives (per standing design memory): a re-skinned always-expanded
-// tab bar, and a glow/glass treatment — both read as generic to the product
-// owner. This stays collapsed by default so it never competes with a
-// screen's own primary content, and expands only on deliberate tap.
-// Traces to: task brief's Design direction section
-import { useState } from "react";
+// [Design language 2026-09-29, §11] Primary navigation, one source of truth
+// for two presentations (CSS-swapped at 900px, no hydration mismatch):
+//
+//  Desktop (≥900): a quiet 232px side rail under the top bar (Linear's
+//  "reduce visual noise… increase hierarchy and density"): Post first, as
+//  an ink button (the screen's own primary action keeps the one brand
+//  fill), then Discover, Businesses, Activity, Profile as 44px rows with
+//  icon + word; the current page gets the neutral selected fill and a
+//  brand icon.
+//
+//  Phone: the floating command hub, now always open — a pill in the thumb
+//  zone with every destination as icon + word (low-literacy research:
+//  icons alone are opaque, hidden menus are missed; the old collapsed ✦
+//  orb hid all five). Post is the raised ink circle in the middle. While
+//  scrolling DOWN the hub condenses to icons only; scrolling up brings the
+//  words back (motion layout spring). Reduced motion: no animation, and
+//  it never condenses.
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import Icon from "@/app/components/Icon";
-import { usePathname, useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "motion/react";
+import { usePathname } from "next/navigation";
+import { motion, useReducedMotion } from "motion/react";
 import { useTranslation } from "react-i18next";
+import { Compass, Store, Plus, Activity, CircleUserRound, type LucideIcon } from "lucide-react";
 import { useHost } from "@/app/host/HostProvider";
 
-const DESTINATIONS = [
-  { href: "/", labelKey: "nav.discover", icon: "discover" },
-  { href: "/businesses", labelKey: "nav.businesses", icon: "businesses" },
-  { href: "/post", labelKey: "nav.post", icon: "post" },
-  { href: "/activity", labelKey: "nav.activity", icon: "activity" },
-  { href: "/profile", labelKey: "nav.profile", icon: "profile" },
-] as const;
+type Dest = { href: string; labelKey: string; icon: LucideIcon };
+
+const DESTINATIONS: Dest[] = [
+  { href: "/", labelKey: "nav.discover", icon: Compass },
+  { href: "/businesses", labelKey: "nav.businesses", icon: Store },
+  { href: "/post", labelKey: "nav.post", icon: Plus },
+  { href: "/activity", labelKey: "nav.activity", icon: Activity },
+  { href: "/profile", labelKey: "nav.profile", icon: CircleUserRound },
+];
+
+function isActive(pathname: string, href: string) {
+  return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
+}
 
 export default function CommandHub() {
   const { t } = useTranslation("common");
-  const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
-  // [IMP38] The rail brand comes from the host ("Vyapar ForKhatri" on the
-  // ForKhatri host, plain "Vyapar" standalone) — the core never names it.
+  const reduce = useReducedMotion();
   const { brand } = useHost();
+  const [condensed, setCondensed] = useState(false);
+
+  useEffect(() => {
+    if (reduce) return;
+    let last = window.scrollY;
+    const on = () => {
+      const y = window.scrollY;
+      if (Math.abs(y - last) < 12) return;
+      setCondensed(y > last && y > 120);
+      last = y;
+    };
+    window.addEventListener("scroll", on, { passive: true });
+    return () => window.removeEventListener("scroll", on);
+  }, [reduce]);
+
+  const post = DESTINATIONS[2];
+  const others = DESTINATIONS.filter((d) => d !== post);
 
   return (
     <>
-      {/* [IMP33 — 04-ui.md F4 `--fk-bp-desktop`] "≥900 px: bottom nav
-          becomes a 240 px left rail with the same five items and labels."
-          This was in the sealed spec and never built; at 1440px the app
-          had no navigation chrome at all beyond a floating orb designed
-          for a thumb. Same five DESTINATIONS array as the floating hub —
-          one source of truth, so the two presentations can never drift.
-          The swap is pure CSS (`.vy-rail` / `.vy-hub-float` in
-          globals.css) rather than a `window.innerWidth` read, so there is
-          no hydration mismatch and no resize listener. */}
-      <nav className="vy-rail" aria-label={t("nav.primary", { defaultValue: "Primary" })}>
-        <Link href="/" className="vy-rail-brand">
-          {brand.qualifier ? `${brand.name} ` : brand.name}
-          {brand.qualifier && <span>{brand.qualifier}</span>}
+      <nav className="vy-rail" aria-label={t("nav.primary")}>
+        <Link href={post.href} className="vy-rail-post" aria-current={isActive(pathname, post.href) ? "page" : undefined}>
+          <Plus size={20} strokeWidth={2.25} aria-hidden="true" />
+          {t(post.labelKey)}
         </Link>
-        {DESTINATIONS.map((d) => {
-          const active = pathname === d.href;
+        {others.map((d) => {
+          const active = isActive(pathname, d.href);
+          const I = d.icon;
           return (
-            <Link
-              key={d.href}
-              href={d.href}
-              className="vy-rail-link"
-              aria-current={active ? "page" : undefined}
-            >
+            <Link key={d.href} href={d.href} className="vy-rail-link" aria-current={active ? "page" : undefined}>
               <span className="vy-rail-mark" aria-hidden="true">
-                <Icon name={d.icon} size={18} />
+                <I size={20} strokeWidth={active ? 2.1 : 1.75} />
               </span>
               {t(d.labelKey)}
             </Link>
           );
         })}
+        {brand.qualifier && (
+          <p className="vy-rail-foot">
+            {brand.name} · {brand.qualifier}
+          </p>
+        )}
       </nav>
 
-      <div
-        className="vy-hub-float"
-        style={{
-          position: "fixed",
-          bottom: 20,
-          left: 0,
-          right: 0,
-          // [Fix] no inline `display` here: an inline style beats the
-          // stylesheet, so the ≥900px `display: none` (the left rail takes
-          // over on desktop) never applied and this button floated over
-          // desktop content. `display: flex` now lives on .vy-hub-float.
-          justifyContent: "center",
-          zIndex: 50,
-          pointerEvents: "none",
-        }}
-      >
-      <motion.div
-        layout
-        style={{ pointerEvents: "auto" }}
-        transition={{ type: "spring", stiffness: 380, damping: 30 }}
-      >
-        <AnimatePresence mode="popLayout">
-          {open ? (
-            <motion.div
-              key="expanded"
-              layout
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="vy-row"
-              style={{
-                background: "var(--surface-overlay)",
-                border: "1px solid var(--border-subtle)",
-                borderRadius: "var(--radius-pill)",
-                padding: 6,
-                boxShadow: "var(--shadow-float)",
-                gap: 2,
-              }}
-            >
-              {DESTINATIONS.map((d) => {
-                const active = pathname === d.href;
-                return (
-                  <button
-                    key={d.href}
-                    onClick={() => {
-                      router.push(d.href);
-                      setOpen(false);
-                    }}
-                    className="vy-btn"
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: 2,
-                      padding: "8px 14px",
-                      background: active ? "var(--accent)" : "transparent",
-                      color: active ? "var(--accent-ink)" : "var(--text-secondary)",
-                      minWidth: 60,
-                    }}
-                  >
-                    <Icon name={d.icon} size={18} />
-                    <span style={{ fontSize: 11, fontWeight: 600 }}>{t(d.labelKey)}</span>
-                  </button>
-                );
-              })}
-              <button
-                onClick={() => setOpen(false)}
-                className="vy-btn vy-btn-ghost"
-                aria-label={t("nav.collapse")}
-                style={{ padding: "8px 12px" }}
+      <div className="vy-hub-float">
+        <motion.nav
+          layout={!reduce}
+          transition={{ type: "spring", stiffness: 420, damping: 36 }}
+          className="vy-hub"
+          data-condensed={condensed ? "" : undefined}
+          aria-label={t("nav.primary")}
+        >
+          {DESTINATIONS.map((d) => {
+            const active = isActive(pathname, d.href);
+            const I = d.icon;
+            const isPost = d === post;
+            return (
+              <Link
+                key={d.href}
+                href={d.href}
+                className={isPost ? "vy-hub-item vy-hub-post" : "vy-hub-item"}
+                aria-current={active ? "page" : undefined}
+                aria-label={condensed ? t(d.labelKey) : undefined}
               >
-                ✕
-              </button>
-            </motion.div>
-          ) : (
-            <motion.button
-              key="collapsed"
-              layout
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              onClick={() => setOpen(true)}
-              aria-label={t("nav.open")}
-              style={{
-                background: "var(--accent)",
-                color: "var(--accent-ink)",
-                border: "none",
-                borderRadius: "var(--radius-pill)",
-                width: 56,
-                height: 56,
-                fontSize: 22,
-                boxShadow: "var(--shadow-float)",
-                cursor: "pointer",
-              }}
-            >
-              ✦
-            </motion.button>
-          )}
-        </AnimatePresence>
-      </motion.div>
+                <span className="vy-hub-icon" aria-hidden="true">
+                  <I size={isPost ? 24 : 22} strokeWidth={isPost ? 2.25 : active ? 2.1 : 1.75} />
+                </span>
+                <span className="vy-hub-label">{t(d.labelKey)}</span>
+              </Link>
+            );
+          })}
+        </motion.nav>
       </div>
     </>
   );

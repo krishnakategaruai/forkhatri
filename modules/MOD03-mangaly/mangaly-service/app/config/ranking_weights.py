@@ -12,31 +12,10 @@ from __future__ import annotations
 
 from typing import Final
 
-LOCALITY_RELOCATION_WEIGHT: Final[float] = 0.25
-PARTNER_PREFERENCE_WEIGHT: Final[float] = 0.25
-# [DEC-V1-030] Reciprocity: the harmonic mean of "they fit what I asked for"
-# and "I fit what they asked for". A one-sided fit (one of the two near zero)
-# pulls the mean toward zero, so a mutual fit always outranks a one-way one.
-# Both directions read only each person's stated partner preferences and the
-# biodata facts already in `ranking_input_snapshot` — never who liked, viewed
-# or messaged whom. A side that stated no preference is neutral (0.5), not 0.
-RECIPROCITY_WEIGHT: Final[float] = 0.20
-LIFESTYLE_COMPATIBILITY_WEIGHT: Final[float] = 0.15
-EVIDENCE_COMPLETENESS_WEIGHT: Final[float] = 0.15
-POPULARITY_WEIGHT: Final[float] = 0.0  # by construction — never read from anywhere
-
-assert (
-    abs(
-        LOCALITY_RELOCATION_WEIGHT
-        + PARTNER_PREFERENCE_WEIGHT
-        + RECIPROCITY_WEIGHT
-        + LIFESTYLE_COMPATIBILITY_WEIGHT
-        + EVIDENCE_COMPLETENESS_WEIGHT
-        + POPULARITY_WEIGHT
-        - 1.0
-    )
-    < 1e-9
-), "DEC-V1-002 weights must sum to 1.0"
+# [2026-09-28] The five DEC-V1-002 weights that used to sit here (locality,
+# partner preference, reciprocity, lifestyle, evidence) were superseded by the
+# AI matching engine (config/matching_engine.py, DEC-V1-031) and no code read
+# them any more. Popularity is still never an input anywhere.
 
 # DEC-V1-002's diversity re-rank: after the weighted sort, no more than
 # MAX_SAME_BRACKET_RUN results in a row may share one of SCORE_BRACKETS equal
@@ -61,4 +40,6 @@ DAILY_PICK_MAX_AGE_DAYS: Final[int] = 3
 # v3 (DEC-V1-030): a reciprocity term — the harmonic mean of each side's fit
 # for the other — and the partner-preference checks grow height, education and
 # diet preferences alongside age and locality.
-RANKING_WEIGHTS_VERSION: Final[str] = "DEC-V1-002.v3"
+# v4 (2026-09-28): the daily pick scores pairs with the AI engine's
+# pair score, the same number that orders Discover.
+RANKING_WEIGHTS_VERSION: Final[str] = "DEC-V1-002.v4"

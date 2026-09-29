@@ -87,5 +87,11 @@
       "business": "Business",
       "professional": "Professional"
     }
+  },
+  "broaden": {
+    "radius": "Widen to {{km}} km",
+    "adjacent_categories": "Include related categories",
+    "remove_filter": "Remove one filter",
+    "include_unverified": "Include unverified listings"
   }
 }

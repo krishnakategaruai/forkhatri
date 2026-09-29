@@ -19,19 +19,12 @@ import { api } from "@/lib/api";
 import { setPreferredLanguage } from "@/lib/i18n/provider";
 import type { Language } from "@/lib/i18n/config";
 import Screen from "@/app/components/Screen";
+import SkillPicker from "@/app/components/taxonomy/SkillPicker";
+import { useTaxonomyAliases, useTaxonomyTree } from "@/app/hooks/hiring";
 
 const HELP_OPTION_IDS = ["find_customers", "find_work", "hire", "partners"];
 const LANGUAGE_IDS: Language[] = ["en", "hi", "te"];
 const WORK_MODES = ["on_site", "remote", "both"] as const;
-
-interface CapabilityOption {
-  slug: string;
-  label: string;
-}
-
-interface CategoryOption extends CapabilityOption {
-  description: string;
-}
 
 const TOTAL_VISIBLE_STEPS = 5;
 
@@ -60,12 +53,8 @@ export default function FirstRunPage() {
   // screenshots show — guided, scoped capability capture instead of a
   // blank textbox — as an original Vyapar screen: this app's own chip/
   // card primitives, near-monochrome palette, no photos/gradients.
-  const [capPhase, setCapPhase] = useState<"categories" | "skills">("categories");
-  const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([]);
-  const [categorySearch, setCategorySearch] = useState("");
-  const [pickedCategories, setPickedCategories] = useState<string[]>([]);
-  const [capabilityOptions, setCapabilityOptions] = useState<CapabilityOption[]>([]);
-  const [capabilitySearch, setCapabilitySearch] = useState("");
+  const tree = useTaxonomyTree();
+  const aliases = useTaxonomyAliases();
   const [capabilities, setCapabilities] = useState<string[]>([]);
   const [capabilitiesOther, setCapabilitiesOther] = useState("");
   const [help, setHelp] = useState<string[]>([]);
@@ -87,25 +76,7 @@ export default function FirstRunPage() {
       setCapabilitiesOther(s.capabilities_other ?? "");
       setHelp(s.help_with ?? []);
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // [Real bug found live by the product owner on a sibling screen
-  // (FilterSheet), audited and fixed here too — same anti-pattern: a
-  // taxonomy fetch whose language comes from a request header, kept in an
-  // effect with no `i18n.language` dependency, so it never re-ran on a
-  // live language switch while this step was open. Split out from the
-  // one-time member-state fetch above (which genuinely only needs to run
-  // once) into its own effect that DOES depend on the active language.
-  useEffect(() => {
-    api.get<CategoryOption[]>("/v1/first-run/category-options").then(setCategoryOptions);
-  }, [i18n.language]);
-
-  useEffect(() => {
-    if (capPhase !== "skills") return;
-    const params = pickedCategories.length ? `?categories=${pickedCategories.join(",")}` : "";
-    api.get<CapabilityOption[]>(`/v1/first-run/scoped-capability-options${params}`).then(setCapabilityOptions);
-  }, [capPhase, pickedCategories, i18n.language]);
 
   async function next(nextStep: number, extra: Record<string, unknown> = {}) {
     setSaving(true);
@@ -123,14 +94,6 @@ export default function FirstRunPage() {
 
   function toggleHelp(id: string) {
     setHelp((h) => (h.includes(id) ? h.filter((x) => x !== id) : [...h, id]));
-  }
-
-  function toggleCapability(slug: string) {
-    setCapabilities((c) => (c.includes(slug) ? c.filter((x) => x !== slug) : [...c, slug]));
-  }
-
-  function toggleCategory(slug: string) {
-    setPickedCategories((c) => (c.includes(slug) ? c.filter((x) => x !== slug) : [...c, slug]));
   }
 
   function chooseLanguage(lang: Language) {
@@ -178,8 +141,8 @@ export default function FirstRunPage() {
                   key={id}
                   className="vy-btn"
                   style={{
-                    background: language === id ? "var(--accent)" : "var(--surface-overlay)",
-                    color: language === id ? "var(--accent-ink)" : "var(--text-primary)",
+                    background: language === id ? "var(--selected-solid-bg)" : "var(--surface-overlay)",
+                    color: language === id ? "var(--selected-solid-fg)" : "var(--text-primary)",
                   }}
                   onClick={() => chooseLanguage(id)}
                 >
@@ -251,111 +214,36 @@ export default function FirstRunPage() {
           </motion.div>
         )}
 
-        {step === 2 && capPhase === "categories" && (
-          <motion.div key="2-categories" {...fade} className="vy-stack">
-            <h1>{t("firstRun:step2cat.title")}</h1>
+        {/* [FE1 — 2026-09-28] One step, one picker: the real two-level
+            taxonomy (GET /v1/taxonomy/tree) — category → skill/role with a
+            one-line description each, drill-in on a phone and two columns
+            on desktop, a search that matches both levels (and the English
+            name, in Hindi or Telugu). Anything not in the tree is kept as
+            free text in capabilities_other, exactly as before. Replaces
+            the earlier two sub-phases that fetched first-run-only lists. */}
+        {step === 2 && (
+          <motion.div key="2-skills" {...fade} className="vy-stack">
+            <h1>{t("firstRun:step2cap.title")}</h1>
             <p>{t("firstRun:step2cat.help")}</p>
-            {/* [Original-Vyapar design — NOT WorkIndia's picture-card chrome
-                copied] a searchable list of real taxonomy categories as
-                tappable cards with a one-line description, this app's own
-                near-monochrome card style, no photos/icons/gradients. */}
-            <input
-              className="vy-input"
-              value={categorySearch}
-              onChange={(e) => setCategorySearch(e.target.value)}
-              placeholder={t("firstRun:step2cat.searchPlaceholder")}
-              aria-label={t("firstRun:step2cat.searchPlaceholder")}
+            <SkillPicker
+              tree={tree.data}
+              selected={capabilities}
+              onChange={setCapabilities}
+              max={15}
+              aliases={aliases}
+              onFreeText={(text) => setCapabilitiesOther((prev) => (prev ? `${prev}, ${text}` : text))}
             />
-            <div className="vy-stack vy-firstrun-cats" style={{ gap: 6 }}>
-              {categoryOptions
-                .filter((c) => c.label.toLowerCase().includes(categorySearch.toLowerCase()))
-                .map((c) => (
-                  <button
-                    key={c.slug}
-                    className="vy-card"
-                    aria-pressed={pickedCategories.includes(c.slug)}
-                    style={{
-                      textAlign: "left",
-                      cursor: "pointer",
-                      border: pickedCategories.includes(c.slug) ? "1px solid var(--accent)" : "1px solid transparent",
-                      background: pickedCategories.includes(c.slug) ? "var(--accent-soft)" : "var(--surface-overlay)",
-                    }}
-                    onClick={() => toggleCategory(c.slug)}
-                  >
-                    <strong style={{ color: pickedCategories.includes(c.slug) ? "var(--accent-strong)" : "var(--text-primary)" }}>
-                      {pickedCategories.includes(c.slug) ? "✓ " : ""}{c.label}
-                    </strong>
-                    <p className="vy-muted" style={{ fontSize: 13, marginTop: 2 }}>{c.description}</p>
-                  </button>
-                ))}
-            </div>
+            {capabilitiesOther && <p className="vy-muted" style={{ fontSize: 13 }}>{t("firstRun:step2cap.otherAdded", { text: capabilitiesOther })}</p>}
             <button
               className="vy-btn vy-btn-primary"
-              disabled={pickedCategories.length === 0 || saving}
-              onClick={() => setCapPhase("skills")}
+              disabled={saving || (capabilities.length === 0 && !capabilitiesOther)}
+              onClick={() => next(3, { capabilities, capabilities_other: capabilitiesOther || null })}
             >
               {t("common:action.continue")}
             </button>
             <button className="vy-btn vy-btn-ghost" disabled={saving} onClick={() => next(3, {})}>
               {t("firstRun:step2cap.skip")}
             </button>
-          </motion.div>
-        )}
-
-        {step === 2 && capPhase === "skills" && (
-          <motion.div key="2-skills" {...fade} className="vy-stack">
-            <h1>{t("firstRun:step2cap.title")}</h1>
-            <p>{t("firstRun:step2cap.helpScoped")}</p>
-            <div className="vy-row" style={{ flexWrap: "wrap" }}>
-              {capabilityOptions
-                .filter((c) => c.label.toLowerCase().includes(capabilitySearch.toLowerCase()))
-                .map((c) => (
-                  <button
-                    key={c.slug}
-                    className="vy-chip"
-                    aria-pressed={capabilities.includes(c.slug)}
-                style={{ cursor: "pointer" }}
-                    onClick={() => toggleCapability(c.slug)}
-                  >
-                    {capabilities.includes(c.slug) ? "✓ " : ""}{c.label}
-                  </button>
-                ))}
-            </div>
-            <label className="vy-label">{t("firstRun:step2cap.otherLabel")}</label>
-            <input
-              className="vy-input"
-              value={capabilitySearch}
-              onChange={(e) => setCapabilitySearch(e.target.value)}
-              placeholder={t("firstRun:step2cap.searchPlaceholder")}
-            />
-            {/* if the search text matches nothing suggested, offer it as a
-                free-text addition — the "search box to add a skill not in
-                the suggested list" */}
-            {capabilitySearch && !capabilityOptions.some((c) => c.label.toLowerCase() === capabilitySearch.toLowerCase()) && (
-              <button
-                className="vy-btn vy-btn-secondary"
-                style={{ alignSelf: "flex-start" }}
-                onClick={() => {
-                  setCapabilitiesOther((prev) => (prev ? `${prev}, ${capabilitySearch}` : capabilitySearch));
-                  setCapabilitySearch("");
-                }}
-              >
-                {t("firstRun:step2cap.addOther", { text: capabilitySearch })}
-              </button>
-            )}
-            {capabilitiesOther && <p className="vy-muted" style={{ fontSize: 13 }}>{t("firstRun:step2cap.otherAdded", { text: capabilitiesOther })}</p>}
-            <div className="vy-row">
-              <button className="vy-btn vy-btn-ghost" onClick={() => setCapPhase("categories")}>
-                ← {t("common:action.back")}
-              </button>
-              <button
-                className="vy-btn vy-btn-primary"
-                disabled={saving}
-                onClick={() => next(3, { capabilities, capabilities_other: capabilitiesOther || null })}
-              >
-                {t("common:action.continue")}
-              </button>
-            </div>
           </motion.div>
         )}
 
@@ -370,8 +258,8 @@ export default function FirstRunPage() {
                   className="vy-btn"
                   style={{
                     justifyContent: "flex-start",
-                    background: help.includes(id) ? "var(--accent-soft)" : "var(--surface-overlay)",
-                    color: help.includes(id) ? "var(--accent-strong)" : "var(--text-primary)",
+                    background: help.includes(id) ? "var(--selected-bg)" : "var(--surface-overlay)",
+                    color: help.includes(id) ? "var(--selected-fg)" : "var(--text-primary)",
                   }}
                   onClick={() => toggleHelp(id)}
                 >

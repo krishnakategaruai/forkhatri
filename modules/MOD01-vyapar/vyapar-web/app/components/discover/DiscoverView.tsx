@@ -1,137 +1,242 @@
 "use client";
 
-// [IMP38 — Refactor C] Discover (home), presentational half — markup moved
-// verbatim out of app/page.tsx (see that file for the FR18 / IMP33
-// reasoning). Data in, events out; the only state here is whether the
-// phone filter panel is open. IntentBar and FilterSheet are the shared
-// search controls and load their own option lists, as before.
+// [IMP38 — Refactor C] Discover (home), presentational half. Data in,
+// events out.
+//
+// [Design language 2026-09-29 — owner: "this complete design is old
+// fashioned"; references/design-language-2026-09-29.md §11] FE2's data
+// logic (URL filters, rows vs flat results, facets, preview counts, saved
+// searches, widen / drop-last empty state) is kept as it was; the page
+// around it is rebuilt:
+//   Hero      greeting · Opportunities | Businesses icon tabs · search
+//             pill (field, mic, Where on desktop, one brand Search).
+//   Trades    tinted icon tiles that filter in place; "All" → every
+//             category in a sheet.
+//   Chips     sticky: Filters (n) · location (phone) · Near me · Today ·
+//             ₹20,000+ a month · Verified · Work from home · Night shift.
+//   Curated   ixigo-style themed rows with icons, snap and arrows.
+//   Filtered  count heading, Sort, applied chips, Save this search, one
+//             flat grid (1 → 2 → 3 → 4 columns).
+//   Filters   no permanent sidebar: a bottom sheet on phones, a right
+//             drawer on desktop, FE2's sections inside.
+//   States    card-shaped skeletons, an empty state that offers to widen,
+//             and an error state with Try again.
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { FeedResponse } from "@/lib/sdk";
-import IntentBar, { type ParsedIntent } from "@/app/components/IntentBar";
-import FilterSheet, { activeFilterCount, type Filters } from "@/app/components/FilterSheet";
-import { RevealSection } from "@/app/components/Motion";
-import { SkeletonGrid, EmptyState } from "@/app/components/States";
-import OpportunityCard from "@/app/components/opportunity/OpportunityCard";
+import { Plus, SearchX, Sparkles, UserPlus, WifiOff } from "lucide-react";
+import type { FeedFacets, FeedFilterValues, FeedRow, OpportunityCard } from "@/lib/sdk";
+import DiscoverHero from "./DiscoverHero";
+import TradeRail from "./TradeRail";
+import QuickChips from "./QuickChips";
+import FeedRows from "./FeedRows";
+import DiscoverCard from "./DiscoverCard";
+import ResultsHeader from "./ResultsHeader";
+import MobileFilterSheet from "./MobileFilterSheet";
 
 export interface DiscoverViewProps {
-  /** Member's display name once known; null shows the greeting skeleton. */
   displayName: string | null;
-  feed: FeedResponse | null;
-  filters: Filters;
-  onFiltersChange: (next: Filters) => void;
-  onSearch: (intent: ParsedIntent) => void;
-  onOpenDirectory: () => void;
+  filters: FeedFilterValues;
+  curated: boolean;
+  /** Curated mode: themed rows (null while loading). */
+  rows: FeedRow[] | null;
+  enrichmentPrompt: string | null;
+  /** Filtered mode: the ranked list and its total (null while loading). */
+  items: OpportunityCard[] | null;
+  total: number | null;
+  facets: FeedFacets | null;
+  place: string | null;
+  defaultRadiusKm: number | null;
+  skillLabel: (slug: string) => string;
+  searchName: string;
+  onFiltersChange: (next: FeedFilterValues) => void;
+  onSeeAllRow: (row: FeedRow) => void;
+  preview: (draft: FeedFilterValues) => Promise<{ total: number; facets: FeedFacets }>;
   onAddCapabilities: () => void;
-  onSeeAll: (sectionKey: string) => void;
   onPost: () => void;
-  onNotInterested: (sectionKey: string, opportunityId: string) => void;
+  /** The filter to drop for the empty state's "remove the last filter". */
+  lastFilterRemoved: FeedFilterValues | null;
+  /** The current list failed to load and has nothing to show. */
+  failed?: boolean;
+  onRetry?: () => void;
 }
 
-export default function DiscoverView({
-  displayName,
-  feed,
-  filters,
-  onFiltersChange,
-  onSearch,
-  onOpenDirectory,
-  onAddCapabilities,
-  onSeeAll,
-  onPost,
-  onNotInterested,
-}: DiscoverViewProps) {
-  const { t } = useTranslation(["discover", "opportunities", "ranking"]);
-  const [showFilters, setShowFilters] = useState(false);
-
+function SkeletonCards({ count, strip }: { count: number; strip?: boolean }) {
+  const { t } = useTranslation("common");
   return (
-    <>
-      {/* [IMP33] The greeting moved ABOVE the search bar and became the
-          screen's real <h1> at the display scale — no screen should open
-          with its chrome louder than its subject. */}
-      <div className="vy-page-head">
-        {displayName !== null ? (
-          <h1>{t("discover:home.greeting", { name: displayName.split(" ")[0] })}</h1>
-        ) : (
-          <div className="vy-skeleton" style={{ height: 40, width: 260, maxWidth: "70%" }} aria-hidden="true" />
-        )}
-      </div>
-
-      {/* [Fix #8] Search-first home, WorkIndia/Upwork lens: intent bar +
-          one-tap directory entry, both above the feed and above the fold. */}
-      <div className="vy-stack">
-        <IntentBar onSearch={onSearch} />
-        <div className="vy-row" style={{ flexWrap: "wrap" }}>
-          <button className="vy-btn vy-btn-secondary" onClick={onOpenDirectory}>
-            ▤ {t("discover:home.openDirectory")}
-          </button>
-          <button className="vy-btn vy-btn-secondary" aria-expanded={showFilters} onClick={() => setShowFilters((v) => !v)}>
-            {activeFilterCount(filters) > 0
-              ? t("discover:businesses.filtersActive", { count: activeFilterCount(filters) })
-              : t("discover:businesses.filters")}
-          </button>
+    <div className={strip ? "vy-row2-strip vy-skel-strip" : "vy-dgrid2"} aria-busy="true">
+      <span className="vy-visually-hidden" role="status">{t("state.loading", { defaultValue: "Loading" })}</span>
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i} className={strip ? "vy-row2-cell" : undefined} aria-hidden="true">
+          <div className="vy-card vy-ocard vy-ocard-skel">
+            <div className="vy-skeleton" style={{ width: 44, height: 44, borderRadius: 14 }} />
+            <div className="vy-skeleton" style={{ height: 18, width: "85%" }} />
+            <div className="vy-skeleton" style={{ height: 22, width: "55%" }} />
+            <div className="vy-skeleton" style={{ height: 14, width: "70%" }} />
+          </div>
         </div>
-        {showFilters && <FilterSheet filters={filters} onChange={onFiltersChange} />}
-      </div>
+      ))}
+    </div>
+  );
+}
 
-      {/* [IMP33] Skeletons that occupy the real grid's shape, so the feed
-          resolves in place instead of jumping when it lands. */}
-      {feed === null && <SkeletonGrid count={6} />}
-      {feed?.enrichment_prompt && (
-        <div className="vy-card">
-          <p>{t(`discover:enrichment.${feed.enrichment_prompt}` as "enrichment.sparseProfile")}</p>
-          <button className="vy-btn vy-btn-secondary" style={{ marginTop: 8 }} onClick={onAddCapabilities}>
+function RowsSkeleton() {
+  return (
+    <div className="vy-rows2">
+      {[0, 1].map((r) => (
+        <section key={r} className="vy-row2" aria-hidden={r > 0}>
+          <div className="vy-row2-head">
+            <div className="vy-skeleton" style={{ height: 24, width: 200 }} />
+          </div>
+          <SkeletonCards count={4} strip />
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function StateBlock({ icon, title, body, action }: { icon: React.ReactNode; title: string; body: string; action?: React.ReactNode }) {
+  return (
+    <div className="vy-empty">
+      <span className="vy-empty-mark" aria-hidden="true">{icon}</span>
+      <h2 className="vy-card-title">{title}</h2>
+      <p>{body}</p>
+      {action}
+    </div>
+  );
+}
+
+/** [imp-backend-b L13 — few rows on a sparse home] never a blank gap: say
+ *  how to see more (add skills), and offer the other side (post a need).
+ *  The trade tiles above stay as the way to browse. */
+function SparseNudge({ skills, onSkills, onPost }: { skills: boolean; onSkills: () => void; onPost: () => void }) {
+  const { t } = useTranslation(["discover", "explore"]);
+  return (
+    <div className="vy-nudge">
+      <span className="vy-trade-tile vy-trade-indigo" aria-hidden="true">
+        <Sparkles size={22} strokeWidth={1.9} />
+      </span>
+      <div className="vy-nudge-text">
+        <h2 className="vy-card-title">{t("explore:sparse.title")}</h2>
+        <p>{t("explore:sparse.body")}</p>
+      </div>
+      <div className="vy-nudge-actions">
+        {skills && (
+          <button type="button" className="vy-btn vy-btn-secondary" onClick={onSkills}>
+            <UserPlus size={18} aria-hidden="true" />
             {t("discover:home.addCapabilities")}
           </button>
-        </div>
+        )}
+        <button type="button" className="vy-btn vy-btn-secondary" onClick={onPost}>
+          <Plus size={18} aria-hidden="true" />
+          {t("explore:sparse.post")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default function DiscoverView(p: DiscoverViewProps) {
+  const { t } = useTranslation(["discover", "explore"]);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const f = p.filters;
+
+  const failed = p.failed ? (
+    <StateBlock
+      icon={<WifiOff size={26} strokeWidth={1.8} />}
+      title={t("explore:state.errorTitle")}
+      body={t("explore:state.errorBody")}
+      action={
+        <button type="button" className="vy-btn vy-btn-secondary" onClick={p.onRetry}>
+          {t("explore:state.retry")}
+        </button>
+      }
+    />
+  ) : null;
+
+  return (
+    <div className="vy-discover2">
+      <DiscoverHero
+        firstName={p.displayName !== null ? p.displayName.split(" ")[0] : null}
+        query={f.q ?? ""}
+        onQuery={(q) => p.onFiltersChange({ ...f, q: q || null })}
+        place={p.place}
+        radiusKm={f.radius_km ?? null}
+        defaultRadiusKm={p.defaultRadiusKm}
+        onRadius={(km) => p.onFiltersChange({ ...f, radius_km: km })}
+      />
+
+      <TradeRail skills={f.skills ?? []} onSkills={(skills) => p.onFiltersChange({ ...f, skills })} />
+
+      <QuickChips
+        filters={f}
+        onChange={p.onFiltersChange}
+        onOpenFilters={() => setSheetOpen(true)}
+        place={p.place}
+        defaultRadiusKm={p.defaultRadiusKm}
+      />
+
+
+      {p.curated ? (
+        failed && p.rows === null ? (
+          failed
+        ) : p.rows === null ? (
+          <RowsSkeleton />
+        ) : p.rows.length === 0 ? (
+          <SparseNudge skills onSkills={p.onAddCapabilities} onPost={p.onPost} />
+        ) : (
+          <>
+            <FeedRows rows={p.rows} onSeeAll={p.onSeeAllRow} />
+            {(p.enrichmentPrompt || p.rows.length <= 3) && <SparseNudge skills={!!p.enrichmentPrompt} onSkills={p.onAddCapabilities} onPost={p.onPost} />}
+          </>
+        )
+      ) : (
+        <section className="vy-results2" aria-label={t("explore:filters.applied")}>
+          <ResultsHeader total={p.total} place={p.place} filters={f} onChange={p.onFiltersChange} skillLabel={p.skillLabel} searchName={p.searchName} />
+          {failed && p.items === null ? (
+            failed
+          ) : p.items === null ? (
+            <SkeletonCards count={8} />
+          ) : p.items.length === 0 ? (
+            <StateBlock
+              icon={<SearchX size={26} strokeWidth={1.8} />}
+              title={t("explore:filters.noResults")}
+              body={t("explore:filters.noResultsBody")}
+              action={
+                <div className="vy-row" style={{ flexWrap: "wrap", justifyContent: "center", gap: 8 }}>
+                  {f.radius_km ? (
+                    <button className="vy-btn vy-btn-secondary" onClick={() => p.onFiltersChange({ ...f, radius_km: Math.min(50, (f.radius_km ?? 5) * 2) })}>
+                      {t("explore:results.widen", { km: Math.min(50, (f.radius_km ?? 5) * 2) })}
+                    </button>
+                  ) : null}
+                  {p.lastFilterRemoved && (
+                    <button className="vy-btn vy-btn-ghost" onClick={() => p.onFiltersChange(p.lastFilterRemoved!)}>
+                      {t("explore:results.dropLast")}
+                    </button>
+                  )}
+                </div>
+              }
+            />
+          ) : (
+            <div className="vy-dgrid2">
+              {p.items.map((item) => (
+                <DiscoverCard key={item.id} item={item} />
+              ))}
+            </div>
+          )}
+        </section>
       )}
 
-      {feed?.sponsored?.map((item) => <OpportunityCard key={`sponsored-${item.id}`} item={item} variant="sponsored" />)}
-
-      {feed?.sections.map((section, sectionIndex) => (
-        // [IMP33] Each section arrives as one unit (RevealSection), with
-        // its own cards staggering inside it. Timing rationale lives in
-        // Motion.tsx.
-        <RevealSection key={section.key} index={sectionIndex} className="vy-stack">
-          <div className="vy-row" style={{ justifyContent: "space-between" }}>
-            <h2 className="vy-section-title">{t(`discover:home.section${section.key.replace(/_(.)/g, (_, c) => c.toUpperCase()).replace(/^(.)/, (c) => c.toUpperCase())}` as "home.sectionForYou")}</h2>
-            {section.total_available > section.items.length && (
-              <button className="vy-btn vy-btn-ghost" style={{ fontSize: 13 }} onClick={() => onSeeAll(section.key)}>
-                {t("discover:home.seeAll", { count: section.total_available })}
-              </button>
-            )}
-          </div>
-          {/* [IMP33 — F4 "2-column result lists" at ≥600, a third column
-              only at ≥1280 where a card is still readable]. */}
-          <div className="vy-grid vy-grid-3">
-            {section.items.map((item, i) => (
-              <OpportunityCard
-                key={item.id}
-                item={item}
-                variant="feed"
-                index={i}
-                // UX08 per-card Not interested: removes the card from this
-                // section immediately (optimistic, handled by the caller).
-                onNotInterested={() => onNotInterested(section.key, item.id)}
-              />
-            ))}
-          </div>
-        </RevealSection>
-      ))}
-
-      {feed && feed.sections.length === 0 && !feed.enrichment_prompt && (
-        // [IMP33] A real empty state with a next action, not one muted
-        // sentence in a void.
-        <EmptyState
-          mark="✦"
-          title={t("discover:home.noOpportunities")}
-          body={t("discover:home.emptyBody")}
-          action={
-            <button className="vy-btn vy-btn-primary" onClick={onPost}>
-              {t("discover:home.emptyAction")}
-            </button>
-          }
+      {sheetOpen && (
+        <MobileFilterSheet
+          value={f}
+          preview={p.preview}
+          onClose={() => setSheetOpen(false)}
+          onApply={(next) => {
+            p.onFiltersChange(next);
+            setSheetOpen(false);
+          }}
         />
       )}
-    </>
+    </div>
   );
 }

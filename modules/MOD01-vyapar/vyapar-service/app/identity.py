@@ -16,10 +16,21 @@
 #     before any route code runs, so no route can forget it;
 #   * a token never carries operator powers, even a token an operator made;
 #   * require_scope("...") for routes/services that want an explicit check.
-# Traces to: FR50, TR050, SP050 (IdentityBridge-CC), REFACTOR-PLAN.md §B
+# [IMP-ADMIN — Admin & Governance Console, ADR-012] Operator access now has
+# two sources, and either grants it:
+#   * the member row (is_operator / operator_permissions), as before;
+#   * permissions the HOST granted to this session (ForKhatri: the resolve
+#     response's `admin_scopes`, mapped in integrations/identity/
+#     admin_scopes.py), carried as `session_permissions`.
+# Session permissions reach the database through app/db.py get_conn(), which
+# sets `vyapar.authz_permissions` beside `vyapar.authz_context` in the same
+# transaction; vyapar_identity.is_operator() (migration 024) honours them.
+# Access tokens never carry session permissions.
+# Traces to: FR50, TR050, SP050 (IdentityBridge-CC), REFACTOR-PLAN.md §B, TR-PLAT-01
 from __future__ import annotations
 
-from dataclasses import dataclass
+import json
+from dataclasses import dataclass, field
 
 from fastapi import Depends, Header, Request
 
@@ -40,6 +51,9 @@ class AuthzContext:
     # The access token's id when auth_method == "access_token" — the audit
     # trail records it for every write the token makes.
     credential_id: str | None = None
+    # [IMP-ADMIN] Operator permissions granted by the host session (never by
+    # a token). Empty for almost every request.
+    session_permissions: frozenset[str] = field(default_factory=frozenset)
 
     @property
     def is_token(self) -> bool:
@@ -89,10 +103,12 @@ async def resolve_authz_context(
                 row = await conn.fetchrow(
                     "SELECT is_operator FROM vyapar_identity.members WHERE id = $1", identity.member_id
                 )
+        session_permissions = frozenset(identity.operator_permissions or ())
         ctx = AuthzContext(
             member_id=identity.member_id,
-            is_operator=bool(row["is_operator"]) if row else False,
+            is_operator=(bool(row["is_operator"]) if row else False) or bool(session_permissions),
             auth_method=identity.auth_method,
+            session_permissions=session_permissions,
         )
 
     # Read by the integration middleware (per-token write audit).
@@ -116,3 +132,33 @@ def require_member_session(request: Request, ctx: AuthzContext) -> None:
     """Refuses access tokens outright (credential management, for example)."""
     if ctx.is_token:
         raise fail(403, "member_session_required", request_language(request))
+
+
+# ---------------------------------------------------------------------------
+# [IMP-ADMIN] Operator permissions, from either source.
+# ---------------------------------------------------------------------------
+def authz_permissions_setting(ctx: AuthzContext) -> str:
+    """The value app/db.py writes to `vyapar.authz_permissions` (migration
+    024). It names the member it belongs to, so the database ignores it the
+    moment the transaction's authz_context is switched to someone else."""
+    if ctx.is_token or not ctx.session_permissions:
+        return ""
+    return json.dumps({"member_id": ctx.member_id, "permissions": sorted(ctx.session_permissions)})
+
+
+def with_session_permissions(ctx: AuthzContext, row_permissions) -> set[str]:
+    """Member-row permissions plus the session's. The services' existing
+    chokepoints read `operator_permissions` from the member row; they union
+    this in so a session-granted permission passes the same check."""
+    granted = set(row_permissions or [])
+    if not ctx.is_token:
+        granted |= ctx.session_permissions
+    return granted
+
+
+async def operator_permissions(conn, ctx: AuthzContext) -> frozenset[str]:
+    """Every operator permission the caller holds right now."""
+    if ctx.is_token:
+        return frozenset()
+    row = await conn.fetchval("SELECT operator_permissions FROM vyapar_identity.members WHERE id = $1", ctx.member_id)
+    return frozenset(with_session_permissions(ctx, row))

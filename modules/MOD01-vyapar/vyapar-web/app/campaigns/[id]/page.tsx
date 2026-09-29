@@ -16,6 +16,7 @@ import { api, ApiError } from "@/lib/api";
 import { formatPaise } from "@/lib/money";
 import PerformanceReport from "@/app/components/PerformanceReport";
 import Screen from "@/app/components/Screen";
+import { formatDate } from "@/lib/format"; // [FE2] Indian date order
 
 interface CampaignItem {
   promotion_id: string;
@@ -53,7 +54,7 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
   const [busy, setBusy] = useState(false);
 
   const money = (p: number) => formatPaise(p, i18n.language);
-  const fmt = (d: string) => new Date(d).toLocaleDateString(i18n.language);
+  const fmt = (d: string) => formatDate(d, i18n.language);
 
   const load = useCallback(async () => {
     try {

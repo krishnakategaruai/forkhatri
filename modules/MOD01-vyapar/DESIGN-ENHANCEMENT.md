@@ -1,5 +1,26 @@
 # Design Enhancement Spec — MOD01 Vyapar
 
+## Palette 2026-09-29 (supersedes every colour rule below)
+
+On 2026-09-29 the owner said: "colors need to be changed in vyapar, i really hate the colors you used, and theme based designs, else all other is good." The saffron-on-near-black, dark-first palette is retired. Everything else in this document still applies (structure, type, spacing, motion, the surface ladder, one primary action per screen). Where a later section names saffron, amber, `#e8871e`, `#D97A12`, "dark-first" or "accent-tinted chips", read it through this section. The research and every contrast ratio are in `references/palette-2026-09-29.md`.
+
+**Rules**
+
+1. **Light first.** The default page is a warm off-white "chalk" canvas (`--surface #f6f5f1`) with white cards (`--surface-raised #ffffff`). Dark mode is an option: it follows the phone or computer setting (`prefers-color-scheme`), and `<html data-theme="light|dark">` forces either theme. Dark is a blue-slate night (`#121419`), not near-black.
+2. **One brand colour: "Neel" indigo.** `--brand #2b4acb` (dark `#8b9dff`). Use it only for the primary button, links (`--brand-text`), the focus ring (`--focus-ring`) and the current-page marker in the rail. Never use it on card titles, on selected chips, or on large areas.
+3. **Card titles and headings use `--text-primary`.** globals.css enforces this for `.vy-card h2/h3`, `.vy-card-title`, `.vy-dcard-title` and `.vy-hub-tile-title`, with zero specificity so a component can still override it.
+4. **Selected is neutral, not brand.** Chips, tabs, options and picked rows use `--selected-bg` / `--selected-fg` / `--selected-border` (an ink outline on a light fill). Segmented toggles without their own border use `--selected-solid-bg` / `--selected-solid-fg` (an ink fill).
+5. **Secondary: peacock teal** (`--secondary`, `--secondary-soft`, `--secondary-text`). Use it only for small highlights such as icon tiles and the profile monogram.
+6. **Semantic colours** (`--success`, `--warning`, `--danger`, `--info`, `--verified`) each come as a solid value, a `-soft` tint for backgrounds and a `-text` value for text. Always pair them with an icon or a word, never colour alone.
+7. **The Search action** next to a search field (`.vy-search-action`) is a normal-sized button from 600px up. It is full width only on phones.
+8. **No gradients, glass (backdrop blur) or glow.** The action bar and the top scrim are now solid.
+9. **Every pair passes WCAG 2.2 AA in both themes** (4.5:1 text, 3:1 large text and UI). `node scripts/check-contrast.mjs` in `vyapar-web` reads the tokens from globals.css and fails if any pair drops below. Run it after any colour change.
+10. **Tokens only.** Components never use hex, rgb or named colours. The legacy names `--accent*`, `--trust-*` and `--ink-*` remain as aliases so older code keeps working. New code uses `--brand*`, `--selected-*`, the semantic tokens and `--scrim`.
+
+**Token names for other agents:** `--surface`, `--surface-raised`, `--surface-overlay`, `--surface-nested`, `--surface-sunken`, `--surface-floating`, `--border-hairline`, `--border-default`, `--border-strong`, `--text-primary`, `--text-quaternary`, `--text-secondary`, `--text-tertiary`, `--brand`, `--brand-hover`, `--brand-pressed`, `--brand-soft`, `--brand-text`, `--on-brand`, `--focus-ring`, `--secondary`, `--secondary-soft`, `--secondary-text`, `--success(-soft|-text)`, `--warning(-soft|-text)`, `--danger(-soft|-text)`, `--info(-soft|-text)`, `--verified(-soft|-text)`, `--selected-bg`, `--selected-fg`, `--selected-border`, `--selected-solid-bg`, `--selected-solid-fg`, `--scrim`, `--shadow-card`, `--shadow-float`.
+
+---
+
 **Created:** 2026-09-17. **Author:** UX critique agent, same persona as
 `UX-CRITIQUE.md`. **Scope of this request:** the product owner asked to
 "enhance colors, themes" — visual richness/polish within the **existing**

@@ -58,10 +58,10 @@ export default function EnquiriesView({ role, onRoleChange, items, stateFilter, 
     <>
       <h1>{t("enquiries:mine.title")}</h1>
       <div className="vy-row">
-        <button className="vy-btn" style={{ background: role === "sent" ? "var(--accent)" : "var(--surface-overlay)", color: role === "sent" ? "var(--accent-ink)" : "var(--text-primary)" }} onClick={() => onRoleChange("sent")}>
+        <button className="vy-btn" style={{ background: role === "sent" ? "var(--selected-solid-bg)" : "var(--surface-overlay)", color: role === "sent" ? "var(--selected-solid-fg)" : "var(--text-primary)" }} onClick={() => onRoleChange("sent")}>
           {t("enquiries:mine.tabSent")}
         </button>
-        <button className="vy-btn" style={{ background: role === "received" ? "var(--accent)" : "var(--surface-overlay)", color: role === "received" ? "var(--accent-ink)" : "var(--text-primary)" }} onClick={() => onRoleChange("received")}>
+        <button className="vy-btn" style={{ background: role === "received" ? "var(--selected-solid-bg)" : "var(--surface-overlay)", color: role === "received" ? "var(--selected-solid-fg)" : "var(--text-primary)" }} onClick={() => onRoleChange("received")}>
           {t("enquiries:mine.tabReceived")}
         </button>
       </div>

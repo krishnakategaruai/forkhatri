@@ -12,12 +12,14 @@ import {
   ITEM_FIELDS,
   ITEM_OPTIONS,
   SCALES,
+  THEMES,
   getBrief,
   saveBrief,
   understand,
   type Brief,
   type Scale,
   type ScaleWish,
+  type Theme,
   type UnderstoodItem,
 } from '@/lib/matchmaker';
 import { useLoaderHold } from '@/lib/useLoaderHold';
@@ -32,12 +34,40 @@ import './matchmaker.css';
  * 10 makes it a must. Beside that, the six 1–10 scales: where they would like
  * a partner to be (and how much it matters), and where the candidate is.
  * Nothing is saved until the family presses Save — the product never acts on
- * something a person did not confirm. All of it is private. */
+ * something a person did not confirm. All of it is private.
+ *
+ * [Owner, 2026-09-28] Also the last step of setting up a profile
+ * (`?setup=1`): it opens already filled from the profile (an age range
+ * around the candidate's age, their city) and asks "what matters to you"
+ * for each theme, compared with the candidate's own facts — nothing asked
+ * twice. It can be skipped; without it the profile page still rates every
+ * match on what the two have in common. */
 
 const OPTION_KEY: Record<string, string> = {
   relocation: 'relocation_willingness',
   education: 'highest_education_level',
 };
+/* Which option list labels a theme's own value on "Yours: Telugu, Khatri". */
+const FACT_OPTION: Record<string, string> = {
+  roots: 'mother_tongue',
+  life: 'diet',
+  family_view: 'family_values',
+  education: 'highest_education_level',
+};
+/* "What matters" in words a family uses, mapped onto the engine's 1–10:
+   doesn't matter (unset), nice to have, important, must (10 = must). */
+const LEVELS: [string, number | null][] = [
+  ['none', null],
+  ['nice', 4],
+  ['important', 7],
+  ['must', 10],
+];
+function levelOf(n: number | undefined): string {
+  if (!n) return 'none';
+  if (n >= 10) return 'must';
+  if (n >= 6) return 'important';
+  return 'nice';
+}
 const RANGE_BOUNDS: Record<string, [number, number]> = { age: [18, 80], height_cm: [120, 220] };
 const MUST = 10;
 
@@ -64,6 +94,9 @@ export default function MatchmakerPage() {
   const [saving, setSaving] = useState(false);
   const [note, setNote] = useState<Note>(null);
   const [manage, setManage] = useState<string | null>(null);
+  const [setup, setSetup] = useState(false);
+  const [started, setStarted] = useState(false);
+  const [matters, setMatters] = useState<Partial<Record<Theme, number>>>({});
 
   useEffect(() => {
     let active = true;
@@ -72,7 +105,9 @@ export default function MatchmakerPage() {
       if (!active || !session) return;
       // A parent describing the partner they want for the child whose
       // profile they made (DEC-V1-019); the server checks the right.
-      const wantedFor = new URLSearchParams(window.location.search).get('manage');
+      const params = new URLSearchParams(window.location.search);
+      const wantedFor = params.get('manage');
+      setSetup(params.get('setup') === '1');
       if (wantedFor) {
         setManaging(wantedFor);
         setManage(wantedFor);
@@ -85,7 +120,14 @@ export default function MatchmakerPage() {
       }
       setBrief(saved);
       setWords(saved.text);
-      setItems(saved.items);
+      // Nothing said yet: start from what the profile already says.
+      if (saved.items.length === 0 && (saved.suggested?.length ?? 0) > 0) {
+        setItems(saved.suggested);
+        setStarted(true);
+      } else {
+        setItems(saved.items);
+      }
+      setMatters(saved.priorities ?? {});
       setWanted(saved.partner_scales ?? {});
       setOwn(saved.self_scales ?? {});
       setPhase('ready');
@@ -105,6 +147,8 @@ export default function MatchmakerPage() {
   }
 
   const back = manage ? `/me?manage=${manage}` : '/me';
+  // Where setting up continues: the profile they made, or Home.
+  const done = manage ? `/me?manage=${manage}` : '/';
   const fieldLabel = (field: string) => t(`discover:matchmaker.field.${field}`);
   const optionLabel = (field: string, value: string) =>
     t(`profile:option.${OPTION_KEY[field] ?? field}.${value}`, { defaultValue: value });
@@ -148,8 +192,13 @@ export default function MatchmakerPage() {
       items: items.filter(hasValue),
       partner_scales: wanted,
       self_scales: brief?.can_rate_self ? own : undefined,
+      priorities: matters,
     });
     setSaving(false);
+    if (res.ok && setup) {
+      router.push(done);
+      return;
+    }
     setNote(
       res.ok
         ? { kind: 'ok', text: t('discover:matchmaker.saved') }
@@ -225,6 +274,60 @@ export default function MatchmakerPage() {
           update(index, { values: e.target.value.split(',').map((s) => s.trim()).filter(Boolean) })
         }
       />
+    );
+  }
+
+  function renderTheme(theme: Theme) {
+    const value = matters[theme];
+    const facts = brief?.theme_facts?.[theme] ?? [];
+    const factText = facts
+      .map((v) =>
+        FACT_OPTION[theme]
+          ? t(`profile:option.${FACT_OPTION[theme]}.${v}`, { defaultValue: v.replace(/_/g, ' ') })
+          : v,
+      )
+      .join(', ');
+    // A theme compared with the candidate's own facts needs those facts;
+    // horoscope needs a chart, which Discover checks on its own.
+    const usable = theme === 'horoscope' || facts.length > 0;
+    const set = (n: number | null) =>
+      setMatters((m) => {
+        const next = { ...m };
+        if (n === null) delete next[theme];
+        else next[theme] = n;
+        return next;
+      });
+    const name = t(`discover:matchmaker.matters.theme.${theme}.name`);
+    return (
+      <div key={theme} className={`mm-theme${value ? ' is-set' : ''}`}>
+        <div className="mm-scale__head">
+          <span className="mm-scale__name">{name}</span>
+        </div>
+        <p className="caption">
+          {t(`discover:matchmaker.matters.theme.${theme}.note`)}
+          {factText && ` · ${t('discover:matchmaker.matters.yours', { facts: factText })}`}
+          {!usable && ` · ${t('discover:matchmaker.matters.noFacts')}`}
+        </p>
+        {usable && (
+          <div className="mm-levels" role="radiogroup" aria-label={name}>
+            {LEVELS.map(([level, n]) => {
+              const on = level === 'none' ? !value : levelOf(value) === level;
+              return (
+                <button
+                  key={level}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  className={`mm-level${on ? ' is-on' : ''}`}
+                  onClick={() => set(n)}
+                >
+                  {t(`discover:matchmaker.matters.level.${level}`)}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -312,17 +415,28 @@ export default function MatchmakerPage() {
   return (
     <>
       <header className="topbar">
-        <button className="icon-btn" onClick={() => router.push(back)} aria-label={t('common:action.back')}>
-          ←
-        </button>
-        <h1>{t('discover:matchmaker.title')}</h1>
-        <span style={{ width: 44 }} aria-hidden="true" />
+        {setup ? (
+          <span style={{ width: 44 }} aria-hidden="true" />
+        ) : (
+          <button className="icon-btn" onClick={() => router.push(back)} aria-label={t('common:action.back')}>
+            ←
+          </button>
+        )}
+        <h1>{t(setup ? 'discover:matchmaker.setup.title' : 'discover:matchmaker.title')}</h1>
+        {setup ? (
+          <button type="button" className="mm-link" onClick={() => router.push(done)}>
+            {t('discover:matchmaker.setup.skip')}
+          </button>
+        ) : (
+          <span style={{ width: 44 }} aria-hidden="true" />
+        )}
       </header>
 
       <main className="screen mm">
         <div className="mm-grid">
           <div className="mm-col">
             <section className="mm-words" aria-labelledby="mm-words-label">
+              {setup && <p className="label">{t('discover:matchmaker.setup.step')}</p>}
               <p className="mm-intro">{t('discover:matchmaker.intro')}</p>
               <label id="mm-words-label" className="label" htmlFor="mm-words">
                 {t('discover:matchmaker.wordsLabel')}
@@ -357,7 +471,11 @@ export default function MatchmakerPage() {
                 {t('discover:matchmaker.understood')}
               </h2>
               <p className="caption">
-                {source === 'basic' ? t('discover:matchmaker.basicNote') : t('discover:matchmaker.understoodHint')}
+                {source === 'basic'
+                  ? t('discover:matchmaker.basicNote')
+                  : started && !source
+                    ? t('discover:matchmaker.setup.started')
+                    : t('discover:matchmaker.understoodHint')}
               </p>
               {items.length === 0 && <p className="mm-empty">{t('discover:matchmaker.nothing')}</p>}
               <ul className="mm-items">
@@ -412,7 +530,7 @@ export default function MatchmakerPage() {
                       if (field) setItems((list) => [...list, { field, importance: 6, values: [] }]);
                     }}
                   >
-                    <option value="">{t('discover:matchmaker.add')}</option>
+                    <option value="">{`+ ${t('discover:matchmaker.add')}`}</option>
                     {unused.map((f) => (
                       <option key={f} value={f}>
                         {fieldLabel(f)}
@@ -425,6 +543,21 @@ export default function MatchmakerPage() {
           </div>
 
           <div className="mm-col">
+            <section className="mm-scales" aria-labelledby="mm-matters-title">
+              <h2 id="mm-matters-title" className="h2">
+                {t('discover:matchmaker.matters.title')}
+              </h2>
+              <p className="caption">{t('discover:matchmaker.matters.hint')}</p>
+              {THEMES.map((theme) => renderTheme(theme))}
+            </section>
+
+            {/* The six 1–10 scales are fine-tuning: folded away so the page
+                reads as words first, not as a form. */}
+            <details className="mm-fine">
+              <summary className="mm-fine__summary">
+                <span className="mm-fine__title">{t('discover:matchmaker.fine.title')}</span>
+                <span className="caption">{t('discover:matchmaker.fine.hint')}</span>
+              </summary>
             <section className="mm-scales" aria-labelledby="mm-partner-title">
               <h2 id="mm-partner-title" className="h2">
                 {t('discover:matchmaker.scales.partnerTitle')}
@@ -446,6 +579,7 @@ export default function MatchmakerPage() {
                 <p className="caption">{t('discover:matchmaker.scales.selfManaged')}</p>
               )}
             </section>
+            </details>
           </div>
         </div>
 
@@ -456,7 +590,9 @@ export default function MatchmakerPage() {
             </p>
           )}
           <button type="button" className="btn btn--primary" disabled={saving} onClick={save}>
-            {saving ? t('discover:matchmaker.saving') : t('discover:matchmaker.save')}
+            {saving
+              ? t('discover:matchmaker.saving')
+              : t(setup ? 'discover:matchmaker.setup.continue' : 'discover:matchmaker.save')}
           </button>
         </div>
       </main>

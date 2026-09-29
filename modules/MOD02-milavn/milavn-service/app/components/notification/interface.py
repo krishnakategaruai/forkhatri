@@ -344,6 +344,40 @@ async def _on_circle_join_decided(event: DomainEvent) -> None:
         )
 
 
+async def _on_circle_invited(event: DomainEvent) -> None:
+    """[Owner 2026-09-29] Someone invited you into a circle. Written in the invitee's own language
+    (their Milavn profile preference); the deep link opens their invitations, because an
+    invite-only circle is not readable until they accept."""
+    from app.i18n import translate
+
+    circle_id = event.payload.get("circle_id")
+    inviter = event.payload.get("invited_by_member_id")
+    if not circle_id or not inviter:
+        return
+    factory = get_process_session_factory()
+    async with factory() as s, s.begin():
+        name = (await s.execute(text("SELECT milavn_circle.circle_name(:c)"), {"c": str(circle_id)})).scalar_one_or_none()
+        if not name:
+            return
+        who = (await identity.display_names_for([UUID(str(inviter))]))[UUID(str(inviter))].display_name
+        for m in event.payload.get("member_ids", []):
+            # [045] Withdrawn before this ran? Then there is nothing to tell them.
+            if not (await s.execute(text("SELECT milavn_circle.invite_is_pending(:c, :m)"), {"c": str(circle_id), "m": str(m)})).scalar_one():
+                continue
+            lang = (await s.execute(text("SELECT milavn_profile.language_of(:m)"), {"m": str(m)})).scalar_one_or_none() or "en"
+            await deliver(
+                s,
+                member_id=UUID(str(m)),
+                notification_class="social",
+                title=translate("notify.circleInvite.title", lang, who=who, circle=name),
+                body=translate("notify.circleInvite.body", lang),
+                # The circle in the link lets the notification be removed when the invitation is
+                # withdrawn, declined or accepted (migration 045 trigger); the page reads `invites=1`.
+                deep_link=f"/circles?invites=1&circle={circle_id}",
+                occurrence_id=None,
+            )
+
+
 async def _on_group_update_posted(event: DomainEvent) -> None:
     """[FR126] One admin message, fanned out to every distinct member across every chapter — the same
     "class useful" (suppressible) treatment as everything else that is genuinely useful but not
@@ -537,6 +571,7 @@ def register_subscribers() -> None:
     bus.subscribe("connection.formed", _on_connection_formed)
     bus.subscribe("circle.join_requested", _on_circle_join_requested)
     bus.subscribe("circle.join_decided", _on_circle_join_decided)
+    bus.subscribe("circle.invited", _on_circle_invited)
     bus.subscribe("occurrence.cancelled", _on_cancelled)
     bus.subscribe("occurrence.updated", _on_updated)
     bus.subscribe("occurrence.announcement", _on_announcement)

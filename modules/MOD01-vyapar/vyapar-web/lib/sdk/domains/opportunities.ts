@@ -11,6 +11,8 @@ import type {
   Page,
   PageParams,
   ProfileCardData,
+  ResultsResponse,
+  RowsResponse,
   WhyResponse,
 } from "../types";
 
@@ -52,16 +54,45 @@ export function opportunitiesApi(c: VyaparClient) {
   };
 }
 
+function feedQuery(params: FeedParams) {
+  return {
+    skills: params.skills,
+    q: params.q,
+    type: params.type,
+    work_mode: params.work_mode,
+    radius_km: params.radius_km,
+    availability: params.availability,
+    // "relevance" is the server default; leaving it out keeps URLs short
+    sort: params.sort && params.sort !== "relevance" ? params.sort : undefined,
+    types: params.types,
+    pay_kind: params.pay_kind,
+    pay_min_paise: params.pay_min_paise,
+    pay_max_paise: params.pay_max_paise,
+    posted_within: params.posted_within,
+    shift: params.shift,
+    experience: params.experience,
+    verified_only: params.verified_only || undefined,
+    segment: params.segment,
+  };
+}
+
 export function feedApi(c: VyaparClient) {
   return {
     /** listOpportunityFeed — the five Discover sections for the caller */
-    get: (params: FeedParams = {}) => c.get<FeedResponse>("/v1/opportunities/feed", { skills: params.skills }),
+    // [FE2 — imp-backend-b §5] every route takes the same filter query
+    // (skills, q, type, work_mode, radius_km, availability, sort); empty
+    // values are dropped by buildQuery, so an unfiltered call is unchanged.
+    get: (params: FeedParams = {}) => c.get<FeedResponse>("/v1/opportunities/feed", feedQuery(params)),
+    /** [FE2] listOpportunityResults — a search or any filter: one ranked list, total, facet counts */
+    results: (params: FeedParams = {}, limit = 60) => c.get<ResultsResponse>("/v1/opportunities/feed/results", { ...feedQuery(params), limit }),
+    /** [FE2] listOpportunityRows — the unfiltered home as themed rows */
+    rows: () => c.get<RowsResponse>("/v1/opportunities/feed/rows"),
     /** listOpportunityFeedSection — every item in one section ("See all") */
-    section: <T = { key: string; items: OpportunityCard[] }>(key: string) =>
-      c.get<T>(`/v1/opportunities/feed/section/${seg(key)}`),
+    section: <T = OpportunityCard[]>(key: string, params: FeedParams = {}) =>
+      c.get<T>(`/v1/opportunities/feed/section/${seg(key)}`, feedQuery(params)),
     /** listOpportunityFeedSectionPage — cursor-paginated */
-    sectionPage: (key: string, page: PageParams = {}) =>
-      c.get<Page<OpportunityCard>>(`/v1/opportunities/feed/section/${seg(key)}/page`, { ...page }),
+    sectionPage: (key: string, page: PageParams = {}, params: FeedParams = {}) =>
+      c.get<Page<OpportunityCard>>(`/v1/opportunities/feed/section/${seg(key)}/page`, { ...feedQuery(params), ...page }),
   };
 }
 

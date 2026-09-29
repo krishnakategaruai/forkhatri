@@ -29,6 +29,11 @@ class Settings(BaseSettings):
         "http://CHANGE_ME-identity-service.internal"
     )
     identity_service_key: str = "CHANGE_ME"
+    # [IMP-ADMIN] The name this service presents to the platform
+    # (X-ForKhatri-Service); the platform keys its SERVICE_KEYS by it. The
+    # same key also authenticates the platform when it calls Vyapar's
+    # /internal/v1 bridges (app/integrations/internal_auth.py).
+    identity_service_name: str = "vyapar"
     identity_resolve_cache_seconds: int = 30
     identity_resolve_negative_cache_seconds: int = 5
 
@@ -102,6 +107,20 @@ class Settings(BaseSettings):
 
     # [IMP37] Idempotency-Key middleware: how long a first response is kept for replay.
     idempotency_ttl_hours: int = 24
+
+    # [IMP-B] Contact actions: the local day/hour used for call windows and
+    # the daily call cap (India Standard Time as a fixed offset, so no tz
+    # database is needed on the host). Country code for tel:/wa.me links.
+    contact_timezone_offset_minutes: int = 330
+    contact_default_country_code: str = "91"
+    # [IMP-B/FR28] Count-based badges are recomputed on read once the cached
+    # value is older than this (a nightly-equivalent cadence).
+    badges_cache_seconds: int = 86400
+    # [IMP-B/FR40] Independent 'asked_for_money' reports that pause an
+    # employment opportunity and raise its case to High.
+    seeker_charge_report_threshold: int = 2
+    # [IMP-B/L1] Pre-accept calling: taps one caller may make per post per day.
+    precall_caller_taps_per_day: int = 3
 
     @property
     def identity_provider_names(self) -> list[str]:

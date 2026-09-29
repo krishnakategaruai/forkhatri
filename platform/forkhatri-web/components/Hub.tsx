@@ -13,6 +13,7 @@
 import { motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Lang, Member, ModuleEntry } from "@/lib/api";
+import { admin } from "@/lib/admin-api";
 import { relativeTime, type Translate } from "@/lib/i18n";
 import { parseIntent } from "@/lib/intent";
 import IntentField, { SUGGESTIONS } from "./CommandOrb";
@@ -36,6 +37,18 @@ export default function Hub({ t, lang, member, modules, stale, onEnter }: HubPro
   const [query, setQuery] = useState("");
   const [compact, setCompact] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Only people the samaj has appointed see the admin console row (ADR-012).
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    let live = true;
+    admin.me().then(
+      (me) => live && setIsAdmin(me.is_admin),
+      () => undefined,
+    );
+    return () => {
+      live = false;
+    };
+  }, [member.member_id]);
 
   const hour = openedAt.getHours();
   const greetingKey = hour < 12 ? "greetMorning" : hour < 17 ? "greetAfternoon" : "greetEvening";
@@ -249,6 +262,22 @@ export default function Hub({ t, lang, member, modules, stale, onEnter }: HubPro
                 </span>
               </a>
             </li>
+            {isAdmin && (
+              <li>
+                <a className="module-row" href="/admin">
+                  <span className="module-mark">
+                    <Sigil moduleKey="admin" size={24} />
+                  </span>
+                  <span className="module-text">
+                    <span className="module-name">{t("adminConsole")}</span>
+                    <span className="module-tagline">{t("adminConsoleNote")}</span>
+                  </span>
+                  <span className="module-go" aria-hidden="true">
+                    <ArrowIcon size={18} />
+                  </span>
+                </a>
+              </li>
+            )}
           </ul>
         </motion.div>
 

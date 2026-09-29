@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
 from pydantic import BaseModel, Field
 
+from app import media_files
 from app.api.deps import CurrentMember, DbSession, Locale
 from app.components.profile import interface as profile
 from app.config import localities
@@ -116,7 +117,9 @@ async def update_enrichment(
     except profile.ProfileNotFound as exc:
         raise HTTPException(status_code=404, detail=translate("profile.notFound", lang)) from exc
     except profile.UnsupportedMedia as exc:
-        raise HTTPException(status_code=422, detail="unsupported photo type") from exc
+        raise HTTPException(status_code=415, detail=translate("moments.unsupported", lang)) from exc
+    except media_files.TooLarge as exc:
+        raise HTTPException(status_code=413, detail=translate("media.tooLarge", lang, mb=exc.limit_mb)) from exc
     return _to_response(result)
 
 

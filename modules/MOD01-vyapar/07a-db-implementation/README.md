@@ -43,9 +43,9 @@ PGPASSWORD=$DB_ADMIN_PASSWORD psql -h localhost -p 5433 -U postgres -c "DROP DAT
 | Schema | Owning component | RLS? | Primary tables |
 |---|---|---|---|
 | `vyapar_identity` | Identity Bridge | Yes | members |
-| `vyapar_listings` | Listings & Verification | Yes | listings, listing_contacts, otp_challenges, verification_records, taxonomy_terms, member_listing, outbox_event |
-| `vyapar_opportunities` | Opportunities | Yes | opportunities, member_opportunity, outbox_event |
-| `vyapar_enquiries` | Enquiries & Partnerships | Yes | enquiries, enquiry_messages, blocks, partnership_requests, outbox_event (016) |
+| `vyapar_listings` | Listings & Verification | Yes | listings, listing_contacts, otp_challenges, verification_records, taxonomy_terms, member_listing, outbox_event, listing_packages (019) |
+| `vyapar_opportunities` | Opportunities | Yes | opportunities, member_opportunity, outbox_event, saved_searches (019) |
+| `vyapar_enquiries` | Enquiries & Partnerships | Yes | enquiries, enquiry_messages, blocks, partnership_requests, outbox_event (016), contact_attempts (019) |
 | `vyapar_reviews` | Reviews & Reputation | Yes | review_invites, reviews, review_disputes, outbox_event (016) |
 | `vyapar_commercial` | Commercial | Yes (products/no) | products, campaigns, promotions, commercial_order_history, entitlements, workspace_members, impressions, outbox_event |
 | `vyapar_payments` | Payment Bridge | Yes | payment_orders |

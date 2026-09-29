@@ -32,7 +32,7 @@ async def campaign_options(
     listing_id: str,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> CampaignOptionsOut:
     return await svc.list_campaign_options(conn, ctx, lang, listing_id=listing_id)
 
@@ -42,7 +42,7 @@ async def create_campaign(
     body: CampaignIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> CampaignCreatedOut:
     return await svc.create_campaign(conn, ctx, lang, body=body)
 
@@ -53,7 +53,7 @@ async def confirm_campaign_purchase(
     body: ConfirmIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> CampaignPurchaseOut:
     return await svc.confirm_campaign_purchase(conn, ctx, lang, campaign_id=campaign_id, body=body)
 
@@ -63,7 +63,7 @@ async def get_campaign(
     campaign_id: str,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> CampaignOut:
     return await svc.get_campaign(conn, ctx, lang, campaign_id=campaign_id)
 
@@ -74,7 +74,7 @@ async def set_campaign_items_state(
     body: CampaignItemsStateIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> CampaignItemsStateOut:
     return await svc.set_campaign_items_state(conn, ctx, lang, campaign_id=campaign_id, body=body)
 
@@ -84,6 +84,6 @@ async def campaign_report(
     campaign_id: str,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> PerformanceReportOut:
     return await svc.get_campaign_report(conn, ctx, lang, campaign_id=campaign_id)

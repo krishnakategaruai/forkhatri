@@ -22,6 +22,7 @@ import { useTranslation } from "react-i18next";
 import type { Notification } from "@/lib/sdk";
 import { useSdk } from "@/lib/sdk/react";
 import { useHost } from "@/app/host/HostProvider";
+import { Bell } from "lucide-react";
 
 export default function NotificationBell() {
   const { t } = useTranslation("notifications");
@@ -67,41 +68,12 @@ export default function NotificationBell() {
   // hardcoded `right` offset; the parent flex row in layout.tsx now owns
   // placement for both this and DevMemberSwitcher.
   return (
-    <div style={{ position: "relative", flexShrink: 0 }}>
-      <button
-        className="vy-btn vy-btn-secondary"
-        style={{ fontSize: 13, padding: "8px 12px", position: "relative" }}
-        onClick={openPanel}
-        aria-label={t("bellLabel")}
-      >
-        🔔
-        {unread > 0 && (
-          <span
-            style={{
-              position: "absolute",
-              top: -4,
-              right: -4,
-              background: "var(--accent)",
-              color: "var(--accent-ink)",
-              borderRadius: "999px",
-              fontSize: 10,
-              fontWeight: 700,
-              minWidth: 16,
-              height: 16,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "0 3px",
-            }}
-          >
-            {/* [Same bug-fix pass] the badge itself was already safe at
-                double digits (absolute-positioned on its own button, grows
-                via padding rather than a fixed width) — capped display
-                text defensively anyway so a large backlog never shows an
-                unreasonably wide badge. */}
-            {unread > 99 ? "99+" : unread}
-          </span>
-        )}
+    <div className="vy-menu-anchor">
+      {/* [Design language 2026-09-29] an icon button in the top bar (bell
+          left of the avatar), with the unread count as a small badge. */}
+      <button type="button" className="vy-iconbtn" onClick={openPanel} aria-label={t("bellLabel")} aria-expanded={open} title={t("bellLabel")}>
+        <Bell size={20} strokeWidth={1.75} aria-hidden="true" />
+        {unread > 0 && <span className="vy-iconbtn-badge">{unread > 99 ? "99+" : unread}</span>}
       </button>
       <AnimatePresence>
         {open && (
@@ -113,8 +85,8 @@ export default function NotificationBell() {
             // [Design-enhancement pass, DESIGN-ENHANCEMENT.md — named
             // example] a floating dropdown panel, one step above the
             // ordinary --surface-raised content sitting behind it.
-            className="vy-card vy-card-floating"
-            style={{ position: "absolute", top: 44, right: 0, width: 280, maxHeight: 360, overflowY: "auto", padding: 10 }}
+            className="vy-popover vy-popover-end"
+            style={{ width: 320, maxHeight: 420, overflowY: "auto" }}
           >
             <div className="vy-row" style={{ justifyContent: "space-between", marginBottom: 8 }}>
               <strong style={{ fontSize: 14 }}>{t("panelTitle")}</strong>

@@ -24,7 +24,7 @@ from __future__ import annotations
 import asyncpg
 from pydantic import BaseModel
 
-from app.reputation import reputation_for_listings
+from app.reputation import badges_for_members, reputation_for_listings
 from app.taxonomy_cache import labels_for
 
 CARD_LIMIT = 4
@@ -42,6 +42,7 @@ class ProfileCard(BaseModel):
     matched_labels: list[str]  # the skills that caused this recommendation
     other_labels: list[str]  # the profile's remaining skills, for context
     reputation: dict | None = None
+    badges: list[dict] = []  # [IMP-B/FR28] owner's count-based badges, localized
 
 
 async def recommend_profiles(
@@ -81,6 +82,7 @@ async def recommend_profiles(
         require_opportunity_participation, CARD_LIMIT,
     )
     reputation = await reputation_for_listings(conn, rows)
+    owner_badges = await badges_for_members(conn, [r["owner_id"] for r in rows], lang)
     wanted = set(skills)
     cards: list[ProfileCard] = []
     for r in rows:
@@ -100,6 +102,7 @@ async def recommend_profiles(
                 matched_labels=labels_for(matched, lang),
                 other_labels=labels_for(others, lang),
                 reputation=reputation.get(str(r["id"])),
+                badges=[b.model_dump() for b in owner_badges.get(r["owner_id"], [])],
             )
         )
     return cards

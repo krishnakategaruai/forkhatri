@@ -19,14 +19,16 @@ export default function TopActions({ people = false }: { people?: boolean }) {
   const pathname = usePathname();
   const [unread, setUnread] = useState(0);
 
+  // Keyed on the member id, so a re-fetched identity for the same person doesn't ask for the count again.
+  const memberId = identity?.member_id;
   useEffect(() => {
-    if (!identity) return;
+    if (!memberId) return;
     let alive = true;
     const tick = () => getUnread().then((r) => alive && setUnread(r.unread)).catch(() => undefined);
     tick();
     const id = setInterval(tick, 20000);
     return () => { alive = false; clearInterval(id); };
-  }, [identity, pathname]);
+  }, [memberId, pathname]);
 
   const avatar = resolveMediaUrl(profile?.photo_url ?? identity?.avatar ?? null);
 

@@ -9,12 +9,26 @@
 // Reference: Upwork's in-place "Flag as inappropriate" with a reason list and
 // confidential review; WorkIndia's email-only reporting is what this avoids.
 // Traces to: FR39, FR24, FR53, TR039
-import { useState } from "react";
+//
+// [FE2 — imp-backend-b §2] "Asked me for money" (`asked_for_money`) is a
+// reason of its own for opportunities and enquiries: two reports from
+// different people pause the post. Another block on the page (the seeker
+// protection notice) can open this sheet with a reason already chosen via
+// requestReport() — an event, so neither component owns the other.
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/lib/sdk";
 import { useSdk } from "@/lib/sdk/react";
 
 const REASONS = ["scam", "fake", "impersonation", "harassment", "discrimination", "spam", "stale", "privacy", "other"] as const;
+const MONEY_REASON_KINDS = ["opportunity", "enquiry"];
+const OPEN_REPORT_EVENT = "vyapar:open-report";
+
+/** Open the report sheet for `objectId` on this page, with `reason` pre-chosen, and scroll to it. */
+export function requestReport(objectId: string, reason: string) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(OPEN_REPORT_EVENT, { detail: { objectId, reason } }));
+}
 
 export default function ReportSheet({
   objectKind,
@@ -36,12 +50,28 @@ export default function ReportSheet({
   const [blocked, setBlocked] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [idempotencyKey] = useState(() => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Date.now())));
+  const anchor = useRef<HTMLDivElement>(null);
+  const reasons: readonly string[] = MONEY_REASON_KINDS.includes(objectKind) ? ["asked_for_money", ...REASONS] : REASONS;
+
+  useEffect(() => {
+    function onRequest(e: Event) {
+      const detail = (e as CustomEvent<{ objectId: string; reason: string }>).detail;
+      if (!detail || detail.objectId !== objectId) return;
+      setOpen(true);
+      setReason(detail.reason);
+      requestAnimationFrame(() => anchor.current?.scrollIntoView({ behavior: "smooth", block: "center" }));
+    }
+    window.addEventListener(OPEN_REPORT_EVENT, onRequest);
+    return () => window.removeEventListener(OPEN_REPORT_EVENT, onRequest);
+  }, [objectId]);
 
   if (!open) {
     return (
-      <button className="vy-btn vy-btn-ghost" style={{ alignSelf: "flex-start", fontSize: 13 }} onClick={() => setOpen(true)}>
-        ⚑ {t("trustSafety:report.button")}
-      </button>
+      <div ref={anchor}>
+        <button className="vy-btn vy-btn-ghost" style={{ alignSelf: "flex-start", fontSize: 13 }} onClick={() => setOpen(true)}>
+          ⚑ {t("trustSafety:report.button")}
+        </button>
+      </div>
     );
   }
 
@@ -86,18 +116,18 @@ export default function ReportSheet({
   }
 
   return (
-    <div className="vy-card vy-stack">
+    <div className="vy-card vy-stack" ref={anchor}>
       <h2 className="vy-card-title">{t("trustSafety:report.title")}</h2>
       <div className="vy-row" style={{ flexWrap: "wrap" }}>
-        {REASONS.map((r) => (
+        {reasons.map((r) => (
           <button
             key={r}
             className="vy-chip"
             style={{
-              border: `1px solid ${reason === r ? "var(--accent)" : "var(--border-hairline)"}`,
+              border: `1px solid ${reason === r ? "var(--selected-border)" : "var(--border-hairline)"}`,
               cursor: "pointer",
-              background: reason === r ? "var(--accent-soft)" : "var(--surface-overlay)",
-              color: reason === r ? "var(--accent-strong)" : "var(--text-primary)",
+              background: reason === r ? "var(--selected-bg)" : "var(--surface-overlay)",
+              color: reason === r ? "var(--selected-fg)" : "var(--text-primary)",
             }}
             onClick={() => setReason(r)}
           >

@@ -13,5 +13,60 @@
       "notChanged": "ఈ కేసు ఆ చర్యను అనుమతించే స్థితిలో లేదు.",
       "invalidOutcome": "దయచేసి సరైన ఫలితాన్ని ఎంచుకోండి."
     }
+  },
+  "admin": {
+    "casesTitle": "మంగళి మోడరేషన్ కేసులు",
+    "someone": "ఒక సభ్యుడు",
+    "summary": "{name} గురించి {category} ఫిర్యాదు",
+    "member": {
+      "profile": "వివాహ ప్రొఫైల్",
+      "searchable": "శోధనలో కనిపిస్తుంది",
+      "notSearchable": "శోధనలో కనిపించదు",
+      "reports": "వీరిపై ఫిర్యాదులు",
+      "reportsValue": "{total}లో {open} తెరిచి ఉన్నాయి",
+      "blocks": "బ్లాక్‌లు",
+      "blocksValue": "{made} మందిని బ్లాక్ చేశారు · {by} మంది బ్లాక్ చేశారు",
+      "planEnds": "ప్లాన్ గడువు",
+      "rm": "రిలేషన్‌షిప్ మేనేజర్",
+      "lastOrder": "చివరి ఆర్డర్",
+      "lastOrderValue": "{plan}, {total}, {status}, {date}",
+      "planActive": "సక్రియం",
+      "planCancelled": "రద్దు (గడువు వరకు కొనసాగుతుంది)",
+      "order": {
+        "created": "చెల్లింపు పూర్తి కాలేదు",
+        "paid": "చెల్లించారు",
+        "failed": "చెల్లింపు విఫలం",
+        "refunded": "రీఫండ్ అయింది"
+      }
+    },
+    "field": {
+      "reason": "కారణం",
+      "about": "ఎవరి గురించి",
+      "state": "స్థితి",
+      "priority": "ప్రాధాన్యత",
+      "reported": "ఫిర్యాదు తేదీ",
+      "description": "ఏమన్నారు",
+      "due": "గడువు",
+      "outcome": "ఫలితం",
+      "account": "ఖాతా"
+    },
+    "state": {
+      "open": "తెరిచి ఉంది",
+      "acknowledged": "పరిశీలనలో",
+      "resolved": "పరిష్కారం"
+    },
+    "priority": {
+      "urgent": "అత్యవసరం",
+      "high": "ఎక్కువ",
+      "normal": "సాధారణం"
+    },
+    "outcome": {
+      "no_action": "చర్య అవసరం లేదు",
+      "warned": "హెచ్చరించారు",
+      "content_removed": "కంటెంట్ తొలగించారు",
+      "account_suspended": "ఖాతా నిలిపివేశారు",
+      "escalated_to_investigation": "విచారణకు పంపారు"
+    },
+    "suspended": "మంగళిలో నిలిపివేశారు"
   }
 }

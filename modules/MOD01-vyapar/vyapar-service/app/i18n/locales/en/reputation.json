@@ -1,0 +1,28 @@
+{
+  "badge": {
+    "responds_fast": {
+      "label": "Responds fast",
+      "description": "Usually replies within 2 hours, over at least 5 enquiries"
+    },
+    "reliable": {
+      "label": "Reliable",
+      "description": "9 in 10 people who worked with them recommend them, over at least 5 reviews"
+    },
+    "rising": {
+      "label": "Rising",
+      "description": "New on Vyapar and already recommended by 3 or more people"
+    },
+    "top_recommended": {
+      "label": "Top recommended",
+      "description": "Recommended by 95% of at least 20 reviewers"
+    },
+    "verified_business": {
+      "label": "Verified business",
+      "description": "Business documents checked by Vyapar"
+    },
+    "repeat_hires": {
+      "label": "Repeat hires",
+      "description": "At least 3 people came back to work with them again"
+    }
+  }
+}

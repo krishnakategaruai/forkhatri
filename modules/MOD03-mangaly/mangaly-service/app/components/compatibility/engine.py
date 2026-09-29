@@ -36,6 +36,8 @@ from app.config import matching_engine as cfg
 
 __all__ = [
     "Wish",
+    "common_points",
+    "priorities",
     "direction_fit",
     "distance_km",
     "fails_must",
@@ -114,7 +116,53 @@ def _places(value: Any) -> list[str]:
 
 def wishes(snapshot: dict) -> list[Wish]:
     """The seeker's wishes: the understood items when they used the
-    matchmaker, else their older partner-preference fields."""
+    matchmaker, else their older partner-preference fields — plus a "like
+    us" wish for each theme they said matters (`priority_wishes`)."""
+    stated = _stated_wishes(snapshot)
+    covered = {w.field for w in stated}
+    return stated + [w for w in priority_wishes(snapshot) if w.field not in covered]
+
+
+def priorities(snapshot: dict) -> dict[str, int]:
+    """[Owner, 2026-09-28] {theme: 1–10} the family gave at setup; unset
+    themes are absent."""
+    raw = snapshot.get("priorities")
+    if not isinstance(raw, dict):
+        return {}
+    out: dict[str, int] = {}
+    for theme, value in raw.items():
+        n = _int(value)
+        if theme in cfg.PRIORITY_THEMES and n is not None and n >= cfg.SCALE_MIN:
+            out[theme] = min(cfg.SCALE_MAX, n)
+    return out
+
+
+def priority_wishes(snapshot: dict) -> list[Wish]:
+    """Each theme that matters, as wishes built from the seeker's own facts:
+    "same roots" means their own mother tongue and community. A fact the
+    seeker never gave makes no wish (nothing is guessed)."""
+    out: list[Wish] = []
+    for theme, importance in priorities(snapshot).items():
+        for field in cfg.PRIORITY_THEMES[theme]:
+            own = _fact(field, snapshot)
+            if own in (None, "", []):
+                continue
+            if field == "locality":
+                city = str(own).split(",")[0].strip()
+                here = _geo(snapshot)
+                out.append(Wish(field, importance, values=(city,), geo=(here,) if here else ()))
+            elif field == "hobbies":
+                out.append(Wish(field, importance, values=tuple(str(h) for h in own)))
+            elif field == "education" and _lower(own) not in cfg.EDUCATION_LEVELS:
+                continue  # a level outside the ordered list cannot be a floor
+            elif field == "diet" and _lower(own) not in cfg.DIET_COMPAT:
+                continue
+            else:
+                out.append(Wish(field, importance, values=(_lower(own),)))
+    return out
+
+
+def _stated_wishes(snapshot: dict) -> list[Wish]:
     brief = snapshot.get("partner_brief")
     if isinstance(brief, list) and brief:
         out: list[Wish] = []
@@ -355,3 +403,45 @@ def breakdown(seeker: dict, other: dict) -> dict[str, Any]:
         if (fit := item_fit(wish, seeker)) is not None and fit >= 1.0
     ]
     return {"yours": yours, "theirs_met": theirs_met}
+
+
+def common_points(seeker: dict, other: dict) -> list[dict[str, Any]]:
+    """[Owner, 2026-09-28] The generic "points of match" for a reader who
+    has not said what they want yet: facts both people share, strongest
+    first, as `{"key": ..., **params}` for `discovery.shelf.reason`. Only
+    biodata a searchable profile already shows; no count, no number."""
+    out: list[dict[str, Any]] = []
+
+    def same(field: str) -> Any:
+        a, b = _fact(field, seeker), _fact(field, other)
+        return b if a and b and _lower(a) == _lower(b) else None
+
+    mine = {_lower(h): h for h in (seeker.get("hobbies") or [])}
+    shared = [h for h in (other.get("hobbies") or []) if _lower(h) in mine]
+    if shared:
+        out.append({"key": "sharedHobbies", "list": ("hobby", shared[:2])})
+    if (v := same("mother_tongue")) is not None:
+        out.append({"key": "sameTongue", "value": ("mother_tongue", v)})
+    if (v := same("sub_community")) is not None:
+        out.append({"key": "sameCommunity", "value": ("sub_community", v)})
+    if (v := same("family_values")) is not None:
+        out.append({"key": "sameFamilyValues", "value": ("family_values", v)})
+    if (v := same("family_type")) is not None:
+        out.append({"key": "sameFamilyType", "value": ("family_type", v)})
+    if (v := same("diet")) is not None:
+        out.append({"key": "sameDiet", "value": ("diet", v)})
+    if (v := same("education")) is not None:
+        out.append({"key": "sameEducation", "value": ("education_level", v)})
+    my_city = str(seeker.get("locality") or "").split(",")[0].strip()
+    their_city = str(other.get("locality") or "").split(",")[0].strip()
+    if my_city and _lower(my_city) == _lower(their_city):
+        out.append({"key": "sameCity", "city": my_city})
+    else:
+        here, there = _geo(seeker), _geo(other)
+        if here and there and their_city:
+            km = distance_km(here, there)
+            if km <= cfg.NEARBY_REASON_KM:
+                out.append({"key": "nearby", "city": their_city, "km": max(5, int(round(km / 5.0)) * 5)})
+        if their_city and _would_relocate(other):
+            out.append({"key": "openToMove", "city": their_city})
+    return out

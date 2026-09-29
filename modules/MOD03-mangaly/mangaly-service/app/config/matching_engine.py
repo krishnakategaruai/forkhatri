@@ -89,6 +89,28 @@ SCALES: Final[tuple[str, ...]] = (
 SCALE_MIN: Final[int] = 1
 SCALE_MAX: Final[int] = 10
 
+# --- What matters (asked once at setup, editable later) ----------------------
+# [Owner, 2026-09-28] Besides their own words, a family says how much each of
+# these matters, 1–10. A theme that matters becomes a "like us" wish built
+# from the seeker's OWN facts (nothing re-asked): "same roots" at 8 means
+# "speaks our mother tongue, from our community", importance 8. A field the
+# family already spoke about in their words keeps their words. 10 is a must,
+# the same as everywhere else. Horoscope has no field here: it orders the
+# Discover rows and the family's own filter decides who is removed.
+PRIORITY_THEMES: Final[dict[str, tuple[str, ...]]] = {
+    "horoscope": (),
+    "roots": ("mother_tongue", "sub_community"),
+    "near": ("locality",),
+    "life": ("diet", "hobbies"),
+    "family_view": ("family_values", "family_type"),
+    "education": ("education",),
+}
+
+# --- Horoscope row in Discover ------------------------------------------------
+# Traditional thresholds: 18 of 36 gunas is the usual minimum for a match.
+HOROSCOPE_SHELF_MIN_GUNA: Final[float] = 18.0
+GUNA_MAX: Final[int] = 36
+
 # --- Compatibility tables ----------------------------------------------------
 # Diet, read as "how livable is a shared kitchen": a vegetarian home and a
 # non-vegetarian partner is the classic hard mismatch; eggetarian sits close

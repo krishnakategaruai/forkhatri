@@ -23,6 +23,57 @@
     "confirmRequired": "Please confirm: {fields}",
     "tooOldToRenew": "This listing is too old to renew directly — please review and re-confirm its details first.",
     "invalidTransition": "Can't do that from the current state.",
-    "removedCannotShare": "This item has been removed and can't be shared."
+    "removedCannotShare": "This item has been removed and can't be shared.",
+    "fieldNotForType": "The field {field} doesn't apply to a {type} opportunity.",
+    "salaryRangeInvalid": "The minimum salary can't be more than the maximum.",
+    "experienceRangeInvalid": "The minimum experience can't be more than the maximum.",
+    "budgetFieldsMismatch": "Give either a fixed budget or an hourly rate, not both.",
+    "budgetRangeInvalid": "The minimum budget can't be more than the maximum.",
+    "tooManyScreeningQuestions": "You can ask at most {max} screening questions.",
+    "salaryRequired": "Add a monthly salary range before publishing this job.",
+    "budgetRequired": "Add a budget or an hourly rate before publishing this project.",
+    "precallNotForType": "Calling before you accept is available only for jobs and local services."
+  },
+  "compensation": {
+    "monthly": "{amount} a month",
+    "monthlyRange": "{min} to {max} a month",
+    "plusIncentive": "+ incentives up to {amount}",
+    "plusIncentiveOpen": "+ incentives",
+    "incentiveOnly": "Incentives only, up to {amount} a month",
+    "incentiveOnlyOpen": "Incentives only",
+    "fixed": "Fixed price {amount}",
+    "fixedRange": "Fixed price {min} to {max}",
+    "hourly": "{amount} an hour",
+    "hourlyRange": "{min} to {max} an hour",
+    "budget": "Budget {amount}"
+  },
+  "suggestion": {
+    "expand_description": "Describe the work in a few more lines. Clear posts get replies from people who actually fit.",
+    "add_skills": "Add the skills this needs, so it reaches people who have them.",
+    "fewer_skills": "Ask for the 3 to 5 skills that matter most. Long lists put good people off.",
+    "add_location": "Add the area where the work happens, so nearby people see it.",
+    "consider_remote": "If some of the work can be done from home, allow remote. You will likely get more responses.",
+    "add_salary": "Add a monthly salary range. Jobs that show pay get many more applications.",
+    "lower_qualification": "Lower the minimum qualification to 12th if the work allows it. You will likely get more responses.",
+    "relax_english": "Ask for basic English if the job doesn't need more. Many good candidates will then apply.",
+    "lower_experience": "Asking for over 2 years' experience cuts the list a lot. Consider accepting less.",
+    "add_job_timings": "Add the job timings (for example 9 am to 6 pm), so people know if it suits them.",
+    "add_interview_details": "Say how and where the interview happens. It builds trust.",
+    "add_openings": "Say how many people you are hiring.",
+    "add_shift": "Say whether it is a day, night or rotational shift.",
+    "add_budget": "Add a budget or an hourly rate. Projects that show one get better proposals.",
+    "add_duration": "Say how long the project will run.",
+    "add_screening_question": "Add a screening question to see quickly who has done this before.",
+    "relax_experience_level": "Asking only for experts narrows the field. Allow intermediate if you can.",
+    "add_deadline": "Add a deadline for proposals, so people apply sooner.",
+    "add_preferred_date": "Add the date you need this done.",
+    "add_local_budget": "Add a rough budget, so providers can quote quickly.",
+    "add_urgency": "Say how soon you need it: today, this week or flexible."
+  },
+  "precall": {
+    "disclosure": {
+      "whatsapp_only": "Anyone who messages you on WhatsApp from this post will see your phone number. They can't ring you from Vyapar.",
+      "call_and_whatsapp": "Anyone who calls or messages you from this post will see your phone number, and can reach you on it later."
+    }
   }
 }

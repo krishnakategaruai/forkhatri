@@ -8,6 +8,9 @@ Creates or refreshes:
   so "fresh" holds only until a test enters a module.
 - Lakshmi Reddy (+919999900003): Ananya Reddy's mother, a family member (not a
   candidate) for Mangaly Home Circle tests. Joins Ananya's circle through the app.
+- Ramesh Khatri (+919999900011) and Meena Khatri (+919999900012): the samaj's
+  president and secretary in the Admin & Governance Console (roles set by
+  seed_dev_governance.py).
 And sets the development password on member 11111111-1111-1111-1111-111111111111
 (imported; Asha Reddy in Milavn and in Mangaly).
 
@@ -57,6 +60,23 @@ NEW_MEMBERS = [
         "name": "Lakshmi Reddy",
         "phone": "+919999900003",
         "email": "lakshmi.reddy@forkhatri.test",
+        "language": "te",
+    },
+    {
+        # Admin & Governance Console: the samaj's national office bearers, so the
+        # two-person rule (one proposes, another decides) is tested with real people.
+        # Their roles are set by seed_dev_governance.py.
+        "id": UUID("a0000000-0000-4000-8000-000000000011"),
+        "name": "Ramesh Khatri",
+        "phone": "+919999900011",
+        "email": "ramesh.khatri@forkhatri.test",
+        "language": "hi",
+    },
+    {
+        "id": UUID("a0000000-0000-4000-8000-000000000012"),
+        "name": "Meena Khatri",
+        "phone": "+919999900012",
+        "email": "meena.khatri@forkhatri.test",
         "language": "te",
     },
 ]

@@ -35,7 +35,17 @@ function itemHref(routes: VyaparRoutes, item: ActivityItem): string {
   }
 }
 
-export default function ActivityView({ data }: { data: ActivityResponse }) {
+export default function ActivityView({
+  data,
+  extrasSlot,
+  hasExtras = false,
+}: {
+  data: ActivityResponse;
+  /** [FE2] contracts and saved searches, shown under the title */
+  extrasSlot?: React.ReactNode;
+  /** [FE2] true when the extras have content, so "nothing here yet" is not shown next to them */
+  hasExtras?: boolean;
+}) {
   const { t } = useTranslation(["activity", "common"]);
   const routes = useRoutes();
   const isEmpty = ACTIVITY_GROUP_KEYS.every(([key]) => (data[key] ?? []).length === 0);
@@ -44,7 +54,8 @@ export default function ActivityView({ data }: { data: ActivityResponse }) {
   return (
     <>
       <h1>{t("activity:title")}</h1>
-      {isEmpty && <EmptyState mark="◔" title={t("activity:empty")} body={t("activity:emptyBody")} />}
+      {extrasSlot}
+      {isEmpty && !hasExtras && <EmptyState mark="◔" title={t("activity:empty")} body={t("activity:emptyBody")} />}
       <div className="vy-grid">
         {groups.map(([key, labelKey], gi) => (
           <RevealSection key={key} index={gi} className="vy-stack">

@@ -222,6 +222,18 @@
     "familyFor": {
       "title": "Suggested by {{name}}’s family",
       "sub": "Picks from {{name}}’s circle. Nothing was sent to anyone."
+    },
+    "horoscope": {
+      "title": "Matched by horoscope",
+      "sub": "At least 18 of 36 gunas match with your chart",
+      "titleFor": "Matched by horoscope for {{name}}",
+      "subFor": "At least 18 of 36 gunas match with {{name}}'s chart"
+    },
+    "education": {
+      "title": "Similar education",
+      "sub": "Studied to the same level as you",
+      "titleFor": "Similar education to {{name}}",
+      "subFor": "Studied to the same level as {{name}}"
     }
   },
   "searchLabel": "Search by city, job or college",
@@ -343,7 +355,56 @@
     "rateLimited": "That's a lot for one day. Please try again tomorrow.",
     "failed": "Couldn't read that just now. Please try again.",
     "privacy": "Private to you and your family. Other members never see this.",
-    "back": "Back"
+    "back": "Back",
+    "setup": {
+      "title": "Who are you looking for?",
+      "step": "Last step",
+      "skip": "Skip for now",
+      "continue": "Save and see matches",
+      "started": "We started from your profile. Change or remove anything."
+    },
+    "matters": {
+      "title": "What matters to you",
+      "hint": "Tap how much each one matters. We compare with your own profile, so nothing is asked twice. \"Must\" means people who clearly don't meet it are not shown.",
+      "yours": "yours: {{facts}}",
+      "noFacts": "add it to your profile to use this",
+      "theme": {
+        "horoscope": {
+          "name": "Horoscope match",
+          "note": "Guna Milan with your chart"
+        },
+        "roots": {
+          "name": "Same roots",
+          "note": "Mother tongue and community"
+        },
+        "near": {
+          "name": "Close to home",
+          "note": "Lives near you"
+        },
+        "life": {
+          "name": "Same way of life",
+          "note": "Food and interests"
+        },
+        "family_view": {
+          "name": "Same family values",
+          "note": "Family values and family type"
+        },
+        "education": {
+          "name": "Similar education",
+          "note": "At least your level of study"
+        }
+      },
+      "level": {
+        "none": "Doesn't matter",
+        "nice": "Nice to have",
+        "important": "Important",
+        "must": "Must"
+      }
+    },
+    "fine": {
+      "title": "Fine-tune with scales",
+      "hint": "Optional. Faith, outlook, family life, career, social and active life, for your partner and for you."
+    }
   },
   "fit": {
     "title": "How you fit each other",
@@ -365,6 +426,21 @@
       "close": "Close",
       "differs": "Different",
       "unknown": "Not shared"
-    }
+    },
+    "common": "What you have in common",
+    "commonFor": "What {{name}} and this match have in common",
+    "commonNone": "Nothing in common to show yet.",
+    "commonCta": "Tell us what you are looking for, to see how they fit you",
+    "alsoCommon": "Also in common"
+  },
+  "compat": {
+    "tabFit": "You & them",
+    "tabFitFor": "{{name}} & them",
+    "tabHoroscope": "Horoscope",
+    "gunas": "{{n}} of {{max}} gunas",
+    "poruthams": "{{n}} of {{max}} poruthams",
+    "common_one": "{{count}} thing in common",
+    "common_other": "{{count}} things in common",
+    "birth": "Born"
   }
 }

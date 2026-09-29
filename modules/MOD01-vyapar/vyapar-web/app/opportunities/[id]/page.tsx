@@ -37,7 +37,7 @@
 // The same pair powers the embeddable OpportunityDetailPanel (embed/).
 // Traces to: FR55, FR12 (confirm), FR13 (lifecycle), FR16/FR28 (poster
 // trust context), FR20 (Why this?), TR055, UX09
-import { use as useParamsPromise } from "react";
+import { use as useParamsPromise, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSdk } from "@/lib/sdk/react";
 import ReportSheet from "@/app/components/ReportSheet";
@@ -47,12 +47,20 @@ import Screen from "@/app/components/Screen";
 import { SkeletonGrid, EmptyState } from "@/app/components/States";
 import OpportunityDetailView from "@/app/components/opportunity/OpportunityDetailView";
 import { useOpportunityDetailController } from "@/app/components/opportunity/useOpportunityDetailController";
+import ApplicantsSummary from "@/app/components/applicants/ApplicantsSummary";
+import ApplyConfirm from "@/app/components/respond/ApplyConfirm";
+import Sheet from "@/app/components/respond/Sheet";
+import { useMyResponse } from "@/app/hooks/hiring";
+import PrecallActions from "@/app/components/contact/PrecallActions";
 
 export default function OpportunityDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = useParamsPromise(params);
-  const { t } = useTranslation(["opportunities", "common", "discover"]);
+  const { t } = useTranslation(["opportunities", "common", "discover", "hiring"]);
   const sdk = useSdk();
   const { opportunity: opp, error, similar, why, busy, notice, hidden, actions } = useOpportunityDetailController(id);
+  // [FE1] A job's Apply is one tap: the confirmation opens here, in place.
+  const [applyOpen, setApplyOpen] = useState(false);
+  const myResponse = useMyResponse(id, !!opp && !opp.is_poster);
 
   if (error)
     return (
@@ -93,7 +101,35 @@ export default function OpportunityDetailPage({ params }: { params: Promise<{ id
         }
         performanceSlot={<PerformanceReport targetKind="opportunity" targetId={id} />}
         reportSlot={<ReportSheet objectKind="opportunity" objectId={id} blockMemberId={opp.poster_id} />}
+        applicantsSlot={<ApplicantsSummary opportunityId={id} type={opp.type} />}
+        primaryActionSlot={
+          myResponse.data ? (
+            // Already responded: one calm row to the thread, never a second Apply.
+            <a className="vy-btn vy-btn-secondary" href={`/enquiries/${myResponse.data.id}`} style={{ textDecoration: "none", textAlign: "center" }}>
+              {myResponse.data.stage === "declined"
+                ? t("hiring:apply.notSelected")
+                : myResponse.data.stage === "hired"
+                  ? t("hiring:apply.hiredOpen")
+                  : t("hiring:apply.appliedOpen")}
+            </a>
+          ) : opp.type === "employment" && opp.source_segment !== "public" ? (
+            // With pre-accept calling on, Apply and Call are two equal buttons:
+            // Apply outlined, Call the one filled accent (WorkIndia/Apna).
+            <button type="button" className={`vy-btn ${opp.allow_precall ? "vy-btn-secondary" : "vy-btn-primary"}`} onClick={() => setApplyOpen(true)}>
+              {t("hiring:apply.apply")}
+            </button>
+          ) : undefined
+        }
+        precallSlot={opp.allow_precall && !opp.is_poster ? <PrecallActions opportunityId={id} /> : undefined}
       />
+      {applyOpen && (
+        <Sheet title={t("hiring:apply.sheetTitle")} onClose={() => setApplyOpen(false)}>
+          <ApplyConfirm
+            target={{ id: opp.id, title: opp.title, pay: opp.compensation_label ?? opp.compensation, location: opp.location }}
+            onDone={() => void myResponse.refresh()}
+          />
+        </Sheet>
+      )}
     </Screen>
   );
 }

@@ -19,10 +19,14 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { NotInterestedReason, Opportunity, WhyResponse } from "@/lib/sdk";
 import SponsoredBadge from "@/app/components/SponsoredBadge";
+// [FE2] count-based poster badges + "Nobody charges job seekers" notice
+import { BadgeList } from "@/app/components/trust/Badges";
+import SeekerProtectionNotice from "@/app/components/trust/SeekerProtectionNotice";
 import { Morph } from "@/app/components/Screen";
 import { useRoutes } from "@/app/host/HostProvider";
 import OpportunityCard from "./OpportunityCard";
 import { hostOf, NOT_INTERESTED_REASON_KEYS, signalLabel } from "./labels";
+import { structuredFacts, type T as LabelT } from "@/app/components/composer/labels";
 
 export interface OpportunityDetailActions {
   onToggleSave: () => void;
@@ -52,12 +56,26 @@ export interface OpportunityDetailViewProps extends OpportunityDetailActions {
   performanceSlot?: React.ReactNode;
   /** Viewer only: the report / block sheet. */
   reportSlot?: React.ReactNode;
+  /**
+   * [FE1] Viewer only: replaces the default primary link (for a job, the
+   * one-tap Apply that opens its confirmation sheet in place). Rendered in
+   * the action card and in the phone action bar.
+   */
+  primaryActionSlot?: React.ReactNode;
+  /**
+   * [FE1 → FE2] Viewer only, when the poster allows calls before accepting
+   * (`allow_precall`): FE2's PrecallActions (Call + WhatsApp) mounts here,
+   * beside the primary action.
+   */
+  precallSlot?: React.ReactNode;
+  /** [FE1] Poster only: applicant counts per stage + the link to the applicants board. */
+  applicantsSlot?: React.ReactNode;
 }
 
 export default function OpportunityDetailView(props: OpportunityDetailViewProps) {
   const { opportunity: opp, similar, why, busy, notice } = props;
   const id = opp.id;
-  const { t, i18n } = useTranslation(["opportunities", "common", "ranking", "commercial", "discover"]);
+  const { t, i18n } = useTranslation(["opportunities", "common", "ranking", "commercial", "discover", "hiring"]);
   const routes = useRoutes();
   const [showWhy, setShowWhy] = useState(false);
   const [showReasons, setShowReasons] = useState(false);
@@ -85,11 +103,15 @@ export default function OpportunityDetailView(props: OpportunityDetailViewProps)
   const viewerCanAct = !opp.is_poster && opp.state === "active";
   const soon = opp.days_left !== null && opp.days_left <= 3;
 
+  // [FE1] The typed fields read as facts (salary range, shift, openings,
+  // qualification, English, budget, duration, level…), with the server's
+  // localized money line first and the free-text pay as its fallback.
   const facts = [
-    { label: t("opportunities:detail.factPay"), value: opp.compensation },
-    { label: t("opportunities:detail.factDuration"), value: opp.timing },
-    { label: t("opportunities:detail.factMode"), value: opp.work_mode ? t(`opportunities:workMode.${opp.work_mode}` as "workMode.on_site") : null },
-    { label: t("opportunities:detail.factLocation"), value: opp.location },
+    { key: "pay", label: t("opportunities:detail.factPay"), value: opp.compensation_label ?? opp.compensation, wide: false },
+    { key: "timing", label: t("opportunities:detail.factDuration"), value: opp.timing, wide: false },
+    { key: "mode", label: t("opportunities:detail.factMode"), value: opp.work_mode ? t(`opportunities:workMode.${opp.work_mode}` as "workMode.on_site") : null, wide: false },
+    { key: "location", label: t("opportunities:detail.factLocation"), value: opp.location, wide: false },
+    ...structuredFacts(t as LabelT, opp.type, opp.structured, i18n.language),
   ].filter((f) => f.value);
 
   const matchCount = opp.capability_match ? opp.capability_match.filter(Boolean).length : 0;
@@ -120,7 +142,8 @@ export default function OpportunityDetailView(props: OpportunityDetailViewProps)
       {/* Header: what kind of thing, how long it stays open, then the title
           and a byline that carries trust — who posted it and from where. */}
       <div className="vy-row" style={{ flexWrap: "wrap", gap: 8 }}>
-        <span className="vy-chip">{t(`opportunities:type.${opp.type}` as "type.employment")}</span>
+        {/* [FE1] One word per type everywhere a person sees it: Job / Freelance project / Local service. */}
+        <span className="vy-chip">{t(`hiring:kinds.${opp.type}`, { defaultValue: t(`opportunities:type.${opp.type}` as "type.employment") })}</span>
         {opp.state !== "active" && <span className="vy-chip">{t(`opportunities:detail.state.${opp.state}` as "detail.state.active")}</span>}
         {opp.sponsored && <SponsoredBadge />}
         {opp.deadline && opp.state === "active" && (
@@ -170,7 +193,7 @@ export default function OpportunityDetailView(props: OpportunityDetailViewProps)
           {facts.length > 0 ? (
             <div className="vy-facts">
               {facts.map((f) => (
-                <div key={f.label} className="vy-fact">
+                <div key={f.key} className={f.wide ? "vy-fact vy-fact-wide" : "vy-fact"}>
                   <span className="vy-fact-label">{f.label}</span>
                   <span className="vy-fact-value">{f.value}</span>
                 </div>
@@ -180,12 +203,15 @@ export default function OpportunityDetailView(props: OpportunityDetailViewProps)
             <p className="vy-muted">{t("opportunities:detail.noDetailsYet")}</p>
           )}
           {notice && <p className="vy-error">{notice}</p>}
+          {!opp.is_poster && <SeekerProtectionNotice protection={opp.seeker_protection} objectId={id} />}
         </div>
 
         {/* Action column: sticky beside the whole read on desktop; on a
             phone it sits right under the facts, so the primary action is on
             the first screen without scrolling. */}
         <div className="vy-detail-aside vy-detail-aside-full">
+          {opp.is_poster && opp.state !== "draft" && props.applicantsSlot}
+
           {opp.is_poster && opp.state !== "draft" && (
             <div className="vy-card vy-stack vy-card-actions">
               {(opp.state === "active" || opp.state === "stale") && (
@@ -218,7 +244,8 @@ export default function OpportunityDetailView(props: OpportunityDetailViewProps)
 
           {viewerCanAct && (
             <div className="vy-card vy-stack vy-card-actions" ref={actionCardRef}>
-              {primaryAction}
+              {props.primaryActionSlot ?? primaryAction}
+              {props.precallSlot}
 
               {/* Decision context at the moment of acting: how many others
                   have responded and whether this person replies, the
@@ -247,7 +274,8 @@ export default function OpportunityDetailView(props: OpportunityDetailViewProps)
                   matters (beside the action) and one tap from doing
                   something about it. Not on Public items: an official
                   source can legitimately charge an application fee. */}
-              {!isPublic && (
+              {/* [FE2] the fuller seeker-protection notice replaces this line on job posts */}
+              {!isPublic && !opp.seeker_protection?.applies && (
                 <p className="vy-safety-line">
                   {t("opportunities:detail.freeToRespond")}{" "}
                   <a href="#report-opportunity">{t("opportunities:detail.reportIfAsked")}</a>
@@ -396,6 +424,7 @@ export default function OpportunityDetailView(props: OpportunityDetailViewProps)
             <section className="vy-card vy-stack" style={{ gap: 8 }}>
               <h2 className="vy-card-title">{t("opportunities:detail.aboutPoster")}</h2>
               <p style={{ fontWeight: 600 }}>{opp.poster.name ?? opp.submitter_name}</p>
+              <BadgeList badges={opp.poster_badges} />
               {opp.poster.verified_listing_id && opp.poster.verified_listing_name && (
                 <p>
                   <span className="vy-badge vy-badge-verified">✓</span>{" "}
@@ -447,7 +476,10 @@ export default function OpportunityDetailView(props: OpportunityDetailViewProps)
           >
             {opp.saved ? "★" : "☆"}
           </button>
-          <div className="vy-actionbar-main">{primaryAction}</div>
+          <div className="vy-actionbar-main">
+            {props.primaryActionSlot ?? primaryAction}
+            {props.precallSlot && <div className="vy-actionbar-precall">{props.precallSlot}</div>}
+          </div>
         </div>
       )}
     </>

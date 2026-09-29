@@ -9,10 +9,11 @@ from typing import Literal
 import asyncpg
 from fastapi import APIRouter, Depends, Query
 
-from app.db import get_conn
+from app.db import get_conn, get_internal_conn
 from app.deps import Locale
 from app.errors import ERROR_RESPONSES
 from app.identity import AuthzContext, resolve_authz_context
+from app.integrations.internal_auth import require_platform_service
 from app.services import admin_ops as svc
 from app.services.admin_ops import (  # noqa: F401  schemas used below; background passes re-exported for main.py
     BulkStaleIn,
@@ -34,10 +35,17 @@ from app.services.admin_ops import (  # noqa: F401  schemas used below; backgrou
 )
 
 router = APIRouter(tags=["admin-ops"], responses=ERROR_RESPONSES)
-# [Known dev-only shortcut — see app/services/admin_ops.py] the MOD05 bridge
-# still resolves a connection through get_conn(); it needs its own
-# internal-service-key dependency once the real MOD05 integration is wired.
-internal_router = APIRouter(prefix="/internal/v1", tags=["internal-bridges"], responses=ERROR_RESPONSES)
+# [IMP-ADMIN, 2026-09-29] The MOD05 bridge is a server-to-server call: it is
+# authenticated by the platform service key (require_platform_service), not
+# by a member session, and runs on a connection with no member context —
+# dashboard_summary() is an allow-list SECURITY DEFINER function that answers
+# only for public listings. (It used to resolve a member through get_conn(),
+# so with the real ForKhatri provider it answered 401 to the platform, and in
+# development it answered anyone.)
+internal_router = APIRouter(
+    prefix="/internal/v1", tags=["internal-bridges"], responses=ERROR_RESPONSES,
+    dependencies=[Depends(require_platform_service)],
+)
 
 
 @router.get("/v1/admin/marketplace-health", response_model=MarketplaceHealthOut, operation_id="getMarketplaceHealth", summary="Get marketplace health metrics (admin)")
@@ -45,7 +53,7 @@ async def marketplace_health(
     lang: Locale,
     days: int = Query(default=30, ge=1, le=365),
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> MarketplaceHealthOut:
     return await svc.get_marketplace_health(conn, ctx, lang, days=days)
 
@@ -54,7 +62,7 @@ async def marketplace_health(
 async def opportunities_queue(
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[OpportunityQueueItemOut]:
     return await svc.list_opportunity_review_queue(conn, ctx, lang)
 
@@ -65,7 +73,7 @@ async def decide_opportunity(
     body: QueueDecisionIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> QueueDecisionOut:
     return await svc.decide_opportunity_review(conn, ctx, lang, opportunity_id=opportunity_id, body=body)
 
@@ -74,7 +82,7 @@ async def decide_opportunity(
 async def stale_queue(
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[StaleItemOut]:
     return await svc.list_stale_queue(conn, ctx, lang)
 
@@ -84,7 +92,7 @@ async def bulk_stale_action(
     body: BulkStaleIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> BulkStaleOut:
     return await svc.bulk_stale_action(conn, ctx, lang, body=body)
 
@@ -94,7 +102,7 @@ async def list_taxonomy(
     lang: Locale,
     kind: Literal["category", "capability"] | None = None,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[TaxonomyTermOut]:
     return await svc.list_taxonomy_terms(conn, ctx, lang, kind=kind)
 
@@ -104,7 +112,7 @@ async def add_taxonomy_term(
     body: TaxonomyAddIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> TaxonomyCreatedOut:
     return await svc.create_taxonomy_term(conn, ctx, lang, body=body)
 
@@ -114,7 +122,7 @@ async def merge_taxonomy_terms(
     body: TaxonomyMergeIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> TaxonomyMergedOut:
     return await svc.merge_taxonomy_terms(conn, ctx, lang, body=body)
 
@@ -125,7 +133,7 @@ async def rename_taxonomy_term(
     body: TaxonomyRenameIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> TaxonomyRenamedOut:
     return await svc.rename_taxonomy_term(conn, ctx, lang, term_id=term_id, body=body)
 
@@ -134,11 +142,11 @@ async def rename_taxonomy_term(
 async def list_dead_letters(
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[DeadLetterOut]:
     return await svc.list_dead_letters(conn, ctx, lang)
 
 
 @internal_router.get("/dashboard-summary/{listing_id}", response_model=DashboardSummaryOut, operation_id="getDashboardSummary", summary="Get a listing's summary for the platform dashboard (internal)")
-async def dashboard_summary(listing_id: str, conn: asyncpg.Connection = Depends(get_conn)) -> DashboardSummaryOut:
+async def dashboard_summary(listing_id: str, conn: asyncpg.Connection = Depends(get_internal_conn)) -> DashboardSummaryOut:
     return await svc.get_dashboard_summary(conn, listing_id=listing_id)

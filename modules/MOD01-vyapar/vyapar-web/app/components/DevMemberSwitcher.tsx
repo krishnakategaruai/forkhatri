@@ -18,6 +18,12 @@ import { useTranslation } from "react-i18next";
 // forkhatri.tsx) as its account control; the standalone host has none.
 import { getDevMemberId, setDevMemberId, type DevMember } from "@/lib/sdk";
 import { useSdk } from "@/lib/sdk/react";
+import { FlaskConical } from "lucide-react";
+
+function initials(name: string): string {
+  const parts = name.replace(/^m_/, "").split(/[\s_]+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? "") + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
+}
 
 export default function DevMemberSwitcher() {
   const { t } = useTranslation("common");
@@ -42,17 +48,23 @@ export default function DevMemberSwitcher() {
   // explicit max-width + ellipsis so even a very long real name can never
   // force the header wider than the viewport on a narrow phone.
   return (
-    <div style={{ position: "relative", flexShrink: 0, minWidth: 0 }}>
+    <div className="vy-menu-anchor" style={{ minWidth: 0 }}>
+      {/* [Design language 2026-09-29] the avatar: initials in a circle,
+          plus the first name on desktop; always the right-most item. The
+          small flask marks it as the development member switcher. */}
       <button
-        className="vy-btn vy-btn-secondary"
-        style={{ fontSize: 13, padding: "8px 14px", display: "flex", alignItems: "center", gap: 4, maxWidth: "44vw" }}
+        type="button"
+        className="vy-avatar-btn"
         onClick={() => setOpen((v) => !v)}
         aria-label={t("devTools.switcherLabel")}
+        aria-expanded={open}
+        title={currentMember?.display_name ?? current}
       >
-        <span>🧪</span>
-        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>
-          {currentMember?.display_name ?? current}
+        <span className="vy-avatar" aria-hidden="true">
+          {initials(currentMember?.display_name ?? current)}
+          <span className="vy-avatar-dev"><FlaskConical size={10} strokeWidth={2.25} /></span>
         </span>
+        <span className="vy-avatar-name">{(currentMember?.display_name ?? current).split(" ")[0]}</span>
       </button>
       <AnimatePresence>
         {open && (
@@ -61,16 +73,8 @@ export default function DevMemberSwitcher() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 400, damping: 32 }}
-            className="vy-card"
-            style={{
-              position: "absolute",
-              top: 44,
-              right: 0,
-              width: 260,
-              maxHeight: 360,
-              overflowY: "auto",
-              padding: 10,
-            }}
+            className="vy-popover vy-popover-end"
+            style={{ width: 280, maxHeight: 420, overflowY: "auto" }}
           >
             <p className="vy-muted" style={{ marginBottom: 8 }}>
               {t("devTools.notSignIn")}
@@ -83,8 +87,8 @@ export default function DevMemberSwitcher() {
                   style={{
                     justifyContent: "flex-start",
                     textAlign: "left",
-                    background: m.id === current ? "var(--accent-soft)" : "transparent",
-                    color: m.id === current ? "var(--accent-strong)" : "var(--text-primary)",
+                    background: m.id === current ? "var(--selected-bg)" : "transparent",
+                    color: m.id === current ? "var(--selected-fg)" : "var(--text-primary)",
                   }}
                   onClick={() => {
                     setDevMemberId(m.id);

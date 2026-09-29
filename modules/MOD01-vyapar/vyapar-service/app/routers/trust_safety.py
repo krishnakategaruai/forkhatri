@@ -36,16 +36,39 @@ async def file_report(
     body: ReportIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> ReportReceivedOut:
     return await svc.create_report(conn, ctx, lang, body=body, idempotency_key=idempotency_key)
 
 
+# [IMP-B] "Nobody charges job seekers": the notice on an opportunity, and a
+# pre-check composers/agents can run before posting. Registered after
+# opportunities.router; Starlette keeps looking past a path-only match, so
+# POST .../seeker-charge-check is never mistaken for PATCH /{opportunity_id}.
+@router.get("/v1/opportunities/{opportunity_id}/seeker-protection", response_model=svc.SeekerProtectionOut, operation_id="getOpportunitySeekerProtection", summary="The 'no fee may be asked from applicants' notice for an opportunity")
+async def get_seeker_protection(
+    opportunity_id: str,
+    lang: Locale,
+    ctx: AuthzContext = Depends(resolve_authz_context),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
+) -> svc.SeekerProtectionOut:
+    return await svc.get_opportunity_seeker_protection(conn, ctx, lang, opportunity_id=opportunity_id)
+
+
+@router.post("/v1/opportunities/seeker-charge-check", response_model=svc.SeekerChargeCheckOut, operation_id="checkSeekerCharge", summary="Check opportunity text/fields for a charge on applicants before posting")
+async def check_seeker_charge(
+    body: svc.SeekerChargeCheckIn,
+    lang: Locale,
+    ctx: AuthzContext = Depends(resolve_authz_context),
+) -> svc.SeekerChargeCheckOut:
+    return svc.run_seeker_charge_check(body, lang)
+
+
 @router.get("/v1/moderation/outcomes", response_model=list[ModerationOutcomeOut], operation_id="listMyModerationOutcomes", summary="List moderation outcomes affecting the member")
 async def list_my_outcomes(
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[ModerationOutcomeOut]:
     return await svc.list_my_moderation_outcomes(conn, ctx)
 
@@ -55,7 +78,7 @@ async def file_appeal(
     body: AppealIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> AppealCreatedOut:
     return await svc.create_appeal(conn, ctx, lang, body=body)
 
@@ -64,7 +87,7 @@ async def file_appeal(
 async def moderation_queue(
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[ModerationCaseOut]:
     return await svc.list_moderation_queue(conn, ctx, lang)
 
@@ -75,7 +98,7 @@ async def decide_case(
     body: DecideIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> CaseDecisionOut:
     return await svc.decide_moderation_case(conn, ctx, lang, case_id=case_id, body=body)
 
@@ -84,7 +107,7 @@ async def decide_case(
 async def list_appeals(
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[AppealQueueItemOut]:
     return await svc.list_appeals(conn, ctx, lang)
 
@@ -95,6 +118,6 @@ async def decide_appeal(
     body: AppealDecisionIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> AppealDecisionOut:
     return await svc.decide_appeal(conn, ctx, lang, appeal_id=appeal_id, body=body)

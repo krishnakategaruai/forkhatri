@@ -37,6 +37,9 @@ def _msg(m: conversation.Message) -> dict:
         "body": m.body,
         "created_at": m.created_at.isoformat(),
         "mine": m.mine,
+        "photo_url": m.photo_url,
+        "doc_url": m.doc_url,
+        "doc_name": m.doc_name,
     }
 
 
@@ -134,6 +137,8 @@ async def add_photo(
         raise HTTPException(status_code=403, detail=translate("moments.notThere", lang)) from exc
     except conversation.UnsupportedMedia as exc:
         raise HTTPException(status_code=415, detail=translate("moments.unsupported", lang)) from exc
+    except conversation.TooLarge as exc:
+        raise HTTPException(status_code=413, detail=translate("media.tooLarge", lang, mb=exc.limit_mb)) from exc
     return _photo(p)
 
 
@@ -158,7 +163,50 @@ async def post_to_board(circle_id: UUID, body: MessageRequest, session: DbSessio
                 pid = await conversation.post_to_board(session, circle_id=circle_id, member_id=member.member_id, body=body.body)
                 outcome.set_result(201, {"id": str(pid)})
         return outcome.response
+    except conversation.OrganizersOnly as exc:
+        raise HTTPException(status_code=403, detail=translate("circle.organizersPost", lang)) from exc
     except conversation.NotAllowed as exc:
         raise HTTPException(status_code=403, detail=translate("circle.notMember", lang)) from exc
     except conversation.InvalidInput as exc:
         raise HTTPException(status_code=422, detail={"fields": ["body"]}) from exc
+
+
+@router.post("/circles/{circle_id}/posts/media", status_code=status.HTTP_201_CREATED)
+async def post_photo_to_board(
+    circle_id: UUID,
+    session: DbSession,
+    member: CurrentMember,
+    lang: Locale,
+    photo: UploadFile | None = File(default=None),
+    document: UploadFile | None = File(default=None),
+    body: str = Form(default=""),
+) -> dict:
+    """An Instagram/FB-style post with a photo and/or a document; the write-up is optional."""
+    await enforce(session, scope=RateLimitScope.MESSAGE_POST, subject=str(member.member_id), limit_max=60, window_seconds=600)
+    if photo is None and document is None:
+        raise HTTPException(status_code=422, detail={"fields": ["photo", "document"]})
+    try:
+        pid = await conversation.post_to_board(session, circle_id=circle_id, member_id=member.member_id, body=body, photo=photo, document=document)
+    except conversation.OrganizersOnly as exc:
+        raise HTTPException(status_code=403, detail=translate("circle.organizersPost", lang)) from exc
+    except conversation.NotAllowed as exc:
+        raise HTTPException(status_code=403, detail=translate("circle.notMember", lang)) from exc
+    except conversation.InvalidInput as exc:
+        raise HTTPException(status_code=422, detail={"fields": ["body"]}) from exc
+    except conversation.UnsupportedMedia as exc:
+        key = "media.unsupportedDocument" if exc.kind == "document" else "moments.unsupported"
+        raise HTTPException(status_code=415, detail=translate(key, lang)) from exc
+    except conversation.TooLarge as exc:
+        raise HTTPException(status_code=413, detail=translate("media.tooLarge", lang, mb=exc.limit_mb)) from exc
+    return {"id": str(pid)}
+
+
+@router.delete("/circles/{circle_id}/posts/{post_id}", status_code=204)
+async def delete_board_post(circle_id: UUID, post_id: UUID, session: DbSession, member: CurrentMember, lang: Locale) -> None:
+    """[B8] Take back your own post — or, as the circle's organizer or an assistant, take down anyone's."""
+    try:
+        await conversation.delete_post(session, circle_id=circle_id, post_id=post_id, member_id=member.member_id)
+    except conversation.PostNotFound as exc:
+        raise HTTPException(status_code=404, detail=translate("circle.postNotFound", lang)) from exc
+    except conversation.NotAllowed as exc:
+        raise HTTPException(status_code=403, detail=translate("circle.notYourPost", lang)) from exc

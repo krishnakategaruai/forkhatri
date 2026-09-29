@@ -17,6 +17,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSdk } from "@/lib/sdk/react";
+import type { FeedFilterValues } from "@/lib/sdk";
 
 export interface Filters {
   radius_km?: number;
@@ -188,6 +189,110 @@ export default function FilterSheet({
           {t(ns("clearFilters"))}
         </button>
       )}
+    </div>
+  );
+}
+
+// ======================================================================
+// [FE2 — imp-backend-b §5, research §6] The Discover feed's filters.
+//
+// Same file, same chip vocabulary as the directory panel above, but the
+// feed's own dimensions, all sent to the feed and section endpoints:
+// distance (radius_km), what kind of post (type), where the work happens
+// (work_mode), how soon (availability), sort (relevance · nearest · newest
+// · verified first · highest pay) and skills. Presentational: value in,
+// onChange out. Where it lives decides how it applies — the desktop
+// sidebar applies each tap instantly; the phone bottom sheet edits a draft
+// and applies on "Show results".
+// ======================================================================
+
+export const FEED_RADIUS_STEPS = [5, 10, 25, 50];
+export const FEED_TYPES = ["employment", "freelance", "local_service", "partnership", "training", "community"] as const;
+export const FEED_WORK_MODES = ["on_site", "remote", "both"] as const;
+export const FEED_AVAILABILITY = ["now", "this_week", "later"] as const;
+export const FEED_SORTS = ["relevance", "distance", "freshness", "verified_first", "salary_high"] as const;
+
+/** Filters that narrow the feed (sort is not a filter; it is shown with them but never counted). */
+export function feedFilterCount(f: FeedFilterValues): number {
+  return [f.radius_km, f.type, f.work_mode, f.availability, f.q].filter(Boolean).length + ((f.skills?.length ?? 0) > 0 ? 1 : 0);
+}
+
+export function FeedFilterSheet({ value, onChange }: { value: FeedFilterValues; onChange: (next: FeedFilterValues) => void }) {
+  const { t, i18n } = useTranslation(["explore"]);
+  const sdk = useSdk();
+  const [skillOptions, setSkillOptions] = useState<SkillOption[]>([]);
+  const [skillSearch, setSkillSearch] = useState("");
+  useEffect(() => {
+    sdk.firstRun.capabilityOptions<SkillOption[]>().then(setSkillOptions).catch(() => setSkillOptions([]));
+  }, [i18n.language, sdk]);
+
+  const set = (patch: Partial<FeedFilterValues>) => onChange({ ...value, ...patch });
+  const skills = value.skills ?? [];
+  const chip = (pressed: boolean, label: string, onClick: () => void, key?: string) => (
+    <button key={key ?? label} type="button" className="vy-chip" aria-pressed={pressed} onClick={onClick}>
+      {label}
+    </button>
+  );
+  const shownSkills = skillOptions.filter(
+    (s) => skills.includes(s.slug) || (skillSearch ? s.label.toLowerCase().includes(skillSearch.toLowerCase()) : true),
+  );
+
+  return (
+    <div className="vy-stack" style={{ gap: 18 }}>
+      <div className="vy-filter-group" role="group" aria-label={t("explore:filters.sort")}>
+        <span className="vy-label">{t("explore:filters.sort")}</span>
+        <div className="vy-row">
+          {FEED_SORTS.map((s) => chip((value.sort ?? "relevance") === s, t(`explore:sort.${s}`), () => set({ sort: s }), s))}
+        </div>
+      </div>
+      <div className="vy-filter-group" role="group" aria-label={t("explore:filters.distance")}>
+        <span className="vy-label">{t("explore:filters.distance")}</span>
+        <div className="vy-row">
+          {chip(!value.radius_km, t("explore:filters.anyDistance"), () => set({ radius_km: null }), "any")}
+          {FEED_RADIUS_STEPS.map((km) => chip(value.radius_km === km, t("explore:filters.withinKm", { km }), () => set({ radius_km: km }), String(km)))}
+        </div>
+      </div>
+      <div className="vy-filter-group" role="group" aria-label={t("explore:filters.type")}>
+        <span className="vy-label">{t("explore:filters.type")}</span>
+        <div className="vy-row">
+          {chip(!value.type, t("explore:filters.anyType"), () => set({ type: null }), "any")}
+          {FEED_TYPES.map((x) => chip(value.type === x, t(`explore:type.${x}`), () => set({ type: x }), x))}
+        </div>
+      </div>
+      <div className="vy-filter-group" role="group" aria-label={t("explore:filters.workMode")}>
+        <span className="vy-label">{t("explore:filters.workMode")}</span>
+        <div className="vy-row">
+          {chip(!value.work_mode, t("explore:filters.anyMode"), () => set({ work_mode: null }), "any")}
+          {FEED_WORK_MODES.map((x) => chip(value.work_mode === x, t(`explore:workMode.${x}`), () => set({ work_mode: x }), x))}
+        </div>
+      </div>
+      <div className="vy-filter-group" role="group" aria-label={t("explore:filters.availability")}>
+        <span className="vy-label">{t("explore:filters.availability")}</span>
+        <div className="vy-row">
+          {chip(!value.availability, t("explore:filters.anyTime"), () => set({ availability: null }), "any")}
+          {FEED_AVAILABILITY.map((x) => chip(value.availability === x, t(`explore:availability.${x}`), () => set({ availability: x }), x))}
+        </div>
+      </div>
+      <div className="vy-filter-group">
+        <span className="vy-label">{t("explore:filters.skills")}</span>
+        <input
+          className="vy-input"
+          value={skillSearch}
+          onChange={(e) => setSkillSearch(e.target.value)}
+          placeholder={t("explore:filters.skillsSearch")}
+          aria-label={t("explore:filters.skillsSearch")}
+        />
+        <div className="vy-row" style={{ maxHeight: 180, overflowY: "auto" }}>
+          {shownSkills.map((s) =>
+            chip(
+              skills.includes(s.slug),
+              s.label,
+              () => set({ skills: skills.includes(s.slug) ? skills.filter((x) => x !== s.slug) : [...skills, s.slug] }),
+              s.slug,
+            ),
+          )}
+        </div>
+      </div>
     </div>
   );
 }

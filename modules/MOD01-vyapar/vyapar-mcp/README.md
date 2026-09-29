@@ -26,9 +26,15 @@ curl -X POST http://localhost:8011/v1/integrations/tokens \
 |---|---|
 | `read` | every read tool |
 | `opportunities:write` | `save_opportunity`, `unsave_opportunity`, `mark_not_interested`, `post_opportunity`, `publish_opportunity` |
-| `listings:write` | `save_profile`, `unsave_profile` |
-| `enquiries:write` | `create_enquiry`, `reply_to_enquiry` |
+| `opportunities:write` (also) | `save_search`, `delete_saved_search`, `set_applicant_stage`, `draft_opportunity`, `check_seeker_charge` |
+| `listings:write` | `save_profile`, `unsave_profile`, `update_contact_preferences`, `upsert_listing_packages`, `request_listing_package` |
+| `enquiries:write` | `create_enquiry`, `reply_to_enquiry`, `accept_enquiry`, `close_enquiry`, `withdraw_enquiry`, `record_contact_attempt`, `record_opportunity_contact_attempt` |
+| `partnerships:write` | `create_partnership_request`, `respond_partnership` |
+| `reviews:write` | `submit_review` |
 | `notifications:write` | `mark_notification_read` |
+| `contracts:write` | `create_contract`, `fund_milestone`, `approve_milestone` |
+
+`fund_milestone` only opens a checkout: it returns a `checkout_url` the member opens to pay, and the milestone becomes funded only when that payment is confirmed. `buy_boost` is refused for every access token (`not_available_to_tokens`), because boosts and plans stay with the member in person.
 
 Some actions stay with the member in person, whatever scopes a token holds:
 - payments and plans;
@@ -130,7 +136,25 @@ You can also put it in a project's `.mcp.json`:
 | `list_profile_reviews` | Published reviews | `GET /v1/listings/{id}/reviews` |
 | `list_my_profiles` | The member's own profiles | `GET /v1/listings/mine` |
 | `save_profile` / `unsave_profile` | Save a profile, or remove it from the saved list | `POST` / `DELETE /v1/listings/{id}/save` |
+| `search_opportunities` | Feed with real filters (q, skills, type, work_mode, radius_km, availability, and an optional current `lat`/`lng` used for distance only, never stored) and sort (relevance, distance, freshness, verified_first, salary_high). Cards carry `distance_km`, `poster_badges`, `seeker_protection`. | `GET /v1/opportunities/feed` |
+| `save_search` / `list_saved_searches` / `delete_saved_search` | Saved searches, optionally with alerts | `/v1/opportunities/saved-searches` |
+| `accept_enquiry` / `close_enquiry` / `withdraw_enquiry` | Enquiry lifecycle | `POST /v1/enquiries/{id}/accept`, `/close`, `/withdraw` |
+| `get_contact_actions` | Call / WhatsApp actions after acceptance, per the other person's call hours, days, daily cap and channels | `GET /v1/enquiries/{id}/contact-actions` |
+| `record_contact_attempt` | Record a call or WhatsApp now (counts toward the callee's daily cap) | `POST /v1/enquiries/{id}/contact-attempts` |
+| `get_opportunity_contact_actions` | Call / WhatsApp the poster before applying, when the post allows it (`allow_precall`) | `GET /v1/opportunities/{id}/contact-actions` |
+| `record_opportunity_contact_attempt` | Record a pre-accept tap: counts toward the poster's cap, notifies them, opens an application | `POST /v1/opportunities/{id}/contact-attempts` |
+| `get_contact_preferences` / `update_contact_preferences` | The member's own contact rules, or one listing's overrides | `GET`/`PATCH /v1/listings/contact-preferences`, `/v1/listings/{id}/contact-preferences` |
+| `list_partnerships` / `get_partnership` | Partnership requests | `GET /v1/partnership-requests/mine`, `/{id}` |
+| `create_partnership_request` / `respond_partnership` | Send, accept, decline, withdraw, restrict or close | `POST /v1/partnership-requests`, `/{id}/{action}` |
+| `list_review_invites` / `submit_review` | Review a completed interaction | `GET /v1/reviews/invite/{kind}/{id}`, `POST /v1/reviews` |
+| `get_member_badges` | Count-based badges, no star score | `GET /v1/members/{id}/badges` |
+| `list_boost_products` / `buy_boost` | Boost packs and preparing a boost order | `GET /v1/promotions/options`, `POST /v1/promotions`, `/confirm-purchase` |
+| `list_listing_packages` / `upsert_listing_packages` / `request_listing_package` | Basic / standard / premium service packages | `/v1/listings/{id}/packages...` |
+| `check_seeker_charge` | Pre-check a draft against "nobody charges job seekers" | `POST /v1/opportunities/seeker-charge-check` |
+| `list_applicants` / `set_applicant_stage` | Applicant pipeline on the member's opportunity | `GET /v1/opportunities/{id}/applicants`, `POST .../applicants/{enquiry_id}/stage` |
+| `draft_opportunity` / `get_ai_shortlist` | AI draft from a plain brief; AI-ranked applicants | `POST /v1/ai/draft-opportunity`, `GET /v1/opportunities/{id}/ai-shortlist` |
+| `create_contract` / `fund_milestone` / `approve_milestone` | Milestone contracts | `POST /v1/contracts`, `.../milestones/{mid}/fund`, `.../approve` |
 
-Every write sends an `Idempotency-Key`, so an agent that retries after a timeout cannot post twice. Read tools are marked read-only, so clients can auto-approve them. Tools that contact another person tell the agent to confirm with the member first. Those tools are `create_enquiry`, `reply_to_enquiry` and `post_opportunity`.
+Every write sends an `Idempotency-Key`, so an agent that retries after a timeout cannot post twice. Read tools are marked read-only, so clients can auto-approve them. Tools that contact another person tell the agent to confirm with the member first. Those tools are `create_enquiry`, `reply_to_enquiry`, `post_opportunity`, `create_partnership_request`, `respond_partnership`, `submit_review`, `request_listing_package` and `create_contract`.
 
 When the API refuses a call, the tool returns an error that includes Vyapar's stable error code, for example `Vyapar refused (403 scope_required): ...`.

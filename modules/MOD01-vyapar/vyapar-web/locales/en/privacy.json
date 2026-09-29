@@ -59,5 +59,9 @@
     "key": {
       "max_distance_km": "Show closer opportunities"
     }
+  },
+  "delete": {
+    "blocked": "Your account can't be deleted yet: finish or close your open enquiries and contracts first.",
+    "done": "Your account is scheduled for deletion. We'll confirm when it is done."
   }
 }

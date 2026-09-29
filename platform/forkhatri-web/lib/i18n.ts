@@ -17,6 +17,8 @@ const en = {
   back: "Back",
   membersDashboard: "ForKhatri in numbers",
   membersDashboardNote: "How many we are, where we live, women and men, ages",
+  adminConsole: "Admin console",
+  adminConsoleNote: "Queues, members, roles and the samaj organisation",
 
   // Arrival
   arrivalKicker: "Welcome to ForKhatri",
@@ -171,6 +173,8 @@ const hi: Dictionary = {
   back: "वापस",
   membersDashboard: "आँकड़ों में ForKhatri",
   membersDashboardNote: "हम कितने हैं, कहाँ रहते हैं, महिलाएँ और पुरुष, उम्र",
+  adminConsole: "एडमिन कंसोल",
+  adminConsoleNote: "कतारें, सदस्य, भूमिकाएँ और समाज का संगठन",
 
   arrivalKicker: "ForKhatri में आपका स्वागत है",
   arrivalPromise: "आपका समुदाय। आपके अवसर। आपका साथ। आपकी प्रगति।",
@@ -316,6 +320,8 @@ const te: Dictionary = {
   back: "వెనక్కి",
   membersDashboard: "సంఖ్యల్లో ForKhatri",
   membersDashboardNote: "మనం ఎంతమంది, ఎక్కడ ఉంటాం, మహిళలు-పురుషులు, వయస్సు",
+  adminConsole: "అడ్మిన్ కన్సోల్",
+  adminConsoleNote: "క్యూలు, సభ్యులు, పాత్రలు, సమాజ సంస్థ",
 
   arrivalKicker: "ForKhatri కి స్వాగతం",
   arrivalPromise: "మీ సమాజం. మీ అవకాశాలు. మీ తోడు. మీ ఎదుగుదల.",

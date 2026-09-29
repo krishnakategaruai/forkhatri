@@ -35,6 +35,8 @@ import Screen from "@/app/components/Screen";
 import { SkeletonGrid, EmptyState } from "@/app/components/States";
 import ListingDetailView from "@/app/components/listing/ListingDetailView";
 import { useListingDetailController } from "@/app/components/listing/useListingDetailController";
+import ListingPackages from "@/app/components/packages/ListingPackages";
+import ListingContactOverride from "@/app/components/contact/ListingContactOverride";
 
 // ==================================================================
 // [IMP33 — desktop layout for Listing detail]
@@ -104,6 +106,8 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
           />
         }
         performanceSlot={<PerformanceReport targetKind="listing" targetId={id} />}
+        packagesSlot={<ListingPackages listingId={id} isOwner={listing.is_owner} providerName={listing.name} initial={listing.packages} />}
+        contactPrefsSlot={<ListingContactOverride listingId={id} />}
       />
     </Screen>
   );

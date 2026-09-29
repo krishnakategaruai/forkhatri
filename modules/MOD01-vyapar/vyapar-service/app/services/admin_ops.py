@@ -36,9 +36,8 @@ from pydantic import BaseModel, Field
 from app.audit import audit
 from app.db import get_pool
 from app.errors import ApiError
-from app.identity import AuthzContext
+from app.identity import AuthzContext, with_session_permissions
 from app.outbox import publish_with_outbox
-from app.services.opportunities import _lifecycle_action
 from app.taxonomy_cache import refresh_taxonomy_cache
 
 
@@ -132,6 +131,7 @@ class DashboardSummaryOut(BaseModel):
 
 async def _require(conn: asyncpg.Connection, ctx: AuthzContext, permission: str, lang: str) -> None:
     perms = await conn.fetchval("SELECT operator_permissions FROM vyapar_identity.members WHERE id = $1", ctx.member_id)
+    perms = with_session_permissions(ctx, perms)  # [IMP-ADMIN] or granted by the host session
     if not perms or permission not in perms:
         raise ApiError(403, "adminOps.error.permissionRequired", lang, permission=permission)
 
@@ -261,7 +261,18 @@ async def decide_opportunity_review(
     if current is None:
         raise ApiError(404, "common.error.opportunityNotFound", lang)
     if body.action == "approve":
-        await _lifecycle_action(conn, ctx, opportunity_id, lang, from_states={"pending_review", "draft"}, to_state="active", reset_freshness=True)
+        # [IMP-ADMIN fix, 2026-09-29] this used opportunities._lifecycle_action,
+        # the POSTER's own path, which answers 404 to anyone else, so an
+        # operator could never approve a queued opportunity. Same transition
+        # and freshness reset, checked here, for the operator.
+        if current["state"] not in ("pending_review", "draft"):
+            raise ApiError(400, "opportunities.error.invalidTransition", lang)
+        await conn.execute(
+            """UPDATE vyapar_opportunities.opportunities
+                  SET state = 'active', published_at = coalesce(published_at, now()), last_confirmed_at = now(), updated_at = now()
+                WHERE id = $1""",
+            opportunity_id,
+        )
         new_state = "active"
     elif body.action == "return":
         await conn.execute(
@@ -454,7 +465,7 @@ async def list_dead_letters(
     ctx: AuthzContext,
     lang: str,
 ) -> list[DeadLetterOut]:
-    perms = await conn.fetchval("SELECT operator_permissions FROM vyapar_identity.members WHERE id = $1", ctx.member_id)
+    perms = with_session_permissions(ctx, await conn.fetchval("SELECT operator_permissions FROM vyapar_identity.members WHERE id = $1", ctx.member_id))
     if not perms:  # [TR052] visible to any operator — it is cross-cutting infrastructure health, not one permission's business data
         raise ApiError(403, "adminOps.error.permissionRequired", lang, permission="any")
     rows = await conn.fetch("SELECT * FROM vyapar_integration.dead_letters ORDER BY created_at DESC LIMIT 200")
@@ -467,16 +478,10 @@ async def list_dead_letters(
 # ---------------------------------------------------------------------------
 # FR52(e) — MOD05 Dashboard Read Bridge (no member session; server-to-server)
 # ---------------------------------------------------------------------------
-# [Known dev-only shortcut, declared rather than hidden] the MOD05 bridge route still
-# goes through get_conn()/resolve_authz_context() for the pool connection,
-# which in DEV_MODE defaults to a dev member header. That default is HARMLESS
-# here: dashboard_summary() is SECURITY DEFINER and reads no authz_context at
-# all, so any caller identity bypasses RLS the same way (as the function's
-# owner) regardless of who the connection resolves to. In a real deployment
-# (DEV_MODE=false) this route would incorrectly demand a real platform
-# session for what FR52 defines as a server-to-server call with none — a
-# genuine follow-up for whoever wires the real MOD05 integration: give this
-# route its own internal-service-key dependency instead of get_conn().
+# [IMP-ADMIN, 2026-09-29 — the former dev-only shortcut is closed] the route
+# is authenticated by the platform service key (integrations/internal_auth.py)
+# and runs on get_internal_conn(), a connection with no member context;
+# dashboard_summary() is SECURITY DEFINER and reads no authz_context.
 
 
 async def get_dashboard_summary(

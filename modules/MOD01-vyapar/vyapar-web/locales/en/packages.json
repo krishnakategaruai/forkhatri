@@ -1,0 +1,49 @@
+{
+  "title": "Packages",
+  "subtitle": "Fixed prices for common jobs. Pick one and send a request.",
+  "tier": "Package",
+  "price": "Price",
+  "whatYouGet": "What you get",
+  "delivery": "Delivery",
+  "revisions": "Revisions",
+  "days_one": "{{count}} day",
+  "days_other": "{{count}} days",
+  "revisionsCount_one": "{{count}} revision",
+  "revisionsCount_other": "{{count}} revisions",
+  "included": "Included",
+  "notIncluded": "Not included",
+  "request": "Request this package",
+  "requestPrefill": "Namaste {{name}}, I'd like the {{tier}} package: {{pkg}} ({{price}}).",
+  "messageLabel": "Your message",
+  "send": "Send request",
+  "sending": "Sending…",
+  "sent": "Request sent.",
+  "openConversation": "Open the conversation",
+  "tierName": {
+    "basic": "Basic",
+    "standard": "Standard",
+    "premium": "Premium"
+  },
+  "editor": {
+    "title": "Your packages",
+    "subtitle": "Offer up to three fixed-price packages. Leave a tier empty to not offer it.",
+    "name": "Package name",
+    "namePlaceholder": {
+      "basic": "For example: monthly GST return filing",
+      "standard": "For example: GST filing with TDS",
+      "premium": "For example: full monthly accounts"
+    },
+    "price": "Price (₹)",
+    "delivery": "Delivery (days)",
+    "revisions": "Revisions included",
+    "includes": "What's included",
+    "includeN": "Included item {{n}}",
+    "addInclude": "Add a line",
+    "description": "Short description (optional)",
+    "remove": "Stop offering this tier",
+    "save": "Save packages",
+    "saved": "Packages saved",
+    "errTier": "{{tier}} needs a name and a price.",
+    "errNone": "Add at least one package with a name and a price."
+  }
+}

@@ -11,6 +11,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { apiFetch, api, ApiError } from "@/lib/api";
+import { formatDate } from "@/lib/format"; // [FE2] Indian date order
 
 interface InviteStatus {
   can_review: boolean;
@@ -57,7 +58,7 @@ export default function ReviewComposer({
         ★ {t("reviews:composer.writeReview")}
         {status.expires_at && (
           <span className="vy-muted" style={{ marginLeft: 8, fontSize: 12 }}>
-            {t("reviews:composer.closesOn", { date: new Date(status.expires_at).toLocaleDateString(i18n.language) })}
+            {t("reviews:composer.closesOn", { date: formatDate(status.expires_at, i18n.language) })}
           </span>
         )}
       </button>
@@ -97,8 +98,8 @@ export default function ReviewComposer({
   const choiceStyle = (active: boolean) => ({
     flex: 1,
     minHeight: 48,
-    background: active ? "var(--accent)" : "var(--surface-overlay)",
-    color: active ? "var(--accent-ink)" : "var(--text-primary)",
+    background: active ? "var(--selected-solid-bg)" : "var(--surface-overlay)",
+    color: active ? "var(--selected-solid-fg)" : "var(--text-primary)",
     border: "none",
   });
 
@@ -122,10 +123,10 @@ export default function ReviewComposer({
             aria-checked={tags.includes(tag)}
             className="vy-chip"
             style={{
-              border: `1px solid ${tags.includes(tag) ? "var(--accent)" : "var(--border-hairline)"}`,
+              border: `1px solid ${tags.includes(tag) ? "var(--selected-border)" : "var(--border-hairline)"}`,
               cursor: "pointer",
-              background: tags.includes(tag) ? "var(--accent-soft)" : "var(--surface-overlay)",
-              color: tags.includes(tag) ? "var(--accent-strong)" : "var(--text-primary)",
+              background: tags.includes(tag) ? "var(--selected-bg)" : "var(--surface-overlay)",
+              color: tags.includes(tag) ? "var(--selected-fg)" : "var(--text-primary)",
             }}
             onClick={() => toggleTag(tag)}
           >

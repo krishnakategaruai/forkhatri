@@ -104,6 +104,8 @@ class AuthenticatedSessionInfo:
     expires_at: datetime | None
     display_name: str | None = None
     preferred_language: str | None = None
+    # [ADR-012] Platform admin scopes (shared console), e.g. "mangaly.moderate".
+    admin_scopes: tuple[str, ...] = ()
 
 
 async def get_authenticated_session(
@@ -142,6 +144,7 @@ async def get_authenticated_session(
                 resolved.expires_at,
                 resolved.display_name,
                 resolved.preferred_language,
+                resolved.admin_scopes,
             )
         except identity.PlatformSessionInvalid:
             raise _not_authenticated() from None

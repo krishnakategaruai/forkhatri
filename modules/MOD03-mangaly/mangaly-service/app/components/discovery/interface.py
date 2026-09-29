@@ -40,7 +40,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.components.compatibility import interface as compatibility
 from app.components.discovery.models import DiscoveryProfileIndex
 from app.components.profile.models import FieldState, Profile
-from app.config.matching_engine import NEARBY_REASON_KM
+from app.config.matching_engine import GUNA_MAX, HOROSCOPE_SHELF_MIN_GUNA, NEARBY_REASON_KM
 from app.config.profile_schema import FACT_SOURCES
 from app.config.ranking_weights import (
     DAILY_PICK_MAX_AGE_DAYS,
@@ -57,8 +57,10 @@ __all__ = [
     "SearchResult",
     "Snippet",
     "authorize_family_viewer",
+    "because_rows",
     "cards_for",
     "daily_picks_for",
+    "first_name_for_member",
     "get_snapshot",
     "get_snippet",
     "reciprocal_reasons",
@@ -270,6 +272,9 @@ async def refresh_index(session: AsyncSession, *, account_id: UUID) -> None:
         "self_scales": _scales_of(attrs.get("self_scales") or {}),
         "partner_scales": wanted_scales if isinstance(wanted_scales, dict) else None,
         "partner_brief": brief.get("items") if isinstance(brief, dict) else None,
+        # [Owner, 2026-09-28] How much each theme matters, 1–10. Private and
+        # engine-only, like the brief.
+        "priorities": matters if isinstance((matters := _partner_value(attrs, "priorities")), dict) else None,
     }
 
     # [Migration 039/043] The first prompt answer the candidate published —
@@ -953,6 +958,12 @@ async def _most_compatible(
         result = by_id.get(pick.pick_account_id)
         if result is None:
             continue
+        # [2026-09-28] A stable pairing is not always a good one: a leftover
+        # pair can be "stable" and still a poor fit (a 39-year-old in Delhi
+        # for someone asking for 27–34 in Hyderabad). An introduction needs
+        # at least the "Good match" word; otherwise there is none today.
+        if result.match_label is None:
+            continue
         try:
             between = await connection.connection_between(
                 session, account_id=account_id, other_account_id=pick.pick_account_id
@@ -965,6 +976,11 @@ async def _most_compatible(
         why = translate_reason(reasons[0]) if reasons else reciprocal_reason(snap.get(pick.pick_account_id, {}))
         return result, why
     return None
+
+
+def _guna_text(score: float) -> str:
+    """Gunas count in halves: 26.5 stays 26.5, 26.0 reads 26."""
+    return str(int(score)) if float(score).is_integer() else f"{score:.1f}"
 
 
 @dataclass(frozen=True, slots=True)
@@ -986,6 +1002,20 @@ SHELF_SIZE = 12
 # (each person appears in one row only); a row needs two people to stand.
 PICKED_SHELF_SIZE = 6
 MIN_SHELF_SIZE = 2
+
+
+async def first_name_for_member(
+    session: AsyncSession, *, viewer_account_id: UUID, candidate_account_id: UUID
+) -> str:
+    """The first name of a candidate whose circle the viewer is in — the seat
+    reasons are written from ("In Hyderabad, like Varun")."""
+    full = (
+        await session.execute(
+            text("SELECT candidate_name FROM mangaly_home_circle.list_member_contexts(:me) WHERE candidate_account_id = :c"),
+            {"me": viewer_account_id, "c": candidate_account_id},
+        )
+    ).scalar_one_or_none()
+    return (full or "").split(" ")[0]
 
 
 async def shelves(
@@ -1030,17 +1060,11 @@ async def shelves(
     # Whose seat the reasons are written from. A parent searching for Varun
     # reads "In Hyderabad, like Varun", never "like you" — it is Varun's city.
     for_other = ranking_account != viewer_account_id
-    candidate_first = ""
-    if for_other:
-        candidate_first = (
-            (
-                await session.execute(
-                    text("SELECT candidate_name FROM mangaly_home_circle.list_member_contexts(:me) WHERE candidate_account_id = :c"),
-                    {"me": viewer_account_id, "c": ranking_account},
-                )
-            ).scalar_one_or_none()
-            or ""
-        ).split(" ")[0]
+    candidate_first = (
+        await first_name_for_member(session, viewer_account_id=viewer_account_id, candidate_account_id=ranking_account)
+        if for_other
+        else ""
+    )
 
     def t(key: str, **params: object) -> str:
         text_ = ""
@@ -1057,7 +1081,8 @@ async def shelves(
     def val(enum: str, raw: object) -> str:
         key = f"discovery.value.{enum}.{raw}"
         text_ = translate(key, lang)
-        return str(raw) if text_ == key else text_
+        # An unlabelled value reads as words ("road trips"), never as a key.
+        return str(raw).replace("_", " ") if text_ == key else text_
 
     def city_of(value: object) -> str:
         return str(value or "").split(",")[0].strip()
@@ -1088,7 +1113,7 @@ async def shelves(
         the city last."""
         hobbies = shared_hobbies(c)
         if hobbies:
-            return t("sharedHobbies", list=", ".join(hobbies[:2]))
+            return t("sharedHobbies", list=", ".join(val("hobby", h) for h in hobbies[:2]))
         if same(c.get("mother_tongue"), seeker.get("mother_tongue")):
             return t("sameTongue", value=val("mother_tongue", c.get("mother_tongue")))
         if same(c.get("sub_community"), seeker.get("sub_community")):
@@ -1211,17 +1236,21 @@ async def shelves(
     )
     shelf("family", fam, {})
 
-    # 3. Close to home — the same city.
-    if my_city:
+    # 3–8. The themed rows. [Owner, 2026-09-28] Their order follows what the
+    #      family said matters most at setup (ties and unset keep the order
+    #      below); rows take people in that order, so the theme that matters
+    #      most gets first claim on a person.
+    def near_rows() -> None:
+        if not my_city:
+            return
+        # Close to home — the same city.
         shelf(
             "near",
             [(r, t("sameCity", city=my_city)) for r in ranked
              if same(city_of(snap.get(r.candidate_account_id, {}).get("locality")), my_city)],
             {"nearby": "city"},
         )
-
-    # 4. Would move for the right person — other cities, open to relocating.
-    if my_city:
+        # Would move for the right person — other cities, open to relocating.
         shelf(
             "moving",
             [
@@ -1234,46 +1263,101 @@ async def shelves(
             {"openToRelocate": True},
         )
 
-    # 5. Same roots — mother tongue, community, native place.
-    roots: list[tuple[SearchResult, str | None]] = []
-    for r in ranked:
-        c = snap.get(r.candidate_account_id, {})
-        if same(c.get("mother_tongue"), seeker.get("mother_tongue")):
-            roots.append((r, t("sameTongue", value=val("mother_tongue", c.get("mother_tongue")))))
-        elif same(c.get("sub_community"), seeker.get("sub_community")):
-            roots.append((r, t("sameCommunity", value=val("sub_community", c.get("sub_community")))))
-        elif same(c.get("native_place"), seeker.get("native_place")):
-            roots.append((r, t("sameNative", place=c.get("native_place"))))
-    shelf(
-        "roots",
-        roots,
-        {"motherTongue": [seeker["mother_tongue"]]} if seeker.get("mother_tongue") else {},
-    )
-
-    # 6. Shares your way of life — shared interests, or the same food.
-    life: list[tuple[SearchResult, str | None]] = []
-    for r in ranked:
-        c = snap.get(r.candidate_account_id, {})
-        hobbies = shared_hobbies(c)
-        if hobbies:
-            life.append((r, t("sharedHobbies", list=", ".join(hobbies[:2]))))
-        elif same(c.get("lifestyle_diet"), seeker.get("lifestyle_diet")):
-            life.append((r, t("sameDiet", value=val("diet", c.get("lifestyle_diet")))))
-    shelf("life", life, {"diet": [seeker["lifestyle_diet"]]} if seeker.get("lifestyle_diet") else {})
-
-    # 7. Sees family life the way you do — the same family-involvement answer.
-    if seeker.get("family_involvement"):
+    def roots_row() -> None:
+        # Same roots — mother tongue, community, native place.
+        roots: list[tuple[SearchResult, str | None]] = []
+        for r in ranked:
+            c = snap.get(r.candidate_account_id, {})
+            if same(c.get("mother_tongue"), seeker.get("mother_tongue")):
+                roots.append((r, t("sameTongue", value=val("mother_tongue", c.get("mother_tongue")))))
+            elif same(c.get("sub_community"), seeker.get("sub_community")):
+                roots.append((r, t("sameCommunity", value=val("sub_community", c.get("sub_community")))))
+            elif same(c.get("native_place"), seeker.get("native_place")):
+                roots.append((r, t("sameNative", place=c.get("native_place"))))
         shelf(
-            "familyView",
-            [
-                (r, t("sameFamilyView", value=val("family_involvement", seeker["family_involvement"])))
-                for r in ranked
-                if same(snap.get(r.candidate_account_id, {}).get("family_involvement"), seeker["family_involvement"])
-            ],
-            {},
+            "roots",
+            roots,
+            {"motherTongue": [seeker["mother_tongue"]]} if seeker.get("mother_tongue") else {},
         )
 
-    # 8. In their own words — people who published an answer openly.
+    def life_row() -> None:
+        # Shares your way of life — shared interests, or the same food.
+        life: list[tuple[SearchResult, str | None]] = []
+        for r in ranked:
+            c = snap.get(r.candidate_account_id, {})
+            hobbies = shared_hobbies(c)
+            if hobbies:
+                life.append((r, t("sharedHobbies", list=", ".join(val("hobby", h) for h in hobbies[:2]))))
+            elif same(c.get("lifestyle_diet"), seeker.get("lifestyle_diet")):
+                life.append((r, t("sameDiet", value=val("diet", c.get("lifestyle_diet")))))
+        shelf("life", life, {"diet": [seeker["lifestyle_diet"]]} if seeker.get("lifestyle_diet") else {})
+
+    def family_view_row() -> None:
+        # Sees family life the way you do — the same family-involvement answer.
+        if seeker.get("family_involvement"):
+            shelf(
+                "familyView",
+                [
+                    (r, t("sameFamilyView", value=val("family_involvement", seeker["family_involvement"])))
+                    for r in ranked
+                    if same(snap.get(r.candidate_account_id, {}).get("family_involvement"), seeker["family_involvement"])
+                ],
+                {},
+            )
+
+    def education_row() -> None:
+        # [Owner, 2026-09-28] Similar education — the same level.
+        mine = seeker.get("education_level")
+        if mine:
+            shelf(
+                "education",
+                [
+                    (r, t("sameEducation", value=val("education_level", mine)))
+                    for r in ranked
+                    if same(snap.get(r.candidate_account_id, {}).get("education_level"), mine)
+                ],
+                {},
+            )
+
+    # [Owner, 2026-09-28] Matched by horoscope — for a candidate with a chart,
+    # people whose Guna Milan with them reaches the traditional minimum, most
+    # gunas first. Scored in one batch call before the rows are laid out; the
+    # horoscope service being down costs this row, never the page. The row
+    # never changes anyone's score (horoscope is not a ranking input).
+    horoscope_items: list[tuple[SearchResult, str | None]] = []
+    try:
+        from app.components.horoscope import interface as horoscope
+
+        gunas = await horoscope.guna_scores(
+            session,
+            seeker_account_id=ranking_account,
+            seeker_gender=str(seeker.get("gender") or ""),
+            candidate_ids=[r.candidate_account_id for r in ranked],
+        )
+        horoscope_items = [
+            (by_id[pid], t("horoscopeGuna", n=_guna_text(g), max=GUNA_MAX))
+            for pid, g in sorted(gunas.items(), key=lambda kv: -kv[1])
+            if g >= HOROSCOPE_SHELF_MIN_GUNA and pid in by_id
+        ]
+    except Exception:  # noqa: BLE001 — a row, never the page, fails
+        horoscope_items = []
+
+    def horoscope_row() -> None:
+        shelf("horoscope", horoscope_items, {"minGuna": HOROSCOPE_SHELF_MIN_GUNA})
+
+    themed = [
+        ("horoscope", horoscope_row),
+        ("near", near_rows),
+        ("roots", roots_row),
+        ("life", life_row),
+        ("family_view", family_view_row),
+        ("education", education_row),
+    ]
+    matters = compatibility.priorities(seeker)
+    for _, build in sorted(themed, key=lambda th: -matters.get(th[0], 0)):
+        build()
+
+    # In their own words — people who published an answer openly.
     shelf("words", [(r, None) for r in ranked if r.open_prompt], {})
 
     # 9. New this month — newest first.
@@ -1309,4 +1393,238 @@ async def shelves(
     )
     if waiting:  # the whole pool was one person: still show them
         out.append(Shelf(key="picked", items=waiting, see_all={}))
+    return out
+
+
+
+# ---------------------------------------------------------------------------
+# [Owner, 2026-09-28] "Because of this, these": Home rows from the family's
+# own actions
+# ---------------------------------------------------------------------------
+#
+# Netflix's "Because you watched…" row, applied to what a family actually
+# does in Mangaly: a request sent, a profile someone in the circle suggested,
+# a profile saved. Each row is people who share the most checkable facts
+# with that one person (city, studies, work, mother tongue, community, food,
+# family values, interests, age), so the row explains itself: "Like Kunal:
+# Hyderabad, master's, Telugu". Nothing here reads who viewed or liked whom
+# (DEC-V1-002); every action is the family's own.
+
+BECAUSE_ROW_SIZE = 8
+BECAUSE_MIN_SHARED = 2
+BECAUSE_ANCHORS_PER_KIND = 2
+
+
+@dataclass(frozen=True, slots=True)
+class BecauseRow:
+    kind: str  # "request" | "suggested" | "saved"
+    anchor_account_id: UUID
+    title: str
+    sub: str
+    items: list[ShelfItem]
+
+
+async def because_rows(
+    session: AsyncSession,
+    *,
+    viewer_account_id: UUID,
+    for_candidate_account_id: UUID | None = None,
+    lang: str = "en",
+) -> list[BecauseRow]:
+    from app.components.connection import interface as connection
+    from app.components.connection.models import ConnectionStatus
+    from app.components.home_circle import interface as home_circle
+    from app.components.shortlist import interface as shortlist
+    from app.i18n import translate
+
+    seat = for_candidate_account_id or viewer_account_id
+    page = await search(
+        session,
+        viewer_account_id=viewer_account_id,
+        for_candidate_account_id=for_candidate_account_id,
+        page=1,
+        page_size=200,
+    )
+    ranked = page.results
+    if not ranked:
+        return []
+
+    try:
+        sent = await connection.list_sent(session, account_id=seat)
+    except Exception:  # noqa: BLE001 — a row, never the page, fails
+        sent = []
+    try:
+        received = await connection.list_incoming(session, account_id=seat)
+    except Exception:  # noqa: BLE001
+        received = []
+    try:
+        suggestions = await home_circle.list_suggestions(
+            session, caller_account_id=viewer_account_id, candidate_account_id=seat
+        )
+    except Exception:  # noqa: BLE001
+        suggestions = []
+    try:
+        saved = await shortlist.list_entries(session, candidate_account_id=seat)
+    except Exception:  # noqa: BLE001
+        saved = []
+
+    live = (ConnectionStatus.PENDING, ConnectionStatus.ACCEPTED)
+    in_progress = {c.target_account_id for c in sent if c.status in live} | {c.subject_account_id for c in received}
+
+    anchors: list[tuple[str, UUID, UUID | None]] = []  # (kind, anchor, by)
+
+    def add(kind: str, ids: list[tuple[UUID, UUID | None]]) -> None:
+        taken = {a for _, a, _ in anchors}
+        for anchor, by in ids:
+            if len([1 for k, _, _ in anchors if k == kind]) >= BECAUSE_ANCHORS_PER_KIND:
+                return
+            if anchor not in taken and anchor != seat:
+                anchors.append((kind, anchor, by))
+                taken.add(anchor)
+
+    add("request", [(c.target_account_id, c.acting_account_id) for c in sent if c.status in live])
+    add("suggested", [(x.suggested_profile_id, x.suggested_by_account_id) for x in suggestions])
+    add("saved", [(e.saved_account_id, e.saved_by_account_id) for e in saved])
+    if not anchors:
+        return []
+
+    ids = list({r.candidate_account_id for r in ranked} | {a for _, a, _ in anchors})
+    rows = (
+        await session.execute(
+            text(
+                "SELECT profile_id, ranking_input_snapshot FROM mangaly_discovery.discovery_profile_index "
+                "WHERE profile_id = ANY(CAST(:ids AS uuid[]))"
+            ),
+            {"ids": [str(i) for i in ids]},
+        )
+    ).mappings().all()
+    snap = {r["profile_id"]: (r["ranking_input_snapshot"] or {}) for r in rows}
+    opened = await open_cards_for(session, account_ids=[a for _, a, _ in anchors])
+    cards = await cards_for(session, account_ids=[a for _, a, _ in anchors])
+    professions: dict[UUID, str] = {}
+    for _, a_id, _ in anchors:
+        snippet = await get_snippet(session, account_id=a_id)
+        if snippet and snippet.profession:
+            professions[a_id] = snippet.profession
+    by_names: dict[UUID, str] = {}
+    for member in await _circle_first_names(session, viewer_account_id=viewer_account_id, seat=seat):
+        by_names[member[0]] = member[1]
+    seat_first = (
+        await first_name_for_member(session, viewer_account_id=viewer_account_id, candidate_account_id=seat)
+        if seat != viewer_account_id
+        else ""
+    )
+
+    def val(enum: str, raw: object) -> str:
+        key = f"discovery.value.{enum}.{raw}"
+        text_ = translate(key, lang)
+        return str(raw).replace("_", " ") if text_ == key else text_
+
+    def lower(v: object) -> str:
+        return str(v or "").strip().lower()
+
+    def shared(a: dict, c: dict) -> list[str]:
+        """The facts `c` shares with the anchor `a`, as short labels."""
+        out: list[str] = []
+        city_a, city_c = lower(a.get("locality")).split(",")[0], lower(c.get("locality")).split(",")[0]
+        if city_a and city_a == city_c:
+            out.append(str(c.get("locality") or "").split(",")[0].strip())
+        for fact, enum in (
+            ("education_level", "education_level"),
+            ("mother_tongue", "mother_tongue"),
+            ("sub_community", "sub_community"),
+            ("lifestyle_diet", "diet"),
+            ("family_values", "family_values"),
+        ):
+            if a.get(fact) and lower(a.get(fact)) == lower(c.get(fact)):
+                out.append(val(enum, c.get(fact)))
+        hobbies = {lower(h) for h in (a.get("hobbies") or [])}
+        common = [h for h in (c.get("hobbies") or []) if lower(h) in hobbies]
+        if common:
+            out.append(val("hobby", common[0]))
+        return out
+
+    def who(anchor: UUID) -> str:
+        o = opened.get(anchor)
+        if o and o.first_name:
+            return o.first_name.split(" ")[0]
+        card = cards.get(anchor)
+        age = card.age if card else None
+        work = professions.get(anchor) or ""
+        if age and work:
+            return translate("discovery.because.anonWork", lang, age=age, work=work)
+        if age:
+            return translate("discovery.because.anon", lang, age=age)
+        return translate("discovery.because.anonNone", lang)
+
+    used: set[UUID] = set()
+    out: list[BecauseRow] = []
+    for kind, anchor, by in anchors:
+        a = snap.get(anchor)
+        if not a:
+            continue
+        name = who(anchor)
+        scored = []
+        for i, r in enumerate(ranked):
+            cid = r.candidate_account_id
+            if cid == anchor or cid in in_progress or cid in used:
+                continue
+            facts = shared(a, snap.get(cid, {}))
+            if len(facts) >= BECAUSE_MIN_SHARED:
+                scored.append((len(facts), -i, r, facts))
+        scored.sort(key=lambda x: (x[0], x[1]), reverse=True)
+        picked = scored[:BECAUSE_ROW_SIZE]
+        if len(picked) < 2:
+            continue
+        used.update(r.candidate_account_id for _, _, r, _ in picked)
+        items = [
+            ShelfItem(r, translate("discovery.because.like", lang, name=name, facts=", ".join(facts[:3])))
+            for _, _, r, facts in picked
+        ]
+        if kind == "request":
+            sub = (
+                translate("discovery.because.sub.requestFor", lang, name=seat_first)
+                if seat_first
+                else translate("discovery.because.sub.request", lang)
+            )
+        elif kind == "suggested":
+            if by == viewer_account_id:
+                sub = translate("discovery.because.sub.suggestedByYou", lang)
+            elif by and by in by_names:
+                sub = translate("discovery.because.sub.suggestedBy", lang, name=by_names[by])
+            else:
+                sub = translate("discovery.because.sub.suggested", lang)
+        else:
+            sub = translate("discovery.because.sub.saved", lang)
+        out.append(
+            BecauseRow(
+                kind=kind,
+                anchor_account_id=anchor,
+                title=translate("discovery.because.title", lang, name=name),
+                sub=sub,
+                items=items,
+            )
+        )
+    return out
+
+
+async def _circle_first_names(
+    session: AsyncSession, *, viewer_account_id: UUID, seat: UUID
+) -> list[tuple[UUID, str]]:
+    """First names of the people in the seat's Home Circle (and the seat
+    themself), so "Lakshmi suggested them" can name who did."""
+    try:
+        from app.components.home_circle import interface as home_circle
+
+        members = await home_circle.list_circle_for(
+            session, caller_account_id=viewer_account_id, candidate_account_id=seat
+        )
+    except Exception:  # noqa: BLE001
+        return []
+    out: list[tuple[UUID, str]] = []
+    for m in members:
+        account = getattr(m, "member_account_id", None)
+        name = getattr(m, "member_name", None) or ""
+        if account and name:
+            out.append((account, name.split(" ")[0]))
     return out

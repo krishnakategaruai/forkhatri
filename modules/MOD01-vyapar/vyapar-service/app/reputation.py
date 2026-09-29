@@ -50,3 +50,126 @@ def trust_from_reputation(rep: dict | None) -> float:
     if not rep or rep["interactions"] < NEW_MEMBER_THRESHOLD:
         return 0.0
     return 0.5 * rep["recommends"] / rep["interactions"]
+
+
+# ---------------------------------------------------------------------------
+# [IMP-B, 2026-09-28] Count-based badges (FR28: counts, never a star score).
+# Every badge is a plain threshold over numbers migration 019's
+# `badge_inputs()` returns — the rules are listed once, here, so a badge
+# can never mean two different things on two screens. The result is cached
+# on the member row (`badges`, `badges_computed_at`) and recomputed on read
+# once older than `badges_cache_seconds` (nightly-equivalent). `earned_at`
+# is kept from the previous cache when a badge is still held, so it records
+# when it was first earned, not when the cache last refreshed.
+# Traces to: FR28, TR028, FR19 (trust context), FR23 (response time)
+# ---------------------------------------------------------------------------
+import json
+from datetime import datetime, timezone
+
+from pydantic import BaseModel
+
+from app.config import get_settings
+from app.i18n import translate
+
+BADGE_KEYS: tuple[str, ...] = (
+    "responds_fast", "reliable", "rising", "top_recommended", "verified_business", "repeat_hires",
+)
+
+RESPONDS_FAST_MAX_MINUTES = 120
+RESPONDS_FAST_MIN_THREADS = 5
+RELIABLE_MIN_REVIEWS = 5
+RELIABLE_MIN_RATIO = 0.90
+RISING_MAX_MEMBER_DAYS = 90
+RISING_MIN_RECOMMENDS = 3
+TOP_MIN_REVIEWS = 20
+TOP_MIN_RATIO = 0.95
+REPEAT_HIRES_MIN_HIRERS = 3
+
+
+class BadgeOut(BaseModel):
+    key: str
+    label: str
+    description: str
+    earned_at: str
+
+
+def compute_badge_keys(inputs: dict, now: datetime | None = None) -> list[str]:
+    """Pure rule evaluation over one member's counts (see badge_inputs())."""
+    now = now or datetime.now(timezone.utc)
+    reviews = int(inputs.get("reviews") or 0)
+    recommends = int(inputs.get("recommends") or 0)
+    ratio = (recommends / reviews) if reviews else 0.0
+    answered = int(inputs.get("answered") or 0)
+    median = inputs.get("median_minutes")
+    member_since = inputs.get("member_since")
+    member_days = (now - member_since).days if member_since else None
+    keys: list[str] = []
+    if answered >= RESPONDS_FAST_MIN_THREADS and median is not None and median < RESPONDS_FAST_MAX_MINUTES:
+        keys.append("responds_fast")
+    if reviews >= RELIABLE_MIN_REVIEWS and ratio >= RELIABLE_MIN_RATIO:
+        keys.append("reliable")
+    if member_days is not None and member_days < RISING_MAX_MEMBER_DAYS and recommends >= RISING_MIN_RECOMMENDS:
+        keys.append("rising")
+    if reviews >= TOP_MIN_REVIEWS and ratio >= TOP_MIN_RATIO:
+        keys.append("top_recommended")
+    if inputs.get("verified_business"):
+        keys.append("verified_business")
+    if int(inputs.get("repeat_hirers") or 0) >= REPEAT_HIRES_MIN_HIRERS:
+        keys.append("repeat_hires")
+    return keys
+
+
+def badge_out(key: str, earned_at: str, lang: str) -> BadgeOut:
+    return BadgeOut(
+        key=key,
+        label=translate(f"reputation.badge.{key}.label", lang),
+        description=translate(f"reputation.badge.{key}.description", lang),
+        earned_at=earned_at,
+    )
+
+
+async def badges_for_members(conn: asyncpg.Connection, member_ids: Sequence[str], lang: str = "en") -> dict[str, list[BadgeOut]]:
+    """Keyed by member id. Fresh cache rows are returned as they are; stale
+    or never-computed ones are recomputed from live counts and stored."""
+    ids = list({m for m in member_ids if m})
+    if not ids:
+        return {}
+    max_age = get_settings().badges_cache_seconds
+    cached = await conn.fetch("SELECT * FROM vyapar_identity.member_badges($1::text[], $2)", ids, max_age)
+    out: dict[str, list[BadgeOut]] = {}
+    stale: dict[str, list[dict]] = {}
+    for r in cached:
+        raw = r["badges"]
+        items = json.loads(raw) if isinstance(raw, str) else list(raw or [])
+        if r["fresh"]:
+            out[r["member_id"]] = [badge_out(b["key"], b["earned_at"], lang) for b in items if b.get("key") in BADGE_KEYS]
+        else:
+            stale[r["member_id"]] = items
+    if stale:
+        now = datetime.now(timezone.utc)
+        rows = await conn.fetch("SELECT * FROM vyapar_identity.badge_inputs($1::text[])", list(stale))
+        for r in rows:
+            previous = {b["key"]: b["earned_at"] for b in stale.get(r["member_id"], []) if "key" in b}
+            keys = compute_badge_keys(dict(r), now)
+            fresh_items = [{"key": k, "earned_at": previous.get(k) or now.isoformat()} for k in keys]
+            await conn.execute("SELECT vyapar_identity.store_badges($1, $2::jsonb)", r["member_id"], json.dumps(fresh_items))
+            out[r["member_id"]] = [badge_out(b["key"], b["earned_at"], lang) for b in fresh_items]
+    return out
+
+
+async def badges_for_member(conn: asyncpg.Connection, member_id: str, lang: str = "en") -> list[BadgeOut]:
+    return (await badges_for_members(conn, [member_id], lang)).get(member_id, [])
+
+
+# [IMP-B] Poster context on an opportunity detail read: the opportunities
+# owner merges this via `hooks.run_opportunity_enrichers(...)` (see
+# app/services/hooks.py); feed cards already carry `poster_badges` directly.
+from app.services import hooks as _hooks  # noqa: E402
+
+
+@_hooks.register_opportunity_enricher
+async def enrich_opportunity_with_poster_badges(conn: asyncpg.Connection, ctx, lang: str, opportunity: dict) -> dict:
+    poster_id = opportunity.get("poster_id")
+    if not poster_id:
+        return {}
+    return {"poster_badges": [b.model_dump() for b in await badges_for_member(conn, poster_id, lang)]}

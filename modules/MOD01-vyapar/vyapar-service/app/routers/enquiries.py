@@ -34,7 +34,7 @@ async def create_enquiry(
     body: EnquiryCreate,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> EnquiryOut:
     return await svc.create_enquiry(conn, ctx, lang, body=body, idempotency_key=idempotency_key)
@@ -44,7 +44,7 @@ async def create_enquiry(
 async def list_my_enquiries(
     role: Literal["sent", "received", "all"] = "all",
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[EnquiryOut]:
     return await svc.list_my_enquiries(conn, ctx, role=role)
 
@@ -56,7 +56,7 @@ async def list_my_enquiries_page(
     limit: int = Query(default=DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     cursor: str | None = None,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> Page[EnquiryOut]:
     return await svc.list_my_enquiries_page(conn, ctx, lang, limit=limit, cursor=cursor, role=role)
 
@@ -66,7 +66,7 @@ async def get_enquiry(
     enquiry_id: str,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> EnquiryOut:
     return await svc.get_enquiry(conn, ctx, lang, enquiry_id=enquiry_id)
 
@@ -77,41 +77,41 @@ async def reply_to_enquiry(
     body: MessageIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> EnquiryMessageOut:
     return await svc.reply_to_enquiry(conn, ctx, lang, enquiry_id=enquiry_id, body=body)
 
 
 @router.post("/{enquiry_id}/accept", response_model=EnquiryOut, operation_id="acceptEnquiry", summary="Accept an enquiry")
-async def accept_enquiry(enquiry_id: str, lang: Locale, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn)) -> EnquiryOut:
+async def accept_enquiry(enquiry_id: str, lang: Locale, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn, scope="function")) -> EnquiryOut:
     return await svc.accept_enquiry(conn, ctx, lang, enquiry_id=enquiry_id)
 
 
 @router.post("/{enquiry_id}/resolve", response_model=EnquiryOut, operation_id="resolveEnquiry", summary="Mark an enquiry resolved")
-async def resolve_enquiry(enquiry_id: str, lang: Locale, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn)) -> EnquiryOut:
+async def resolve_enquiry(enquiry_id: str, lang: Locale, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn, scope="function")) -> EnquiryOut:
     return await svc.resolve_enquiry(conn, ctx, lang, enquiry_id=enquiry_id)
 
 
 @router.post("/{enquiry_id}/close", response_model=EnquiryOut, operation_id="closeEnquiry", summary="Close an enquiry")
-async def close_enquiry(enquiry_id: str, lang: Locale, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn)) -> EnquiryOut:
+async def close_enquiry(enquiry_id: str, lang: Locale, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn, scope="function")) -> EnquiryOut:
     return await svc.close_enquiry(conn, ctx, lang, enquiry_id=enquiry_id)
 
 
 @router.post("/{enquiry_id}/withdraw", response_model=EnquiryOut, operation_id="withdrawEnquiry", summary="Withdraw a sent enquiry")
-async def withdraw_enquiry(enquiry_id: str, lang: Locale, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn)) -> EnquiryOut:
+async def withdraw_enquiry(enquiry_id: str, lang: Locale, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn, scope="function")) -> EnquiryOut:
     return await svc.withdraw_enquiry(conn, ctx, lang, enquiry_id=enquiry_id)
 
 
 @router.post("/{enquiry_id}/restrict", response_model=EnquiryOut, operation_id="restrictEnquiry", summary="Restrict an enquiry thread")
-async def restrict_enquiry(enquiry_id: str, lang: Locale, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn)) -> EnquiryOut:
+async def restrict_enquiry(enquiry_id: str, lang: Locale, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn, scope="function")) -> EnquiryOut:
     return await svc.restrict_enquiry(conn, ctx, lang, enquiry_id=enquiry_id)
 
 
 @router.post("/block", response_model=BlockedOut, operation_id="blockMember", summary="Block a member from contacting you")
-async def block_member(body: BlockIn, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn)) -> BlockedOut:
+async def block_member(body: BlockIn, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn, scope="function")) -> BlockedOut:
     return await svc.block_member(conn, ctx, body=body)
 
 
 @router.post("/{enquiry_id}/refer-to-counsel", response_model=ReferredOut, operation_id="referEnquiryToCounsel", summary="Refer an enquiry to Counsel")
-async def refer_to_counsel(enquiry_id: str, body: ReferToCounselIn, lang: Locale, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn)) -> ReferredOut:
+async def refer_to_counsel(enquiry_id: str, body: ReferToCounselIn, lang: Locale, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn, scope="function")) -> ReferredOut:
     return await svc.refer_enquiry_to_counsel(conn, ctx, lang, enquiry_id=enquiry_id, body=body)

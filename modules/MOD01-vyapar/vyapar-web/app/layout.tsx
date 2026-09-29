@@ -11,15 +11,22 @@
 import type { Metadata } from "next";
 import { Noto_Sans, Noto_Sans_Devanagari, Noto_Sans_Telugu } from "next/font/google";
 import "./globals.css";
+// [FE2] contact, packages, filters, contracts, badges, Hire/Find work menu
+import "./styles/fe2.css";
+// [FE1] composer, response composers, applicants board, voice input, picker
+import "./hiring.css";
+// [Design language 2026-09-29] the 2026 language on every shared class; loaded last so it wins
+import "./styles/language-2026.css";
+import "./styles/discover-2026.css";
 import CommandHub from "./components/CommandHub";
-import LanguageSwitcher from "./components/LanguageSwitcher";
+import AppTopBar from "./components/nav/AppTopBar";
 import { I18nProvider } from "@/lib/i18n/provider";
 // [IMP38 — Refactor C] The host adapter owns the platform-specific shell
 // pieces (account control, bell source, brand, platform link); the layout
 // only decides WHERE they go. NEXT_PUBLIC_VYAPAR_HOST selects the host.
 import { HostProvider } from "./host/HostProvider";
-import HostTopBar from "./host/HostTopBar";
 import { hostMetadata } from "./host/meta";
+import { DISPLAY_BOOT_SCRIPT } from "@/lib/display";
 
 const notoSans = Noto_Sans({ subsets: ["latin"], variable: "--font-noto-sans" });
 const notoDevanagari = Noto_Sans_Devanagari({ subsets: ["devanagari"], variable: "--font-noto-deva" });
@@ -32,32 +39,21 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${notoSans.variable} ${notoDevanagari.variable} ${notoTelugu.variable}`}>
+    <html lang="en" className={`${notoSans.variable} ${notoDevanagari.variable} ${notoTelugu.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Text size and high contrast before first paint (lib/display.ts). */}
+        <script dangerouslySetInnerHTML={{ __html: DISPLAY_BOOT_SCRIPT }} />
+      </head>
       <body>
         <HostProvider>
         <I18nProvider>
-          <LanguageSwitcher />
-          {/* [Real bug found live by the product owner — "Alerts and name
-              is being missed up in UI"] NotificationBell and
-              DevMemberSwitcher used to be two INDEPENDENT `position: fixed`
-              elements, each with a hand-guessed `right` offset that assumed
-              the other's exact pixel width — NotificationBell was
-              hardcoded at `right: 168` on the assumption DevMemberSwitcher
-              is always ~154px wide. Any member with a longer display name
-              (or an unread count reaching two digits) breaks that
-              assumption and the two elements overlap. Fixed by giving them
-              ONE shared fixed-position flex container instead — real
-              flexbox layout, gap-based spacing, `min-width: 0` on the name
-              pill so it can never force the row wider than the viewport;
-              neither child guesses the other's size anymore. */}
-          {/* The language / alerts / account pills float over the page; this
-              scrim sits behind them so scrolled content fades out under the
-              pills instead of showing through between them. */}
-          <div className="vy-topbar-scrim" aria-hidden="true" />
-          {/* [IMP38] That shared flex row now lives in host/HostTopBar.tsx,
-              which renders the bell and the host's account control (the
-              development member switcher on ForKhatri) inside it. */}
-          <HostTopBar />
+          {/* [Design language 2026-09-29] One real header replaces the
+              floating language / Hire / alerts / account pills and the
+              scrim behind them: wordmark, Hire / Find work, the search
+              pill, language & display, bell, avatar (right-most). The
+              lesson of the old overlap bug still holds — every control
+              lives in ONE flex row, none guesses another's width. */}
+          <AppTopBar />
           {children}
           <CommandHub />
         </I18nProvider>

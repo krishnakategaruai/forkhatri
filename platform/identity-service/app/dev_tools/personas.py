@@ -61,6 +61,18 @@ PERSONAS: tuple[Persona, ...] = (
         "Milavn Moderator: moderation scope granted by Milavn.",
         for_automated_tests=True,
     ),
+    Persona(
+        "samaj-president",
+        UUID("a0000000-0000-4000-8000-000000000011"),
+        "Ramesh Khatri: the samaj's national president in the admin console (/admin).",
+        for_automated_tests=True,
+    ),
+    Persona(
+        "samaj-secretary",
+        UUID("a0000000-0000-4000-8000-000000000012"),
+        "Meena Khatri: the samaj's general secretary in the admin console; the second person for approvals.",
+        for_automated_tests=True,
+    ),
 )
 
 BY_KEY = {persona.key: persona for persona in PERSONAS}

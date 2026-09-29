@@ -4,6 +4,7 @@ import './globals.css';
 import AppChrome from '@/components/AppChrome';
 import { IdentityProvider } from '@/lib/identity';
 import { I18nProvider } from '@/lib/i18n/provider';
+import { THEME_BOOT_SCRIPT } from '@/lib/theme';
 
 // 04-ui.md Design System Foundation: Anek is one multiscript system for
 // Latin, Devanagari and Telugu — not a Latin face with bolted-on fallbacks.
@@ -24,13 +25,17 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#FBF8F3' },
-    { media: '(prefers-color-scheme: dark)', color: '#FBF8F3' },
+    { media: '(prefers-color-scheme: dark)', color: '#0B1220' },
   ],
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${anek.variable} ${anekDev.variable} ${anekTe.variable} ${fraunces.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Appearance (UX17) is resolved before first paint; set after hydration, the launch screen flashed light, then dark. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+      </head>
       <body>
         <I18nProvider>
           <IdentityProvider>

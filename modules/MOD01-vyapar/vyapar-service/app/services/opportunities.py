@@ -18,12 +18,15 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timedelta, timezone
-from typing import Literal
+import re
+from datetime import date, datetime, timedelta, timezone
+from typing import Any, Literal
 
 import asyncpg
 from pydantic import BaseModel, Field
 
+from app.services import hooks
+from app.viewer_profile import viewer_capabilities
 from app.services.listings import require_profile
 from app.errors import ApiError
 from app.i18n import translate
@@ -68,6 +71,297 @@ NOT_INTERESTED_REASONS = {
     "too_far", "wrong_type", "not_my_capability", "value_too_low", "wrong_timing", "already_found", "not_interested",
 }
 
+# ---------------------------------------------------------------------------
+# [Backend A, 2026-09-28] Typed fields per opportunity type (migration 018).
+# WorkIndia asks an employer for salary, shift, timings, qualification and
+# openings as fields; Upwork asks a client for budget type, duration,
+# experience level and screening questions. Vyapar stores the same as
+# nullable columns so ranking, filters, suggestions and one-tap applications
+# can read them. The free-text `compensation` column is kept in sync as a
+# derived display string, so every screen and client that reads it today
+# keeps working. Money is in paise (integers), never floats.
+# ---------------------------------------------------------------------------
+IncentiveType = Literal["none", "fixed_plus_incentive", "incentive_only"]
+Shift = Literal["day", "night", "rotational", "flexible"]
+MinQualification = Literal["below_10th", "10th", "12th", "diploma", "iti", "graduate", "postgraduate", "any"]
+EnglishLevel = Literal["none", "basic", "good", "fluent"]
+BudgetType = Literal["fixed", "hourly"]
+Duration = Literal["under_1_week", "1_4_weeks", "1_3_months", "3_6_months", "over_6_months", "ongoing"]
+ExperienceLevel = Literal["entry", "intermediate", "expert"]
+Urgency = Literal["today", "this_week", "flexible"]
+
+EMPLOYMENT_FIELDS = frozenset({
+    "salary_min_paise", "salary_max_paise", "incentive_type", "incentive_max_paise", "openings", "shift",
+    "job_timings", "interview_details", "min_qualification", "english_level", "experience_min_months",
+    "experience_max_months", "requires_assets",
+})
+FREELANCE_FIELDS = frozenset({
+    "budget_type", "budget_min_paise", "budget_max_paise", "hourly_rate_min_paise", "hourly_rate_max_paise",
+    "duration", "experience_level", "screening_questions",
+})
+LOCAL_SERVICE_FIELDS = frozenset({"preferred_date", "budget_paise", "urgency"})
+STRUCTURED_FIELDS_BY_TYPE: dict[str, frozenset[str]] = {
+    "employment": EMPLOYMENT_FIELDS,
+    "freelance": FREELANCE_FIELDS,
+    "local_service": LOCAL_SERVICE_FIELDS,
+}
+ALL_STRUCTURED_FIELDS = EMPLOYMENT_FIELDS | FREELANCE_FIELDS | LOCAL_SERVICE_FIELDS
+_STRUCTURED_COLUMNS = sorted(ALL_STRUCTURED_FIELDS)
+MAX_SCREENING_QUESTIONS = 5
+
+
+class ScreeningQuestion(BaseModel):
+    id: str | None = Field(default=None, max_length=40, description="Stable id; assigned (q1, q2, ...) when omitted")
+    text: str = Field(min_length=3, max_length=300)
+
+
+class OpportunityStructured(BaseModel):
+    """Type-specific fields. On input, only the fields for the opportunity's
+    own type are accepted (a salary on a freelance project is a 422,
+    `structured_field_not_for_type`). On output every field is present and
+    the ones for other types are null."""
+
+    # employment (monthly, in-hand, paise)
+    salary_min_paise: int | None = Field(default=None, ge=0)
+    salary_max_paise: int | None = Field(default=None, ge=0)
+    incentive_type: IncentiveType | None = None
+    incentive_max_paise: int | None = Field(default=None, ge=0)
+    openings: int | None = Field(default=None, ge=1, le=1000)
+    shift: Shift | None = None
+    job_timings: str | None = Field(default=None, max_length=200)
+    interview_details: str | None = Field(default=None, max_length=500)
+    min_qualification: MinQualification | None = None
+    english_level: EnglishLevel | None = None
+    experience_min_months: int | None = Field(default=None, ge=0, le=600)
+    experience_max_months: int | None = Field(default=None, ge=0, le=600)
+    requires_assets: list[str] | None = Field(default=None, max_length=10, description="e.g. bike, smartphone, laptop")
+    # freelance
+    budget_type: BudgetType | None = None
+    budget_min_paise: int | None = Field(default=None, ge=0)
+    budget_max_paise: int | None = Field(default=None, ge=0)
+    hourly_rate_min_paise: int | None = Field(default=None, ge=0)
+    hourly_rate_max_paise: int | None = Field(default=None, ge=0)
+    duration: Duration | None = None
+    experience_level: ExperienceLevel | None = None
+    screening_questions: list[ScreeningQuestion] | None = Field(default=None, max_length=MAX_SCREENING_QUESTIONS)
+    # local service
+    preferred_date: date | None = None
+    budget_paise: int | None = Field(default=None, ge=0)
+    urgency: Urgency | None = None
+
+
+def _col(row: asyncpg.Record, name: str) -> Any:
+    """Column value, or None when a narrower SELECT did not include it."""
+    try:
+        return row[name]
+    except (KeyError, IndexError):
+        return None
+
+
+def structured_from_row(row: asyncpg.Record) -> OpportunityStructured:
+    values: dict[str, Any] = {}
+    for name in ALL_STRUCTURED_FIELDS:
+        v = _col(row, name)
+        if name == "screening_questions":
+            if isinstance(v, str):
+                v = json.loads(v)
+            v = [ScreeningQuestion(**q) for q in (v or [])]
+        elif name == "requires_assets":
+            v = list(v) if v else []
+        values[name] = v
+    return OpportunityStructured(**values)
+
+
+def _normalize_structured(struct: OpportunityStructured, type_: str, lang: str) -> dict[str, Any]:
+    """Validates the fields for `type_` and returns the full column dict
+    (fields of other types set to their empty value). One place for every
+    per-type rule, shared by create and patch."""
+    allowed = STRUCTURED_FIELDS_BY_TYPE.get(type_, frozenset())
+    data = struct.model_dump()
+    for name in ALL_STRUCTURED_FIELDS - allowed:
+        if data.get(name) not in (None, [], {}):
+            raise ApiError(
+                422, "opportunities.error.fieldNotForType", lang, field=name, type=type_,
+                extra={"field": name, "opportunity_type": type_}, error_code="structured_field_not_for_type",
+            )
+    out: dict[str, Any] = {name: None for name in ALL_STRUCTURED_FIELDS}
+    out["requires_assets"] = []
+    out["screening_questions"] = []
+    if type_ == "employment":
+        lo, hi = data["salary_min_paise"], data["salary_max_paise"]
+        if lo is not None and hi is not None and lo > hi:
+            raise ApiError(422, "opportunities.error.salaryRangeInvalid", lang)
+        elo, ehi = data["experience_min_months"], data["experience_max_months"]
+        if elo is not None and ehi is not None and elo > ehi:
+            raise ApiError(422, "opportunities.error.experienceRangeInvalid", lang)
+        assets: list[str] = []
+        for a in data["requires_assets"] or []:
+            a = a.strip().lower()[:40]
+            if a and a not in assets:
+                assets.append(a)
+        for name in EMPLOYMENT_FIELDS:
+            out[name] = data[name]
+        if data["incentive_type"] in (None, "none"):
+            out["incentive_max_paise"] = None
+        out["requires_assets"] = assets
+    elif type_ == "freelance":
+        btype = data["budget_type"]
+        has_fixed = data["budget_min_paise"] is not None or data["budget_max_paise"] is not None
+        has_hourly = data["hourly_rate_min_paise"] is not None or data["hourly_rate_max_paise"] is not None
+        if btype is None:
+            btype = "hourly" if (has_hourly and not has_fixed) else ("fixed" if has_fixed else None)
+        if (btype == "fixed" and has_hourly) or (btype == "hourly" and has_fixed):
+            raise ApiError(422, "opportunities.error.budgetFieldsMismatch", lang)
+        for lo, hi in ((data["budget_min_paise"], data["budget_max_paise"]), (data["hourly_rate_min_paise"], data["hourly_rate_max_paise"])):
+            if lo is not None and hi is not None and lo > hi:
+                raise ApiError(422, "opportunities.error.budgetRangeInvalid", lang)
+        questions: list[dict[str, str]] = []
+        used: set[str] = set()
+        for i, q in enumerate(data["screening_questions"] or [], start=1):
+            qid = (q.get("id") or "").strip() or f"q{i}"
+            while qid in used:
+                qid = f"{qid}_{i}"
+            used.add(qid)
+            questions.append({"id": qid, "text": q["text"].strip()})
+        if len(questions) > MAX_SCREENING_QUESTIONS:
+            raise ApiError(422, "opportunities.error.tooManyScreeningQuestions", lang, max=MAX_SCREENING_QUESTIONS)
+        for name in FREELANCE_FIELDS:
+            out[name] = data[name]
+        out["budget_type"] = btype
+        out["screening_questions"] = questions
+    elif type_ == "local_service":
+        for name in LOCAL_SERVICE_FIELDS:
+            out[name] = data[name]
+    return out
+
+
+def format_inr(paise: int) -> str:
+    """Rupee sign with Indian digit grouping (1,50,000); paise only when non-zero."""
+    rupees, rest = divmod(int(paise), 100)
+    digits = str(rupees)
+    if len(digits) > 3:
+        head, tail = digits[:-3], digits[-3:]
+        groups = []
+        while len(head) > 2:
+            groups.insert(0, head[-2:])
+            head = head[:-2]
+        if head:
+            groups.insert(0, head)
+        digits = ",".join(groups) + "," + tail
+    return "\u20b9" + digits + (f".{rest:02d}" if rest else "")
+
+
+def compensation_label(struct: OpportunityStructured, type_: str, lang: str) -> str | None:
+    """The derived display string for the money fields, in `lang`. None
+    when no money field is set (the caller then falls back to free text)."""
+
+    def t(key: str, **params: Any) -> str:
+        return translate(f"opportunities.compensation.{key}", lang, **params)
+
+    if type_ == "employment":
+        lo, hi = struct.salary_min_paise, struct.salary_max_paise
+        if lo is None and hi is None:
+            base = None
+        elif lo is not None and hi is not None and lo != hi:
+            base = t("monthlyRange", min=format_inr(lo), max=format_inr(hi))
+        else:
+            base = t("monthly", amount=format_inr(lo if lo is not None else hi))
+        if struct.incentive_type == "fixed_plus_incentive":
+            extra = t("plusIncentive", amount=format_inr(struct.incentive_max_paise)) if struct.incentive_max_paise else t("plusIncentiveOpen")
+            return f"{base} {extra}" if base else extra
+        if struct.incentive_type == "incentive_only":
+            return t("incentiveOnly", amount=format_inr(struct.incentive_max_paise)) if struct.incentive_max_paise else t("incentiveOnlyOpen")
+        return base
+    if type_ == "freelance":
+        if struct.budget_type == "hourly":
+            lo, hi = struct.hourly_rate_min_paise, struct.hourly_rate_max_paise
+            if lo is None and hi is None:
+                return None
+            if lo is not None and hi is not None and lo != hi:
+                return t("hourlyRange", min=format_inr(lo), max=format_inr(hi))
+            return t("hourly", amount=format_inr(lo if lo is not None else hi))
+        lo, hi = struct.budget_min_paise, struct.budget_max_paise
+        if lo is None and hi is None:
+            return None
+        if lo is not None and hi is not None and lo != hi:
+            return t("fixedRange", min=format_inr(lo), max=format_inr(hi))
+        return t("fixed", amount=format_inr(lo if lo is not None else hi))
+    if type_ == "local_service" and struct.budget_paise is not None:
+        return t("budget", amount=format_inr(struct.budget_paise))
+    return None
+
+
+_BARE_AMOUNT = re.compile(r"^\s*(?:₹|rs\.?|inr)?\s*([0-9][0-9,]*)(?:\.(\d{1,2}))?\s*(?:/-)?\s*$", re.IGNORECASE)
+
+
+def legacy_compensation_label(text: str | None, type_: str, lang: str) -> str | None:
+    """[FE2 — owner review 2026-09-29] Older posts keep money only in the
+    free-text `compensation`. A bare number there ("15000", "Rs 800") used to
+    reach cards as-is. It is now shown with ₹ and the period the post type
+    implies (a month for a job, fixed for a project, a budget for a local
+    service). Any other free text is kept exactly as the poster wrote it."""
+    if not text:
+        return None
+    m = _BARE_AMOUNT.match(text)
+    if not m:
+        return text
+    paise = int(m.group(1).replace(",", "")) * 100 + int((m.group(2) or "0").ljust(2, "0"))
+    key = {"employment": "monthly", "freelance": "fixed", "local_service": "budget"}.get(type_)
+    if key is None:
+        return format_inr(paise)
+    return translate(f"opportunities.compensation.{key}", lang, amount=format_inr(paise))
+
+
+def has_budget(struct: OpportunityStructured) -> bool:
+    if struct.budget_type == "hourly":
+        return struct.hourly_rate_min_paise is not None or struct.hourly_rate_max_paise is not None
+    return struct.budget_min_paise is not None or struct.budget_max_paise is not None
+
+
+def _structured_placeholders(start: int) -> str:
+    """`$n, $n+1, ...` (jsonb-cast where needed) for every structured column, in `_STRUCTURED_COLUMNS` order."""
+    return ", ".join(f"${start + i}" + ("::jsonb" if c == "screening_questions" else "") for i, c in enumerate(_STRUCTURED_COLUMNS))
+
+
+def _structured_set_clause(start: int) -> str:
+    return ", ".join(f"{c} = ${start + i}" + ("::jsonb" if c == "screening_questions" else "") for i, c in enumerate(_STRUCTURED_COLUMNS))
+
+
+def _structured_values(columns: dict[str, Any]) -> list[Any]:
+    return [json.dumps(columns[c]) if c == "screening_questions" else columns[c] for c in _STRUCTURED_COLUMNS]
+
+
+def _seeker_charge_check(
+    *, lang: str, type_: str, title: str | None, description: str | None, requirements: str | None,
+    compensation: str | None, columns: dict[str, Any], candidate_pays: bool | None = None,
+) -> None:
+    """[Backend A, wiring workstream B's hook] "Nobody charges job seekers":
+    every create, patch and publish runs the registered checks over the
+    record as it WILL be (free text plus the structured text fields a fee
+    could hide in: timings, interview details, screening questions). A
+    refusal is B's 422 `seeker_charge_not_allowed`, raised before anything
+    is written."""
+    questions = " ".join(q["text"] if isinstance(q, dict) else q.text for q in (columns.get("screening_questions") or []))
+    text = " ".join(filter(None, [
+        title, description, requirements, compensation,
+        columns.get("job_timings"), columns.get("interview_details"), questions,
+    ]))
+    structured = {k: v for k, v in columns.items() if k != "screening_questions"}
+    structured.update({"type": type_, "candidate_pays": candidate_pays})
+    hooks.run_seeker_charge_checks(text=text, structured=structured, lang=lang)
+
+
+# [IMP-B/L1] Pre-accept calling makes sense where a person rings about a job
+# or a local job (Apna's "Call HR", WorkIndia's "Click to call HR"); a
+# freelance proposal or a partnership is a written conversation.
+PRECALL_TYPES = ("employment", "local_service")
+
+
+def _check_precall(allow: bool | None, type_: str, lang: str) -> None:
+    if allow and type_ not in PRECALL_TYPES:
+        raise ApiError(422, "opportunities.error.precallNotForType", lang, error_code="precall_not_for_type",
+                       extra={"field": "allow_precall", "opportunity_type": type_, "allowed_types": list(PRECALL_TYPES)})
+
 
 def _extract_fields(raw_input: str | None) -> dict:
     """[TR012] Rule-based extraction only — never an AI hot-path dependency,
@@ -108,6 +402,14 @@ class OpportunityCreate(BaseModel):
     source_url: str | None = None
     raw_input: str | None = None
     raw_image_url: str | None = None
+    structured: OpportunityStructured | None = None
+    # Declared, never stored: an opportunity may not charge the applicant.
+    # true is refused with 422 seeker_charge_not_allowed (workstream B's rule).
+    candidate_pays: bool | None = Field(default=None, description="Must be false or omitted; true is refused (seeker_charge_not_allowed)")
+    # [IMP-B/L1] "Let people call me before I accept" — employment and local_service only.
+    allow_precall: bool = Field(default=False, description="Let people call or WhatsApp before an application is accepted (employment, local_service)")
+    # [IMP-B/W2] how they may reach the poster before acceptance; WhatsApp only by default.
+    precall_channel: Literal["call_and_whatsapp", "whatsapp_only"] = "whatsapp_only"
 
 
 class OpportunityPatch(BaseModel):
@@ -123,6 +425,10 @@ class OpportunityPatch(BaseModel):
     required_capabilities: list[str] | None = None
     response_method: Literal["in_app", "external"] | None = None
     deadline: datetime | None = None
+    structured: OpportunityStructured | None = None  # partial: only the fields sent are changed
+    candidate_pays: bool | None = Field(default=None, description="Must be false or omitted; true is refused (seeker_charge_not_allowed)")
+    allow_precall: bool | None = Field(default=None, description="Let people call or WhatsApp before accepting (employment, local_service)")
+    precall_channel: Literal["call_and_whatsapp", "whatsapp_only"] | None = None
 
 
 class ConfirmFieldsIn(BaseModel):
@@ -156,6 +462,26 @@ class OpportunityOut(BaseModel):
     state: str
     state_reason: str | None
     saved: bool = False
+    # [Backend A] typed fields per type, and the derived money line in the
+    # caller's language (falls back to the free-text `compensation`).
+    structured: OpportunityStructured = Field(default_factory=OpportunityStructured)
+    compensation_label: str | None = None
+    # [Backend A, workstream B's enrichers] set on the detail read only.
+    # Shapes are B's: seeker_protection = {applies, title, body, report_reason,
+    # report_label} (employment only, else null); poster_badges =
+    # [{key, label, description, earned_at}]. See references/imp-backend-b.md.
+    seeker_protection: dict[str, Any] | None = None
+    poster_badges: list[dict[str, Any]] = []
+    # [IMP-B/L1] pre-accept calling: the poster's switch, and (detail read,
+    # non-poster viewers) the call/WhatsApp actions — the same shape as
+    # GET /v1/opportunities/{id}/contact-actions.
+    allow_precall: bool = False
+    precall_actions: dict[str, Any] | None = None
+    # [IMP-B/W2] whatsapp_only | call_and_whatsapp, and the honest sentence to
+    # show next to the switch, in the reader's language ("Anyone who calls or
+    # messages you from this post will see your phone number.").
+    precall_channel: str = "whatsapp_only"
+    precall_disclosure: str | None = None
     # [FR18 card fields — set only by feed.py's card builder, None elsewhere]
     submitter_name: str | None = None
     posted_days_ago: int | None = None
@@ -197,7 +523,8 @@ class PosterSummary(BaseModel):
 OpportunityOut.model_rebuild()
 
 
-def _row_to_opp(row: asyncpg.Record, caller_id: str, saved: bool = False) -> OpportunityOut:
+def _row_to_opp(row: asyncpg.Record, caller_id: str, saved: bool = False, lang: str = "en") -> OpportunityOut:
+    structured = structured_from_row(row)
     return OpportunityOut(
         id=str(row["id"]),
         poster_id=row["poster_id"],
@@ -225,6 +552,14 @@ def _row_to_opp(row: asyncpg.Record, caller_id: str, saved: bool = False) -> Opp
         state=row["state"],
         state_reason=row["state_reason"],
         saved=saved,
+        structured=structured,
+        compensation_label=compensation_label(structured, row["type"], lang) or legacy_compensation_label(row["compensation"], row["type"], lang),
+        allow_precall=bool(_col(row, "allow_precall")),
+        precall_channel=_col(row, "precall_channel") or "whatsapp_only",
+        precall_disclosure=(
+            translate(f"opportunities.precall.disclosure.{_col(row, 'precall_channel') or 'whatsapp_only'}", lang)
+            if row["type"] in PRECALL_TYPES else None
+        ),
     )
 
 
@@ -254,20 +589,37 @@ async def create_opportunity(
     if not body.location:
         unconfirmed.append("location")
 
+    # [Backend A] typed fields validated for the type; `compensation` is the
+    # derived money line (in the content language) whenever money fields are
+    # set, else the free text the caller sent.
+    columns = _normalize_structured(body.structured or OpportunityStructured(), type_, lang)
+    compensation = compensation_label(OpportunityStructured(**columns), type_, lang) or body.compensation
+    _seeker_charge_check(
+        lang=lang, type_=type_, title=title, description=body.description, requirements=body.requirements,
+        compensation=body.compensation or compensation, columns=columns, candidate_pays=body.candidate_pays,
+    )
+    _check_precall(body.allow_precall, type_, lang)
+
     row = await conn.fetchrow(
-        """INSERT INTO vyapar_opportunities.opportunities
+        f"""INSERT INTO vyapar_opportunities.opportunities
              (poster_id, title, type, description, requirements, compensation, value_amount,
               location, work_mode, timing, required_capabilities, response_method, deadline,
               source_segment, source_name, source_url, entry_mode, raw_input, raw_image_url,
-              unconfirmed_fields, content_language)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
+              unconfirmed_fields, content_language, {", ".join(_STRUCTURED_COLUMNS)})
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,
+                   {_structured_placeholders(22)})
            RETURNING *""",
-        ctx.member_id, title, type_, body.description, body.requirements, body.compensation, body.value_amount,
+        ctx.member_id, title, type_, body.description, body.requirements, compensation, body.value_amount,
         body.location, body.work_mode, body.timing, body.required_capabilities, body.response_method, body.deadline,
         body.source_segment, body.source_name, body.source_url, body.entry_mode, body.raw_input, body.raw_image_url,
-        unconfirmed, lang,
+        unconfirmed, lang, *_structured_values(columns),
     )
-    return _row_to_opp(row, ctx.member_id)
+    if body.allow_precall or body.precall_channel != "whatsapp_only":
+        row = await conn.fetchrow(
+            "UPDATE vyapar_opportunities.opportunities SET allow_precall = $2, precall_channel = $3 WHERE id = $1 RETURNING *",
+            row["id"], bool(body.allow_precall), body.precall_channel,
+        )
+    return _row_to_opp(row, ctx.member_id, lang=lang)
 
 
 async def list_my_opportunities(
@@ -296,7 +648,7 @@ async def get_opportunity(
            RETURNING saved_at""",
         ctx.member_id, opportunity_id,
     )
-    out = _row_to_opp(row, ctx.member_id, saved=saved_row["saved_at"] is not None)
+    out = _row_to_opp(row, ctx.member_id, saved=saved_row["saved_at"] is not None, lang=lang)
     # [Real gap found live by the product owner, fixed here] feed cards
     # correctly show "posted by <name>, from your community" (a trust
     # signal research on this audience found matters more than
@@ -341,14 +693,17 @@ async def get_opportunity(
             out.poster.reply_rate = habit["reply_rate"]
             out.poster.reply_speed = habit["reply_speed"]
     if not out.is_poster and out.required_capabilities:
-        viewer_caps = await conn.fetchval(
-            "SELECT capabilities FROM vyapar_identity.members WHERE id = $1", ctx.member_id
-        )
+        viewer_caps = await viewer_capabilities(conn, ctx.member_id)  # [L14] own + active listings' skills
         if viewer_caps:
             mine = set(viewer_caps)
             out.capability_match = [c in mine for c in out.required_capabilities]
     if not out.is_poster:  # [FR32] detail view event, never with member identity
         await log_events(conn, "opportunity", [row["id"]], "view", "opportunity_detail", {str(row["id"])} if out.sponsored else set())
+    # [Backend A] workstream B's enrichers (seeker protection, poster badges).
+    extra = await hooks.run_opportunity_enrichers(conn, ctx, lang, out.model_dump(mode="json"))
+    out.seeker_protection = extra.get("seeker_protection")
+    out.poster_badges = extra.get("poster_badges") or []
+    out.precall_actions = extra.get("precall_actions")
     return out
 
 
@@ -378,7 +733,7 @@ async def list_similar_opportunities(
     # profile"] Among similar opportunities, the ones that ask for skills
     # the viewer actually has come first; closeness to this one breaks ties.
     viewer_caps = list(
-        await conn.fetchval("SELECT capabilities FROM vyapar_identity.members WHERE id = $1", ctx.member_id) or []
+        await viewer_capabilities(conn, ctx.member_id) or []  # [L14] own + active listings' skills
     )
     rows = await conn.fetch(
         """SELECT o.* FROM vyapar_opportunities.opportunities o
@@ -404,7 +759,7 @@ async def list_similar_opportunities(
     now = datetime.now(timezone.utc)
     out: list[OpportunityOut] = []
     for r in rows:
-        card = _row_to_opp(r, ctx.member_id)
+        card = _row_to_opp(r, ctx.member_id, lang=lang)
         card.submitter_name = names.get(r["poster_id"])
         card.posted_days_ago = (now - r["published_at"]).days if r["published_at"] else None
         card.viewer_matched_labels = labels_for([c for c in r["required_capabilities"] if c in mine], lang)
@@ -462,21 +817,48 @@ async def update_opportunity(
             raise ApiError(422, "opportunities.error.compensationRequired", lang)
         if new_type == "local_service" and not (body.location or current["location"]):
             raise ApiError(422, "opportunities.error.locationRequired", lang)
+    # [Backend A] the structured patch is partial: fields sent replace, the
+    # rest stay; a type change drops the old type's fields (a salary makes no
+    # sense on a freelance project). The merged set is re-validated whole.
+    merged = OpportunityStructured() if (body.type and body.type != current["type"]) else structured_from_row(current)
+    if body.structured is not None:
+        merged = merged.model_copy(update=body.structured.model_dump(exclude_unset=True))
+    columns = _normalize_structured(merged, new_type, lang)
+    derived = compensation_label(OpportunityStructured(**columns), new_type, current["content_language"] or lang)
+    compensation = derived or body.compensation  # the derived line wins; else the caller's free text, else unchanged
+    _seeker_charge_check(
+        lang=lang, type_=new_type,
+        title=body.title if body.title is not None else current["title"],
+        description=body.description if body.description is not None else current["description"],
+        requirements=body.requirements if body.requirements is not None else current["requirements"],
+        compensation=body.compensation or compensation or current["compensation"],
+        columns=columns, candidate_pays=body.candidate_pays,
+    )
+    _check_precall(body.allow_precall, new_type, lang)
+    # A type change to one where pre-accept calling does not apply switches it
+    # off rather than refusing the edit (the switch has no meaning there).
+    allow_precall = body.allow_precall if body.allow_precall is not None else current["allow_precall"]
+    if new_type not in PRECALL_TYPES:
+        allow_precall = False
+
     row = await conn.fetchrow(
-        """UPDATE vyapar_opportunities.opportunities SET
+        f"""UPDATE vyapar_opportunities.opportunities SET
              title = COALESCE($2, title), type = COALESCE($3, type), description = COALESCE($4, description),
              requirements = COALESCE($5, requirements), compensation = COALESCE($6, compensation),
              value_amount = COALESCE($7, value_amount), location = COALESCE($8, location),
              work_mode = COALESCE($9, work_mode), timing = COALESCE($10, timing),
              required_capabilities = COALESCE($11, required_capabilities),
              response_method = COALESCE($12, response_method), deadline = COALESCE($13, deadline),
+             {_structured_set_clause(14)},
+             allow_precall = ${14 + len(_STRUCTURED_COLUMNS)},
+             precall_channel = COALESCE(${15 + len(_STRUCTURED_COLUMNS)}, precall_channel),
              last_confirmed_at = now(), updated_at = now()
            WHERE id = $1 RETURNING *""",
-        opportunity_id, body.title, body.type, body.description, body.requirements, body.compensation,
+        opportunity_id, body.title, body.type, body.description, body.requirements, compensation,
         body.value_amount, body.location, body.work_mode, body.timing, body.required_capabilities,
-        body.response_method, body.deadline,
+        body.response_method, body.deadline, *_structured_values(columns), allow_precall, body.precall_channel,
     )
-    return _row_to_opp(row, ctx.member_id)
+    return _row_to_opp(row, ctx.member_id, lang=lang)
 
 
 # ---------------------------------------------------------------------------
@@ -529,6 +911,18 @@ async def publish_opportunity(
     missing = {f for f in missing if f in current["unconfirmed_fields"]}
     if missing:
         raise ApiError(422, "opportunities.error.confirmRequired", lang, fields=", ".join(sorted(missing)))
+    # [Backend A] a job without a salary or a project without a budget gets
+    # few and poor responses (WorkIndia and Upwork both require them), so
+    # publish needs them — the same one gate every publish path goes through.
+    structured = structured_from_row(current)
+    _seeker_charge_check(
+        lang=lang, type_=current["type"], title=current["title"], description=current["description"],
+        requirements=current["requirements"], compensation=current["compensation"], columns=structured.model_dump(),
+    )
+    if current["type"] == "employment" and (structured.salary_min_paise is None or structured.salary_max_paise is None):
+        raise ApiError(422, "opportunities.error.salaryRequired", lang)
+    if current["type"] == "freelance" and not has_budget(structured):
+        raise ApiError(422, "opportunities.error.budgetRequired", lang)
     row = await conn.fetchrow(
         """UPDATE vyapar_opportunities.opportunities SET state='active', published_at=now(), last_confirmed_at=now(), updated_at=now()
            WHERE id=$1 RETURNING *""",
@@ -722,6 +1116,102 @@ async def record_opportunity_external_open(
         ctx.member_id, opportunity_id,
     )
     return OpenedOut(opened=True)
+
+
+# ---------------------------------------------------------------------------
+# [Backend A, 2026-09-28] Suggestions: what to change to get more or better
+# responses, computed from what is missing or restrictive on the row.
+# WorkIndia shows an employer "Lower min qualification to 12th -> likely
+# more responses" while the job is being posted; Upwork nudges for a budget
+# and screening questions. Rule-based, poster-only, localized; each item
+# names the field so the composer can focus it.
+# ---------------------------------------------------------------------------
+Impact = Literal["more_responses", "better_fit", "trust"]
+
+
+class SuggestionOut(BaseModel):
+    code: str = Field(description="Stable rule id, e.g. lower_qualification")
+    field: str | None = Field(default=None, description="The opportunity or structured field the tip is about")
+    impact: Impact
+    message: str = Field(description="Localized tip")
+
+
+class SuggestionsOut(BaseModel):
+    opportunity_id: str
+    suggestions: list[SuggestionOut]
+
+
+def compute_suggestions(row: asyncpg.Record, lang: str) -> list[SuggestionOut]:
+    s = structured_from_row(row)
+    type_ = row["type"]
+    tips: list[tuple[str, str | None, str]] = []  # (code, field, impact)
+
+    def add(code: str, field: str | None, impact: str) -> None:
+        tips.append((code, field, impact))
+
+    if len((row["description"] or "").strip()) < 80:
+        add("expand_description", "description", "better_fit")
+    if not row["required_capabilities"]:
+        add("add_skills", "required_capabilities", "better_fit")
+    elif len(row["required_capabilities"]) > 5:
+        add("fewer_skills", "required_capabilities", "more_responses")
+    if row["work_mode"] == "on_site" and not row["location"]:
+        add("add_location", "location", "more_responses")
+    if row["work_mode"] == "on_site" and type_ in ("employment", "freelance"):
+        add("consider_remote", "work_mode", "more_responses")
+
+    if type_ == "employment":
+        if s.salary_min_paise is None or s.salary_max_paise is None:
+            add("add_salary", "salary_min_paise", "more_responses")
+        if s.min_qualification in ("graduate", "postgraduate"):
+            add("lower_qualification", "min_qualification", "more_responses")
+        if s.english_level in ("good", "fluent"):
+            add("relax_english", "english_level", "more_responses")
+        if (s.experience_min_months or 0) > 24:
+            add("lower_experience", "experience_min_months", "more_responses")
+        if not s.job_timings:
+            add("add_job_timings", "job_timings", "better_fit")
+        if not s.interview_details:
+            add("add_interview_details", "interview_details", "trust")
+        if s.openings is None:
+            add("add_openings", "openings", "trust")
+        if s.shift is None:
+            add("add_shift", "shift", "better_fit")
+    elif type_ == "freelance":
+        if not has_budget(s):
+            add("add_budget", "budget_type", "more_responses")
+        if s.duration is None:
+            add("add_duration", "duration", "better_fit")
+        if not s.screening_questions:
+            add("add_screening_question", "screening_questions", "better_fit")
+        if s.experience_level == "expert":
+            add("relax_experience_level", "experience_level", "more_responses")
+        if not row["deadline"]:
+            add("add_deadline", "deadline", "more_responses")
+    elif type_ == "local_service":
+        if s.preferred_date is None:
+            add("add_preferred_date", "preferred_date", "better_fit")
+        if s.budget_paise is None:
+            add("add_local_budget", "budget_paise", "more_responses")
+        if s.urgency is None:
+            add("add_urgency", "urgency", "better_fit")
+
+    return [
+        SuggestionOut(code=code, field=field, impact=impact, message=translate(f"opportunities.suggestion.{code}", lang))
+        for code, field, impact in tips
+    ]
+
+
+async def get_opportunity_suggestions(
+    conn: asyncpg.Connection,
+    ctx: AuthzContext,
+    lang: str,
+    opportunity_id: str,
+) -> SuggestionsOut:
+    row = await conn.fetchrow("SELECT * FROM vyapar_opportunities.opportunities WHERE id = $1", opportunity_id)
+    if row is None or row["poster_id"] != ctx.member_id:
+        raise ApiError(404, "common.error.opportunityNotFound", lang)
+    return SuggestionsOut(opportunity_id=str(row["id"]), suggestions=compute_suggestions(row, lang))
 
 
 async def list_my_opportunities_page(

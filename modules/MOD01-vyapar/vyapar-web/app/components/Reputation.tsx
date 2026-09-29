@@ -15,6 +15,8 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError, type Reputation as SdkReputation } from "@/lib/sdk";
 import { useSdk } from "@/lib/sdk/react";
+// [FE2] Indian date order ("31 Aug 2026"), never the US "8/31/2026"
+import { formatDate } from "@/lib/format";
 
 // [IMP38] The wire type now lives in lib/sdk; kept here as an alias-compatible
 // interface so existing imports of `Reputation` from this file keep working.
@@ -130,7 +132,7 @@ export function ReviewList({ listingId }: { listingId: string }) {
           <div className="vy-row" style={{ flexWrap: "wrap", gap: 6 }}>
             <strong>{r.recommend ? t("reviews:recommends") : t("reviews:doesNotRecommend")}</strong>
             <span className="vy-muted">
-              {[r.author_first_name, t("reviews:verifiedInteraction"), new Date(r.created_at).toLocaleDateString(i18n.language)]
+              {[r.author_first_name, t("reviews:verifiedInteraction"), formatDate(r.created_at, i18n.language)]
                 .filter(Boolean)
                 .join(" · ")}
             </span>
@@ -159,10 +161,10 @@ export function ReviewList({ listingId }: { listingId: string }) {
                     aria-checked={reason === d}
                     className="vy-chip"
                     style={{
-                      border: `1px solid ${reason === d ? "var(--accent)" : "var(--border-hairline)"}`,
+                      border: `1px solid ${reason === d ? "var(--selected-border)" : "var(--border-hairline)"}`,
                       cursor: "pointer",
-                      background: reason === d ? "var(--accent-soft)" : "var(--surface-overlay)",
-                      color: reason === d ? "var(--accent-strong)" : "var(--text-primary)",
+                      background: reason === d ? "var(--selected-bg)" : "var(--surface-overlay)",
+                      color: reason === d ? "var(--selected-fg)" : "var(--text-primary)",
                     }}
                     onClick={() => setReason(d)}
                   >

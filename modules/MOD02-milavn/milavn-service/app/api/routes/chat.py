@@ -180,13 +180,22 @@ async def send_message(conversation_id: UUID, body: SendRequest, session: DbSess
 @router.post("/{conversation_id}/photos", status_code=201)
 async def send_photo(conversation_id: UUID, session: DbSession, member: CurrentMember, lang: Locale, photo: Annotated[UploadFile, File()]) -> dict:
     await enforce(session, scope=RateLimitScope.PHOTO_UPLOAD, subject=str(member.member_id), limit_max=60, window_seconds=3600)
+    from app import media_files
+
+    # Only a member of the conversation gets as far as writing a file.
+    if not await chat.is_member(session, conversation_id, member.member_id):
+        raise HTTPException(status_code=403, detail=translate("chat.notAllowed", lang))
     try:
         ref = await chat.store_photo(conversation_id, photo)
-        m = await chat.send(session, conversation_id=conversation_id, me=member.member_id, kind="photo", body=None, expression=None, media_ref=ref)
-    except chat.NotAllowed as exc:
-        raise HTTPException(status_code=403, detail=translate("chat.notAllowed", lang)) from exc
-    except chat.InvalidInput as exc:
+    except media_files.NotAnImage as exc:
         raise HTTPException(status_code=415, detail=translate("moments.unsupported", lang)) from exc
+    except media_files.TooLarge as exc:
+        raise HTTPException(status_code=413, detail=translate("media.tooLarge", lang, mb=exc.limit_mb)) from exc
+    try:
+        m = await chat.send(session, conversation_id=conversation_id, me=member.member_id, kind="photo", body=None, expression=None, media_ref=ref)
+    except (chat.NotAllowed, chat.InvalidInput) as exc:
+        media_files.remove(ref)
+        raise HTTPException(status_code=403, detail=translate("chat.notAllowed", lang)) from exc
     payload = _msg(m)
     chat.hub.publish(conversation_id, {"type": "message", "message": {**payload, "mine": False}})
     return payload

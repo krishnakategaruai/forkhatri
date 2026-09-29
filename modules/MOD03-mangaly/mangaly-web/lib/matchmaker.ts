@@ -32,7 +32,19 @@ export type Brief = {
   /** False while a parent edits a profile they made: only the candidate rates themselves. */
   can_rate_self: boolean;
   ai_available: boolean;
+  /** How much each theme matters, 1–10; unset themes are absent. */
+  priorities: Partial<Record<Theme, number>>;
+  /** Nothing said yet: starting points read from the profile itself. */
+  suggested: UnderstoodItem[];
+  /** The candidate's own values each theme compares with. */
+  theme_facts: Partial<Record<Theme, string[]>>;
 };
+
+/** [Owner, 2026-09-28] "What matters to you" — each theme becomes a
+ *  "like us" wish built from the candidate's own profile, so nothing is
+ *  asked twice. Horoscope orders Discover's rows. */
+export const THEMES = ['horoscope', 'roots', 'near', 'life', 'family_view', 'education'] as const;
+export type Theme = (typeof THEMES)[number];
 
 export type Understanding = {
   items: UnderstoodItem[];
@@ -87,6 +99,7 @@ export function saveBrief(brief: {
   items: UnderstoodItem[];
   partner_scales: Partial<Record<Scale, ScaleWish>>;
   self_scales?: Partial<Record<Scale, number>> | null;
+  priorities?: Partial<Record<Theme, number>>;
 }): Promise<Outcome<null>> {
   return sendJson<null>('PATCH', '/profile/matchmaker/brief', brief);
 }

@@ -17,10 +17,10 @@ router = APIRouter(prefix="/v1/members/me", tags=["member-settings"], responses=
 
 
 @router.get("", response_model=MemberMeOut, operation_id="getMe", summary="Get the signed-in member's basic settings")
-async def get_me(lang: Locale, conn: asyncpg.Connection = Depends(get_conn)) -> MemberMeOut:
+async def get_me(lang: Locale, conn: asyncpg.Connection = Depends(get_conn, scope="function")) -> MemberMeOut:
     return await svc.get_me(conn, lang)
 
 
 @router.patch("/language", response_model=LanguageOut, operation_id="setMemberLanguage", summary="Set the signed-in member's preferred language")
-async def set_member_language(body: LanguagePatch, conn: asyncpg.Connection = Depends(get_conn)) -> LanguageOut:
+async def set_member_language(body: LanguagePatch, conn: asyncpg.Connection = Depends(get_conn, scope="function")) -> LanguageOut:
     return await svc.set_member_language(conn, body.language)

@@ -110,7 +110,7 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{var t=localStorage.getItem('mangaly.theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}try{if(!sessionStorage.getItem('mangaly.splash')&&!matchMedia('(prefers-reduced-motion: reduce)').matches){document.documentElement.setAttribute('data-splash','1');}}catch(e){}",
+              "try{var t=localStorage.getItem('mangaly.theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}try{var z=localStorage.getItem('mangaly.textSize');if(z==='larger'||z==='largest'){document.documentElement.setAttribute('data-text-size',z);}}catch(e){}try{if(!sessionStorage.getItem('mangaly.splash')&&!matchMedia('(prefers-reduced-motion: reduce)').matches){document.documentElement.setAttribute('data-splash','1');}}catch(e){}",
           }}
         />
         <I18nProvider>

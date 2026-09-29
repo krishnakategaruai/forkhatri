@@ -37,7 +37,7 @@ router = APIRouter(tags=["workspace"], responses=ERROR_RESPONSES)
 @router.get("/v1/workspace/mine", response_model=list[WorkspaceSummaryOut], operation_id="listMyWorkspaces", summary="List workspaces the member belongs to")
 async def my_workspaces(
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[WorkspaceSummaryOut]:
     return await svc.list_my_workspaces(conn, ctx)
 
@@ -47,7 +47,7 @@ async def get_workspace(
     listing_id: str,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> WorkspaceOut:
     return await svc.get_workspace(conn, ctx, lang, listing_id=listing_id)
 
@@ -57,7 +57,7 @@ async def create_entitlement(
     body: EntitlementIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> EntitlementCreatedOut:
     return await svc.create_entitlement(conn, ctx, lang, body=body)
 
@@ -68,7 +68,7 @@ async def confirm_entitlement_purchase(
     body: ConfirmIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> EntitlementPurchaseOut:
     return await svc.confirm_entitlement_purchase(conn, ctx, lang, entitlement_id=entitlement_id, body=body)
 
@@ -79,7 +79,7 @@ async def set_renewal(
     body: RenewalIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> RenewalOut:
     return await svc.set_entitlement_renewal(conn, ctx, lang, entitlement_id=entitlement_id, body=body)
 
@@ -87,7 +87,7 @@ async def set_renewal(
 @router.get("/v1/entitlements/mine", response_model=list[EntitlementOut], operation_id="listMyEntitlements", summary="List the member's workspace plans")
 async def list_my_entitlements(
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[EntitlementOut]:
     return await svc.list_my_entitlements(conn, ctx)
 
@@ -98,7 +98,7 @@ async def invite_member(
     body: InviteIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> InviteCreatedOut:
     return await svc.invite_workspace_member(conn, ctx, lang, listing_id=listing_id, body=body)
 
@@ -106,7 +106,7 @@ async def invite_member(
 @router.get("/v1/workspace/invites/mine", response_model=list[WorkspaceInviteOut], operation_id="listMyWorkspaceInvites", summary="List workspace invitations for the member")
 async def my_invites(
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[WorkspaceInviteOut]:
     return await svc.list_my_workspace_invites(conn, ctx)
 
@@ -117,7 +117,7 @@ async def answer_invite(
     body: AnswerIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> InviteAnswerOut:
     return await svc.answer_workspace_invite(conn, ctx, lang, invite_id=invite_id, body=body)
 
@@ -128,6 +128,6 @@ async def change_member_role(
     body: RoleChangeIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> RoleChangeOut:
     return await svc.change_workspace_member_role(conn, ctx, lang, member_row_id=member_row_id, body=body)

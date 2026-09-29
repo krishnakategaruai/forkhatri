@@ -6,25 +6,41 @@ import { useLoaderHold } from "@/lib/useLoaderHold";
 import SacredLoader from "@/components/SacredLoader";
 import MotionTitle from "@/components/MotionTitle";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { resolveMediaUrl } from "@/lib/api";
+import { getJson, query, resolveMediaUrl } from "@/lib/api";
+import ContextChip from "@/components/ContextChip";
+import { useActiveContext, contextKey, firstName as firstOf } from "@/lib/activeContext";
+import type { HoroscopeMatchResponse } from "@/components/HoroscopeMatch";
+import type { Fit } from "@/components/HowYouFit";
+import { getBrief, type Brief } from "@/lib/matchmaker";
+import { listConversations, type ConversationSummary } from "@/lib/messages";
 import AccountButton from "@/components/AccountButton";
 import ForKhatriHubLink from "@/components/ForKhatriHubLink";
 import { Avatar } from "@/components/Avatar";
 import { getSession, type Session } from "@/lib/auth";
 import { reportOutage } from "@/lib/outage";
 import { redirectToEntrance } from "@/lib/platform";
-import { getContexts, listMembers, type Member } from "@/lib/homeCircle";
+import { listMembers, type Member } from "@/lib/homeCircle";
 import {
   getCompleteness,
   getOwnProfile,
   type CompletenessReport,
   type Profile,
 } from "@/lib/profile";
-import { search, type SearchResult } from "@/lib/discovery";
-import { listIncoming, type Connection } from "@/lib/connections";
+import {
+  getBecause,
+  getShelves,
+  getSnippet,
+  search,
+  type BecauseRow,
+  type SearchResult,
+  type Snippet,
+} from "@/lib/discovery";
+import { formatRupees, getCatalogue, getMyPlan, type Catalogue, type MyPlan } from "@/lib/billing";
+import { listIncoming, listSent, sendRequest, type Connection } from "@/lib/connections";
+import { listSuggestions, suggestProfile, type Suggestion } from "@/lib/homeCircle";
 
 /* FR090 · TR090 · UX01 · UI01 · SP090
  *
@@ -50,12 +66,49 @@ type State =
       session: Session;
       profile: Profile | null;
       completeness: CompletenessReport | null;
-      matches: SearchResult[];
+      matches: Picked[];
       matchTotal: number;
       incoming: Connection[];
       members: Member[];
+      /** [Owner, 2026-09-28] Today's introduction: the daily pick. */
+      hero: Hero | null;
+      /** Chats with something unread, newest first. */
+      unreadChats: ConversationSummary[];
+      /** The matchmaker brief (own search only). */
+      brief: Brief | null;
+      /** [Owner, 2026-09-28] Where this search stands — Home's own job. */
+      progress: Progress;
+      /** "Because of this, these": people like those the family acted on. */
+      because: BecauseRow[];
+      /** The seat's plan and the catalogue, for the plans section. */
+      plan: MyPlan | null;
+      catalogue: Catalogue | null;
     }
   | { phase: "out" };
+
+type Picked = SearchResult & { reason?: string | null };
+type Hero = {
+  person: Picked;
+  /** "Sub" line of the row: why the engine chose them. */
+  common: string[];
+  gunas: { n: number; max: number } | null;
+  /** From the nightly pairing (true), or the engine's top match (false). */
+  daily: boolean;
+};
+
+/* [Owner, 2026-09-28] "Home has specific functionality other than
+   Discovery": browsing people stays on Discover; Home shows where the
+   family's search stands — requests out and their answers, connections
+   made, and what the family suggested. */
+type Face = { id: string; card: Snippet | null };
+type Progress = {
+  awaiting: Face[];
+  awaitingTotal: number;
+  connected: Face[];
+  connectedTotal: number;
+  suggested: (Face & { by: string | null; byYou: boolean })[];
+  suggestedTotal: number;
+};
 
 /* Requests this person may answer: their own, and — as a parent or guardian —
    each candidate's they help (the same set the request popup offers). Home
@@ -80,14 +133,21 @@ export default function HomePage() {
   // [owner 2026-09-25] The loader stays at least a second, never a flash.
   const loaderHold = useLoaderHold();
   const { t, i18n } = useTranslation(["common", "auth", "home", "profile", "discover"]);
-  const railRef = useRef<HTMLUListElement>(null);
-  // One press moves the rail by most of what is visible.
-  const railStep = () => Math.round((railRef.current?.clientWidth ?? 600) * 0.8);
   const router = useRouter();
   const [state, setState] = useState<State>({ phase: "checking" });
+  // The introduction's own action: a request (parents) or a suggestion.
+  const [introAction, setIntroAction] = useState<"idle" | "busy" | "done" | "error">("idle");
+  // [Owner, 2026-09-28] Home follows whose search you are in. A father in
+  // his daughter's Home Circle used to read "No new matches — complete your
+  // profile" and "Invite family": Home searched as him (no profile of his
+  // own) and counted only his own circle.
+  const { contexts, active, choose, loaded } = useActiveContext();
+  const forId = active?.kind === "family" ? active.circle.candidate_account_id : undefined;
+  const seatKey = active ? contextKey(active) : "none";
 
   useEffect(() => {
-    let active = true;
+    if (!loaded) return;
+    let alive = true;
     (async () => {
       let session: Session | null;
       try {
@@ -95,10 +155,10 @@ export default function HomePage() {
       } catch {
         // [ForKhatri TR15/TR16] Mangaly or ForKhatri sign-in is unreachable:
         // the shared retry state (OutageGate), never "signed out" (a loop).
-        if (active) reportOutage();
+        if (alive) reportOutage();
         return;
       }
-      if (!active) return;
+      if (!alive) return;
       if (!session) {
         // [TR16] Signed out: the ForKhatri entrance signs the member in and
         // returns them here. The old signed-out screen below is retained, unused.
@@ -106,42 +166,120 @@ export default function HomePage() {
         return;
       }
       const profile = await getOwnProfile();
-      if (!active) return;
-      if (!profile) {
+      if (!alive) return;
+      if (!profile && !contexts?.circles.length) {
         // No candidate profile of their own and no circle to belong to: the
         // wizard is the only useful next step. A parent or relative who is in
         // someone's circle is a full member and keeps Home.
-        const contexts = await getContexts();
-        if (!active) return;
-        if (!contexts?.circles.length) {
-          router.replace("/profile/create");
-          return;
-        }
+        router.replace("/profile/create");
+        return;
       }
       // Home shows people, so it loads people. Each call is optional: a
       // failure leaves that section empty rather than blocking the screen.
-      const [completeness, found, incoming, members] = await Promise.all([
+      const [completeness, found, rows, incoming, members, chats, brief] = await Promise.all([
         profile ? getCompleteness().catch(() => null) : Promise.resolve(null),
-        search({}, { page: 1 }).catch(() => null),
+        search({}, { page: 1, forCandidate: forId }).catch(() => null),
+        getShelves({ forCandidate: forId }).catch(() => null),
         waitingOnThisFamily(session, !!profile),
-        listMembers().catch(() => [] as Member[]),
+        listMembers(forId).catch(() => [] as Member[]),
+        listConversations(forId).catch(() => [] as ConversationSummary[]),
+        forId ? Promise.resolve(null) : getBrief().catch(() => null),
       ]);
-      if (!active) return;
+      const [sent, received, suggestions, because, plan, catalogue] = await Promise.all([
+        listSent(forId).catch(() => [] as Connection[]),
+        listIncoming(forId).catch(() => [] as Connection[]),
+        listSuggestions(forId).catch(() => [] as Suggestion[]),
+        getBecause(forId).catch(() => [] as BecauseRow[]),
+        getMyPlan(forId).catch(() => null),
+        getCatalogue().catch(() => null),
+      ]);
+      const awaitingIds = sent.filter((c) => c.status === "pending").map((c) => c.target_account_id);
+      const connectedIds = [
+        ...sent.filter((c) => c.status === "accepted").map((c) => c.target_account_id),
+        ...received.filter((c) => c.status === "accepted").map((c) => c.subject_account_id),
+      ].filter((v, i, all) => all.indexOf(v) === i);
+      const suggestedRows = suggestions.filter(
+        (x, i, all) => all.findIndex((y) => y.suggested_profile_id === x.suggested_profile_id) === i,
+      );
+      // A few faces per lane; the rest is a count.
+      const faceIds = [
+        ...awaitingIds.slice(0, 4),
+        ...connectedIds.slice(0, 4),
+        ...suggestedRows.slice(0, 4).map((x) => x.suggested_profile_id),
+      ].filter((v, i, all) => all.indexOf(v) === i);
+      const cards = new Map(
+        await Promise.all(
+          faceIds.map(async (id) => [id, await getSnippet(id).catch(() => null)] as const),
+        ),
+      );
+      const face = (id: string): Face => ({ id, card: cards.get(id) ?? null });
+      const progress: Progress = {
+        awaiting: awaitingIds.slice(0, 4).map(face),
+        awaitingTotal: awaitingIds.length,
+        connected: connectedIds.slice(0, 4).map(face),
+        connectedTotal: connectedIds.length,
+        suggested: suggestedRows.slice(0, 4).map((x) => ({
+          ...face(x.suggested_profile_id),
+          by: x.suggested_by_name ?? null,
+          byYou: !!x.suggested_by_is_you,
+        })),
+        suggestedTotal: suggestedRows.length,
+      };
+      if (!alive) return;
+      const shelves = rows?.shelves ?? [];
+      const pairing = shelves.find((sh) => sh.key === "mostCompatible")?.results[0] ?? null;
+      const picked = shelves.find((sh) => sh.key === "picked")?.results ?? [];
+      // No good pairing today: the engine's top match, said as such.
+      // Never introduce someone the family is already talking to or waiting on.
+      const inProgress = new Set([
+        ...awaitingIds,
+        ...connectedIds,
+        ...incoming.map((c) => c.subject_account_id),
+      ]);
+      const daily =
+        pairing ?? picked.find((m) => !inProgress.has(m.candidate_account_id)) ?? null;
+      // The hero's full story: what the two share, and the gunas.
+      let hero: Hero | null = null;
+      if (daily) {
+        const q = query({ for_candidate: forId });
+        const [fit, horo] = await Promise.all([
+          getJson<Fit>(`/discovery/fit/${daily.candidate_account_id}${q}`).catch(() => null),
+          getJson<HoroscopeMatchResponse>(`/horoscope/match/${daily.candidate_account_id}${q}`).catch(() => null),
+        ]);
+        const ak = horo?.available ? horo.match?.ashtakoota : null;
+        hero = {
+          person: { ...daily, match_label: daily.match_label ?? fit?.label ?? null },
+          common: (fit?.common ?? []).slice(0, 3),
+          gunas: ak && ak.status === "CALCULATED" && ak.totalScore != null ? { n: ak.totalScore, max: ak.maxScore } : null,
+          daily: !!pairing,
+        };
+      }
+      if (!alive) return;
       setState({
         phase: "in",
         session,
         profile,
         completeness,
-        matches: found?.results ?? [],
+        matches: picked.length > 0 ? picked : (found?.results ?? []),
         matchTotal: found?.total ?? 0,
         incoming,
         members,
+        hero,
+        unreadChats: chats.filter((c) => (c.unread_count ?? 0) > 0),
+        brief,
+        progress,
+        because,
+        plan,
+        catalogue,
       });
+      setIntroAction("idle");
     })();
     return () => {
-      active = false;
+      alive = false;
     };
-  }, [router]);
+    // seatKey stands for `active`; contexts only matter once loaded.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router, loaded, seatKey]);
 
   if (state.phase === "checking" || loaderHold) {
     return (
@@ -186,8 +324,26 @@ export default function HomePage() {
     );
   }
 
-  const { profile, completeness, matches, matchTotal, incoming, members } =
+  const { profile, completeness, matchTotal, incoming, members, hero, unreadChats, brief, progress, because, plan, catalogue } =
     state;
+  // [Owner, 2026-09-28] Home reads by role. Someone searching for their child
+  // or relative reads the formal view (biodata facts first, larger type);
+  // parents and guardians also get the request button — they decide. A
+  // candidate reads the photo-and-words view. Nothing else changes by role.
+  const familyView = active?.kind === "family";
+  const decides =
+    active?.kind === "family" && ["parent", "guardian"].includes(active.circle.relationship_type);
+  const forName = active?.kind === "family" ? firstOf(active.circle.candidate_name) : null;
+  const fmtGunas = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
+  // What the family told the matchmaker, as a few words for the card.
+  const briefPoints = brief
+    ? [
+        ...Object.entries(brief.priorities ?? {})
+          .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
+          .map(([theme]) => t(`discover:matchmaker.matters.theme.${theme}.name`)),
+        ...brief.items.map((it) => t(`discover:matchmaker.field.${it.field}`)),
+      ].filter((v, i, all) => all.indexOf(v) === i)
+    : [];
   const fullName = profile?.name || state.session.display_name || "";
   const firstName = fullName.trim().split(/\s+/)[0] || fullName;
   /* The same three milestones /me shows, so Home and Me never disagree
@@ -243,157 +399,343 @@ export default function HomePage() {
           />
         </div>
         <div className="topbar__actions">
+          {contexts && active && <ContextChip contexts={contexts} active={active} onChoose={choose} />}
           <ForKhatriHubLink />
           <AccountButton />
         </div>
       </header>
 
-      <main className="home">
+      <main className={`home${familyView ? " home--family" : ""}`}>
         {/* Only what is waiting on this person, and only when something is.
             A zero is not news, so nothing renders for it. */}
-        {(waiting > 0 || unread > 0) && (
-          <div className="home-alerts">
-            {waiting > 0 && (
-              <Link className="home-alert home-alert--req" href="/discover">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />
-                </svg>
-                <strong>{waiting}</strong>
-                <span>{t("home:tiles.requests")}</span>
-              </Link>
-            )}
-            {unread > 0 && (
-              <Link className="home-alert" href="/messages">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-4.4 3.3A.4.4 0 0 1 4 20z" />
-                </svg>
-                <strong>{unread}</strong>
-                <span>{t("home:tiles.unread", { count: unread })}</span>
-              </Link>
-            )}
-          </div>
+        {/* [Owner, 2026-09-28] YOUR TURN — Hinge's "Your turn": the people
+            waiting on this family, as faces, only when someone is. */}
+        {(waiting > 0 || unreadChats.length > 0) && (
+          <section className="home-alerts hturn" aria-labelledby="home-turn">
+            <h2 className="hturn__title" id="home-turn">
+              {t("home:turn.title")}
+            </h2>
+            <ul className="hturn__list">
+              {incoming.slice(0, 4).map((c) => {
+                const who = c.subject?.open_name ?? c.subject_name ?? null;
+                return (
+                  <li key={c.id}>
+                    <Link className="hturn__item" href={`/profile/${c.subject_account_id}`}>
+                      <Avatar photoUrl={c.subject?.photo_url ?? null} name={who ?? ""} size={44} anonymized={!who} />
+                      <span className="hturn__text">
+                        <strong>{who ?? t("profile:hub.ageYears", { age: c.subject?.age ?? "" })}</strong>
+                        <span>
+                          {c.sent_by_label ??
+                            (forName ? t("home:turn.requestFor", { name: forName }) : t("home:turn.request"))}
+                        </span>
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+              {unreadChats.slice(0, 3).map((c) => (
+                <li key={c.conversation_id ?? c.connection_id}>
+                  <Link className="hturn__item" href={`/messages/${c.connection_id}`}>
+                    <Avatar photoUrl={c.other_photo_url} name={c.other_name ?? ""} size={44} />
+                    <span className="hturn__text">
+                      <strong>{c.other_name ?? t("home:turn.someone")}</strong>
+                      <span>{t("home:tiles.unread", { count: c.unread_count ?? 1 })}</span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
 
         {/* NEW MATCHES — large immersive portraits, one filling most of a
             phone screen with the next peeking: the face first, the name set
             big on the photo, two or three facts as glass chips. */}
         <section className="hfeed" aria-labelledby="home-matches">
+          {/* [Owner, 2026-09-28] TODAY'S INTRODUCTION — Sitch's
+              "Introductions" and Hinge's "Most Compatible": one person the
+              nightly pairing chose for this seat, with why, not a feed. */}
+          {hero && (
+            <article className="hintro" aria-labelledby="home-intro">
+              <Link className="hintro__photo" href={`/profile/${hero.person.candidate_account_id}`} tabIndex={-1}>
+                {hero.person.photo_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={resolveMediaUrl(hero.person.photo_url) ?? ""} alt="" />
+                ) : (
+                  <span className="hcard__empty">
+                    <Avatar anonymized size={88} />
+                  </span>
+                )}
+              </Link>
+              <div className="hintro__body">
+                <p className="hintro__eyebrow">
+                  {hero.daily
+                    ? forName
+                      ? t("home:intro.eyebrowFor", { name: forName })
+                      : t("home:intro.eyebrow")
+                    : forName
+                      ? t("home:intro.topFor", { name: forName })
+                      : t("home:intro.top")}
+                </p>
+                {/* A hidden name is replaced by who they are (work, city),
+                    never by a bare "30 yrs". */}
+                <h2 className="hintro__name" id="home-intro">
+                  {hero.person.open_name?.trim().split(/\s+/)[0] ??
+                    (hero.person.profession ||
+                      t("profile:hub.ageYears", { age: hero.person.age ?? "" }))}
+                  {hero.person.open_name && hero.person.age ? (
+                    <span className="hintro__age"> {hero.person.age}</span>
+                  ) : null}
+                </h2>
+                {familyView ? (
+                  <dl className="hintro__facts">
+                    {(
+                      [
+                        ["age", hero.person.age ? t("profile:hub.ageYears", { age: hero.person.age }) : null],
+                        ["height", hero.person.height_cm ? `${hero.person.height_cm} cm` : null],
+                        [
+                          "education",
+                          hero.person.education_level
+                            ? t(`profile:option.highest_education_level.${hero.person.education_level}`)
+                            : null,
+                        ],
+                        // Work is the heading when the name is hidden.
+                        ["work", hero.person.open_name ? hero.person.profession : null],
+                        ["city", hero.person.locality?.split(",")[0]?.trim()],
+                        [
+                          "tongue",
+                          hero.person.mother_tongue
+                            ? t(`profile:option.mother_tongue.${hero.person.mother_tongue}`)
+                            : null,
+                        ],
+                      ] as const
+                    )
+                      .filter(([, v]) => !!v)
+                      .map(([k, v]) => (
+                        <div key={k} className="hintro__fact">
+                          <dt>{t(`home:intro.fact.${k}`)}</dt>
+                          <dd>{v}</dd>
+                        </div>
+                      ))}
+                  </dl>
+                ) : (
+                  <>
+                    <p className="hintro__meta">
+                      {[
+                        hero.person.open_name ? hero.person.profession : null,
+                        !hero.person.open_name && hero.person.age
+                          ? t("profile:hub.ageYears", { age: hero.person.age })
+                          : null,
+                        hero.person.locality?.split(",")[0]?.trim(),
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                    {/* Their own words, when they published an answer openly. */}
+                    {hero.person.open_prompt && (
+                      <blockquote className="hintro__words">
+                        <span className="hintro__q">{t(`profile:hub.prompts.q.${hero.person.open_prompt.q}`)}</span>
+                        <span className="hintro__a">{hero.person.open_prompt.a}</span>
+                      </blockquote>
+                    )}
+                  </>
+                )}
+                <ul className="hintro__chips">
+                  {hero.person.match_label && (
+                    <li className="hintro__chip hintro__chip--word">{t(`discover:match.${hero.person.match_label}`)}</li>
+                  )}
+                  {hero.gunas && (
+                    <li className="hintro__chip">
+                      {t("discover:compat.gunas", { n: fmtGunas(hero.gunas.n), max: hero.gunas.max })}
+                    </li>
+                  )}
+                </ul>
+                {/* [Owner, 2026-09-29] Trust where the family decides: what
+                    is verified, and since when (research: 91% of women rate
+                    verified profiles highly important). */}
+                <ul className="hintro__trust">
+                  {(hero.person.verification ?? []).length > 0 ? (
+                    (hero.person.verification ?? []).map((v) => (
+                      <li key={v.layer}>
+                        {v.verified_on
+                          ? t("discover:verified.on", {
+                              label: t(`discover:verified.layer.${v.layer}`),
+                              date: new Intl.DateTimeFormat(`${i18n.language}-IN`, { month: "short", year: "numeric" }).format(
+                                new Date(v.verified_on),
+                              ),
+                            })
+                          : t(`discover:verified.layer.${v.layer}`)}
+                      </li>
+                    ))
+                  ) : (
+                    <li className="is-none">{t("discover:verified.none")}</li>
+                  )}
+                </ul>
+                {(hero.person.reason || hero.common.length > 0) && (
+                  <div className="hintro__why">
+                    <p className="hintro__why-title">{t("home:intro.why")}</p>
+                    <ul>
+                      {[hero.person.reason, ...hero.common]
+                        .filter((v, i, all): v is string => !!v && all.indexOf(v) === i)
+                        .slice(0, 3)
+                        .map((line) => (
+                          <li key={line}>{line}</li>
+                        ))}
+                    </ul>
+                  </div>
+                )}
+                <div className="hintro__actions">
+                  <Link className="btn btn--primary" href={`/profile/${hero.person.candidate_account_id}`}>
+                    {familyView ? t("home:intro.openBiodata") : t("home:intro.open")}
+                  </Link>
+                  {familyView && active?.kind === "family" && (
+                    <button
+                      type="button"
+                      className="btn hintro__second"
+                      disabled={introAction === "busy" || introAction === "done"}
+                      onClick={async () => {
+                        setIntroAction("busy");
+                        const outcome = decides
+                          ? await sendRequest(hero.person.candidate_account_id, active.circle.candidate_account_id)
+                          : await suggestProfile(active.circle.membership_id, hero.person.candidate_account_id);
+                        setIntroAction(outcome.ok ? "done" : "error");
+                      }}
+                    >
+                      {introAction === "done"
+                        ? decides
+                          ? t("home:intro.requestSent")
+                          : t("home:intro.suggested")
+                        : decides
+                          ? t("home:intro.requestFor", { name: forName })
+                          : t("home:intro.suggestTo", { name: forName })}
+                    </button>
+                  )}
+                  <Link className="hintro__link" href={`/profile/${hero.person.candidate_account_id}#compatibility`}>
+                    {forName ? t("home:intro.fitFor", { name: forName }) : t("home:intro.fit")}
+                  </Link>
+                  {introAction === "error" && (
+                    <p className="hintro__error" role="alert">
+                      {t("home:intro.actionFailed")}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </article>
+          )}
+
+          {/* YOUR SEARCH — where things stand, not more people to browse. */}
           <div className="hfeed__head">
             <h2 className="hfeed__title" id="home-matches">
-              {t("home:matches.title")}
-              {matchTotal > 0 && <span className="hfeed__count">{matchTotal}</span>}
+              {forName ? t("home:search.titleFor", { name: forName }) : t("home:search.title")}
             </h2>
             <Link className="hfeed__all" href="/discover">
-              {t("home:matches.seeAll")}
+              {t("home:search.browse", { count: matchTotal })}
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M5 12h14M13 6l6 6-6 6" />
               </svg>
             </Link>
           </div>
+          <div className="hsearch">
+            {(
+              [
+                ["awaiting", progress.awaiting, progress.awaitingTotal],
+                ["connected", progress.connected, progress.connectedTotal],
+                ["suggested", progress.suggested, progress.suggestedTotal],
+              ] as const
+            ).map(([lane, faces, total]) => (
+              <div key={lane} className={`hsearch__lane${total === 0 ? " is-empty" : ""}`}>
+                <span className="hsearch__n">{total}</span>
+                <span className="hsearch__label">{t(`home:search.${lane}.label`, { count: total })}</span>
+                {total > 0 ? (
+                  <ul className="hsearch__faces">
+                    {faces.map((f) => {
+                      const name = f.card?.name?.trim().split(/\s+/)[0] ?? null;
+                      const by =
+                        lane === "suggested" && "byYou" in f
+                          ? f.byYou
+                            ? t("home:search.suggested.byYou")
+                            : f.by
+                              ? t("home:search.suggested.by", { name: f.by.split(" ")[0] })
+                              : null
+                          : null;
+                      return (
+                        <li key={f.id}>
+                          <Link
+                            className="hsearch__face"
+                            href={`/profile/${f.id}`}
+                            aria-label={[name, f.card?.age, f.card?.profession, by].filter(Boolean).join(", ")}
+                          >
+                            <Avatar photoUrl={f.card?.photo_url ?? null} name={name ?? ""} size={48} anonymized={!f.card?.photo_url} />
+                            <span className="hsearch__who">
+                              {name ?? t("profile:hub.ageYears", { age: f.card?.age ?? "" })}
+                            </span>
+                            {by && <span className="hsearch__by">{by}</span>}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p className="hsearch__empty">
+                    {forName
+                      ? t(`home:search.${lane}.emptyFor`, { name: forName })
+                      : t(`home:search.${lane}.empty`)}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
 
-          {matches.length === 0 ? (
-            <p className="caption">{t("home:matches.empty")}</p>
-          ) : (
-            <div className="mrail-wrap">
-              <button
-                type="button"
-                className="mrail__nav mrail__nav--prev"
-                aria-label={t("home:matches.prev")}
-                onClick={() => railRef.current?.scrollBy({ left: -railStep(), behavior: "smooth" })}
-              >
-                ‹
-              </button>
-              <ul className="hrail" ref={railRef}>
-                {matches.slice(0, 16).map((match, i) => {
-                  const city = match.locality?.split(",")[0]?.trim();
-                  const name = match.open_name?.trim().split(/\s+/)[0];
-                  const photos = match.open_photo_urls?.length ?? 0;
-                  // Stored values are keys ("doctorate"); show their translated labels.
-                  const chips = [
-                    match.education_level
-                      ? t(`profile:option.highest_education_level.${match.education_level}`)
-                      : null,
-                    match.mother_tongue
-                      ? t(`profile:option.mother_tongue.${match.mother_tongue}`)
-                      : null,
-                  ].filter((c): c is string => !!c);
+          {/* [Owner, 2026-09-28] BECAUSE OF THIS, THESE — rows from what the
+              family did (a request, a suggestion, a save), each explaining
+              itself. */}
+          {because
+            .map((row) => ({
+              ...row,
+              results: row.results.filter((p) => p.candidate_account_id !== hero?.person.candidate_account_id),
+            }))
+            .filter((row) => row.results.length >= 2)
+            .map((row) => (
+            <section key={`${row.kind}-${row.anchor_account_id}`} className="hbecause" aria-label={row.title}>
+              <div className="hbecause__head">
+                <h3 className="hbecause__title">{row.title}</h3>
+                <p className="hbecause__sub">{row.sub}</p>
+              </div>
+              <ul className="hbecause__list">
+                {row.results.map((p) => {
+                  const name = p.open_name?.trim().split(/\s+/)[0];
+                  const facts = familyView
+                    ? [
+                        p.age ? t("profile:hub.ageYears", { age: p.age }) : null,
+                        p.height_cm ? `${p.height_cm} cm` : null,
+                        p.profession,
+                        p.locality?.split(",")[0]?.trim(),
+                      ]
+                    : [p.profession, p.locality?.split(",")[0]?.trim()];
                   return (
-                    <li
-                      key={match.candidate_account_id}
-                      className="hcard"
-                      style={{ "--i": Math.min(i, 6) } as React.CSSProperties}
-                    >
-                      <Link
-                        className="hcard__link"
-                        href={`/profile/${match.candidate_account_id}`}
-                        aria-label={[name, match.age, city, match.profession].filter(Boolean).join(", ")}
-                      >
-                        {match.photo_url ? (
+                    <li key={p.candidate_account_id}>
+                      <Link className="bcard" href={`/profile/${p.candidate_account_id}`}>
+                        {p.photo_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            className="hcard__img"
-                            src={resolveMediaUrl(match.photo_url) ?? ""}
-                            alt=""
-                            loading={i < 2 ? "eager" : "lazy"}
-                            decoding="async"
-                          />
+                          <img className="bcard__img" src={resolveMediaUrl(p.photo_url) ?? ""} alt="" loading="lazy" />
                         ) : (
-                          <span className="hcard__empty">
-                            <Avatar anonymized size={88} />
+                          <span className="bcard__img bcard__img--empty">
+                            <Avatar anonymized size={56} />
                           </span>
                         )}
-                        <span className="hcard__top">
-
-                          {photos > 1 && (
-                            <span className="hcard__chip">
-                              {t("discover:tile.photos", { count: photos })}
-                            </span>
-                          )}
+                        <span className="bcard__name">
+                          {name ?? t("profile:hub.ageYears", { age: p.age ?? "" })}
+                          {name && p.age ? <span className="bcard__age"> {p.age}</span> : null}
                         </span>
-                        <span className="hcard__text">
-                          <span className="hcard__name">
-                            {name ?? t("profile:hub.ageYears", { age: match.age ?? "" })}
-                            {name && match.age ? <span className="hcard__age"> {match.age}</span> : null}
-                            {(match.verification?.length ?? 0) > 0 && (
-                              <Icon name="verified" size={16} className="seal" label={t("discover:verified.title")} />
-                            )}
-                          </span>
-                          <span className="hcard__meta">
-                            {[match.profession, city].filter(Boolean).join(" · ")}
-                          </span>
-                          {chips.length > 0 && (
-                            <span className="hcard__chips">
-                              {chips.map((c) => (
-                                <span key={c} className="hcard__chip">
-                                  {c}
-                                </span>
-                              ))}
-                            </span>
-                          )}
-                        </span>
+                        <span className="bcard__meta">{facts.filter(Boolean).join(" · ")}</span>
+                        {p.reason && <span className="bcard__why">{p.reason}</span>}
                       </Link>
                     </li>
                   );
                 })}
-                {matchTotal > 0 && (
-                  <li className="hcard hcard--more">
-                    <Link className="hcard__link hcard__link--more" href="/discover">
-                      <span className="hcard__more-n">{matchTotal}</span>
-                      <span>{t("home:matches.seeAllCount", { count: matchTotal })}</span>
-                    </Link>
-                  </li>
-                )}
               </ul>
-              <button
-                type="button"
-                className="mrail__nav mrail__nav--next"
-                aria-label={t("home:matches.next")}
-                onClick={() => railRef.current?.scrollBy({ left: railStep(), behavior: "smooth" })}
-              >
-                ›
-              </button>
-            </div>
-          )}
+            </section>
+          ))}
         </section>
 
         {/* Two small tiles, side by side even on a phone: how ready your
@@ -424,7 +766,22 @@ export default function HomePage() {
                 : t("home:tiles.allRead")}
             </span>
           </Link>
-          {profile && (
+          {/* [Owner, 2026-09-28] Sitch's "Talk to your matchmaker": what
+              this family told the engine, or the ask to tell it. */}
+          {!forId && profile && (
+            <Link className="duo duo--mm" href="/me/matchmaker">
+              <span className="duo__plus" aria-hidden="true">
+                <Icon name="heart" />
+              </span>
+              <span className="duo__label">{t("home:mm.title")}</span>
+              <span className="duo__body">
+                {briefPoints.length > 0
+                  ? t("home:mm.matters", { list: briefPoints.slice(0, 3).join(", ") })
+                  : t("home:mm.ask")}
+              </span>
+            </Link>
+          )}
+          {profile && !forId && (
             <Link className="duo duo--profile" href="/me">
               <span
                 className="duo-ring"
@@ -463,10 +820,14 @@ export default function HomePage() {
                 <Icon name="invite" />
               </span>
             )}
-            <span className="duo__label">{t("home:circle.title")}</span>
+            <span className="duo__label">
+              {forName ? t("home:circle.titleFor", { name: forName }) : t("home:circle.title")}
+            </span>
             <span className="duo__body">
               {circleCount > 0
-                ? t("home:circle.helping", { count: circleCount })
+                ? forName
+                  ? t("home:circle.helpingFor", { count: circleCount, name: forName })
+                  : t("home:circle.helping", { count: circleCount })
                 : t("home:circle.invite")}
             </span>
           </Link>
@@ -488,6 +849,53 @@ export default function HomePage() {
 
         {/* The internal build tracker (/status) is not linked from a
             member's Home: a real member has no use for it. */}
+        {/* [Owner, 2026-09-28] PLANS — last on Home, after everything free:
+            the seat's plan, today's requests, and what each plan adds. A plan
+            buys capability in one's own search, never a place in anyone's
+            results (DEC-V1-031). */}
+        {catalogue && plan && (
+          <section className="hplans" aria-labelledby="home-plans">
+            <div className="hplans__head">
+              <h2 className="hfeed__title" id="home-plans">
+                {forName ? t("home:plans.titleFor", { name: forName }) : t("home:plans.title")}
+              </h2>
+              <p className="hplans__now">
+                {t("home:plans.current", { plan: plan.plan_name })}
+                {plan.usage.daily_requests != null &&
+                  ` · ${t("home:plans.usage", { used: plan.usage.requests_sent_today, limit: plan.usage.daily_requests })}`}
+              </p>
+            </div>
+            <ul className="hplans__list">
+              {catalogue.plans.map((p) => {
+                const cheapest = p.terms.length
+                  ? p.terms.reduce((a, b) => (b.total_paise / b.months < a.total_paise / a.months ? b : a))
+                  : null;
+                const current = p.code === plan.plan_code;
+                return (
+                  <li key={p.code} className={`hplan${current ? " is-current" : ""}`}>
+                    <span className="hplan__name">{p.name}</span>
+                    {cheapest && (
+                      <span className="hplan__price">
+                        {t("home:plans.from", {
+                          price: formatRupees(Math.round(cheapest.total_paise / cheapest.months / 100) * 100),
+                        })}
+                      </span>
+                    )}
+                    <ul className="hplan__features">
+                      {p.features.slice(0, 3).map((f) => (
+                        <li key={f}>{f}</li>
+                      ))}
+                    </ul>
+                    {current && <span className="hplan__badge">{t("home:plans.yours")}</span>}
+                  </li>
+                );
+              })}
+            </ul>
+            <Link className="hplans__all" href="/plans">
+              {t("home:plans.compare")}
+            </Link>
+          </section>
+        )}
       </main>
     </>
   );

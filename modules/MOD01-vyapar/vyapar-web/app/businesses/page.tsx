@@ -16,7 +16,7 @@
 // last search re-runs on a live language switch), the markup is
 // <BusinessesView>.
 // Traces to: FR15, FR16, FR17, TR015, TR016, TR017
-import { useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import type { ListingSearchParams } from "@/lib/sdk";
 import type { ParsedIntent } from "@/app/components/IntentBar";
 import { DEFAULT_FILTERS, type Filters } from "@/app/components/FilterSheet";
@@ -43,7 +43,14 @@ function buildParams(intent: ParsedIntent, attempt: number, f: Filters, extraPar
   return params;
 }
 
-export default function BusinessesPage() {
+// [FE2] The page now reads its URL (?q=&category=&locality=&skills=) and runs
+// that search on arrival — Discover's search box, the desktop Hire menu and
+// the outcome pages all link here with a query. Before this, those links
+// landed on an empty directory.
+type BusinessesQuery = { q?: string; category?: string; locality?: string; skills?: string };
+
+export default function BusinessesPage({ searchParams }: { searchParams: Promise<BusinessesQuery> }) {
+  const query = use(searchParams);
   const [lastQuery, setLastQuery] = useState<ParsedIntent | null>(null);
   const [broadenAttempt, setBroadenAttempt] = useState(0);
   // [Real regression fix — FR15/FR17/FR19, coordinator direction] the
@@ -52,14 +59,31 @@ export default function BusinessesPage() {
   // both are sent together on every search, and the intent bar is now a
   // shortcut INTO these filters (it can set locality/category), never the
   // only path to them.
-  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState<Filters>(() =>
+    query.skills ? { ...DEFAULT_FILTERS, skills: query.skills.split(",").filter(Boolean) } : DEFAULT_FILTERS,
+  );
   const { response, loading, search } = useListingSearch();
+  const ranFor = useRef<string | null>(null);
+  const queryKey = JSON.stringify(query);
 
   async function runSearch(intent: ParsedIntent, attempt = 0, extraParams: Record<string, string> = {}, f: Filters = filters) {
     setLastQuery(intent);
     setBroadenAttempt(attempt);
     await search(buildParams(intent, attempt, f, extraParams));
   }
+
+  useEffect(() => {
+    if (ranFor.current === queryKey) return;
+    ranFor.current = queryKey;
+    if (!query.q && !query.category && !query.locality && !query.skills) return;
+    const f: Filters = query.skills ? { ...DEFAULT_FILTERS, skills: query.skills.split(",").filter(Boolean) } : DEFAULT_FILTERS;
+    const intent: ParsedIntent = { text: query.q ?? "", category: query.category, locality: query.locality };
+    queueMicrotask(() => {
+      setFilters(f);
+      void runSearch(intent, 0, {}, f);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryKey]);
 
   function changeFilters(next: Filters) {
     setFilters(next);

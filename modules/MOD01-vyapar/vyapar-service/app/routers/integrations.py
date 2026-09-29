@@ -31,7 +31,7 @@ from app.integrations.webhooks.events import EVENT_TYPES, WILDCARD, catalogue
 router = APIRouter(prefix="/v1/integrations", tags=["integrations"])
 
 Ctx = Annotated[AuthzContext, Depends(resolve_authz_context)]
-Conn = Annotated[asyncpg.Connection, Depends(get_conn)]
+Conn = Annotated[asyncpg.Connection, Depends(get_conn, scope="function")]
 
 
 # ---------------------------------------------------------------------------

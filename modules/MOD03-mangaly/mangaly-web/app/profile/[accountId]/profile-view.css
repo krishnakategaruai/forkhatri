@@ -377,3 +377,32 @@
   border-radius: 24px;
   max-height: 70vh;
 }
+
+/* [2026-09-29, critique] The family biodata in sections: two columns on a
+   desk, readable type for elders. */
+.biodata-sections {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+  align-items: start;
+}
+@media (min-width: 900px) {
+  .biodata-sections {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.biodata-section__title {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: 1.25rem;
+}
+.biodata--family .biodata__row > dt {
+  font-size: 0.9375rem;
+  color: var(--ink-2);
+}
+.biodata--family .biodata__row > dd {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+}

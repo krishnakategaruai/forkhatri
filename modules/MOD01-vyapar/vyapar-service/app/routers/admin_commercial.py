@@ -33,7 +33,7 @@ audit_router = APIRouter(prefix="/v1/admin/audit", tags=["admin-audit"], respons
 async def list_products(
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[AdminProductOut]:
     return await svc.list_commercial_products(conn, ctx, lang)
 
@@ -43,7 +43,7 @@ async def create_product_version(
     body: ProductVersionIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> ProductVersionCreatedOut:
     return await svc.create_commercial_product_version(conn, ctx, lang, body=body)
 
@@ -55,7 +55,7 @@ async def list_orders(
     state: str | None = None,
     limit: int = Query(default=50, le=200),
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[CommercialOrderOut]:
     return await svc.list_commercial_orders(conn, ctx, lang, kind=kind, state=state, limit=limit)
 
@@ -65,7 +65,7 @@ async def process_refund(
     body: RefundIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> RefundOut:
     return await svc.process_refund(conn, ctx, lang, body=body)
 
@@ -77,7 +77,7 @@ async def ranking_diagnostics(
     lang: Locale,
     q: str | None = None,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> RankingDiagnosticsOut:
     return await svc.get_ranking_diagnostics(conn, ctx, lang, target_kind=target_kind, target_id=target_id, q=q)
 
@@ -92,6 +92,6 @@ async def search_audit(
     days: int = Query(default=30, ge=1, le=365),
     limit: int = Query(default=100, le=500),
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[AuditEventOut]:
     return await svc.search_audit_log(conn, ctx, lang, actor_id=actor_id, object_kind=object_kind, object_id=object_id, action=action, days=days, limit=limit)

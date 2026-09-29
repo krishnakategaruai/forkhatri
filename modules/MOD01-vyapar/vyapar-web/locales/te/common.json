@@ -67,5 +67,22 @@
   "layout": {
     "actions": "చర్యలు",
     "onThisPage": "ఈ పేజీలో"
+  },
+  "shell": {
+    "home": "వ్యాపార్ హోమ్",
+    "searchPlaceholder": "ఉద్యోగాలు, నైపుణ్యాలు లేదా వ్యాపారాలు వెతకండి",
+    "searchLabel": "వ్యాపార్‌లో వెతకండి",
+    "openSearch": "వెతకండి",
+    "account": "ఖాతా"
+  },
+  "display": {
+    "title": "భాష మరియు డిస్‌ప్లే",
+    "language": "భాష",
+    "textSize": "అక్షరాల పరిమాణం",
+    "sizeNormal": "సాధారణం",
+    "sizeLarge": "పెద్దది",
+    "sizeLarger": "ఇంకా పెద్దది",
+    "contrast": "ఎక్కువ కాంట్రాస్ట్",
+    "contrastHint": "ముదురు అక్షరాలు, స్పష్టమైన అంచులు"
   }
 }

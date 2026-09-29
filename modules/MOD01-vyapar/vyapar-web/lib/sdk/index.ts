@@ -24,6 +24,15 @@ import {
 import { devApi, eventsApi, firstRunApi, membersApi, preferencesApi, privacyApi, uploadsApi, workspaceApi } from "./domains/account";
 import { adminApi, commercialApi } from "./domains/commercial";
 import { integrationsApi } from "./domains/integrations";
+// [FE2] contact control, packages, saved searches, badges, seeker protection, contracts
+// and the taxonomy tree (shared with FE1's hiring screens)
+import { contactApi } from "./domains/contact";
+import { packagesApi } from "./domains/packages";
+import { savedSearchesApi } from "./domains/savedSearches";
+import { badgesApi, seekerProtectionApi } from "./domains/trust";
+import { contractsApi } from "./domains/contracts";
+import { taxonomyApi } from "./domains/taxonomy";
+import { aiApi, applicantsApi, postingApi, responsesApi } from "./domains/hiring";
 
 export function createVyaparSdk(config: VyaparClientConfig | VyaparClient) {
   const client = config instanceof VyaparClient ? config : new VyaparClient(config);
@@ -49,6 +58,21 @@ export function createVyaparSdk(config: VyaparClientConfig | VyaparClient) {
     uploads: uploadsApi(client),
     events: eventsApi(client),
     integrations: integrationsApi(client),
+    contact: contactApi(client),
+    packages: packagesApi(client),
+    savedSearches: savedSearchesApi(client),
+    badges: badgesApi(client),
+    seekerProtection: seekerProtectionApi(client),
+    contracts: contractsApi(client),
+    taxonomy: taxonomyApi(client),
+    /** [FE1] typed opportunity writes (structured fields) + posting suggestions */
+    posting: postingApi(client),
+    /** [FE1] structured responses: one-tap apply, proposals, quotes */
+    responses: responsesApi(client),
+    /** [FE1] the poster's applicant pipeline */
+    applicants: applicantsApi(client),
+    /** [FE1] AI assistance: drafts, photo reading, shortlist, posting tips, proposal help */
+    ai: aiApi(client),
     dev: devApi(client),
   };
 }
@@ -70,3 +94,10 @@ export {
 } from "./auth";
 export type { AuthStrategy, AuthRequest, TokenSource } from "./auth";
 export * from "./types";
+export type * from "./domains/contact";
+export type * from "./domains/packages";
+export type * from "./domains/savedSearches";
+export type * from "./domains/trust";
+export type * from "./domains/contracts";
+export type * from "./domains/taxonomy";
+export * from "./hiring-types";

@@ -30,7 +30,7 @@ async def get_invite_status(
     interaction_kind: InteractionKind,
     interaction_id: str,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> ReviewInviteStatusOut:
     return await svc.get_review_invite_status(conn, ctx, interaction_kind=interaction_kind, interaction_id=interaction_id)
 
@@ -40,7 +40,7 @@ async def submit_review(
     body: ReviewIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> ReviewCreatedOut:
     return await svc.create_review(conn, ctx, lang, body=body, idempotency_key=idempotency_key)
@@ -50,7 +50,7 @@ async def submit_review(
 async def list_listing_reviews(
     listing_id: str,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[ListingReviewOut]:
     return await svc.list_listing_reviews(conn, ctx, listing_id=listing_id)
 
@@ -62,7 +62,7 @@ async def list_listing_reviews_page(
     limit: int = Query(default=DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     cursor: str | None = None,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> Page[ListingReviewOut]:
     return await svc.list_listing_reviews_page(conn, ctx, lang, limit=limit, cursor=cursor, listing_id=listing_id)
 
@@ -73,6 +73,6 @@ async def dispute_review(
     body: DisputeIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> DisputeOut:
     return await svc.dispute_review(conn, ctx, lang, review_id=review_id, body=body)

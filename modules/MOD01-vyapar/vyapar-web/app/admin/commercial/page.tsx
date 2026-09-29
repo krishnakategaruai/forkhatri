@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import { api, ApiError } from "@/lib/api";
 import { formatPaise } from "@/lib/money";
 import Screen from "@/app/components/Screen";
+import { formatDate } from "@/lib/format"; // [FE2] Indian date order
 
 interface Product {
   id: string;
@@ -237,7 +238,7 @@ export default function AdminCommercialPage() {
               <span className="vy-badge vy-badge-member-provided">{t(`commercial:state.${o.state}` as "state.active")}</span>
             </div>
             <span className="vy-muted" style={{ fontSize: 13 }}>
-              {o.owner_id} · {new Date(o.created_at).toLocaleDateString(i18n.language)}
+              {o.owner_id} · {formatDate(o.created_at, i18n.language)}
               {o.charged_paise != null ? ` · ${money(o.charged_paise)}` : ""}
               {o.refunded_paise ? ` · ${t("adminCommercial:orders.refunded", { amount: money(o.refunded_paise) })}` : ""}
             </span>

@@ -52,5 +52,8 @@
       "unmapped": "Unmapped",
       "merged": "Merged"
     }
+  },
+  "stale": {
+    "done": "{{n}} items updated."
   }
 }

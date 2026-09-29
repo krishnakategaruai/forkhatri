@@ -159,3 +159,13 @@
   color: var(--accent-ink);
   text-decoration: none;
 }
+
+/* Inside the compatibility panel: the panel is the card. */
+.fit--bare {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.fit__h--gap {
+  margin-top: var(--space-3);
+}

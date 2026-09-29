@@ -22,7 +22,7 @@ async def assert_non_owning_role(engine: AsyncEngine) -> None:
         owned = await conn.scalar(
             text(
                 "SELECT count(*) FROM pg_tables "
-                "WHERE schemaname IN ('identity', 'registry', 'platform') AND tableowner = current_user"
+                "WHERE schemaname IN ('identity', 'registry', 'platform', 'governance') AND tableowner = current_user"
             )
         )
     if owned:

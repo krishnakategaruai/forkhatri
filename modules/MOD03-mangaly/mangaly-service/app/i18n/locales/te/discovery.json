@@ -70,6 +70,38 @@
       "brother_in_law": "బావ/బావమరిది",
       "sister_in_law": "వదిన/మరదలు",
       "family_friend": "కుటుంబ స్నేహితులు"
+    },
+    "family_values": {
+      "traditional": "సాంప్రదాయ",
+      "moderate": "మధ్యస్థ",
+      "liberal": "ఉదార"
+    },
+    "family_type": {
+      "joint": "ఉమ్మడి",
+      "nuclear": "చిన్న",
+      "extended": "విస్తృత"
+    },
+    "hobby": {
+      "cooking": "వంట",
+      "street_food": "స్ట్రీట్ ఫుడ్",
+      "trekking": "ట్రెక్కింగ్",
+      "road_trips": "రోడ్ ట్రిప్స్",
+      "pilgrimages": "తీర్థయాత్రలు",
+      "beaches": "బీచ్‌లు",
+      "cricket": "క్రికెట్",
+      "badminton": "బ్యాడ్మింటన్",
+      "yoga": "యోగా",
+      "fitness": "ఫిట్‌నెస్",
+      "music": "సంగీతం",
+      "classical_dance": "శాస్త్రీయ నృత్యం",
+      "movies": "సినిమాలు",
+      "reading": "చదవడం",
+      "photography": "ఫోటోగ్రఫీ",
+      "gardening": "తోటపని",
+      "volunteering": "స్వచ్ఛంద సేవ",
+      "spirituality": "ఆధ్యాత్మికత",
+      "board_games": "బోర్డ్ గేమ్స్",
+      "art": "కళలు & చేతిపనులు"
     }
   },
   "shelf": {
@@ -90,7 +122,11 @@
       "mutualFit": "మీరిద్దరూ ఒకరి ఇష్టాలకు మరొకరు సరిపోతారు",
       "wantsYourCity": "వారు కూడా {city}లో ఉన్నవారిని కోరుకుంటున్నారు",
       "wantsYourAge": "మీ వయసు వారిని కోరుకుంటున్నారు",
-      "nearby": "{city}లో · సుమారు {km} కి.మీ. దూరం"
+      "nearby": "{city}లో · సుమారు {km} కి.మీ. దూరం",
+      "sameFamilyValues": "వీరిదీ {value} కుటుంబం",
+      "sameFamilyType": "వీరిదీ {value} కుటుంబం",
+      "sameEducation": "వీరు కూడా {value} వరకు చదివారు",
+      "horoscopeGuna": "{max}లో {n} గుణాలు కలుస్తాయి"
     },
     "reasonFor": {
       "sharedHobbies": "{name} లాగే {list} ఇష్టం",
@@ -102,13 +138,33 @@
       "suggestedBy": "{name} {relation} సూచించారు",
       "suggestedByYou": "మీరు సూచించారు",
       "sameFamilyView": "వారు కూడా కుటుంబం {value} ఉండాలనుకుంటారు",
-      "mutualFit": "{name}, వారు ఒకరి ఇష్టాలకు మరొకరు సరిపోతారు",
+      "mutualFit": "{name} కోరినదానికి వీరు సరిపోతారు, వీరు కోరినదానికి {name} సరిపోతారు",
       "wantsYourCity": "{name} ఉన్న {city}లో ఉన్నవారిని కోరుకుంటున్నారు",
       "wantsYourAge": "{name} వయసు వారిని కోరుకుంటున్నారు",
-      "nearby": "{city}లో · {name} నుండి సుమారు {km} కి.మీ."
+      "nearby": "{city}లో · {name} నుండి సుమారు {km} కి.మీ.",
+      "sameFamilyValues": "{name} లాగే {value} కుటుంబం",
+      "sameFamilyType": "{name} లాగే {value} కుటుంబం",
+      "sameEducation": "{name} లాగే {value} వరకు చదివారు",
+      "horoscopeGuna": "{name}తో {max}లో {n} గుణాలు కలుస్తాయి",
+      "openToMove": "{city}లో · ఊరు మారడానికి సిద్ధం"
     }
   },
   "error": {
     "lookingForMissing": "సంబంధాలు చూడటానికి మీరు వధువు కోసం వెతుకుతున్నారా లేదా వరుడి కోసమా చెప్పండి."
+  },
+  "because": {
+    "title": "{name} లాంటి మరికొందరు",
+    "like": "వీరు కూడా: {facts}",
+    "anon": "ఈ {age} ఏళ్ల వ్యక్తి",
+    "anonWork": "ఈ {age} ఏళ్ల {work}",
+    "anonNone": "ఈ ప్రొఫైల్",
+    "sub": {
+      "request": "మీరు వీరికి అభ్యర్థన పంపినందుకు",
+      "requestFor": "{name} కోసం వీరికి అభ్యర్థన వెళ్ళినందుకు",
+      "suggested": "మీ కుటుంబం వీరిని సూచించినందుకు",
+      "suggestedBy": "{name} వీరిని సూచించినందుకు",
+      "suggestedByYou": "మీరు వీరిని సూచించినందుకు",
+      "saved": "మీరు వీరిని సేవ్ చేసినందుకు"
+    }
   }
 }

@@ -39,7 +39,7 @@ async def boost_options(
     target_id: str,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> PromotionOptionsOut:
     return await svc.list_promotion_options(conn, ctx, lang, target_kind=target_kind, target_id=target_id)
 
@@ -49,7 +49,7 @@ async def quote_custom_promotion(
     days: int,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> svc.PromotionQuoteOut:
     return await svc.quote_custom_promotion(conn, ctx, lang, days=days)
 
@@ -59,7 +59,7 @@ async def create_promotion_draft(
     body: PromotionIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> PromotionCreatedOut:
     return await svc.create_promotion(conn, ctx, lang, body=body)
 
@@ -70,7 +70,7 @@ async def confirm_purchase(
     body: ConfirmIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> PurchaseResultOut:
     return await svc.confirm_promotion_purchase(conn, ctx, lang, promotion_id=promotion_id, body=body)
 
@@ -78,7 +78,7 @@ async def confirm_purchase(
 @router.get("/v1/promotions/mine", response_model=list[PromotionSummaryOut], operation_id="listMyPromotions", summary="List the member's promotions")
 async def list_my_promotions(
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[PromotionSummaryOut]:
     return await svc.list_my_promotions(conn, ctx)
 
@@ -89,7 +89,7 @@ async def list_my_promotions_page(
     limit: int = Query(default=DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     cursor: str | None = None,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> Page[PromotionSummaryOut]:
     return await svc.list_my_promotions_page(conn, ctx, lang, limit=limit, cursor=cursor)
 
@@ -99,7 +99,7 @@ async def get_promotion(
     promotion_id: str,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> PromotionDetailOut:
     return await svc.get_promotion(conn, ctx, lang, promotion_id=promotion_id)
 
@@ -109,7 +109,7 @@ async def cancel_promotion(
     promotion_id: str,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> PromotionCancelOut:
     return await svc.cancel_promotion(conn, ctx, lang, promotion_id=promotion_id)
 
@@ -122,7 +122,7 @@ async def performance_report(
     promotion_id: str | None = None,
     days: int = Query(default=30, ge=1, le=365),
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> PerformanceReportOut:
     return await svc.get_performance_report(conn, ctx, lang, target_kind=target_kind, target_id=target_id, promotion_id=promotion_id, days=days)
 
@@ -133,6 +133,6 @@ async def reject_promotion(
     body: RejectIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> PromotionRejectOut:
     return await svc.reject_promotion(conn, ctx, lang, promotion_id=promotion_id, body=body)

@@ -1,0 +1,70 @@
+{
+  "channel": {
+    "call": "Call",
+    "whatsapp": "WhatsApp"
+  },
+  "reason": {
+    "outside_hours": "Outside their call hours. Next window: {when}",
+    "day_off": "They don't take calls today. Next window: {when}",
+    "daily_cap_reached": "They have taken all the calls they accept today. Next window: {when}",
+    "not_matching": "They take calls only from people whose skills match this work",
+    "precall_off": "Calling before an application is accepted is off for this post",
+    "caller_limit_reached": "You have contacted them about this post {limit} times today. Try again tomorrow",
+    "whatsapp_only": "They take WhatsApp messages only for this post, not calls"
+  },
+  "prefill": {
+    "whatsapp": "Hi {name}, this is {me} from Vyapar, about \"{subject}\".",
+    "whatsappJob": "Hi {name}, I saw your job \"{job}\" on Vyapar and would like to talk about it. {me}"
+  },
+  "attempt": {
+    "youContacted": "You contacted {name} by {channel} on {when}",
+    "theyContacted": "{name} contacted you by {channel} on {when}"
+  },
+  "error": {
+    "emptyWindow": "Call hours must start and end at different times.",
+    "notRevealed": "Contact details open once the enquiry is accepted.",
+    "channelOff": "They don't accept contact on this channel.",
+    "notMatching": "They take calls only from people whose skills match this work.",
+    "dailyCapReached": "They have taken all the calls they accept today. Try again tomorrow.",
+    "precallOff": "The poster takes calls only after accepting an application. Apply instead.",
+    "precallCallerLimit": "You have contacted them about this post {limit} times today. Try again tomorrow.",
+    "outsideHours": "They take calls only in their call hours. Try again in the next window.",
+    "ownPost": "This is your own post.",
+    "precallWhatsappOnly": "They take WhatsApp messages only for this post, not calls. Send a WhatsApp message instead."
+  },
+  "precall": {
+    "reason": {
+      "precall_off": "The poster takes calls only after accepting an application. Apply instead.",
+      "own_post": "This is your own post.",
+      "no_contact": "The poster has no phone or WhatsApp number to call. Apply instead."
+    },
+    "leadIntro": "I contacted you by {channel} from Vyapar about this job."
+  },
+  "date": {
+    "month": {
+      "m1": "Jan",
+      "m2": "Feb",
+      "m3": "Mar",
+      "m4": "Apr",
+      "m5": "May",
+      "m6": "Jun",
+      "m7": "Jul",
+      "m8": "Aug",
+      "m9": "Sep",
+      "m10": "Oct",
+      "m11": "Nov",
+      "m12": "Dec"
+    },
+    "weekday": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    },
+    "zone": "IST",
+    "pattern": "{date}, {time} {zone}"
+  }
+}

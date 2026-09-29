@@ -10,6 +10,42 @@
     "restricted": "This thread has been restricted — no further messages.",
     "invalidTransition": "Can't do that from the current state.",
     "providerOnly": "Only the provider can do that.",
-    "senderOnly": "Only the sender can do that."
+    "senderOnly": "Only the sender can do that.",
+    "messageTooShort": "Please write at least {min} characters.",
+    "proposalFieldsNotAllowed": "A bid, timeline and milestones only go with a proposal on a project.",
+    "screeningAnswersNotAllowed": "Screening answers only go with an application to an opportunity.",
+    "bidRequired": "A proposal needs your price and how many days the work will take.",
+    "milestonesHourly": "Milestones only apply to a fixed-price proposal.",
+    "milestonesTotal": "The milestone amounts must add up to your bid.",
+    "unknownScreeningQuestion": "One of the answers is for a question this opportunity doesn't ask.",
+    "screeningAnswersRequired": "Please answer every screening question.",
+    "alreadyDeclined": "The poster has already decided on your application for this.",
+    "compareCount": "Choose 2 to {max} applicants to compare.",
+    "applicantNotFound": "That applicant isn't on this opportunity.",
+    "stageFinal": "This applicant has already been hired or declined.",
+    "applicantNotAvailable": "This applicant's conversation has ended, so they can't be hired from here."
+  },
+  "oneTap": {
+    "intro": "Hello, I'd like to apply.",
+    "experience": "I have {years} years of experience.",
+    "locality": "I'm based in {locality}."
+  },
+  "applicant": {
+    "skills": {
+      "all": "Has all {count} required skills",
+      "allOne": "Has the required skill: {skills}",
+      "some": "Has {matched} of {total} skills: {skills}",
+      "none": "None of the required skills",
+      "missing": "Missing: {skills}"
+    },
+    "reason": {
+      "location_fit": "Lives near the work",
+      "experience_fit": "Has the experience you asked for",
+      "timing_fit": "Can start soon",
+      "value_fit": "Bid is within your budget"
+    },
+    "risk": {
+      "bidAboveBudget": "Bid is above your budget"
+    }
   }
 }

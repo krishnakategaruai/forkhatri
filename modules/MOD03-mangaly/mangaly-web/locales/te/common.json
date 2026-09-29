@@ -33,7 +33,13 @@
       "dark": "డార్క్",
       "system": "సిస్టమ్"
     },
-    "logOutConfirm": "ఈ పరికరంలో ForKhatri నుండి లాగ్ అవుట్ అవ్వాలా?"
+    "logOutConfirm": "ఈ పరికరంలో ForKhatri నుండి లాగ్ అవుట్ అవ్వాలా?",
+    "textSize": "అక్షరాల పరిమాణం",
+    "textSizeOption": {
+      "standard": "సాధారణం",
+      "larger": "పెద్దది",
+      "largest": "అతి పెద్దది"
+    }
   },
   "action": {
     "back": "వెనుకకు",

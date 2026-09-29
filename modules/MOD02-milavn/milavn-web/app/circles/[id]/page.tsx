@@ -1,20 +1,38 @@
 'use client';
 
-/* Circle detail (FR020, FR024, FR025, FR027 · UX09/UI09): stats pills
- * (community memory, members-only for non-open circles), member list,
- * upcoming activities, join/leave, "new activity in this circle". */
+/* Circle detail (FR020, FR024, FR025, FR027 · UX09/UI09). A circle is a community
+ * page, never a chat (owner, 2026-09-28). Design brief from the critique agent the
+ * same day — photo-led, editorial, near-monochrome, one accent:
+ *   hero   full-bleed cover (Luma: no text on the photo), floating back/more, the
+ *          top bar fades in only once the hero scrolls away (Apple 2025);
+ *   head   caption, the name in the display serif, faces + count, description;
+ *   action ONE saffron primary; invite/manage are quiet icon buttons;
+ *   tabs   Posts · Events · Photos · Members with a sliding indicator;
+ *   feed   hairline-separated posts (Threads/Strava clubs), polls with bars,
+ *          documents as rows. Organizer-only circles keep posting to organizers. */
 
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import ActivityCard from '@/components/ActivityCard';
-import { CardSkeleton, EmptyState, ErrorState, Toast } from '@/components/States';
-import { api, ApiError, resolveMediaUrl, type Card, type Circle } from '@/lib/api';
-import { formatDateLong, formatRelative, initials } from '@/lib/format';
+import { ArrowLeft, BarChart3, Ellipsis, FileText, Image as ImageIcon, Paperclip, Settings2, UserPlus, X } from 'lucide-react';
 
-type Post = { id: string; member_id: string; display_name: string; avatar: string | null; body: string; created_at: string; mine: boolean };
+import CircleCover from '@/components/CircleCover';
+import InvitePeopleSheet from '@/components/InvitePeopleSheet';
+import { Sheet } from '@/components/Sheet';
+import { CardSkeleton, ErrorState, Toast } from '@/components/States';
+import { api, ApiError, resolveMediaUrl, type Card, type Circle } from '@/lib/api';
+import { formatDateLong, formatRelative, formatWhen, initials } from '@/lib/format';
+import { useIdentity } from '@/lib/identity';
+
+type Post = {
+  id: string; member_id: string; display_name: string; avatar: string | null; body: string; created_at: string; mine: boolean;
+  photo_url: string | null; doc_url: string | null; doc_name: string | null;
+};
+
+type Tab = 'posts' | 'events' | 'photos' | 'members';
 
 type Chapter = { circle_id: string; name: string; locality: string | null; member_count: number; join_policy: string };
 type Fundraiser = {
@@ -23,11 +41,15 @@ type Fundraiser = {
 };
 
 type PollOption = { id: string; label: string; option_time: string | null; occurrence_id: string | null; voters: string[]; voted: boolean };
-type Poll = { id: string; question: string; kind: 'date' | 'activity'; asked_by: string; mine: boolean; created_at: string; closed: boolean; options: PollOption[] };
+type Poll = { id: string; question: string; kind: 'date' | 'activity' | 'question'; asked_by: string; mine: boolean; created_at: string; closed: boolean; options: PollOption[] };
 
 type JoinRequest = { request_id: string; member_id: string; display_name: string; avatar: string | null; answers: string[]; created_at: string };
 
+
 type Detail = Circle & {
+  // [FR125] Season circles (temple, travel) carry dates and a computed "concluded".
+  starts_on: string | null; ends_on: string | null; is_concluded: boolean;
+  posting_policy: 'members' | 'organizers';
   members: { member_id: string; display_name: string; avatar: string | null; role: string }[];
   join_policy?: 'open' | 'approval'; // [FR115]
   join_questions?: string[];
@@ -38,39 +60,122 @@ type Detail = Circle & {
   upcoming: Card[];
 };
 
+type FeedItem = { at: string } & ({ kind: 'post'; post: Post } | { kind: 'poll'; poll: Poll });
+
+const MEMBER_PREVIEW = 8;
+const FEED_PREVIEW = 20;
+
 export default function CircleDetailPage() {
   const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { identity, profile } = useIdentity();
   const [d, setD] = useState<Detail | null>(null);
   const [error, setError] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ text: string; actionLabel?: string; onAction?: () => void; ms: number } | null>(null);
+  // Each toast clears itself; a newer toast replaces it and restarts the clock.
+  useEffect(() => {
+    if (!toast) return;
+    const handle = setTimeout(() => setToast(null), toast.ms);
+    return () => clearTimeout(handle);
+  }, [toast]);
   const [posts, setPosts] = useState<Post[] | null>(null);
+  const [polls, setPolls] = useState<Poll[]>([]);
+  // Composer: one place to write a post, attach a photo, or ask a question (a poll IS a post).
   const [draft, setDraft] = useState('');
+  const [composing, setComposing] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [docFile, setDocFile] = useState<File | null>(null);
+  const [tab, setTab] = useState<Tab>('posts');
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [pollMode, setPollMode] = useState(false);
+  const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
+  const [posting, setPosting] = useState(false);
   // [FR115] Answering happens in place on this page — no separate application screen.
   const [answering, setAnswering] = useState(false);
-  // [FR120] The circle's open questions: which day, or which one shall we go to.
-  const [polls, setPolls] = useState<Poll[]>([]);
-  const [asking, setAsking] = useState(false);
-  const [question, setQuestion] = useState('');
-  const [times, setTimes] = useState<string[]>(['', '']);
+  const [answers, setAnswers] = useState<string[]>([]);
   // [FR123/FR124] Sister chapters, and drives for something the community needs.
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [drives, setDrives] = useState<Fundraiser[]>([]);
   const [pledging, setPledging] = useState<string | null>(null);
   const [pledgeAmount, setPledgeAmount] = useState('');
-  const [answers, setAnswers] = useState<string[]>([]);
-  const say = (m: string) => { setToast(m); setTimeout(() => setToast(null), 2000); };
+  const [menu, setMenu] = useState(false);
+  // [FR121] Invite: the organizer's people from Milavn itself, added in place.
+  const [inviting, setInviting] = useState(false);
+  const [allMembers, setAllMembers] = useState(false);
+  const [allFeed, setAllFeed] = useState(false);
+  // The organizer manages the circle in place (owner: the admin gets every option).
+  const [managing, setManaging] = useState(false);
+  const [mName, setMName] = useState('');
+  const [mDesc, setMDesc] = useState('');
+  const [mJoin, setMJoin] = useState<'open' | 'approval'>('open');
+  const [mPost, setMPost] = useState<'members' | 'organizers'>('members');
+  const [saving, setSaving] = useState(false);
+  const fileInput = useRef<HTMLInputElement | null>(null);
+  const docInput = useRef<HTMLInputElement | null>(null);
+  const coverInput = useRef<HTMLInputElement | null>(null);
+  const [coverBusy, setCoverBusy] = useState(false);
+  const [descOpen, setDescOpen] = useState(false);
+  const [lightbox, setLightbox] = useState<string | null>(null);
+  const [postMenu, setPostMenu] = useState<Post | null>(null);
+  // The top bar stays out of the way until the hero has scrolled past.
+  const [pastHero, setPastHero] = useState(false);
+  const heroRef = useRef<HTMLDivElement | null>(null);
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
+
+  const say = (text: string, action?: { label: string; run: () => void }, ms = 2000) => {
+    setToast({ text, ms, actionLabel: action?.label, onAction: action ? () => { setToast(null); action.run(); } : undefined });
+  };
 
   const loadPosts = useCallback(() => { api<{ posts: Post[] }>(`/circles/${id}/posts`).then((r) => setPosts(r.posts)).catch(() => setPosts([])); }, [id]);
   const loadPolls = useCallback(() => { api<Poll[]>(`/circles/${id}/polls`).then(setPolls).catch(() => setPolls([])); }, [id]);
   const loadDrives = useCallback(() => { api<Fundraiser[]>(`/circles/${id}/fundraisers`).then(setDrives).catch(() => setDrives([])); }, [id]);
   const load = useCallback(() => { setError(false); api<Detail>(`/circles/${id}`).then(setD).catch(() => setError(true)); loadPosts(); loadPolls(); loadDrives(); }, [id, loadPosts, loadPolls, loadDrives]);
   useEffect(load, [load]);
+  // A non-member can't read posts, so their first tab is Events.
+  const [tabChosen, setTabChosen] = useState(false);
+  useEffect(() => { if (d && !d.viewer_role && !tabChosen) setTab('events'); }, [d, tabChosen]);
 
-  const post = async () => {
-    const body = draft.trim(); if (!body) return;
-    try { await api(`/circles/${id}/posts`, { body: { body }, idempotent: true }); setDraft(''); loadPosts(); }
+  const startComposer = (mode: 'text' | 'photo' | 'doc' | 'poll') => {
+    setComposing(true);
+    setPollMode(mode === 'poll');
+    if (mode === 'photo') setTimeout(() => fileInput.current?.click(), 0);
+    if (mode === 'doc') setTimeout(() => docInput.current?.click(), 0);
+  };
+
+  const resetComposer = () => { setDraft(''); setPhotoFile(null); setDocFile(null); setPollMode(false); setPollOptions(['', '']); setComposing(false); };
+
+  const submitPost = async () => {
+    if (posting) return;
+    setPosting(true);
+    try {
+      if (pollMode) {
+        const options = pollOptions.map((o) => o.trim()).filter(Boolean).map((label) => ({ label }));
+        if (!draft.trim() || options.length < 2) { say(t('poll.needTwo')); return; }
+        await api(`/circles/${id}/polls`, { body: { question: draft.trim(), kind: 'question', options } });
+        loadPolls();
+      } else if (photoFile || docFile) {
+        const form = new FormData();
+        if (photoFile) form.append('photo', photoFile);
+        if (docFile) form.append('document', docFile);
+        form.append('body', draft.trim());
+        await api(`/circles/${id}/posts/media`, { form });
+        loadPosts();
+      } else {
+        const body = draft.trim();
+        if (!body) return;
+        await api(`/circles/${id}/posts`, { body: { body }, idempotent: true });
+        loadPosts();
+      }
+      resetComposer();
+    } catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
+    finally { setPosting(false); }
+  };
+
+  const removePost = async (p: Post) => {
+    setPostMenu(null);
+    try { await api(`/circles/${id}/posts/${p.id}`, { method: 'DELETE' }); say(t('circles.postDeleted')); loadPosts(); }
     catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
   };
 
@@ -86,15 +191,6 @@ export default function CircleDetailPage() {
       setAnswering(false);
       say(r.status === 'pending' ? t('join.asked') : t('circles.joined'));
       load();
-    } catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
-  };
-
-  const askCircle = async () => {
-    const options = times.filter((t) => t).map((t) => ({ label: new Date(t).toLocaleString(), option_time: new Date(t).toISOString() }));
-    if (!question.trim() || options.length < 2) { say(t('poll.needTwo')); return; }
-    try {
-      await api(`/circles/${id}/polls`, { body: { question: question.trim(), kind: 'date', options } });
-      setAsking(false); setQuestion(''); setTimes(['', '']); loadPolls();
     } catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
   };
 
@@ -122,6 +218,15 @@ export default function CircleDetailPage() {
     } catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
   };
 
+  // Removing someone is a second, deliberate tap on the same button (no extra dialog).
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
+  const removeMember = async (memberId: string, name: string) => {
+    if (confirmRemove !== memberId) { setConfirmRemove(memberId); return; }
+    setConfirmRemove(null);
+    try { await api(`/circles/${id}/members/${memberId}`, { method: 'DELETE' }); say(t('circles.removed', { name: name.split(' ')[0] })); load(); }
+    catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
+  };
+
   const setRole = async (memberId: string, role: string) => {
     try { await api(`/circles/${id}/roles`, { body: { member_id: memberId, role } }); say(role === 'assistant' ? t('role.nowAssistant') : t('role.nowMember')); load(); }
     catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
@@ -134,263 +239,637 @@ export default function CircleDetailPage() {
       load();
     } catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
   };
-  const leave = async () => { try { await api(`/circles/${id}/leave`, { body: {} }); load(); } catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); } };
+
+  // Leaving is one tap in the ⋯ menu, so the toast carries the way back: an open
+  // circle rejoins instantly; one that screens sends a fresh request instead.
+  const leave = async () => {
+    if (!d) return;
+    setMenu(false);
+    try {
+      await api(`/circles/${id}/leave`, { body: {} });
+      say(t('circles.left', { name: d.name }), {
+        label: t('common.undo'),
+        run: () => {
+          api<{ status: string }>(`/circles/${id}/join`, { body: {} })
+            .then((r) => { say(r.status === 'pending' ? t('circles.askedRejoin') : t('circles.rejoined')); load(); })
+            .catch((e) => say(e instanceof ApiError ? e.message : t('state.error')));
+        },
+      }, 6000);
+      load();
+    } catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
+  };
+
+  const openInvite = () => setInviting(true);
+
+  // Invitations still waiting for an answer — the organizer can see and withdraw them.
+  type PendingInvite = { invite_id: string; member_id: string; display_name: string; avatar: string | null; invited_by: { member_id: string; display_name: string }; created_at: string };
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
+  const loadPendingInvites = () => { api<PendingInvite[]>(`/circles/${id}/invites`).then(setPendingInvites).catch(() => setPendingInvites([])); };
+  const cancelInvite = async (inv: PendingInvite) => {
+    try { await api(`/circles/${id}/invites/${inv.invite_id}`, { method: 'DELETE' }); setPendingInvites((prev) => prev.filter((x) => x.invite_id !== inv.invite_id)); say(t('invite.withdrawn')); }
+    catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
+  };
+
+  const openManage = () => {
+    loadPendingInvites();
+    if (!d) return;
+    setMName(d.name); setMDesc(d.description ?? ''); setMJoin(d.join_policy ?? 'open'); setMPost(d.posting_policy); setConfirmDelete(false);
+    setManaging(true);
+  };
+
+  // The cover photo applies the moment it's picked — no extra save step.
+  const setCover = async (file: File | null) => {
+    if (coverBusy) return;
+    setCoverBusy(true);
+    try {
+      if (file) {
+        const form = new FormData();
+        form.append('photo', file);
+        await api(`/circles/${id}/cover`, { form });
+      } else {
+        await api(`/circles/${id}/cover`, { method: 'DELETE' });
+      }
+      load();
+    } catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
+    finally { setCoverBusy(false); }
+  };
+
+  // Deleting is for everyone and permanent, so it takes a second, deliberate tap in place.
+  const deleteCircle = async () => {
+    if (!confirmDelete) { setConfirmDelete(true); return; }
+    try {
+      await api(`/circles/${id}`, { method: 'DELETE' });
+      setManaging(false);
+      say(t('manage.deleted'));
+      router.replace('/circles');
+    } catch (e) { setConfirmDelete(false); say(e instanceof ApiError ? e.message : t('state.error'), undefined, 4000); }
+  };
+
+  const saveManage = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await api(`/circles/${id}`, { method: 'PATCH', body: { name: mName, description: mDesc, join_policy: mJoin, posting_policy: mPost } });
+      setManaging(false);
+      say(t('manage.saved'));
+      load();
+    } catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
+    finally { setSaving(false); }
+  };
+
+  const canManage = d?.viewer_role === 'organizer' || d?.viewer_role === 'assistant';
+  const mayPost = Boolean(d?.viewer_role && (d.posting_policy !== 'organizers' || canManage));
+  const startYear = d ? new Date(d.memory?.first_activity_at ?? d.created_at).getFullYear() : null;
+  const sinceYear = startYear !== null && startYear < new Date().getFullYear() ? startYear : null;
+  const shownMembers = d ? (allMembers ? d.members : d.members.slice(0, MEMBER_PREVIEW)) : [];
+  const roleOf = new Map((d?.members ?? []).map((m) => [m.member_id, m.role]));
+  const myAvatar = resolveMediaUrl(profile?.photo_url ?? identity?.avatar ?? null);
+
+  // One feed, newest first: written posts and polls belong together (FB/WhatsApp model).
+  const feed: FeedItem[] = [
+    ...(posts ?? []).map((post): FeedItem => ({ kind: 'post', at: post.created_at, post })),
+    ...polls.map((poll): FeedItem => ({ kind: 'poll', at: poll.created_at, poll })),
+  ].sort((a, b) => b.at.localeCompare(a.at));
+  const shownFeed = allFeed ? feed : feed.slice(0, FEED_PREVIEW);
+
+  // Events tab: what's ahead (soonest first), then what the circle has already done.
+  const nowIso = new Date().toISOString();
+  const upcomingEvents = (d?.upcoming ?? []).filter((c) => c.time_start >= nowIso && c.status !== 'cancelled').sort((a, b) => a.time_start.localeCompare(b.time_start));
+  const pastEvents = (d?.upcoming ?? []).filter((c) => c.time_start < nowIso).sort((a, b) => b.time_start.localeCompare(a.time_start));
+  const photoPosts = (posts ?? []).filter((p) => p.photo_url);
+  const TABS: { key: Tab; label: string }[] = [
+    { key: 'posts', label: t('posts.tabPosts') },
+    { key: 'events', label: t('posts.tabEvents') },
+    { key: 'photos', label: t('posts.tabPhotos') },
+    { key: 'members', label: t('posts.tabMembers') },
+  ];
+
+  useEffect(() => {
+    const el = heroRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([entry]) => setPastHero(!entry.isIntersecting), { rootMargin: '-56px 0px 0px 0px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [d?.id, d?.cover_url]);
+
+  // Sliding tab indicator: measured, so it fits equal tabs on a phone and auto-width tabs on desktop.
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = tabRefs.current[tab];
+      if (el) setIndicator({ left: el.offsetLeft, width: el.offsetWidth });
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [tab, d?.id]);
+
+  const roleText = (memberId: string) => {
+    const role = roleOf.get(memberId);
+    if (role === 'organizer') return t('detail.organizer');
+    if (role === 'assistant') return t('role.assistant');
+    return null;
+  };
+  const face = (avatar: string | null, name: string, size: 'sm' | 'md' | 'lg') => (
+    avatar ? <img className={`cx-av cx-av--${size}`} src={resolveMediaUrl(avatar) ?? ''} alt="" /> : <span className={`cx-av cx-av--${size}`}>{initials(name)}</span>
+  );
+
+  const hasHero = Boolean(d?.cover_url);
+  const typeText = d ? (d.circle_type === 'public' ? t('circles.openToAll') : d.type_label) : '';
+  const caption = d ? [typeText, d.locality_label, !d.is_open ? t('circles.inviteOnly') : null, d.is_concluded ? t('circles.concluded') : null].filter(Boolean).join(' · ') : '';
+
+  const membersList = d && d.members.length > 0 && (
+    <div className="cx-list">
+      {shownMembers.map((m) => (
+        <div key={m.member_id} className="cx-row">
+          <Link href={`/p/${m.member_id}`} className="row grow" style={{ gap: 12, minWidth: 0 }}>
+            {face(m.avatar, m.display_name, 'md')}
+            <span className="grow" style={{ minWidth: 0 }}>
+              <span className="cx-strong truncate" style={{ display: 'block' }}>{m.display_name}</span>
+              {roleText(m.member_id) && <span className="cx-caption">{roleText(m.member_id)}</span>}
+            </span>
+          </Link>
+          {/* [FR121] The organizer shares the work: one tap to ask someone to help, or to step them back. */}
+          {d.viewer_role === 'organizer' && m.role !== 'organizer' && (
+            <button className="cx-textbtn" onClick={() => setRole(m.member_id, m.role === 'assistant' ? 'member' : 'assistant')}>
+              {m.role === 'assistant' ? t('role.stepDown') : t('role.makeAssistant')}
+            </button>
+          )}
+          {((d.viewer_role === 'organizer' && m.role !== 'organizer') || (d.viewer_role === 'assistant' && m.role === 'member')) && (
+            <button className="cx-textbtn" style={{ color: confirmRemove === m.member_id ? 'var(--danger)' : 'var(--cx-muted)' }} onClick={() => removeMember(m.member_id, m.display_name)}>
+              {confirmRemove === m.member_id ? t('circles.removeConfirm') : t('circles.remove')}
+            </button>
+          )}
+        </div>
+      ))}
+      {d.members.length > MEMBER_PREVIEW && (
+        <button className="cx-textbtn" style={{ alignSelf: 'flex-start', marginTop: 8 }} onClick={() => setAllMembers((v) => !v)}>
+          {allMembers ? t('circles.showFewer') : t('circles.seeAll', { count: d.members.length })}
+        </button>
+      )}
+    </div>
+  );
+
+  const chaptersSection = d?.group && (
+    <section className="cx-aside-block">
+      <span className="cx-label">{t('chapter.partOf', { name: d.group.name })}</span>
+      {chapters.filter((c) => c.circle_id !== d.id).length === 0 ? (
+        <span className="cx-caption">{t('chapter.onlyOne')}</span>
+      ) : (
+        chapters.filter((c) => c.circle_id !== d.id).map((c) => (
+          <Link key={c.circle_id} href={`/circles/${c.circle_id}`} className="cx-row">
+            <span className="grow"><span className="cx-strong">{c.name}</span><br /><span className="cx-caption">{[c.locality, t('chapter.members', { count: c.member_count })].filter(Boolean).join(' · ')}</span></span>
+          </Link>
+        ))
+      )}
+    </section>
+  );
+
+  const drivesSection = d?.viewer_role && drives.length > 0 && (
+    <section className="cx-block">
+      <span className="cx-label">{t('drive.title')}</span>
+      {drives.map((f) => {
+        const promised = f.promised_paise / 100;
+        const target = f.target_paise ? f.target_paise / 100 : null;
+        return (
+          <div key={f.id} className="stack" style={{ gap: 6 }}>
+            <span className="cx-strong">{f.title}</span>
+            {f.purpose && <span className="cx-caption">{f.purpose}</span>}
+            {target && <div className="cx-bar"><span style={{ width: `${Math.min(100, (promised / target) * 100)}%` }} /></div>}
+            <span className="cx-caption">
+              {target
+                ? `${t('drive.progress', { promised: promised.toLocaleString('en-IN'), target: target.toLocaleString('en-IN') })} · ${t('drive.people', { count: f.people })}`
+                : `${t('drive.promisedOnly', { promised: promised.toLocaleString('en-IN') })} · ${t('drive.people', { count: f.people })}`}
+            </span>
+            <span className="cx-caption">{t('drive.noPaymentsYet')}</span>
+            {f.my_pledge ? (
+              <div className="row" style={{ gap: 12 }}>
+                <span className="cx-caption">{t('drive.youPromised', { amount: (f.my_pledge.amount_paise / 100).toLocaleString('en-IN') })}</span>
+                <button className="cx-textbtn" onClick={() => pledge(f, null)}>{t('drive.takeBack')}</button>
+              </div>
+            ) : pledging === f.id ? (
+              <div className="row" style={{ gap: 8 }}>
+                <input className="cx-input grow" name="pledge-amount" inputMode="numeric" placeholder={t('drive.amountPlaceholder')} value={pledgeAmount} onChange={(e) => setPledgeAmount(e.target.value)} />
+                <button className="cx-btn cx-btn--primary" disabled={!pledgeAmount.trim()} onClick={() => pledge(f, pledgeAmount)}>{t('drive.promise')}</button>
+              </div>
+            ) : (
+              !f.closed && <button className="cx-btn cx-btn--quiet" style={{ alignSelf: 'flex-start' }} onClick={() => setPledging(f.id)}>{t('drive.iWillGive')}</button>
+            )}
+          </div>
+        );
+      })}
+    </section>
+  );
+
+  const actionsBlock = d && (
+    <div className="cx-actions">
+      {d.viewer_role ? (
+        <>
+          <Link href={`/create?circle=${d.id}`} className={`cx-btn ${d.viewer_role === 'organizer' ? 'cx-btn--primary' : 'cx-btn--quiet'} cx-btn--lg grow`}>{t('circles.newActivity')}</Link>
+          {(d.is_open || canManage) && <button className="cx-iconbtn" aria-label={t('circles.invite')} onClick={openInvite}><UserPlus size={20} strokeWidth={1.75} /></button>}
+          {d.viewer_role === 'organizer' && <button className="cx-iconbtn" aria-label={t('manage.button')} onClick={openManage}><Settings2 size={20} strokeWidth={1.75} /></button>}
+                  </>
+      ) : d.is_open ? (
+        d.my_request_status === 'pending' ? (
+          <button className="cx-btn cx-btn--quiet cx-btn--lg grow" disabled>{t('join.waiting')}</button>
+        ) : answering ? (
+          <div className="stack grow" style={{ gap: 10 }}>
+            <span className="cx-caption">{t('join.answerHint')}</span>
+            {(d.join_questions ?? []).map((q, i) => (
+              <label key={i} className="stack" style={{ gap: 6 }}>
+                <span className="cx-strong">{q}</span>
+                <input className="cx-input" name={`join-answer-${i}`} maxLength={200} value={answers[i] ?? ''} onChange={(e) => setAnswers((prev) => prev.map((v, j) => (j === i ? e.target.value : v)))} />
+              </label>
+            ))}
+            <div className="row" style={{ gap: 8 }}>
+              <button className="cx-btn cx-btn--ghost" onClick={() => setAnswering(false)}>{t('common.cancel')}</button>
+              <button className="cx-btn cx-btn--primary grow" onClick={join}>{t('join.send')}</button>
+            </div>
+          </div>
+        ) : (
+          <button className="cx-btn cx-btn--primary cx-btn--lg grow" onClick={join}>{d.join_policy === 'approval' ? t('join.ask') : t('circles.join')}</button>
+        )
+      ) : null}
+    </div>
+  );
+
 
   return (
-    <>
-      <header className="topbar">
-        <button className="icon-btn" aria-label={t('common.back')} onClick={() => router.back()}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
-        </button>
-        <h1 style={{ fontSize: '1.25rem' }} className="truncate">{d?.name ?? ''}</h1>
-        <span style={{ width: 44 }} />
+    <div className={`cx cx-page${d && !hasHero ? ' cx-page--nohero' : ''}`}>
+      {/* The bar is empty over the photo; the name arrives once the hero is gone. */}
+      <header className={`topbar cx-topbar${pastHero || (d && !hasHero) ? ' is-solid' : ''}${pastHero ? ' show-title' : ''}`}>
+        <button className="icon-btn" aria-label={t('common.back')} onClick={() => (history.length > 1 ? router.back() : router.push('/circles'))}><ArrowLeft size={20} strokeWidth={1.75} /></button>
+        <h1 className="truncate cx-topbar__title">{d?.name ?? ''}</h1>
+        {d?.viewer_role && d.viewer_role !== 'organizer' ? (
+          <button className="icon-btn" aria-label={t('common.more')} onClick={() => setMenu(true)}><Ellipsis size={20} strokeWidth={1.75} /></button>
+        ) : <span style={{ width: 44 }} />}
       </header>
-      <main className="screen">
-        {error && <ErrorState onRetry={load} />}
-        {!d && !error && <CardSkeleton count={1} />}
-        {d && (
-          <>
-            <div className="row" style={{ gap: 14 }}>
-              <span className="strip__ring" style={{ width: 64, height: 64, borderColor: 'transparent', padding: 0 }}><div style={{ fontSize: '1.25rem' }}>{initials(d.name)}</div></span>
-              <div className="grow">
-                <div className="row" style={{ gap: 8 }}><span className="pill pill--neutral">{d.type_label}</span>{!d.is_open && <span className="pill pill--neutral">{t('circles.inviteOnly')}</span>}</div>
-                {d.description && <p className="muted" style={{ margin: '6px 0 0' }}>{d.description}</p>}
-              </div>
+
+      {error && <main className="screen"><ErrorState onRetry={load} /></main>}
+      {!d && !error && <main className="screen"><CardSkeleton count={1} /></main>}
+      {d && (
+        <>
+          {hasHero && (
+            <div className="cx-hero" ref={heroRef}>
+              <CircleCover variant="hero" name={d.name} coverUrl={d.cover_url} faces={d.viewer_role ? d.members : undefined} caption={caption} />
             </div>
-            <div className="row">
-              {d.viewer_role ? (
-                <>
-                  <Link href={`/create?circle=${d.id}`} className="btn btn--primary grow">{t('circles.newActivity')}</Link>
-                  {d.viewer_role !== 'organizer' && <button className="btn btn--ghost" onClick={leave}>{t('circles.leave')}</button>}
-                </>
-              ) : d.is_open ? (
-                d.my_request_status === 'pending' ? (
-                  <span className="pill pill--neutral" style={{ alignSelf: 'flex-start' }}>{t('join.waiting')}</span>
-                ) : answering ? (
-                  <div className="stack" style={{ gap: 8 }}>
-                    <span className="caption">{t('join.answerHint')}</span>
-                    {(d.join_questions ?? []).map((q, i) => (
-                      <label key={i} className="field">
-                        <span className="field__label">{q}</span>
-                        <input
-                          className="field__input"
-                          name={`join-answer-${i}`}
-                          maxLength={200}
-                          value={answers[i] ?? ''}
-                          onChange={(e) => setAnswers((prev) => prev.map((v, j) => (j === i ? e.target.value : v)))}
-                        />
-                      </label>
-                    ))}
-                    <div className="row" style={{ gap: 8 }}>
-                      <button className="btn btn--ghost grow" onClick={() => setAnswering(false)}>{t('common.cancel')}</button>
-                      <button className="btn btn--primary grow btn--spring" onClick={join}>{t('join.send')}</button>
+          )}
+
+          <div className="cx-layout">
+            <main className="cx-main">
+              <div className="cx-head" ref={hasHero ? undefined : heroRef}>
+                <span className="cx-label">{caption}</span>
+                <h1 className="cx-title">{d.name}</h1>
+                <div className="row" style={{ gap: 10 }}>
+                  {d.members.length > 1 && <span className="cx-stack">{d.members.slice(0, 5).map((m) => <span key={m.member_id}>{face(m.avatar, m.display_name, hasHero ? 'sm' : 'md')}</span>)}</span>}
+                  <span className="cx-caption">{[t('circles.members', { count: d.member_count }), sinceYear ? t('circles.sinceYear', { year: sinceYear }) : null].filter(Boolean).join(' · ')}</span>
+                </div>
+                {d.description && (
+                  <p className={`cx-desc${descOpen ? ' is-open' : ''}`}>
+                    {d.description}
+                  </p>
+                )}
+                {d.description && d.description.length > 160 && !descOpen && <button className="cx-textbtn" style={{ alignSelf: 'flex-start' }} onClick={() => setDescOpen(true)}>{t('circles.readMore')}</button>}
+              </div>
+
+              {/* One action block: under the head on a phone, first in the aside on desktop (Luma's action card). */}
+              <div className="cx-only-narrow">{actionsBlock}</div>
+
+              {/* Meetup encourages organizers to add their own images — a quiet nudge until there is one. */}
+              {d.viewer_role === 'organizer' && !d.cover_url && (
+                <div className="cx-hairrow">
+                  <span className="grow cx-caption">{t('manage.coverHint')}</span>
+                  <button className="cx-btn cx-btn--quiet" onClick={() => coverInput.current?.click()} disabled={coverBusy}>{t('manage.coverAdd')}</button>
+                </div>
+              )}
+              <input ref={coverInput} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) void setCover(f); e.target.value = ''; }} />
+
+              {(d.join_requests?.length ?? 0) > 0 && (
+                <section className="cx-block">
+                  <span className="cx-label">{t('join.waitingTitle', { count: d.join_requests?.length ?? 0 })}</span>
+                  {(d.join_requests ?? []).map((r) => (
+                    <div key={r.request_id} className="stack" style={{ gap: 8 }}>
+                      <div className="cx-row" style={{ borderBottom: 0 }}>
+                        {face(r.avatar, r.display_name, 'md')}
+                        <span className="grow"><span className="cx-strong">{r.display_name}</span><br /><span className="cx-caption">{formatRelative(r.created_at)}</span></span>
+                        <button className="cx-btn cx-btn--ghost" onClick={() => decide(r, false)}>{t('join.notNow')}</button>
+                        <button className="cx-btn cx-btn--primary" onClick={() => decide(r, true)}>{t('join.letThemIn')}</button>
+                      </div>
+                      {(d.join_questions ?? []).map((q, i) => (r.answers[i] ? <span key={i} className="cx-caption">{q} — <b>{r.answers[i]}</b></span> : null))}
                     </div>
-                  </div>
-                ) : (
-                  <button className="btn btn--primary btn--block btn--spring" onClick={join}>
-                    {d.join_policy === 'approval' ? t('join.ask') : t('circles.join')}
+                  ))}
+                </section>
+              )}
+
+              {upcomingEvents.length > 0 && (
+                <section className="stack cx-only-narrow" style={{ gap: 12 }}>
+                  <span className="cx-label">{t('circles.nextUp')}</span>
+                  <ActivityCard card={upcomingEvents[0]} />
+                </section>
+              )}
+
+              <nav className="cx-tabs" role="tablist" aria-label={d.name}>
+                {TABS.map((x) => (
+                  <button
+                    key={x.key}
+                    ref={(el) => { tabRefs.current[x.key] = el; }}
+                    role="tab"
+                    className="cx-tab"
+                    aria-selected={tab === x.key}
+                    onClick={() => { setTab(x.key); setTabChosen(true); if (x.key === 'members' && canManage) loadPendingInvites(); }}
+                  >
+                    {x.label}
+                    {x.key === 'events' && upcomingEvents.length > 0 && <span className="cx-tab__count">{upcomingEvents.length}</span>}
                   </button>
-                )
-              ) : null}
-            </div>
+                ))}
+                {indicator && <span className="cx-tabs__ind" style={{ transform: `translateX(${indicator.left}px)`, width: indicator.width }} />}
+              </nav>
 
-            {d.memory && (
-              <section className="stack" style={{ gap: 8 }}>
-                <span className="label">{t('circles.memory')}</span>
-                <div className="row">
-                  <div className="stat"><b>{d.memory.member_count}</b><span>{t('circles.members', { count: d.memory.member_count }).replace(/^\d+\s*/, '')}</span></div>
-                  <div className="stat"><b>{d.memory.activities_held}</b><span>{t('circles.held')}</span></div>
-                  <div className="stat"><b>{d.memory.upcoming_count}</b><span>{t('circles.upcoming')}</span></div>
-                  {d.memory.first_activity_at && <div className="stat"><b>{new Date(d.memory.first_activity_at).getFullYear()}</b><span>{t('circles.since')}</span></div>}
-                </div>
-              </section>
-            )}
+              {tab === 'posts' && !d.viewer_role && <p className="cx-caption cx-empty">{t('posts.membersOnly')}</p>}
+              {tab === 'posts' && d.viewer_role && (
+                <section className="stack" style={{ gap: 0 }}>
+                  {drivesSection}
+                  {d.posting_policy === 'organizers' && <p className="cx-caption" style={{ margin: '12px 0 0' }}>{t('posts.adminOnly')}</p>}
 
-            {d.group && (
-              <section className="card stack fade-in" style={{ gap: 8 }}>
-                <b>{t('chapter.partOf', { name: d.group.name })}</b>
-                {chapters.filter((c) => c.circle_id !== d.id).length === 0 ? (
-                  <span className="caption">{t('chapter.onlyOne')}</span>
-                ) : (
-                  chapters.filter((c) => c.circle_id !== d.id).map((c) => (
-                    <Link key={c.circle_id} href={`/circles/${c.circle_id}`} className="lrow lrow--tap">
-                      <span className="grow">{c.name}<br /><span className="caption">{[c.locality, t('chapter.members', { count: c.member_count })].filter(Boolean).join(' · ')}</span></span>
-                      <span className="muted">›</span>
-                    </Link>
-                  ))
-                )}
-              </section>
-            )}
-
-            {d.viewer_role && drives.length > 0 && (
-              <section className="card stack fade-in" style={{ gap: 10 }}>
-                <b>{t('drive.title')}</b>
-                {drives.map((f) => {
-                  const promised = f.promised_paise / 100;
-                  const target = f.target_paise ? f.target_paise / 100 : null;
-                  return (
-                    <div key={f.id} className="stack" style={{ gap: 6 }}>
-                      <b>{f.title}</b>
-                      {f.purpose && <span className="caption">{f.purpose}</span>}
-                      <span className="caption">
-                        {target
-                          ? `${t('drive.progress', { promised: promised.toLocaleString('en-IN'), target: target.toLocaleString('en-IN') })} · ${t('drive.people', { count: f.people })}`
-                          : `${t('drive.promisedOnly', { promised: promised.toLocaleString('en-IN') })} · ${t('drive.people', { count: f.people })}`}
-                      </span>
-                      <span className="caption" style={{ color: 'var(--accent-pressed)' }}>{t('drive.noPaymentsYet')}</span>
-                      {f.my_pledge ? (
-                        <div className="row" style={{ gap: 8 }}>
-                          <span className="pill pill--trust">{t('drive.youPromised', { amount: (f.my_pledge.amount_paise / 100).toLocaleString('en-IN') })}</span>
-                          <button className="link" onClick={() => pledge(f, null)}>{t('drive.takeBack')}</button>
+                  {mayPost && (
+                    <div className={`cx-composer${composing ? ' is-open' : ''}`}>
+                      <div className="row" style={{ gap: 10 }}>
+                        {myAvatar ? <img className="cx-av cx-av--sm" src={myAvatar} alt="" /> : <span className="cx-av cx-av--sm">{initials(identity?.display_name ?? '')}</span>}
+                        {composing ? (
+                          <textarea
+                            className="cx-input grow"
+                            rows={pollMode ? 2 : 3}
+                            autoFocus
+                            maxLength={pollMode ? 160 : 1000}
+                            value={draft}
+                            onChange={(e) => setDraft(e.target.value)}
+                            placeholder={pollMode ? t('posts.questionPlaceholder') : t('posts.share')}
+                            aria-label={t('posts.share')}
+                          />
+                        ) : (
+                          <button className="cx-input cx-composer__prompt grow" onClick={() => startComposer('text')}>{t('posts.share')}</button>
+                        )}
+                        {!composing && (
+                          <>
+                            <button className="cx-iconbtn cx-iconbtn--sm" aria-label={t('posts.addPhoto')} onClick={() => startComposer('photo')}><ImageIcon size={18} strokeWidth={1.75} /></button>
+                          </>
+                        )}
+                      </div>
+                      {composing && (
+                        <div className="stack" style={{ gap: 8, paddingLeft: 42 }}>
+                          {pollMode && pollOptions.map((v, i) => (
+                            <input key={i} className="cx-input" name={`poll-option-${i}`} maxLength={120} placeholder={t('posts.option', { n: i + 1 })} value={v} onChange={(e) => setPollOptions((prev) => prev.map((x, j) => (j === i ? e.target.value : x)))} />
+                          ))}
+                          {pollMode && pollOptions.length < 4 && <button className="cx-textbtn" style={{ alignSelf: 'flex-start' }} onClick={() => setPollOptions((prev) => [...prev, ''])}>{t('posts.addOption')}</button>}
+                          {photoFile && !pollMode && <span className="cx-attach"><ImageIcon size={16} strokeWidth={1.75} /> <span className="grow truncate">{photoFile.name}</span><button className="cx-plain" aria-label={t('common.close')} onClick={() => setPhotoFile(null)}><X size={16} /></button></span>}
+                          {docFile && !pollMode && <span className="cx-attach"><Paperclip size={16} strokeWidth={1.75} /> <span className="grow truncate">{docFile.name}</span><button className="cx-plain" aria-label={t('common.close')} onClick={() => setDocFile(null)}><X size={16} /></button></span>}
+                          <div className="row" style={{ gap: 6 }}>
+                            {!pollMode && <button className="cx-iconbtn cx-iconbtn--sm" aria-label={t('posts.addPhoto')} onClick={() => fileInput.current?.click()}><ImageIcon size={18} strokeWidth={1.75} /></button>}
+                            {!pollMode && <button className="cx-iconbtn cx-iconbtn--sm" aria-label={t('posts.addDocument')} onClick={() => docInput.current?.click()}><Paperclip size={18} strokeWidth={1.75} /></button>}
+                            <button className="cx-iconbtn cx-iconbtn--sm" aria-pressed={pollMode} aria-label={t('posts.askQuestion')} onClick={() => { setPollMode((v) => !v); setPhotoFile(null); setDocFile(null); }}><BarChart3 size={18} strokeWidth={1.75} /></button>
+                            <span className="grow" />
+                            <button className="cx-btn cx-btn--ghost" onClick={resetComposer}>{t('common.cancel')}</button>
+                            <button className="cx-btn cx-btn--primary" disabled={posting || (!draft.trim() && !photoFile && !docFile)} onClick={submitPost}>{t('posts.post')}</button>
+                          </div>
                         </div>
-                      ) : pledging === f.id ? (
-                        <div className="row" style={{ gap: 8 }}>
-                          <label className="field grow" style={{ margin: 0 }}>
-                            <input className="field__input" name="pledge-amount" inputMode="numeric" placeholder="₹" value={pledgeAmount} onChange={(e) => setPledgeAmount(e.target.value)} />
-                          </label>
-                          <button className="btn btn--primary btn--sm" disabled={!pledgeAmount.trim()} onClick={() => pledge(f, pledgeAmount)}>{t('drive.promise')}</button>
-                        </div>
-                      ) : (
-                        !f.closed && <button className="btn btn--secondary btn--sm" style={{ alignSelf: 'flex-start' }} onClick={() => setPledging(f.id)}>{t('drive.iWillGive')}</button>
                       )}
+                      <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => { setPhotoFile(e.target.files?.[0] ?? null); e.target.value = ''; }} />
+                      <input ref={docInput} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" hidden onChange={(e) => { setDocFile(e.target.files?.[0] ?? null); e.target.value = ''; }} />
                     </div>
-                  );
-                })}
-              </section>
-            )}
+                  )}
 
-            {d.viewer_role && (
-              <section className="card stack fade-in" style={{ gap: 10 }}>
-                <div className="row row--between">
-                  <b>{t('poll.title')}</b>
-                  {!asking && <button className="btn btn--secondary btn--sm" onClick={() => setAsking(true)}>{t('poll.ask')}</button>}
-                </div>
-                {asking && (
-                  <div className="stack" style={{ gap: 8 }}>
-                    <label className="field">
-                      <input className="field__input" name="poll-question" maxLength={160} placeholder={t('poll.questionPlaceholder')} value={question} onChange={(e) => setQuestion(e.target.value)} />
-                    </label>
-                    {times.map((v, i) => (
-                      <label key={i} className="field">
-                        <input className="field__input" type="datetime-local" name={`poll-time-${i}`} value={v} onChange={(e) => setTimes((prev) => prev.map((x, j) => (j === i ? e.target.value : x)))} />
-                      </label>
-                    ))}
-                    {times.length < 4 && <button className="link" style={{ alignSelf: 'flex-start' }} onClick={() => setTimes((prev) => [...prev, ''])}>{t('poll.addOption')}</button>}
-                    <div className="row" style={{ gap: 8 }}>
-                      <button className="btn btn--ghost grow" onClick={() => setAsking(false)}>{t('common.cancel')}</button>
-                      <button className="btn btn--primary grow" onClick={askCircle}>{t('poll.send')}</button>
-                    </div>
+                  {posts !== null && feed.length === 0 && <p className="cx-caption cx-empty">{t('posts.empty')}</p>}
+
+                  <div className="cx-feed">
+                    {shownFeed.map((item) => item.kind === 'post' ? (
+                      <article key={`p-${item.post.id}`} className="cx-post">
+                        <Link href={`/p/${item.post.member_id}`} className="cx-post__av">{face(item.post.avatar, item.post.display_name, 'md')}</Link>
+                        <div className="cx-post__main">
+                          <div className="cx-post__meta">
+                            <span className="cx-strong">{item.post.mine ? t('circles.boardYou') : item.post.display_name}</span>
+                            {roleText(item.post.member_id) && <span className="cx-caption">· {roleText(item.post.member_id)}</span>}
+                            <span className="cx-caption">· {formatWhen(item.post.created_at, i18n.language)}</span>
+                            <span className="grow" />
+                            {(item.post.mine || canManage) && <button className="cx-plain cx-post__more" aria-label={t('common.more')} onClick={() => setPostMenu(item.post)}><Ellipsis size={18} strokeWidth={1.75} /></button>}
+                          </div>
+                          {item.post.body && <p className="cx-post__body">{item.post.body}</p>}
+                          {item.post.photo_url && (
+                            <button className="cx-plain cx-post__photo" onClick={() => setLightbox(item.post.photo_url)}>
+                              <img src={resolveMediaUrl(item.post.photo_url) ?? ''} alt="" loading="lazy" />
+                            </button>
+                          )}
+                          {item.post.doc_url && (
+                            <a className="cx-doc" href={resolveMediaUrl(item.post.doc_url) ?? ''} target="_blank" rel="noopener noreferrer">
+                              <FileText size={20} strokeWidth={1.75} aria-hidden="true" />
+                              <span className="grow truncate">{item.post.doc_name}</span>
+                              <span className="cx-textbtn">{t('posts.openDoc')}</span>
+                            </a>
+                          )}
+                        </div>
+                      </article>
+                    ) : (() => {
+                      const poll = item.poll;
+                      const total = poll.options.reduce((n, o) => n + o.voters.length, 0);
+                      return (
+                        <article key={`q-${poll.id}`} className="cx-post">
+                          <span className="cx-post__av"><span className="cx-av cx-av--md cx-av--icon"><BarChart3 size={18} strokeWidth={1.75} /></span></span>
+                          <div className="cx-post__main">
+                            <div className="cx-post__meta">
+                              <span className="cx-strong">{poll.asked_by}</span>
+                              <span className="cx-caption">· {formatWhen(poll.created_at, i18n.language)}{poll.closed ? ` · ${t('poll.closed')}` : ''}</span>
+                            </div>
+                            <p className="cx-post__body cx-strong" style={{ fontSize: '1rem' }}>{poll.question}</p>
+                            <div className="stack" style={{ gap: 6 }}>
+                              {poll.options.map((o) => (
+                                <button key={o.id} type="button" className={`cx-opt${o.voted ? ' is-mine' : ''}`} aria-pressed={o.voted} disabled={poll.closed} onClick={() => votePoll(poll, o)}>
+                                  <span className="cx-opt__bar" style={{ width: `${total ? (o.voters.length / total) * 100 : 0}%` }} />
+                                  <span className="cx-opt__label">{o.option_time ? formatDateLong(o.option_time, i18n.language) : o.label}</span>
+                                  <span className="cx-opt__count">{o.voters.length}</span>
+                                </button>
+                              ))}
+                            </div>
+                            <div className="row" style={{ gap: 12 }}>
+                              {poll.mine && !poll.closed && <button className="cx-textbtn" onClick={() => closePoll(poll)}>{t('poll.settle')}</button>}
+                              {poll.closed && poll.kind === 'date' && poll.options.length > 0 && (
+                                <Link className="cx-textbtn" href={`/create?circle=${d.id}&when=${encodeURIComponent([...poll.options].sort((a, b) => b.voters.length - a.voters.length)[0].option_time ?? '')}`}>{t('poll.createActivity')}</Link>
+                              )}
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })())}
                   </div>
-                )}
-                {polls.length === 0 && !asking && <span className="caption">{t('poll.none')}</span>}
-                {polls.map((poll) => (
-                  <div key={poll.id} className="stack" style={{ gap: 6 }}>
-                    <b>{poll.question}</b>
-                    <span className="caption">{t('poll.askedBy', { name: poll.asked_by })}{poll.closed ? ` · ${t('poll.closed')}` : ''}</span>
-                    {poll.options.map((o) => (
-                      <button
-                        key={o.id}
-                        type="button"
-                        className="lrow lrow--tap"
-                        aria-pressed={o.voted}
-                        disabled={poll.closed}
-                        onClick={() => votePoll(poll, o)}
-                        style={{ textAlign: 'left', borderColor: o.voted ? 'var(--accent-primary)' : undefined }}
-                      >
-                        <span className="grow">
-                          {o.voted ? '✓ ' : ''}{o.option_time ? formatDateLong(o.option_time, i18n.language) : o.label}
-                          <br />
-                          <span className="caption">{o.voters.length === 0 ? t('poll.noneYet') : o.voters.join(', ')}</span>
-                        </span>
-                        <span className="pill pill--neutral">{o.voters.length}</span>
+                  {feed.length > FEED_PREVIEW && !allFeed && <button className="cx-textbtn" style={{ alignSelf: 'center', marginTop: 12 }} onClick={() => setAllFeed(true)}>{t('circles.showEarlier')}</button>}
+                </section>
+              )}
+
+              {tab === 'events' && (
+                <section className="stack" style={{ gap: 14, paddingTop: 16 }}>
+                  <div className="cx-sechead">
+                    <span className="cx-label">{t('posts.upcomingEvents')}</span>
+                    {d.viewer_role && <Link href={`/create?circle=${d.id}`} className="cx-btn cx-btn--quiet">{t('circles.newActivity')}</Link>}
+                  </div>
+                  {upcomingEvents.length === 0 && pastEvents.length === 0 && <p className="cx-caption" style={{ margin: 0 }}>{t('posts.noEventsAtAll')}</p>}
+                  {upcomingEvents.length > 0 && <div className="cx-evgrid">{upcomingEvents.map((c) => <ActivityCard key={c.id} card={c} compact />)}</div>}
+                  {pastEvents.length > 0 && <span className="cx-label" style={{ marginTop: 8 }}>{t('posts.pastEvents')}</span>}
+                  {pastEvents.length > 0 && <div className="cx-evgrid">{pastEvents.map((c) => <ActivityCard key={c.id} card={c} compact />)}</div>}
+                </section>
+              )}
+
+              {tab === 'photos' && (
+                !d.viewer_role ? <p className="cx-caption cx-empty">{t('posts.membersOnly')}</p>
+                : photoPosts.length === 0 ? <p className="cx-caption cx-empty">{t('posts.noPhotos')}</p>
+                : (
+                  <div className="cx-photos">
+                    {photoPosts.map((p) => (
+                      <button key={p.id} className="cx-plain" onClick={() => setLightbox(p.photo_url)}>
+                        <img src={resolveMediaUrl(p.photo_url) ?? ''} alt={p.body || p.display_name} loading="lazy" />
                       </button>
                     ))}
-                    {poll.mine && !poll.closed && <button className="link" style={{ alignSelf: 'flex-start' }} onClick={() => closePoll(poll)}>{t('poll.settle')}</button>}
-                    {poll.closed && poll.kind === 'date' && poll.options.length > 0 && (
-                      <Link
-                        className="btn btn--secondary btn--sm"
-                        style={{ alignSelf: 'flex-start' }}
-                        href={`/create?circle=${d.id}&when=${encodeURIComponent([...poll.options].sort((a, b) => b.voters.length - a.voters.length)[0].option_time ?? '')}`}
-                      >
-                        {t('poll.createActivity')}
-                      </Link>
-                    )}
                   </div>
-                ))}
-              </section>
-            )}
+                )
+              )}
 
-            {(d.join_requests?.length ?? 0) > 0 && (
-              <section className="card stack fade-in" style={{ gap: 10, borderColor: 'var(--accent-primary)' }}>
-                <div className="title">{t('join.waitingTitle', { count: d.join_requests?.length ?? 0 })}</div>
-                {(d.join_requests ?? []).map((r) => (
-                  <div key={r.request_id} className="stack" style={{ gap: 6 }}>
-                    <div className="row" style={{ gap: 10 }}>
-                      {r.avatar ? <img className="avatar avatar--lg" src={resolveMediaUrl(r.avatar) ?? ''} alt="" /> : <span className="avatar avatar--lg">{initials(r.display_name)}</span>}
-                      <span className="grow"><b>{r.display_name}</b><br /><span className="caption">{formatRelative(r.created_at)}</span></span>
+              {tab === 'members' && (
+                <section className="stack" style={{ gap: 12, paddingTop: 8 }}>
+                  {!d.viewer_role && d.members.length === 0 && <p className="cx-caption cx-empty">{t('circles.membersHidden')}</p>}
+                  {membersList}
+                  {canManage && pendingInvites.length > 0 && (
+                    <div className="stack" style={{ gap: 4 }}>
+                      <span className="cx-label">{t('invite.pendingTitle', { count: pendingInvites.length })}</span>
+                      <div className="cx-list">
+                        {pendingInvites.map((inv) => (
+                          <div key={inv.invite_id} className="cx-row">
+                            {face(inv.avatar, inv.display_name, 'md')}
+                            <span className="grow" style={{ minWidth: 0 }}>
+                              <span className="cx-strong truncate" style={{ display: 'block' }}>{inv.display_name}</span>
+                              <span className="cx-caption">{t('invite.invitedBy', { name: inv.invited_by.display_name.split(' ')[0] })}</span>
+                            </span>
+                            <button className="cx-textbtn" onClick={() => cancelInvite(inv)}>{t('invite.withdraw')}</button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    {(d.join_questions ?? []).map((q, i) => (
-                      r.answers[i] ? <span key={i} className="caption">{q} — <b>{r.answers[i]}</b></span> : null
-                    ))}
-                    <div className="row" style={{ gap: 8 }}>
-                      <button className="btn btn--ghost grow" onClick={() => decide(r, false)}>{t('join.notNow')}</button>
-                      <button className="btn btn--primary grow" onClick={() => decide(r, true)}>{t('join.letThemIn')}</button>
-                    </div>
-                  </div>
-                ))}
-              </section>
-            )}
+                  )}
+                  <div className="m-only">{chaptersSection}</div>
+                </section>
+              )}
+            </main>
 
-            {d.viewer_role && (
-              <section className="card stack" style={{ gap: 12 }}>
-                <div className="row row--between"><span className="label">{t('circles.board')}</span><span className="caption">{t('circles.boardPrivate')}</span></div>
-                <div className="composer">
-                  <textarea rows={1} value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={t('circles.boardPlaceholder')} aria-label={t('circles.boardPlaceholder')} maxLength={1000} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void post(); } }} />
-                  <button className="btn btn--primary btn--sm btn--spring" disabled={!draft.trim()} onClick={post}>{t('thread.send')}</button>
-                </div>
-                {posts && posts.length === 0 && <p className="caption" style={{ margin: 0 }}>{t('circles.boardEmpty')}</p>}
-                {posts && posts.map((p) => (
-                  <div key={p.id} className="row" style={{ gap: 10, alignItems: 'flex-start' }}>
-                    <Link href={`/p/${p.member_id}`}>{p.avatar ? <img className="avatar avatar--lg" src={resolveMediaUrl(p.avatar) ?? ''} alt="" /> : <span className="avatar avatar--lg" />}</Link>
-                    <div className="grow">
-                      <div className="row" style={{ gap: 6 }}><b>{p.display_name}</b><span className="caption">· {formatRelative(p.created_at)}</span></div>
-                      <p style={{ margin: '2px 0 0', whiteSpace: 'pre-wrap' }}>{p.body}</p>
-                    </div>
-                  </div>
-                ))}
-              </section>
-            )}
-
-            <section className="section">
-              <div className="section__head"><h2>{t('circles.upcomingIn')}</h2></div>
-              {d.upcoming.length === 0 ? <EmptyState message={t('circles.emptyUpcoming')} action={d.viewer_role ? t('circles.newActivity') : undefined} onAction={d.viewer_role ? () => router.push(`/create?circle=${d.id}`) : undefined} /> : <div className="rail">{d.upcoming.map((c) => <ActivityCard key={c.id} card={c} compact />)}</div>}
-            </section>
-
-            <section className="section">
-              <div className="section__head"><h2>{t('circles.members', { count: d.members.length })}</h2></div>
-              <div className="list">
-                {d.members.map((m) => (
-                  <div key={m.member_id} className="lrow" style={{ minHeight: 56 }}>
-                    <Link href={`/p/${m.member_id}`} className="row grow" style={{ gap: 10 }}>
-                      {m.avatar ? <img className="avatar avatar--lg" src={resolveMediaUrl(m.avatar) ?? ''} alt="" /> : <span className="avatar avatar--lg" />}
-                      <span className="grow">{m.display_name}</span>
+            <aside className="cx-aside">
+              <section className="cx-aside-block">{actionsBlock}</section>
+              {upcomingEvents.length > 0 && (
+                <section className="cx-aside-block">
+                  <span className="cx-label">{t('circles.nextUp')}</span>
+                  <ActivityCard card={upcomingEvents[0]} compact />
+                </section>
+              )}
+              {upcomingEvents.length > 1 && (
+                <section className="cx-aside-block">
+                  <span className="cx-label">{t('posts.upcomingEvents')}</span>
+                  {upcomingEvents.slice(1, 4).map((c) => (
+                    <Link key={c.id} href={`/a/${c.slug}`} className="cx-row">
+                      <span className="grow"><span className="cx-strong">{c.title}</span><br /><span className="cx-caption">{formatWhen(c.time_start, i18n.language)}</span></span>
                     </Link>
-                    {m.role === 'organizer' && <span className="pill pill--accent">{t('detail.organizer')}</span>}
-                    {m.role === 'assistant' && <span className="pill pill--trust">{t('role.assistant')}</span>}
-                    {/* [FR121] The organizer shares the work: one tap to ask someone to help, or to step them back. */}
-                    {d.viewer_role === 'organizer' && m.role !== 'organizer' && (
-                      <button className="link" onClick={() => setRole(m.member_id, m.role === 'assistant' ? 'member' : 'assistant')}>
-                        {m.role === 'assistant' ? t('role.stepDown') : t('role.makeAssistant')}
-                      </button>
-                    )}
-                  </div>
-                ))}
+                  ))}
+                </section>
+              )}
+              {chaptersSection}
+            </aside>
+          </div>
+        </>
+      )}
+
+      {/* Quiet actions: leave for members; the same place holds the organizer's rarer actions. */}
+      <Sheet open={menu} onClose={() => setMenu(false)} label={t('common.more')}>
+        <div className="stack">
+          {d?.viewer_role === 'organizer' ? (
+            <button className="cx-btn cx-btn--ghost cx-btn--lg" onClick={() => { setMenu(false); openManage(); }}>{t('manage.title')}</button>
+          ) : (
+            <button className="cx-btn cx-btn--ghost cx-btn--lg" onClick={leave}>{t('circles.leave')}</button>
+          )}
+          <button className="cx-btn cx-btn--quiet cx-btn--lg" onClick={() => setMenu(false)}>{t('common.cancel')}</button>
+        </div>
+      </Sheet>
+
+      <Sheet open={postMenu !== null} onClose={() => setPostMenu(null)} label={t('common.more')}>
+        <div className="stack">
+          <button className="cx-btn cx-btn--danger cx-btn--lg" onClick={() => postMenu && removePost(postMenu)}>{t('common.delete')}</button>
+          <button className="cx-btn cx-btn--quiet cx-btn--lg" onClick={() => setPostMenu(null)}>{t('common.cancel')}</button>
+        </div>
+      </Sheet>
+
+      {d && (
+        <InvitePeopleSheet
+          open={inviting}
+          onClose={() => setInviting(false)}
+          circleId={d.id}
+          circleName={d.name}
+          canShareLink={canManage || (d.is_open && d.join_policy !== 'approval')}
+          onDone={(m) => { say(m); load(); }}
+        />
+      )}
+
+      {/* [Owner 2026-09-28] The organizer gets every option of their circle, in one place. */}
+      <Sheet open={managing} onClose={() => setManaging(false)} label={t('manage.title')}>
+        <div className="stack cx" style={{ gap: 16 }}>
+          <h2 className="cx-h2">{t('manage.title')}</h2>
+          <div className="stack" style={{ gap: 8 }}>
+            <span className="cx-label">{t('manage.cover')}</span>
+            {d?.cover_url ? (
+              <div className="mcover">
+                <img src={resolveMediaUrl(d.cover_url) ?? ''} alt="" />
+                <div className="row" style={{ gap: 8 }}>
+                  <button className="cx-btn cx-btn--quiet" disabled={coverBusy} onClick={() => coverInput.current?.click()}>{t('manage.coverChange')}</button>
+                  <button className="cx-btn cx-btn--ghost" disabled={coverBusy} onClick={() => setCover(null)}>{t('manage.coverRemove')}</button>
+                </div>
               </div>
-            </section>
-          </>
-        )}
-      </main>
-      <Toast text={toast} />
-    </>
+            ) : (
+              <button className="mcover mcover--empty" disabled={coverBusy} onClick={() => coverInput.current?.click()}>
+                <span className="cx-strong">{t('manage.coverAdd')}</span>
+                <span className="cx-caption">{t('manage.coverHint')}</span>
+              </button>
+            )}
+          </div>
+          <label className="stack" style={{ gap: 6 }}>
+            <span className="cx-label">{t('manage.name')}</span>
+            <input className="cx-input" name="circle-name" maxLength={80} value={mName} onChange={(e) => setMName(e.target.value)} />
+          </label>
+          <label className="stack" style={{ gap: 6 }}>
+            <span className="cx-label">{t('manage.description')}</span>
+            <textarea className="cx-input" name="circle-description" rows={3} maxLength={500} value={mDesc} onChange={(e) => setMDesc(e.target.value)} />
+          </label>
+          <div className="stack" style={{ gap: 8 }}>
+            <span className="cx-label">{t('manage.whoJoins')}</span>
+            <div className="cx-chips">
+              <button className="cx-chip" aria-pressed={mJoin === 'open'} onClick={() => setMJoin('open')}>{t('join.anyone')}</button>
+              <button className="cx-chip" aria-pressed={mJoin === 'approval'} onClick={() => setMJoin('approval')}>{t('join.askFirst')}</button>
+            </div>
+          </div>
+          <div className="stack" style={{ gap: 8 }}>
+            <span className="cx-label">{t('manage.whoPosts')}</span>
+            <div className="cx-chips">
+              <button className="cx-chip" aria-pressed={mPost === 'members'} onClick={() => setMPost('members')}>{t('manage.postMembers')}</button>
+              <button className="cx-chip" aria-pressed={mPost === 'organizers'} onClick={() => setMPost('organizers')}>{t('manage.postOrganizers')}</button>
+            </div>
+          </div>
+          <div className="row cx-sheetfoot" style={{ gap: 8 }}>
+            <button className="cx-btn cx-btn--ghost grow" onClick={() => setManaging(false)}>{t('common.cancel')}</button>
+            <button className="cx-btn cx-btn--primary grow" disabled={saving || !mName.trim()} onClick={saveManage}>{t('common.save')}</button>
+          </div>
+          <button className={`cx-btn cx-btn--lg ${confirmDelete ? 'cx-btn--danger' : 'cx-btn--danger-text'}`} onClick={deleteCircle}>
+            {confirmDelete ? t('manage.deleteConfirm') : t('manage.delete')}
+          </button>
+        </div>
+      </Sheet>
+
+      {lightbox && (
+        <div className="cx-lightbox" role="dialog" aria-modal="true" onClick={() => setLightbox(null)}>
+          <button className="cx-iconbtn cx-lightbox__close" aria-label={t('common.close')} onClick={() => setLightbox(null)}><X size={20} /></button>
+          <img src={resolveMediaUrl(lightbox) ?? ''} alt="" />
+        </div>
+      )}
+
+      <Toast text={toast?.text ?? null} actionLabel={toast?.actionLabel} onAction={toast?.onAction} />
+    </div>
   );
 }

@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from app.api.deps import AppSettings, DbSession
+from app.components.governance import interface as governance
 from app.components.identity import interface as identity
 from app.errors import DomainError
 
@@ -63,7 +64,11 @@ async def resolve_session(
         raise DomainError("session_invalid", "The session is not valid.", 401)
     await db.commit()
     member, expires_at = resolved
-    return member.claims(expires_at, include_identifiers=service in settings.services_receiving_identifiers)
+    claims = member.claims(expires_at, include_identifiers=service in settings.services_receiving_identifiers)
+    # Module permissions the samaj appointed this member to in the Admin & Governance
+    # Console (e.g. "milavn.moderate"). Modules map them onto their own chokepoint.
+    claims["admin_scopes"] = await governance.module_scopes_for(db, member.member_id)
+    return claims
 
 
 class ProvisionRequest(BaseModel):

@@ -69,7 +69,7 @@ class MyHostProvider:
 register_provider("myhost", MyHostProvider)
 ```
 
-The ForKhatri adapter (`forkhatri_session.py`) is the reference implementation. It resolves the cookie against `IDENTITY_SERVICE_INTERNAL_URL/internal/v1/sessions/resolve` using `X-Service-Key`, with a 2-second timeout. A successful resolve is cached for 30 seconds and a failed one for 5 seconds. Any failure gives a 503.
+The ForKhatri adapter (`forkhatri_session.py`) is the reference implementation. It resolves the cookie against `IDENTITY_SERVICE_INTERNAL_URL/internal/v1/sessions/resolve` using `X-ForKhatri-Service: IDENTITY_SERVICE_NAME` and `X-ForKhatri-Service-Key: IDENTITY_SERVICE_KEY` with the body `{"session_token": ...}`, and a 2-second timeout. The response's `admin_scopes` are mapped onto operator permissions (see `references/imp-admin-console.md`). A successful resolve is cached for 30 seconds and a failed one for 5 seconds. Any failure gives a 503.
 
 ### Notifications
 

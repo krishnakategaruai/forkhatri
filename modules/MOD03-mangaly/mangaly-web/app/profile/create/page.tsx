@@ -141,7 +141,8 @@ function CreateProfileWizard() {
       });
       setBusy(false);
       if (made.ok) {
-        router.push(`/me?manage=${made.accountId}`);
+        // [Owner, 2026-09-28] Setting up ends on who they are looking for.
+        router.push(`/me/matchmaker?setup=1&manage=${made.accountId}`);
         return;
       }
       setError(
@@ -162,7 +163,8 @@ function CreateProfileWizard() {
     setBusy(false);
 
     if (result.ok) {
-      router.push("/");
+      // [Owner, 2026-09-28] Setting up ends on who they are looking for.
+      router.push("/me/matchmaker?setup=1");
       return;
     }
     setError(

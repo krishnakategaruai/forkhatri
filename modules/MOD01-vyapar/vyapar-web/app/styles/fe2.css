@@ -1,0 +1,1580 @@
+/* [FE2 — 2026-09-28] Styles for contact actions, contact preferences,
+   badges, seeker protection, service packages, Discover filters, saved
+   searches, contracts and the desktop Hire / Find work menu.
+   Same fixed rules as globals.css: the ink ramp and ONE accent, lightness
+   steps instead of shadows, no gradients / glass / glow. Every rule below
+   the base is inside a min-width query, so phones render the base only. */
+
+/* ---- small shared bits ------------------------------------------------ */
+
+.vy-link-btn {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: var(--type-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--border-strong);
+  cursor: pointer;
+  align-self: flex-start;
+  text-align: left;
+}
+
+.vy-link-btn:hover {
+  text-decoration-color: var(--text-primary);
+}
+
+.vy-state-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: var(--type-xs);
+  font-weight: 600;
+  border: 1px solid var(--border-hairline);
+  color: var(--text-secondary);
+  background: var(--surface-overlay);
+  white-space: nowrap;
+}
+
+.vy-state-chip[data-tone="action"] {
+  border-color: var(--accent);
+  color: var(--text-primary);
+  background: var(--accent-soft);
+}
+
+.vy-state-chip[data-tone="done"] {
+  border-color: transparent;
+  color: var(--trust-verified);
+  background: var(--trust-verified-soft);
+}
+
+.vy-state-chip[data-tone="warn"] {
+  border-color: var(--danger, var(--border-strong));
+  color: var(--danger-text, var(--text-primary));
+  background: transparent;
+}
+
+.vy-segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+}
+
+.vy-segmented > button {
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--type-sm);
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  flex: 1 1 auto;
+}
+
+.vy-segmented > button[aria-pressed="true"],
+.vy-segmented > button[aria-selected="true"] {
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+
+.vy-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  cursor: pointer;
+}
+
+.vy-toggle-row input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+
+.vy-stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.vy-stepper > button {
+  appearance: none;
+  border: none;
+  background: var(--surface-overlay);
+  color: var(--text-primary);
+  width: 40px;
+  height: 38px;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.vy-stepper > button:disabled {
+  color: var(--text-tertiary);
+  cursor: default;
+}
+
+.vy-stepper > output {
+  background: var(--surface-overlay);
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  min-width: 76px;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.vy-sandbox-note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-strong);
+  color: var(--text-secondary);
+  font-size: var(--type-sm);
+  line-height: 1.5;
+}
+
+.vy-sandbox-note strong {
+  color: var(--text-primary);
+}
+
+/* ---- badges ------------------------------------------------------------ */
+
+.vy-trust-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.vy-trust-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vy-trust-badge {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px 3px 7px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-hairline);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--type-xs);
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.vy-trust-badge svg {
+  color: var(--text-tertiary);
+}
+
+.vy-trust-badge[aria-expanded="true"] {
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+.vy-trust-badges[data-compact] .vy-trust-badge {
+  padding: 2px 8px 2px 6px;
+  font-size: 11.5px;
+}
+
+.vy-trust-badge-desc {
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.vy-trust-badge-desc strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* ---- seeker protection ---------------------------------------------- */
+
+.vy-seeker-notice {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-4);
+}
+
+.vy-seeker-notice-mark {
+  color: var(--trust-verified);
+  margin-top: 2px;
+}
+
+/* ---- contact actions ------------------------------------------------ */
+
+.vy-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vy-contact-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.vy-contact-row .vy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.vy-contact-reason {
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.vy-contact-history {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--type-sm);
+  color: var(--text-tertiary);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ---- contact preferences ------------------------------------------ */
+
+.vy-prefs-preview {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-primary);
+  font-size: var(--type-body);
+  line-height: 1.5;
+}
+
+.vy-day-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vy-day-chips .vy-chip {
+  min-width: 48px;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.vy-time-pair {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.vy-time-pair .vy-select {
+  width: auto;
+  min-width: 112px;
+}
+
+@media (min-width: 900px) {
+  .vy-prefs {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: var(--space-6);
+    align-items: start;
+  }
+
+  .vy-prefs-aside {
+    position: sticky;
+    top: var(--space-6);
+  }
+}
+
+/* ---- packages -------------------------------------------------------- */
+
+.vy-pkg-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+}
+
+.vy-pkg-tabs > button {
+  flex: 1;
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--type-sm);
+  font-weight: 600;
+  padding: 8px 10px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.vy-pkg-tabs > button[aria-selected="true"] {
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  border-color: var(--selected-border);
+}
+
+.vy-pkg-price {
+  font-size: var(--type-title);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.vy-pkg-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vy-pkg-list li {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  color: var(--text-secondary);
+  font-size: var(--type-sm);
+}
+
+.vy-pkg-list li svg {
+  color: var(--trust-verified);
+  margin-top: 1px;
+}
+
+.vy-pkg-table {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .vy-pkg-mobile {
+    display: none;
+  }
+
+  .vy-pkg-table {
+    display: table;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+  }
+
+  .vy-pkg-table th,
+  .vy-pkg-table td {
+    text-align: left;
+    vertical-align: top;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-hairline);
+    font-size: var(--type-sm);
+    color: var(--text-secondary);
+  }
+
+  .vy-pkg-table thead th {
+    color: var(--text-primary);
+    font-size: var(--type-body);
+    border-bottom-color: var(--border-default);
+  }
+
+  .vy-pkg-table tbody th {
+    color: var(--text-tertiary);
+    font-weight: 600;
+    width: 150px;
+  }
+
+  .vy-pkg-table td[data-yes] {
+    color: var(--text-primary);
+  }
+
+  .vy-pkg-table tfoot td {
+    border-bottom: none;
+  }
+}
+
+.vy-pkg-editor {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 1200px) {
+  .vy-pkg-editor {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* ---- Discover filters --------------------------------------------- */
+
+.vy-applied {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+@media (min-width: 900px) {
+  .vy-applied {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+}
+
+.vy-applied .vy-chip {
+  flex-shrink: 0;
+  cursor: pointer;
+  padding-right: 8px;
+}
+
+.vy-applied .vy-chip svg {
+  color: var(--text-tertiary);
+}
+
+.vy-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vy-filter-group .vy-row {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vy-filter-group .vy-chip {
+  cursor: pointer;
+}
+
+/* Bottom sheet (phones): scrim + sheet + sticky footer. */
+.vy-sheet-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: var(--scrim);
+}
+
+.vy-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 81;
+  max-height: 86dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-floating);
+  border-top: 1px solid var(--border-default);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.vy-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.vy-sheet-body {
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.vy-sheet-foot {
+  display: flex;
+  gap: var(--space-2);
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border-hairline);
+  background: var(--surface-floating);
+}
+
+.vy-sheet-foot .vy-btn-primary {
+  flex: 1;
+}
+
+.vy-save-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* ---- contracts ------------------------------------------------------ */
+
+.vy-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.vy-timeline-item {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: var(--space-3);
+  position: relative;
+  padding-bottom: var(--space-5);
+}
+
+.vy-timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+/* the rail between dots */
+.vy-timeline-item::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  top: 22px;
+  bottom: 2px;
+  width: 1px;
+  background: var(--border-hairline);
+}
+
+.vy-timeline-item:last-child::before {
+  display: none;
+}
+
+.vy-dot {
+  width: 14px;
+  height: 14px;
+  margin: 4px 0 0 4px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  background: transparent;
+  box-sizing: border-box;
+}
+
+.vy-dot[data-tone="held"] {
+  background: var(--text-tertiary);
+  border-color: var(--text-tertiary);
+}
+
+.vy-dot[data-tone="action"] {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.vy-dot[data-tone="done"] {
+  background: var(--trust-verified);
+  border-color: var(--trust-verified);
+}
+
+.vy-dot[data-tone="warn"] {
+  border-color: var(--danger, var(--text-primary));
+}
+
+.vy-timeline-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.vy-timeline-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+.vy-timeline-amount {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.vy-ledger {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 0;
+  margin: 0;
+}
+
+.vy-ledger dt {
+  color: var(--text-secondary);
+  font-size: var(--type-sm);
+}
+
+.vy-ledger dd {
+  margin: 0;
+  padding-left: 12px;
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.vy-ledger .vy-ledger-total {
+  border-top: 1px solid var(--border-hairline);
+  padding-top: 8px;
+}
+
+.vy-events {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vy-events li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+}
+
+.vy-events time {
+  color: var(--text-tertiary);
+  font-size: var(--type-xs);
+}
+
+.vy-remaining {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+.vy-remaining[data-ok] {
+  border-color: transparent;
+  background: var(--trust-verified-soft);
+  color: var(--trust-verified);
+}
+
+.vy-remaining[data-over] {
+  border-color: var(--danger, var(--text-primary));
+  background: transparent;
+  color: var(--danger-text, var(--text-primary));
+}
+
+.vy-ms-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-hairline);
+  background: var(--surface-nested);
+}
+
+@media (min-width: 720px) {
+  .vy-ms-row {
+    grid-template-columns: minmax(0, 1fr) 150px 160px auto;
+    align-items: end;
+  }
+}
+
+/* display comes from .vy-pane-row-mobile / -console (one of the two is
+   hidden at each width); setting it here would show both. */
+.vy-contract-row {
+  gap: 4px;
+  text-decoration: none;
+  color: inherit;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.vy-contract-row[aria-current="true"] {
+  border-color: var(--selected-border);
+}
+
+/* Sticky current action on phones (the hub sits under it, as on Opportunity detail). */
+.vy-contract-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 55;
+  display: flex;
+  gap: var(--space-2);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  background: var(--surface);
+  border-top: 1px solid var(--border-hairline);
+}
+
+.vy-contract-footer .vy-btn {
+  flex: 1;
+}
+
+@media (min-width: 900px) {
+  .vy-contract-footer {
+    display: none;
+  }
+}
+
+/* ---- desktop Hire / Find work menu ------------------------------------ */
+
+.vy-topleft {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 60;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.vy-menu-trigger {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.vy-menu-trigger:hover,
+.vy-menu-trigger[aria-expanded="true"] {
+  color: var(--text-primary);
+  background: var(--surface-raised);
+  border-color: var(--border-hairline);
+}
+
+.vy-mega {
+  position: absolute;
+  top: 46px;
+  left: 0;
+  width: min(940px, calc(100vw - var(--rail-w) - 48px));
+  max-height: calc(100dvh - 90px);
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) 230px;
+  padding: 0;
+  overflow: hidden;
+  border-color: var(--border-default);
+}
+
+.vy-mega-col {
+  padding: var(--space-4);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vy-mega-col + .vy-mega-col {
+  border-left: 1px solid var(--border-hairline);
+}
+
+.vy-mega-cat {
+  appearance: none;
+  display: block;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--type-sm);
+  font-weight: 600;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.vy-mega-cat[aria-selected="true"],
+.vy-mega-cat:hover {
+  background: var(--surface-raised);
+  color: var(--text-primary);
+}
+
+.vy-mega-cat[aria-selected="true"] {
+  box-shadow: inset 2px 0 0 var(--selected-border);
+}
+
+.vy-mega-items {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 12px;
+}
+
+.vy-mega-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--text-primary);
+}
+
+.vy-mega-item:hover,
+.vy-mega-item:focus-visible {
+  background: var(--surface-raised);
+}
+
+.vy-mega-item strong {
+  font-size: var(--type-sm);
+}
+
+.vy-mega-item span {
+  font-size: var(--type-xs);
+  color: var(--text-tertiary);
+  line-height: 1.4;
+}
+
+.vy-mega-head {
+  padding: 0 10px 8px;
+}
+
+/* ---- outcome pages ------------------------------------------------ */
+
+.vy-outcome-hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 62ch;
+}
+
+.vy-spec-grid {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 600px) {
+  .vy-spec-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .vy-spec-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.vy-spec {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.vy-spec strong {
+  color: var(--text-primary);
+  font-size: var(--type-body);
+}
+
+/* ---- pre-accept calling (opportunity action bar) --------------------- */
+
+.vy-precall {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vy-precall-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.vy-precall-row > .vy-btn:first-child:not(.vy-precall-wa) {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.vy-precall-wa {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  padding-inline: 0;
+  flex-shrink: 0;
+}
+
+/* keep focused / scrolled-to controls clear of the pinned phone footer */
+html:has(.vy-contract-footer) {
+  scroll-padding-bottom: 96px;
+}
+
+/* ====================================================================== */
+/* [FE2 — Discover redesign, owner review 2026-09-29]                     */
+/* Tokens only: every colour below is a design-system variable.          */
+/* ====================================================================== */
+
+/* ---- top: switch, search, location ---------------------------------- */
+
+.vy-dtop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.vy-dtop-switch {
+  align-self: flex-start;
+  display: inline-flex;
+}
+
+.vy-dtop-switch > .vy-dtop-switch-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--type-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.vy-dtop-switch > .vy-dtop-switch-link:hover {
+  color: var(--text-primary);
+}
+
+.vy-dtop-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+/* phones: the location chip shrinks to "12 km"; desktop shows "Near Ameerpet · 12 km" */
+.vy-loc-long {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .vy-loc-long {
+    display: inline;
+  }
+
+  .vy-loc-short {
+    display: none;
+  }
+}
+
+.vy-search {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.vy-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  z-index: 1;
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.vy-search .vy-voice-field > .vy-input.vy-search-input {
+  padding-left: 42px;
+  padding-right: 96px;
+}
+
+.vy-search-input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.vy-search-clear {
+  position: absolute;
+  right: 52px;
+  top: 9px;
+  z-index: 1;
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vy-search-clear:hover {
+  color: var(--text-primary);
+  background: var(--surface-overlay);
+}
+
+.vy-loc {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.vy-loc-chip {
+  cursor: pointer;
+  height: 46px;
+  padding-inline: 14px;
+  white-space: nowrap;
+}
+
+.vy-loc-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  width: min(320px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-color: var(--border-default);
+}
+
+.vy-loc-pop input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+@media (max-width: 899px) {
+  .vy-loc-pop {
+    left: 0;
+    right: auto;
+  }
+}
+
+/* ---- layout: slim sticky sidebar + results --------------------------- */
+
+.vy-discover {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.vy-discover-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+@media (min-width: 900px) {
+  .vy-discover {
+    grid-template-columns: 248px minmax(0, 1fr);
+    gap: var(--space-6);
+  }
+
+  /* sticks while the results scroll; no inner scrollbar — the panel is as
+     tall as it needs to be and scrolls with the page once it is taller
+     than the window */
+  .vy-discover-side {
+    position: sticky;
+    top: 76px;
+  }
+}
+
+/* ---- filter panel ------------------------------------------------------ */
+
+.vy-fpanel {
+  display: flex;
+  flex-direction: column;
+}
+
+.vy-fpanel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: var(--space-2);
+}
+
+.vy-fsec {
+  border-top: 1px solid var(--border-hairline);
+}
+
+.vy-fsec-head {
+  appearance: none;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: none;
+  border: none;
+  padding: 12px 0;
+  font: inherit;
+  font-size: var(--type-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+}
+
+.vy-fsec-caret {
+  color: var(--text-tertiary);
+  font-weight: 400;
+  font-size: 16px;
+}
+
+.vy-fsec-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: var(--space-3);
+}
+
+.vy-fopt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 0;
+  font-size: var(--type-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.vy-fopt input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+
+.vy-fopt-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.vy-fopt-count {
+  color: var(--text-tertiary);
+  font-size: var(--type-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.vy-fopt[data-empty] {
+  color: var(--text-tertiary);
+}
+
+.vy-fverified {
+  border-top: 1px solid var(--border-hairline);
+  padding: 12px 0;
+  font-weight: 700;
+}
+
+.vy-fverified input {
+  width: 18px;
+  height: 18px;
+}
+
+.vy-pay-range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.vy-pay-range .vy-input {
+  padding: 8px 10px;
+}
+
+/* ---- themed rows ------------------------------------------------------- */
+
+.vy-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.vy-row-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.vy-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.vy-row-title {
+  font-size: var(--type-heading);
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.vy-row-count {
+  font-size: var(--type-xs);
+  font-weight: 600;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.vy-row-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+.vy-row-arrows {
+  gap: 6px;
+}
+
+@media (min-width: 900px) {
+  .vy-row-arrows {
+    display: inline-flex;
+  }
+}
+
+.vy-row-arrow {
+  appearance: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-hairline);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.vy-row-arrow:disabled {
+  color: var(--text-tertiary);
+  cursor: default;
+  opacity: 0.5;
+}
+
+.vy-row-strip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 82%;
+  gap: var(--space-3);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 2px;
+  scrollbar-width: none;
+  padding: 2px 2px 6px;
+  overscroll-behavior-x: contain;
+}
+
+.vy-row-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.vy-row-cell {
+  scroll-snap-align: start;
+  min-width: 0;
+  display: flex;
+}
+
+@media (min-width: 600px) {
+  .vy-row-strip {
+    grid-auto-columns: calc((100% - 2 * var(--space-3)) / 2.3);
+  }
+}
+
+@media (min-width: 1100px) {
+  .vy-row-strip {
+    grid-auto-columns: calc((100% - 3 * var(--space-3)) / 3.25);
+  }
+}
+
+/* ---- the Discover card ---------------------------------------------- */
+
+.vy-dcard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  padding: var(--space-4);
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: border-color var(--dur-exit) var(--ease-out), transform var(--dur-exit) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .vy-dcard:hover {
+    border-color: var(--border-default);
+    transform: translateY(-1px);
+  }
+}
+
+.vy-dcard-top {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.vy-dcard-kind {
+  font-size: var(--type-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+}
+
+.vy-dcard-title {
+  font-size: 16px;
+  line-height: 1.3;
+  font-weight: 650;
+  color: var(--text-primary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.vy-dcard-pay {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.vy-dcard-line {
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+}
+
+.vy-dcard-meta {
+  font-size: var(--type-xs);
+  color: var(--text-tertiary);
+}
+
+.vy-dcard .vy-trust-badges {
+  margin-top: 2px;
+}
+
+.vy-dcard-why {
+  margin-top: auto;
+  padding-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vy-dcard-why .vy-link-btn {
+  font-size: var(--type-xs);
+  color: var(--text-secondary);
+}
+
+/* flat list: fills the width, never leaves orphan gaps */
+.vy-dgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-3);
+}
+
+@media (min-width: 900px) {
+  .vy-dgrid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
+
+.vy-dgrid > .vy-dcard {
+  height: 100%;
+}
+
+/* ---- results header, sort, save -------------------------------------- */
+
+.vy-rhead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.vy-rhead-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.vy-rhead-title {
+  font-size: var(--type-heading);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.vy-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: var(--type-sm);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-pill);
+  padding: 4px 6px 4px 12px;
+  background: var(--surface-raised);
+}
+
+.vy-sort select {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: 600;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.vy-sort select option {
+  background: var(--surface-floating);
+  color: var(--text-primary);
+}
+
+.vy-sort-label {
+  white-space: nowrap;
+}
+
+.vy-bell-toggle {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border-hairline);
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: var(--radius-pill);
+  padding: 6px 12px;
+  font: inherit;
+  font-size: var(--type-sm);
+  cursor: pointer;
+}
+
+.vy-bell-toggle[aria-pressed="true"] {
+  color: var(--selected-fg);
+  border-color: var(--selected-border);
+  background: var(--selected-bg);
+}
+
+/* ---- phone: sticky filter bar + quick chips --------------------------- */
+
+.vy-mbar-wrap {
+  position: sticky;
+  /* below the floating language / alerts / account pills */
+  top: 62px;
+  z-index: 20;
+  margin-inline: calc(-1 * var(--space-4));
+  padding: 8px var(--space-4);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vy-mbar {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.vy-mbar-filters {
+  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vy-quick {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.vy-quick .vy-chip {
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+@media (min-width: 900px) {
+  .vy-mbar-wrap {
+    display: none;
+  }
+}
+
+/* the pay switch fits on one line in the 248px sidebar */
+.vy-fpanel .vy-segmented {
+  flex-wrap: nowrap;
+}
+
+.vy-fpanel .vy-segmented > button {
+  flex: 1 1 0;
+  padding: 6px 8px;
+  font-size: var(--type-xs);
+  white-space: nowrap;
+}
+
+/* the sheet's own title is the panel's "Filters"; the close sits beside it,
+   and "Clear all" lives in the sticky footer */
+.vy-sheet {
+  position: fixed;
+}
+
+.vy-sheet-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+}
+
+.vy-sheet .vy-fpanel-head .vy-link-btn {
+  display: none;
+}

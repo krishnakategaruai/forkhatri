@@ -1,0 +1,237 @@
+/* [Owner, 2026-09-28] The compatibility panel on a profile: two faces, one
+   summary line, then "You & them" and "Horoscope". Calm: one accent, serif
+   heading, no gold, no coloured verdicts. */
+
+.compat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  scroll-margin-top: calc(var(--topbar-h, 56px) + var(--space-3));
+  /* The panel sits in a side column on desktop: size by its own width. */
+  container-type: inline-size;
+}
+
+.compat__top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.compat__faces {
+  display: flex;
+  flex: none;
+}
+.compat__face {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--surface);
+  background: var(--accent-tint);
+}
+.compat__face--other {
+  margin-left: -16px;
+}
+@container (min-width: 480px) {
+  .compat__face {
+    width: 64px;
+    height: 64px;
+  }
+}
+.compat__face--blank {
+  display: block;
+}
+
+.compat__heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  flex: 1 1 160px;
+}
+.compat__title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: 1.375rem;
+  line-height: 1.25;
+}
+
+.compat__summary {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.compat__pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.compat__pill:hover {
+  border-color: var(--accent);
+}
+.compat__pill--word {
+  cursor: default;
+  border-color: transparent;
+  background: var(--accent-tint);
+  color: var(--accent-ink);
+}
+
+.compat__tabs {
+  display: flex;
+  gap: var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+.compat__tab {
+  position: relative;
+  padding: var(--space-2) 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.compat__tab.is-on {
+  color: var(--ink);
+}
+.compat__tab.is-on::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.compat__tab:focus-visible,
+.compat__pill:focus-visible {
+  outline: 2px solid var(--focus-ring, var(--accent));
+  outline-offset: 2px;
+}
+
+/* The horoscope reading sits inside the panel: the panel is the card. */
+.compat__body .hmatch {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+/* Koota rings: eight at a glance, the worked table one tap away. */
+.hmatch__rings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4) var(--space-2);
+}
+@container (min-width: 640px) {
+  .hmatch__rings {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+}
+.hring {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+  min-width: 0;
+}
+.hring__svg {
+  width: 52px;
+  height: 52px;
+}
+.hring__track,
+.hring__fill {
+  fill: none;
+  stroke-width: 5;
+}
+.hring__track {
+  stroke: var(--line);
+}
+.hring__fill {
+  stroke: var(--accent);
+  stroke-linecap: round;
+}
+.hring__label {
+  font-size: 0.75rem;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.hring__pts {
+  font-size: 0.875rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.hmatch__agree {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.hmatch__agree-item {
+  display: inline-flex;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 0.8125rem;
+  color: var(--ink-3);
+}
+.hmatch__agree-item.is-on {
+  color: var(--ink);
+  background: var(--surface-2);
+}
+
+.hmatch__details > summary {
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--accent-ink);
+  padding: var(--space-2) 0;
+}
+.hmatch__details[open] > summary {
+  margin-bottom: var(--space-2);
+}
+
+/* [2026-09-29, critique] Koota rings in gold foil ink, not alarm red: a full
+   ring is good news and must not read as a warning. */
+.hring__fill {
+  stroke: var(--gold-ink, var(--accent-ink));
+}
+
+.compat__birth {
+  margin: 0 0 var(--space-3);
+  font-size: 0.9375rem;
+  color: var(--ink);
+}
+.compat__birth-label {
+  font-weight: 600;
+  color: var(--ink-2);
+}

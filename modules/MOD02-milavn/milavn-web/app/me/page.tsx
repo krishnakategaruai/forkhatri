@@ -23,10 +23,10 @@ import { chooseLanguage } from '@/lib/i18n/provider';
 import { formatDateLong, formatInr } from '@/lib/format';
 import { useIdentity } from '@/lib/identity';
 import { FORKHATRI_ACCOUNT_URL, FORKHATRI_ENTRANCE_URL } from '@/lib/platform';
+import { readThemeChoice, setThemeChoice, type ThemeChoice } from '@/lib/theme';
 
 type Taxonomy = { group: string; interests: { tag: string; label: string }[] }[];
 type MyTicket = { id: string; status: string; amount_paise: number; refund_amount_paise: number | null; title: string; slug: string; time_start: string };
-const THEME_KEY = 'milavn.theme';
 
 export default function MePage() {
   const { t } = useTranslation();
@@ -40,7 +40,7 @@ export default function MePage() {
   const [photo, setPhoto] = useState<File | null>(null);
   const [precision, setPrecision] = useState<string>('locality');
   const [noPhotos, setNoPhotos] = useState(false); // FR113
-  const [theme, setTheme] = useState<'system' | 'light' | 'dark'>('system');
+  const [theme, setTheme] = useState<ThemeChoice>('system');
   const [reputation, setReputation] = useState<string[]>([]);
   const [mine, setMine] = useState<{ participating: Card[]; hosting: Card[] } | null>(null);
   const [help, setHelp] = useState(false);
@@ -57,7 +57,7 @@ export default function MePage() {
     api<{ prefer_not_pictured: boolean }>('/moments/preference').then((r) => setNoPhotos(r.prefer_not_pictured)).catch(() => undefined);
     api<Taxonomy>('/profile/interests/taxonomy').then(setTaxonomy).catch(() => undefined);
     api<{ participating: Card[]; hosting: Card[] }>('/occurrences/mine').then(setMine).catch(() => undefined);
-    try { const saved = localStorage.getItem(THEME_KEY) as 'light' | 'dark' | null; if (saved) { setTheme(saved); document.documentElement.dataset.theme = saved; } } catch { /* ignore */ }
+    setTheme(readThemeChoice());
   }, [identity]);
   useEffect(() => { setBio(profile?.bio ?? ''); }, [profile]);
   useEffect(() => {
@@ -65,11 +65,7 @@ export default function MePage() {
     api<string[]>(`/people/reputation/${identity.member_id}`).then(setReputation).catch(() => setReputation([]));
   }, [identity]);
 
-  const setThemeChoice = (v: 'system' | 'light' | 'dark') => {
-    setTheme(v);
-    if (v === 'system') { delete document.documentElement.dataset.theme; try { localStorage.removeItem(THEME_KEY); } catch { /* ignore */ } }
-    else { document.documentElement.dataset.theme = v; try { localStorage.setItem(THEME_KEY, v); } catch { /* ignore */ } }
-  };
+  const chooseTheme = (v: ThemeChoice) => { setTheme(v); setThemeChoice(v); };
 
   const saveEdit = async () => {
     const form = new FormData();
@@ -155,7 +151,7 @@ export default function MePage() {
           <div className="setrow"><span className="setrow__icon"><Globe size={18} aria-hidden="true" /></span><span className="grow">{t('profile.language')}</span>
             <div className="chips">{SUPPORTED_LANGUAGES.map((l) => <button key={l} className="chip chip--sm" aria-pressed={lang === l} onClick={() => setLang(l)}>{LANGUAGE_NATIVE[l]}</button>)}</div></div>
           <div className="setrow"><span className="setrow__icon"><SunMoon size={18} aria-hidden="true" /></span><span className="grow">{t('profile.appearance')}</span>
-            <div className="chips">{(['system', 'light', 'dark'] as const).map((v) => <button key={v} className="chip chip--sm" aria-pressed={theme === v} onClick={() => setThemeChoice(v)}>{t(`profile.${v}`)}</button>)}</div></div>
+            <div className="chips">{(['system', 'light', 'dark'] as const).map((v) => <button key={v} className="chip chip--sm" aria-pressed={theme === v} onClick={() => chooseTheme(v)}>{t(`profile.${v}`)}</button>)}</div></div>
           <div className="setrow"><span className="setrow__icon"><MapPin size={18} aria-hidden="true" /></span><span className="grow">{t('profile.locationPrivacy')}<br /><span className="caption">{t('profile.locationBody')}</span></span>
             <div className="chips">{['city', 'zone', 'locality'].map((v) => <button key={v} className="chip chip--sm" aria-pressed={precision === v} onClick={() => setPrec(v)}>{t(`profile.precision.${v}`)}</button>)}</div></div>
           <div className="setrow"><span className="setrow__icon"><Camera size={18} aria-hidden="true" /></span><span className="grow">{t('moments.prefTitle')}<br /><span className="caption">{t('moments.prefBody')}</span></span>

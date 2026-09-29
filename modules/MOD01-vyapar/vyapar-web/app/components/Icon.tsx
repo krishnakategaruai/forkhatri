@@ -30,6 +30,23 @@ const PATHS: Record<string, string> = {
   alert: "M6 16V11a6 6 0 0 1 12 0v5l2 2H4l2-2Zm4 4h4",
   save: "M6 4h12v17l-6-4-6 4V4Z",
   share: "M12 3v12m0-12-4 4m4-4 4 4M5 13v7h14v-7",
+  // [FE2] contact, contracts, badges, filters
+  phone: "M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1Z",
+  whatsapp: "M4 20l1.3-4A8 8 0 1 1 8 18.7L4 20Zm5-11c0 3 2.5 6 6 6l1-1.5-2-1-1 1c-1-.5-2-1.5-2.5-2.5l1-1-1-2L9 9Z",
+  contract: "M7 3h7l5 5v13H7V3Zm7 0v5h5M10 13h6M10 17h4",
+  bolt: "M13 3 5 14h6l-1 7 8-11h-6l1-7Z",
+  shield: "M12 3l8 3v6c0 4.5-3.5 7.5-8 9-4.5-1.5-8-4.5-8-9V6l8-3Zm-3 9 2 2 4-4",
+  rising: "M4 18l6-6 4 4 6-8M15 8h5v5",
+  ribbon: "M12 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10Zm-3 9-2 9 5-3 5 3-2-9",
+  repeat: "M4 10a6 6 0 0 1 10-4.5L17 8M17 3v5h-5M20 14a6 6 0 0 1-10 4.5L7 16M7 21v-5h5",
+  close: "M6 6l12 12M18 6 6 18",
+  filter: "M4 6h16M7 12h10M10 18h4",
+  clock: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 4v5l3 2",
+  lock: "M6 11V8a6 6 0 0 1 12 0v3M5 11h14v10H5V11Z",
+  outcome: "M4 12h10M10 6l6 6-6 6M20 4v16",
+  search: "M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm9 16-4.3-4.3",
+  pin: "M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11Zm0-8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z",
+  sort: "M7 4v16m0 0-3-3m3 3 3-3M17 20V4m0 0-3 3m3-3 3 3",
 };
 
 export type IconName = keyof typeof PATHS;

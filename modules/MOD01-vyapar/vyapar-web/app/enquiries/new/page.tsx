@@ -32,6 +32,8 @@ import Screen from "@/app/components/Screen";
 import ProfileSetup from "@/app/components/ProfileSetup";
 import type { Me } from "@/lib/sdk";
 import ComposerPreview, { PreviewCard } from "@/app/post/_components/ComposerPreview";
+import StructuredResponse, { isStructuredKind } from "@/app/components/respond/StructuredResponse";
+import { useOpportunity } from "@/app/hooks/opportunities";
 
 type Target =
   | { targetKind: "listing"; id: string; name: string; kind: string; locality: string; verificationState: string }
@@ -403,10 +405,31 @@ function ComposeInner() {
   );
 }
 
+// [FE1 — 2026-09-28] Jobs, freelance projects and local services now each
+// have their own structured composer (one-tap apply, proposal, quote —
+// app/components/respond/StructuredResponse.tsx). Listings and the other
+// opportunity types keep the composer above, unchanged.
+function Router() {
+  const params = useSearchParams();
+  const opportunityId = params.get("opportunity_id");
+  const opportunity = useOpportunity(opportunityId ?? "", { enabled: !!opportunityId });
+  if (opportunityId && !opportunity.data && !opportunity.error) {
+    return (
+      <Screen width="wide">
+        <div className="vy-skeleton" style={{ height: 40, width: 280, maxWidth: "70%" }} aria-hidden="true" />
+      </Screen>
+    );
+  }
+  if (opportunity.data && isStructuredKind(opportunity.data.type) && opportunity.data.source_segment !== "public") {
+    return <StructuredResponse opportunity={opportunity.data} />;
+  }
+  return <ComposeInner />;
+}
+
 export default function NewEnquiryPage() {
   return (
     <Suspense fallback={null}>
-      <ComposeInner />
+      <Router />
     </Suspense>
   );
 }

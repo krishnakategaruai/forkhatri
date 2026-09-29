@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, ApiError } from "@/lib/api";
 import Screen from "@/app/components/Screen";
+import { formatDate } from "@/lib/format"; // [FE2] Indian date order
 
 interface Evidence {
   reason: string;
@@ -114,7 +115,7 @@ function CaseCard({ item, onDone }: { item: CaseItem; onDone: () => void }) {
                 <p key={i} className="vy-muted" style={{ fontSize: 13 }}>
                   {p.action ? t(`trustSafety:action.${p.action}` as "action.limit") : t(`trustSafety:queue.caseState.${p.state}` as "queue.caseState.dismissed")}
                   {p.reason_code ? ` — ${t(`trustSafety:reasonCode.${p.reason_code}` as "reasonCode.spam", { defaultValue: p.reason_code })}` : p.primary_reason ? ` — ${t(`trustSafety:primaryReason.${p.primary_reason}` as "primaryReason.scam", { defaultValue: p.primary_reason })}` : ""}
-                  {" · "}{new Date(p.date).toLocaleDateString(i18n.language)}
+                  {" · "}{formatDate(p.date, i18n.language)}
                 </p>
               ))}
             </div>
@@ -139,10 +140,10 @@ function CaseCard({ item, onDone }: { item: CaseItem; onDone: () => void }) {
             key={a}
             className="vy-chip"
             style={{
-              border: `1px solid ${action === a ? "var(--accent)" : "var(--border-hairline)"}`,
+              border: `1px solid ${action === a ? "var(--selected-border)" : "var(--border-hairline)"}`,
               cursor: "pointer",
-              background: action === a ? "var(--accent-soft)" : "var(--surface-overlay)",
-              color: action === a ? "var(--accent-strong)" : "var(--text-primary)",
+              background: action === a ? "var(--selected-bg)" : "var(--surface-overlay)",
+              color: action === a ? "var(--selected-fg)" : "var(--text-primary)",
             }}
             onClick={() => setAction(a)}
           >
@@ -198,7 +199,7 @@ function AppealCard({ item, onDone }: { item: AppealItem; onDone: () => void }) 
           {item.object_title ? ` · ${item.object_title}` : ""}
         </strong>
         <span className={item.overdue ? "vy-error" : "vy-muted"}>
-          {item.overdue ? t("trustSafety:queue.overdue") : t("trustSafety:queue.due", { date: new Date(item.due_at).toLocaleDateString(i18n.language) })}
+          {item.overdue ? t("trustSafety:queue.overdue") : t("trustSafety:queue.due", { date: formatDate(item.due_at, i18n.language) })}
         </span>
       </div>
       {item.action && <p className="vy-muted">{t(`trustSafety:action.${item.action}` as "action.limit")}</p>}

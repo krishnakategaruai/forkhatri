@@ -37,6 +37,9 @@ CATEGORY_KEYS: Final[dict[str, frozenset[str]]] = {
             # importance on each 1–10 scale ({scale: {want, importance}}).
             "brief",
             "scales",
+            # [Owner, 2026-09-28] How much each theme matters, 1–10
+            # ({theme: importance}, config/matching_engine.PRIORITY_THEMES).
+            "priorities",
         }
     ),
     "lifestyle": frozenset({"diet", "hobbies", "smoking", "drinking"}),

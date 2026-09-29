@@ -10,6 +10,7 @@
     "blocked": "Blocked. You won't see each other's enquiries."
   },
   "reason": {
+    "asked_for_money": "Asked me for money (fee, deposit or kit)",
     "scam": "Scam or asked for advance payment",
     "fake": "Fake or misleading",
     "impersonation": "Pretending to be someone else",
@@ -33,7 +34,8 @@
     "advance_payment": "Mentions advance payment or fees",
     "prohibited_content": "Prohibited wording",
     "spam_pattern": "Looks like spam",
-    "retaliation": "Retaliatory review"
+    "retaliation": "Retaliatory review",
+    "asked_for_money": "Asked a job seeker for money"
   },
   "severity": {
     "low": "Low",

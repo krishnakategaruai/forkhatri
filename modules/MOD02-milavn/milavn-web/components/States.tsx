@@ -59,7 +59,12 @@ export function CardSkeleton({ count = 2 }: { count?: number }) {
   );
 }
 
-export function Toast({ text }: { text: string | null }) {
+export function Toast({ text, actionLabel, onAction }: { text: string | null; actionLabel?: string; onAction?: () => void }) {
   if (!text) return null;
-  return <div className="toast" role="status">{text}</div>;
+  return (
+    <div className="toast" role="status">
+      {text}
+      {actionLabel && onAction && <button className="toast__action" onClick={onAction}>{actionLabel}</button>}
+    </div>
+  );
 }

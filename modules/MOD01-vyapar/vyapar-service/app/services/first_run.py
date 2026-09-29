@@ -25,7 +25,7 @@ from typing import Literal
 import asyncpg
 from pydantic import BaseModel
 
-from app.taxonomy_cache import labels_for
+from app.taxonomy_cache import children_of, description_for, labels_for
 
 
 TOTAL_STEPS = 5
@@ -112,92 +112,15 @@ async def list_capability_options(
 # [Original-Vyapar upgrade, 2026-09-17, product-owner-reaffirmed: "I
 # genuinely feel above things also should be available" — a direct
 # reaffirmation of the WorkIndia-onboarding research, built as an original
-# Vyapar screen, never their layout/chrome] a real DB parent-child link
-# between category and capability taxonomy terms doesn't exist (checked
-# directly — every capability row's `parent_id` is null), so "scoped
-# suggestions per category" needs an explicit mapping; this is that
-# mapping, editorially curated once here rather than guessed per-request.
-# Categories/capabilities not listed here simply fall back to the full
-# unscoped list — never a missing/broken suggestion set.
-CATEGORY_CAPABILITY_SCOPE: dict[str, list[str]] = {
-    "accounting_tax": ["accounting", "tax", "gst_filing"],
-    "automotive": ["car_repair"],
-    "design_architecture": ["architecture", "interior_design"],
-    "education": ["tutoring", "mathematics", "yoga"],
-    "events": ["events", "catering"],
-    "food_catering": ["catering", "bakery", "cakes"],
-    "handicraft": ["handicraft", "tailoring", "textiles"],
-    "health_wellness": ["yoga"],
-    "home_repair": ["plumbing", "electrical", "car_repair"],
-    "legal": ["legal", "property_law", "gst_filing"],
-    "logistics": ["delivery", "wholesale"],
-    "marketing": ["social_media", "sales", "content_writing"],
-    "media_photo": ["photography", "video_editing", "content_writing"],
-    "printing": ["printing"],
-    "software_it": ["software", "python", "react", "product_management", "startup"],
-    "textiles_retail": ["textiles", "tailoring", "wholesale"],
-}
-
-# [Same upgrade] taxonomy_terms has no `description` column (checked
-# directly) — a short, honest one-line description per category, written
-# once here for each of the 3 launch languages, matching the same
-# translated-content standard as every taxonomy display name already gets.
-CATEGORY_DESCRIPTIONS: dict[str, dict[str, str]] = {
-    "en": {
-        "accounting_tax": "Bookkeeping, tax filing, GST and audit help",
-        "automotive": "Vehicle repair, servicing and parts",
-        "design_architecture": "Architecture, interiors and design services",
-        "education": "Tutoring, coaching and skill classes",
-        "events": "Event planning, decor and management",
-        "food_catering": "Catering, baking and food service",
-        "handicraft": "Handmade goods, tailoring and textiles work",
-        "health_wellness": "Fitness, yoga and wellness services",
-        "home_repair": "Plumbing, electrical and home maintenance",
-        "legal": "Legal advice, documentation and compliance",
-        "logistics": "Delivery, transport and wholesale supply",
-        "marketing": "Marketing, social media and sales support",
-        "media_photo": "Photography, video and content creation",
-        "printing": "Printing and signage services",
-        "software_it": "Software, IT and technology services",
-        "textiles_retail": "Textiles, garments and retail",
-    },
-    "hi": {
-        "accounting_tax": "बहीखाता, टैक्स फाइलिंग, GST और ऑडिट सहायता",
-        "automotive": "वाहन मरम्मत, सर्विसिंग और पार्ट्स",
-        "design_architecture": "आर्किटेक्चर, इंटीरियर और डिज़ाइन सेवाएँ",
-        "education": "ट्यूशन, कोचिंग और स्किल क्लासेज़",
-        "events": "इवेंट योजना, सजावट और प्रबंधन",
-        "food_catering": "कैटरिंग, बेकिंग और फूड सेवा",
-        "handicraft": "हस्तनिर्मित सामान, दर्ज़ी और कपड़ा काम",
-        "health_wellness": "फिटनेस, योग और वेलनेस सेवाएँ",
-        "home_repair": "प्लंबिंग, इलेक्ट्रिकल और घर की मरम्मत",
-        "legal": "कानूनी सलाह, दस्तावेज़ीकरण और अनुपालन",
-        "logistics": "डिलीवरी, परिवहन और थोक आपूर्ति",
-        "marketing": "मार्केटिंग, सोशल मीडिया और सेल्स सहायता",
-        "media_photo": "फोटोग्राफी, वीडियो और कंटेंट निर्माण",
-        "printing": "प्रिंटिंग और साइनेज सेवाएँ",
-        "software_it": "सॉफ़्टवेयर, IT और टेक्नोलॉजी सेवाएँ",
-        "textiles_retail": "कपड़े, परिधान और रिटेल",
-    },
-    "te": {
-        "accounting_tax": "బుక్కీపింగ్, టాక్స్ ఫైలింగ్, GST మరియు ఆడిట్ సహాయం",
-        "automotive": "వాహన మరమ్మత్తు, సర్వీసింగ్ మరియు పార్ట్స్",
-        "design_architecture": "ఆర్కిటెక్చర్, ఇంటీరియర్స్ మరియు డిజైన్ సేవలు",
-        "education": "ట్యూషన్, కోచింగ్ మరియు స్కిల్ క్లాసులు",
-        "events": "ఈవెంట్ ప్లానింగ్, డెకర్ మరియు మేనేజ్‌మెంట్",
-        "food_catering": "క్యాటరింగ్, బేకింగ్ మరియు ఫుడ్ సర్వీస్",
-        "handicraft": "హస్తనిర్మిత వస్తువులు, టైలరింగ్ మరియు టెక్స్‌టైల్స్ పని",
-        "health_wellness": "ఫిట్‌నెస్, యోగా మరియు వెల్‌నెస్ సేవలు",
-        "home_repair": "ప్లంబింగ్, ఎలక్ట్రికల్ మరియు హోమ్ మెయింటెనెన్స్",
-        "legal": "న్యాయ సలహా, డాక్యుమెంటేషన్ మరియు కంప్లయన్స్",
-        "logistics": "డెలివరీ, రవాణా మరియు హోల్‌సేల్ సరఫరా",
-        "marketing": "మార్కెటింగ్, సోషల్ మీడియా మరియు సేల్స్ సహాయం",
-        "media_photo": "ఫోటోగ్రఫీ, వీడియో మరియు కంటెంట్ క్రియేషన్",
-        "printing": "ప్రింటింగ్ మరియు సైనేజ్ సేవలు",
-        "software_it": "సాఫ్ట్‌వేర్, IT మరియు టెక్నాలజీ సేవలు",
-        "textiles_retail": "టెక్స్‌టైల్స్, గార్మెంట్స్ మరియు రిటైల్",
-    },
-}
+# Vyapar screen, never their layout/chrome] scoped skill suggestions per
+# category. Until migration 018 no capability row had a `parent_id`, so this
+# file carried a hard-coded category -> skills map and a hard-coded
+# description per category in three languages. [Backend A, 2026-09-28] Both
+# now come from the taxonomy tree itself (`taxonomy_terms.parent_id` and
+# `description_*`, served by the shared in-process cache), so an operator
+# adding a role under a category is enough — nothing to edit here.
+# Categories with no children fall back to the full unscoped list — never a
+# missing/broken suggestion set.
 
 
 async def list_category_options(
@@ -210,8 +133,10 @@ async def list_category_options(
     rows = await conn.fetch("SELECT slug FROM vyapar_listings.taxonomy_terms WHERE kind = 'category' AND status = 'active' ORDER BY slug")
     slugs = [r["slug"] for r in rows]
     labels = labels_for(slugs, lang)
-    descriptions = CATEGORY_DESCRIPTIONS.get(lang, CATEGORY_DESCRIPTIONS["en"])
-    return [CategoryOptionOut(slug=s, label=l, description=descriptions.get(s, l)) for s, l in zip(slugs, labels)]
+    return [
+        CategoryOptionOut(slug=s, label=l, description=description_for("category", s, lang) or l)
+        for s, l in zip(slugs, labels)
+    ]
 
 
 async def list_scoped_capability_options(
@@ -226,7 +151,7 @@ async def list_scoped_capability_options(
     picked = [c for c in categories.split(",") if c]
     scoped_slugs: list[str] = []
     for c in picked:
-        for s in CATEGORY_CAPABILITY_SCOPE.get(c, []):
+        for s in children_of(c):
             if s not in scoped_slugs:
                 scoped_slugs.append(s)
     rows = await conn.fetch("SELECT slug FROM vyapar_listings.taxonomy_terms WHERE kind = 'capability' AND status = 'active' ORDER BY slug")

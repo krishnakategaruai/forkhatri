@@ -26,7 +26,7 @@ router = APIRouter(prefix="/v1/notifications", tags=["notifications"], responses
 @router.get("", response_model=list[NotificationOut], operation_id="listNotifications", summary="List the member's notifications")
 async def list_notifications(
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[NotificationOut]:
     return await svc.list_notifications(conn, ctx)
 
@@ -37,7 +37,7 @@ async def list_notifications_page(
     limit: int = Query(default=DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     cursor: str | None = None,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> Page[NotificationOut]:
     return await svc.list_notifications_page(conn, ctx, lang, limit=limit, cursor=cursor)
 
@@ -45,7 +45,7 @@ async def list_notifications_page(
 @router.get("/unread-count", response_model=UnreadCountOut, operation_id="getUnreadNotificationCount", summary="Get the number of unread notifications")
 async def unread_count(
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> UnreadCountOut:
     return await svc.get_unread_notification_count(conn, ctx)
 
@@ -54,7 +54,7 @@ async def unread_count(
 async def mark_read(
     notification_id: str,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> ReadOut:
     return await svc.mark_notification_read(conn, ctx, notification_id=notification_id)
 
@@ -62,6 +62,6 @@ async def mark_read(
 @router.post("/read-all", response_model=ReadOut, operation_id="markAllNotificationsRead", summary="Mark all notifications as read")
 async def mark_all_read(
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> ReadOut:
     return await svc.mark_all_notifications_read(conn, ctx)

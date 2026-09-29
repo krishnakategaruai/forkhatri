@@ -156,8 +156,8 @@ export default function BoostPage({ params }: { params: Promise<{ kind: string; 
   const chipStyle = (active: boolean) => ({
     border: "none",
     cursor: "pointer",
-    background: active ? "var(--accent)" : "var(--surface-overlay)",
-    color: active ? "var(--accent-ink)" : "var(--text-primary)",
+    background: active ? "var(--selected-solid-bg)" : "var(--surface-overlay)",
+    color: active ? "var(--selected-solid-fg)" : "var(--text-primary)",
   });
 
   const disclosureRows: [string, string][] = product
@@ -197,7 +197,7 @@ export default function BoostPage({ params }: { params: Promise<{ kind: string; 
               role="radio"
               aria-checked={productId === p.id}
               className="vy-card vy-row"
-              style={{ justifyContent: "space-between", cursor: "pointer", borderColor: productId === p.id ? "var(--accent)" : undefined, color: "inherit" }}
+              style={{ justifyContent: "space-between", cursor: "pointer", borderColor: productId === p.id ? "var(--selected-border)" : undefined, color: "inherit" }}
               onClick={() => setProductId(p.id)}
             >
               <strong>{productId === p.id ? "● " : "○ "}{t("commercial:boost.days", { n: p.duration_days })}</strong>
@@ -209,7 +209,7 @@ export default function BoostPage({ params }: { params: Promise<{ kind: string; 
               role="radio"
               aria-checked={productId === CUSTOM}
               className="vy-card vy-row"
-              style={{ justifyContent: "space-between", cursor: "pointer", borderColor: productId === CUSTOM ? "var(--accent)" : undefined, color: "inherit" }}
+              style={{ justifyContent: "space-between", cursor: "pointer", borderColor: productId === CUSTOM ? "var(--selected-border)" : undefined, color: "inherit" }}
               onClick={() => setProductId(CUSTOM)}
             >
               <strong>{productId === CUSTOM ? "● " : "○ "}{t("commercial:boost.custom")}</strong>

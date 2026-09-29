@@ -873,11 +873,8 @@
     line-clamp: 1;
   }
 }
-@media (min-width: 1024px) {
-  .hfeed__all {
-    display: none;
-  }
-}
+/* The desktop "see all" tile went with the portrait grid; the link to
+   Discover is the way to browse people now, on every width. */
 
 /* ---- Lavish ---------------------------------------------------------- */
 .home-head__title {
@@ -1222,3 +1219,629 @@ html:is([lang='hi'], [lang='te']) .home-head__date {
 .hmatch__check:hover { text-decoration: underline; }
 /* Kundli matching tile: its own full row under the pairs, so it never sits alone in half a row. */
 .home-duo .duo--kundli { grid-column: 1 / -1; }
+
+/* [Owner, 2026-09-28] TODAY'S INTRODUCTION — one person, with why.
+   Photo and story side by side from tablet up; stacked on a phone. */
+.hintro {
+  display: grid;
+  grid-template-columns: 1fr;
+  overflow: hidden;
+  border-radius: 28px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  margin-bottom: 18px;
+}
+@media (min-width: 640px) {
+  .hintro {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  }
+}
+.hintro__photo {
+  display: block;
+  aspect-ratio: 4 / 5;
+  background: var(--surface-2);
+}
+@media (min-width: 640px) {
+  .hintro__photo {
+    aspect-ratio: auto;
+    min-height: 340px;
+  }
+}
+.hintro__photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.hintro__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 20px 22px;
+  min-width: 0;
+}
+.hintro__eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+}
+.hintro__name {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: 2rem;
+  line-height: 1.1;
+}
+.hintro__age {
+  color: var(--ink-3);
+}
+.hintro__meta {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 0.9375rem;
+}
+.hintro__chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.hintro__chip {
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.hintro__chip--word {
+  border-color: transparent;
+  background: var(--accent-tint);
+  color: var(--accent-ink);
+}
+.hintro__why {
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+.hintro__why-title {
+  margin: 0 0 6px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.hintro__why ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hintro__why li::before {
+  content: "✓ ";
+  color: var(--accent);
+}
+.hintro__actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: 6px;
+}
+.hintro__link {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--accent-ink);
+  text-decoration: none;
+}
+.hintro__link:hover {
+  text-decoration: underline;
+}
+
+/* The one reason on each portrait, and the match word. */
+.hcard__reason {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  opacity: 0.95;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hcard__word {
+  color: #fbd946;
+}
+
+/* [Owner, 2026-09-28] YOUR TURN — who is waiting on this family. */
+.hturn {
+  flex-direction: column;
+  gap: 8px;
+}
+.hturn__title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.hturn__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+}
+@media (min-width: 1024px) {
+  .hturn__list {
+    flex-direction: column;
+    overflow: visible;
+  }
+}
+.hturn__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 200px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+}
+.hturn__item:hover {
+  border-color: var(--accent);
+}
+.hturn__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+.hturn__text strong {
+  font-size: 0.9375rem;
+  color: var(--ink);
+}
+
+/* Phone, acting for someone: the "Viewing Kavya's search" chip and the
+   avatar take the top line, the date and greeting keep their full width
+   below — the chip used to squeeze the date into three lines. */
+@media (max-width: 639px) {
+  .home-head:has(.context-chip) {
+    flex-wrap: wrap;
+  }
+  .home-head:has(.context-chip) .home-head__text {
+    order: 2;
+    flex-basis: 100%;
+  }
+  .home-head:has(.context-chip) .topbar__actions {
+    order: 1;
+    margin-left: auto;
+  }
+}
+
+/* [Owner, 2026-09-28] YOUR SEARCH — where the search stands: three lanes,
+   a number and a few faces each. Browsing people stays on Discover. */
+.hsearch {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media (min-width: 640px) {
+  .hsearch {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.hsearch__lane {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  min-width: 0;
+}
+.hsearch__n {
+  font-family: var(--font-serif);
+  font-size: 2.25rem;
+  line-height: 1;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--ink);
+}
+.hsearch__lane.is-empty .hsearch__n {
+  color: var(--ink-3);
+}
+.hsearch__label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.hsearch__faces {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.hsearch__face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 64px;
+  text-align: center;
+  color: var(--ink);
+  text-decoration: none;
+}
+.hsearch__face:hover .hsearch__who {
+  text-decoration: underline;
+}
+.hsearch__who {
+  font-size: 0.75rem;
+  font-weight: 600;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hsearch__by {
+  font-size: 0.6875rem;
+  color: var(--ink-3);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hsearch__empty {
+  margin: 4px 0 0;
+  font-size: 0.8125rem;
+  color: var(--ink-3);
+}
+
+/* Phone: the three lanes sit side by side as small counts; the empty-lane
+   sentence is desktop only, so three zeros never fill a phone screen. */
+@media (max-width: 639px) {
+  .hsearch {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .hsearch__lane {
+    padding: 12px 10px;
+    border-radius: 18px;
+    gap: 4px;
+  }
+  .hsearch__n {
+    font-size: 1.75rem;
+  }
+  .hsearch__label {
+    font-size: 0.75rem;
+    line-height: 1.3;
+  }
+  .hsearch__empty {
+    display: none;
+  }
+  .hsearch__faces {
+    gap: 6px;
+  }
+  .hsearch__face {
+    width: 48px;
+  }
+}
+
+/* [Owner, 2026-09-28] The family view of Home: for someone searching for
+   their child or relative, usually an elder. Biodata facts first, a step
+   larger type, labels spelled out. */
+.home--family .hintro__name {
+  font-size: 2.25rem;
+}
+.home--family .hintro__why li,
+.home--family .hsearch__label,
+.home--family .bcard__meta,
+.home--family .bcard__why {
+  font-size: 1rem;
+}
+.hintro__facts {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+}
+.hintro__fact {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.hintro__fact dt {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.hintro__fact dd {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.hintro__words {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--surface-2);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hintro__q {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+.hintro__a {
+  font-family: var(--font-serif);
+  font-size: 1.125rem;
+  line-height: 1.35;
+}
+.hintro__error {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--danger);
+}
+
+/* BECAUSE OF THIS, THESE */
+.hbecause {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 22px;
+  min-width: 0;
+}
+.hbecause__head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.hbecause__title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: 1.375rem;
+}
+.hbecause__sub {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--ink-3);
+}
+.hbecause__list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 4px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 164px;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+}
+.home--family .hbecause__list {
+  grid-auto-columns: 196px;
+}
+.bcard {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  scroll-snap-align: start;
+  color: var(--ink);
+  text-decoration: none;
+}
+.bcard__img {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border-radius: 18px;
+  background: var(--surface-2);
+  display: grid;
+  place-items: center;
+  margin-bottom: 4px;
+}
+.bcard:hover .bcard__name {
+  text-decoration: underline;
+}
+.bcard__name {
+  font-family: var(--font-serif);
+  font-size: 1.125rem;
+  font-weight: 500;
+}
+.bcard__age {
+  color: var(--ink-3);
+}
+.bcard__meta {
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bcard__why {
+  font-size: 0.8125rem;
+  color: var(--accent-ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* PLANS: last on Home and quiet. The plan you have, what each adds. */
+.hplans {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 8px;
+}
+@media (min-width: 1024px) {
+  .hplans {
+    grid-column: 1 / -1;
+  }
+}
+.hplans__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+}
+.hplans__now {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--ink-2);
+}
+.hplans__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media (min-width: 640px) {
+  .hplans__list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.hplan {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.hplan.is-current {
+  border-color: var(--accent);
+}
+.hplan__name {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+.hplan__price {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.hplan__features {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+.hplan__features li::before {
+  content: "\2713  ";
+  color: var(--accent);
+}
+.hplan__badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+}
+.hplans__all {
+  align-self: flex-start;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--accent-ink);
+  text-decoration: none;
+}
+.hplans__all:hover {
+  text-decoration: underline;
+}
+
+/* The introduction's second action (request or suggest): an outlined
+   button, clearly pressable, quieter than "See biodata". */
+.hintro__second {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+.hintro__second:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.hintro__second:disabled {
+  opacity: 0.75;
+}
+
+/* Larger text on a phone: the three counts become one line each (number
+   beside its label) instead of squeezing three columns. */
+@media (max-width: 639px) {
+  html[data-text-size] .hsearch {
+    grid-template-columns: 1fr;
+  }
+  html[data-text-size] .hsearch__lane {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 10px;
+  }
+  html[data-text-size] .hsearch__faces {
+    flex-basis: 100%;
+  }
+}
+
+/* Verified facts on the introduction: quiet, one line each. */
+.hintro__trust {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+.hintro__trust li::before {
+  content: "✓  ";
+  color: var(--ok);
+}
+.hintro__trust li.is-none::before {
+  content: "";
+}
+.hintro__trust li.is-none {
+  color: var(--ink-3);
+}
+
+/* [2026-09-29, critique] Calm colour: verified ticks in the ink of the page,
+   not green; the elder-facing fact labels a readable size, not tiny caps. */
+.hintro__trust li::before {
+  color: var(--accent-ink);
+}
+.hintro__fact dt {
+  font-size: 0.875rem;
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 600;
+}

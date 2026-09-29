@@ -29,6 +29,10 @@ ALL_SCOPES: tuple[str, ...] = (
     "reviews:write",
     "partnerships:write",
     "notifications:write",
+    # [IMP-B, 2026-09-28] workstream D's contracts & milestone payments API.
+    # Funding a milestone only OPENS a checkout; the member still completes
+    # the payment in person, so money never moves on a token alone.
+    "contracts:write",
 )
 
 READ_METHODS = frozenset({"GET", "HEAD"})
@@ -36,6 +40,9 @@ READ_METHODS = frozenset({"GET", "HEAD"})
 # Path prefixes a token may never use.
 TOKEN_FORBIDDEN_PREFIXES: tuple[str, ...] = (
     "/v1/admin",
+    # [IMP-ADMIN — ADR-012] the Admin & Governance Console's federated views
+    # (manifest, queues, case detail, actions). Operator-only, member session only.
+    "/vyapar/admin",
     "/internal",
     "/v1/dev",
     "/v1/payments",
@@ -65,12 +72,22 @@ WRITE_SCOPE_BY_PREFIX: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("/v1/reviews", ("reviews:write",)),
     ("/v1/partnership-requests", ("partnerships:write",)),
     ("/v1/notifications", ("notifications:write",)),
+    ("/v1/contracts", ("contracts:write",)),
+    # AI routes only draft and suggest; nothing is written until the member confirms.
+    ("/v1/ai", ("read",)),
     # An attachment is uploaded on the way to posting an opportunity,
     # writing a listing or replying to an enquiry — any of those scopes will do.
     ("/v1/uploads", ("opportunities:write", "listings:write", "enquiries:write")),
     # Client-observed analytics events (impressions, scroll depth) carry no
     # state change and follow the member's own analytics consent.
     ("/v1/events", ("read",)),
+)
+
+# [IMP-B/L1] Writes whose area is decided by the path's last segment, checked
+# before the prefix table: a pre-accept call tap on an opportunity records a
+# contact and may open an application, so it needs enquiries:write.
+WRITE_SCOPE_BY_SUFFIX: tuple[tuple[str, str, tuple[str, ...]], ...] = (
+    ("/v1/opportunities/", "/contact-attempts", ("enquiries:write",)),
 )
 
 DENY = "__deny__"
@@ -91,6 +108,9 @@ def required_scopes(method: str, path: str) -> tuple[str, ...] | str:
         return DENY
     if method in READ_METHODS:
         return ("read",)
+    for prefix, suffix, scopes in WRITE_SCOPE_BY_SUFFIX:
+        if path.startswith(prefix) and path.rstrip("/").endswith(suffix):
+            return scopes
     for prefix, scopes in WRITE_SCOPE_BY_PREFIX:
         if _under(path, prefix):
             return scopes

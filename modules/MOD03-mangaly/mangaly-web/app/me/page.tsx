@@ -71,6 +71,7 @@ import {
 } from "@/lib/profileSections";
 import { getContexts } from "@/lib/homeCircle";
 import { getStoredTheme, setPreferredTheme, type Theme } from "@/lib/theme";
+import { TEXT_SIZES, getStoredTextSize, setPreferredTextSize, type TextSize } from "@/lib/textSize";
 import PlaceSearch, { type PlaceValue } from "@/components/PlaceSearch";
 
 /* FR001/FR002/FR003/FR005 · UX11 "Profile edit hub" — v3, built from
@@ -336,6 +337,7 @@ export default function ProfileHubPage() {
   // 'system' on first render so server and client markup agree; corrected
   // from localStorage after mount.
   const [theme, setTheme] = useState<Theme>("system");
+  const [textSize, setTextSize] = useState<TextSize>("standard");
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [sheet, setSheet] = useState<Sheet>(null);
   const [savingOutlook, setSavingOutlook] = useState(false);
@@ -406,6 +408,7 @@ export default function ProfileHubPage() {
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setTheme(getStoredTheme());
+    setTextSize(getStoredTextSize());
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -1826,6 +1829,25 @@ export default function ProfileHubPage() {
                       }}
                     >
                       {t(`common:settings.themeOption.${opt}`)}
+                    </button>
+                  ))}
+                </div>
+                <div className="label" style={{ marginTop: 16 }}>
+                  {t("common:settings.textSize")}
+                </div>
+                <div className="segmented segmented--3" role="radiogroup" aria-label={t("common:settings.textSize")}>
+                  {TEXT_SIZES.map((opt) => (
+                    <button
+                      key={opt}
+                      type="button"
+                      className={`segmented__opt${textSize === opt ? " is-active" : ""}`}
+                      aria-pressed={textSize === opt}
+                      onClick={() => {
+                        setTextSize(opt);
+                        setPreferredTextSize(opt);
+                      }}
+                    >
+                      {t(`common:settings.textSizeOption.${opt}`)}
                     </button>
                   ))}
                 </div>

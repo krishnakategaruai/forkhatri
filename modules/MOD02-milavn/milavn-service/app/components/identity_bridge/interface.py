@@ -223,6 +223,10 @@ async def resolve_session(session_token: str) -> MemberIdentity | None:
         return None
     member_id = UUID(claims["member_id"])
     ident = _compose(member_id, claims.get("display_name") or FALLBACK_DISPLAY_NAME, int(claims.get("identity_level") or 0))
+    # [ADR-012] A moderator the samaj appoints in the shared ForKhatri admin console arrives as a
+    # platform role (admin_scopes); it counts alongside the module's own member file.
+    if MODERATE_SCOPE in (claims.get("admin_scopes") or []) and MODERATE_SCOPE not in ident.scopes:
+        ident = MemberIdentity(ident.member_id, ident.display_name, ident.handle, ident.avatar, ident.identity_level, (*ident.scopes, MODERATE_SCOPE))
     ttl = SESSION_TTL_SECONDS
     expires_at = claims.get("session_expires_at")
     if expires_at:

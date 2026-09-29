@@ -1,91 +1,113 @@
 "use client";
 
-// [TR018] Opportunity Discover feed, five sections (FR18) — the home
-// screen. [TR044] first-run redirect (FR44).
-// [Coordinator browser-check fixes, 2026-09-15]:
-//  - The WorkIndia/Upwork lens puts search first: an <IntentBar> now sits
-//    at the very top of home, above the feed, with a one-tap "Businesses &
-//    Professionals" directory link right next to it — both fit on a
-//    phone's first screen without scrolling, per the design direction's
-//    own no-scrolling-burden rule.
-//  - Cards now render the freshness stamp, source segment + submitter, and
-//    the one-line relevance reason feed.py's fix now sends per FR18's own
-//    required card fields — previously only title/location/value/segment.
-//  - Sections that have more items than shown now render a "See all N"
-//    link (feed.py's `total_available` field) instead of a long,
-//    repetitive scroll.
-// [Product-owner i18n rule] Converted to useTranslation() — every string
-// on this screen is a key in locales/<lang>/discover.json, not literal text.
-// [IMP38 — Refactor C] Now only the route: first-run check and feed come
-// from data hooks (useFirstRunState, useFeed — both via the SDK, the feed
-// re-fetching on a live language switch), the markup from <DiscoverView>.
+// [TR018] Opportunity Discover — the home screen. [TR044] first-run
+// redirect (FR44).
+// [IMP38 — Refactor C] Only the route: data here, markup in <DiscoverView>.
+// [FE2 — owner review 2026-09-29] Filters live in the URL (?q=&types=&
+// radius_km=&pay_min_paise=&posted_within=&sort=…): shareable, reloadable,
+// the target of saved searches, row "See all" links and the Hire / Find
+// work menu. With nothing narrowing the list the page shows themed rows
+// (GET /v1/opportunities/feed/rows); otherwise one ranked list with its
+// total and facet counts (GET /v1/opportunities/feed/results).
+// [Design language 2026-09-29] the page now also passes a load failure
+// (with Try again) to the view; the sidebar is gone, filters live in a
+// sheet / drawer that fetches its own preview counts.
 // Traces to: FR44, FR18, FR19, FR20
-import { useEffect, useState } from "react";
+import { use, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
+import type { FeedFilterValues, ResultsResponse, RowsResponse } from "@/lib/sdk";
 import { useSdk } from "@/lib/sdk/react";
-import type { ParsedIntent } from "@/app/components/IntentBar";
-import { DEFAULT_FILTERS, type Filters } from "@/app/components/FilterSheet";
 import Screen from "@/app/components/Screen";
 import DiscoverView from "@/app/components/discover/DiscoverView";
-import { useFeed, useFirstRunState } from "@/app/hooks/opportunities";
+import { filtersFromQuery, filtersToQuery, isCurated, seeAllQuery, toFeedParams, type FeedQuery } from "@/app/components/discover/feedFilters";
+import { useFirstRunState } from "@/app/hooks/opportunities";
+import { useResource } from "@/app/hooks/useResource";
 import { useRoutes } from "@/app/host/HostProvider";
 
-export default function HomePage() {
+/** The filter the empty state offers to drop: the narrowest-looking one still set. */
+function withoutLastFilter(f: FeedFilterValues): FeedFilterValues | null {
+  if (f.verified_only) return { ...f, verified_only: false };
+  if (f.experience) return { ...f, experience: null };
+  if (f.shift) return { ...f, shift: null };
+  if (f.posted_within) return { ...f, posted_within: null };
+  if (f.pay_min_paise != null || f.pay_max_paise != null) return { ...f, pay_min_paise: null, pay_max_paise: null, pay_kind: null };
+  if (f.work_mode) return { ...f, work_mode: null };
+  if (f.skills?.length) return { ...f, skills: f.skills.slice(0, -1) };
+  if (f.types?.length) return { ...f, types: f.types.slice(0, -1) };
+  if (f.segment) return { ...f, segment: null };
+  if (f.q) return { ...f, q: null };
+  return null;
+}
+
+export default function HomePage({ searchParams }: { searchParams: Promise<FeedQuery> }) {
+  const query = use(searchParams);
   const router = useRouter();
   const sdk = useSdk();
   const routes = useRoutes();
-  // [Original-Vyapar upgrade, product-owner direction: "based on skills we
-  // need list to be flown"] the same shared FilterSheet Businesses already
-  // uses — on Discover only `skills` actually narrows results (the feed's
-  // other sections are relevance-ranked by FR19, not independently
-  // sortable/radius-filtered the way a flat search list is).
-  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  const { t } = useTranslation(["explore"]);
+  const queryKey = JSON.stringify(query);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const filters = useMemo(() => filtersFromQuery(query), [queryKey]);
+  const curated = isCurated(filters);
   const firstRun = useFirstRunState();
   const state = firstRun.data;
-  const feed = useFeed({ skills: filters.skills }, { enabled: !!state?.done });
+  const ready = !!state?.done;
+  const rows = useResource<RowsResponse>(() => sdk.feed.rows(), [sdk], { enabled: ready && curated });
+  const results = useResource<ResultsResponse>(() => sdk.feed.results(toFeedParams(filters)), [queryKey, sdk], { enabled: ready });
 
   // [TR044] A member who has not finished first run goes there first.
   useEffect(() => {
     if (state && !state.done) router.replace("/first-run");
   }, [state, router]);
 
-  function runSearch(intent: ParsedIntent) {
-    const params = new URLSearchParams();
-    if (intent.text) params.set("q", intent.text);
-    // [Third critique pass fix] intent.category is now a real taxonomy
-    // slug from IntentBar's own suggestion fetch.
-    if (intent.category) params.set("category", intent.category);
-    if (intent.locality) params.set("locality", intent.locality);
-    router.push(routes.businesses(params.toString()));
+  function setFilters(next: FeedFilterValues) {
+    const qs = filtersToQuery(next);
+    router.replace(qs ? `/?${qs}` : "/", { scroll: false });
   }
 
-  function notInterested(sectionKey: string, opportunityId: string) {
-    sdk.opportunities
-      .notInterested(opportunityId, "not_interested")
-      .then(() =>
-        feed.setData((f) =>
-          f ? { ...f, sections: f.sections.map((s) => (s.key === sectionKey ? { ...s, items: s.items.filter((i) => i.id !== opportunityId) } : s)) } : f,
-        ),
-      )
-      .catch(() => {});
-  }
+  const skillLabels = new Map((results.data?.facets.skills ?? []).map((s) => [s.value, s.label ?? s.value]));
+  const skillLabel = (slug: string) => skillLabels.get(slug) ?? slug.replace(/_/g, " ");
+  const searchName =
+    [
+      filters.q ? `“${filters.q}”` : null,
+      ...(filters.types ?? []).map((x) => t(`explore:type.${x}`)),
+      ...(filters.skills ?? []).map(skillLabel),
+      filters.radius_km ? t("explore:filters.withinKm", { km: filters.radius_km }) : null,
+    ]
+      .filter(Boolean)
+      .join(" · ") || t("explore:saved.defaultName");
+  const resultsFresh = results.data;
 
   return (
-    // [IMP33] Discover is a *collection* screen, so it takes the wide
-    // measure (F4's 720px reading column is the right max for prose and
-    // the wrong max for a grid of opportunity cards).
     <Screen width="wide">
       <DiscoverView
         displayName={state ? state.display_name : null}
-        feed={feed.data}
         filters={filters}
+        curated={curated}
+        rows={rows.data?.rows ?? null}
+        enrichmentPrompt={rows.data?.enrichment_prompt ?? null}
+        items={resultsFresh?.items ?? null}
+        total={resultsFresh?.total ?? null}
+        facets={resultsFresh?.facets ?? null}
+        place={resultsFresh?.near_label ?? null}
+        defaultRadiusKm={resultsFresh?.radius_km ?? null}
+        skillLabel={skillLabel}
+        searchName={searchName}
         onFiltersChange={setFilters}
-        onSearch={runSearch}
-        onOpenDirectory={() => router.push(routes.businesses())}
+        onSeeAllRow={(row) => {
+          const qs = seeAllQuery(row.see_all);
+          router.push(qs ? `/?${qs}` : "/", { scroll: true });
+        }}
+        preview={async (draft) => {
+          const r = await sdk.feed.results(toFeedParams(draft), 1);
+          return { total: r.total, facets: r.facets };
+        }}
         onAddCapabilities={() => router.push(routes.newListing)}
-        onSeeAll={(key) => router.push(routes.feedSection(key))}
         onPost={() => router.push(routes.post)}
-        onNotInterested={notInterested}
+        lastFilterRemoved={withoutLastFilter(filters)}
+        failed={!!(curated ? rows.error && !rows.data : results.error && !results.data)}
+        onRetry={() => void (curated ? rows.refresh() : results.refresh())}
       />
     </Screen>
   );

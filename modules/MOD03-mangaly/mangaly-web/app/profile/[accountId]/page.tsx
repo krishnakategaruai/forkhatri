@@ -13,9 +13,8 @@ import FamilyNotes from "@/components/FamilyNotes";
 import OutlookScene from "@/components/OutlookScene";
 import VoiceIntroPlayer from "@/components/VoiceIntroPlayer";
 import { useActiveContext } from "@/lib/activeContext";
-import HowYouFit from "@/components/HowYouFit";
+import CompatibilityPanel from "@/components/CompatibilityPanel";
 import SimilarProfiles from "@/components/SimilarProfiles";
-import HoroscopeMatch from "@/components/HoroscopeMatch";
 import { resolveMediaUrl } from "@/lib/api";
 import { requireSession } from "@/lib/auth";
 import {
@@ -561,14 +560,12 @@ export default function MemberProfilePage() {
       />
     ) : null;
 
-  // The traditional horoscope match for the candidate in context, when both
-  // have birth details; then the next few profiles worth reading.
-  const horoscopeMatch = (
-    <HoroscopeMatch
-      otherAccountId={accountId}
-      forCandidate={family ? { accountId: family.candidate_account_id, name: family.candidate_name } : undefined}
-    />
-  );
+  // Birth time and place: always visible (owner, 2026-09-27).
+  const horoscopeFacts = publicProfile?.attributes?.horoscope as Record<string, unknown> | undefined;
+  const birthDetails = {
+    time: typeof horoscopeFacts?.birth_time === "string" ? horoscopeFacts.birth_time : null,
+    place: typeof horoscopeFacts?.birth_place === "string" ? horoscopeFacts.birth_place : null,
+  };
   // After everything about this person: the next few worth reading.
   const similar = (
     <SimilarProfiles viewedId={accountId} forCandidate={family?.candidate_account_id} />
@@ -618,8 +615,15 @@ export default function MemberProfilePage() {
           return def.fields
             .map((f) => ({
               key: `${category}.${f.key}`,
-              label: t(`profile:field.${category}.${f.key}`),
-              text: formatFieldValue(t, f, facts[category]?.[f.key]),
+              // A reader's wording where the form's differs ("About them",
+              // not "A few lines about you"; "Height", not "Height (cm)").
+              label: i18n.exists(`profile:fieldView.${category}.${f.key}`)
+                ? t(`profile:fieldView.${category}.${f.key}`)
+                : t(`profile:field.${category}.${f.key}`),
+              text:
+                f.key === "height_cm" && facts[category]?.[f.key]
+                  ? `${String(facts[category]?.[f.key])} cm`
+                  : formatFieldValue(t, f, facts[category]?.[f.key]),
             }))
             .filter(
               (row): row is { key: string; label: string; text: string } =>
@@ -687,24 +691,33 @@ export default function MemberProfilePage() {
           {header(t("profile:view.title"))}
           <main className="screen preview-card">
             {hero}
+            {/* [2026-09-29, critique] The biodata a family reads, grouped the
+                way a printed biodata is (basics, community, education and
+                work, family, lifestyle, horoscope), two columns on a desk,
+                larger type — not one flat list of 27 rows. */}
             {sections.length > 0 && (
-              <div className="card">
-                <div className="label">{t("profile:view.biodata")}</div>
-                <dl className="biodata">
-                  {sections.flatMap((section) =>
-                    section.rows.map((row) => (
-                      <div key={row.key} className="biodata__row">
-                        <dt>{row.label}</dt>
-                        <dd>{row.text}</dd>
-                      </div>
-                    )),
-                  )}
-                </dl>
+              <div className="biodata-sections">
+                {sections.map((section) => (
+                  <section key={section.id} className="card biodata-section" aria-label={t(`profile:hub.section.${section.id}`)}>
+                    <h2 className="biodata-section__title">{t(`profile:hub.section.${section.id}`)}</h2>
+                    <dl className="biodata biodata--family">
+                      {section.rows.map((row) => (
+                        <div key={row.key} className="biodata__row">
+                          <dt>{row.label}</dt>
+                          <dd>{row.text}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </section>
+                ))}
               </div>
             )}
-            <HowYouFit
+            {/* [Owner, 2026-09-28] Everything the engine knows about this
+                pair in one place: fit, what they share, and the horoscope. */}
+            <CompatibilityPanel
               candidateId={accountId}
               forCandidate={{ accountId: family.candidate_account_id, name: family.candidate_name }}
+              birth={birthDetails}
             />
             {(publicProfile?.open_photo_urls?.length ?? 0) > 1 && (
               <div
@@ -751,7 +764,6 @@ export default function MemberProfilePage() {
             </button>
             )}
             {familyNotes}
-            {horoscopeMatch}
             {similar}
           </main>
         </>
@@ -801,7 +813,7 @@ export default function MemberProfilePage() {
               </span>
 
               {insight(snippet?.verification)}
-              <HowYouFit candidateId={accountId} />
+              <CompatibilityPanel candidateId={accountId} birth={birthDetails} />
 
               {/* Only what they chose to publish (migration 039). No claim
                   is made about what they have or have not written. */}
@@ -829,7 +841,6 @@ export default function MemberProfilePage() {
               {linkActions()}
             </div>
           </div>
-          {horoscopeMatch}
             {similar}
         </main>
       </>
@@ -1021,7 +1032,7 @@ export default function MemberProfilePage() {
         // reader-facing insight (why this person, what is verified).
         <div key="identity" className="pview__head">
           {insight(snippet?.verification)}
-              <HowYouFit candidateId={accountId} />
+              <CompatibilityPanel candidateId={accountId} birth={birthDetails} />
         </div>
       );
     }
@@ -1432,7 +1443,6 @@ export default function MemberProfilePage() {
             )}
           </section>
         )}
-        {horoscopeMatch}
             {similar}
       </main>
     </>

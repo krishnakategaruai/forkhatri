@@ -5,24 +5,23 @@
 // capped preview — keeps the home screen itself short (no scrolling
 // burden on primary content) while still making every eligible item
 // reachable, not silently dropped past the cap.
+// [FE2 — imp-backend-b §5] Carries the home feed's filters (same URL
+// query), so "See all" shows the same filtered set, with the applied
+// filters as removable chips; cards are the shared OpportunityCard, so
+// distance and poster badges show here too.
 // Traces to: FR18 (not a separate FR — a UX completion of the same one)
-import { useEffect, useState, use as useParamsPromise } from "react";
+import { use, useMemo } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { api } from "@/lib/api";
-import LivingCard from "@/app/components/LivingCard";
+import type { OpportunityCard as Card } from "@/lib/sdk";
+import { useSdk } from "@/lib/sdk/react";
 import Screen from "@/app/components/Screen";
-
-interface OpportunityCard {
-  id: string;
-  title: string;
-  location: string | null;
-  compensation: string | null;
-  type_action_label: string;
-  source_segment: string;
-  submitter_name: string | null;
-  posted_days_ago: number | null;
-  relevance_reason: string | null;
-}
+import { SkeletonGrid, EmptyState } from "@/app/components/States";
+import OpportunityCard from "@/app/components/opportunity/OpportunityCard";
+import AppliedFilters from "@/app/components/discover/AppliedFilters";
+import { filtersFromQuery, filtersToQuery, toFeedParams, type FeedQuery } from "@/app/components/discover/feedFilters";
+import { useResource } from "@/app/hooks/useResource";
 
 const SECTION_LABEL_KEY: Record<string, string> = {
   for_you: "sectionForYou",
@@ -32,43 +31,38 @@ const SECTION_LABEL_KEY: Record<string, string> = {
   public: "sectionPublic",
 };
 
-export default function FeedSectionPage({ params }: { params: Promise<{ key: string }> }) {
-  const { key } = useParamsPromise(params);
-  const { t } = useTranslation(["discover", "opportunities", "ranking"]);
-  const [items, setItems] = useState<OpportunityCard[] | null>(null);
-
-  useEffect(() => {
-    api.get<OpportunityCard[]>(`/v1/opportunities/feed/section/${key}`).then(setItems);
-  }, [key]);
-
-  function freshnessLabel(days: number | null): string {
-    if (days === null) return "";
-    if (days === 0) return t("discover:card.postedToday");
-    if (days === 1) return t("discover:card.postedYesterday");
-    return t("discover:card.postedDaysAgo", { days });
-  }
+export default function FeedSectionPage({ params, searchParams }: { params: Promise<{ key: string }>; searchParams: Promise<FeedQuery> }) {
+  const { key } = use(params);
+  const query = use(searchParams);
+  const { t } = useTranslation(["discover", "opportunities", "ranking", "explore"]);
+  const sdk = useSdk();
+  const router = useRouter();
+  const queryKey = JSON.stringify(query);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const filters = useMemo(() => filtersFromQuery(query), [queryKey]);
+  const items = useResource<Card[]>(() => sdk.feed.section(key, toFeedParams(filters)), [key, queryKey, sdk]);
+  const skills = useResource<{ slug: string; label: string }[]>(() => sdk.firstRun.capabilityOptions(), [sdk], { fallback: [] });
+  const qs = filtersToQuery(filters);
 
   return (
     <Screen width="wide">
+      <Link href={qs ? `/?${qs}` : "/"} transitionTypes={["vy-back"]} className="vy-btn vy-btn-ghost" style={{ alignSelf: "flex-start", textDecoration: "none" }}>
+        ← {t("explore:filters.backToDiscover")}
+      </Link>
       <h1>{t(`discover:home.${SECTION_LABEL_KEY[key] ?? "sectionForYou"}` as "home.sectionForYou")}</h1>
-      {items === null && <p className="vy-muted">{t("common:state.loading")}</p>}
-      {/* [IMP33] F4 "2-column result lists" at ≥600px. */}
+      <AppliedFilters
+        value={filters}
+        skillLabel={(slug) => skills.data?.find((s) => s.slug === slug)?.label ?? slug.replace(/_/g, " ")}
+        onChange={(next) => {
+          const nextQs = filtersToQuery(next);
+          router.replace(nextQs ? `?${nextQs}` : "?", { scroll: false });
+        }}
+      />
+      {items.data === null && <SkeletonGrid count={6} />}
+      {items.data && items.data.length === 0 && <EmptyState mark="◌" title={t("explore:filters.noResults")} body={t("explore:filters.noResultsBody")} />}
       <div className="vy-grid vy-grid-3">
-        {items?.map((item, i) => (
-          <LivingCard
-            index={i}
-            key={item.id}
-            href={`/opportunities/${item.id}`}
-            title={item.title}
-            subtitle={[item.location, item.compensation].filter(Boolean).join(" · ")}
-            meta={[
-              t(`opportunities:actionLabel.${item.type_action_label}` as "actionLabel.apply"),
-              item.submitter_name || undefined,
-              freshnessLabel(item.posted_days_ago),
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          />
+        {items.data?.map((item, i) => (
+          <OpportunityCard key={item.id} item={item} variant="feed" index={i} />
         ))}
       </div>
     </Screen>

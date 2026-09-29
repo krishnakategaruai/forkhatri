@@ -71,3 +71,9 @@ already implied/named by the Sealed `07-tech-reqs.md`'s own stated stack
 before Step 8 ran its STRIDE pass — none of them is new, unvetted attack
 surface Step 8 hadn't already priced in when it wrote SP001-SP055 against
 "the existing scaffold... FastAPI/asyncpg."
+
+## Vendor backlog (built on our side; only the vendor integration is outstanding)
+
+| Item | Why | What exists now | What the vendor adds | Status |
+|---|---|---|---|---|
+| **Masked / proxy phone numbers for pre-accept contact.** An Exotel- or Knowlarity-class virtual number: the caller dials a Vyapar number that bridges to the poster, and the poster's real number is never shown. | Critique W2 (women's safety; VISION-2040 item 9, women-safe mode). A `tel:` or `wa.me` link hands the poster's real number to every caller for good. Meena (home tailor) or Sarita (home tutor) posting from her own phone can then be reached at any hour outside Vyapar, which is how job-scam messages reach people. | Migration 023/025 and `services/contact.py`: a per-post `allow_precall` switch (off by default) and `precall_channel` (`whatsapp_only` by default, or `call_and_whatsapp`). Call hours, the daily cap, `calls_from = matching_only` and the 3-taps-a-day caller limit are enforced. The number is sent only while an action is usable now. The copy is honest: "Anyone who calls or messages you from this post will see your phone number" (`opportunities.precall.disclosure.*`, en/hi/te). | A virtual number per post (or per poster), click-to-call bridging, and call logs as the source of `contact_attempts`. `href` would then carry the proxy number, and the real one never leaves the server. Needs a contract, DLT-registered numbers and a webhook for call events. | **Blocked on vendor** (logged 2026-09-29, backend B). No code change is needed elsewhere; `contact.py` is the only place that builds the href. |

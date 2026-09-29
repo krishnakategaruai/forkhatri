@@ -6,6 +6,7 @@ stale code); restart the process after code changes.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -16,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
-from app.api.routes import auth, insights, internal, members, modules
+from app.api.routes import admin, auth, insights, internal, members, modules
 from app.config.settings import Settings, get_settings
 from app.db.engine import assert_non_owning_role, create_engine, create_session_factory
 from app.errors import DomainError
@@ -36,10 +37,30 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.engine = engine
     app.state.session_factory = create_session_factory(engine)
     logger.info("Identity service started against %s:%s/%s", settings.db_host, settings.db_port, settings.db_name)
+    expiry = asyncio.create_task(_end_due_suspensions(app.state.session_factory))
     try:
         yield
     finally:
+        expiry.cancel()
         await engine.dispose()
+
+
+async def _end_due_suspensions(factory) -> None:  # noqa: ANN001
+    """Suspensions with an end date end on their own (governance ADR-012); checked every minute."""
+    from app.components.governance import interface as governance
+
+    while True:
+        try:
+            async with factory() as db:
+                ended = await governance.expire_due_suspensions(db)
+                await db.commit()
+            if ended:
+                logger.info("Ended %s suspension(s) that reached their end date.", ended)
+        except asyncio.CancelledError:
+            raise
+        except Exception:  # noqa: BLE001 - a failed sweep retries next minute
+            logger.exception("Suspension expiry sweep failed")
+        await asyncio.sleep(60)
 
 
 def _app_path(request: Request) -> str:
@@ -122,6 +143,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(modules.router)
     app.include_router(internal.router)
     app.include_router(insights.router)
+    app.include_router(admin.router)
     if settings.dev_tools_active:
         # Imported only here: the package is not shipped in the production image (.dockerignore).
         from app.dev_tools.router import router as dev_router

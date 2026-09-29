@@ -22,6 +22,7 @@ import { api, ApiError } from "@/lib/api";
 import { formatPaise } from "@/lib/money";
 import PerformanceReport from "@/app/components/PerformanceReport";
 import Screen from "@/app/components/Screen";
+import { formatDate } from "@/lib/format"; // [FE2] Indian date order
 
 interface HistoryRow {
   from_state: string | null;
@@ -102,7 +103,7 @@ export default function PromotionPage({
   if (!promo) return <Screen><p className="vy-muted">{t("common:state.loading")}</p></Screen>;
 
   const money = (p: number) => formatPaise(p, i18n.language);
-  const fmt = (d: string) => new Date(d).toLocaleDateString(i18n.language);
+  const fmt = (d: string) => formatDate(d, i18n.language);
 
   let banner: string | null = null;
   if (result === "unavailable") banner = t("commercial:promotion.resultUnavailable");

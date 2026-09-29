@@ -43,6 +43,10 @@ import { api, ApiError, resolveAttachmentUrl } from "@/lib/api";
 import ReportSheet from "@/app/components/ReportSheet";
 import ReviewComposer from "@/app/components/ReviewComposer";
 import { SkeletonGrid, EmptyState } from "@/app/components/States";
+// [FE2] Call / WhatsApp after acceptance, and the way into a contract
+import ContactActionsBlock from "@/app/components/contact/ContactActionsBlock";
+import ContractEntry, { isClientOf } from "@/app/components/contracts/ContractEntry";
+import { formatDate } from "@/lib/format"; // [FE2] Indian date order
 
 interface Message {
   id: string;
@@ -149,13 +153,35 @@ export default function EnquiryThread({
     : enquiry.opportunity_id
     ? `/opportunities/${enquiry.opportunity_id}`
     : null;
-  const fmt = (d: string) => new Date(d).toLocaleDateString(i18n.language);
+  const fmt = (d: string) => formatDate(d, i18n.language);
 
   return (
     <div className="vy-ctx vy-ctx-tight">
     <div className="vy-ctx-grid">
     <div className="vy-ctx-main">
       <h2>{stateLabel}</h2>
+
+      {/* [FE2] thread header: Call / WhatsApp once both sides accepted. It
+          replaces the plain "Contact details" block (which would repeat the
+          same number), and falls back to that block when there are no
+          actions to offer. */}
+      <ContactActionsBlock
+        enquiryId={id}
+        enquiryState={enquiry.state}
+        disclosedContacts={enquiry.disclosed_contacts}
+        safetyLine={t("enquiries:detail.safetyNotice")}
+        fallback={
+          enquiry.disclosed_contacts.length > 0 && (
+            <div className="vy-card vy-card-nested vy-stack">
+              <p className="vy-muted">{t("enquiries:detail.safetyNotice")}</p>
+              <strong style={{ fontSize: 13 }}>{t("enquiries:detail.contactRevealed")}</strong>
+              {enquiry.disclosed_contacts.map((c) => (
+                <p key={c.channel}>{c.channel}: {c.value}</p>
+              ))}
+            </div>
+          )
+        }
+      />
 
       <div className="vy-stack">
         {enquiry.messages.map((m) => (
@@ -175,15 +201,6 @@ export default function EnquiryThread({
         ))}
       </div>
 
-      {enquiry.disclosed_contacts.length > 0 && (
-        <div className="vy-card vy-card-nested vy-stack">
-          <p className="vy-muted">{t("enquiries:detail.safetyNotice")}</p>
-          <strong style={{ fontSize: 13 }}>{t("enquiries:detail.contactRevealed")}</strong>
-          {enquiry.disclosed_contacts.map((c) => (
-            <p key={c.channel}>{c.channel}: {c.value}</p>
-          ))}
-        </div>
-      )}
 
       {!["closed", "withdrawn"].includes(enquiry.state) && (
         <div className="vy-row">
@@ -237,6 +254,10 @@ export default function EnquiryThread({
       </div>
       <span className="vy-ctx-heading vy-ctx-wide-only">{t("common:layout.actions")}</span>
       <div className="vy-row vy-ctx-actions" style={{ flexWrap: "wrap" }}>
+        {/* [FE2] "Start a contract" (client, accepted) or "Open contract" */}
+        {["in_progress", "resolved", "closed"].includes(enquiry.state) && (
+          <ContractEntry enquiryId={id} enquiryState={enquiry.state} isClient={isClientOf(enquiry)} opportunityId={enquiry.opportunity_id} />
+        )}
         {!enquiry.is_sender && ["open", "awaiting_response"].includes(enquiry.state) && (
           <button className="vy-btn vy-btn-primary" disabled={busy} onClick={() => act(() => api.post(`/v1/enquiries/${id}/accept`))}>
             {t("enquiries:detail.accept")}

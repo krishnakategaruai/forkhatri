@@ -1,296 +1,552 @@
 "use client";
 
-// [TR011] Opportunity Composer: create, share, or upload (FR11). Three
-// entry modes with one mandatory segment tag (Community/Public).
-// [Critique agent finding, fixed] "Upload a screenshot" now uses a real
-// file-picker (app/components/FileUpload.tsx → POST /v1/uploads →
-// dev-environment local-disk storage, served back statically) instead of
-// a pasted-URL field — FR11's own named scenario (forwarding a WhatsApp
-// screenshot) has no URL to paste for a gallery photo, so the earlier
-// substitute was honestly documented but genuinely unusable for that case.
-// Traces to: FR11, FR14, TR011, TR014
+// ======================================================================
+// [TR011 → FE1 rebuild, 2026-09-28] Post an opportunity — AI-first,
+// structured, type-specific.
 //
-// [Product-owner reference check, 2026-09-15] "Vyapar is inspired from
-// Upwork + WorkIndia" — checked live via web search. Upwork's own posting
-// flow has a distinct "Skills & Experience" step ("select required skills,
-// experience level, and project budget" — upwork.com/resources/how-to-
-// post-job-on-upwork) BEFORE publish, which this composer's create mode
-// was missing entirely (`required_capabilities`/`value_amount` were only
-// ever sent empty). Added a skills input below — this also feeds FR19's
-// own `capability_fit` ranking signal, so it's not cosmetic, it's the exact
-// data the feed already scores on. WorkIndia's own pattern (minimal typing,
-// fast local jobs) is why this stays ONE optional field, not Upwork's full
-// multi-field skill-and-budget wizard — Vyapar's local_service/community
-// opportunities are the WorkIndia-shaped case and shouldn't be forced
-// through an Upwork-weight form.
-// [Product-owner i18n rule] Converted to useTranslation().
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+// REQUIREMENT (owner): minimise typing on both sides; one structured
+// composer per action; a genuine desktop layout; every string translated.
+// Research (references/2026-screen-research.md §1, §5, §9):
+//  - Start with one box, "Describe what you need", with a mic and "Read
+//    from a photo". draftOpportunity / readOpportunityImage turn it into a
+//    typed draft; values the draft is unsure of are marked "please check",
+//    and each missing detail is asked as one question chip answered in
+//    place. "Fill in myself" opens the empty form; the old share and
+//    upload modes (FR11) stay available.
+//  - Type-specific sections in the researched order (see ComposerForm).
+//  - Skills from the real taxonomy (SkillPicker).
+//  - Before publishing, "Get more responses": getOpportunitySuggestions +
+//    getPostingTips merged into one-tap cards (ReviewStep).
+//  - A live preview of what applicants will see: side panel on desktop,
+//    collapsible on a phone.
+//  - Publish-gate errors (salary_required, budget_required,
+//    seeker_charge_not_allowed) land on the field they concern, localized.
+// Two steps after the start (Details, Check & publish); NN/g: a step label
+// is enough for two steps, no progress bar.
+// Prefill: /opportunities/new?type=<employment|freelance|local_service>&skills=a,b
+// (FE2's outcome pages link here).
+// Traces to: FR11, FR12, FR14, TR011, TR014, imp-backend-a §1, imp-backend-c §1–4
+// ======================================================================
+
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { api, ApiError, resolveAttachmentUrl } from "@/lib/api";
-import FileUpload from "@/app/components/FileUpload";
+import { ApiError, type Me, type Opportunity, type OpportunitySuggestion, type PostingTip } from "@/lib/sdk";
+import { useSdk } from "@/lib/sdk/react";
 import Screen from "@/app/components/Screen";
 import ProfileSetup from "@/app/components/ProfileSetup";
-import type { Me } from "@/lib/sdk";
-import ComposerPreview, { PreviewCard } from "@/app/post/_components/ComposerPreview";
+import { useTaxonomyAliases, useTaxonomyTree } from "@/app/hooks/hiring";
+import ComposerForm, { fieldLabel, useComposerControls } from "@/app/components/composer/ComposerForm";
+import OpportunityPreview from "@/app/components/composer/OpportunityPreview";
+import ReviewStep from "@/app/components/composer/ReviewStep";
+import StartPanel from "@/app/components/composer/StartPanel";
+import LegacyComposer from "@/app/components/composer/LegacyComposer";
+import AcceptancePrompt, { acceptanceKind, type LegalKind } from "@/app/components/respond/AcceptancePrompt";
+import { fieldAnchor } from "@/app/components/composer/fields";
+import {
+  draftFromAi,
+  retypeAiDraft,
+  emptyDraft,
+  isPostKind,
+  mergeFixes,
+  MUST_CHECK,
+  toWrite,
+  validate,
+  type ComposerDraft,
+  type FieldCode,
+  type FixKey,
+  type PostKind,
+} from "@/app/components/composer/draft";
 
-type EntryMode = "create" | "share" | "upload";
+type Stage = "start" | "form" | "review";
 
-const V1_TYPE_IDS = ["employment", "freelance", "local_service"];
-const OTHER_TYPE_IDS = ["partnership", "training", "community"];
-// [IMP39] Mirrors TYPE_ACTION_LABEL in the API (services/opportunities.py),
-// used ONLY to label the live preview the way the feed card will.
-const TYPE_ACTION: Record<string, string> = {
-  employment: "apply",
-  freelance: "submitProposal",
-  local_service: "enquireNow",
-  partnership: "contact",
-  training: "register",
-  community: "register",
+/** Which form field a server error code belongs to. */
+const ERROR_FIELD: Record<string, FieldCode> = {
+  salary_required: "salary",
+  salary_range_invalid: "salary",
+  budget_required: "budget",
+  budget_range_invalid: "budget",
+  budget_fields_mismatch: "budget",
+  experience_range_invalid: "experience",
+  too_many_screening_questions: "screening_questions",
 };
 
-export default function NewOpportunityPage() {
-  const { t, i18n } = useTranslation(["opportunities", "common", "discover"]);
+function Composer() {
+  const { t, i18n } = useTranslation(["hiring", "opportunities", "common"]);
+  const sdk = useSdk();
   const router = useRouter();
-  const [mode, setMode] = useState<EntryMode | null>(null);
-  // [Owner, 2026-09-22] no profile of either kind → setup first.
+  const params = useSearchParams();
+  const tree = useTaxonomyTree();
+  const aliases = useTaxonomyAliases();
+
+  // Prefill from ?type=&skills= (outcome pages, "Post a similar job").
+  const prefillType = params.get("type");
+  const prefillSkills = (params.get("skills") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const initialKind: PostKind | null = isPostKind(prefillType) ? prefillType : null;
+
   const [me, setMe] = useState<Me | null>(null);
   useEffect(() => {
-    api.get<Me>("/v1/members/me").then(setMe).catch(() => setMe(null));
-  }, [i18n.language]);
-  // [Coordinator's "fewer taps" refinement, applied here] Segment
-  // (Community/Public) is still an explicit, mandatory, independently-
-  // changeable choice per FR11 — but it no longer forces its own screen.
-  // It's smart-defaulted from the entry mode (create -> usually "my own";
-  // share/upload -> usually "found elsewhere") and shown as one inline
-  // toggle on the same screen as the details form, cutting three required
-  // taps down to two screens without removing the choice itself.
-  const [segment, setSegment] = useState<"community" | "public">("community");
-  const [sourceName, setSourceName] = useState("");
-  const [title, setTitle] = useState("");
-  const [type, setType] = useState("employment");
-  const [location, setLocation] = useState("");
-  const [compensation, setCompensation] = useState("");
-  const [skills, setSkills] = useState("");
-  const [rawInput, setRawInput] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [error, setError] = useState<string | null>(null);
+    sdk.members.me().then(setMe).catch(() => setMe(null));
+  }, [sdk, i18n.language]);
+
+  const [stage, setStage] = useState<Stage>("start");
+  const [legacy, setLegacy] = useState<{ mode: "share" | "upload"; imageUrl?: string; notice?: string } | null>(null);
+  const [kind, setKind] = useState<PostKind | null>(initialKind);
+  const [text, setText] = useState("");
+  const [spoken, setSpoken] = useState(false);
+  const [busy, setBusy] = useState<"draft" | "photo" | null>(null);
+  const [startError, setStartError] = useState<string | null>(null);
+  // [Critique L7] One photo button. When reading photos isn't available here
+  // (501/503 — learnt once per session), the same tap simply attaches the
+  // photo on this screen; the text box becomes its note and the photo is
+  // kept with the post. No detour to another screen.
+  const [attachedImage, setAttachedImage] = useState<string | null>(null);
+
+  const [draft, setDraft] = useState<ComposerDraft>(() => emptyDraft(initialKind ?? "employment", prefillSkills));
+  const [flagged, setFlagged] = useState<Set<FieldCode>>(new Set());
+  const [questions, setQuestions] = useState<{ code: FieldCode; question: string }[]>([]);
+  const [openQuestion, setOpenQuestion] = useState<FieldCode | null>(null);
+  const [fromAi, setFromAi] = useState<"ai" | "rules" | null>(null);
+  const [errors, setErrors] = useState<Partial<Record<FieldCode, string>>>({});
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const [saved, setSaved] = useState<Opportunity | null>(null);
   const [saving, setSaving] = useState(false);
-  // [IMP39] the poster's own name, shown on the live preview exactly where
-  // the feed card shows the submitter line
-  const [myName, setMyName] = useState("");
+  const [suggestions, setSuggestions] = useState<OpportunitySuggestion[]>([]);
+  const [tips, setTips] = useState<PostingTip[]>([]);
+  const [loadingFixes, setLoadingFixes] = useState(false);
+  const [applying, setApplying] = useState<FixKey | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [needsAccept, setNeedsAccept] = useState<LegalKind | null>(null);
 
-  useEffect(() => {
-    api.get<{ display_name: string }>("/v1/members/me").then((m) => setMyName(m.display_name)).catch(() => undefined);
-  }, []);
+  const skillLabel = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const c of tree.data?.categories ?? []) for (const s of c.children ?? []) m.set(s.slug, s.label);
+    return (slug: string) => m.get(slug) ?? slug;
+  }, [tree.data]);
 
-  async function submit() {
-    if (!mode) return;
-    setSaving(true);
-    setError(null);
+  function change(patch: Partial<ComposerDraft>) {
+    setDraft((d) => ({ ...d, ...patch }));
+    // Touching a field is looking at it: drop its "please check" and its error.
+    const touched = Object.keys(patch);
+    const codes = new Set<FieldCode>();
+    const map: Record<string, FieldCode[]> = {
+      title: ["title"], location: ["location"], description: ["description"], skills: ["required_capabilities"],
+      salaryMin: ["salary"], salaryMax: ["salary"], incentiveType: ["incentive_type"], incentiveMax: ["incentive_type"],
+      openings: ["openings"], shift: ["shift"], jobTimings: ["job_timings"], experienceMonths: ["experience"],
+      qualification: ["min_qualification"], english: ["english_level"], assets: ["requires_assets"], interview: ["interview_details"],
+      budgetType: ["budget"], budgetMin: ["budget"], budgetMax: ["budget"], localBudget: ["budget"], duration: ["duration"],
+      experienceLevel: ["experience_level"], questions: ["screening_questions"], urgency: ["urgency"], preferredDate: ["preferred_date"],
+      type: ["type"], workMode: ["work_mode"], deadline: ["deadline"], allowPrecall: [], precallChannel: [], segment: ["type"], sourceName: ["type"], timing: ["timing"],
+    };
+    for (const k of touched) for (const c of map[k] ?? []) codes.add(c);
+    if (codes.size) {
+      setFlagged((f) => new Set([...f].filter((c) => !codes.has(c))));
+      setErrors((e) => Object.fromEntries(Object.entries(e).filter(([c]) => !codes.has(c as FieldCode))));
+    }
+  }
+
+  function errorText(e: unknown): string {
+    if (e instanceof ApiError) {
+      const matched = typeof e.details?.matched === "string" ? e.details.matched : "";
+      if (e.code) return t(`hiring:errors.${e.code}`, { defaultValue: typeof e.detail === "string" ? e.detail : t("common:state.somethingWentWrong"), matched });
+      if (typeof e.detail === "string") return e.detail;
+    }
+    return t("common:state.somethingWentWrong");
+  }
+
+  function goToField(code: FieldCode) {
+    setStage("form");
+    requestAnimationFrame(() => {
+      const el = document.getElementById(fieldAnchor(code));
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      (el?.querySelector("input, textarea, button") as HTMLElement | null)?.focus({ preventScroll: true });
+    });
+  }
+
+  /** Put a server error next to its field (and go back to the form) or show it under the button. */
+  function placeError(e: unknown) {
+    const legal = acceptanceKind(e);
+    if (legal) {
+      setNeedsAccept(legal);
+      return;
+    }
+    const msg = errorText(e);
+    if (e instanceof ApiError && e.code) {
+      let field: FieldCode | undefined = ERROR_FIELD[e.code];
+      if (e.code === "seeker_charge_not_allowed" && e.details?.field !== "candidate_pays") {
+        const m = String(e.details?.matched ?? "").toLowerCase();
+        field = m && draft.title.toLowerCase().includes(m) ? "title" : m && draft.interview.toLowerCase().includes(m) ? "interview_details" : m && draft.jobTimings.toLowerCase().includes(m) ? "job_timings" : m && draft.questions.join(" ").toLowerCase().includes(m) ? "screening_questions" : "description";
+      }
+      if (field) {
+        setErrors((x) => ({ ...x, [field as FieldCode]: msg }));
+        goToField(field);
+        return;
+      }
+    }
+    setFormError(msg);
+  }
+
+  // ---- start: AI draft ------------------------------------------------------
+  function applyAi(ai: Parameters<typeof draftFromAi>[0]) {
+    const base = kind ? { ...draft, type: kind } : draft;
+    // The type the poster tapped wins over the type the draft inferred.
+    const r = draftFromAi(kind ? retypeAiDraft(ai, kind) : ai, base);
+    setDraft(r.draft);
+    setFlagged(new Set(r.flagged));
+    setQuestions(r.questions);
+    setFromAi(ai.source);
+    setErrors({});
+    setStage("form");
+    window.scrollTo({ top: 0 });
+  }
+
+  async function onDraft(entry: "text" | "voice") {
+    setBusy("draft");
+    setStartError(null);
     try {
-      const opp = await api.post<{ id: string }>("/v1/opportunities", {
-        entry_mode: mode,
-        title: mode === "create" ? title : undefined,
-        type,
-        location: mode === "create" ? location : undefined,
-        compensation: compensation || undefined,
-        required_capabilities: skills.split(",").map((s) => s.trim()).filter(Boolean),
-        response_method: "in_app",
-        source_segment: segment,
-        source_name: segment === "public" ? sourceName : undefined,
-        raw_input: mode !== "create" ? rawInput : undefined,
-        raw_image_url: mode === "upload" ? imageUrl : undefined,
-      });
-      router.push(`/opportunities/${opp.id}`);
+      applyAi(await sdk.ai.draftOpportunity({ text: text.trim(), language: i18n.language, entry }));
     } catch (e) {
-      setError(e instanceof ApiError ? String(e.detail) : t("common:state.somethingWentWrong"));
+      setStartError(errorText(e));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  function photoReadingOff(): boolean {
+    try {
+      return sessionStorage.getItem("vyapar.aiPhoto") === "off";
+    } catch {
+      return false;
+    }
+  }
+
+  async function onPhoto(file: File) {
+    setBusy("photo");
+    setStartError(null);
+    let url = "";
+    try {
+      url = (await sdk.uploads.upload(file)).url;
+      setAttachedImage(url);
+      if (photoReadingOff()) return;
+      applyAi(await sdk.ai.readOpportunityImage({ image_url: url, language: i18n.language }));
+    } catch (e) {
+      if (url && e instanceof ApiError && (e.status === 501 || e.status === 503)) {
+        try {
+          sessionStorage.setItem("vyapar.aiPhoto", "off");
+        } catch {
+          /* private mode: ask again next time */
+        }
+      } else {
+        setStartError(errorText(e));
+      }
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  // ---- details → review -------------------------------------------------------
+  async function saveDraft(d: ComposerDraft): Promise<Opportunity> {
+    const body = toWrite(d);
+    if (saved) return sdk.posting.update(saved.id, body);
+    return sdk.posting.create({
+      ...body,
+      entry_mode: "create",
+      raw_image_url: attachedImage ?? undefined,
+      source_segment: d.segment,
+      source_name: d.segment === "public" ? d.sourceName.trim() : undefined,
+    });
+  }
+
+  async function loadFixes(id: string, withTips: boolean) {
+    setLoadingFixes(true);
+    const [s, tp] = await Promise.allSettled([
+      sdk.posting.suggestions(id),
+      withTips ? sdk.ai.getPostingTips({ opportunity_id: id, language: i18n.language }) : Promise.resolve(null),
+    ]);
+    if (s.status === "fulfilled") setSuggestions(s.value.suggestions);
+    if (tp.status === "fulfilled" && tp.value) setTips(tp.value.tips);
+    setLoadingFixes(false);
+  }
+
+  async function toReview() {
+    setFormError(null);
+    const problems = validate(draft);
+    const localized = Object.fromEntries(Object.entries(problems).map(([c, k]) => [c, t(`hiring:composer.error.${k}`)])) as Partial<Record<FieldCode, string>>;
+    if (Object.keys(localized).length) {
+      setErrors(localized);
+      goToField(Object.keys(localized)[0] as FieldCode);
+      return;
+    }
+    setSaving(true);
+    try {
+      const opp = await saveDraft(draft);
+      setSaved(opp);
+      setStage("review");
+      window.scrollTo({ top: 0 });
+      void loadFixes(opp.id, true);
+    } catch (e) {
+      placeError(e);
     } finally {
       setSaving(false);
     }
   }
 
+  async function applyFix(key: FixKey, patch: Partial<ComposerDraft>) {
+    if (!saved) return;
+    const next = { ...draft, ...patch };
+    setApplying(key);
+    change(patch);
+    try {
+      const opp = await sdk.posting.update(saved.id, toWrite(next));
+      setSaved(opp);
+      await loadFixes(opp.id, false);
+    } catch (e) {
+      placeError(e);
+    } finally {
+      setApplying(null);
+    }
+  }
+
+  async function publish() {
+    if (!saved) return;
+    setPublishing(true);
+    setFormError(null);
+    try {
+      // The poster has just reviewed every field on this screen, so any the
+      // server still marks unconfirmed (title/location it defaulted) are
+      // confirmed as seen — the FR12 gate is kept, not bypassed.
+      if (saved.unconfirmed_fields.length) await sdk.posting.confirm(saved.id, saved.unconfirmed_fields);
+      await sdk.posting.publish(saved.id);
+      router.push(`/opportunities/${saved.id}`);
+    } catch (e) {
+      placeError(e);
+      setPublishing(false);
+    }
+  }
+
+  // [Critique L8] Amounts and openings the draft filled must be looked at
+  // before publishing; the other "please check" marks stay advisory.
+  const mustCheck = [...flagged].filter((c) => MUST_CHECK.includes(c));
+  const fixes = useMemo(() => mergeFixes(suggestions, tips, draft), [suggestions, tips, draft]);
+  const { renderControl } = useComposerControls({ draft, onChange: change, tree: tree.data, errors, aliases });
+  const openQuestions = questions.filter((q) => {
+    const val: Record<string, boolean> = {
+      salary: !!draft.salaryMin && !!draft.salaryMax,
+      openings: draft.openings !== null,
+      shift: draft.shift !== null,
+      job_timings: !!draft.jobTimings.trim(),
+      interview_details: !!draft.interview.trim(),
+      min_qualification: draft.qualification !== null,
+      english_level: draft.english !== null,
+      experience: draft.experienceMonths !== null,
+      requires_assets: draft.assets.length > 0,
+      budget: draft.type === "freelance" ? !!draft.budgetMin && !!draft.budgetMax : !!draft.localBudget,
+      duration: draft.duration !== null,
+      experience_level: draft.experienceLevel !== null,
+      screening_questions: draft.questions.some(Boolean),
+      preferred_date: !!draft.preferredDate,
+      urgency: draft.urgency !== null,
+      location: !!draft.location.trim(),
+      title: !!draft.title.trim(),
+      required_capabilities: draft.skills.length > 0,
+      description: !!draft.description.trim(),
+      incentive_type: draft.incentiveType !== "none",
+      work_mode: !!draft.workMode,
+      timing: !!draft.timing.trim(),
+    };
+    return !val[q.code];
+  });
+
   if (me?.profiles && !me.profiles.complete) {
     return (
       <Screen width="wide">
-        <h1>{t("opportunities:new.chooseModeTitle")}</h1>
+        <h1>{t("hiring:composer.startTitle")}</h1>
         <ProfileSetup profiles={me.profiles} required />
       </Screen>
     );
   }
 
-  if (!mode) {
+  if (legacy) {
     return (
       <Screen width="wide">
-        <h1>{t("opportunities:new.chooseModeTitle")}</h1>
-        <div className="vy-stack vy-choice-grid vy-choice-grid-3">
-          <button
-            className="vy-card vy-choice"
-            onClick={() => {
-              setMode("create");
-              setSegment("community");
-            }}
-          >
-            <span className="vy-choice-mark" aria-hidden="true">¶</span>
-            <h2 style={{ fontSize: 17 }}>{t("opportunities:new.modeCreate")}</h2>
-            <p>{t("opportunities:new.modeCreateDesc")}</p>
-            <span className="vy-choice-arrow" aria-hidden="true">→</span>
-          </button>
-          <button
-            className="vy-card vy-choice"
-            onClick={() => {
-              setMode("share");
-              setSegment("public");
-            }}
-          >
-            <span className="vy-choice-mark" aria-hidden="true">⇪</span>
-            <h2 style={{ fontSize: 17 }}>{t("opportunities:new.modeShare")}</h2>
-            <p>{t("opportunities:new.modeShareDesc")}</p>
-            <span className="vy-choice-arrow" aria-hidden="true">→</span>
-          </button>
-          <button
-            className="vy-card vy-choice"
-            onClick={() => {
-              setMode("upload");
-              setSegment("public");
-            }}
-          >
-            <span className="vy-choice-mark" aria-hidden="true">▣</span>
-            <h2 style={{ fontSize: 17 }}>{t("opportunities:new.modeUpload")}</h2>
-            <p>{t("opportunities:new.modeUploadDesc")}</p>
-            <span className="vy-choice-arrow" aria-hidden="true">→</span>
-          </button>
+        <LegacyComposer
+          mode={legacy.mode}
+          initialImageUrl={legacy.imageUrl}
+          initialType={kind ?? "employment"}
+          tree={tree.data}
+          notice={legacy.notice}
+          onBack={() => setLegacy(null)}
+        />
+      </Screen>
+    );
+  }
+
+  if (stage === "start") {
+    return (
+      <Screen width="wide">
+        <div className="vy-compose">
+          <div className="vy-compose-main">
+            <StartPanel
+              text={text}
+              onText={(v) => {
+                setText(v);
+                if (!v.trim()) setSpoken(false);
+              }}
+              kind={kind}
+              onKind={(k) => {
+                setKind(k);
+                if (k) setDraft((d) => ({ ...d, type: k }));
+              }}
+              busy={busy}
+              error={startError}
+              onDraft={onDraft}
+              onPhoto={onPhoto}
+              onManual={() => {
+                setDraft((d) => ({ ...d, type: kind ?? d.type }));
+                setStage("form");
+              }}
+              onLegacy={(mode) => setLegacy({ mode })}
+              spoken={spoken}
+              onSpoken={() => setSpoken(true)}
+              attachedImage={attachedImage}
+              attachedImageSrc={attachedImage ? sdk.uploads.resolveUrl(attachedImage) : null}
+              onRemoveImage={() => setAttachedImage(null)}
+            />
+          </div>
+          <aside className="vy-compose-aside" aria-label={t("hiring:composer.howTitle")}>
+            <span className="vy-preview-label">{t("hiring:composer.howTitle")}</span>
+            <ol className="vy-howto">
+              <li><span><strong>{t("hiring:composer.how1Title")}</strong>{t("hiring:composer.how1")}</span></li>
+              <li><span><strong>{t("hiring:composer.how2Title")}</strong>{t("hiring:composer.how2")}</span></li>
+              <li><span><strong>{t("hiring:composer.how3Title")}</strong>{t("hiring:composer.how3")}</span></li>
+            </ol>
+            <p className="vy-safety-line">{t("hiring:composer.freeNote")}</p>
+          </aside>
         </div>
       </Screen>
     );
   }
 
-  // [IMP39] Live preview (desktop): the Discover card other members will
-  // see, from the values typed so far. For share/upload the server derives
-  // the title from the pasted text, so the preview shows the first line and
-  // says so, rather than inventing what the parser will produce.
-  const firstLine = rawInput.split(/\r?\n/).map((l) => l.trim()).find(Boolean) ?? "";
-  const previewTitle = mode === "create" ? title.trim() : firstLine.slice(0, 90);
-  const previewMeta = [
-    t(`opportunities:actionLabel.${TYPE_ACTION[type] ?? "contact"}` as "actionLabel.apply"),
-    segment === "community" ? t("discover:home.sectionCommunity") : t("discover:home.sectionPublic"),
-    t("common:preview.postedToday"),
-  ].join(" · ");
+  const preview = <OpportunityPreview draft={draft} skillLabel={skillLabel} posterName={me?.display_name} />;
 
   return (
     <Screen width="wide">
-      <h1>{mode === "create" ? t("opportunities:new.titleCreate") : mode === "share" ? t("opportunities:new.titleShare") : t("opportunities:new.titleUpload")}</h1>
+      <div className="vy-stack" style={{ gap: 6 }}>
+        <span className="vy-step-label">
+          {stage === "form" ? t("hiring:composer.step1") : t("hiring:composer.step2")}
+        </span>
+        <h1>{stage === "form" ? t(`hiring:composer.formTitle.${draft.type}`, { defaultValue: t("hiring:composer.formTitle.other") }) : t("hiring:composer.reviewTitle")}</h1>
+      </div>
       <div className="vy-compose">
-      <div className="vy-compose-main">
-      <div className="vy-stack">
-        <div className="vy-row">
-          <button
-            className="vy-btn"
-            style={{ background: segment === "community" ? "var(--accent)" : "var(--surface-overlay)", color: segment === "community" ? "var(--accent-ink)" : "var(--text-primary)" }}
-            onClick={() => setSegment("community")}
-          >
-            {t("opportunities:new.segmentCommunity")}
-          </button>
-          <button
-            className="vy-btn"
-            style={{ background: segment === "public" ? "var(--accent)" : "var(--surface-overlay)", color: segment === "public" ? "var(--accent-ink)" : "var(--text-primary)" }}
-            onClick={() => setSegment("public")}
-          >
-            {t("opportunities:new.segmentPublic")}
-          </button>
+        <div className="vy-compose-main">
+          {stage === "form" && (
+            <>
+              {fromAi && (
+                <div className="vy-card vy-card-nested vy-stack" style={{ gap: 10, padding: 16 }}>
+                  <p style={{ color: "var(--text-primary)", fontSize: 14 }}>
+                    {flagged.size > 0 ? t("hiring:composer.draftedCheck", { count: flagged.size }) : t("hiring:composer.drafted")}
+                  </p>
+                  {openQuestions.length > 0 && (
+                    <div className="vy-questions">
+                      <span className="vy-field-hint">{t("hiring:composer.questionsIntro")}</span>
+                      {openQuestions.map((q) => (
+                        <div key={q.code} className="vy-question">
+                          <button type="button" aria-expanded={openQuestion === q.code} onClick={() => setOpenQuestion(openQuestion === q.code ? null : q.code)}>
+                            <span>{q.question || t(`hiring:composer.ask.${q.code}`, { defaultValue: fieldLabel(t, q.code, draft.type) })}</span>
+                            <span aria-hidden="true">{openQuestion === q.code ? "−" : "+"}</span>
+                          </button>
+                          {openQuestion === q.code && (
+                            <div className="vy-stack" style={{ gap: 6 }}>
+                              <span className="vy-visually-hidden">{fieldLabel(t, q.code, draft.type)}</span>
+                              {renderControl(q.code)}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <ComposerForm
+                draft={draft}
+                onChange={change}
+                tree={tree.data}
+                aliases={aliases}
+                flagged={flagged}
+                onLooksRight={(code) => setFlagged((f) => new Set([...f].filter((c) => c !== code)))}
+                errors={errors}
+              />
+
+              <details className="vy-mobile-only vy-card vy-card-nested" style={{ padding: "14px 18px" }}>
+                <summary style={{ cursor: "pointer", fontWeight: 600 }}>{t("hiring:preview.toggle")}</summary>
+                <div style={{ marginTop: 12 }}>{preview}</div>
+              </details>
+
+              {formError && <p className="vy-error" role="alert">{formError}</p>}
+              <div className="vy-row" style={{ flexWrap: "wrap", gap: 8 }}>
+                <button type="button" className="vy-btn vy-btn-primary vy-submit" disabled={saving} onClick={toReview}>
+                  {saving ? t("common:state.saving") : t("hiring:composer.continueToCheck")}
+                </button>
+                <button type="button" className="vy-btn vy-btn-ghost" onClick={() => setStage("start")}>
+                  ← {t("hiring:composer.backToStart")}
+                </button>
+              </div>
+            </>
+          )}
+
+          {stage === "review" && (
+            <>
+              <ReviewStep draft={draft} fixes={fixes} loadingFixes={loadingFixes} applying={applying} onApply={applyFix} onEdit={goToField} />
+              {flagged.size > 0 && (
+                <p className={mustCheck.length ? "vy-error" : "vy-field-hint"} role={mustCheck.length ? "alert" : undefined}>
+                  {mustCheck.length
+                    ? t("hiring:composer.checkBeforePublish", { fields: mustCheck.map((c) => fieldLabel(t, c, draft.type)).join(", "), ok: t("hiring:composer.looksRight") })
+                    : t("hiring:composer.stillUnchecked", { fields: [...flagged].map((c) => fieldLabel(t, c, draft.type)).join(", ") })}{" "}
+                  <button type="button" className="vy-check-ok" onClick={() => goToField([...flagged][0])}>
+                    {t("hiring:composer.checkNow")}
+                  </button>
+                </p>
+              )}
+              <div className="vy-mobile-only">{preview}</div>
+              {needsAccept && (
+                <AcceptancePrompt
+                  kind={needsAccept}
+                  onAccepted={() => {
+                    setNeedsAccept(null);
+                    void publish();
+                  }}
+                />
+              )}
+              {formError && <p className="vy-error" role="alert">{formError}</p>}
+              <div className="vy-row" style={{ flexWrap: "wrap", gap: 8 }}>
+                <button type="button" className="vy-btn vy-btn-primary vy-submit" disabled={publishing || applying !== null || mustCheck.length > 0} onClick={publish}>
+                  {publishing ? t("hiring:composer.publishing") : t("hiring:composer.publish")}
+                </button>
+                <button type="button" className="vy-btn vy-btn-secondary" onClick={() => setStage("form")}>
+                  {t("hiring:composer.editDetails")}
+                </button>
+              </div>
+              <p className="vy-field-hint">{t("hiring:composer.draftSavedNote")}</p>
+            </>
+          )}
         </div>
 
-        {segment === "public" && (
-          <div className="vy-field">
-            <label className="vy-label">{t("opportunities:new.sourceNameLabel")}</label>
-            <input className="vy-input" value={sourceName} onChange={(e) => setSourceName(e.target.value)} placeholder={t("opportunities:new.sourceNamePlaceholder")} />
-          </div>
-        )}
-
-        {mode === "create" && (
-          <>
-            <div className="vy-field">
-              <label className="vy-label">{t("opportunities:new.titleLabel")}</label>
-              <input className="vy-input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("opportunities:new.titlePlaceholder")} />
-            </div>
-            <div className="vy-field">
-              <label className="vy-label">{t("opportunities:new.locationLabel")}</label>
-              <input className="vy-input" value={location} onChange={(e) => setLocation(e.target.value)} placeholder={t("opportunities:new.locationPlaceholder")} />
-            </div>
-          </>
-        )}
-
-        {mode === "share" && (
-          <div className="vy-field">
-            <label className="vy-label">{t("opportunities:new.pasteLabel")}</label>
-            <textarea className="vy-textarea" rows={5} value={rawInput} onChange={(e) => setRawInput(e.target.value)} placeholder={t("opportunities:new.pastePlaceholder")} />
-          </div>
-        )}
-
-        {mode === "upload" && (
-          <div className="vy-field">
-            {/* [Critique agent finding, fixed here] FR11's own named scenario
-                is forwarding a WhatsApp screenshot — a pasted-URL field is
-                unusable for a photo sitting in a gallery with no URL. Real
-                file upload via the one shared FileUpload component. */}
-            <label className="vy-label">{t("opportunities:new.screenshotLinkLabel")}</label>
-            <FileUpload value={imageUrl} onChange={setImageUrl} accept="image/*" />
-            <label className="vy-label" style={{ marginTop: 8 }}>{t("opportunities:new.screenshotNotesLabel")}</label>
-            <textarea className="vy-textarea" rows={3} value={rawInput} onChange={(e) => setRawInput(e.target.value)} placeholder={t("opportunities:new.screenshotNotesPlaceholder")} />
-          </div>
-        )}
-
-        <div className="vy-field-pair">
-        <div className="vy-field">
-          <label className="vy-label">{t("opportunities:new.typeLabel")}</label>
-          <select className="vy-select" value={type} onChange={(e) => setType(e.target.value)}>
-            <optgroup label={t("opportunities:new.typeGroupCommon")}>
-              {V1_TYPE_IDS.map((id) => (
-                <option key={id} value={id}>{t(`opportunities:new.type${id.charAt(0).toUpperCase()}${id.slice(1).replace(/_(.)/g, (_, c) => c.toUpperCase())}` as "new.typeEmployment")}</option>
-              ))}
-            </optgroup>
-            <optgroup label={t("opportunities:new.typeGroupOther")}>
-              {OTHER_TYPE_IDS.map((id) => (
-                <option key={id} value={id}>{t(`opportunities:new.type${id.charAt(0).toUpperCase()}${id.slice(1)}` as "new.typePartnership")}</option>
-              ))}
-            </optgroup>
-          </select>
-        </div>
-
-        <div className="vy-field">
-          <label className="vy-label">{t("opportunities:new.compensationLabel")}</label>
-          <input className="vy-input" value={compensation} onChange={(e) => setCompensation(e.target.value)} placeholder={t("opportunities:new.compensationPlaceholder")} />
-        </div>
-        </div>
-
-        <div className="vy-field">
-          <label className="vy-label">{t("opportunities:new.skillsLabel")}</label>
-          <input className="vy-input" value={skills} onChange={(e) => setSkills(e.target.value)} placeholder={t("opportunities:new.skillsPlaceholder")} />
-        </div>
-
-        {error && <p className="vy-error">{error}</p>}
-
-        <button
-          className="vy-btn vy-btn-primary vy-submit"
-          disabled={saving || (mode === "create" && (!title || !location)) || (mode !== "create" && !rawInput) || (segment === "public" && !sourceName)}
-          onClick={submit}
-        >
-          {saving ? t("common:state.saving") : t("common:action.continue")}
-        </button>
-      </div>
-      </div>
-      <ComposerPreview guide={[t("opportunities:new.guide1"), t("opportunities:new.guide2"), t("opportunities:new.guide3")]}>
-        <PreviewCard
-          image={mode === "upload" && imageUrl ? resolveAttachmentUrl(imageUrl) : undefined}
-          title={previewTitle}
-          subtitle={[mode === "create" ? location.trim() : "", compensation.trim()].filter(Boolean).join(" · ") || undefined}
-          chips={skills.split(",").map((x) => x.trim()).filter(Boolean)}
-          submitter={segment === "public" && sourceName.trim() ? sourceName.trim() : myName || undefined}
-          meta={previewMeta}
-        />
-        {mode !== "create" && <p className="vy-muted">{t("opportunities:new.previewFromText")}</p>}
-      </ComposerPreview>
+        <aside className="vy-compose-aside" aria-label={t("hiring:preview.label")}>
+          <span className="vy-preview-label">{t("hiring:preview.label")}</span>
+          <p className="vy-preview-caption">{t("hiring:preview.caption")}</p>
+          {preview}
+        </aside>
       </div>
     </Screen>
+  );
+}
+
+export default function NewOpportunityPage() {
+  return (
+    <Suspense fallback={null}>
+      <Composer />
+    </Suspense>
   );
 }

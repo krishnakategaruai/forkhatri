@@ -33,6 +33,8 @@ export interface RequestOptions {
   signal?: AbortSignal;
   /** Sent as Idempotency-Key: a retried POST with the same key returns the first response. */
   idempotencyKey?: string;
+  /** Let the request finish even if the page navigates away (fire-and-forget logging). */
+  keepalive?: boolean;
 }
 
 export type HttpMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
@@ -94,6 +96,7 @@ export class VyaparClient {
       method,
       headers,
       signal: options.signal,
+      keepalive: options.keepalive,
       body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
     });
     const isJson = res.headers.get("content-type")?.includes("application/json");
@@ -112,6 +115,10 @@ export class VyaparClient {
 
   patch<T>(path: string, body?: unknown, options: Omit<RequestOptions, "body"> = {}): Promise<T> {
     return this.request<T>("PATCH", path, { ...options, body });
+  }
+
+  put<T>(path: string, body?: unknown, options: Omit<RequestOptions, "body"> = {}): Promise<T> {
+    return this.request<T>("PUT", path, { ...options, body });
   }
 
   delete<T>(path: string, options: Omit<RequestOptions, "body"> = {}): Promise<T> {

@@ -103,6 +103,14 @@ INSERT INTO taxonomy_terms (kind, slug, name_en, name_hi, name_te, icon) VALUES
 ('capability','handicraft',        'Handicraft',                   'हस्तशिल्प',              'హస్తకళ', NULL);
 INSERT INTO taxonomy_terms (kind, slug, name_en, status) VALUES ('capability','pooja-samagri-supply','pooja samagri supply','unmapped');
 
+-- [018] Two-level taxonomy: parents, plain-language descriptions and the
+-- blue-collar roles. The data lives once, in the migration (an idempotent
+-- upsert on (kind, slug)); re-applied here so a fresh seed carries the same
+-- tree as an upgraded database.
+\ir migrations/018-structured-opportunities.sql
+-- [022] Trade roles 018 left out: mason, tile fitter, welder, packer/loader, gardener (mali).
+\ir migrations/022-taxonomy-trade-roles.sql
+
 -- ---------------------------------------------------------------- listings
 INSERT INTO listings (id, owner_id, kind, name, headline, description, categories, capabilities, services, locality, lat, lng, service_radius_km, service_mode, primary_phone, contact_verified, experience_years, languages, availability, rates, intent_state, intent_visible, state, verification_state, verification_document, verification_claim, verified_at, verification_expires_at, image_url, response_minutes, published_at, last_confirmed_at, credential_ref) VALUES
 ('00000000-0000-4000-8000-000000000001','m_anita','business','Khatri & Associates','Chartered Accountants for small businesses','GST registration and monthly filing, income-tax returns, bookkeeping and audit support for shops, traders and startups in Hyderabad. Fixed monthly packages, no surprises.','{accounting_tax}','{accounting,gst_filing,tax}','[{"name":"GST registration","price_hint":"₹1,500"},{"name":"Monthly GST filing","price_hint":"from ₹999/mo"},{"name":"ITR filing","price_hint":"from ₹799"}]','Banjara Hills',17.4156,78.4347,15,'both','+919000000002',true,12,'{en,hi}','this_week',NULL,NULL,false,'active_verified','verified','gst',NULL,now()-interval '40 days',now()+interval '325 days','/assets/accountant.jpg',45,now()-interval '70 days',now()-interval '3 days',NULL),

@@ -25,6 +25,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import (
+    admin,
     operations,
     auth,
     billing,
@@ -145,6 +146,8 @@ def create_app() -> FastAPI:
     app.include_router(media.router)
     # [DEC-V1-028] Moderator review queue, Tier 3/4 exits, suspension.
     app.include_router(operations.router)
+    # [ADR-012] The shared ForKhatri admin console's adapter over the case queue.
+    app.include_router(admin.router)
     # [2026-09-21] These three shipped written but were never registered, so
     # nine endpoints were unreachable — including block and report. A
     # matrimonial product with no way to block or report someone fails §22

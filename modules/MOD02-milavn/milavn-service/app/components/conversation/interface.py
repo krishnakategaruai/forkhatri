@@ -19,7 +19,6 @@ here trusts RLS and only adds the block filter and the display names.
 
 from __future__ import annotations
 
-import shutil
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -29,8 +28,8 @@ from fastapi import UploadFile
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app import media_files
 from app.components.identity_bridge import interface as identity
-from app.config.settings import get_settings
 
 
 class NotAllowed(Exception):
@@ -42,10 +41,28 @@ class InvalidInput(Exception):
 
 
 class UnsupportedMedia(Exception):
-    pass
+    """kind: 'photo' (not a JPEG/PNG/WebP) or 'document' (not an office file / PDF / text)."""
+
+    def __init__(self, kind: str = "photo") -> None:
+        super().__init__(kind)
+        self.kind = kind
 
 
-_ALLOWED_IMAGE_TYPES = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
+TooLarge = media_files.TooLarge  # re-exported: the routes map it to 413
+
+
+# Circle posts may carry a document: agendas, checklists, schedules. Office formats and PDF only.
+_ALLOWED_DOC_TYPES = {
+    "application/pdf": ".pdf",
+    "application/msword": ".doc",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+    "application/vnd.ms-excel": ".xls",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
+    "application/vnd.ms-powerpoint": ".ppt",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".pptx",
+    "text/plain": ".txt",
+}
+MAX_DOC_BYTES = media_files.MAX_DOC_BYTES
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,6 +74,9 @@ class Message:
     body: str
     created_at: datetime
     mine: bool
+    photo_url: str | None = None
+    doc_url: str | None = None
+    doc_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -153,15 +173,12 @@ async def list_photos(session: AsyncSession, *, occurrence_id: UUID, viewer_memb
 async def add_photo(session: AsyncSession, *, occurrence_id: UUID, member_id: UUID, photo: UploadFile, caption: str | None) -> Photo:
     if not await was_there(session, occurrence_id=occurrence_id, member_id=member_id):
         raise NotAllowed()
-    ext = _ALLOWED_IMAGE_TYPES.get(photo.content_type or "")
-    if ext is None:
-        raise UnsupportedMedia(photo.content_type or "unknown")
-    root: Path = get_settings().media_root / "moments"
-    root.mkdir(parents=True, exist_ok=True)
-    name = f"{occurrence_id}-{uuid4().hex[:8]}{ext}"
-    with (root / name).open("wb") as fh:
-        shutil.copyfileobj(photo.file, fh)
-    ref = f"moments/{name}"
+    # [B4/B7] What the file IS, not what the browser called it; capped while streaming.
+    try:
+        ext = media_files.sniff_image(photo)
+    except media_files.NotAnImage as exc:
+        raise UnsupportedMedia("photo") from exc
+    ref = media_files.store(photo, "moments", str(occurrence_id), ext, media_files.MAX_PHOTO_BYTES)
     photo_id = uuid4()
     cap = (caption or "").strip()[:200] or None
     await session.execute(
@@ -233,19 +250,62 @@ async def list_posts(session: AsyncSession, *, circle_id: UUID, viewer_member_id
     # RLS returns nothing for non-members; the route turns "not a member" into an empty board.
     rows = (
         await session.execute(
-            text("SELECT id, member_id, body, created_at FROM milavn_circle.circle_post WHERE circle_id = :c AND deleted_at IS NULL ORDER BY created_at DESC LIMIT :l"),
+            text("SELECT id, member_id, body, created_at, photo_ref, doc_ref, doc_name FROM milavn_circle.circle_post WHERE circle_id = :c AND deleted_at IS NULL ORDER BY created_at DESC LIMIT :l"),
             {"c": str(circle_id), "l": limit},
         )
     ).all()
     hidden = await _blocked_filter(session, viewer_member_id, [r[1] for r in rows])
     names = await identity.display_names_for([r[1] for r in rows])
-    return [Message(r[0], r[1], names[r[1]].display_name, names[r[1]].avatar, r[2], r[3], r[1] == viewer_member_id) for r in rows if r[1] not in hidden]
+    return [
+        Message(
+            r[0], r[1], names[r[1]].display_name, names[r[1]].avatar, r[2], r[3], r[1] == viewer_member_id,
+            f"/media/{r[4]}" if r[4] else None, f"/media/{r[5]}" if r[5] else None, r[6],
+        )
+        for r in rows
+        if r[1] not in hidden
+    ]
 
 
-async def post_to_board(session: AsyncSession, *, circle_id: UUID, member_id: UUID, body: str) -> UUID:
-    body = (body or "").strip()
-    if not body or len(body) > 1000:
-        raise InvalidInput()
+class PostNotFound(Exception):
+    pass
+
+
+async def delete_post(session: AsyncSession, *, circle_id: UUID, post_id: UUID, member_id: UUID) -> None:
+    """[B8] The author takes their post back; the circle's organizer or an assistant can take down
+    anyone's post (as Facebook / WhatsApp group admins can). Definer function, migration 043.
+    [B5] The post's photo and document leave the disk with it."""
+    row = (
+        await session.execute(
+            text("SELECT r_outcome, r_photo_ref, r_doc_ref FROM milavn_circle.delete_circle_post(:c, :p, :m)"),
+            {"c": str(circle_id), "p": str(post_id), "m": str(member_id)},
+        )
+    ).first()
+    outcome = row[0] if row else "not_found"
+    if outcome == "not_found":
+        raise PostNotFound
+    if outcome != "deleted":
+        raise NotAllowed
+    media_files.remove(row[1], row[2])
+
+
+class OrganizersOnly(NotAllowed):
+    """A member, but this is an announcement-style circle where only the organizers post."""
+
+
+async def check_may_post(session: AsyncSession, circle_id: UUID, member_id: UUID) -> None:
+    """Raises NotAllowed (not a member) or OrganizersOnly (posting policy). Shared by board posts
+    and polls [B2]: a poll is a post, so an announcement-only circle refuses members' polls too."""
+    if await _may_post(session, circle_id, member_id):
+        return
+    member = (
+        await session.execute(text("SELECT milavn_circle.is_active_member(:c, :m)"), {"c": str(circle_id), "m": str(member_id)})
+    ).scalar_one()
+    raise OrganizersOnly() if member else NotAllowed()
+
+
+async def _may_post(session: AsyncSession, circle_id: UUID, member_id: UUID) -> bool:
+    """Membership, then the circle's posting policy: an announcement-style circle
+    ('organizers') accepts posts only from its organizer or an assistant."""
     is_member = (
         await session.execute(
             text("SELECT milavn_circle.is_active_member(:c, :m) OR milavn_circle.is_circle_creator(:c, :m)"),
@@ -253,11 +313,61 @@ async def post_to_board(session: AsyncSession, *, circle_id: UUID, member_id: UU
         )
     ).scalar_one()
     if not is_member:
-        raise NotAllowed()
+        return False
+    row = (
+        await session.execute(
+            text(
+                "SELECT c.posting_policy, m.member_role::text FROM milavn_circle.circle c "
+                "LEFT JOIN milavn_circle.circle_membership m ON m.circle_id = c.id AND m.member_id = :m AND m.left_at IS NULL "
+                "WHERE c.id = :c"
+            ),
+            {"c": str(circle_id), "m": str(member_id)},
+        )
+    ).first()
+    if row is None:
+        return False
+    policy, role = row[0] or "members", row[1]
+    return policy != "organizers" or role in ("organizer", "assistant")
+
+
+async def post_to_board(
+    session: AsyncSession, *, circle_id: UUID, member_id: UUID, body: str, photo: UploadFile | None = None, document: UploadFile | None = None
+) -> UUID:
+    body = (body or "").strip()
+    if (not body and photo is None and document is None) or len(body) > 1000:
+        raise InvalidInput()
+    await check_may_post(session, circle_id, member_id)
+    # [B6] Both attachments are validated before either is stored, so a bad document never leaves
+    # an orphaned photo on disk (and vice versa).
+    photo_ext = doc_ext = None
+    if photo is not None:
+        try:
+            photo_ext = media_files.sniff_image(photo)
+        except media_files.NotAnImage as exc:
+            raise UnsupportedMedia("photo") from exc
+        media_files.check_size(photo, media_files.MAX_PHOTO_BYTES)  # [B7] 10 MB
+    if document is not None:
+        doc_ext = _ALLOWED_DOC_TYPES.get(document.content_type or "")
+        if doc_ext is None:
+            raise UnsupportedMedia("document")
+        media_files.check_size(document, MAX_DOC_BYTES)
+    photo_ref = doc_ref = doc_name = None
+    try:
+        if photo is not None:
+            photo_ref = media_files.store(photo, "circle-posts", str(circle_id), photo_ext, media_files.MAX_PHOTO_BYTES)
+        if document is not None:
+            doc_ref = media_files.store(document, "circle-docs", str(circle_id), doc_ext, MAX_DOC_BYTES)
+            doc_name = Path(document.filename or f"document{doc_ext}").name[:120]
+    except BaseException:
+        media_files.remove(photo_ref, doc_ref)
+        raise
     post_id = uuid4()
     await session.execute(
-        text("INSERT INTO milavn_circle.circle_post (id, circle_id, member_id, body) VALUES (:id, :c, :m, :b)"),
-        {"id": str(post_id), "c": str(circle_id), "m": str(member_id), "b": body},
+        text(
+            "INSERT INTO milavn_circle.circle_post (id, circle_id, member_id, body, photo_ref, doc_ref, doc_name) "
+            "VALUES (:id, :c, :m, :b, :p, :d, :dn)"
+        ),
+        {"id": str(post_id), "c": str(circle_id), "m": str(member_id), "b": body, "p": photo_ref, "d": doc_ref, "dn": doc_name},
     )
     return post_id
 

@@ -19,6 +19,6 @@ router = APIRouter(prefix="/v1/events", tags=["events"], responses=ERROR_RESPONS
 async def submit_events(
     body: EventBatchIn,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> EventsAcceptedOut:
     return await svc.submit_events(conn, ctx, body)

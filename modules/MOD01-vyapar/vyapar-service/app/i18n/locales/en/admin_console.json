@@ -1,0 +1,267 @@
+{
+  "view": {
+    "moderation": "Reported content",
+    "verification": "Business verification",
+    "opportunities": "Opportunity review",
+    "appeals": "Appeals",
+    "disputes": "Disputes",
+    "commercial": "Orders & refunds"
+  },
+  "error": {
+    "permissionRequired": "You don't have access to this part of the Admin Console.",
+    "itemNotFound": "This item is no longer available.",
+    "actionNotAvailable": "This action can't be taken on this item any more.",
+    "reasonRequired": "Choose a reason before taking this action.",
+    "reasonNotAllowed": "That reason can't be used for this action."
+  },
+  "itemType": {
+    "moderation_case": "Reported content",
+    "verification_record": "Verification request",
+    "opportunity_review": "Opportunity awaiting review",
+    "stale_opportunity": "Opportunity with no recent update",
+    "appeal": "Appeal",
+    "contract_dispute": "Contract dispute",
+    "review_dispute": "Review dispute",
+    "promotion_order": "Boost order",
+    "plan_order": "Business Workspace plan",
+    "campaign_order": "Campaign order"
+  },
+  "status": {
+    "open": "Open",
+    "in_review": "In review",
+    "escalated": "Escalated",
+    "actioned": "Action taken",
+    "dismissed": "Dismissed",
+    "pending": "Waiting for a decision",
+    "verified": "Verified",
+    "rejected": "Rejected",
+    "needs_clearer_copy": "Clearer copy requested",
+    "expired": "Expired",
+    "revoked": "Revoked",
+    "pending_review": "Waiting for review",
+    "draft": "Returned to the poster",
+    "active": "Live",
+    "paused": "Paused",
+    "stale": "No recent update",
+    "removed": "Removed",
+    "closed": "Closed",
+    "delayed": "Delayed",
+    "upheld": "Decision kept",
+    "overturned": "Decision overturned",
+    "resolved_client": "Resolved for the client",
+    "resolved_provider": "Resolved for the provider",
+    "awaiting_payment": "Waiting for payment",
+    "scheduled": "Scheduled",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "refunded": "Refunded",
+    "succeeded": "Paid",
+    "failed": "Payment failed",
+    "cancelling": "Ends at the end of this period"
+  },
+  "objectKind": {
+    "listing": "Business listing",
+    "opportunity": "Opportunity",
+    "enquiry": "Enquiry conversation",
+    "partnership": "Partnership request",
+    "review": "Review"
+  },
+  "subject": {
+    "untitled": "{kind} from {name}",
+    "contract": "Contract: {title}"
+  },
+  "summary": {
+    "reported": "{kind} “{title}” was reported {count} time(s): {reason}.",
+    "autoFlagged": "{kind} “{title}” was flagged automatically: {reason}.",
+    "verification": "{owner} sent {document} for “{listing}”.",
+    "opportunityReview": "“{title}” posted by {poster} is waiting for review.",
+    "opportunityFlagged": "“{title}” posted by {poster} needs a check: {flags}.",
+    "stale": "“{title}” posted by {poster} has had no update for {days} days.",
+    "staleNeverPublished": "“{title}” posted by {poster} was never published.",
+    "appeal": "{member} appeals the decision “{action}” on the {kind} “{title}”.",
+    "contractDispute": "{opener} opened a dispute on the contract “{title}” with {other}.",
+    "reviewDispute": "{subject} disputes a review written by {author}: {reason}.",
+    "promotionOrder": "{owner} bought {product} for “{target}” — {amount}.",
+    "planOrder": "{owner} bought {product} for “{listing}” — {amount}.",
+    "campaignOrder": "{owner} bought {product} “{name}” — {amount}.",
+    "unpaidOrder": "{owner} started {product} — not paid yet.",
+    "refundedPart": "{amount} refunded so far."
+  },
+  "flag": {
+    "source_unreachable": "the source link could not be reached",
+    "unconfirmed_fields": "some details were not confirmed by the poster"
+  },
+  "document": {
+    "gst": "a GST certificate",
+    "udyam": "a Udyam registration",
+    "pan": "a PAN card",
+    "shops_est": "a Shops & Establishment licence",
+    "credential": "the credential “{name}” issued by {issuer}"
+  },
+  "primaryReason": {
+    "scam": "Scam or advance payment",
+    "fake": "Fake or misleading",
+    "impersonation": "Impersonation",
+    "harassment": "Harassment",
+    "discrimination": "Discrimination",
+    "spam": "Spam",
+    "stale": "Out of date",
+    "privacy": "Privacy",
+    "other": "Other",
+    "advance_payment": "Mentions advance payment or fees",
+    "prohibited_content": "Prohibited wording",
+    "spam_pattern": "Looks like spam",
+    "retaliation": "Retaliatory review",
+    "manipulation": "Review manipulation",
+    "not_the_interaction": "Not about this interaction",
+    "abusive": "Abusive review",
+    "asked_for_money": "Asked a job seeker for money"
+  },
+  "reasonCode": {
+    "scam_confirmed": "Confirmed scam or advance-payment request",
+    "fake_listing": "Fake or misleading information",
+    "impersonation": "Impersonation",
+    "harassment": "Harassment or abuse",
+    "discrimination": "Discrimination",
+    "spam": "Spam",
+    "stale_info": "Out-of-date information",
+    "privacy_violation": "Privacy violation",
+    "policy_other": "Another policy breach",
+    "no_violation": "No violation found",
+    "appeal_evidence_accepted": "Appeal evidence accepted",
+    "asked_for_money": "Asked applicants for money",
+    "document_illegible": "Document illegible / too blurry to read",
+    "document_expired": "Document has expired",
+    "name_mismatch": "Business name doesn't match the document",
+    "document_type_mismatch": "Wrong document type submitted",
+    "suspected_fraud": "Suspected fraudulent document",
+    "other": "Other",
+    "missing_details": "Important details are missing",
+    "unclear_pay": "Pay or terms are unclear",
+    "source_unreachable": "The source can't be checked",
+    "duplicate": "Duplicate of another post",
+    "prohibited_content": "Prohibited content",
+    "seeker_charge": "Asks applicants for a fee or deposit"
+  },
+  "action": {
+    "moderation": {
+      "dismiss": "No violation, close the report",
+      "limit": "Limit who sees it",
+      "remove": "Remove it",
+      "request_verification": "Ask for verification again",
+      "suspend": "Suspend the member's posts"
+    },
+    "verification": {
+      "verify": "Verify",
+      "reject": "Reject",
+      "needs_clearer_copy": "Ask for a clearer copy"
+    },
+    "opportunity": {
+      "approve": "Approve and publish",
+      "return": "Return to the poster for changes",
+      "remove": "Remove"
+    },
+    "stale": {
+      "remind": "Remind the poster",
+      "expire": "Mark as expired"
+    },
+    "appeal": {
+      "upheld": "Keep the decision",
+      "overturned": "Overturn and restore"
+    },
+    "contract": {
+      "resolved_client": "Resolve for the client (refund held payments)",
+      "resolved_provider": "Resolve for the provider (release held payments)",
+      "closed": "Close without a change"
+    },
+    "review": {
+      "keep": "Keep the review published",
+      "hide": "Hide the review",
+      "remove": "Remove the review"
+    },
+    "commercial": {
+      "reject": "Stop and reject this boost (refund if paid)",
+      "refund": "Refund the remaining amount"
+    }
+  },
+  "history": {
+    "caseOpened": "Case opened",
+    "reported": "Reported: {reason}",
+    "autoFlagged": "Flagged automatically: {reason}",
+    "decided": "Decision: {action}",
+    "submitted": "Document sent",
+    "verificationDecided": "Verification decision: {state}",
+    "posted": "Posted",
+    "published": "Published",
+    "appealFiled": "Appeal sent",
+    "appealDecided": "Appeal decision: {state}",
+    "disputeOpened": "Dispute opened",
+    "disputeResolved": "Dispute resolved: {state}",
+    "reviewWritten": "Review written",
+    "consoleAction": "Admin Console: {action}",
+    "auditAction": "Recorded action: {action}",
+    "orderPlaced": "Order placed",
+    "orderState": "Status changed to: {state}",
+    "refundProcessed": "Refund of {amount}",
+    "refundFailed": "Refund could not be completed",
+    "refundRejected": "Refund refused: more than the amount left"
+  },
+  "actor": {
+    "reporter": "A member (kept private)",
+    "system": "Vyapar (automatic)",
+    "unknown": "Unknown member"
+  },
+  "label": {
+    "none": "None"
+  },
+  "product": {
+    "boost_3d": "Boost · 3 days",
+    "boost_7d": "Boost · 7 days",
+    "boost_14d": "Boost · 14 days",
+    "campaign_s": "Campaign · Starter",
+    "campaign_m": "Campaign · Season",
+    "workspace_monthly": "Business Workspace · monthly",
+    "workspace_annual": "Business Workspace · annual",
+    "custom_boost": "Boost · custom length"
+  },
+  "payment": {
+    "pending": "Payment pending",
+    "succeeded": "Paid",
+    "failed": "Payment failed",
+    "refunded": "Refunded",
+    "none": "No payment yet",
+    "refundFailed": "The last refund could not be completed"
+  },
+  "member": {
+    "fact": {
+      "memberSince": "Member since",
+      "listings": "Business listings",
+      "verification": "Verification",
+      "openOpportunities": "Open opportunities",
+      "activeBoosts": "Running boosts",
+      "campaigns": "Running campaigns",
+      "contracts": "Active contracts",
+      "openReports": "Open reports about this member",
+      "totalPaid": "Paid to Vyapar so far"
+    },
+    "value": {
+      "verification": "{verified} verified, {pending} waiting",
+      "noListing": "No business listing"
+    },
+    "flag": {
+      "open_reports": "Has open reports",
+      "content_suspended": "Posts are suspended",
+      "appeal_open": "Has an appeal waiting",
+      "verification_pending": "Verification waiting for a decision",
+      "verification_rejected": "A verification was rejected",
+      "plan_paused": "Business Workspace plan is paused",
+      "plan_ending": "Business Workspace plan ends this period",
+      "payment_failed": "A recent payment failed",
+      "contract_disputed": "A contract is in dispute",
+      "operator": "Vyapar operator"
+    }
+  },
+  "orderStatus": {
+    "draft": "Draft, not yet confirmed"
+  }
+}

@@ -16,6 +16,8 @@ import { useTranslation } from "react-i18next";
 import LivingCard from "@/app/components/LivingCard";
 import { useRoutes } from "@/app/host/HostProvider";
 import { freshnessLabel, postedLabel, signalLabel } from "./labels";
+import type { Badge } from "@/lib/sdk";
+import { BadgeList } from "@/app/components/trust/Badges";
 
 export interface OpportunityCardItem {
   id: string;
@@ -28,6 +30,10 @@ export interface OpportunityCardItem {
   source_segment?: string;
   relevance_reason?: string | null;
   viewer_matched_labels?: string[];
+  /** [FE2] real distance from the viewer, when both have coordinates */
+  distance_km?: number | null;
+  /** [FE2] the poster's earned badges */
+  poster_badges?: Badge[];
 }
 
 export type OpportunityCardVariant = "feed" | "sponsored" | "similar";
@@ -96,6 +102,7 @@ export default function OpportunityCard({
       submitterName={item.submitter_name || undefined}
       meta={[
         action,
+        item.distance_km != null ? t("discover:businesses.distanceAway", { km: item.distance_km < 10 ? item.distance_km.toFixed(1) : Math.round(item.distance_km) }) : "",
         item.source_segment === "community" ? t("discover:home.sectionCommunity") : t("discover:home.sectionPublic"),
         freshnessLabel(t, item.posted_days_ago),
         item.relevance_reason ? signalLabel(t, item.relevance_reason, "") : "",
@@ -105,6 +112,8 @@ export default function OpportunityCard({
       onNotInterested={onNotInterested}
       shareText={`${item.title} — found on Vyapar`}
       reportHref={`${href}#report-opportunity`}
-    />
+    >
+      <BadgeList badges={item.poster_badges} compact max={2} />
+    </LivingCard>
   );
 }

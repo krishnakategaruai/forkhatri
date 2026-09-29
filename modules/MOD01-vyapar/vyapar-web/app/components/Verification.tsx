@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/lib/sdk";
 import { useSdk } from "@/lib/sdk/react";
+import { formatDate } from "@/lib/format"; // [FE2] Indian date order
 
 export const DOC_KEY: Record<string, string> = {
   gst: "typeGst",
@@ -52,7 +53,7 @@ export function TrustContextSheet({
   onReport?: () => void;
 }) {
   const { t, i18n } = useTranslation(["verification", "common"]);
-  const fmt = (d: string | null) => (d ? new Date(d).toLocaleDateString(i18n.language) : "");
+  const fmt = (d: string | null) => (d ? formatDate(d, i18n.language) : "");
   const isCredential = listing.verification_document === "credential";
   const scope = isCredential ? listing.verification_claim ?? "" : listing.verification_document ? t(DOC_KEY[listing.verification_document] as "typeGst") : "";
   const state = listing.verification_state;
@@ -64,7 +65,7 @@ export function TrustContextSheet({
       role="dialog"
       aria-modal="true"
       aria-label={t("sheetTitle")}
-      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "flex-end", zIndex: 80 }}
+      style={{ position: "fixed", inset: 0, background: "var(--scrim)", display: "flex", alignItems: "flex-end", zIndex: 80 }}
       onClick={onClose}
     >
       {/* [Design-enhancement pass, DESIGN-ENHANCEMENT.md — named example]
@@ -93,7 +94,7 @@ export function TrustContextSheet({
 
 export function VerificationBadge({ listing, onOpenTrustSheet }: { listing: VerificationFields; onOpenTrustSheet?: () => void }) {
   const { t, i18n } = useTranslation("verification");
-  const fmt = (d: string | null) => (d ? new Date(d).toLocaleDateString(i18n.language) : "");
+  const fmt = (d: string | null) => (d ? formatDate(d, i18n.language) : "");
   const isCredential = listing.verification_document === "credential";
   const scope = isCredential
     ? listing.verification_claim ?? ""
@@ -208,10 +209,10 @@ export function VerificationPanel({
             key={o}
             className="vy-chip"
             style={{
-              border: `1px solid ${docType === o ? "var(--accent)" : "var(--border-hairline)"}`,
+              border: `1px solid ${docType === o ? "var(--selected-border)" : "var(--border-hairline)"}`,
               cursor: "pointer",
-              background: docType === o ? "var(--accent-soft)" : "var(--surface-overlay)",
-              color: docType === o ? "var(--accent-strong)" : "var(--text-primary)",
+              background: docType === o ? "var(--selected-bg)" : "var(--surface-overlay)",
+              color: docType === o ? "var(--selected-fg)" : "var(--text-primary)",
             }}
             onClick={() => setDocType(o)}
           >

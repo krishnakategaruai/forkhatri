@@ -35,7 +35,7 @@ router = APIRouter(tags=["privacy"], responses=ERROR_RESPONSES)
 @router.get("/v1/privacy", response_model=PrivacySettingsOut, operation_id="getPrivacySettings", summary="Get the member's privacy settings")
 async def get_privacy(
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> PrivacySettingsOut:
     return await svc.get_privacy_settings(conn, ctx)
 
@@ -45,7 +45,7 @@ async def patch_privacy(
     body: PrivacyPatch,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> PrivacySettingsOut:
     return await svc.update_privacy_settings(conn, ctx, lang, body)
 
@@ -53,7 +53,7 @@ async def patch_privacy(
 @router.post("/v1/privacy/export", status_code=201, response_model=DataExportOut, operation_id="requestDataExport", summary="Request an export of the member's data")
 async def request_export(
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> DataExportOut:
     return await svc.request_data_export(conn, ctx)
 
@@ -62,7 +62,7 @@ async def request_export(
 async def withdraw_consent(
     body: WithdrawConsentIn,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> WithdrawConsentOut:
     return await svc.withdraw_consent(conn, ctx, body.field)
 
@@ -74,7 +74,7 @@ async def withdraw_consent(
 async def request_deletion(
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> DeletionOut:
     return await svc.request_account_deletion(conn, ctx, lang)
 
@@ -82,7 +82,7 @@ async def request_deletion(
 @router.get("/v1/privacy/requests", response_model=list[PrivacyRequestOut], operation_id="listMyPrivacyRequests", summary="List the member's privacy requests")
 async def list_my_requests(
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[PrivacyRequestOut]:
     return await svc.list_my_privacy_requests(conn, ctx)
 
@@ -90,7 +90,7 @@ async def list_my_requests(
 @router.get("/v1/preferences/mine", response_model=list[DerivedPreferenceOut], operation_id="listMyPreferences", summary="List the member's derived preferences")
 async def list_my_preferences(
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[DerivedPreferenceOut]:
     return await svc.list_my_preferences(conn, ctx)
 
@@ -101,7 +101,7 @@ async def decide_preference(
     action: Literal["confirm", "decline", "remove"],
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> PreferenceDecisionOut:
     return await svc.decide_preference(conn, ctx, lang, pref_id, action)
 
@@ -111,7 +111,7 @@ async def get_legal_document(
     kind: Literal["privacy", "terms"],
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> LegalDocumentOut:
     return await svc.get_legal_document(conn, ctx, lang, kind)
 
@@ -120,6 +120,6 @@ async def get_legal_document(
 async def accept_legal_document(
     kind: Literal["privacy", "terms"],
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> LegalAcceptanceOut:
     return await svc.accept_legal_document(conn, ctx, kind)

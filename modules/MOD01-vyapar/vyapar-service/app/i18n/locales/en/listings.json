@@ -28,10 +28,19 @@
     "otpExpired": "Code expired — request a new one",
     "otpLockedNow": "Too many failed attempts — locked for 15 minutes",
     "otpIncorrect": "Incorrect code ({attempts}/5 attempts)",
-    "profileRequired": "Set up a business or professional profile first — either one is enough."
+    "profileRequired": "Set up a business or professional profile first — either one is enough.",
+    "duplicatePackageTier": "Each tier (basic, standard, premium) can appear only once.",
+    "tooManyPackages": "A listing can offer at most {max} packages.",
+    "packageNotFound": "That package is no longer available."
   },
   "success": {
     "otpSent": "OTP sent",
     "contactVerified": "Contact verified"
-  }
+  },
+  "packageTier": {
+    "basic": "Basic",
+    "standard": "Standard",
+    "premium": "Premium"
+  },
+  "packageRequestNote": "Requested the {tier} package: {name} ({price})"
 }

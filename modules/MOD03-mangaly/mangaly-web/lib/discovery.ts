@@ -267,6 +267,33 @@ export async function getShelves(
   }
 }
 
+/** [Owner, 2026-09-28] "Because of this, these" on Home: people like one
+ *  person the family acted on (a request, a suggestion, a save). */
+export type BecauseRow = {
+  kind: "request" | "suggested" | "saved";
+  anchor_account_id: string;
+  title: string;
+  sub: string;
+  results: (SearchResult & { reason?: string | null })[];
+};
+
+export async function getBecause(forCandidate?: string): Promise<BecauseRow[]> {
+  try {
+    const res = await apiFetch(`${API_BASE}/discovery/because${query({ for_candidate: forCandidate })}`, {
+      cache: "no-store",
+      headers: currentLanguageHeader(),
+    });
+    if (!res.ok) return [];
+    const body = (await res.json()) as BecauseRow[];
+    return body.map((row) => ({
+      ...row,
+      results: row.results.map((r) => ({ ...normalizeResult(r), reason: r.reason ?? null })),
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export type Snippet = {
   verification?: VerifiedLayer[];
   locality: string | null;

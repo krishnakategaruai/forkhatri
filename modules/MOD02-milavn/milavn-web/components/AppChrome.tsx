@@ -16,6 +16,7 @@ import { api } from '@/lib/api';
 import { appUrl } from '@/lib/base-path';
 import { useIdentity } from '@/lib/identity';
 import { goToEntrance } from '@/lib/platform';
+import { followSystemTheme } from '@/lib/theme';
 
 const CHROMELESS_PREFIXES = ['/welcome', '/onboarding', '/a/', '/create', '/organizer/', '/admin', '/chats/', '/pay/'];
 // On a wide screen the rail stays for everything except the launch/onboarding flow, so a person never loses their way.
@@ -31,24 +32,21 @@ export default function AppChrome({ children }: { children: React.ReactNode }) {
   const chromeless = CHROMELESS_PREFIXES.some((p) => pathname.startsWith(p));
   const railless = RAILLESS_PREFIXES.some((p) => pathname.startsWith(p)) || (!identity && isPublic);
 
-  // Appearance (UX17): an explicit light/dark choice persists across full page
-  // loads; "System" leaves the attribute off so prefers-color-scheme decides.
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('milavn.theme');
-      if (saved === 'light' || saved === 'dark') document.documentElement.dataset.theme = saved;
-    } catch { /* ignore */ }
-  }, []);
+  // Appearance (UX17) is applied before first paint by the inline script in
+  // app/layout.tsx; here Milavn keeps following the device while "System" is chosen.
+  useEffect(() => followSystemTheme(), []);
 
   // Presence heartbeat (chat: "active now"): a timestamp, never a location.
+  // Keyed on the member id: a fresh identity object for the same person must not start a second heartbeat.
+  const memberId = identity?.member_id;
   useEffect(() => {
-    if (!identity) return;
+    if (!memberId) return;
     let alive = true;
     const beat = () => { if (alive) api('/presence', { body: {} }).catch(() => undefined); };
     beat();
     const id = setInterval(beat, 30000);
     return () => { alive = false; clearInterval(id); };
-  }, [identity]);
+  }, [memberId]);
 
   useEffect(() => {
     if (!ready || isPublic || unavailable) return;
@@ -62,9 +60,9 @@ export default function AppChrome({ children }: { children: React.ReactNode }) {
 
   if (ready && unavailable && !isPublic) {
     return (
-      <div className="shell shell--chromeless">
-        <div className="screen" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
-          <div className="brand-mark" style={{ width: 64, height: 64, fontSize: '1.6rem', borderRadius: 20 }}>M</div>
+      <div className="shell shell--chromeless shell--railless">
+        <div className="splash">
+          <div className="brand-mark splash__mark">M</div>
           <ErrorState message={t('platform.unavailable')} onRetry={() => void reload()} />
         </div>
       </div>
@@ -72,11 +70,12 @@ export default function AppChrome({ children }: { children: React.ReactNode }) {
   }
 
   // Signed out on a member-only page: hold the splash while the entrance loads, never flash member UI.
+  // Railless too: on a wide screen the shell is a two-column grid and the splash would sit in the rail column.
   if ((!ready || !identity) && !isPublic) {
     return (
-      <div className="shell shell--chromeless" aria-busy="true">
-        <div className="screen" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
-          <div className="brand-mark" style={{ width: 64, height: 64, fontSize: '1.6rem', borderRadius: 20 }}>M</div>
+      <div className="shell shell--chromeless shell--railless" aria-busy="true">
+        <div className="splash">
+          <div className="brand-mark splash__mark splash__mark--breathe">M</div>
           <p className="caption">{t('app.tagline')}</p>
         </div>
       </div>

@@ -1,0 +1,267 @@
+{
+  "view": {
+    "moderation": "రిపోర్ట్ చేసిన కంటెంట్",
+    "verification": "వ్యాపార ధృవీకరణ",
+    "opportunities": "అవకాశాల సమీక్ష",
+    "appeals": "అప్పీళ్లు",
+    "disputes": "వివాదాలు",
+    "commercial": "ఆర్డర్లు & రీఫండ్‌లు"
+  },
+  "error": {
+    "permissionRequired": "అడ్మిన్ కన్సోల్‌లోని ఈ భాగానికి మీకు యాక్సెస్ లేదు.",
+    "itemNotFound": "ఈ అంశం ఇప్పుడు అందుబాటులో లేదు.",
+    "actionNotAvailable": "ఈ అంశంపై ఇక ఈ చర్య తీసుకోలేరు.",
+    "reasonRequired": "ఈ చర్య తీసుకునే ముందు కారణాన్ని ఎంచుకోండి.",
+    "reasonNotAllowed": "ఈ చర్యకు ఈ కారణాన్ని ఉపయోగించలేరు."
+  },
+  "itemType": {
+    "moderation_case": "రిపోర్ట్ చేసిన కంటెంట్",
+    "verification_record": "ధృవీకరణ అభ్యర్థన",
+    "opportunity_review": "సమీక్ష కోసం వేచి ఉన్న అవకాశం",
+    "stale_opportunity": "ఇటీవల అప్‌డేట్ లేని అవకాశం",
+    "appeal": "అప్పీల్",
+    "contract_dispute": "ఒప్పంద వివాదం",
+    "review_dispute": "సమీక్ష వివాదం",
+    "promotion_order": "బూస్ట్ ఆర్డర్",
+    "plan_order": "బిజినెస్ వర్క్‌స్పేస్ ప్లాన్",
+    "campaign_order": "క్యాంపెయిన్ ఆర్డర్"
+  },
+  "status": {
+    "open": "తెరిచి ఉంది",
+    "in_review": "సమీక్షలో ఉంది",
+    "escalated": "పైస్థాయికి పంపబడింది",
+    "actioned": "చర్య తీసుకున్నారు",
+    "dismissed": "తోసిపుచ్చారు",
+    "pending": "నిర్ణయం కోసం వేచి ఉంది",
+    "verified": "ధృవీకరించబడింది",
+    "rejected": "తిరస్కరించబడింది",
+    "needs_clearer_copy": "స్పష్టమైన కాపీ అడిగారు",
+    "expired": "గడువు తీరింది",
+    "revoked": "రద్దు చేయబడింది",
+    "pending_review": "సమీక్ష కోసం వేచి ఉంది",
+    "draft": "పోస్ట్ చేసినవారికి తిరిగి పంపారు",
+    "active": "లైవ్‌లో ఉంది",
+    "paused": "నిలిపివేయబడింది",
+    "stale": "ఇటీవల అప్‌డేట్ లేదు",
+    "removed": "తొలగించబడింది",
+    "closed": "మూసివేయబడింది",
+    "delayed": "ఆలస్యమైంది",
+    "upheld": "నిర్ణయం కొనసాగుతుంది",
+    "overturned": "నిర్ణయం మార్చబడింది",
+    "resolved_client": "క్లయింట్‌కు అనుకూలంగా పరిష్కరించబడింది",
+    "resolved_provider": "సేవా ప్రదాతకు అనుకూలంగా పరిష్కరించబడింది",
+    "awaiting_payment": "చెల్లింపు కోసం వేచి ఉంది",
+    "scheduled": "షెడ్యూల్ చేయబడింది",
+    "completed": "పూర్తయింది",
+    "cancelled": "రద్దు చేయబడింది",
+    "refunded": "రీఫండ్ చేయబడింది",
+    "succeeded": "చెల్లించారు",
+    "failed": "చెల్లింపు విఫలమైంది",
+    "cancelling": "ఈ వ్యవధి చివరలో ముగుస్తుంది"
+  },
+  "objectKind": {
+    "listing": "వ్యాపార లిస్టింగ్",
+    "opportunity": "అవకాశం",
+    "enquiry": "ఎంక్వైరీ సంభాషణ",
+    "partnership": "భాగస్వామ్య అభ్యర్థన",
+    "review": "సమీక్ష"
+  },
+  "subject": {
+    "untitled": "{name} నుండి {kind}",
+    "contract": "ఒప్పందం: {title}"
+  },
+  "summary": {
+    "reported": "{kind} “{title}” పై {count} సార్లు రిపోర్ట్ వచ్చింది: {reason}.",
+    "autoFlagged": "{kind} “{title}” ఆటోమేటిక్‌గా ఫ్లాగ్ చేయబడింది: {reason}.",
+    "verification": "“{listing}” కోసం {owner} {document} పంపారు.",
+    "opportunityReview": "{poster} పోస్ట్ చేసిన “{title}” సమీక్ష కోసం వేచి ఉంది.",
+    "opportunityFlagged": "{poster} పోస్ట్ చేసిన “{title}” తనిఖీ అవసరం: {flags}.",
+    "stale": "{poster} పోస్ట్ చేసిన “{title}” కి {days} రోజులుగా అప్‌డేట్ లేదు.",
+    "staleNeverPublished": "{poster} పోస్ట్ చేసిన “{title}” ఎప్పుడూ ప్రచురించబడలేదు.",
+    "appeal": "{kind} “{title}” పై తీసుకున్న నిర్ణయం “{action}” పై {member} అప్పీల్ చేశారు.",
+    "contractDispute": "{other} తో ఉన్న ఒప్పందం “{title}” పై {opener} వివాదం లేవనెత్తారు.",
+    "reviewDispute": "{author} రాసిన సమీక్షపై {subject} అభ్యంతరం తెలిపారు: {reason}.",
+    "promotionOrder": "“{target}” కోసం {owner} {product} కొన్నారు — {amount}.",
+    "planOrder": "“{listing}” కోసం {owner} {product} కొన్నారు — {amount}.",
+    "campaignOrder": "{owner} {product} “{name}” కొన్నారు — {amount}.",
+    "unpaidOrder": "{owner} {product} ప్రారంభించారు — ఇంకా చెల్లించలేదు.",
+    "refundedPart": "ఇప్పటివరకు {amount} రీఫండ్ చేశారు."
+  },
+  "flag": {
+    "source_unreachable": "మూల లింక్‌ను చేరుకోలేకపోయాం",
+    "unconfirmed_fields": "కొన్ని వివరాలను పోస్ట్ చేసినవారు నిర్ధారించలేదు"
+  },
+  "document": {
+    "gst": "GST సర్టిఫికెట్",
+    "udyam": "ఉద్యమ్ రిజిస్ట్రేషన్",
+    "pan": "PAN కార్డ్",
+    "shops_est": "షాప్స్ & ఎస్టాబ్లిష్‌మెంట్ లైసెన్స్",
+    "credential": "{issuer} జారీ చేసిన సర్టిఫికెట్ “{name}”"
+  },
+  "primaryReason": {
+    "scam": "మోసం లేదా ముందస్తు చెల్లింపు",
+    "fake": "నకిలీ లేదా తప్పుదోవ",
+    "impersonation": "వేరొకరిలా నటన",
+    "harassment": "వేధింపు",
+    "discrimination": "వివక్ష",
+    "spam": "స్పామ్",
+    "stale": "పాతది",
+    "privacy": "గోప్యత",
+    "other": "ఇతరం",
+    "advance_payment": "ముందస్తు చెల్లింపు లేదా ఫీజుల ప్రస్తావన",
+    "prohibited_content": "నిషేధిత పదాలు",
+    "spam_pattern": "స్పామ్‌లా ఉంది",
+    "retaliation": "ప్రతీకార సమీక్ష",
+    "manipulation": "సమీక్షలో అవకతవకలు",
+    "not_the_interaction": "ఈ సంభాషణకు సంబంధం లేదు",
+    "abusive": "దూషణతో కూడిన సమీక్ష",
+    "asked_for_money": "ఉద్యోగార్థిని డబ్బు అడిగారు"
+  },
+  "reasonCode": {
+    "scam_confirmed": "నిర్ధారించబడిన మోసం లేదా ముందస్తు చెల్లింపు అభ్యర్థన",
+    "fake_listing": "నకిలీ లేదా తప్పుదోవ పట్టించే సమాచారం",
+    "impersonation": "వేరొకరిలా నటించడం",
+    "harassment": "వేధింపు లేదా దుర్వినియోగం",
+    "discrimination": "వివక్ష",
+    "spam": "స్పామ్",
+    "stale_info": "పాత సమాచారం",
+    "privacy_violation": "గోప్యత ఉల్లంఘన",
+    "policy_other": "ఇతర విధాన ఉల్లంఘన",
+    "no_violation": "ఉల్లంఘన కనుగొనబడలేదు",
+    "appeal_evidence_accepted": "అప్పీల్ ఆధారం ఆమోదించబడింది",
+    "asked_for_money": "అభ్యర్థులను డబ్బు అడిగారు",
+    "document_illegible": "డాక్యుమెంట్ చదవలేనిది / చాలా అస్పష్టం",
+    "document_expired": "డాక్యుమెంట్ గడువు తీరింది",
+    "name_mismatch": "వ్యాపార పేరు డాక్యుమెంట్‌తో సరిపోలడం లేదు",
+    "document_type_mismatch": "తప్పు డాక్యుమెంట్ టైప్ సమర్పించారు",
+    "suspected_fraud": "మోసపూరిత డాక్యుమెంట్ అనుమానం",
+    "other": "ఇతర",
+    "missing_details": "ముఖ్యమైన వివరాలు లేవు",
+    "unclear_pay": "జీతం లేదా షరతులు స్పష్టంగా లేవు",
+    "source_unreachable": "మూలాన్ని తనిఖీ చేయలేము",
+    "duplicate": "మరో పోస్ట్‌కు నకలు",
+    "prohibited_content": "నిషేధిత కంటెంట్",
+    "seeker_charge": "అభ్యర్థుల నుండి ఫీజు లేదా డిపాజిట్ అడుగుతోంది"
+  },
+  "action": {
+    "moderation": {
+      "dismiss": "ఉల్లంఘన లేదు, రిపోర్ట్ మూసివేయండి",
+      "limit": "ఎవరు చూస్తారో పరిమితం చేయండి",
+      "remove": "తొలగించండి",
+      "request_verification": "మళ్లీ ధృవీకరణ అడగండి",
+      "suspend": "సభ్యుని పోస్టులను సస్పెండ్ చేయండి"
+    },
+    "verification": {
+      "verify": "ధృవీకరించండి",
+      "reject": "తిరస్కరించండి",
+      "needs_clearer_copy": "స్పష్టమైన కాపీ అడగండి"
+    },
+    "opportunity": {
+      "approve": "ఆమోదించి ప్రచురించండి",
+      "return": "మార్పుల కోసం పోస్ట్ చేసినవారికి తిరిగి పంపండి",
+      "remove": "తొలగించండి"
+    },
+    "stale": {
+      "remind": "పోస్ట్ చేసినవారికి గుర్తు చేయండి",
+      "expire": "గడువు తీరినదిగా గుర్తించండి"
+    },
+    "appeal": {
+      "upheld": "నిర్ణయాన్ని కొనసాగించండి",
+      "overturned": "నిర్ణయాన్ని మార్చి పునరుద్ధరించండి"
+    },
+    "contract": {
+      "resolved_client": "క్లయింట్‌కు అనుకూలంగా పరిష్కరించండి (నిలిపిన చెల్లింపులు వాపసు)",
+      "resolved_provider": "సేవా ప్రదాతకు అనుకూలంగా పరిష్కరించండి (నిలిపిన చెల్లింపులు విడుదల)",
+      "closed": "మార్పు లేకుండా మూసివేయండి"
+    },
+    "review": {
+      "keep": "సమీక్షను ప్రచురణలోనే ఉంచండి",
+      "hide": "సమీక్షను దాచండి",
+      "remove": "సమీక్షను తొలగించండి"
+    },
+    "commercial": {
+      "reject": "ఈ బూస్ట్‌ను ఆపి తిరస్కరించండి (చెల్లించి ఉంటే రీఫండ్)",
+      "refund": "మిగిలిన మొత్తాన్ని రీఫండ్ చేయండి"
+    }
+  },
+  "history": {
+    "caseOpened": "కేసు తెరవబడింది",
+    "reported": "రిపోర్ట్ చేశారు: {reason}",
+    "autoFlagged": "ఆటోమేటిక్‌గా ఫ్లాగ్ చేయబడింది: {reason}",
+    "decided": "నిర్ణయం: {action}",
+    "submitted": "డాక్యుమెంట్ పంపారు",
+    "verificationDecided": "ధృవీకరణ నిర్ణయం: {state}",
+    "posted": "పోస్ట్ చేశారు",
+    "published": "ప్రచురించబడింది",
+    "appealFiled": "అప్పీల్ పంపారు",
+    "appealDecided": "అప్పీల్ నిర్ణయం: {state}",
+    "disputeOpened": "వివాదం లేవనెత్తారు",
+    "disputeResolved": "వివాదం పరిష్కరించబడింది: {state}",
+    "reviewWritten": "సమీక్ష రాశారు",
+    "consoleAction": "అడ్మిన్ కన్సోల్: {action}",
+    "auditAction": "నమోదైన చర్య: {action}",
+    "orderPlaced": "ఆర్డర్ చేశారు",
+    "orderState": "స్థితి మారింది: {state}",
+    "refundProcessed": "{amount} రీఫండ్",
+    "refundFailed": "రీఫండ్ పూర్తి కాలేదు",
+    "refundRejected": "రీఫండ్ తిరస్కరించబడింది: మిగిలిన మొత్తం కంటే ఎక్కువ"
+  },
+  "actor": {
+    "reporter": "ఒక సభ్యుడు (గోప్యంగా ఉంచారు)",
+    "system": "వ్యాపార్ (ఆటోమేటిక్)",
+    "unknown": "తెలియని సభ్యుడు"
+  },
+  "label": {
+    "none": "ఏదీ లేదు"
+  },
+  "product": {
+    "boost_3d": "బూస్ట్ · 3 రోజులు",
+    "boost_7d": "బూస్ట్ · 7 రోజులు",
+    "boost_14d": "బూస్ట్ · 14 రోజులు",
+    "campaign_s": "క్యాంపెయిన్ · స్టార్టర్",
+    "campaign_m": "క్యాంపెయిన్ · సీజన్",
+    "workspace_monthly": "బిజినెస్ వర్క్‌స్పేస్ · నెలవారీ",
+    "workspace_annual": "బిజినెస్ వర్క్‌స్పేస్ · వార్షిక",
+    "custom_boost": "బూస్ట్ · మీకు నచ్చిన వ్యవధి"
+  },
+  "payment": {
+    "pending": "చెల్లింపు పెండింగ్‌లో ఉంది",
+    "succeeded": "చెల్లించారు",
+    "failed": "చెల్లింపు విఫలమైంది",
+    "refunded": "రీఫండ్ చేయబడింది",
+    "none": "ఇంకా చెల్లింపు లేదు",
+    "refundFailed": "చివరి రీఫండ్ పూర్తి కాలేదు"
+  },
+  "member": {
+    "fact": {
+      "memberSince": "సభ్యులైనప్పటి నుండి",
+      "listings": "వ్యాపార లిస్టింగ్‌లు",
+      "verification": "ధృవీకరణ",
+      "openOpportunities": "తెరిచి ఉన్న అవకాశాలు",
+      "activeBoosts": "నడుస్తున్న బూస్ట్‌లు",
+      "campaigns": "నడుస్తున్న క్యాంపెయిన్‌లు",
+      "contracts": "యాక్టివ్ ఒప్పందాలు",
+      "openReports": "ఈ సభ్యునిపై తెరిచి ఉన్న రిపోర్ట్‌లు",
+      "totalPaid": "ఇప్పటివరకు వ్యాపార్‌కు చెల్లించినది"
+    },
+    "value": {
+      "verification": "{verified} ధృవీకరించబడ్డాయి, {pending} వేచి ఉన్నాయి",
+      "noListing": "వ్యాపార లిస్టింగ్ లేదు"
+    },
+    "flag": {
+      "open_reports": "తెరిచి ఉన్న రిపోర్ట్‌లు ఉన్నాయి",
+      "content_suspended": "పోస్టులు సస్పెండ్ చేయబడ్డాయి",
+      "appeal_open": "ఒక అప్పీల్ వేచి ఉంది",
+      "verification_pending": "ధృవీకరణ నిర్ణయం కోసం వేచి ఉంది",
+      "verification_rejected": "ఒక ధృవీకరణ తిరస్కరించబడింది",
+      "plan_paused": "బిజినెస్ వర్క్‌స్పేస్ ప్లాన్ నిలిపివేయబడింది",
+      "plan_ending": "బిజినెస్ వర్క్‌స్పేస్ ప్లాన్ ఈ వ్యవధితో ముగుస్తుంది",
+      "payment_failed": "ఇటీవలి ఒక చెల్లింపు విఫలమైంది",
+      "contract_disputed": "ఒక ఒప్పందంపై వివాదం ఉంది",
+      "operator": "వ్యాపార్ ఆపరేటర్"
+    }
+  },
+  "orderStatus": {
+    "draft": "డ్రాఫ్ట్, ఇంకా నిర్ధారించలేదు"
+  }
+}

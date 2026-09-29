@@ -13,5 +13,60 @@
       "notChanged": "यह मामला ऐसी स्थिति में नहीं है जिसमें यह कार्रवाई की जा सके।",
       "invalidOutcome": "कृपया एक सही परिणाम चुनें।"
     }
+  },
+  "admin": {
+    "casesTitle": "मंगली मॉडरेशन मामले",
+    "someone": "एक सदस्य",
+    "summary": "{name} के बारे में {category} की शिकायत",
+    "member": {
+      "profile": "विवाह प्रोफ़ाइल",
+      "searchable": "खोज में दिखती है",
+      "notSearchable": "खोज में नहीं दिखती",
+      "reports": "इनके बारे में शिकायतें",
+      "reportsValue": "{total} में से {open} खुली",
+      "blocks": "ब्लॉक",
+      "blocksValue": "{made} लोगों को ब्लॉक किया · {by} ने ब्लॉक किया",
+      "planEnds": "प्लान इस तारीख तक",
+      "rm": "रिलेशनशिप मैनेजर",
+      "lastOrder": "आख़िरी ऑर्डर",
+      "lastOrderValue": "{plan}, {total}, {status}, {date}",
+      "planActive": "सक्रिय",
+      "planCancelled": "रद्द (अंतिम तारीख तक चलेगा)",
+      "order": {
+        "created": "भुगतान पूरा नहीं हुआ",
+        "paid": "भुगतान हुआ",
+        "failed": "भुगतान विफल",
+        "refunded": "रिफ़ंड हुआ"
+      }
+    },
+    "field": {
+      "reason": "कारण",
+      "about": "किसके बारे में",
+      "state": "स्थिति",
+      "priority": "प्राथमिकता",
+      "reported": "शिकायत की तारीख",
+      "description": "क्या कहा गया",
+      "due": "इस तारीख तक",
+      "outcome": "नतीजा",
+      "account": "खाता"
+    },
+    "state": {
+      "open": "खुला",
+      "acknowledged": "देखा जा रहा है",
+      "resolved": "सुलझा"
+    },
+    "priority": {
+      "urgent": "तत्काल",
+      "high": "ऊँची",
+      "normal": "सामान्य"
+    },
+    "outcome": {
+      "no_action": "कोई कार्रवाई नहीं",
+      "warned": "चेतावनी दी",
+      "content_removed": "सामग्री हटाई",
+      "account_suspended": "खाता निलंबित",
+      "escalated_to_investigation": "जाँच के लिए भेजा"
+    },
+    "suspended": "मंगली में निलंबित"
   }
 }

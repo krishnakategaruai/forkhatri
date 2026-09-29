@@ -11,6 +11,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSdk } from "@/lib/sdk/react";
+import { formatDate } from "@/lib/format"; // [FE2] Indian date order
 
 interface Count {
   kind: string;
@@ -49,7 +50,7 @@ export default function PerformanceReport({
   }, [targetKind, targetId, promotionId, sdk]);
 
   if (!report) return null;
-  const fmt = (d: string) => new Date(d).toLocaleDateString(i18n.language);
+  const fmt = (d: string) => formatDate(d, i18n.language);
 
   return (
     <section className="vy-card vy-stack" aria-labelledby={`perf-${targetId}`}>

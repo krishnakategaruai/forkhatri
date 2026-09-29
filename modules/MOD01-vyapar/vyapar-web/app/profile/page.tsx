@@ -27,6 +27,7 @@ import Icon from "@/app/components/Icon";
 // [IMP38 — Refactor C] The way back to the host platform ("Back to
 // ForKhatri" and its URL) comes from the host adapter; standalone has none.
 import { useHost, useRoutes } from "@/app/host/HostProvider";
+import { formatDate } from "@/lib/format"; // [FE2] Indian date order
 
 // [FR34] a team invitation is an account-level decision, so it waits here
 
@@ -69,7 +70,7 @@ function HubTile({ tile }: { tile: Tile }) {
 }
 
 export default function ProfilePage() {
-  const { t, i18n } = useTranslation(["profile", "workspace", "adminCommercial", "privacy", "adminOps", "common"]);
+  const { t, i18n } = useTranslation(["profile", "workspace", "adminCommercial", "privacy", "adminOps", "common", "contracts", "contact"]);
   const [me, setMe] = useState<Me | null>(null);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [workspaces, setWorkspaces] = useState<WorkspaceRow[]>([]);
@@ -121,6 +122,9 @@ export default function ProfilePage() {
   const memberTiles: Tile[] = [
     { href: routes.myListings, label: t("profile:myListings"), desc: t("profile:hub.desc.myListings"), mark: "listings", arrow: true },
     { href: "/enquiries/mine", label: t("profile:enquiries"), desc: t("profile:hub.desc.enquiries"), mark: "enquiries", arrow: true },
+    // [FE2] contracts and calling preferences
+    { href: "/contracts", label: t("contracts:nav.title"), desc: t("contracts:nav.desc"), mark: "contract", arrow: true },
+    { href: "/profile/contact", label: t("contact:tile.label"), desc: t("contact:tile.desc"), mark: "phone", arrow: true },
     { href: "/moderation/outcomes", label: t("profile:moderationOutcomes"), desc: t("profile:hub.desc.moderationOutcomes"), mark: "moderation", arrow: true },
     { href: "/promotions", label: t("profile:myBoosts"), desc: t("profile:hub.desc.myBoosts"), mark: "boost", arrow: true },
     { href: "/privacy", label: t("privacy:title"), desc: t("profile:hub.desc.privacy"), mark: "privacy", arrow: true },
@@ -202,7 +206,7 @@ export default function ProfilePage() {
                 <div key={invite.id} className="vy-card vy-stack" style={{ gap: 6 }}>
                   <strong>{invite.listing_name ?? invite.listing_id}</strong>
                   <span className="vy-muted" style={{ fontSize: 13 }}>
-                    {t("profile:inviteRole", { role: t(`workspace:role.${invite.role}` as "role.admin") })} · {t("workspace:team.expires", { date: new Date(invite.expires_at).toLocaleDateString(i18n.language) })}
+                    {t("profile:inviteRole", { role: t(`workspace:role.${invite.role}` as "role.admin") })} · {t("workspace:team.expires", { date: formatDate(invite.expires_at, i18n.language) })}
                   </span>
                   <div className="vy-row">
                     <button className="vy-btn vy-btn-primary" disabled={busy} onClick={() => answerInvite(invite.id, true)}>{t("profile:accept")}</button>

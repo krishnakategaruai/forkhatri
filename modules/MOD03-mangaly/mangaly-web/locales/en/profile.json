@@ -223,7 +223,7 @@
       "promptsRest": "The rest of their answers",
       "outlook": "Their ten quick choices, beside yours",
       "photos": "The rest of their photos",
-      "note": "Nothing here is scored. A request is simply a question, and a no is a normal answer."
+      "note": "No one is ranked or scored as a person. A request is simply a question, and a no is a normal answer."
     },
     "link": {
       "connect": "Send a request",
@@ -822,5 +822,23 @@
     "promptsCount_one": "{{count}} answer published. Choose which ones show in the “In my words” section.",
     "promptsCount_other": "{{count}} answers published. Choose which ones show in the “In my words” section.",
     "photosLabel": "More photos"
+  },
+  "fieldView": {
+    "basics": {
+      "about": "About them",
+      "height_cm": "Height"
+    },
+    "horoscope": {
+      "birth_time_accuracy": "Birth time"
+    },
+    "career_children_living_financial": {
+      "wants_children": "Wants children"
+    },
+    "relocation": {
+      "relocation_willingness": "Relocation"
+    },
+    "education": {
+      "highest_education_level": "Education"
+    }
   }
 }

@@ -15,9 +15,11 @@ import Screen from "@/app/components/Screen";
 import { SkeletonGrid } from "@/app/components/States";
 import ActivityView from "@/app/components/activity/ActivityView";
 import { useActivity } from "@/app/hooks/engagement";
+import ActivityExtras, { useActivityExtras } from "@/app/components/activity/ActivityExtras";
 
 export default function ActivityPage() {
   const { data } = useActivity();
+  const extras = useActivityExtras();
 
   if (!data)
     return (
@@ -49,7 +51,7 @@ export default function ActivityPage() {
     // 2026-09-17.
     // ==================================================================
     <Screen width="wide">
-      <ActivityView data={data} />
+      <ActivityView data={data} extrasSlot={<ActivityExtras extras={extras} />} hasExtras={extras.hasAny} />
     </Screen>
   );
 }

@@ -33,7 +33,13 @@
       "dark": "गहरी",
       "system": "सिस्टम"
     },
-    "logOutConfirm": "इस डिवाइस पर ForKhatri से लॉग आउट करें?"
+    "logOutConfirm": "इस डिवाइस पर ForKhatri से लॉग आउट करें?",
+    "textSize": "अक्षरों का आकार",
+    "textSizeOption": {
+      "standard": "सामान्य",
+      "larger": "बड़ा",
+      "largest": "सबसे बड़ा"
+    }
   },
   "action": {
     "back": "वापस",

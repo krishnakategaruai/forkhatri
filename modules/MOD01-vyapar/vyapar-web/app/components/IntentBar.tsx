@@ -92,7 +92,7 @@ export default function IntentBar({ onSearch, placeholder }: IntentBarProps) {
           {parsed.locality && <span className="vy-chip">{t("businesses.chipNear", { locality: parsed.locality })}</span>}
         </div>
       )}
-      <button className="vy-btn vy-btn-primary" onClick={() => onSearch(parsed)}>
+      <button className="vy-btn vy-btn-primary vy-search-action" onClick={() => onSearch(parsed)}>
         {t("businesses.search")}
       </button>
     </div>

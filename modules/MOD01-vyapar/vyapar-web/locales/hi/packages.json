@@ -1,0 +1,49 @@
+{
+  "title": "पैकेज",
+  "subtitle": "आम कामों के लिए तय दाम। एक चुनें और अनुरोध भेजें।",
+  "tier": "पैकेज",
+  "price": "दाम",
+  "whatYouGet": "आपको क्या मिलेगा",
+  "delivery": "डिलीवरी",
+  "revisions": "बदलाव",
+  "days_one": "{{count}} दिन",
+  "days_other": "{{count}} दिन",
+  "revisionsCount_one": "{{count}} बदलाव",
+  "revisionsCount_other": "{{count}} बदलाव",
+  "included": "शामिल",
+  "notIncluded": "शामिल नहीं",
+  "request": "यह पैकेज माँगें",
+  "requestPrefill": "नमस्ते {{name}}, मुझे {{tier}} पैकेज चाहिए: {{pkg}} ({{price}})।",
+  "messageLabel": "आपका संदेश",
+  "send": "अनुरोध भेजें",
+  "sending": "भेजा जा रहा है…",
+  "sent": "अनुरोध भेज दिया।",
+  "openConversation": "बातचीत खोलें",
+  "tierName": {
+    "basic": "बेसिक",
+    "standard": "स्टैंडर्ड",
+    "premium": "प्रीमियम"
+  },
+  "editor": {
+    "title": "आपके पैकेज",
+    "subtitle": "तीन तक तय दाम वाले पैकेज दें। जो स्तर नहीं देना, उसे खाली छोड़ें।",
+    "name": "पैकेज का नाम",
+    "namePlaceholder": {
+      "basic": "जैसे: मासिक GST रिटर्न फ़ाइलिंग",
+      "standard": "जैसे: TDS के साथ GST फ़ाइलिंग",
+      "premium": "जैसे: पूरा मासिक हिसाब-किताब"
+    },
+    "price": "दाम (₹)",
+    "delivery": "डिलीवरी (दिन)",
+    "revisions": "शामिल बदलाव",
+    "includes": "क्या शामिल है",
+    "includeN": "शामिल चीज़ {{n}}",
+    "addInclude": "एक पंक्ति जोड़ें",
+    "description": "छोटा विवरण (वैकल्पिक)",
+    "remove": "यह स्तर हटाएँ",
+    "save": "पैकेज सहेजें",
+    "saved": "पैकेज सहेज लिए",
+    "errTier": "{{tier}} के लिए नाम और दाम चाहिए।",
+    "errNone": "कम से कम एक पैकेज नाम और दाम के साथ जोड़ें।"
+  }
+}

@@ -204,6 +204,11 @@ CREATE TABLE IF NOT EXISTS vyapar_listings.taxonomy_terms (
   aliases     text[] NOT NULL DEFAULT '{}',
   status      text NOT NULL DEFAULT 'active' CHECK (status IN ('active','unmapped','merged')),
   merged_into int REFERENCES vyapar_listings.taxonomy_terms(id),
+  -- [018] one-line plain-language description per language; parent_id (above)
+  -- is filled for every capability (category -> capability tree).
+  description_en text,
+  description_hi text,
+  description_te text,
   version     int NOT NULL DEFAULT 1,
   created_at  timestamptz NOT NULL DEFAULT now(),
   updated_at  timestamptz NOT NULL DEFAULT now(),
@@ -472,6 +477,32 @@ CREATE TABLE IF NOT EXISTS vyapar_opportunities.opportunities (
   state_reason          text,
   distribution_limited  boolean NOT NULL DEFAULT false,      -- [TR040] auto-limit
   image_url             text,
+  -- [018] typed fields per type (all nullable; money in paise). `compensation`
+  -- above stays and is kept in sync as a derived display string.
+  salary_min_paise      bigint CHECK (salary_min_paise IS NULL OR salary_min_paise >= 0),          -- employment
+  salary_max_paise      bigint CHECK (salary_max_paise IS NULL OR salary_max_paise >= 0),
+  incentive_type        text CHECK (incentive_type IS NULL OR incentive_type IN ('none','fixed_plus_incentive','incentive_only')),
+  incentive_max_paise   bigint CHECK (incentive_max_paise IS NULL OR incentive_max_paise >= 0),
+  openings              smallint CHECK (openings IS NULL OR openings >= 1),
+  shift                 text CHECK (shift IS NULL OR shift IN ('day','night','rotational','flexible')),
+  job_timings           text,
+  interview_details     text,
+  min_qualification     text CHECK (min_qualification IS NULL OR min_qualification IN ('below_10th','10th','12th','diploma','iti','graduate','postgraduate','any')),
+  english_level         text CHECK (english_level IS NULL OR english_level IN ('none','basic','good','fluent')),
+  experience_min_months smallint CHECK (experience_min_months IS NULL OR experience_min_months >= 0),
+  experience_max_months smallint CHECK (experience_max_months IS NULL OR experience_max_months >= 0),
+  requires_assets       text[] NOT NULL DEFAULT '{}',
+  budget_type           text CHECK (budget_type IS NULL OR budget_type IN ('fixed','hourly')),                -- freelance
+  budget_min_paise      bigint CHECK (budget_min_paise IS NULL OR budget_min_paise >= 0),
+  budget_max_paise      bigint CHECK (budget_max_paise IS NULL OR budget_max_paise >= 0),
+  hourly_rate_min_paise bigint CHECK (hourly_rate_min_paise IS NULL OR hourly_rate_min_paise >= 0),
+  hourly_rate_max_paise bigint CHECK (hourly_rate_max_paise IS NULL OR hourly_rate_max_paise >= 0),
+  duration              text CHECK (duration IS NULL OR duration IN ('under_1_week','1_4_weeks','1_3_months','3_6_months','over_6_months','ongoing')),
+  experience_level      text CHECK (experience_level IS NULL OR experience_level IN ('entry','intermediate','expert')),
+  screening_questions   jsonb NOT NULL DEFAULT '[]',                                                          -- [{id, text}], max 5
+  preferred_date        date,                                                                                 -- local_service
+  budget_paise          bigint CHECK (budget_paise IS NULL OR budget_paise >= 0),
+  urgency               text CHECK (urgency IS NULL OR urgency IN ('today','this_week','flexible')),
   last_confirmed_at     timestamptz NOT NULL DEFAULT now(),
   reminder_sent_at      timestamptz,
   published_at          timestamptz,
@@ -558,6 +589,17 @@ CREATE TABLE IF NOT EXISTS vyapar_enquiries.enquiries (
   safety_notice_seen boolean NOT NULL DEFAULT false,
   first_reply_at     timestamptz,
   state_reason       text,                                   -- [TR023] e.g. 'no_response_yet', never overwrites state itself
+  -- [018] structured proposal/application and the poster's pipeline stage
+  -- (separate from the thread `state`; hiring also accepts the thread).
+  bid_amount_paise   bigint CHECK (bid_amount_paise IS NULL OR bid_amount_paise > 0),
+  bid_type           text CHECK (bid_type IS NULL OR bid_type IN ('fixed','hourly')),
+  timeline_days      smallint CHECK (timeline_days IS NULL OR timeline_days > 0),
+  milestones         jsonb NOT NULL DEFAULT '[]',              -- [{title, amount_paise, due_days}]
+  screening_answers  jsonb NOT NULL DEFAULT '[]',              -- [{question_id, answer}]
+  applied_via        text NOT NULL DEFAULT 'form' CHECK (applied_via IN ('form','one_tap','voice','agent')),
+  profile_snapshot   jsonb,                                    -- sender's profile at the moment of applying
+  stage              text NOT NULL DEFAULT 'new' CHECK (stage IN ('new','shortlisted','hired','declined')),
+  stage_changed_at   timestamptz,
   last_activity_at   timestamptz NOT NULL DEFAULT now(),
   created_at         timestamptz NOT NULL DEFAULT now(),
   updated_at         timestamptz NOT NULL DEFAULT now(),
@@ -570,6 +612,11 @@ CREATE INDEX IF NOT EXISTS enquiries_provider_idx ON vyapar_enquiries.enquiries 
 CREATE UNIQUE INDEX IF NOT EXISTS enquiries_one_open_per_target
   ON vyapar_enquiries.enquiries (sender_id, COALESCE(listing_id::text, opportunity_id::text))
   WHERE state NOT IN ('resolved','closed','withdrawn');
+-- [018] the poster's applicant list reads by opportunity and stage.
+CREATE INDEX IF NOT EXISTS enquiries_opportunity_stage_idx
+  ON vyapar_enquiries.enquiries (opportunity_id, stage, created_at DESC)
+  WHERE opportunity_id IS NOT NULL;
+-- [018] applicant.shortlisted|hired|declined domain events (see migrations/018 for the trigger body).
 
 CREATE TABLE IF NOT EXISTS vyapar_enquiries.enquiry_messages (
   id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -945,7 +992,7 @@ CREATE SCHEMA IF NOT EXISTS vyapar_payments AUTHORIZATION vyapar_owner;
 
 CREATE TABLE IF NOT EXISTS vyapar_payments.payment_orders (
   id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  kind                text NOT NULL CHECK (kind IN ('promotion','entitlement','campaign')),
+  kind                text NOT NULL CHECK (kind IN ('promotion','entitlement','campaign','contract_milestone')),  -- contract_milestone: migration 021
   ref_id              uuid NOT NULL,                          -- no cross-schema FK
   member_id           text NOT NULL,
   amount_paise        bigint NOT NULL,
@@ -1370,3 +1417,684 @@ GRANT USAGE ON SCHEMA vyapar_platform TO vyapar_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA vyapar_platform TO vyapar_app;
 GRANT EXECUTE ON FUNCTION vyapar_platform.check_and_increment(text, int, int) TO vyapar_app;
 GRANT EXECUTE ON FUNCTION vyapar_platform.distance_km(double precision, double precision, double precision, double precision) TO vyapar_app;
+
+-- =============================================================================
+-- 13. vyapar_contracts — Contracts & milestone payments [Workstream D, migration 021]
+-- =============================================================================
+-- A client (who pays) and a provider (who does the work) turn an accepted
+-- enquiry into a contract: fixed-price with milestones, or hourly with weekly
+-- timesheets (each approved week becomes one auto-released milestone).
+-- Money is recorded in contract_ledger (held / released / refunded / fee) —
+-- ledger facts, NOT escrow or payouts, until BLOCKER-01 (no merchant account)
+-- is resolved. Payment success reaches a milestone through the trigger
+-- `payment_orders_contract_milestone` on vyapar_payments.payment_orders (see
+-- migration 021 for the trigger function, notify_party() and the reviews
+-- issue_invites() extension that qualifies a completed contract's enquiry).
+CREATE SCHEMA IF NOT EXISTS vyapar_contracts AUTHORIZATION vyapar_owner;
+
+CREATE TABLE IF NOT EXISTS vyapar_contracts.contracts (
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  opportunity_id      uuid,                                   -- no cross-schema FK
+  enquiry_id          uuid NOT NULL,                          -- no cross-schema FK
+  client_member_id    text NOT NULL,
+  provider_member_id  text NOT NULL,
+  provider_listing_id uuid,                                   -- no cross-schema FK; NULL for a hired applicant without a listing
+  title               text NOT NULL CHECK (char_length(title) BETWEEN 3 AND 140),
+  description         text CHECK (description IS NULL OR char_length(description) <= 2000),
+  kind                text NOT NULL CHECK (kind IN ('fixed','hourly')),
+  currency            text NOT NULL DEFAULT 'INR' CHECK (currency = 'INR'),
+  total_paise         bigint NOT NULL CHECK (total_paise > 0),  -- fixed: sum of milestones; hourly: budget ceiling
+  hourly_rate_paise   bigint CHECK (hourly_rate_paise IS NULL OR hourly_rate_paise > 0),
+  weekly_hours_cap    numeric(5,2) CHECK (weekly_hours_cap IS NULL OR (weekly_hours_cap > 0 AND weekly_hours_cap <= 168)),
+  platform_fee_bps    int NOT NULL DEFAULT 0 CHECK (platform_fee_bps BETWEEN 0 AND 10000),  -- CONTRACT_PLATFORM_FEE_BPS at creation
+  state               text NOT NULL DEFAULT 'draft' CHECK (state IN ('draft','proposed','active','completed','cancelled','disputed')),
+  proposed_at         timestamptz,
+  accepted_at         timestamptz,
+  completed_at        timestamptz,
+  cancelled_at        timestamptz,
+  cancelled_by        text,
+  cancel_reason       text CHECK (cancel_reason IS NULL OR char_length(cancel_reason) <= 500),
+  created_at          timestamptz NOT NULL DEFAULT now(),
+  updated_at          timestamptz NOT NULL DEFAULT now(),
+  CHECK (client_member_id <> provider_member_id),
+  CHECK (kind = 'fixed' OR (hourly_rate_paise IS NOT NULL AND weekly_hours_cap IS NOT NULL))
+);
+CREATE INDEX IF NOT EXISTS contracts_client_idx ON vyapar_contracts.contracts (client_member_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS contracts_provider_idx ON vyapar_contracts.contracts (provider_member_id, created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS contracts_one_live_per_enquiry
+  ON vyapar_contracts.contracts (enquiry_id) WHERE state IN ('draft','proposed','active','disputed');
+
+CREATE TABLE IF NOT EXISTS vyapar_contracts.contract_milestones (
+  id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  contract_id      uuid NOT NULL REFERENCES vyapar_contracts.contracts(id) ON DELETE CASCADE,
+  title            text NOT NULL CHECK (char_length(title) BETWEEN 2 AND 140),
+  description      text CHECK (description IS NULL OR char_length(description) <= 2000),
+  amount_paise     bigint NOT NULL CHECK (amount_paise > 0),
+  due_date         date,
+  sort             int NOT NULL DEFAULT 0,
+  state            text NOT NULL DEFAULT 'pending' CHECK (state IN ('pending','funded','submitted','approved','released','rejected','refunded')),
+  funded_order_id  uuid,                                      -- -> vyapar_payments.payment_orders.id (no cross-schema FK)
+  checkout_url     text,                                      -- the open checkout for funded_order_id, until it is paid or fails
+  funded_at        timestamptz,
+  submitted_at     timestamptz,
+  submission_note  text CHECK (submission_note IS NULL OR char_length(submission_note) <= 1000),
+  approved_at      timestamptz,
+  released_at      timestamptz,
+  rejected_at      timestamptz,
+  reject_note      text CHECK (reject_note IS NULL OR char_length(reject_note) <= 1000),
+  auto_release_at  timestamptz,                               -- submitted_at + CONTRACT_AUTO_RELEASE_DAYS (14)
+  auto_approve     boolean NOT NULL DEFAULT false,            -- timesheet-backed milestone: released the moment it is funded
+  pending_notice   jsonb,                                     -- pre-rendered en/hi/te texts for the notification the payment trigger sends
+  created_at       timestamptz NOT NULL DEFAULT now(),
+  updated_at       timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS contract_milestones_contract_idx ON vyapar_contracts.contract_milestones (contract_id, sort, created_at);
+CREATE INDEX IF NOT EXISTS contract_milestones_auto_release_idx ON vyapar_contracts.contract_milestones (auto_release_at) WHERE state = 'submitted';
+
+CREATE TABLE IF NOT EXISTS vyapar_contracts.contract_ledger (
+  id               bigserial PRIMARY KEY,
+  contract_id      uuid NOT NULL REFERENCES vyapar_contracts.contracts(id) ON DELETE CASCADE,
+  milestone_id     uuid REFERENCES vyapar_contracts.contract_milestones(id) ON DELETE SET NULL,
+  entry            text NOT NULL CHECK (entry IN ('held','released','refunded','fee')),
+  amount_paise     bigint NOT NULL CHECK (amount_paise >= 0),
+  payment_order_id uuid,                                      -- -> vyapar_payments.payment_orders.id (no cross-schema FK)
+  note             text,
+  created_at       timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS contract_ledger_contract_idx ON vyapar_contracts.contract_ledger (contract_id, created_at);
+
+CREATE TABLE IF NOT EXISTS vyapar_contracts.contract_events (  -- audit timeline
+  id               bigserial PRIMARY KEY,
+  contract_id      uuid NOT NULL REFERENCES vyapar_contracts.contracts(id) ON DELETE CASCADE,
+  milestone_id     uuid,
+  actor_member_id  text,                                      -- NULL for the system (payment trigger, scheduled pass)
+  type             text NOT NULL,
+  data             jsonb NOT NULL DEFAULT '{}',
+  created_at       timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS contract_events_contract_idx ON vyapar_contracts.contract_events (contract_id, id);
+
+CREATE TABLE IF NOT EXISTS vyapar_contracts.contract_disputes (  -- in-product mediation, no arbitration
+  id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  contract_id      uuid NOT NULL REFERENCES vyapar_contracts.contracts(id) ON DELETE CASCADE,
+  milestone_id     uuid REFERENCES vyapar_contracts.contract_milestones(id) ON DELETE SET NULL,
+  opened_by        text NOT NULL,
+  reason           text NOT NULL CHECK (char_length(reason) BETWEEN 10 AND 2000),
+  state            text NOT NULL DEFAULT 'open' CHECK (state IN ('open','resolved_client','resolved_provider','closed')),
+  notes            text CHECK (notes IS NULL OR char_length(notes) <= 2000),
+  resolved_by      text,
+  resolved_at      timestamptz,
+  created_at       timestamptz NOT NULL DEFAULT now(),
+  updated_at       timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS contract_disputes_contract_idx ON vyapar_contracts.contract_disputes (contract_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS contract_disputes_open_idx ON vyapar_contracts.contract_disputes (created_at) WHERE state = 'open';
+
+CREATE TABLE IF NOT EXISTS vyapar_contracts.timesheets (  -- hourly contracts, one row per ISO week
+  id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  contract_id      uuid NOT NULL REFERENCES vyapar_contracts.contracts(id) ON DELETE CASCADE,
+  week_start       date NOT NULL CHECK (extract(isodow FROM week_start) = 1),   -- Monday
+  hours            numeric(5,2) NOT NULL CHECK (hours > 0 AND hours <= 168),
+  note             text CHECK (note IS NULL OR char_length(note) <= 1000),
+  state            text NOT NULL DEFAULT 'submitted' CHECK (state IN ('submitted','approved','paid','rejected')),
+  reject_note      text CHECK (reject_note IS NULL OR char_length(reject_note) <= 1000),
+  milestone_id     uuid REFERENCES vyapar_contracts.contract_milestones(id) ON DELETE SET NULL,
+  submitted_at     timestamptz NOT NULL DEFAULT now(),
+  approved_at      timestamptz,
+  paid_at          timestamptz,
+  created_at       timestamptz NOT NULL DEFAULT now(),
+  updated_at       timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (contract_id, week_start)
+);
+
+-- RLS: the two parties, moderation operators, and the background pass
+-- (vyapar.service_role = 'dispatcher'); child tables inherit through is_party().
+CREATE OR REPLACE FUNCTION vyapar_contracts.is_party(p_contract_id uuid)
+RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = vyapar_contracts, pg_temp AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM vyapar_contracts.contracts c
+     WHERE c.id = p_contract_id
+       AND current_setting('vyapar.authz_context', true) IN (c.client_member_id, c.provider_member_id))
+    OR vyapar_identity.is_operator('moderation')
+    OR coalesce(current_setting('vyapar.service_role', true), '') = 'dispatcher';
+$$;
+
+ALTER TABLE vyapar_contracts.contracts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS contracts_parties ON vyapar_contracts.contracts;
+CREATE POLICY contracts_parties ON vyapar_contracts.contracts
+  USING (client_member_id = current_setting('vyapar.authz_context', true)
+      OR provider_member_id = current_setting('vyapar.authz_context', true)
+      OR vyapar_identity.is_operator('moderation')
+      OR coalesce(current_setting('vyapar.service_role', true), '') = 'dispatcher')
+  WITH CHECK (client_member_id = current_setting('vyapar.authz_context', true)
+      OR provider_member_id = current_setting('vyapar.authz_context', true)
+      OR vyapar_identity.is_operator('moderation')
+      OR coalesce(current_setting('vyapar.service_role', true), '') = 'dispatcher');
+
+ALTER TABLE vyapar_contracts.contract_milestones ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS contract_milestones_parties ON vyapar_contracts.contract_milestones;
+CREATE POLICY contract_milestones_parties ON vyapar_contracts.contract_milestones
+  USING (vyapar_contracts.is_party(contract_id)) WITH CHECK (vyapar_contracts.is_party(contract_id));
+ALTER TABLE vyapar_contracts.contract_ledger ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS contract_ledger_parties ON vyapar_contracts.contract_ledger;
+CREATE POLICY contract_ledger_parties ON vyapar_contracts.contract_ledger
+  USING (vyapar_contracts.is_party(contract_id)) WITH CHECK (vyapar_contracts.is_party(contract_id));
+ALTER TABLE vyapar_contracts.contract_events ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS contract_events_parties ON vyapar_contracts.contract_events;
+CREATE POLICY contract_events_parties ON vyapar_contracts.contract_events
+  USING (vyapar_contracts.is_party(contract_id)) WITH CHECK (vyapar_contracts.is_party(contract_id));
+ALTER TABLE vyapar_contracts.contract_disputes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS contract_disputes_parties ON vyapar_contracts.contract_disputes;
+CREATE POLICY contract_disputes_parties ON vyapar_contracts.contract_disputes
+  USING (vyapar_contracts.is_party(contract_id)) WITH CHECK (vyapar_contracts.is_party(contract_id));
+ALTER TABLE vyapar_contracts.timesheets ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS timesheets_parties ON vyapar_contracts.timesheets;
+CREATE POLICY timesheets_parties ON vyapar_contracts.timesheets
+  USING (vyapar_contracts.is_party(contract_id)) WITH CHECK (vyapar_contracts.is_party(contract_id));
+
+GRANT USAGE ON SCHEMA vyapar_contracts TO vyapar_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA vyapar_contracts TO vyapar_app;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA vyapar_contracts TO vyapar_app;
+GRANT EXECUTE ON FUNCTION vyapar_contracts.is_party(uuid) TO vyapar_app;
+
+-- =============================================================================
+-- 14. Contact control, seeker protection, count badges, service packages,
+--     saved searches [Backend workstream B, migration 019]
+-- Same statements as migrations/019-contact-trust-discovery.sql (idempotent).
+-- =============================================================================
+--   TR018, TR019, TR021, TR024, TR028, TR039, TR040, SP019, SP024, SP040
+
+-- ---------------------------------------------------------------------------
+-- 1. Contact preferences
+-- ---------------------------------------------------------------------------
+ALTER TABLE vyapar_identity.members
+  ADD COLUMN IF NOT EXISTS call_hours_start   time,
+  ADD COLUMN IF NOT EXISTS call_hours_end     time,
+  ADD COLUMN IF NOT EXISTS call_days          text[] NOT NULL DEFAULT '{}'
+    CHECK (call_days <@ ARRAY['mon','tue','wed','thu','fri','sat','sun']::text[]),
+  ADD COLUMN IF NOT EXISTS max_calls_per_day  int CHECK (max_calls_per_day IS NULL OR max_calls_per_day BETWEEN 1 AND 500),
+  ADD COLUMN IF NOT EXISTS calls_from         text NOT NULL DEFAULT 'anyone' CHECK (calls_from IN ('anyone','matching_only')),
+  ADD COLUMN IF NOT EXISTS whatsapp_ok        boolean NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS call_ok            boolean NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS badges             jsonb NOT NULL DEFAULT '[]',
+  ADD COLUMN IF NOT EXISTS badges_computed_at timestamptz;
+COMMENT ON COLUMN vyapar_identity.members.call_days IS '[IMP-B] Empty array = every day. Values mon..sun.';
+COMMENT ON COLUMN vyapar_identity.members.max_calls_per_day IS '[IMP-B] NULL = unlimited. Counted from vyapar_enquiries.contact_attempts per IST day.';
+COMMENT ON COLUMN vyapar_identity.members.badges IS '[IMP-B/FR28] On-read cache of count-based badges: [{key, earned_at}]. Recomputed when badges_computed_at is older than the configured max age.';
+
+-- Listing-level overrides: NULL means "use the owner''s member setting".
+ALTER TABLE vyapar_listings.listings
+  ADD COLUMN IF NOT EXISTS call_hours_start  time,
+  ADD COLUMN IF NOT EXISTS call_hours_end    time,
+  ADD COLUMN IF NOT EXISTS call_days         text[]
+    CHECK (call_days IS NULL OR call_days <@ ARRAY['mon','tue','wed','thu','fri','sat','sun']::text[]),
+  ADD COLUMN IF NOT EXISTS max_calls_per_day int CHECK (max_calls_per_day IS NULL OR max_calls_per_day BETWEEN 1 AND 500),
+  ADD COLUMN IF NOT EXISTS calls_from        text CHECK (calls_from IS NULL OR calls_from IN ('anyone','matching_only')),
+  ADD COLUMN IF NOT EXISTS whatsapp_ok       boolean,
+  ADD COLUMN IF NOT EXISTS call_ok           boolean;
+
+-- Another member's row is RLS-private; the callee's preferences are the
+-- one thing a caller needs from it, so this returns exactly those columns.
+CREATE OR REPLACE FUNCTION vyapar_identity.contact_preferences_for(p_member_id text)
+RETURNS TABLE(member_id text, call_hours_start time, call_hours_end time, call_days text[],
+              max_calls_per_day int, calls_from text, whatsapp_ok boolean, call_ok boolean,
+              capabilities text[], language text)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = vyapar_identity, pg_temp AS $$
+  SELECT m.id, m.call_hours_start, m.call_hours_end, m.call_days, m.max_calls_per_day,
+         m.calls_from, m.whatsapp_ok, m.call_ok, m.capabilities, m.language
+    FROM vyapar_identity.members m
+   WHERE m.id = p_member_id AND NOT m.anonymized AND m.deleted_at IS NULL
+   LIMIT 1;
+$$;
+REVOKE ALL ON FUNCTION vyapar_identity.contact_preferences_for(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION vyapar_identity.contact_preferences_for(text) TO vyapar_app;
+
+CREATE TABLE IF NOT EXISTS vyapar_enquiries.contact_attempts (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  enquiry_id  uuid NOT NULL REFERENCES vyapar_enquiries.enquiries(id) ON DELETE CASCADE,
+  caller_id   text NOT NULL,
+  callee_id   text NOT NULL,
+  channel     text NOT NULL CHECK (channel IN ('call','whatsapp')),
+  at          timestamptz NOT NULL DEFAULT now(),
+  CHECK (caller_id <> callee_id)
+);
+CREATE INDEX IF NOT EXISTS contact_attempts_callee_idx ON vyapar_enquiries.contact_attempts (callee_id, at DESC);
+CREATE INDEX IF NOT EXISTS contact_attempts_enquiry_idx ON vyapar_enquiries.contact_attempts (enquiry_id, at DESC);
+COMMENT ON TABLE vyapar_enquiries.contact_attempts IS '[IMP-B/FR24] Who tapped call/WhatsApp to whom, from which accepted enquiry, when. No phone numbers. Both parties read; only the caller writes.';
+
+ALTER TABLE vyapar_enquiries.contact_attempts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS contact_attempts_parties ON vyapar_enquiries.contact_attempts;
+CREATE POLICY contact_attempts_parties ON vyapar_enquiries.contact_attempts
+  USING (caller_id = current_setting('vyapar.authz_context', true)
+      OR callee_id = current_setting('vyapar.authz_context', true)
+      OR vyapar_identity.is_operator('moderation'))
+  WITH CHECK (caller_id = current_setting('vyapar.authz_context', true));
+GRANT SELECT, INSERT ON vyapar_enquiries.contact_attempts TO vyapar_app;
+
+-- The daily cap counts every caller''s attempts to one callee, which a
+-- single caller cannot see under the policy above. Count only, per IST day.
+CREATE OR REPLACE FUNCTION vyapar_enquiries.contact_attempts_today(p_callee text, p_channel text, p_offset_minutes int)
+RETURNS int
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = vyapar_enquiries, pg_temp AS $$
+  SELECT count(*)::int
+    FROM vyapar_enquiries.contact_attempts a
+   WHERE a.callee_id = p_callee
+     AND (p_channel IS NULL OR a.channel = p_channel)
+     AND (a.at + make_interval(mins => p_offset_minutes))::date = (now() + make_interval(mins => p_offset_minutes))::date;
+$$;
+REVOKE ALL ON FUNCTION vyapar_enquiries.contact_attempts_today(text, text, int) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION vyapar_enquiries.contact_attempts_today(text, text, int) TO vyapar_app;
+
+-- ---------------------------------------------------------------------------
+-- 2. Seeker protection: report reason 'asked_for_money', two-report pause
+-- ---------------------------------------------------------------------------
+ALTER TABLE vyapar_trust_safety.reports DROP CONSTRAINT IF EXISTS reports_reason_check;
+ALTER TABLE vyapar_trust_safety.reports ADD CONSTRAINT reports_reason_check
+  CHECK (reason IN ('scam','fake','impersonation','harassment','discrimination','spam','stale','privacy','other','asked_for_money'));
+
+-- Replaces 004''s version (fix-forward): 'asked_for_money' opens the case at
+-- Medium so ONE report never limits a post by itself; the second
+-- independent report (below) is what pauses it and raises it to High.
+CREATE OR REPLACE FUNCTION vyapar_trust_safety.severity_for_reason(p_reason text)
+RETURNS text LANGUAGE sql IMMUTABLE AS $$
+  SELECT CASE WHEN p_reason IN ('scam','impersonation','harassment','discrimination') THEN 'high'
+              WHEN p_reason IN ('fake','privacy','asked_for_money') THEN 'medium' ELSE 'low' END;
+$$;
+
+-- Called by the reporter''s own request right after file_report(). Counts
+-- DISTINCT reporters with reason 'asked_for_money' on the open case for
+-- this opportunity; at p_threshold or more it pauses the opportunity
+-- (state_reason 'seeker_charge_reports'), raises the case to High with
+-- distribution limited, and tells the poster in their own language
+-- (p_texts = {"en": {"title","body"}, "hi": ..., "te": ...}). Idempotent:
+-- an already-paused post is left as it is.
+CREATE OR REPLACE FUNCTION vyapar_trust_safety.apply_seeker_charge_reports(
+  p_opportunity_id uuid, p_threshold int, p_texts jsonb
+) RETURNS TABLE(reporters int, paused boolean, case_id uuid)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = vyapar_trust_safety, pg_temp AS $$
+DECLARE
+  v_case uuid;
+  v_poster text;
+  v_state text;
+  v_title text;
+  v_n int := 0;
+  v_paused boolean := false;
+  v_lang text;
+BEGIN
+  SELECT c.id INTO v_case FROM vyapar_trust_safety.moderation_cases c
+   WHERE c.object_kind = 'opportunity' AND c.object_id = p_opportunity_id AND c.state IN ('open','in_review','escalated')
+   ORDER BY c.created_at LIMIT 1;
+  IF v_case IS NULL THEN RETURN QUERY SELECT 0, false, NULL::uuid; RETURN; END IF;
+
+  SELECT count(DISTINCT r.reporter_id)::int INTO v_n FROM vyapar_trust_safety.reports r
+   WHERE r.case_id = v_case AND r.reason = 'asked_for_money';
+
+  IF v_n >= p_threshold THEN
+    SELECT o.poster_id, o.state, o.title INTO v_poster, v_state, v_title
+      FROM vyapar_opportunities.opportunities o WHERE o.id = p_opportunity_id FOR UPDATE;
+    IF v_state IN ('active','stale') THEN
+      UPDATE vyapar_opportunities.opportunities
+         SET state = 'paused', state_reason = 'seeker_charge_reports', distribution_limited = true, updated_at = now()
+       WHERE id = p_opportunity_id;
+      v_paused := true;
+      SELECT m.language INTO v_lang FROM vyapar_identity.members m WHERE m.id = v_poster;
+      v_lang := coalesce(v_lang, 'en');
+      INSERT INTO vyapar_integration.notifications (member_id, kind, template_id, title, body, link, params, idempotency_key)
+      VALUES (v_poster, 'opportunityPausedSeekerCharge', 'opportunityPausedSeekerCharge',
+              coalesce(p_texts -> v_lang ->> 'title', p_texts -> 'en' ->> 'title'),
+              coalesce(p_texts -> v_lang ->> 'body', p_texts -> 'en' ->> 'body'),
+              '/opportunities/' || p_opportunity_id::text,
+              jsonb_build_object('opportunity_id', p_opportunity_id, 'case_id', v_case),
+              'seeker_charge_paused:' || p_opportunity_id::text)
+      ON CONFLICT (idempotency_key) DO NOTHING;
+    END IF;
+    UPDATE vyapar_trust_safety.moderation_cases c
+       SET severity = CASE WHEN c.severity = 'critical' THEN c.severity ELSE 'high' END,
+           distribution_limited = true,
+           primary_reason = 'asked_for_money',
+           target_due_at = LEAST(c.target_due_at, now() + vyapar_trust_safety.target_interval('high')),
+           updated_at = now()
+     WHERE c.id = v_case;
+  END IF;
+  RETURN QUERY SELECT v_n, v_paused, v_case;
+END;
+$$;
+REVOKE ALL ON FUNCTION vyapar_trust_safety.apply_seeker_charge_reports(uuid, int, jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION vyapar_trust_safety.apply_seeker_charge_reports(uuid, int, jsonb) TO vyapar_app;
+
+-- ---------------------------------------------------------------------------
+-- 3. Count-based badges
+-- ---------------------------------------------------------------------------
+-- The raw counts behind every badge, for a batch of members. Reviews are the
+-- revealed, published ones (the same rule reputation_for_listings uses);
+-- "hires" are enquiries the member answered that reached resolved/closed;
+-- response time is the 180-day median of first replies.
+CREATE OR REPLACE FUNCTION vyapar_identity.badge_inputs(p_ids text[])
+RETURNS TABLE(member_id text, member_since timestamptz, verified_business boolean,
+              reviews int, recommends int, repeat_hirers int, answered int, median_minutes int)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = vyapar_identity, pg_temp AS $$
+  WITH vis AS (
+    SELECT r.subject_member_id, r.recommend
+      FROM vyapar_reviews.reviews r
+     WHERE r.subject_member_id = ANY (p_ids) AND r.state = 'published'
+       AND vyapar_reviews.is_revealed(r.interaction_kind, r.interaction_id, r.subject_member_id)
+  ), answered AS (
+    SELECT e.provider_id, count(*)::int AS n,
+           (percentile_cont(0.5) WITHIN GROUP (ORDER BY extract(epoch FROM e.first_reply_at - e.created_at)) / 60)::int AS med
+      FROM vyapar_enquiries.enquiries e
+     WHERE e.provider_id = ANY (p_ids) AND e.first_reply_at IS NOT NULL AND e.created_at > now() - interval '180 days'
+     GROUP BY e.provider_id
+  ), hirers AS (
+    SELECT h.provider_id, count(*)::int AS n FROM (
+      SELECT e.provider_id, e.sender_id FROM vyapar_enquiries.enquiries e
+       WHERE e.provider_id = ANY (p_ids) AND e.state IN ('resolved','closed')
+       GROUP BY e.provider_id, e.sender_id HAVING count(*) >= 2
+    ) h GROUP BY h.provider_id
+  )
+  SELECT m.id, m.created_at,
+         EXISTS (SELECT 1 FROM vyapar_listings.listings l WHERE l.owner_id = m.id AND l.state = 'active_verified'),
+         (SELECT count(*)::int FROM vis v WHERE v.subject_member_id = m.id),
+         (SELECT count(*)::int FROM vis v WHERE v.subject_member_id = m.id AND v.recommend),
+         coalesce((SELECT h.n FROM hirers h WHERE h.provider_id = m.id), 0),
+         coalesce((SELECT a.n FROM answered a WHERE a.provider_id = m.id), 0),
+         (SELECT a.med FROM answered a WHERE a.provider_id = m.id)
+    FROM vyapar_identity.members m
+   WHERE m.id = ANY (p_ids) AND NOT m.anonymized AND m.deleted_at IS NULL;
+$$;
+REVOKE ALL ON FUNCTION vyapar_identity.badge_inputs(text[]) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION vyapar_identity.badge_inputs(text[]) TO vyapar_app;
+
+-- The cache read: badges plus whether they are still fresh.
+CREATE OR REPLACE FUNCTION vyapar_identity.member_badges(p_ids text[], p_max_age_seconds int)
+RETURNS TABLE(member_id text, badges jsonb, computed_at timestamptz, fresh boolean)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = vyapar_identity, pg_temp AS $$
+  SELECT m.id, m.badges, m.badges_computed_at,
+         m.badges_computed_at IS NOT NULL AND m.badges_computed_at > now() - make_interval(secs => p_max_age_seconds)
+    FROM vyapar_identity.members m
+   WHERE m.id = ANY (p_ids) AND NOT m.anonymized AND m.deleted_at IS NULL;
+$$;
+REVOKE ALL ON FUNCTION vyapar_identity.member_badges(text[], int) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION vyapar_identity.member_badges(text[], int) TO vyapar_app;
+
+-- The cache write. Only known keys, each with an earned_at, nothing else.
+CREATE OR REPLACE FUNCTION vyapar_identity.store_badges(p_member_id text, p_badges jsonb)
+RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = vyapar_identity, pg_temp AS $$
+BEGIN
+  IF jsonb_typeof(p_badges) <> 'array' THEN RAISE EXCEPTION 'badges_not_array'; END IF;
+  IF EXISTS (
+    SELECT 1 FROM jsonb_array_elements(p_badges) b
+     WHERE NOT (b ? 'key') OR NOT (b ? 'earned_at')
+        OR NOT (b->>'key' = ANY (ARRAY['responds_fast','reliable','rising','top_recommended','verified_business','repeat_hires']))
+  ) THEN RAISE EXCEPTION 'unknown_badge'; END IF;
+  UPDATE vyapar_identity.members SET badges = p_badges, badges_computed_at = now() WHERE id = p_member_id;
+END;
+$$;
+REVOKE ALL ON FUNCTION vyapar_identity.store_badges(text, jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION vyapar_identity.store_badges(text, jsonb) TO vyapar_app;
+
+-- ---------------------------------------------------------------------------
+-- 4. Tiered service packages
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS vyapar_listings.listing_packages (
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  listing_id     uuid NOT NULL REFERENCES vyapar_listings.listings(id) ON DELETE CASCADE,
+  tier           text NOT NULL CHECK (tier IN ('basic','standard','premium')),
+  name           text NOT NULL CHECK (char_length(name) BETWEEN 1 AND 80),
+  name_hi        text,
+  name_te        text,
+  description    text CHECK (description IS NULL OR char_length(description) <= 600),
+  description_hi text,
+  description_te text,
+  price_paise    bigint NOT NULL CHECK (price_paise >= 0),
+  delivery_days  int CHECK (delivery_days IS NULL OR delivery_days BETWEEN 0 AND 365),
+  revisions      int CHECK (revisions IS NULL OR revisions BETWEEN 0 AND 99),
+  includes       text[] NOT NULL DEFAULT '{}' CHECK (cardinality(includes) <= 12),
+  sort           smallint NOT NULL DEFAULT 0,
+  created_at     timestamptz NOT NULL DEFAULT now(),
+  updated_at     timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (listing_id, tier)                     -- at most one of each tier, so at most 3 per listing
+);
+CREATE INDEX IF NOT EXISTS listing_packages_listing_idx ON vyapar_listings.listing_packages (listing_id, sort);
+COMMENT ON TABLE vyapar_listings.listing_packages IS '[IMP-B] Up to three priced tiers per listing (Fiverr/Upwork project-catalog style). Localizable text stored as given plus optional _hi/_te.';
+
+ALTER TABLE vyapar_listings.listing_packages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS listing_packages_visibility ON vyapar_listings.listing_packages;
+CREATE POLICY listing_packages_visibility ON vyapar_listings.listing_packages
+  USING (EXISTS (SELECT 1 FROM vyapar_listings.listings l WHERE l.id = listing_packages.listing_id
+                   AND (l.state IN ('active_unverified','active_verified')
+                        OR l.owner_id = current_setting('vyapar.authz_context', true)
+                        OR vyapar_identity.is_operator('content'))))
+  WITH CHECK (EXISTS (SELECT 1 FROM vyapar_listings.listings l WHERE l.id = listing_packages.listing_id
+                        AND l.owner_id = current_setting('vyapar.authz_context', true)));
+GRANT SELECT, INSERT, UPDATE, DELETE ON vyapar_listings.listing_packages TO vyapar_app;
+
+-- Enquiry sub_choice values (documented, no CHECK): existing free-text values
+-- stay valid; 'request_package' is the new value a package request uses,
+-- together with the package it refers to.
+ALTER TABLE vyapar_enquiries.enquiries ADD COLUMN IF NOT EXISTS package_id uuid;
+COMMENT ON COLUMN vyapar_enquiries.enquiries.package_id IS '[IMP-B] vyapar_listings.listing_packages(id), no cross-schema FK. Set when sub_choice = ''request_package''.';
+
+-- ---------------------------------------------------------------------------
+-- 5. Saved searches
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS vyapar_opportunities.saved_searches (
+  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  member_id       text NOT NULL,
+  query           text NOT NULL DEFAULT '' CHECK (char_length(query) <= 200),
+  filters         jsonb NOT NULL DEFAULT '{}',
+  alert           boolean NOT NULL DEFAULT false,
+  last_alerted_at timestamptz,
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  updated_at      timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS saved_searches_member_idx ON vyapar_opportunities.saved_searches (member_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS saved_searches_alert_idx ON vyapar_opportunities.saved_searches (alert) WHERE alert;
+COMMENT ON TABLE vyapar_opportunities.saved_searches IS '[IMP-B/FR21] A member''s saved opportunity searches; alert=true lets the strong-match pass notify on new matches under the same daily cap.';
+
+ALTER TABLE vyapar_opportunities.saved_searches ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS saved_searches_self ON vyapar_opportunities.saved_searches;
+-- The alert pass runs as the dispatcher (operator context) and must be able
+-- to stamp last_alerted_at on a member's row; nothing else may write another
+-- member's saved searches.
+CREATE POLICY saved_searches_self ON vyapar_opportunities.saved_searches
+  USING (member_id = current_setting('vyapar.authz_context', true) OR vyapar_identity.is_operator(NULL))
+  WITH CHECK (member_id = current_setting('vyapar.authz_context', true)
+              OR current_setting('vyapar.service_role', true) = 'dispatcher');
+GRANT SELECT, INSERT, UPDATE, DELETE ON vyapar_opportunities.saved_searches TO vyapar_app;
+
+
+-- ---------------------------------------------------------------------------
+-- 6. Access-token scope 'contracts:write' (workstream D's contracts API;
+--    app/integrations/identity/scopes.py maps /v1/contracts writes to it).
+--    Values only appended.
+-- ---------------------------------------------------------------------------
+ALTER TABLE vyapar_integration.access_tokens DROP CONSTRAINT IF EXISTS access_tokens_scopes_check;
+ALTER TABLE vyapar_integration.access_tokens ADD CONSTRAINT access_tokens_scopes_check CHECK (
+  cardinality(scopes) > 0 AND scopes <@ ARRAY[
+    'read','opportunities:write','listings:write','enquiries:write',
+    'reviews:write','partnerships:write','notifications:write','contracts:write'
+  ]::text[]);
+
+-- =============================================================================
+-- 15. vyapar_integration.ai_events — AI assistance audit and cost [Workstream C, migration 020]
+-- One row per AI-assisted call; never the input text. See migrations/020-ai.sql.
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS vyapar_integration.ai_events (
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  member_id      text NOT NULL,                       -- vyapar_identity.members(id), no cross-schema FK (convention 3)
+  kind           text NOT NULL CHECK (kind IN ('draft', 'read_image', 'shortlist', 'tips', 'proposal')),
+  provider       text NOT NULL CHECK (provider IN ('anthropic', 'rules')),
+  model          text,                                -- Claude model id, NULL for the rules engine
+  input_hash     text NOT NULL CHECK (input_hash ~ '^[0-9a-f]{64}$'),
+  latency_ms     integer NOT NULL DEFAULT 0 CHECK (latency_ms >= 0),
+  tokens_in      integer NOT NULL DEFAULT 0 CHECK (tokens_in >= 0),
+  tokens_out     integer NOT NULL DEFAULT 0 CHECK (tokens_out >= 0),
+  outcome        text NOT NULL CHECK (outcome IN (
+                   'ok', 'fallback', 'unsupported_without_ai', 'refused',
+                   'unreachable', 'rate_limited', 'api_error', 'bad_json', 'error'
+                 )),
+  credential_id  uuid,                                -- the access token that acted for the member, if any (015)
+  created_at     timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ai_events_member_day_idx ON vyapar_integration.ai_events (member_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS ai_events_created_idx ON vyapar_integration.ai_events (created_at DESC);
+COMMENT ON TABLE vyapar_integration.ai_events IS
+  '[IMP42] One row per AI-assisted call (draft, read_image, shortlist, tips, proposal): member, provider/model, input hash, latency, tokens, outcome. Never the input text. Immutable; self-only RLS plus analytics operators.';
+
+ALTER TABLE vyapar_integration.ai_events ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS ai_events_self_or_analytics ON vyapar_integration.ai_events;
+CREATE POLICY ai_events_self_or_analytics ON vyapar_integration.ai_events
+  USING (member_id = current_setting('vyapar.authz_context', true) OR vyapar_identity.is_operator('analytics'))
+  WITH CHECK (member_id = current_setting('vyapar.authz_context', true));
+
+-- No UPDATE or DELETE grant: audit rows are immutable.
+GRANT SELECT, INSERT ON vyapar_integration.ai_events TO vyapar_app;
+
+-- =============================================================================
+-- 16. Pre-accept calling [Backend workstream B, migration 023]
+-- Same statements as migrations/023-precall.sql (idempotent).
+-- =============================================================================
+
+-- 1 -------------------------------------------------------------------------
+ALTER TABLE vyapar_opportunities.opportunities
+  ADD COLUMN IF NOT EXISTS allow_precall boolean NOT NULL DEFAULT false;
+ALTER TABLE vyapar_opportunities.opportunities DROP CONSTRAINT IF EXISTS opportunities_allow_precall_type_check;
+ALTER TABLE vyapar_opportunities.opportunities ADD CONSTRAINT opportunities_allow_precall_type_check
+  CHECK (NOT allow_precall OR type IN ('employment','local_service'));
+COMMENT ON COLUMN vyapar_opportunities.opportunities.allow_precall IS
+  '[IMP-B/L1] Poster lets people call or WhatsApp before accepting an application. Employment and local_service only.';
+
+-- 2 -------------------------------------------------------------------------
+ALTER TABLE vyapar_enquiries.contact_attempts ADD COLUMN IF NOT EXISTS opportunity_id uuid;  -- no cross-schema FK
+ALTER TABLE vyapar_enquiries.contact_attempts ALTER COLUMN enquiry_id DROP NOT NULL;
+ALTER TABLE vyapar_enquiries.contact_attempts DROP CONSTRAINT IF EXISTS contact_attempts_target_check;
+ALTER TABLE vyapar_enquiries.contact_attempts ADD CONSTRAINT contact_attempts_target_check
+  CHECK (enquiry_id IS NOT NULL OR opportunity_id IS NOT NULL);
+CREATE INDEX IF NOT EXISTS contact_attempts_opportunity_idx
+  ON vyapar_enquiries.contact_attempts (opportunity_id, caller_id, at DESC) WHERE opportunity_id IS NOT NULL;
+
+-- 3 -------------------------------------------------------------------------
+ALTER TABLE vyapar_enquiries.enquiries DROP CONSTRAINT IF EXISTS enquiries_applied_via_check;
+ALTER TABLE vyapar_enquiries.enquiries ADD CONSTRAINT enquiries_applied_via_check
+  CHECK (applied_via IN ('form','one_tap','voice','agent','call'));
+
+-- 4 -------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION vyapar_integration.notify_precall(p_attempt_id uuid, p_texts jsonb)
+RETURNS boolean
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = vyapar_integration, pg_temp AS $$
+DECLARE
+  v_caller text := current_setting('vyapar.authz_context', true);
+  a vyapar_enquiries.contact_attempts%ROWTYPE;
+  v_ok boolean;
+  v_lang text;
+  v_id uuid;
+BEGIN
+  SELECT * INTO a FROM vyapar_enquiries.contact_attempts WHERE id = p_attempt_id;
+  IF NOT FOUND OR a.caller_id IS DISTINCT FROM v_caller OR a.opportunity_id IS NULL THEN
+    RAISE EXCEPTION 'not_your_attempt';
+  END IF;
+  SELECT true INTO v_ok FROM vyapar_opportunities.opportunities o
+   WHERE o.id = a.opportunity_id AND o.poster_id = a.callee_id AND o.allow_precall;
+  IF NOT coalesce(v_ok, false) THEN RAISE EXCEPTION 'precall_off'; END IF;
+  IF vyapar_enquiries.is_blocked(a.callee_id, v_caller) THEN RETURN false; END IF;
+
+  SELECT m.language INTO v_lang FROM vyapar_identity.members m WHERE m.id = a.callee_id;
+  v_lang := coalesce(v_lang, 'en');
+  INSERT INTO vyapar_integration.notifications (member_id, kind, template_id, title, body, link, params, idempotency_key)
+  VALUES (a.callee_id, 'precallContact', 'precallContact',
+          coalesce(p_texts -> v_lang ->> 'title', p_texts -> 'en' ->> 'title'),
+          coalesce(p_texts -> v_lang ->> 'body', p_texts -> 'en' ->> 'body'),
+          '/opportunities/' || a.opportunity_id::text,
+          jsonb_build_object('opportunity_id', a.opportunity_id, 'attempt_id', a.id, 'channel', a.channel,
+                             'enquiry_id', a.enquiry_id),
+          'precall:' || a.id::text)
+  ON CONFLICT (idempotency_key) DO NOTHING
+  RETURNING id INTO v_id;
+  RETURN v_id IS NOT NULL;
+END;
+$$;
+REVOKE ALL ON FUNCTION vyapar_integration.notify_precall(uuid, jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION vyapar_integration.notify_precall(uuid, jsonb) TO vyapar_app;
+
+-- =============================================================================
+-- 17. Session-granted operator permissions [Admin & Governance Console, migration 024]
+-- Same statements as migrations/024-session-admin-permissions.sql (idempotent).
+-- Replaces section 1's is_operator() so it also honours vyapar.authz_permissions.
+-- =============================================================================
+
+CREATE OR REPLACE FUNCTION vyapar_identity.session_permissions()
+RETURNS text[]
+LANGUAGE sql STABLE
+SET search_path = vyapar_identity, pg_temp
+AS $$
+  SELECT CASE
+           WHEN g IS NULL OR jsonb_typeof(g) <> 'object' OR jsonb_typeof(g -> 'permissions') <> 'array'
+             OR (g ->> 'member_id') IS DISTINCT FROM current_setting('vyapar.authz_context', true)
+             OR coalesce(current_setting('vyapar.authz_context', true), '') = ''
+           THEN '{}'::text[]
+           ELSE ARRAY(
+             SELECT p FROM jsonb_array_elements_text(g -> 'permissions') AS p
+              WHERE p = ANY (ARRAY['verification','content','commercial','analytics','moderation'])
+           )
+         END
+    FROM (SELECT nullif(current_setting('vyapar.authz_permissions', true), '')::jsonb AS g) s;
+$$;
+COMMENT ON FUNCTION vyapar_identity.session_permissions() IS
+  '[TR-PLAT-01/ADR-012] Operator permissions granted by the platform session (identity resolve admin_scopes), read from the transaction-local vyapar.authz_permissions setting. Empty unless the setting names the member vyapar.authz_context currently holds.';
+
+CREATE OR REPLACE FUNCTION vyapar_identity.is_operator(p_permission text)
+RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path = vyapar_identity, pg_temp
+AS $$
+  SELECT EXISTS (
+           SELECT 1 FROM vyapar_identity.members m
+            WHERE m.id = current_setting('vyapar.authz_context', true)
+              AND m.is_operator
+              AND (p_permission IS NULL OR p_permission = ANY (m.operator_permissions))
+         )
+      OR (CASE WHEN p_permission IS NULL
+               THEN cardinality(vyapar_identity.session_permissions()) > 0
+               ELSE p_permission = ANY (vyapar_identity.session_permissions())
+          END);
+$$;
+COMMENT ON FUNCTION vyapar_identity.is_operator(text) IS
+  '[MODULE-ARCHITECTURE-STANDARD §4/§5, extended by migration 024] Shared RLS operator-bypass helper. True when the member row grants the permission (is_operator AND permission in operator_permissions) OR the platform session granted it (session_permissions()). p_permission NULL means "any operator permission".';
+
+GRANT EXECUTE ON FUNCTION vyapar_identity.session_permissions() TO vyapar_app;
+GRANT EXECUTE ON FUNCTION vyapar_identity.is_operator(text) TO vyapar_app;
+
+-- =============================================================================
+-- 18. Pre-accept contact channel [Backend workstream B, migration 025]
+-- Same statements as migrations/025-precall-channel.sql (idempotent).
+-- =============================================================================
+ALTER TABLE vyapar_opportunities.opportunities
+  ADD COLUMN IF NOT EXISTS precall_channel text NOT NULL DEFAULT 'whatsapp_only';
+ALTER TABLE vyapar_opportunities.opportunities DROP CONSTRAINT IF EXISTS opportunities_precall_channel_check;
+ALTER TABLE vyapar_opportunities.opportunities ADD CONSTRAINT opportunities_precall_channel_check
+  CHECK (precall_channel IN ('call_and_whatsapp','whatsapp_only'));
+DO $$
+BEGIN
+  -- one-time backfill, only while no row has been set to calls yet (keeps re-runs idempotent)
+  IF NOT EXISTS (SELECT 1 FROM vyapar_opportunities.opportunities WHERE precall_channel = 'call_and_whatsapp') THEN
+    UPDATE vyapar_opportunities.opportunities SET precall_channel = 'call_and_whatsapp' WHERE allow_precall;
+  END IF;
+END $$;
+COMMENT ON COLUMN vyapar_opportunities.opportunities.precall_channel IS
+  '[IMP-B/W2] How people may reach the poster before acceptance: whatsapp_only (default) or call_and_whatsapp. The number is visible to whoever uses either.';
+
+-- [IMP-ADMIN] Verification decisions write the listing's verification label
+-- (verification_state, claim, state active_verified <-> active_unverified).
+-- listings_visibility only lets the owner or a 'content' operator write, so a
+-- 'verification'-only operator (the platform's vyapar.verify scope) was
+-- refused by RLS on verify/reject/clearer-copy. This extra permissive UPDATE
+-- policy admits exactly that operator for updates; reads and inserts are
+-- unchanged. (A member-row operator always held both permissions, which hid
+-- the gap.)
+DROP POLICY IF EXISTS listings_verification_operator_update ON vyapar_listings.listings;
+CREATE POLICY listings_verification_operator_update ON vyapar_listings.listings
+  FOR UPDATE
+  USING (vyapar_identity.is_operator('verification'))
+  WITH CHECK (vyapar_identity.is_operator('verification'));

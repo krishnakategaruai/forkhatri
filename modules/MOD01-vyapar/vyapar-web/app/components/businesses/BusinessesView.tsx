@@ -14,6 +14,7 @@ import FilterSheet, { activeFilterCount, type Filters } from "@/app/components/F
 import { SkeletonGrid } from "@/app/components/States";
 import { useRoutes } from "@/app/host/HostProvider";
 import { signalLabel } from "@/app/components/opportunity/labels";
+import { BadgeList } from "@/app/components/trust/Badges";
 
 export interface BusinessesViewProps {
   response: SearchResponse | null;
@@ -122,7 +123,9 @@ export default function BusinessesView({ response, loading, filters, onFiltersCh
                     ]
                       .filter(Boolean)
                       .join(" · ")}
-                  />
+                  >
+                    <BadgeList badges={r.listing.badges} compact max={3} />
+                  </LivingCard>
                 ))}
               </div>
             </div>

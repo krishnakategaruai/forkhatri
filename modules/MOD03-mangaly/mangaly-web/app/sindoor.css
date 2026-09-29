@@ -1376,21 +1376,22 @@ html::-webkit-scrollbar-thumb {
   height: 36px;
   padding: 0 10px 0 12px;
   border-radius: 999px;
+  /* [2026-09-29, critique] Calm: a hairline gold edge on the page's own
+     surface, not a filled yellow pill that out-shouts every screen. */
   border: 1px solid var(--pick-edge);
-  background: var(--pick);
-  color: var(--on-pick);
+  background: var(--surface);
+  color: var(--ink);
   font-size: 0.8125rem;
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
-  box-shadow: var(--shadow-1);
 }
 .context-chip > span:not(.context-chip__dot) {
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .context-chip--family {
-  background: var(--pick);
-  color: var(--on-pick);
+  background: var(--surface);
+  color: var(--ink);
 }
 .context-chip__dot {
   flex: none;

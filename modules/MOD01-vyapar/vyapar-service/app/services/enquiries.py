@@ -15,15 +15,19 @@
 # Traces to: FR22, FR23, FR24, TR022, TR023, TR024, SP022, SP023, SP024
 from __future__ import annotations
 
-from typing import Literal
+import json
+from datetime import datetime
+from typing import Any, Literal
 
 import asyncpg
 from pydantic import BaseModel, Field
 
+from app.services import hooks
 from app.services.listings import require_profile
 from app.errors import ApiError
+from app.i18n import translate
 from app.identity import AuthzContext
-from app.services.opportunities import TYPE_ACTION_LABEL
+from app.services.opportunities import TYPE_ACTION_LABEL, structured_from_row
 from app.services.privacy import require_accepted
 from app.services.reviews import issue_review_invites
 from app.impressions import log_events
@@ -31,14 +35,74 @@ from app.services.pagination import DEFAULT_LIMIT, MAX_LIMIT, Page, paginate
 
 
 RATE_LIMIT_PER_DAY = 20
+MESSAGE_MIN_LENGTH = 20  # enquiry_limits.message_min; an `apply` may be sent with no message at all (one tap)
+MAX_MILESTONES = 10
+
+AppliedVia = Literal["form", "one_tap", "voice", "agent", "call"]  # call: [IMP-B/L1] auto-created on a pre-accept call tap
+
+# [Backend A, real bug found by the check script] The stored action type
+# (enquiries.action_type CHECK: enquire|apply|propose|contact|register) used
+# to be read straight from opportunities.TYPE_ACTION_LABEL. Since the i18n
+# pass those values are button-label KEYS ("submitProposal", "enquireNow"),
+# so every response to a freelance or local-service opportunity violated the
+# CHECK and failed; only employment ("apply") happened to match. The stored
+# action has its own mapping; TYPE_ACTION_LABEL stays the display label.
+ACTION_TYPE_BY_OPPORTUNITY_TYPE: dict[str, str] = {
+    "employment": "apply",
+    "freelance": "propose",
+    "local_service": "enquire",
+    "partnership": "contact",
+    "training": "register",
+    "community": "register",
+}
+assert set(ACTION_TYPE_BY_OPPORTUNITY_TYPE) == set(TYPE_ACTION_LABEL)
+
+
+class Milestone(BaseModel):
+    title: str = Field(min_length=2, max_length=120)
+    amount_paise: int = Field(gt=0)
+    due_days: int = Field(gt=0, le=3650, description="Days after the work starts")
+
+
+class ScreeningAnswer(BaseModel):
+    question_id: str = Field(min_length=1, max_length=40)
+    answer: str = Field(min_length=1, max_length=1000)
 
 
 class EnquiryCreate(BaseModel):
     listing_id: str | None = None
     opportunity_id: str | None = None
-    message: str = Field(min_length=20, max_length=1000)
+    # [Backend A] min length is enforced by the service (20 characters) so an
+    # `apply` can be one tap with no message; every other action is unchanged.
+    message: str = Field(default="", max_length=1000)
     attachment_url: str | None = None
     sub_choice: str | None = None
+    # [Backend A] structured proposal (freelance `propose`)
+    bid_amount_paise: int | None = Field(default=None, gt=0)
+    bid_type: Literal["fixed", "hourly"] | None = None
+    timeline_days: int | None = Field(default=None, gt=0, le=3650)
+    milestones: list[Milestone] = Field(default_factory=list, max_length=MAX_MILESTONES)
+    # answers to the opportunity's screening questions (apply or propose)
+    screening_answers: list[ScreeningAnswer] = Field(default_factory=list, max_length=10)
+    # how the application was made; derived when omitted (agent token -> agent,
+    # empty `apply` message -> one_tap, else form)
+    applied_via: AppliedVia | None = None
+
+
+class ProfileSnapshot(BaseModel):
+    """The sender's profile at the moment of applying, so a later profile
+    edit never rewrites what the poster saw. Skills are slugs; labels are
+    added at read time in the reader's language."""
+
+    name: str | None = None
+    headline: str | None = None
+    experience_years: int | None = None
+    capabilities: list[str] = []
+    locality: str | None = None
+    languages: list[str] = []
+    availability: str | None = None  # now | this_week | later
+    listing_id: str | None = None
+    listing_kind: str | None = None  # business | professional
 
 
 class MessageIn(BaseModel):
@@ -88,6 +152,37 @@ class EnquiryOut(BaseModel):
     # every other caller of `_row_to_enquiry` is unaffected.
     target_name: str | None = None
     counterpart_name: str | None = None
+    # [Backend A] structured proposal/application and the poster's pipeline
+    stage: str = "new"  # new | shortlisted | hired | declined (separate from the thread `state`)
+    stage_changed_at: str | None = None
+    bid_amount_paise: int | None = None
+    bid_type: str | None = None
+    timeline_days: int | None = None
+    milestones: list[Milestone] = []
+    screening_answers: list[ScreeningAnswer] = []
+    applied_via: str = "form"
+    profile_snapshot: ProfileSnapshot | None = None
+    # [Backend A, workstream B's enricher] set on the thread read only; empty
+    # until the enquiry is accepted. Shapes are B's (references/imp-backend-b.md):
+    # contact_actions = [{channel, label, href, available_now, next_window,
+    # reason, reason_label, window}]; contact_attempts = [{id, enquiry_id,
+    # caller_id, callee_id, channel, at, mine, summary}].
+    contact_actions: list[dict[str, Any]] = []
+    contact_attempts: list[dict[str, Any]] = []
+    # [critique L11] Who may reach whom right now, set on the thread read only
+    # (null elsewhere). can_contact_counterpart: the VIEWER may call/WhatsApp
+    # the other side. counterpart_can_contact: the other side may contact the
+    # viewer. Accepted threads: both. Shortlisted applicant: the poster may
+    # call the applicant, not the reverse. A post with allow_precall on lets
+    # the applicant reach the poster before acceptance.
+    can_contact_counterpart: bool | None = None
+    counterpart_can_contact: bool | None = None
+
+
+def _json(value: Any, default: Any) -> Any:
+    if value is None:
+        return default
+    return json.loads(value) if isinstance(value, str) else value
 
 
 async def _resolve_action_type(conn: asyncpg.Connection, listing_id: str | None, opportunity_id: str | None) -> tuple[str, str | None, str | None]:
@@ -105,11 +200,12 @@ async def _resolve_action_type(conn: asyncpg.Connection, listing_id: str | None,
         row = await conn.fetchrow("SELECT poster_id, state, type FROM vyapar_opportunities.opportunities WHERE id = $1", opportunity_id)
         if row is None or row["state"] != "active":
             return "", None, "target_not_active"
-        return TYPE_ACTION_LABEL.get(row["type"], "contact"), row["poster_id"], None
+        return ACTION_TYPE_BY_OPPORTUNITY_TYPE.get(row["type"], "contact"), row["poster_id"], None
     return "", None, "no_target"
 
 
 def _row_to_enquiry(row: asyncpg.Record, caller_id: str) -> EnquiryOut:
+    snapshot = _json(row["profile_snapshot"], None)
     return EnquiryOut(
         id=str(row["id"]), sender_id=row["sender_id"], provider_id=row["provider_id"],
         is_sender=row["sender_id"] == caller_id,
@@ -118,7 +214,99 @@ def _row_to_enquiry(row: asyncpg.Record, caller_id: str) -> EnquiryOut:
         action_type=row["action_type"], state=row["state"], state_reason=row["state_reason"],
         delivered=row["delivered"], safety_notice_seen=row["safety_notice_seen"],
         last_activity_at=row["last_activity_at"].isoformat(), created_at=row["created_at"].isoformat(),
+        stage=row["stage"],
+        stage_changed_at=row["stage_changed_at"].isoformat() if row["stage_changed_at"] else None,
+        bid_amount_paise=row["bid_amount_paise"], bid_type=row["bid_type"], timeline_days=row["timeline_days"],
+        milestones=[Milestone(**m) for m in _json(row["milestones"], [])],
+        screening_answers=[ScreeningAnswer(**a) for a in _json(row["screening_answers"], [])],
+        applied_via=row["applied_via"],
+        profile_snapshot=ProfileSnapshot(**snapshot) if snapshot else None,
     )
+
+
+async def build_profile_snapshot(conn: asyncpg.Connection, member_id: str) -> ProfileSnapshot:
+    """[Backend A] The sender's own profile, read in the sender's session
+    (their own member row and listings are theirs to read under RLS). The
+    most recent non-archived listing is used, a professional profile first
+    since that is the one describing the person rather than a shop."""
+    member = await conn.fetchrow(
+        "SELECT display_name, locality, capabilities FROM vyapar_identity.members WHERE id = $1", member_id
+    )
+    listing = await conn.fetchrow(
+        """SELECT id, kind, name, headline, experience_years, capabilities, locality, languages, availability
+             FROM vyapar_listings.listings
+            WHERE owner_id = $1 AND state <> 'archived'
+            ORDER BY (kind = 'professional') DESC, updated_at DESC
+            LIMIT 1""",
+        member_id,
+    )
+    caps: list[str] = []
+    for c in list(listing["capabilities"] if listing else []) + list(member["capabilities"] if member else []):
+        if c not in caps:
+            caps.append(c)
+    return ProfileSnapshot(
+        name=(member["display_name"] if member else None) or (listing["name"] if listing else None),
+        headline=listing["headline"] if listing else None,
+        experience_years=listing["experience_years"] if listing else None,
+        capabilities=caps,
+        locality=(listing["locality"] if listing else None) or (member["locality"] if member else None),
+        languages=list(listing["languages"]) if listing else [],
+        availability=listing["availability"] if listing else None,
+        listing_id=str(listing["id"]) if listing else None,
+        listing_kind=listing["kind"] if listing else None,
+    )
+
+
+def _one_tap_message(snapshot: ProfileSnapshot, lang: str) -> str:
+    """The first thread message of a one-tap application, built from the
+    profile so the poster never opens an empty thread."""
+    parts = [translate("enquiries.oneTap.intro", lang)]
+    if snapshot.headline:
+        parts.append(snapshot.headline.strip().rstrip(".") + ".")
+    if snapshot.experience_years:
+        parts.append(translate("enquiries.oneTap.experience", lang, years=snapshot.experience_years))
+    if snapshot.locality:
+        parts.append(translate("enquiries.oneTap.locality", lang, locality=snapshot.locality))
+    return " ".join(parts)[:1000]
+
+
+def _validate_structured_response(body: EnquiryCreate, action_type: str, opp: asyncpg.Record | None, lang: str) -> tuple[str | None, list[dict]]:
+    """[Backend A] Rules for the structured part of an application or
+    proposal. Returns (bid_type, milestones as plain dicts)."""
+    message = body.message.strip()
+    if action_type != "apply" and len(message) < MESSAGE_MIN_LENGTH:
+        raise ApiError(422, "enquiries.error.messageTooShort", lang, min=MESSAGE_MIN_LENGTH)
+    has_bid_fields = body.bid_amount_paise is not None or body.timeline_days is not None or body.milestones or body.bid_type
+    if action_type != "propose" and has_bid_fields:
+        raise ApiError(422, "enquiries.error.proposalFieldsNotAllowed", lang)
+    if body.screening_answers and opp is None:
+        raise ApiError(422, "enquiries.error.screeningAnswersNotAllowed", lang)
+
+    bid_type: str | None = None
+    milestones: list[dict] = []
+    if action_type == "propose":
+        if body.bid_amount_paise is None or body.timeline_days is None:
+            raise ApiError(422, "enquiries.error.bidRequired", lang)
+        structured = structured_from_row(opp) if opp is not None else None
+        bid_type = body.bid_type or (structured.budget_type if structured and structured.budget_type else "fixed")
+        if body.milestones:
+            if bid_type == "hourly":
+                raise ApiError(422, "enquiries.error.milestonesHourly", lang)
+            total = sum(m.amount_paise for m in body.milestones)
+            if total != body.bid_amount_paise:
+                raise ApiError(422, "enquiries.error.milestonesTotal", lang)
+            milestones = [m.model_dump() for m in body.milestones]
+
+    if opp is not None:
+        questions = structured_from_row(opp).screening_questions or []
+        asked = {q.id for q in questions}
+        answered = {a.question_id for a in body.screening_answers if a.answer.strip()}
+        unknown = answered - asked
+        if unknown:
+            raise ApiError(422, "enquiries.error.unknownScreeningQuestion", lang, extra={"question_ids": sorted(unknown)})
+        if action_type == "propose" and asked - answered:
+            raise ApiError(422, "enquiries.error.screeningAnswersRequired", lang, extra={"question_ids": sorted(asked - answered)})
+    return bid_type, milestones
 
 
 async def create_enquiry(
@@ -154,6 +342,28 @@ async def create_enquiry(
     if provider_id == ctx.member_id:
         raise ApiError(400, "enquiries.error.cannotEnquireOwn", lang)
 
+    # [Backend A] structured application/proposal rules, checked before the
+    # daily cap is spent on a request that would be refused anyway.
+    opp = None
+    if body.opportunity_id:
+        opp = await conn.fetchrow("SELECT * FROM vyapar_opportunities.opportunities WHERE id = $1", body.opportunity_id)
+    bid_type, milestones = _validate_structured_response(body, action_type, opp, lang)
+    if body.opportunity_id:
+        # A declined application is final: the poster has already answered it.
+        declined = await conn.fetchval(
+            """SELECT EXISTS (SELECT 1 FROM vyapar_enquiries.enquiries
+                WHERE sender_id = $1 AND opportunity_id = $2 AND stage = 'declined')""",
+            ctx.member_id, body.opportunity_id,
+        )
+        if declined:
+            raise ApiError(409, "enquiries.error.alreadyDeclined", lang)
+    message = body.message.strip()
+    applied_via = body.applied_via or ("agent" if ctx.is_token else ("one_tap" if not message else "form"))
+    snapshot = await build_profile_snapshot(conn, ctx.member_id) if body.opportunity_id else None
+    if not message:
+        # only an `apply` gets here (validated above): build the application from the profile
+        message = _one_tap_message(snapshot or ProfileSnapshot(), lang)
+
     # [SP022] Rate limit — 20/day.
     allowed = await conn.fetchval(
         "SELECT vyapar_platform.check_and_increment($1, 86400, $2)", f"enquiry:{ctx.member_id}:day", RATE_LIMIT_PER_DAY
@@ -187,10 +397,14 @@ async def create_enquiry(
             # into the enquiries INSERT, which raised UndefinedColumnError.
             row = await conn.fetchrow(
                 """INSERT INTO vyapar_enquiries.enquiries
-                     (sender_id, provider_id, listing_id, opportunity_id, action_type, sub_choice, delivered)
-                   VALUES ($1,$2,$3,$4,$5,$6,$7)
+                     (sender_id, provider_id, listing_id, opportunity_id, action_type, sub_choice, delivered,
+                      bid_amount_paise, bid_type, timeline_days, milestones, screening_answers, applied_via, profile_snapshot)
+                   VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb,$12::jsonb,$13,$14::jsonb)
                    RETURNING *""",
                 ctx.member_id, provider_id, body.listing_id, body.opportunity_id, action_type, body.sub_choice, not blocked,
+                body.bid_amount_paise, bid_type, body.timeline_days, json.dumps(milestones),
+                json.dumps([a.model_dump() for a in body.screening_answers if a.answer.strip()]), applied_via,
+                snapshot.model_dump_json() if snapshot else None,
             )
     except asyncpg.UniqueViolationError:
         existing = await conn.fetchrow(
@@ -203,7 +417,7 @@ async def create_enquiry(
 
     await conn.execute(
         "INSERT INTO vyapar_enquiries.enquiry_messages (enquiry_id, sender_id, body, attachment_url, content_language) VALUES ($1,$2,$3,$4,$5)",
-        row["id"], ctx.member_id, body.message, body.attachment_url, lang,
+        row["id"], ctx.member_id, message, body.attachment_url, lang,
     )
     # [FR32] enquiry event on the target (sponsored if it is boosted right now)
     if body.listing_id:
@@ -294,7 +508,41 @@ async def get_enquiry(
         if not row["safety_notice_seen"]:
             await conn.execute("UPDATE vyapar_enquiries.enquiries SET safety_notice_seen = true WHERE id = $1", enquiry_id)
             out.safety_notice_seen = False  # [FR24] shown once — this response is the one time it's false
+    # [Backend A] workstream B's enricher: call/WhatsApp actions and the log of attempts.
+    extra = await hooks.run_enquiry_enrichers(conn, ctx, lang, out.model_dump(mode="json"))
+    out.contact_actions = extra.get("contact_actions") or []
+    out.contact_attempts = extra.get("contact_attempts") or []
+    if not out.contact_actions:
+        # [critique L11] a poster may call an applicant they shortlisted (the
+        # rule lives in shortlist_contact.py; the applicant's view is unchanged).
+        from app.services.shortlist_contact import shortlist_contact_actions
+
+        out.contact_actions = await shortlist_contact_actions(conn, ctx, lang, row)
+    await _set_contact_flags(conn, ctx, row, out)
     return out
+
+
+async def _set_contact_flags(conn: asyncpg.Connection, ctx: AuthzContext, row: asyncpg.Record, out: EnquiryOut) -> None:
+    from app.services.contact import REVEALED_STATES
+    from app.services.shortlist_contact import PRE_ACCEPT_STATES, SHORTLIST_REVEAL_STAGE
+
+    viewer_is_sender = ctx.member_id == row["sender_id"]
+    accepted = row["state"] in REVEALED_STATES
+    shortlisted = (row["opportunity_id"] is not None and row["stage"] == SHORTLIST_REVEAL_STAGE
+                   and row["state"] in PRE_ACCEPT_STATES)
+    precall = False
+    if row["opportunity_id"] is not None and row["state"] in PRE_ACCEPT_STATES:
+        precall = bool(await conn.fetchval(
+            "SELECT allow_precall FROM vyapar_opportunities.opportunities WHERE id = $1", row["opportunity_id"]))
+    poster_may_call = accepted or shortlisted
+    applicant_may_call = accepted or precall
+    has_action = any(a.get("href") for a in out.contact_actions)
+    if viewer_is_sender:
+        out.can_contact_counterpart = has_action or applicant_may_call
+        out.counterpart_can_contact = poster_may_call if row["opportunity_id"] is not None else accepted
+    else:
+        out.can_contact_counterpart = has_action or (poster_may_call if row["opportunity_id"] is not None else accepted)
+        out.counterpart_can_contact = applicant_may_call if row["opportunity_id"] is not None else accepted
 
 
 async def reply_to_enquiry(

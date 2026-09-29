@@ -18,7 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from app.config import get_settings
 from app.db import close_pool, get_pool, init_pool
 from app.taxonomy_cache import refresh_taxonomy_cache
-from app.routers import admin_commercial, admin_ops, campaigns, commercial, dev, discovery, enquiries, events, feed, first_run, listings, member_settings, notifications, opportunities, partnerships, payments, privacy, reviews, trust_safety, uploads, verification, workspace
+from app.routers import admin_commercial, admin_ops, campaigns, commercial, dev, discovery, enquiries, events, feed, first_run, listings, member_settings, notifications, opportunities, partnerships, payments, privacy, reviews, taxonomy, trust_safety, uploads, verification, workspace
 from app.routers.commercial import run_commercial_lifecycle_pass
 from app.routers.privacy import run_preference_detection_pass
 from app.outbox import run_outbox_dispatch_pass
@@ -26,8 +26,14 @@ from app.routers.trust_safety import run_moderation_escalation_pass
 from app.routers.listings import sync_credential_refs
 from app.routers.notifications import notification_loop
 from app.routers.verification import run_verification_expiry_pass, run_verification_image_cleanup
+from app.services.contracts import run_contract_auto_release_pass
 # [IMP37 — Refactor B] integration edges: token/webhook API, middleware, webhook dispatch loop
 from app.routers import integrations as integrations_router
+# [IMP-B] contact control, service packages, saved searches, badges
+from app.routers import badges as badges_router
+from app.routers import contact as contact_router
+from app.routers import packages as packages_router
+from app.routers import saved_searches as saved_searches_router
 from app.integrations import http_middleware as integration_middleware
 from app.integrations.webhooks.dispatcher import webhook_loop
 
@@ -57,6 +63,7 @@ async def verification_cleanup_loop() -> None:
             await run_commercial_lifecycle_pass(get_pool())  # [TR030/TR031/TR033/TR035/TR054] boosts, entitlement renewal/grace, campaigns
             await run_preference_detection_pass(get_pool())  # [TR038] derived-preference proposals
             await run_outbox_dispatch_pass(get_pool())  # [TR052] Search Bridge stand-in dispatch
+            await run_contract_auto_release_pass(get_pool())  # 14-day auto-release of submitted milestones
             await refresh_taxonomy_cache(get_pool())  # keep the label cache current
         except Exception:
             import logging
@@ -107,6 +114,7 @@ app.include_router(uploads.router)
 app.mount("/uploads", StaticFiles(directory=uploads.UPLOAD_DIR), name="uploads")
 
 app.include_router(first_run.router)
+app.include_router(taxonomy.router)  # [Backend A] categories -> skills tree, localized
 app.include_router(member_settings.router)
 # discovery.router's static "/v1/listings/search" path MUST be registered
 # before listings.router's "/v1/listings/{listing_id}" — Starlette matches
@@ -114,12 +122,17 @@ app.include_router(member_settings.router)
 # would otherwise swallow "/v1/listings/search" as if "search" were a
 # listing id (a real routing bug, not a style preference).
 app.include_router(discovery.router)
+# [IMP-B] "/v1/listings/contact-preferences" is static — same rule as search above.
+app.include_router(contact_router.router)
 app.include_router(listings.router)
+app.include_router(packages_router.router)
 # feed.router's static "/v1/opportunities/feed" MUST be registered before
 # opportunities.router's "/v1/opportunities/{opportunity_id}" — same
 # static-before-dynamic ordering rule as discovery.router/listings.router above.
 app.include_router(feed.router)
+app.include_router(saved_searches_router.router)  # [IMP-B] static "/v1/opportunities/saved-searches"
 app.include_router(opportunities.router)
+app.include_router(badges_router.router)  # [IMP-B] /v1/members/{id}/badges
 app.include_router(notifications.router)
 app.include_router(enquiries.router)
 app.include_router(verification.router)
@@ -141,6 +154,12 @@ app.include_router(events.router)
 app.include_router(admin_commercial.audit_router)
 app.include_router(dev.router)
 app.include_router(integrations_router.router)  # [IMP37] tokens, webhooks, /me
+from app.routers import contracts as contracts_router  # noqa: E402  [Workstream D] contracts & milestone payments
+app.include_router(contracts_router.router)
+from app.routers import ai as ai_router  # noqa: E402  [IMP42 — Workstream C] AI drafts, shortlist, tips, proposal help
+app.include_router(ai_router.router)
+from app.routers import admin_console as admin_console_router  # noqa: E402  [IMP-ADMIN] ADR-012 Admin & Governance Console views
+app.include_router(admin_console_router.router)
 
 
 @app.get("/health")

@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import { api, ApiError } from "@/lib/api";
 import FileUpload from "@/app/components/FileUpload";
 import Screen from "@/app/components/Screen";
+import { formatDate } from "@/lib/format"; // [FE2] Indian date order
 
 interface Outcome {
   case_id: string;
@@ -36,7 +37,7 @@ function OutcomeCard({ item, onDone }: { item: Outcome; onDone: () => void }) {
   const [evidenceUrl, setEvidenceUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const fmt = (d: string) => new Date(d).toLocaleDateString(i18n.language);
+  const fmt = (d: string) => formatDate(d, i18n.language);
 
   async function appeal() {
     setBusy(true);

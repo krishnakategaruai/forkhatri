@@ -50,7 +50,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.config import get_settings
 from app.errors import ApiError
 from app.i18n import translate
-from app.identity import AuthzContext
+from app.identity import AuthzContext, with_session_permissions
 from app.notifications import notify_member
 from app.services.listings import has_verified_listing, is_active
 from app.services.payments import GatewayUnavailable, create_payment_order, refund_payment_order
@@ -681,6 +681,7 @@ async def reject_promotion(
     body: RejectIn,
 ) -> PromotionRejectOut:
     perms = await conn.fetchval("SELECT operator_permissions FROM vyapar_identity.members WHERE id = $1", ctx.member_id)
+    perms = with_session_permissions(ctx, perms)  # [IMP-ADMIN] or granted by the host session
     if not perms or "commercial" not in perms:
         raise ApiError(403, "commercial.error.permissionRequired", lang)
     try:

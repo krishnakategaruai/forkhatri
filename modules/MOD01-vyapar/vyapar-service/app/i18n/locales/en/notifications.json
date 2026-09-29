@@ -98,5 +98,82 @@
   "campaignCompleted": {
     "title": "Campaign finished",
     "body": "{name} has ended. Its report stays available."
+  },
+  "contractProposed": {
+    "title": "Contract proposed: {title}",
+    "body": "{name} sent you a contract for {amount}. Review it and accept to start."
+  },
+  "contractAccepted": {
+    "title": "Contract accepted: {title}",
+    "body": "{name} accepted the contract. Fund the first milestone to begin."
+  },
+  "contractCancelled": {
+    "title": "Contract cancelled: {title}",
+    "body": "{name} cancelled this contract. Any held payment is refunded."
+  },
+  "contractCompleted": {
+    "title": "Contract completed: {title}",
+    "body": "Every milestone is released. You can now leave a review."
+  },
+  "contractDisputed": {
+    "title": "Dispute opened: {title}",
+    "body": "{name} opened a dispute. Held payments stay held until a Vyapar moderator records the outcome."
+  },
+  "disputeResolved": {
+    "title": "Dispute resolved: {title}",
+    "body": "Outcome: {outcome}."
+  },
+  "milestoneFunded": {
+    "title": "Milestone funded: {milestone}",
+    "body": "{amount} is held for this milestone. You can start the work."
+  },
+  "milestoneSubmitted": {
+    "title": "Work submitted: {milestone}",
+    "body": "{name} submitted this milestone. Approve it or send it back with a note; it releases on its own after 14 days."
+  },
+  "milestoneReleased": {
+    "title": "Payment released: {milestone}",
+    "body": "{amount} has been released to you."
+  },
+  "milestoneRejected": {
+    "title": "Sent back: {milestone}",
+    "body": "{name} sent this milestone back: {note}"
+  },
+  "timesheetSubmitted": {
+    "title": "Timesheet submitted: {week}",
+    "body": "{name} submitted {hours} hours. Approve to pay {amount}."
+  },
+  "timesheetPaid": {
+    "title": "Timesheet paid: {week}",
+    "body": "{amount} for {hours} hours has been released to you."
+  },
+  "timesheetRejected": {
+    "title": "Timesheet sent back: {week}",
+    "body": "{name} sent this timesheet back: {note}"
+  },
+  "savedSearchMatch": {
+    "title": "{count} new for your saved search \"{name}\"",
+    "body": "New opportunities match a search you saved. Open Vyapar to see them."
+  },
+  "opportunityPausedSeekerCharge": {
+    "title": "Your opportunity was paused",
+    "body": "Two members reported being asked for money to apply. Vyapar never allows a fee, deposit or kit charge for applicants. Our team is reviewing it; you can appeal from Profile → My moderation outcomes. Grievances: {contact}"
+  },
+  "applicantHired": {
+    "title": "You're hired: {title}",
+    "body": "The poster accepted your application. Open the conversation to see their contact details and next steps."
+  },
+  "applicantDeclined": {
+    "title": "Update on your application: {title}",
+    "body": "The poster has chosen other applicants this time. Keep going, there are similar opportunities on Vyapar."
+  },
+  "precallContact": {
+    "title_call": "{name} called about your {job} job",
+    "title_whatsapp": "{name} messaged you on WhatsApp about your {job} job",
+    "body": "{name} is on your applicants list. Open the post to see their profile."
+  },
+  "applicantShortlisted": {
+    "title": "Shortlisted: {title}",
+    "body": "{poster} shortlisted your application and may call you. Keep your phone handy."
   }
 }

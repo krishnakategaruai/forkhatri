@@ -29,7 +29,7 @@ async def create_partnership_request(
     body: PartnershipIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> PartnershipCreatedOut:
     return await svc.create_partnership_request(conn, ctx, lang, body=body, idempotency_key=idempotency_key)
@@ -38,7 +38,7 @@ async def create_partnership_request(
 @router.get("/mine", response_model=list[PartnershipSummaryOut], operation_id="listMyPartnershipRequests", summary="List the member's partnership requests")
 async def list_my_partnership_requests(
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[PartnershipSummaryOut]:
     return await svc.list_my_partnership_requests(conn, ctx)
 
@@ -49,7 +49,7 @@ async def list_my_partnership_requests_page(
     limit: int = Query(default=DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     cursor: str | None = None,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> Page[PartnershipSummaryOut]:
     return await svc.list_my_partnership_requests_page(conn, ctx, lang, limit=limit, cursor=cursor)
 
@@ -59,7 +59,7 @@ async def get_partnership_request(
     request_id: str,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> PartnershipRequestOut:
     return await svc.get_partnership_request(conn, ctx, lang, request_id=request_id)
 
@@ -70,6 +70,6 @@ async def transition_partnership_request(
     action: Action,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> PartnershipTransitionOut:
     return await svc.transition_partnership_request(conn, ctx, lang, request_id=request_id, action=action)

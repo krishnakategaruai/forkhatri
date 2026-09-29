@@ -86,7 +86,7 @@ TARGETS = (
         app="identity_app",
         owns_database=True,
         migrations=REPO_ROOT / "platform/identity-service/db/migrations",
-        schema_like=("identity", "registry", "platform"),
+        schema_like=("identity", "registry", "platform", "governance"),
     ),
     Target(
         key="mangaly",
@@ -281,7 +281,7 @@ def run_identity_seed(base: str) -> None:
         "MANGALY_SOURCE_DSN": url_for(base, database=mangaly.database, user=mangaly.owner, password=mangaly.password(mangaly.owner)),
         "MILAVN_DEV_IDENTITIES": str(REPO_ROOT / "modules/MOD02-milavn/milavn-service/app/config/dev_identities.json"),
     }
-    for script in ("import_module_identities.py", "seed_dev_members.py"):
+    for script in ("import_module_identities.py", "seed_dev_members.py", "seed_dev_governance.py"):
         log(f"seed: platform/identity-service/scripts/{script}")
         subprocess.run([sys.executable, str(REPO_ROOT / "platform/identity-service/scripts" / script)], env=env, check=True)
 

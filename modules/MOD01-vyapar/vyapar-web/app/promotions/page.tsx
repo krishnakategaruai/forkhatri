@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";
 import Screen from "@/app/components/Screen";
+import { formatDate } from "@/lib/format"; // [FE2] Indian date order
 
 interface PromotionRow {
   id: string;
@@ -39,7 +40,7 @@ export default function PromotionsPage() {
             </div>
             <p className="vy-muted" style={{ fontSize: 13 }}>
               {t(`commercial:product.${r.product_id}` as "product.boost_7d", { defaultValue: r.product_id })}
-              {r.ends_at ? ` · ${t("commercial:list.endsOn", { date: new Date(r.ends_at).toLocaleDateString(i18n.language) })}` : ""}
+              {r.ends_at ? ` · ${t("commercial:list.endsOn", { date: formatDate(r.ends_at, i18n.language) })}` : ""}
             </p>
           </a>
         ))}

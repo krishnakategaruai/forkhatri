@@ -30,6 +30,7 @@ import { useTranslation } from "react-i18next";
 import { api, ApiError } from "@/lib/api";
 import { formatPaise } from "@/lib/money";
 import Screen from "@/app/components/Screen";
+import { formatDate } from "@/lib/format"; // [FE2] Indian date order
 
 interface Plan {
   id: string;
@@ -105,7 +106,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ listingId:
   const [chosenItems, setChosenItems] = useState<string[]>([]);
 
   const money = (p: number) => formatPaise(p, i18n.language);
-  const fmt = (d: string) => new Date(d).toLocaleDateString(i18n.language);
+  const fmt = (d: string) => formatDate(d, i18n.language);
 
   const load = useCallback(async () => {
     try {
@@ -209,8 +210,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ listingId:
   const chipStyle = (active: boolean) => ({
     border: "none",
     cursor: "pointer",
-    background: active ? "var(--accent)" : "var(--surface-overlay)",
-    color: active ? "var(--accent-ink)" : "var(--text-primary)",
+    background: active ? "var(--selected-solid-bg)" : "var(--surface-overlay)",
+    color: active ? "var(--selected-solid-fg)" : "var(--text-primary)",
   });
 
   const planFact = ws.entitlement
@@ -300,7 +301,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ listingId:
           <div className="vy-stack" role="radiogroup" aria-label={t("workspace:plan.chooseTitle")} style={{ gap: 8 }}>
             {ws.plans.map((p) => (
               <button key={p.id} role="radio" aria-checked={planId === p.id} className="vy-card vy-row"
-                      style={{ justifyContent: "space-between", cursor: "pointer", color: "inherit", borderColor: planId === p.id ? "var(--accent)" : undefined }}
+                      style={{ justifyContent: "space-between", cursor: "pointer", color: "inherit", borderColor: planId === p.id ? "var(--selected-border)" : undefined }}
                       onClick={() => setPlanId(p.id)}>
                 <strong>{planId === p.id ? "● " : "○ "}{t(`workspace:plan.billing.${p.billing}` as "plan.billing.monthly")}</strong>
                 <span className="vy-muted">{t("commercial:boost.inclTax", { amount: money(p.total_paise) })}</span>

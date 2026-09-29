@@ -10,7 +10,10 @@
     "prev": "Previous matches",
     "next": "More matches",
     "seeAllCount_one": "See {{count}} match",
-    "seeAllCount_other": "See all {{count}} matches"
+    "seeAllCount_other": "See all {{count}} matches",
+    "picked": "Picked for you",
+    "pickedFor": "Picked for {{name}}",
+    "emptyFor": "No matches for {{name}} yet. A fuller profile brings more."
   },
   "waiting": {
     "title": "Waiting for you",
@@ -25,7 +28,9 @@
     "title": "Your Home Circle",
     "helping": "{{count}} helping your search",
     "none": "No one is helping yet",
-    "invite": "Invite family"
+    "invite": "Invite family",
+    "titleFor": "{{name}}'s Home Circle",
+    "helpingFor": "{{count}} helping {{name}}'s search"
   },
   "greetingWord": "Namaste,",
   "hero": {
@@ -47,5 +52,76 @@
     "profile": "Profile strength",
     "profileDone": "Your profile is complete",
     "circleEmpty": "Bring your family in — they can search and answer requests with you."
+  },
+  "turn": {
+    "title": "Your turn",
+    "request": "Wants to connect",
+    "requestFor": "Wants to connect with {{name}}",
+    "someone": "Someone"
+  },
+  "intro": {
+    "eyebrow": "Today's introduction",
+    "eyebrowFor": "Today's introduction for {{name}}",
+    "why": "Why them",
+    "open": "See profile",
+    "fit": "How you fit",
+    "fitFor": "How {{name}} fits",
+    "top": "Your best match right now",
+    "topFor": "{{name}}'s best match right now",
+    "openBiodata": "See biodata",
+    "requestFor": "Send request for {{name}}",
+    "suggestTo": "Suggest to {{name}}",
+    "requestSent": "Request sent",
+    "suggested": "Suggested",
+    "actionFailed": "That did not go through. Try again from the profile.",
+    "fact": {
+      "age": "Age",
+      "height": "Height",
+      "education": "Education",
+      "work": "Work",
+      "city": "City",
+      "tongue": "Mother tongue"
+    }
+  },
+  "mm": {
+    "title": "Your matchmaker",
+    "matters": "Matching on what matters to you: {{list}}",
+    "ask": "Tell us who you are looking for, in your own words"
+  },
+  "search": {
+    "title": "Your search",
+    "titleFor": "{{name}}'s search",
+    "browse_one": "Browse {{count}} match",
+    "browse_other": "Browse all {{count}} matches",
+    "awaiting": {
+      "label_one": "request waiting for a reply",
+      "label_other": "requests waiting for a reply",
+      "empty": "Nothing sent yet. Send a request from any profile.",
+      "emptyFor": "Nothing sent for {{name}} yet."
+    },
+    "connected": {
+      "label_one": "connection",
+      "label_other": "connections",
+      "empty": "No connections yet.",
+      "emptyFor": "No connections for {{name}} yet."
+    },
+    "suggested": {
+      "label_one": "suggested by family",
+      "label_other": "suggested by family",
+      "empty": "Your family has not suggested anyone yet.",
+      "emptyFor": "No family suggestions for {{name}} yet.",
+      "by": "by {{name}}",
+      "byYou": "by you"
+    }
+  },
+  "plans": {
+    "title": "Your plan",
+    "titleFor": "{{name}}'s plan",
+    "current": "You are on {{plan}}",
+    "usage": "{{used}} of {{limit}} requests used today",
+    "from": "From {{price}} a month",
+    "free": "Free",
+    "yours": "Current",
+    "compare": "Compare plans"
   }
 }

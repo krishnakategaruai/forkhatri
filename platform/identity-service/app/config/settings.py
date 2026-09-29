@@ -120,6 +120,16 @@ class Settings(BaseSettings):
     module_api_urls: dict[str, str] = {}
     insights_timeout_seconds: float = 5.0
 
+    # Admin & Governance Console (ADR-012, TR-PLAT-01): module APIs whose admin views the
+    # console federates, in addition to MODULE_API_URLS (a module may offer admin views
+    # before it answers the members dashboard, e.g. Vyapar). Environment only.
+    admin_module_api_urls: dict[str, str] = {}
+    admin_gateway_timeout_seconds: float = 8.0
+
+    @property
+    def admin_modules(self) -> dict[str, str]:
+        return {**self.module_api_urls, **self.admin_module_api_urls}
+
     @property
     def dev_tools_active(self) -> bool:
         """The development member switcher is mounted only here, never in production or a rehearsal."""

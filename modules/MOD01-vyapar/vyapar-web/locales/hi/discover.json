@@ -87,5 +87,11 @@
       "business": "व्यवसाय",
       "professional": "प्रोफेशनल"
     }
+  },
+  "broaden": {
+    "radius": "{{km}} किमी तक बढ़ाएँ",
+    "adjacent_categories": "मिलती-जुलती श्रेणियाँ भी दिखाएँ",
+    "remove_filter": "एक फ़िल्टर हटाएँ",
+    "include_unverified": "असत्यापित लिस्टिंग भी दिखाएँ"
   }
 }

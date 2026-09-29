@@ -216,6 +216,54 @@ async def run_strong_match_pass(pool: asyncpg.Pool) -> int:
                 )
                 if written:
                     sent += 1
+
+            # [IMP-B/FR21] Saved searches with alert=true: new posts matching
+            # the member's own saved filters, through the feed's query
+            # builder, under the SAME per-member daily cap and mute rules —
+            # never a second notification budget.
+            sent += await _saved_search_alerts(conn, {m["id"]: m for m in members}, muted_by_member, settings)
+    return sent
+
+
+async def _saved_search_alerts(conn: asyncpg.Connection, members: dict[str, asyncpg.Record], muted_by_member: dict, settings) -> int:
+    from app.services.feed import saved_search_matches
+    from app.services.saved_searches import _row_to_out
+
+    sent = 0
+    searches = await conn.fetch(
+        "SELECT * FROM vyapar_opportunities.saved_searches WHERE alert AND member_id = ANY($1::text[]) ORDER BY created_at",
+        list(members),
+    )
+    for search in searches:
+        member = members.get(search["member_id"])
+        if member is None or "opportunity" in muted_by_member.get(member["id"], set()):
+            continue
+        saved = _row_to_out(search)
+        since = search["last_alerted_at"] or search["created_at"]
+        matches = await saved_search_matches(conn, member, saved.query, saved.filters, since)
+        if not matches:
+            continue
+        allowed = await conn.fetchval(
+            "SELECT vyapar_platform.check_and_increment($1, 86400, $2)",
+            f"notify:{member['id']}:day", settings.rate_limit_notify_strong_match_per_day,
+        )
+        if not allowed:
+            continue
+        name = saved.name or saved.query or ", ".join(saved.filters.skills) or translate("discover.section.for_you", member["language"])
+        idem_key = f"saved_search:{search['id']}:{date.today().isoformat()}"
+        written = await send_notification(
+            conn, member_id=member["id"], kind="opportunity_match", template_id="saved_search_match",
+            title=translate("notifications.savedSearchMatch.title", member["language"], count=len(matches), name=name),
+            body=translate("notifications.savedSearchMatch.body", member["language"]),
+            link=f"/opportunities/{matches[0]['id']}",
+            params={"saved_search_id": str(search["id"]), "opportunity_ids": [str(m["id"]) for m in matches]},
+            idempotency_key=idem_key,
+        )
+        await conn.execute(
+            "UPDATE vyapar_opportunities.saved_searches SET last_alerted_at = now(), updated_at = now() WHERE id = $1", search["id"]
+        )
+        if written:
+            sent += 1
     return sent
 
 

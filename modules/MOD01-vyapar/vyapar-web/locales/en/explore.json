@@ -1,0 +1,294 @@
+{
+  "filters": {
+    "title": "Filters",
+    "button": "Filters",
+    "buttonCount_one": "Filters ({{count}})",
+    "buttonCount_other": "Filters ({{count}})",
+    "sort": "Sort by",
+    "distance": "Distance",
+    "anyDistance": "Any distance",
+    "withinKm": "Within {{km}} km",
+    "type": "Kind of work",
+    "anyType": "All kinds",
+    "workMode": "Where",
+    "anyMode": "Anywhere",
+    "availability": "Starts",
+    "anyTime": "Any time",
+    "skills": "Skills",
+    "skillsSearch": "Find a skill",
+    "applied": "Applied filters",
+    "remove": "Remove {{label}}",
+    "clearAll": "Clear all",
+    "close": "Close filters",
+    "showResults": "Show results",
+    "showN_one": "Show 1 result",
+    "showN_other": "Show {{count}} results",
+    "noLocation": "Add your area to your profile to sort and filter by real distance. Until then, distance uses the locality name.",
+    "noResults": "Nothing matches these filters",
+    "noResultsBody": "Remove a filter or widen the distance to see more.",
+    "backToDiscover": "Discover",
+    "pay": "Pay",
+    "payKind": {
+      "monthly": "Monthly salary",
+      "project": "Project budget"
+    },
+    "payMin": "Min ₹",
+    "payMax": "Max ₹",
+    "payEchoRange": "{{min}} – {{max}}",
+    "payEchoMin": "{{min}} or more",
+    "payEchoMax": "Up to {{max}}",
+    "perMonth": "a month",
+    "posted": "Posted",
+    "shift": "Shift",
+    "experience": "Your experience",
+    "moreKinds": "More kinds",
+    "noSkills": "No skills match that.",
+    "verifiedOnly": "Verified posters only",
+    "verifiedChip": "Verified posters"
+  },
+  "sort": {
+    "relevance": "Best match",
+    "distance": "Nearest",
+    "freshness": "Newest",
+    "verified_first": "Verified first",
+    "salary_high": "Highest pay"
+  },
+  "type": {
+    "employment": "Jobs",
+    "freelance": "Projects",
+    "local_service": "Local services",
+    "partnership": "Partnerships",
+    "training": "Training",
+    "community": "Community"
+  },
+  "workMode": {
+    "on_site": "On site",
+    "remote": "Remote",
+    "both": "On site or remote"
+  },
+  "availability": {
+    "now": "Right away",
+    "this_week": "Within 2 weeks",
+    "later": "Later"
+  },
+  "saved": {
+    "save": "Save this search",
+    "alert": "Tell me when new ones match",
+    "done": "Search saved.",
+    "doneAlert": "Search saved. We'll tell you when new posts match.",
+    "seeAll": "See saved searches",
+    "title": "Saved searches",
+    "defaultName": "My search",
+    "alertOn": "Alerts on",
+    "alertOff": "Alerts off",
+    "since": "saved {{date}}",
+    "delete": "Delete"
+  },
+  "activity": {
+    "contractsLine_one": "{{count}} running",
+    "contractsLine_other": "{{count}} running",
+    "needsYou_one": "1 needs you",
+    "needsYou_other": "{{count}} need you"
+  },
+  "menu": {
+    "label": "Hire or find work",
+    "hire": "Hire",
+    "work": "Find work",
+    "byCategory": "By category",
+    "byOutcome": "Get it done",
+    "forYou": "For you",
+    "allIn": "All of {{name}} →",
+    "workIn": "All work in {{name}} →",
+    "post": "Post what you need",
+    "postDesc": "Describe it in one line; people come to you",
+    "matches": "Work that matches you",
+    "matchesDesc": "Picked from the skills on your profile",
+    "nearby": "Near you",
+    "nearbyDesc": "Within 10 km, nearest first",
+    "urgentJobs": "Jobs starting now",
+    "urgentJobsDesc": "Employers who need someone this week",
+    "saved": "Saved searches",
+    "savedDesc": "Searches that alert you to new posts",
+    "profile": "Create your work profile",
+    "profileDesc": "So people who hire can find you"
+  },
+  "outcome": {
+    "eyebrow": "Get it done on Vyapar",
+    "how": "People from your own community reply first. Posting is free, and nobody pays a fee to apply.",
+    "whoDoesIt": "Who does this",
+    "postThis": "Post this",
+    "free": "Free to post. You choose whom to talk to.",
+    "profiles": "People who can do it",
+    "seeAllProfiles": "See everyone →",
+    "noProfiles": "No profiles yet for this. Post it, and people who do this work will reply.",
+    "more": "More things people get done",
+    "hire-shop-staff": {
+      "title": "Hire staff for my shop",
+      "short": "Counter, sales, cleaning and security staff",
+      "lead": "Find counter and sales staff, helpers, cleaners and security guards who live near your shop, with the salary and timings you set.",
+      "postTitle": "Post a shop job",
+      "postBody": "Say the role, salary and timings. People nearby apply or call you in the hours you choose."
+    },
+    "home-repair": {
+      "title": "Get my home repaired",
+      "short": "Electricians, plumbers, carpenters, painters, AC repair",
+      "lead": "Electricians, plumbers, carpenters, painters and AC technicians near you — people your neighbours have already used.",
+      "postTitle": "Post the repair",
+      "postBody": "Say what is broken and when you are home. Nearby workers send you a quote."
+    },
+    "build-website": {
+      "title": "Build my website",
+      "short": "Developers and designers for your site",
+      "lead": "Developers and designers who can make a website or app for your business, paid by milestone so you pay for what is done.",
+      "postTitle": "Post the project",
+      "postBody": "Describe the site and your budget. Compare proposals, then start a contract with milestones."
+    },
+    "cater-event": {
+      "title": "Cater an event",
+      "short": "Caterers, cooks, cakes and event help",
+      "lead": "Caterers, cooks, bakers and event helpers for weddings, pujas and family functions, from your own community.",
+      "postTitle": "Post the event",
+      "postBody": "Give the date, place and number of guests. Caterers reply with menus and prices."
+    },
+    "gst-accounts": {
+      "title": "Do my GST and accounts",
+      "short": "GST filing, bookkeeping and income tax",
+      "lead": "Accountants and tax professionals for GST returns, monthly books and income tax — many offer fixed monthly packages.",
+      "postTitle": "Post your accounts work",
+      "postBody": "Say how many invoices a month and which returns. Compare packages and prices."
+    },
+    "market-business": {
+      "title": "Market my business",
+      "short": "Social media, content, design and photos",
+      "lead": "Digital marketers, content writers, designers and photographers who can bring customers to your shop or brand.",
+      "postTitle": "Post the marketing work",
+      "postBody": "Say what you sell and who your customers are. Freelancers send proposals."
+    }
+  },
+  "posted": {
+    "today": "Today",
+    "week": "This week",
+    "month": "This month",
+    "any": "Any time"
+  },
+  "shift": {
+    "day": "Day",
+    "night": "Night",
+    "flexible": "Flexible",
+    "any": "Any shift"
+  },
+  "experience": {
+    "fresher": "Fresher OK",
+    "1": "1+ years",
+    "3": "3+ years",
+    "any": "Any"
+  },
+  "segment": {
+    "community": "From your community",
+    "public": "Public sources"
+  },
+  "top": {
+    "switchLabel": "What to look for",
+    "opportunities": "Opportunities",
+    "businesses": "Businesses & professionals",
+    "searchLabel": "Search opportunities",
+    "searchPlaceholder": "Search jobs, projects or skills",
+    "clearSearch": "Clear search",
+    "nearPlace": "Near {{place}}",
+    "nearPlaceKm": "Near {{place}} · {{km}} km",
+    "locationTitle": "Distance",
+    "area": "Your area",
+    "noArea": "Not set yet",
+    "changeArea": "Change it on your profile",
+    "distance": "Within {{km}} km",
+    "apply": "Apply",
+    "anywhere": "Anywhere",
+    "km": "{{km}} km"
+  },
+  "rows": {
+    "forYou": "For you",
+    "nearYou": "Near you · within {{km}} km",
+    "category": "{{category}}",
+    "newToday": "New today",
+    "startingNow": "Starting this week",
+    "pay20k": "Paying {{amount}}+ a month",
+    "verified": "From verified businesses",
+    "community": "From your community",
+    "projects": "Projects for professionals",
+    "remote": "Work from home",
+    "seeAll": "See all {{count}}",
+    "prev": "Previous",
+    "next": "Next",
+    "projectsBudget": "Projects with a budget over {{amount}}"
+  },
+  "results": {
+    "loading": "Finding opportunities…",
+    "count_one": "1 opportunity",
+    "count_other": "{{count}} opportunities",
+    "countNear_one": "1 opportunity near {{place}}",
+    "countNear_other": "{{count}} opportunities near {{place}}",
+    "widen": "Widen to {{km}} km",
+    "dropLast": "Remove the last filter"
+  },
+  "quick": {
+    "label": "Quick filters",
+    "jobs": "Jobs",
+    "near": "Near me {{km}} km",
+    "today": "Posted today",
+    "verified": "Verified",
+    "nearMe": "Near me",
+    "pay20k": "₹20,000+ a month",
+    "remote": "Work from home",
+    "night": "Night shift",
+    "filters": "Filters"
+  },
+  "card": {
+    "why": "Why this?",
+    "fromCommunity": "From your community",
+    "publicSource": "From a public source",
+    "sponsored": "Sponsored",
+    "whyShort": "Why am I seeing this?",
+    "perMonth": "{{amount}} a month"
+  },
+  "hero": {
+    "subtitleNear": "Work near {{place}}, picked for you",
+    "subtitle": "Work picked for you",
+    "search": "Search",
+    "where": "Where"
+  },
+  "trades": {
+    "label": "Browse by trade",
+    "all": "All",
+    "allTitle": "All kinds of work",
+    "allHint": "Pick one to see its opportunities.",
+    "selected": "{{trade}}, selected",
+    "electricians": "Electricians",
+    "plumbers": "Plumbers",
+    "delivery": "Delivery",
+    "drivers": "Drivers",
+    "cooks": "Cooks",
+    "housekeeping": "Housekeeping",
+    "security": "Security",
+    "sales": "Sales & calling",
+    "tailors": "Tailors",
+    "beauticians": "Beauticians",
+    "tutors": "Tutors",
+    "caTax": "CA & tax",
+    "developers": "Developers",
+    "designers": "Designers",
+    "media": "Photo & video",
+    "office": "Office jobs",
+    "carpenters": "Carpenters",
+    "painters": "Painters"
+  },
+  "state": {
+    "errorTitle": "Couldn't load opportunities",
+    "errorBody": "Check your connection and try again.",
+    "retry": "Try again"
+  },
+  "sparse": {
+    "title": "Want to see more work here?",
+    "body": "Add your skills and we'll show work that fits you. Or post what you need, and people nearby will see it.",
+    "post": "Post what you need"
+  }
+}

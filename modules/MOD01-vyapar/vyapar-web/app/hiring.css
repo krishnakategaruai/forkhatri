@@ -1,0 +1,1360 @@
+/* ======================================================================
+   [FE1 — 2026-09-28] Hiring surfaces: posting composer, response
+   composers, applicants board, voice input, taxonomy picker.
+   Same fixed rules as globals.css (DESIGN-ENHANCEMENT.md): the ink ladder
+   and one accent only, no gradients, no glass, no glow; elevation is a
+   lightness step; the accent marks the one selected / primary thing.
+   Every rule reads tokens, so light and dark both follow globals.css.
+   Mobile-first: base rules are the phone layout, min-width queries add the
+   desktop shapes (side panels, two-column picker, list + detail pane).
+   ====================================================================== */
+
+/* ---- Segmented control (Fixed / Hourly, bid type, sort) --------------- */
+.vy-seg {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  align-self: flex-start;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.vy-seg > button {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--dur-exit) var(--ease-out), color var(--dur-exit) var(--ease-out);
+}
+
+.vy-seg > button[aria-pressed="true"] {
+  background: var(--surface-floating);
+  color: var(--text-primary);
+}
+
+.vy-seg > button:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+/* ---- Option chips (single/multi choice rows) ---------------------------- */
+.vy-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vy-options > .vy-chip {
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  min-height: 36px;
+}
+
+/* ---- Field helpers ------------------------------------------------------ */
+.vy-field-hint {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  line-height: 1.45;
+}
+
+.vy-field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.vy-field-head .vy-label {
+  margin-bottom: 0;
+}
+
+.vy-optional {
+  font-weight: 500;
+  color: var(--text-tertiary);
+}
+
+/* "Please check": an AI-read value the poster has not looked at yet. A
+   quiet dashed tag and a hairline on the field's left edge — noticeable,
+   never alarming, and never the accent (the accent is the Publish button). */
+.vy-badge-check {
+  background: transparent;
+  border: 1px dashed var(--border-strong);
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.vy-field-flagged {
+  border-left: 2px solid var(--border-strong);
+  padding-left: var(--space-3);
+}
+
+.vy-check-ok {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+}
+
+@media (hover: hover) {
+  .vy-check-ok:hover {
+    background: var(--surface-overlay);
+    color: var(--text-primary);
+  }
+}
+
+/* Rupee input: the symbol is part of the field, not the placeholder. */
+.vy-money {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.vy-money > span {
+  position: absolute;
+  left: 14px;
+  color: var(--text-tertiary);
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.vy-money > .vy-input {
+  padding-left: 30px;
+}
+
+.vy-range {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-2);
+}
+
+.vy-range > .vy-range-sep {
+  color: var(--text-tertiary);
+  padding-top: 12px;
+}
+
+.vy-readback {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* A section of the composer: a quiet heading, then its fields. */
+.vy-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.vy-form-section + .vy-form-section {
+  border-top: 1px solid var(--border-hairline);
+  padding-top: var(--space-5);
+}
+
+/* ---- Voice input -------------------------------------------------------- */
+.vy-voice {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.vy-voice-field {
+  position: relative;
+}
+
+.vy-voice-field > .vy-input,
+.vy-voice-field > .vy-textarea {
+  padding-right: 92px;
+}
+
+.vy-voice-tools {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.vy-voice-lang,
+.vy-voice-mic {
+  appearance: none;
+  border: 1px solid var(--border-hairline);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  font: inherit;
+  cursor: pointer;
+  border-radius: var(--radius-pill);
+  display: inline-grid;
+  place-items: center;
+}
+
+.vy-voice-lang {
+  height: 30px;
+  min-width: 34px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.vy-voice-mic {
+  width: 36px;
+  height: 36px;
+}
+
+/* Listening: the accent edge and a sunken fill — no glow ring (L0). */
+.vy-voice-mic[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+  background: var(--surface-sunken);
+}
+
+.vy-voice-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: vy-pulse var(--dur-move) var(--ease-in-out) infinite alternate;
+}
+
+.vy-voice-live {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-nested);
+  border: 1px solid var(--border-hairline);
+}
+
+.vy-voice-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  letter-spacing: 0.02em;
+}
+
+.vy-voice-transcript {
+  color: var(--text-primary);
+  font-size: 15px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.vy-voice-transcript .vy-voice-interim {
+  color: var(--text-tertiary);
+}
+
+.vy-voice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.vy-voice-actions .vy-btn {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+/* ---- Composer: start ("Describe what you need") ------------------------- */
+.vy-describe {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.vy-describe .vy-textarea {
+  min-height: 132px;
+  font-size: 16px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.vy-describe-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.vy-describe-alt {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 600px) {
+  .vy-describe-alt {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.vy-alt-mode {
+  appearance: none;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-hairline);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+}
+
+.vy-alt-mode strong {
+  font-size: 14px;
+}
+
+.vy-alt-mode span {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  line-height: 1.4;
+}
+
+@media (hover: hover) {
+  .vy-alt-mode:hover {
+    border-color: var(--border-default);
+    background: var(--surface-nested);
+  }
+}
+
+/* Step label ("Step 1 of 2 · Details"), no progress bar for two steps. */
+.vy-step-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+/* Missing-detail questions from the draft: one chip each, answered in place. */
+.vy-questions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.vy-question {
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  background: transparent;
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.vy-question > button {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/* ---- Suggestions ("Get more responses") --------------------------------- */
+.vy-tips {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 600px) {
+  .vy-tips {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.vy-tip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-nested);
+  border: 1px solid var(--border-hairline);
+}
+
+.vy-tip-impact {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.vy-tip p {
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.vy-tip-done {
+  opacity: 0.6;
+}
+
+/* ---- Taxonomy picker ---------------------------------------------------- */
+.vy-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.vy-picker-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.vy-picker-cats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.vy-picker-cat {
+  appearance: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-hairline);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  min-width: 0;
+}
+
+.vy-picker-cat strong {
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.vy-picker-cat span {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--text-tertiary);
+}
+
+.vy-picker-cat.vy-picker-cat-has {
+  border-color: var(--selected-border);
+}
+
+.vy-picker-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-strong);
+}
+
+@media (hover: hover) {
+  .vy-picker-cat:hover {
+    background: var(--surface-nested);
+  }
+}
+
+.vy-picker-specs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.vy-picker-spec-list {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.vy-picker-spec {
+  appearance: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: 10px var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-hairline);
+  background: var(--surface-overlay);
+  color: var(--text-primary);
+}
+
+.vy-picker-spec[aria-pressed="true"] {
+  background: var(--selected-bg);
+  border-color: var(--selected-border);
+}
+
+.vy-picker-spec-mark {
+  flex: 0 0 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  line-height: 1;
+  margin-top: 1px;
+}
+
+.vy-picker-spec[aria-pressed="true"] .vy-picker-spec-mark {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.vy-picker-spec-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.vy-picker-spec-text strong {
+  font-size: 14px;
+}
+
+.vy-picker-spec-text span {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  line-height: 1.35;
+}
+
+/* Phone: drill-in — the category grid, or the chosen category's roles. */
+.vy-picker[data-drilled="true"] .vy-picker-cats {
+  display: none;
+}
+
+.vy-picker[data-drilled="false"] .vy-picker-specs {
+  display: none;
+}
+
+.vy-picker-back {
+  align-self: flex-start;
+}
+
+@media (min-width: 900px) {
+  .vy-picker-body {
+    grid-template-columns: minmax(200px, 250px) minmax(0, 1fr);
+    gap: var(--space-4);
+    align-items: start;
+  }
+
+  .vy-picker[data-drilled] .vy-picker-cats {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 420px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .vy-picker[data-drilled] .vy-picker-specs {
+    display: flex;
+  }
+
+  .vy-picker-cat {
+    padding: 8px var(--space-3);
+    border-color: transparent;
+    background: transparent;
+  }
+
+  .vy-picker-cat span {
+    display: none;
+  }
+
+  .vy-picker-cat[data-shown="true"] {
+    background: var(--surface-nested);
+    border-color: var(--border-default);
+  }
+
+  .vy-picker-cat.vy-picker-cat-has:not([data-shown="true"]) {
+    border-color: transparent;
+  }
+
+  .vy-picker-back {
+    display: none;
+  }
+
+  .vy-picker-spec-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ---- Sheet (apply confirmation, compare) -------------------------------- */
+.vy-hsheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  /* a solid scrim from the surface token: no blur, no literal colour */
+  background: var(--scrim);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.vy-hsheet {
+  width: 100%;
+  max-height: 92dvh;
+  overflow-y: auto;
+  background: var(--surface-floating);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: var(--space-5) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.vy-hsheet-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.vy-hsheet-close {
+  appearance: none;
+  border: none;
+  background: var(--surface-overlay);
+  color: var(--text-secondary);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  flex: 0 0 34px;
+}
+
+@media (min-width: 900px) {
+  .vy-hsheet-backdrop {
+    align-items: center;
+    padding: var(--space-6);
+  }
+
+  .vy-hsheet {
+    max-width: 560px;
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+  }
+
+  .vy-hsheet.vy-hsheet-wide {
+    max-width: 1080px;
+  }
+}
+
+/* ---- Toast (undo) ------------------------------------------------------- */
+.vy-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(96px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 10px 10px 10px 18px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-floating);
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  max-width: calc(100vw - 32px);
+}
+
+.vy-toast .vy-btn {
+  padding: 6px 14px;
+  font-size: 13px;
+}
+
+@media (min-width: 900px) {
+  .vy-toast {
+    bottom: var(--space-6);
+    left: calc(50% + var(--rail-w) / 2);
+  }
+}
+
+/* ---- Profile snapshot (what the poster will see) ------------------------ */
+.vy-snapshot {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+.vy-monogram {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.vy-snapshot-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.vy-snapshot-body strong {
+  color: var(--text-primary);
+}
+
+/* ---- Proposal: milestones ----------------------------------------------- */
+.vy-milestones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.vy-milestone {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 36px;
+  gap: var(--space-2);
+  align-items: start;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface-nested);
+}
+
+.vy-milestone-fields {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.vy-milestone-fields > :first-child {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 900px) {
+  .vy-milestone-fields {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .vy-milestone-fields > :first-child {
+    grid-column: auto;
+  }
+}
+
+.vy-msleft {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.vy-msleft.vy-msleft-ok {
+  color: var(--trust-verified);
+}
+
+.vy-icon-btn {
+  appearance: none;
+  border: 1px solid var(--border-hairline);
+  background: transparent;
+  color: var(--text-secondary);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* AI help card (Improve with AI) */
+.vy-ai-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-nested);
+  border: 1px solid var(--border-hairline);
+}
+
+.vy-ai-card blockquote {
+  margin: 0;
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--border-strong);
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.vy-ai-card ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* ---- Applicants board --------------------------------------------------- */
+.vy-board-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.vy-board-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.vy-stage-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+.vy-stage-tabs > .vy-chip {
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  min-height: 36px;
+}
+
+.vy-stage-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary);
+}
+
+.vy-chip[aria-pressed="true"] .vy-stage-count {
+  color: inherit;
+}
+
+.vy-applicants {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.vy-applicant {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-hairline);
+  min-width: 0;
+}
+
+/* "Selected" only means something where the detail pane shows it. */
+@media (min-width: 1024px) {
+  .vy-applicant.vy-applicant-selected {
+    border-color: var(--selected-border);
+    background: var(--surface-nested);
+  }
+}
+
+.vy-applicant-top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+.vy-applicant-name {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  color: var(--text-primary);
+  font-weight: 650;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.vy-applicant-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+}
+
+.vy-applicant-terms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  font-size: 14px;
+}
+
+.vy-applicant-terms strong {
+  color: var(--text-primary);
+}
+
+.vy-applicant-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.vy-applicant-actions .vy-btn {
+  padding: 9px 16px;
+  font-size: 14px;
+}
+
+.vy-select-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.vy-select-box input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+/* The match score: a number out of 10 on a neutral pill — never a %. */
+.vy-score {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.vy-score small {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-weight: 600;
+}
+
+.vy-reasons {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 3px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.vy-reasons li::before {
+  content: "+";
+  color: var(--trust-verified);
+  font-weight: 700;
+  margin-right: 8px;
+}
+
+.vy-reasons li.vy-risk::before {
+  content: "–";
+  color: var(--text-tertiary);
+}
+
+.vy-confirm-inline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface-nested);
+  border: 1px solid var(--border-default);
+}
+
+.vy-compare-bar {
+  position: sticky;
+  bottom: calc(88px + env(safe-area-inset-bottom));
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 10px 10px 10px 18px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-floating);
+  border: 1px solid var(--border-default);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+@media (min-width: 900px) {
+  .vy-compare-bar {
+    bottom: var(--space-4);
+  }
+}
+
+/* Compare: a column per applicant, a row per attribute. Scrolls sideways on
+   a phone with the attribute column pinned. */
+.vy-compare-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+}
+
+.vy-compare {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  min-width: 520px;
+}
+
+.vy-compare th,
+.vy-compare td {
+  text-align: left;
+  vertical-align: top;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.vy-compare thead th {
+  color: var(--text-primary);
+  font-size: 15px;
+  background: var(--surface-nested);
+}
+
+.vy-compare tbody th {
+  color: var(--text-tertiary);
+  font-weight: 600;
+  font-size: 12px;
+  white-space: nowrap;
+  position: sticky;
+  left: 0;
+  background: var(--surface-floating);
+}
+
+.vy-compare td {
+  color: var(--text-secondary);
+}
+
+.vy-compare tr:last-child > * {
+  border-bottom: none;
+}
+
+.vy-compare .vy-compare-best {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+/* Detail pane content */
+.vy-applicant-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.vy-qa {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vy-qa dt {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  font-weight: 600;
+}
+
+.vy-qa dd {
+  margin: 0 0 var(--space-2);
+  color: var(--text-primary);
+  white-space: pre-wrap;
+}
+
+.vy-milestone-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.vy-milestone-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-nested);
+}
+
+/* Poster's "Applicants" summary on the opportunity detail. */
+.vy-stage-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.vy-stage-summary > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 8px 4px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-nested);
+}
+
+.vy-stage-summary strong {
+  font-size: 18px;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.vy-stage-summary span {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+/* Sent state that replaces a composer (no success modal). */
+.vy-sent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-hairline);
+}
+
+.vy-sent-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--trust-verified-soft);
+  color: var(--trust-verified);
+  font-weight: 700;
+}
+
+/* Opportunity detail: long structured facts (interview details, timings). */
+.vy-fact-wide {
+  grid-column: 1 / -1;
+}
+
+/* Example sentences on the composer's start: a tap fills the box. */
+.vy-chip.vy-example {
+  border-radius: var(--radius-md);
+  text-align: left;
+  white-space: normal;
+  line-height: 1.4;
+  font-weight: 500;
+  padding: 8px 12px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+
+/* How-it-works steps beside the start box (desktop aside). */
+.vy-howto {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-4);
+  counter-reset: vy-howto;
+}
+
+.vy-howto li {
+  counter-increment: vy-howto;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: var(--space-3);
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.vy-howto li::before {
+  content: counter(vy-howto);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--surface-nested);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.vy-howto strong {
+  display: block;
+  color: var(--text-primary);
+}
+
+/* Phone: the applicant's full detail opens under the card; on desktop the
+   same detail sits in the pane beside the list instead. */
+.vy-inline-detail {
+  border-top: 1px solid var(--border-hairline);
+  padding-top: var(--space-4);
+}
+
+@media (min-width: 1024px) {
+  .vy-inline-detail {
+    display: none;
+  }
+}
+
+/* Phone action bar with pre-accept calling: Apply and Call side by side. */
+.vy-actionbar-main {
+  gap: var(--space-2);
+}
+
+.vy-actionbar-precall {
+  flex: 1;
+  min-width: 0;
+}
+
+.vy-actionbar-precall .vy-contact-reason {
+  display: none;
+}
+
+/* On/off switch (pre-accept calling). Neutral when off, the accent only
+   when on — it marks the one thing the poster chose. */
+.vy-switch {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 4px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.vy-switch-track {
+  width: 44px;
+  height: 26px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-default);
+  position: relative;
+  transition: background-color var(--dur-exit) var(--ease-out), border-color var(--dur-exit) var(--ease-out);
+  flex: 0 0 44px;
+}
+
+.vy-switch-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  transition: transform var(--dur-exit) var(--ease-out), background-color var(--dur-exit) var(--ease-out);
+}
+
+.vy-switch[aria-checked="true"] .vy-switch-track {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.vy-switch[aria-checked="true"] .vy-switch-thumb {
+  transform: translateX(18px);
+  background: var(--accent-ink);
+}
+
+.vy-switch:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Stage tabs: the selected tab uses the same selected-chip treatment. */
+.vy-chip.vy-tab[aria-selected="true"] {
+  background: var(--selected-bg);
+  color: var(--selected-fg);
+  border-color: var(--selected-border);
+}
+
+/* A number field with a short leading unit ("Day 12"). */
+.vy-unit {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.vy-unit > span {
+  position: absolute;
+  left: 14px;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.vy-unit > .vy-input {
+  padding-left: 52px;
+}

@@ -28,10 +28,19 @@
     "otpExpired": "कोड समय-सीमा समाप्त — नया माँगें",
     "otpLockedNow": "बहुत अधिक असफल प्रयास — 15 मिनट के लिए लॉक",
     "otpIncorrect": "गलत कोड ({attempts}/5 प्रयास)",
-    "profileRequired": "पहले एक व्यवसाय या प्रोफेशनल प्रोफ़ाइल बनाएँ — दोनों में से कोई एक काफ़ी है।"
+    "profileRequired": "पहले एक व्यवसाय या प्रोफेशनल प्रोफ़ाइल बनाएँ — दोनों में से कोई एक काफ़ी है।",
+    "duplicatePackageTier": "हर टियर (बेसिक, स्टैंडर्ड, प्रीमियम) केवल एक बार हो सकता है।",
+    "tooManyPackages": "एक लिस्टिंग अधिकतम {max} पैकेज दे सकती है।",
+    "packageNotFound": "वह पैकेज अब उपलब्ध नहीं है।"
   },
   "success": {
     "otpSent": "OTP भेजा गया",
     "contactVerified": "संपर्क सत्यापित"
-  }
+  },
+  "packageTier": {
+    "basic": "बेसिक",
+    "standard": "स्टैंडर्ड",
+    "premium": "प्रीमियम"
+  },
+  "packageRequestNote": "{tier} पैकेज का अनुरोध किया: {name} ({price})"
 }

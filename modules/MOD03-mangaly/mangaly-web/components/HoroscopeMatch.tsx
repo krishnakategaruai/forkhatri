@@ -60,11 +60,41 @@ type Props = {
   forCandidate?: { accountId: string; name: string };
   /** Checker mode: a result already calculated (the Kundli matching page). */
   result?: Response;
+  /** Inside the compatibility panel: the panel carries the title. */
+  bare?: boolean;
 };
 
 const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
 
-export default function HoroscopeMatch({ otherAccountId, forCandidate, result }: Props) {
+/* One koota as a ring: how much of its points the pair has. One accent,
+ * no red/green verdict — the family reads the numbers. */
+function Ring({ score, max, label }: { score: number; max: number; label: string }) {
+  const r = 22;
+  const c = 2 * Math.PI * r;
+  const share = max > 0 ? Math.max(0, Math.min(1, score / max)) : 0;
+  return (
+    <li className="hring">
+      <svg className="hring__svg" viewBox="0 0 56 56" aria-hidden="true">
+        <circle className="hring__track" cx="28" cy="28" r={r} />
+        <circle
+          className="hring__fill"
+          cx="28"
+          cy="28"
+          r={r}
+          strokeDasharray={`${share * c} ${c}`}
+          transform="rotate(-90 28 28)"
+        />
+      </svg>
+      <span className="hring__label">{label}</span>
+      <span className="hring__pts">
+        {fmt(score)}
+        <span className="hmatch__of">/{max}</span>
+      </span>
+    </li>
+  );
+}
+
+export default function HoroscopeMatch({ otherAccountId, forCandidate, result, bare }: Props) {
   const { t } = useTranslation(["horoscope", "profile"]);
   const [fetched, setData] = useState<Response | null | "error">(null);
   const data = result ?? fetched;
@@ -85,7 +115,7 @@ export default function HoroscopeMatch({ otherAccountId, forCandidate, result }:
 
   const head = (
     <div className="hmatch__head">
-      <h2 className="hmatch__title">{t("horoscope:title")}</h2>
+      {!bare && <h2 className="hmatch__title">{t("horoscope:title")}</h2>}
       <p className="hmatch__layer">{t("horoscope:layer")}</p>
     </div>
   );
@@ -145,6 +175,19 @@ export default function HoroscopeMatch({ otherAccountId, forCandidate, result }:
           <p className="hmatch__essential">
             {porutham.essentialsAgree ? t("horoscope:porutham.essentialsAgree") : t("horoscope:porutham.essentialsFail")}
           </p>
+          <ul className="hmatch__agree">
+            {porutham.items.map((p) => (
+              <li key={p.porutham} className={`hmatch__agree-item${p.agrees ? " is-on" : ""}`}>
+                <span aria-hidden="true">{p.agrees ? "✓" : "–"}</span>
+                {t(`horoscope:porutham.name.${p.porutham}`)}
+                <span className="sr-only">
+                  {p.agrees ? t("horoscope:porutham.agrees") : t("horoscope:porutham.notAgrees")}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <details className="hmatch__details">
+            <summary>{t("horoscope:details")}</summary>
           <table className="hmatch__table">
             <thead>
               <tr>
@@ -171,6 +214,7 @@ export default function HoroscopeMatch({ otherAccountId, forCandidate, result }:
               ))}
             </tbody>
           </table>
+          </details>
         </>
       ) : (
         <p className="hmatch__missing">{t("horoscope:notDeterminable")}</p>
@@ -186,6 +230,13 @@ export default function HoroscopeMatch({ otherAccountId, forCandidate, result }:
             <span className="hmatch__total">{fmt(ashtakoota.totalScore)}</span>
             <span className="hmatch__max">{t("horoscope:outOf", { max: ashtakoota.maxScore })}</span>
           </div>
+          <ul className="hmatch__rings">
+            {ashtakoota.kootas.map((k) => (
+              <Ring key={k.koota} score={k.score} max={k.maxScore} label={t(`horoscope:koota.${k.koota}`)} />
+            ))}
+          </ul>
+          <details className="hmatch__details">
+            <summary>{t("horoscope:details")}</summary>
           <table className="hmatch__table">
             <thead>
               <tr>
@@ -218,6 +269,7 @@ export default function HoroscopeMatch({ otherAccountId, forCandidate, result }:
               ))}
             </tbody>
           </table>
+          </details>
         </>
       ) : (
         <p className="hmatch__missing">{t("horoscope:notDeterminable")}</p>

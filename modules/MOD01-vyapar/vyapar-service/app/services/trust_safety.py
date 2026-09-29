@@ -27,7 +27,7 @@ from pydantic import BaseModel, Field
 
 from app.errors import ApiError
 from app.i18n import translate
-from app.identity import AuthzContext
+from app.identity import AuthzContext, with_session_permissions
 from app.notifications import send_notification
 from app.services.verification import revoke_verification
 
@@ -39,8 +39,141 @@ SEVERITY_RANK = {"critical": 0, "high": 1, "medium": 2, "low": 3}
 REVIEW_OUTCOME = {"limit": "hidden", "remove": "removed", "dismiss": "published", "restore": "published"}
 
 ObjectKind = Literal["listing", "opportunity", "enquiry", "partnership", "review"]
-ReportReason = Literal["scam", "fake", "impersonation", "harassment", "discrimination", "spam", "stale", "privacy", "other"]
+# [IMP-B] 'asked_for_money' appended (migration 019): "the poster asked me for a fee / deposit / kit charge".
+ReportReason = Literal["scam", "fake", "impersonation", "harassment", "discrimination", "spam", "stale", "privacy", "other", "asked_for_money"]
 Action = Literal["limit", "remove", "restore", "request_verification", "suspend", "dismiss"]
+
+
+# ---------------------------------------------------------------------------
+# [IMP-B, 2026-09-28] "Nobody charges job seekers" — enforced, not only worded.
+# The Indian job market's classic scam is a fee before the job: registration,
+# security deposit, uniform/kit, training, "processing". Three layers:
+#   1. `check_seeker_charge(text, structured, lang)` refuses an employment
+#      opportunity outright when it carries an explicit `candidate_pays`
+#      flag/amount, or when its wording asks applicants for money (the same
+#      `ADVANCE_PAYMENT_PATTERNS` opportunities.py already scans, read here,
+#      plus kit/uniform/training-fee phrases). Registered in
+#      app/services/hooks.py so opportunity create/patch/publish can call it.
+#   2. Report reason `asked_for_money`: the second independent report pauses
+#      the opportunity and raises the case to High (migration 019's
+#      apply_seeker_charge_reports — the reporter's session cannot do either
+#      write itself).
+#   3. `seeker_protection_notice(lang)` — the localized notice every
+#      employment opportunity carries, with the report reason to use.
+# Traces to: FR40, TR040, FR39, FR11, SP040
+# ---------------------------------------------------------------------------
+from app.config import get_settings
+from app.services import hooks
+from app.services.opportunities import ADVANCE_PAYMENT_PATTERNS  # read-only reuse; the list stays owned there
+
+SEEKER_CHARGE_PATTERNS: tuple[str, ...] = ADVANCE_PAYMENT_PATTERNS + (
+    "kit charge", "kit fee", "uniform charge", "uniform fee", "training fee", "training charge", "laptop deposit",
+    "refundable deposit", "caution deposit", "verification fee", "document fee", "medical fee", "onboarding fee",
+    "pay before joining", "pay rs", "pay ₹", "candidate pays", "candidates pay", "applicant pays",
+    "किट शुल्क", "यूनिफॉर्म शुल्क", "प्रशिक्षण शुल्क", "ट्रेनिंग फीस", "जॉइनिंग फीस", "उम्मीदवार भुगतान",
+    "కిట్ ఫీజు", "యూనిఫాం ఫీజు", "శిక్షణ ఫీజు", "ట్రైనింగ్ ఫీజు", "జాయినింగ్ ఫీజు", "అభ్యర్థి చెల్లించాలి",
+)
+SEEKER_PROTECTED_TYPES = ("employment",)
+
+
+class SeekerProtectionOut(BaseModel):
+    applies: bool
+    title: str
+    body: str
+    report_reason: str = "asked_for_money"
+    report_label: str
+
+
+def seeker_protection_notice(lang: str, opportunity_type: str | None = "employment") -> SeekerProtectionOut:
+    applies = (opportunity_type or "employment") in SEEKER_PROTECTED_TYPES
+    return SeekerProtectionOut(
+        applies=applies,
+        title=translate("trust_safety.seekerProtection.title", lang),
+        body=translate("trust_safety.seekerProtection.body", lang),
+        report_label=translate("trust_safety.seekerProtection.reportLabel", lang),
+    )
+
+
+def _truthy(value) -> bool:
+    if isinstance(value, str):
+        return value.strip().lower() in ("true", "1", "yes", "y")
+    return bool(value)
+
+
+@hooks.register_seeker_charge_check
+def check_seeker_charge(text: str, structured: dict | None, lang: str = "en") -> None:
+    """Raises ApiError(422, code=seeker_charge_not_allowed) when an employment
+    opportunity would charge the applicant. `structured` is the opportunity's
+    field dict (create/patch body or row); `text` is its free text. Types
+    other than employment pass the structured check but keep the wording
+    check for the fee patterns (a "freelance" post asking a registration fee
+    is the same scam)."""
+    structured = dict(structured or {})
+    # Accept both a flat field dict and an OpportunityCreate/Patch dump,
+    # where type-specific fields sit under "structured".
+    nested = structured.get("structured")
+    if isinstance(nested, dict):
+        structured = {**nested, **{k: v for k, v in structured.items() if k != "structured"}}
+    opp_type = structured.get("type") or "employment"
+    amount = structured.get("candidate_pays_amount") or structured.get("candidate_pays_paise")
+    if _truthy(structured.get("candidate_pays")) or (amount not in (None, 0, "0", "")):
+        raise ApiError(422, "trust_safety.error.seekerChargeNotAllowed", lang, error_code="seeker_charge_not_allowed",
+                       extra={"field": "candidate_pays", "type": opp_type})
+    blob = (text or "").lower()
+    hit = next((p for p in SEEKER_CHARGE_PATTERNS if p in blob), None)
+    if hit is not None:
+        raise ApiError(422, "trust_safety.error.seekerChargeNotAllowed", lang, error_code="seeker_charge_not_allowed",
+                       extra={"field": "text", "matched": hit, "type": opp_type})
+
+
+@hooks.register_opportunity_enricher
+async def enrich_opportunity_with_seeker_protection(conn: asyncpg.Connection, ctx: AuthzContext, lang: str, opportunity: dict) -> dict:
+    notice = seeker_protection_notice(lang, opportunity.get("type"))
+    return {"seeker_protection": notice.model_dump()} if notice.applies else {}
+
+
+async def get_opportunity_seeker_protection(conn: asyncpg.Connection, ctx: AuthzContext, lang: str, opportunity_id: str) -> SeekerProtectionOut:
+    try:
+        opp_type = await conn.fetchval("SELECT type FROM vyapar_opportunities.opportunities WHERE id = $1", opportunity_id)
+    except asyncpg.DataError:
+        opp_type = None
+    if opp_type is None:
+        raise ApiError(404, "common.error.opportunityNotFound", lang)
+    return seeker_protection_notice(lang, opp_type)
+
+
+class SeekerChargeCheckIn(BaseModel):
+    text: str = ""
+    structured: dict = Field(default_factory=dict)
+
+
+class SeekerChargeCheckOut(BaseModel):
+    allowed: bool
+    code: str | None = None
+    message: str | None = None
+
+
+def run_seeker_charge_check(body: SeekerChargeCheckIn, lang: str) -> SeekerChargeCheckOut:
+    """Pre-validation for composers and agents: never raises, reports instead."""
+    try:
+        check_seeker_charge(body.text, body.structured, lang)
+    except ApiError as exc:
+        return SeekerChargeCheckOut(allowed=False, code=exc.code, message=exc.message)
+    return SeekerChargeCheckOut(allowed=True)
+
+
+async def _apply_seeker_charge_reports(conn: asyncpg.Connection, opportunity_id: str) -> None:
+    from app.i18n import LAUNCH_LANGUAGES
+
+    texts = {
+        lang: {"title": translate("notifications.opportunityPausedSeekerCharge.title", lang),
+               "body": translate("notifications.opportunityPausedSeekerCharge.body", lang, contact=GRIEVANCE_CONTACT)}
+        for lang in LAUNCH_LANGUAGES
+    }
+    await conn.fetchrow(
+        "SELECT * FROM vyapar_trust_safety.apply_seeker_charge_reports($1, $2, $3::jsonb)",
+        opportunity_id, get_settings().seeker_charge_report_threshold, json.dumps(texts, ensure_ascii=False),
+    )
 
 
 class ReportReceivedOut(BaseModel):
@@ -176,6 +309,10 @@ async def create_report(
         "SELECT * FROM vyapar_trust_safety.file_report($1, $2, $3, $4, $5)",
         body.object_kind, body.object_id, subject, body.reason, body.evidence_text,
     )
+    # [IMP-B/FR40] "asked for money": the second independent report pauses
+    # the opportunity and raises the case to High (migration 019).
+    if body.reason == "asked_for_money" and body.object_kind == "opportunity":
+        await _apply_seeker_charge_reports(conn, body.object_id)
     # FR39 offers Block in the same flow — the reporter gets the id they can
     # block (they are already a party to / viewer of this object). Never for
     # reviews, where the author may not otherwise be shown.
@@ -246,6 +383,7 @@ async def create_appeal(
 # ---------------------------------------------------------------------------
 async def _require_moderation(conn: asyncpg.Connection, ctx: AuthzContext, lang: str) -> None:
     perms = await conn.fetchval("SELECT operator_permissions FROM vyapar_identity.members WHERE id = $1", ctx.member_id)
+    perms = with_session_permissions(ctx, perms)  # [IMP-ADMIN] or granted by the host session
     if not perms or "moderation" not in perms:
         raise ApiError(403, "trust_safety.error.permissionRequired", lang)
 

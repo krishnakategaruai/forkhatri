@@ -1,11 +1,12 @@
 "use client";
 
-// [IMP38 — Refactor C] The top-right corner of the shell, owned by the host.
-// Same markup layout.tsx had inline (one shared fixed flex row — see the
-// comment kept in layout.tsx for why the bell and the account pill must
-// share one container), but WHICH controls appear now comes from the host:
-// the bell only when the host supplies a notification source, the account
-// control only when the host has one.
+// [IMP38 — Refactor C] The host-owned end of the top bar: the bell only
+// when the host supplies a notification source, the account control only
+// when the host has one.
+// [Design language 2026-09-29] No longer its own fixed-position corner: it
+// renders inline at the end of <AppTopBar>, one flex row with the rest of
+// the header, so the bell sits left of the avatar and the avatar is always
+// the right-most item (the platform header rule), whatever the name width.
 import { useHost } from "./HostProvider";
 import NotificationBell from "@/app/components/NotificationBell";
 
@@ -13,9 +14,9 @@ export default function HostTopBar() {
   const host = useHost();
   const Account = host.AccountControl;
   return (
-    <div style={{ position: "fixed", top: 14, right: 14, zIndex: 60, display: "flex", alignItems: "flex-start", gap: 8, maxWidth: "calc(100vw - 28px)" }}>
+    <>
       {host.notifications && <NotificationBell />}
       {Account && <Account />}
-    </div>
+    </>
   );
 }

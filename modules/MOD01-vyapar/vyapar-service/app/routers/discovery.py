@@ -53,11 +53,11 @@ async def search_listings(
     broaden_attempt: int = Query(default=0, ge=0, le=3),
     limit: int = Query(default=20, le=50),
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> SearchResponse:
     return await svc.search_listings(conn, ctx, lang, q=q, category=category, locality=locality, radius_km=radius_km, service_mode=service_mode, availability=availability, verified_only=verified_only, include_unverified=include_unverified, sort_by=sort_by, skills=skills, broaden_attempt=broaden_attempt, limit=limit)
 
 
 @router.get("/search-suggestions", response_model=SearchSuggestionsOut, operation_id="getSearchSuggestions", summary="Get search suggestions for a partial query")
-async def search_suggestions(lang: Locale, conn: asyncpg.Connection = Depends(get_conn)) -> SearchSuggestionsOut:
+async def search_suggestions(lang: Locale, conn: asyncpg.Connection = Depends(get_conn, scope="function")) -> SearchSuggestionsOut:
     return await svc.get_search_suggestions(conn, lang)

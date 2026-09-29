@@ -85,6 +85,8 @@ export type Circle = {
   id: string; name: string; circle_type: string; type_label: string; description: string | null;
   created_by_member_id: string; created_at: string; member_count: number; viewer_role: string | null; is_open: boolean;
   locality_city?: string | null; locality_locality?: string | null; locality_label?: string | null; near_you?: boolean;
+  cover_url?: string | null; // organizer-uploaded cover photo
+  faces?: { member_id: string; display_name: string; avatar: string | null }[]; // your circles only: a few members' faces
 };
 
 export type AroundYou = { today: Card[]; tomorrow: Card[]; weekend: Card[]; later: Card[]; circles: { id: string; name: string; circle_type: string; member_count: number }[]; viewer_locality: string };

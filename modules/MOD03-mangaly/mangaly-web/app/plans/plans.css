@@ -274,3 +274,23 @@
   font-size: 13px;
   margin: 0;
 }
+
+/* [2026-09-29] The current plan is marked in the brand accent, the same as
+   on Home (it was green here and red there); ticks are quiet, not green;
+   the second plan's button is a real outlined button. */
+.plan--current {
+  border-color: var(--accent);
+}
+.plan__tick,
+.plan--featured .plan__tick {
+  background: var(--accent-tint);
+  color: var(--accent-ink);
+}
+.plan__second {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line-2, var(--line));
+}
+.plan__second:hover:not(:disabled) {
+  border-color: var(--accent);
+}

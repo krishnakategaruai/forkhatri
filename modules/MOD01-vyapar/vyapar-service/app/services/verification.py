@@ -29,7 +29,7 @@ from pydantic import BaseModel, Field
 from app.crypto import encrypt_identifier, mask_identifier
 from app.errors import ApiError
 from app.i18n import translate
-from app.identity import AuthzContext
+from app.identity import AuthzContext, with_session_permissions
 from app.notifications import send_notification
 
 
@@ -136,7 +136,8 @@ async def list_listing_verifications(
 # service IS the chokepoint for this path, per this file's own header note).
 # ---------------------------------------------------------------------------
 def _require_verification_permission(ctx: AuthzContext, conn_row: asyncpg.Record | None, lang: str) -> None:
-    if not conn_row or "verification" not in (conn_row["operator_permissions"] or []):
+    # [IMP-ADMIN] the member row's permissions, or the host session's.
+    if "verification" not in with_session_permissions(ctx, conn_row["operator_permissions"] if conn_row else None):
         raise ApiError(403, "verification.error.permissionRequired", lang)
 
 

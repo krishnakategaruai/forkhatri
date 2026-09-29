@@ -15,7 +15,8 @@
     "forTerm": "for {{term}}",
     "gst": "+ {{gst}} GST",
     "total": "{{total}} all inclusive",
-    "perMonth": "about {{amount}} a month"
+    "perMonth": "about {{amount}} a month",
+    "includesGst": "Includes {{gst}} GST"
   },
   "included": "What's included",
   "includesPlan": "Everything in {{plan}}, and",
@@ -69,5 +70,7 @@
     "empty": "No one yet. A fuller profile gets more attention.",
     "open": "Open profile",
     "homeRow": "See who is interested in you"
-  }
+  },
+  "familyNote": "Plans are bought from {{name}}'s own account; they hold the plan and it covers the whole family's search for them.",
+  "gstIncludedNote": "Prices include 18% GST."
 }

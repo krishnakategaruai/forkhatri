@@ -16,9 +16,7 @@
 
 from __future__ import annotations
 
-import shutil
 from dataclasses import dataclass
-from pathlib import Path
 from uuid import UUID, uuid4
 
 from fastapi import UploadFile
@@ -27,7 +25,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import localities
 from app.config.interests import TAG_LABELS
-from app.config.settings import get_settings
 
 __all__ = [
     "MissingRequiredFields",
@@ -41,7 +38,6 @@ __all__ = [
 ]
 
 SUPPORTED_LANGUAGES = ("en", "hi", "te")
-_ALLOWED_IMAGE_TYPES = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
 
 
 class MissingRequiredFields(Exception):
@@ -236,13 +232,14 @@ async def update_enrichment(
 
 
 async def _store_photo(member_id: UUID, photo: UploadFile) -> str:
-    """Local-disk stand-in for Object Storage (TR01 pre-signed upload)."""
-    ext = _ALLOWED_IMAGE_TYPES.get(photo.content_type or "")
-    if ext is None:
-        raise UnsupportedMedia(photo.content_type or "unknown")
-    root: Path = get_settings().media_root / "profiles"
-    root.mkdir(parents=True, exist_ok=True)
-    name = f"{member_id}-{uuid4().hex[:8]}{ext}"
-    with (root / name).open("wb") as fh:
-        shutil.copyfileobj(photo.file, fh)
-    return f"profiles/{name}"
+    """Local-disk stand-in for Object Storage (TR01 pre-signed upload).
+    [045] The image is recognised by its first bytes (JPEG/PNG/WebP), never by the browser's label,
+    and capped at 10 MB while streaming (raises UnsupportedMedia / media_files.TooLarge)."""
+    from app import media_files
+
+    try:
+        ext = media_files.sniff_image(photo)
+    except media_files.NotAnImage as exc:
+        raise UnsupportedMedia(photo.content_type or "unknown") from exc
+    media_files.check_size(photo, media_files.MAX_PHOTO_BYTES)
+    return media_files.store(photo, "profiles", str(member_id), ext, media_files.MAX_PHOTO_BYTES)

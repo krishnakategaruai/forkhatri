@@ -9,9 +9,9 @@ import type { FeedParams, FeedResponse, Opportunity, ProfileCardData, WhyRespons
 import { useSdk } from "@/lib/sdk/react";
 import { useResource } from "./useResource";
 
-export function useOpportunity(id: string) {
+export function useOpportunity(id: string, options: { enabled?: boolean } = {}) {
   const sdk = useSdk();
-  return useResource<Opportunity>(() => sdk.opportunities.get(id), [id, sdk]);
+  return useResource<Opportunity>(() => sdk.opportunities.get(id), [id, sdk], { enabled: options.enabled });
 }
 
 /** Similar opportunities; an empty list when there are none or the call fails. */
@@ -42,8 +42,9 @@ export function useFirstRunState() {
 /** The Discover feed for the given filters. `enabled: false` holds it back (e.g. until first run is done). */
 export function useFeed(params: FeedParams, options: { enabled?: boolean } = {}) {
   const sdk = useSdk();
-  const skillsKey = (params.skills ?? []).join(",");
-  return useResource<FeedResponse>(() => sdk.feed.get(params), [skillsKey, sdk], { enabled: options.enabled });
+  // [FE2] every filter (not only skills) is part of the key, so any change re-fetches
+  const key = JSON.stringify(params);
+  return useResource<FeedResponse>(() => sdk.feed.get(params), [key, sdk], { enabled: options.enabled });
 }
 
 /** Profiles recommended by any SDK call (similar profiles, matching profiles…). Empty on failure. */

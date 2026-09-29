@@ -67,5 +67,22 @@
   "layout": {
     "actions": "कार्रवाइयाँ",
     "onThisPage": "इस पेज पर"
+  },
+  "shell": {
+    "home": "व्यापार होम",
+    "searchPlaceholder": "नौकरी, हुनर या व्यवसाय खोजें",
+    "searchLabel": "व्यापार में खोजें",
+    "openSearch": "खोजें",
+    "account": "खाता"
+  },
+  "display": {
+    "title": "भाषा और डिस्प्ले",
+    "language": "भाषा",
+    "textSize": "अक्षरों का आकार",
+    "sizeNormal": "सामान्य",
+    "sizeLarge": "बड़ा",
+    "sizeLarger": "और बड़ा",
+    "contrast": "ज़्यादा कंट्रास्ट",
+    "contrastHint": "गहरे अक्षर और साफ़ किनारे"
   }
 }

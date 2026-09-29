@@ -243,6 +243,15 @@ export function Sigil({ moduleKey, size = 24 }: { moduleKey: string; size?: numb
         </>
       );
       break;
+    case "admin":
+      // Admin console: a shield with a check (people the samaj has appointed).
+      art = (
+        <>
+          <path d="M32 10l18 7v13c0 11-8 19-18 23-10-4-18-12-18-23V17z" {...line} />
+          <path d="M24 32l6 6 11-12" {...line} />
+        </>
+      );
+      break;
     default:
       art = <rect x="14" y="14" width="36" height="36" rx="8" {...line} />;
   }

@@ -9,6 +9,11 @@
 // [IMP39 — desktop layout] ≥900px: the sandbox explanation on the left and
 // a wider amount card on the right; phone order unchanged (wrappers are
 // display:contents below the breakpoint).
+// [FE2 — imp-backend-d] Contract milestones and hourly weeks are paid through
+// this same checkout. The contract page sends `?return=/contracts/<id>` so
+// the person lands back on their contract (the API's own simulate redirect
+// points at a promotion, which a contract payment is not). Only same-app
+// paths are honoured.
 // Traces to: FR51, TR051, SP051
 import { useEffect, useState, use as useParamsPromise } from "react";
 import { useRouter } from "next/navigation";
@@ -27,9 +32,20 @@ interface Order {
   sandbox: boolean;
 }
 
-export default function SandboxCheckoutPage({ params }: { params: Promise<{ orderId: string }> }) {
+function safeReturn(value: string | undefined): string | null {
+  return value && value.startsWith("/") && !value.startsWith("//") ? value : null;
+}
+
+export default function SandboxCheckoutPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ orderId: string }>;
+  searchParams: Promise<{ return?: string }>;
+}) {
   const { orderId } = useParamsPromise(params);
-  const { t, i18n } = useTranslation(["commercial", "common"]);
+  const returnTo = safeReturn(useParamsPromise(searchParams).return);
+  const { t, i18n } = useTranslation(["commercial", "common", "contracts"]);
   const router = useRouter();
   const [order, setOrder] = useState<Order | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +63,7 @@ export default function SandboxCheckoutPage({ params }: { params: Promise<{ orde
     setBusy(true);
     try {
       const res = await api.post<{ redirect: string }>(`/v1/payments/orders/${orderId}/simulate`, { outcome });
-      router.push(res.redirect);
+      router.push(returnTo ?? res.redirect);
     } catch (e) {
       setError(e instanceof ApiError ? String(e.detail) : t("common:state.somethingWentWrong"));
       setBusy(false);
@@ -77,7 +93,7 @@ export default function SandboxCheckoutPage({ params }: { params: Promise<{ orde
           ) : (
             <>
               <p>{t("commercial:checkout.done", { state: t(`commercial:paymentState.${order.state}` as "paymentState.pending") })}</p>
-              <a href={`/promotions/${order.ref_id}`}>{t("commercial:checkout.back")} →</a>
+              <a href={returnTo ?? `/promotions/${order.ref_id}`}>{order.kind === "contract_milestone" ? t("contracts:checkout.back") : t("commercial:checkout.back")} →</a>
             </>
           )}
         </div>

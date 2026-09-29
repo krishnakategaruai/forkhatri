@@ -366,6 +366,8 @@ class PlatformSession:
     # name and language; both come straight from the session claims.
     display_name: str | None = None
     preferred_language: str | None = None
+    # [ADR-012] The platform console's admin scopes for this member.
+    admin_scopes: tuple[str, ...] = ()
 
 
 _LINK_REFUSAL_SQLSTATES = {
@@ -441,6 +443,7 @@ async def resolve_platform_session(session: AsyncSession, token: str) -> Platfor
         expires_at=claims.session_expires_at,
         display_name=claims.display_name,
         preferred_language=claims.preferred_language,
+        admin_scopes=claims.admin_scopes,
     )
 
 

@@ -19,7 +19,11 @@ import './how-you-fit.css';
  *   · what THEY are looking for, only as the topics you meet. Their values,
  *     their misses and how many wishes they have stay private (FR020), so
  *     nothing here can be read back into their list.
- * No fraction, no percentage (baseline §3): the one summary is a word. */
+ * No fraction, no percentage (baseline §3): the one summary is a word.
+ *
+ * [Owner, 2026-09-28] A reader who has not said what they want still gets a
+ * rating: the word, and the generic points of match — what the two share
+ * (roots, city, food, family values, education) — with a way to say more. */
 
 type Status = 'met' | 'close' | 'differs' | 'unknown';
 type Wish = {
@@ -31,7 +35,15 @@ type Wish = {
   importance: number;
   status: Status;
 };
-type Fit = { label: 'strong' | 'good' | null; yours: Wish[]; theirs_met: string[] };
+export type Fit = {
+  label: 'strong' | 'good' | null;
+  yours: Wish[];
+  theirs_met: string[];
+  /** What the two share, as sentences in the reader's language. */
+  common?: string[];
+  seat_photo_url?: string | null;
+  other_photo_url?: string | null;
+};
 
 const OPTION_KEY: Record<string, string> = {
   relocation: 'relocation_willingness',
@@ -43,14 +55,20 @@ type Props = {
   candidateId: string;
   /** A circle member reading for their candidate: the candidate's seat. */
   forCandidate?: { accountId: string; name: string };
+  /** Already fetched by the compatibility panel; skips the request. */
+  data?: Fit | null;
+  /** Inside the compatibility panel: no card, no heading of its own. */
+  bare?: boolean;
 };
 
-export default function HowYouFit({ candidateId, forCandidate }: Props) {
+export default function HowYouFit({ candidateId, forCandidate, data, bare }: Props) {
   const { t } = useTranslation(['discover', 'profile']);
-  const [fit, setFit] = useState<Fit | null>(null);
+  const [fetched, setFit] = useState<Fit | null>(null);
+  const fit = data !== undefined ? data : fetched;
 
   const forId = forCandidate?.accountId;
   useEffect(() => {
+    if (data !== undefined) return;
     let active = true;
     const q = forId ? `?for_candidate=${encodeURIComponent(forId)}` : '';
     getJson<Fit>(`/discovery/fit/${candidateId}${q}`).then((f) => {
@@ -59,7 +77,7 @@ export default function HowYouFit({ candidateId, forCandidate }: Props) {
     return () => {
       active = false;
     };
-  }, [candidateId, forId]);
+  }, [candidateId, forId, data]);
 
   if (!fit) return null;
   const name = forCandidate?.name.split(' ')[0];
@@ -84,25 +102,50 @@ export default function HowYouFit({ candidateId, forCandidate }: Props) {
   const field = (f: string) => t(`discover:matchmaker.field.${f}`);
 
   return (
-    <section className="fit" aria-labelledby={`fit-${candidateId}`}>
-      <div className="fit__head">
-        <h2 id={`fit-${candidateId}`} className="fit__title">
-          {t(`discover:fit.title${seat}`, { name })}
-        </h2>
-        {fit.label && <span className="fit__label">{t(`discover:match.${fit.label}`)}</span>}
-      </div>
+    <section
+      className={`fit${bare ? ' fit--bare' : ''}`}
+      aria-labelledby={bare ? undefined : `fit-${candidateId}`}
+    >
+      {!bare && (
+        <div className="fit__head">
+          <h2 id={`fit-${candidateId}`} className="fit__title">
+            {t(`discover:fit.title${seat}`, { name })}
+          </h2>
+          {fit.label && <span className="fit__label">{t(`discover:match.${fit.label}`)}</span>}
+        </div>
+      )}
 
       <div className="fit__cols">
         <div className="fit__col">
-          <h3 className="fit__h">{t(`discover:fit.yours${seat}`, { name })}</h3>
+          <h3 className="fit__h">
+            {t(fit.yours.length === 0 ? `discover:fit.common${seat}` : `discover:fit.yours${seat}`, { name })}
+          </h3>
           {fit.yours.length === 0 ? (
-            forCandidate ? (
-              <p className="fit__quiet">{t('discover:fit.yoursEmptyFor', { name })}</p>
-            ) : (
-              <Link href="/me/matchmaker" className="fit__cta" prefetch={false}>
-                {t('discover:matchmaker.entry.title')} →
-              </Link>
-            )
+            <>
+              {(fit.common ?? []).length > 0 ? (
+                <ul className="fit__list">
+                  {(fit.common ?? []).map((point) => (
+                    <li key={point} className="fit__row fit__row--met">
+                      <span className="fit__mark" aria-hidden="true">
+                        {MARK.met}
+                      </span>
+                      <span className="fit__what">
+                        <span className="fit__wanted">{point}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="fit__quiet">{t('discover:fit.commonNone')}</p>
+              )}
+              {forCandidate ? (
+                <p className="fit__quiet">{t('discover:fit.yoursEmptyFor', { name })}</p>
+              ) : (
+                <Link href="/me/matchmaker" className="fit__cta" prefetch={false}>
+                  {t('discover:fit.commonCta')} →
+                </Link>
+              )}
+            </>
           ) : (
             <ul className="fit__list">
               {fit.yours.map((w) => (
@@ -126,6 +169,19 @@ export default function HowYouFit({ candidateId, forCandidate }: Props) {
             <Link href="/me/matchmaker" className="fit__edit" prefetch={false}>
               {t('discover:fit.edit')}
             </Link>
+          )}
+          {/* Their own list first; what the two simply share comes after. */}
+          {fit.yours.length > 0 && (fit.common ?? []).length > 0 && (
+            <>
+              <h3 className="fit__h fit__h--gap">{t('discover:fit.alsoCommon')}</h3>
+              <ul className="fit__chips">
+                {(fit.common ?? []).map((point) => (
+                  <li key={point} className="fit__chip">
+                    <span aria-hidden="true">✓</span> {point}
+                  </li>
+                ))}
+              </ul>
+            </>
           )}
         </div>
 

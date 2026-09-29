@@ -8,7 +8,8 @@
     "windowClosed": "The 15-day appeal window for this decision has closed.",
     "alreadyAppealed": "You've already appealed this decision.",
     "permissionRequired": "Operator 'moderation' permission required.",
-    "appealNotFound": "Appeal not found."
+    "appealNotFound": "Appeal not found.",
+    "seekerChargeNotAllowed": "No fee, deposit or kit charge may be asked from applicants. Remove it to post this opportunity."
   },
   "action": {
     "limit": "distribution limited",
@@ -29,10 +30,16 @@
     "privacy_violation": "privacy violation",
     "policy_other": "another policy breach",
     "no_violation": "no violation found",
-    "appeal_evidence_accepted": "appeal evidence accepted"
+    "appeal_evidence_accepted": "appeal evidence accepted",
+    "asked_for_money": "asked applicants for money"
   },
   "appealDecision": {
     "upheld": "not accepted — the decision stands",
     "overturned": "accepted — your content has been restored"
+  },
+  "seekerProtection": {
+    "title": "Nobody charges job seekers",
+    "body": "No fee, deposit or kit charge may be asked from applicants. Report if asked.",
+    "reportLabel": "Report: asked me for money"
   }
 }

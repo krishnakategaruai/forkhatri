@@ -32,7 +32,7 @@ from pydantic import BaseModel, Field
 
 from app.audit import audit, audit_out_of_band
 from app.errors import ApiError
-from app.identity import AuthzContext
+from app.identity import AuthzContext, with_session_permissions
 from app.ranking import explain
 from app.services.commercial import _tax
 from app.services.discovery import _listing_signals
@@ -108,6 +108,7 @@ class AuditEventOut(BaseModel):
 
 async def _require_commercial(conn: asyncpg.Connection, ctx: AuthzContext, lang: str) -> None:
     perms = await conn.fetchval("SELECT operator_permissions FROM vyapar_identity.members WHERE id = $1", ctx.member_id)
+    perms = with_session_permissions(ctx, perms)  # [IMP-ADMIN] or granted by the host session
     if not perms or "commercial" not in perms:
         raise ApiError(403, "commercial.error.permissionRequired", lang)
 

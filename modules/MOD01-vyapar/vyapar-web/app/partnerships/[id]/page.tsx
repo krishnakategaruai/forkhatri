@@ -22,6 +22,7 @@ import { ReputationLine, type Reputation } from "@/app/components/Reputation";
 import ReviewComposer from "@/app/components/ReviewComposer";
 import ReportSheet from "@/app/components/ReportSheet";
 import Screen from "@/app/components/Screen";
+import { formatDate } from "@/lib/format"; // [FE2] Indian date order
 
 interface ListingSummary {
   id: string;
@@ -144,7 +145,7 @@ export default function PartnershipDetailPage({ params }: { params: Promise<{ id
       <div>
         <span className="vy-badge vy-badge-member-provided">{t(`partnerships:state.${request.state}` as "state.pending")}</span>
         <h1 style={{ marginTop: 8 }}>{t("partnerships:detail.title")}</h1>
-        <p className="vy-muted">{t("partnerships:detail.sent", { date: new Date(request.created_at).toLocaleDateString(i18n.language) })}</p>
+        <p className="vy-muted">{t("partnerships:detail.sent", { date: formatDate(request.created_at, i18n.language) })}</p>
       </div>
       </div>
 

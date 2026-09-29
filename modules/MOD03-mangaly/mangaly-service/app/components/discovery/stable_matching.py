@@ -26,7 +26,7 @@ from dataclasses import dataclass, field
 from datetime import date
 from typing import TypeVar
 
-from app.components.discovery.interface import _preference_checks, _score, reciprocity
+from app.components.compatibility import interface as compatibility
 from app.config.ranking_weights import DAILY_PICK_LIST_CAP, DAILY_PICK_ROUNDS
 
 K = TypeVar("K", bound=Hashable)
@@ -35,11 +35,12 @@ _GENDER_LOOKED_FOR = {"bride": "female", "groom": "male"}
 
 
 def pair_score(a: dict, b: dict) -> tuple[float, float]:
-    """How much `a` should want `b`: reciprocity first (mutual fit), then the
-    full DEC-V1-002 formula from `a`'s seat as the tie-break."""
-    forward = _preference_checks(a, b)
-    reverse = _preference_checks(b, a)
-    return reciprocity(forward, reverse), _score(a, b)
+    """How much `a` should want `b`, from the same AI engine that orders
+    Discover (DEC-V1-031), so today's pick and "Picked for you" agree: the
+    mutual 1–10 pair score first, then how well `b` fits what `a` asked for
+    as the tie-break. [2026-09-28] It used to read the older yes/no checks
+    on age, city, height, education and diet only."""
+    return compatibility.pair_score(a, b), compatibility.direction_fit(a, b)
 
 
 def looks_for_each_other(a: dict, b: dict) -> bool:

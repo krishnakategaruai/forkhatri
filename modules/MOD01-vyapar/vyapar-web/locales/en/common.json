@@ -67,5 +67,22 @@
   "layout": {
     "actions": "Actions",
     "onThisPage": "On this page"
+  },
+  "shell": {
+    "home": "Vyapar home",
+    "searchPlaceholder": "Search jobs, skills or businesses",
+    "searchLabel": "Search Vyapar",
+    "openSearch": "Search",
+    "account": "Account"
+  },
+  "display": {
+    "title": "Language and display",
+    "language": "Language",
+    "textSize": "Text size",
+    "sizeNormal": "Normal",
+    "sizeLarge": "Large",
+    "sizeLarger": "Larger",
+    "contrast": "High contrast",
+    "contrastHint": "Darker text and clearer edges"
   }
 }

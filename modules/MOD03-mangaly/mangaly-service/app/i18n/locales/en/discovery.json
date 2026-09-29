@@ -70,6 +70,38 @@
       "brother_in_law": "brother-in-law",
       "sister_in_law": "sister-in-law",
       "family_friend": "family friend"
+    },
+    "family_values": {
+      "traditional": "traditional",
+      "moderate": "moderate",
+      "liberal": "liberal"
+    },
+    "family_type": {
+      "joint": "joint",
+      "nuclear": "nuclear",
+      "extended": "extended"
+    },
+    "hobby": {
+      "cooking": "cooking",
+      "street_food": "street food",
+      "trekking": "trekking",
+      "road_trips": "road trips",
+      "pilgrimages": "pilgrimages",
+      "beaches": "beaches",
+      "cricket": "cricket",
+      "badminton": "badminton",
+      "yoga": "yoga",
+      "fitness": "fitness",
+      "music": "music",
+      "classical_dance": "classical dance",
+      "movies": "movies",
+      "reading": "reading",
+      "photography": "photography",
+      "gardening": "gardening",
+      "volunteering": "volunteering",
+      "spirituality": "spirituality",
+      "board_games": "board games",
+      "art": "art & craft"
     }
   },
   "shelf": {
@@ -90,7 +122,11 @@
       "mutualFit": "You fit each other's preferences",
       "wantsYourCity": "Also wants someone in {city}",
       "wantsYourAge": "Looking for someone your age",
-      "nearby": "In {city} · about {km} km away"
+      "nearby": "In {city} · about {km} km away",
+      "sameFamilyValues": "Also a {value} family",
+      "sameFamilyType": "Also a {value} family",
+      "sameEducation": "Also studied to {value} level",
+      "horoscopeGuna": "{n} of {max} gunas match"
     },
     "reasonFor": {
       "sharedHobbies": "Enjoys {list}, like {name}",
@@ -102,13 +138,33 @@
       "suggestedBy": "Suggested by {name}'s {relation}",
       "suggestedByYou": "You suggested this",
       "sameFamilyView": "Also wants family {value}",
-      "mutualFit": "{name} and they fit each other's preferences",
+      "mutualFit": "Fits what {name} asked for, and {name} fits what they asked for",
       "wantsYourCity": "Wants someone in {city}, where {name} is",
       "wantsYourAge": "Looking for someone {name}'s age",
-      "nearby": "In {city} · about {km} km from {name}"
+      "nearby": "In {city} · about {km} km from {name}",
+      "sameFamilyValues": "A {value} family, like {name}'s",
+      "sameFamilyType": "A {value} family, like {name}'s",
+      "sameEducation": "Studied to {value} level, like {name}",
+      "horoscopeGuna": "{n} of {max} gunas match with {name}",
+      "openToMove": "In {city} · open to moving"
     }
   },
   "error": {
     "lookingForMissing": "Tell us whether you are looking for a bride or a groom to see matches."
+  },
+  "because": {
+    "title": "More like {name}",
+    "like": "Also {facts}",
+    "anon": "this {age}-year-old",
+    "anonWork": "this {age}-year-old {work}",
+    "anonNone": "this profile",
+    "sub": {
+      "request": "Because you sent them a request",
+      "requestFor": "Because a request went to them for {name}",
+      "suggested": "Because your family suggested them",
+      "suggestedBy": "Because {name} suggested them",
+      "suggestedByYou": "Because you suggested them",
+      "saved": "Because you saved them"
+    }
   }
 }

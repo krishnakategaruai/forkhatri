@@ -31,7 +31,7 @@ async def submit_verification(
     body: VerificationCreate,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> VerificationOut:
     return await svc.submit_listing_verification(conn, ctx, lang, listing_id=listing_id, body=body)
 
@@ -40,7 +40,7 @@ async def submit_verification(
 async def list_verification_records(
     listing_id: str,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[VerificationOut]:
     return await svc.list_listing_verifications(conn, ctx, listing_id=listing_id)
 
@@ -49,23 +49,23 @@ async def list_verification_records(
 async def verification_queue(
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[VerificationOut]:
     return await svc.list_verification_queue(conn, ctx, lang)
 
 
 @admin_router.post("/{record_id}/verify", response_model=VerificationOut, operation_id="approveVerification", summary="Approve a verification record (admin)")
-async def decide_verify(record_id: str, body: DecisionIn, lang: Locale, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn)) -> VerificationOut:
+async def decide_verify(record_id: str, body: DecisionIn, lang: Locale, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn, scope="function")) -> VerificationOut:
     return await svc.approve_verification(conn, ctx, lang, record_id=record_id, body=body)
 
 
 @admin_router.post("/{record_id}/reject", response_model=VerificationOut, operation_id="rejectVerification", summary="Reject a verification record (admin)")
-async def decide_reject(record_id: str, body: DecisionIn, lang: Locale, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn)) -> VerificationOut:
+async def decide_reject(record_id: str, body: DecisionIn, lang: Locale, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn, scope="function")) -> VerificationOut:
     return await svc.reject_verification(conn, ctx, lang, record_id=record_id, body=body)
 
 
 @admin_router.post("/{record_id}/needs-clearer-copy", response_model=VerificationOut, operation_id="requestClearerVerificationCopy", summary="Ask for a clearer verification copy (admin)")
-async def decide_needs_clearer_copy(record_id: str, body: DecisionIn, lang: Locale, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn)) -> VerificationOut:
+async def decide_needs_clearer_copy(record_id: str, body: DecisionIn, lang: Locale, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn, scope="function")) -> VerificationOut:
     return await svc.request_clearer_verification_copy(conn, ctx, lang, record_id=record_id, body=body)
 
 
@@ -75,6 +75,6 @@ async def admin_revoke_verification(
     body: DecisionIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> RevokedOut:
     return await svc.revoke_listing_verification(conn, ctx, lang, listing_id=listing_id, body=body)

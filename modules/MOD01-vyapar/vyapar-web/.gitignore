@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# private dev servers (distDir via VYAPAR_WEB_DIST_DIR)
+/.next-*/

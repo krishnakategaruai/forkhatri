@@ -69,6 +69,9 @@ class PlatformClaims:
     session_expires_at: datetime | None = None
     # The member's ForKhatri name, shown to the candidate whose circle they join.
     display_name: str | None = None
+    # [ADR-012] Platform admin scopes from the shared console's role
+    # assignments (e.g. "mangaly.moderate"). Empty for ordinary members.
+    admin_scopes: tuple[str, ...] = ()
 
 
 _cache: dict[str, tuple[float, PlatformClaims | None]] = {}
@@ -143,6 +146,9 @@ def _parse_claims(body: object) -> PlatformClaims:
         display_name=_optional("display_name"),
         # An unparseable timestamp raises ValueError → treated as malformed.
         session_expires_at=datetime.fromisoformat(raw_expiry) if raw_expiry else None,
+        admin_scopes=tuple(
+            str(s) for s in (body.get("admin_scopes") or []) if isinstance(s, str) and s
+        ),
     )
 
 

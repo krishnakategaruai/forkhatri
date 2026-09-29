@@ -33,7 +33,13 @@
       "dark": "Dark",
       "system": "System"
     },
-    "logOutConfirm": "Log out of ForKhatri on this device?"
+    "logOutConfirm": "Log out of ForKhatri on this device?",
+    "textSize": "Text size",
+    "textSizeOption": {
+      "standard": "Standard",
+      "larger": "Larger",
+      "largest": "Largest"
+    }
   },
   "action": {
     "back": "Back",

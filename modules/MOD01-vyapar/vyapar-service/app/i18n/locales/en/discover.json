@@ -19,5 +19,21 @@
   },
   "enrichment": {
     "sparseProfile": "Add what you can do to your professional listing to see opportunities picked just for you."
+  },
+  "error": {
+    "tooManySavedSearches": "You can keep at most {max} saved searches. Delete one first.",
+    "savedSearchNotFound": "That saved search no longer exists.",
+    "positionIncomplete": "Send both latitude and longitude, or neither."
+  },
+  "rows": {
+    "forYou": "For you",
+    "nearYou": "Near you · within {km} km",
+    "category": "{category}",
+    "newToday": "New today",
+    "startingNow": "Starting this week",
+    "pay20k": "Paying {amount}+ a month",
+    "projectsBudget": "Projects with a budget over {amount}",
+    "projects": "Projects for professionals",
+    "remote": "Work from home"
   }
 }

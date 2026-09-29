@@ -33,7 +33,7 @@ from pydantic import BaseModel
 from app.identity import AuthzContext
 from app.impressions import log_events
 from app.ranking import RankingSignals, score, top_signal_keys
-from app.reputation import reputation_for_listings, trust_from_reputation
+from app.reputation import badges_for_members, reputation_for_listings, trust_from_reputation
 from app.taxonomy_cache import labels_for
 from app.services.listings import ListingOut, _row_to_out
 
@@ -222,9 +222,13 @@ async def search_listings(
         scored.sort(key=lambda t: t[0], reverse=True)
 
     results = []
-    for _, reason, row, d in scored[:limit]:
+    page_rows = scored[:limit]
+    # [IMP-B/FR28] owner badges on every result card, one batched read
+    owner_badges = await badges_for_members(conn, [row["owner_id"] for _, _, row, _ in page_rows], lang)
+    for _, reason, row, d in page_rows:
         card = _row_to_out(row, [], ctx.member_id, lang=lang)
         card.reputation = reps.get(str(row["id"]))  # [FR28] reputation line on every result card
+        card.badges = [b.model_dump() for b in owner_badges.get(row["owner_id"], [])]
         results.append(SearchResult(listing=card, relevance_reason=reason, distance_km=round(d, 1) if d is not None else None))
 
     sponsored: list[SearchResult] = []

@@ -37,7 +37,7 @@ async def get_payment_order(
     order_id: str,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> PaymentOrderOut:
     return await svc.get_payment_order(conn, ctx, lang, order_id=order_id)
 
@@ -48,6 +48,6 @@ async def simulate_sandbox_payment(
     body: SimulateIn,
     lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
-    conn: asyncpg.Connection = Depends(get_conn),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> SimulatedPaymentOut:
     return await svc.simulate_payment_order(conn, ctx, lang, order_id=order_id, body=body)

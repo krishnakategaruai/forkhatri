@@ -40,6 +40,16 @@ async def suggestions(session: DbSession, member: CurrentMember) -> list[dict]:
     ]
 
 
+@router.get("/search")
+async def search_people(session: DbSession, member: CurrentMember, q: str | None = None, circle_id: UUID | None = None) -> list[dict]:
+    """[Owner 2026-09-29] The "add people" picker: people you know first, then anyone in Milavn
+    whose name or handle matches (2+ characters, 20 at most). With `circle_id`, each person says
+    whether they are already in that circle or already invited."""
+    from app.components.circle import people
+
+    return await people.search(session, viewer_member_id=member.member_id, q=q, circle_id=circle_id)
+
+
 class FollowRequest(BaseModel):
     follow: bool = True
 

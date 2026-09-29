@@ -15,10 +15,8 @@ One process today; a broker replaces `Hub` when there are several.
 from __future__ import annotations
 
 import asyncio
-import shutil
 from dataclasses import dataclass, field
 from datetime import datetime
-from pathlib import Path
 from uuid import UUID, uuid4
 
 from fastapi import UploadFile
@@ -26,11 +24,9 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.components.identity_bridge import interface as identity
-from app.config.settings import get_settings
 
 EXPRESSIONS = ("smile", "laugh", "surprised", "wink", "thinking", "love", "neutral")
 REACTIONS = ("👍", "❤️", "😂", "🔥", "👏", "😮")
-_ALLOWED_IMAGE_TYPES = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
 
 
 class NotAllowed(Exception):
@@ -327,15 +323,13 @@ async def send(session: AsyncSession, *, conversation_id: UUID, me: UUID, kind: 
 
 
 async def store_photo(conversation_id: UUID, photo: UploadFile) -> str:
-    ext = _ALLOWED_IMAGE_TYPES.get(photo.content_type or "")
-    if ext is None:
-        raise InvalidInput()
-    root: Path = get_settings().media_root / "chat"
-    root.mkdir(parents=True, exist_ok=True)
-    name = f"{conversation_id}-{uuid4().hex[:8]}{ext}"
-    with (root / name).open("wb") as fh:
-        shutil.copyfileobj(photo.file, fh)
-    return f"chat/{name}"
+    """[045] Recognised by its first bytes (JPEG/PNG/WebP), capped at 10 MB while streaming.
+    Raises media_files.NotAnImage / media_files.TooLarge."""
+    from app import media_files
+
+    ext = media_files.sniff_image(photo)
+    media_files.check_size(photo, media_files.MAX_PHOTO_BYTES)
+    return media_files.store(photo, "chat", str(conversation_id), ext, media_files.MAX_PHOTO_BYTES)
 
 
 async def retract(session: AsyncSession, *, message_id: UUID, me: UUID) -> None:

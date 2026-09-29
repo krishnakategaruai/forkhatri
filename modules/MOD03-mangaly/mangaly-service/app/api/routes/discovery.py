@@ -303,6 +303,12 @@ class FitResponse(BaseModel):
     label: Literal["strong", "good"] | None = None
     yours: list[FitWishResponse] = []
     theirs_met: list[str] = []
+    # [Owner, 2026-09-28] What the two share, as sentences — the generic
+    # points of match for a reader who has not said what they want.
+    common: list[str] = []
+    # The reader's (or their candidate's) main photo and this person's.
+    seat_photo_url: str | None = None
+    other_photo_url: str | None = None
 
 
 @router.get("/fit/{candidate_account_id}", response_model=FitResponse)
@@ -310,6 +316,7 @@ async def how_you_fit(
     candidate_account_id: UUID,
     session: DbSession,
     account_id: AuthenticatedAccount,
+    lang: Locale,
     for_candidate: UUID | None = None,
 ) -> FitResponse:
     try:
@@ -323,6 +330,7 @@ async def how_you_fit(
             for_candidate_account_id=(
                 context_account_id if context_account_id != account_id else None
             ),
+            lang=lang,
         )
     except AuthorizationDenied as exc:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN) from exc
@@ -369,14 +377,24 @@ async def list_shelves(
             status_code=status.HTTP_409_CONFLICT,
             detail={"code": "looking_for_missing", "message": translate("discovery.error.lookingForMissing", lang)},
         ) from exc
-    ids = list({i.result.candidate_account_id for sh in found for i in sh.items})
+    out = []
+    items_by_shelf = await _shelf_items(session, [sh.items for sh in found], context_account_id)
+    for sh, items in zip(found, items_by_shelf, strict=True):
+        out.append(ShelfResponse(key=sh.key, see_all=sh.see_all, results=items))
+    return out
+
+
+async def _shelf_items(session, groups: list, context_account_id: UUID) -> list[list[ShelfItemResponse]]:
+    """Cards for rows of people: photo and age, the name and photos each
+    person opened, and whether the seat saved them. One lookup for all rows."""
+    ids = list({i.result.candidate_account_id for group in groups for i in group})
     cards = await discovery.cards_for(session, account_ids=ids)
     opened = await discovery.open_cards_for(session, account_ids=ids)
     saved = await shortlist.saved_ids(session, candidate_account_id=context_account_id)
-    out = []
-    for sh in found:
+    out: list[list[ShelfItemResponse]] = []
+    for group in groups:
         items = []
-        for i in sh.items:
+        for i in group:
             r = i.result
             card = cards.get(r.candidate_account_id)
             o = opened.get(r.candidate_account_id)
@@ -402,5 +420,51 @@ async def list_shelves(
                     reason=i.reason,
                 )
             )
-        out.append(ShelfResponse(key=sh.key, see_all=sh.see_all, results=items))
+        out.append(items)
     return out
+
+
+class BecauseRowResponse(BaseModel):
+    """[Owner, 2026-09-28] "Because of this, these" on Home: people like one
+    person the family acted on (a request, a suggestion, a save)."""
+
+    kind: str
+    anchor_account_id: str
+    title: str
+    sub: str
+    results: list[ShelfItemResponse]
+
+
+@router.get("/because", response_model=list[BecauseRowResponse])
+async def list_because(
+    session: DbSession,
+    account_id: AuthenticatedAccount,
+    lang: Locale,
+    for_candidate: UUID | None = None,
+) -> list[BecauseRowResponse]:
+    try:
+        context_account_id = await authz.resolve_context_account(
+            session, acting_account_id=account_id, for_candidate=for_candidate
+        )
+    except AuthorizationDenied as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN) from exc
+    try:
+        rows = await discovery.because_rows(
+            session,
+            viewer_account_id=account_id,
+            for_candidate_account_id=context_account_id if context_account_id != account_id else None,
+            lang=lang,
+        )
+    except discovery.LookingForMissing:
+        return []
+    groups = await _shelf_items(session, [r.items for r in rows], context_account_id)
+    return [
+        BecauseRowResponse(
+            kind=r.kind,
+            anchor_account_id=str(r.anchor_account_id),
+            title=r.title,
+            sub=r.sub,
+            results=items,
+        )
+        for r, items in zip(rows, groups, strict=True)
+    ]

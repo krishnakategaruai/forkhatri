@@ -13,5 +13,60 @@
       "notChanged": "This case is not in a state that allows that action.",
       "invalidOutcome": "Please choose a valid outcome."
     }
+  },
+  "admin": {
+    "casesTitle": "Mangaly moderation cases",
+    "someone": "a member",
+    "summary": "{category} reported about {name}",
+    "member": {
+      "profile": "Matrimony profile",
+      "searchable": "Visible in search",
+      "notSearchable": "Not visible in search",
+      "reports": "Reports about them",
+      "reportsValue": "{open} open of {total}",
+      "blocks": "Blocks",
+      "blocksValue": "Blocked {made} people · blocked by {by}",
+      "planEnds": "Plan runs until",
+      "rm": "Relationship manager",
+      "lastOrder": "Latest order",
+      "lastOrderValue": "{plan}, {total}, {status}, {date}",
+      "planActive": "Active",
+      "planCancelled": "Cancelled (runs to the end date)",
+      "order": {
+        "created": "checkout not completed",
+        "paid": "paid",
+        "failed": "payment failed",
+        "refunded": "refunded"
+      }
+    },
+    "field": {
+      "reason": "Reason",
+      "about": "About",
+      "state": "Status",
+      "priority": "Priority",
+      "reported": "Reported on",
+      "description": "What they said",
+      "due": "Due by",
+      "outcome": "Outcome",
+      "account": "Account"
+    },
+    "state": {
+      "open": "Open",
+      "acknowledged": "Being handled",
+      "resolved": "Resolved"
+    },
+    "priority": {
+      "urgent": "Urgent",
+      "high": "High",
+      "normal": "Normal"
+    },
+    "outcome": {
+      "no_action": "No action needed",
+      "warned": "Warned",
+      "content_removed": "Content removed",
+      "account_suspended": "Account suspended",
+      "escalated_to_investigation": "Sent for investigation"
+    },
+    "suspended": "Suspended in Mangaly"
   }
 }

@@ -39,6 +39,7 @@ import enNotifications from '@/locales/en/notifications.json';
 import enOpportunities from '@/locales/en/opportunities.json';
 import enProfile from '@/locales/en/profile.json';
 import enRanking from '@/locales/en/ranking.json';
+import enHiring from '@/locales/en/hiring.json';
 import hiActivity from '@/locales/hi/activity.json';
 import hiCommon from '@/locales/hi/common.json';
 import hiDiscover from '@/locales/hi/discover.json';
@@ -58,6 +59,7 @@ import hiNotifications from '@/locales/hi/notifications.json';
 import hiOpportunities from '@/locales/hi/opportunities.json';
 import hiProfile from '@/locales/hi/profile.json';
 import hiRanking from '@/locales/hi/ranking.json';
+import hiHiring from '@/locales/hi/hiring.json';
 import teActivity from '@/locales/te/activity.json';
 import teCommon from '@/locales/te/common.json';
 import teDiscover from '@/locales/te/discover.json';
@@ -77,6 +79,20 @@ import teNotifications from '@/locales/te/notifications.json';
 import teOpportunities from '@/locales/te/opportunities.json';
 import teProfile from '@/locales/te/profile.json';
 import teRanking from '@/locales/te/ranking.json';
+import teHiring from '@/locales/te/hiring.json';
+// [FE2] contact control, contracts, service packages, Hire/Find work + outcomes + Discover filters
+import enContact from '@/locales/en/contact.json';
+import enContracts from '@/locales/en/contracts.json';
+import enPackages from '@/locales/en/packages.json';
+import enExplore from '@/locales/en/explore.json';
+import hiContact from '@/locales/hi/contact.json';
+import hiContracts from '@/locales/hi/contracts.json';
+import hiPackages from '@/locales/hi/packages.json';
+import hiExplore from '@/locales/hi/explore.json';
+import teContact from '@/locales/te/contact.json';
+import teContracts from '@/locales/te/contracts.json';
+import tePackages from '@/locales/te/packages.json';
+import teExplore from '@/locales/te/explore.json';
 
 export const SUPPORTED_LANGUAGES = ['en', 'hi', 'te'] as const;
 export type Language = (typeof SUPPORTED_LANGUAGES)[number];
@@ -104,6 +120,13 @@ export const NAMESPACES = [
   'adminCommercial',
   'privacy',
   'adminOps',
+  // [FE1] posting composer, response composers, applicants board, voice input, taxonomy picker
+  'hiring',
+  // [FE2] contact control, contracts, service packages, Hire/Find work menu + outcomes + Discover filters
+  'contact',
+  'contracts',
+  'packages',
+  'explore',
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 
@@ -128,6 +151,11 @@ const resources = {
     adminCommercial: enAdminCommercial,
     privacy: enPrivacy,
     adminOps: enAdminOps,
+    hiring: enHiring,
+    contact: enContact,
+    contracts: enContracts,
+    packages: enPackages,
+    explore: enExplore,
   },
   hi: {
     common: hiCommon,
@@ -149,6 +177,11 @@ const resources = {
     adminCommercial: hiAdminCommercial,
     privacy: hiPrivacy,
     adminOps: hiAdminOps,
+    hiring: hiHiring,
+    contact: hiContact,
+    contracts: hiContracts,
+    packages: hiPackages,
+    explore: hiExplore,
   },
   te: {
     common: teCommon,
@@ -170,6 +203,11 @@ const resources = {
     adminCommercial: teAdminCommercial,
     privacy: tePrivacy,
     adminOps: teAdminOps,
+    hiring: teHiring,
+    contact: teContact,
+    contracts: teContracts,
+    packages: tePackages,
+    explore: teExplore,
   },
 } as const;
 

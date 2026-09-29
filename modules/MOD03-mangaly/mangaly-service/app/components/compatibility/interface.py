@@ -50,7 +50,16 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.components.compatibility.engine import breakdown, distance_km, fails_must, label_for, pair_score
+from app.components.compatibility.engine import (
+    breakdown,
+    common_points,
+    direction_fit,
+    distance_km,
+    fails_must,
+    label_for,
+    pair_score,
+    priorities,
+)
 from app.components.compatibility.understand import (
     Understood,
     clean_items,
@@ -69,11 +78,15 @@ __all__ = [
     "clean_items",
     "fit_for",
     "clean_scales",
+    "common_points",
+    "direction_fit",
     "distance_km",
     "explain",
     "fails_must",
     "label_for",
     "pair_score",
+    "priorities",
+    "translate_points",
     "understand",
 ]
 
@@ -175,20 +188,58 @@ async def explain(
     return reasons[:4]
 
 
+def _label(enum: str, raw: object, lang: str | None) -> str:
+    """A stored value's label; an unlabelled one reads as words, never as a key."""
+    key = f"discovery.value.{enum}.{raw}"
+    text_ = translate(key, lang)
+    return str(raw).replace("_", " ") if text_ == key else text_
+
+
+def translate_points(points: list[dict], lang: str | None, *, name: str = "") -> list[str]:
+    """`{"key", **params}` reasons as sentences in the reader's language,
+    written from the candidate's seat when a family member reads for them
+    ("Speaks Telugu, like Kavya"). A `(enum, raw)` param is shown by its
+    label; an unlabelled value falls back to the stored word."""
+    out: list[str] = []
+    for point in points:
+        params: dict[str, object] = {}
+        for k, v in point.items():
+            if k == "key":
+                continue
+            if isinstance(v, tuple):
+                v = ", ".join(_label(v[0], raw, lang) for raw in (v[1] if isinstance(v[1], list) else [v[1]]))
+            params[k] = v
+        sentence = ""
+        if name:
+            alt = f"discovery.shelf.reasonFor.{point['key']}"
+            sentence = translate(alt, lang, name=name, **params)
+            if sentence == alt:
+                sentence = ""
+        sentence = sentence or translate(f"discovery.shelf.reason.{point['key']}", lang, **params)
+        out.append(sentence[:1].upper() + sentence[1:])
+    return out
+
+
 async def fit_for(
     session: AsyncSession,
     *,
     viewer_account_id: UUID,
     candidate_account_id: UUID,
     for_candidate_account_id: UUID | None = None,
+    lang: str | None = None,
 ) -> dict:
     """[DEC-V1-031] The profile page's "How you fit each other": the engine's
     word for the pair and `breakdown()`, read from the same pre-connection-safe
     snapshots `explain()` reads. A circle member reading for their candidate
-    sees it from the candidate's seat."""
+    sees it from the candidate's seat.
+
+    [Owner, 2026-09-28] `common` is the generic "points of match" — what the
+    two share — so a reader who never said what they want still gets a
+    rating (the word) and the reasons behind it."""
     from app.components.discovery import interface as discovery_module
 
     seat = viewer_account_id
+    name = ""
     if for_candidate_account_id is not None:
         await discovery_module.authorize_family_viewer(
             session,
@@ -196,8 +247,30 @@ async def fit_for(
             candidate_account_id=for_candidate_account_id,
         )
         seat = for_candidate_account_id
+        name = await discovery_module.first_name_for_member(
+            session, viewer_account_id=viewer_account_id, candidate_account_id=seat
+        )
     mine = await discovery_module.get_snapshot(session, account_id=seat) or {}
     theirs = await discovery_module.get_snapshot(session, account_id=candidate_account_id) or {}
+    # The two faces at the top of the panel: the main photo each already
+    # shows on a Discover tile, nothing more.
+    cards = await discovery_module.cards_for(session, account_ids=[seat, candidate_account_id])
+    seat_photo = getattr(cards.get(seat), "photo_url", None)
+    if seat_photo is None and seat == viewer_account_id:
+        # The reader's own face, even while their profile is not searchable.
+        from app.components.profile import interface as profile_module
+
+        own = await profile_module.get_own_profile(session, account_id=seat)
+        seat_photo = own.photo_url if own else None
+    photos = {
+        "seat_photo_url": seat_photo,
+        "other_photo_url": getattr(cards.get(candidate_account_id), "photo_url", None),
+    }
     if not mine or not theirs:
-        return {"label": None, "yours": [], "theirs_met": []}
-    return {"label": label_for(pair_score(mine, theirs)), **breakdown(mine, theirs)}
+        return {"label": None, "yours": [], "theirs_met": [], "common": [], **photos}
+    return {
+        "label": label_for(pair_score(mine, theirs)),
+        **breakdown(mine, theirs),
+        "common": translate_points(common_points(mine, theirs), lang, name=name),
+        **photos,
+    }

@@ -38,12 +38,17 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
   const [unavailable, setUnavailable] = useState(false);
 
+  // Identity and profile are asked for together (one round trip, not two, on
+  // the launch screen). The identity answer decides signed-out vs unavailable,
+  // whichever of the two settles first.
   const load = useCallback(async () => {
+    const [me, prof] = await Promise.allSettled([api<Identity>('/identity/me'), api<Profile | null>('/profile/me')]);
     try {
-      const me = await api<Identity>('/identity/me');
-      setIdentity(me);
+      if (me.status === 'rejected') throw me.reason;
+      if (prof.status === 'rejected') throw prof.reason;
+      setIdentity(me.value);
       setUnavailable(false);
-      setProfile(await api<Profile | null>('/profile/me'));
+      setProfile(prof.value);
     } catch (e) {
       setIdentity(null);
       setProfile(null);

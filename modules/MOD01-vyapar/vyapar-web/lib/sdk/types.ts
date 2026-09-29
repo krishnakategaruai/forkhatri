@@ -4,11 +4,18 @@
 // (vyapar-service/openapi.json, workstream A) names more fields, they are
 // optional additions here, never required.
 //
+import type { StructuredFields } from "./hiring-types";
+
 // Conventions: raw slugs sit next to their localized labels
 // (`capabilities` + `capability_labels`); labels arrive already translated
 // into the language the client sent in X-Vyapar-Language.
 
 // ---- shared -------------------------------------------------------------------
+
+// [FE2] Badges, seeker protection and packages are declared with their own
+// domains; the wire types below reference them.
+import type { Badge, SeekerProtection } from "./domains/trust";
+import type { ServicePackage } from "./domains/packages";
 
 export interface Reputation {
   interactions: number;
@@ -122,12 +129,22 @@ export interface Opportunity {
   poster: PosterSummary | null;
   capability_match: boolean[] | null;
   viewer_matched_labels?: string[];
+  /** [FE1] typed fields for the opportunity's type (others null); see hiring-types.ts */
+  structured?: StructuredFields | null;
+  /** [FE1] the poster lets people call before accepting (jobs and local services only) */
+  allow_precall?: boolean;
+  /** [FE1] the money line in the caller's language; falls back to `compensation` (FE1 owns this field) */
+  compensation_label?: string | null;
   // Present in OpenAPI OpportunityOut; not read by the web screens.
   value_amount?: number | null;
   source_unreachable?: boolean;
   entry_mode?: string;
   state_reason?: string | null;
   relevance_reason?: string | null;
+  // [FE2 — imp-backend-a §5 / -b §2-3] detail-read enrichers
+  seeker_protection?: SeekerProtection | null;
+  poster_badges?: Badge[];
+  distance_km?: number | null;
 }
 
 export interface WhyResponse {
@@ -158,6 +175,15 @@ export interface OpportunityCard {
   submitter_name: string | null;
   posted_days_ago: number | null;
   relevance_reason: string | null;
+  // [FE2 — imp-backend-b §5] FeedCard additions (all optional, additive)
+  distance_km?: number | null;
+  poster_badges?: Badge[];
+  seeker_protection?: SeekerProtection | null;
+  compensation_label?: string | null;
+  work_mode?: string | null;
+  sponsored?: boolean;
+  /** [Design language 2026-09-29] skill slugs (already in the API's FeedCard); picks the card's trade icon. */
+  required_capabilities?: string[];
 }
 
 export interface FeedSection {
@@ -171,10 +197,100 @@ export interface FeedResponse {
   enrichment_prompt: string | null;
   /** At most one labelled paid card; organic sections are unaffected. */
   sponsored?: OpportunityCard[];
+  /** [FE2] The filters as the server applied them. */
+  filters?: FeedFilterValues;
+  /** [FE2] false when the member has no coordinates (distance sort/radius fall back to locality text). */
+  distance_available?: boolean;
+}
+
+export type FeedSort = "relevance" | "distance" | "freshness" | "verified_first" | "salary_high";
+export type OpportunityTypeSlug = "employment" | "freelance" | "local_service" | "partnership" | "training" | "community";
+export type WorkMode = "on_site" | "remote" | "both";
+export type FeedAvailability = "now" | "this_week" | "later";
+
+/** [FE2 — imp-backend-b §5] Discover filters, as sent and as echoed back (`FeedFilters`). */
+export interface FeedFilterValues {
+  skills?: string[];
+  q?: string | null;
+  type?: OpportunityTypeSlug | string | null;
+  work_mode?: WorkMode | string | null;
+  radius_km?: number | null;
+  availability?: FeedAvailability | string | null;
+  sort?: FeedSort | string;
+  // [FE2 — Discover filters redesign] additive
+  types?: string[];
+  pay_kind?: "monthly" | "project" | null;
+  pay_min_paise?: number | null;
+  pay_max_paise?: number | null;
+  posted_within?: "today" | "week" | "month" | null;
+  shift?: "day" | "night" | "flexible" | null;
+  experience?: "fresher" | "1" | "3" | null;
+  verified_only?: boolean;
+  segment?: "community" | "public" | null;
+}
+
+export interface FacetCount {
+  value: string;
+  count: number;
+  label?: string | null;
+}
+
+export interface FeedFacets {
+  type: FacetCount[];
+  work_mode: FacetCount[];
+  posted_within: FacetCount[];
+  shift: FacetCount[];
+  experience: FacetCount[];
+  verified: number;
+  skills: FacetCount[];
+}
+
+/** [FE2] listOpportunityResults — one flat ranked list with its total and facet counts. */
+export interface ResultsResponse {
+  items: OpportunityCard[];
+  total: number;
+  facets: FeedFacets;
+  filters: FeedFilterValues;
+  distance_available: boolean;
+  near_label: string | null;
+  radius_km: number | null;
+}
+
+/** [FE2] listOpportunityRows — the Discover home as themed rows. */
+export interface FeedRow {
+  key: string;
+  /** [imp-backend-b L13] the row title, translated by the server; preferred over title_key. */
+  title?: string | null;
+  title_key: string;
+  title_params: Record<string, string | number>;
+  see_all: Record<string, string | number | boolean>;
+  items: OpportunityCard[];
+  total: number;
+}
+
+export interface RowsResponse {
+  rows: FeedRow[];
+  enrichment_prompt: string | null;
+  distance_available: boolean;
 }
 
 export interface FeedParams {
   skills?: readonly string[];
+  q?: string | null;
+  type?: string | null;
+  work_mode?: string | null;
+  radius_km?: number | null;
+  availability?: string | null;
+  sort?: string | null;
+  types?: readonly string[];
+  pay_kind?: string | null;
+  pay_min_paise?: number | null;
+  pay_max_paise?: number | null;
+  posted_within?: string | null;
+  shift?: string | null;
+  experience?: string | null;
+  verified_only?: boolean;
+  segment?: string | null;
 }
 
 // ---- profiles (business / professional listings) --------------------------------------
@@ -191,6 +307,7 @@ export interface ProfileCardData {
   matched_labels: string[];
   other_labels: string[];
   reputation: Reputation | null;
+  badges?: Badge[];
 }
 
 export interface ListingContact {
@@ -233,6 +350,9 @@ export interface Listing {
   partnership_open: boolean;
   reputation: Reputation | null;
   sponsored: boolean;
+  // [FE2 — imp-backend-b §3-4]
+  badges?: Badge[];
+  packages?: ServicePackage[];
 }
 
 export interface SearchListing {
@@ -246,6 +366,7 @@ export interface SearchListing {
   verification_state: string;
   contact_verified: boolean;
   reputation?: Reputation | null;
+  badges?: Badge[];
 }
 
 export interface SearchResult {
@@ -320,6 +441,17 @@ export interface EnquiryDetail {
   safety_notice_seen: boolean;
   messages: EnquiryMessage[];
   disclosed_contacts: { channel: string; value: string }[];
+  // Present in OpenAPI EnquiryOut (read by FE2's contract and contact screens).
+  listing_id?: string | null;
+  opportunity_id?: string | null;
+  created_at?: string;
+  last_activity_at?: string;
+  target_name?: string | null;
+  counterpart_name?: string | null;
+  bid_amount_paise?: number | null;
+  bid_type?: string | null;
+  timeline_days?: number | null;
+  milestones?: { title: string; amount_paise: number; due_days?: number | null }[] | null;
 }
 
 export type EnquiryRole = "sent" | "received";

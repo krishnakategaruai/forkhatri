@@ -19,5 +19,21 @@
   },
   "enrichment": {
     "sparseProfile": "आपके लिए चुने गए अवसर देखने के लिए अपनी पेशेवर लिस्टिंग में अपनी क्षमताएँ जोड़ें।"
+  },
+  "error": {
+    "tooManySavedSearches": "आप अधिकतम {max} सहेजी खोजें रख सकते हैं। पहले एक हटाएँ।",
+    "savedSearchNotFound": "वह सहेजी खोज अब मौजूद नहीं है।",
+    "positionIncomplete": "अक्षांश और देशांतर दोनों भेजें, या कोई भी नहीं।"
+  },
+  "rows": {
+    "forYou": "आपके लिए",
+    "nearYou": "आपके पास · {km} कि.मी. के भीतर",
+    "category": "{category}",
+    "newToday": "आज नए",
+    "startingNow": "इस हफ़्ते शुरू",
+    "pay20k": "{amount}+ महीना देने वाले",
+    "projectsBudget": "{amount} से अधिक बजट वाले प्रोजेक्ट",
+    "projects": "पेशेवरों के लिए प्रोजेक्ट",
+    "remote": "घर से काम"
   }
 }

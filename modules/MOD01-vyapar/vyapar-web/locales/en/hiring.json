@@ -1,0 +1,659 @@
+{
+  "kinds": {
+    "employment": "Job",
+    "freelance": "Freelance project",
+    "local_service": "Local service",
+    "more": "More types…"
+  },
+  "voice": {
+    "speak": "Speak into {{field}}",
+    "thisField": "this field",
+    "stop": "Stop listening",
+    "listening": "Listening in {{language}}…",
+    "speakNow": "Start speaking — your words appear here.",
+    "checkIt": "Check what we heard",
+    "done": "Done",
+    "keep": "Keep",
+    "retry": "Try again",
+    "discard": "Discard",
+    "switchLanguage": "Voice language: {{language}}. Tap to change.",
+    "langShort": {
+      "en": "EN",
+      "hi": "हिं",
+      "te": "తె"
+    },
+    "langName": {
+      "en": "English",
+      "hi": "Hindi",
+      "te": "Telugu"
+    },
+    "error": {
+      "notAllowed": "Allow the microphone in your browser to speak. You can still type.",
+      "noSpeech": "Didn't catch that — tap the mic and try again.",
+      "network": "Voice needs an internet connection. Please type instead.",
+      "noMic": "No microphone found. Please type instead.",
+      "generic": "Voice isn't working right now. Please type instead."
+    }
+  },
+  "picker": {
+    "searchPlaceholder": "Search a skill or role, e.g. driver, cook, Tally",
+    "noMatch": "Nothing in the list matches “{{query}}”.",
+    "useAsWritten": "Use “{{query}}” as written",
+    "allCategories": "All categories",
+    "selected": "Selected skills",
+    "remove": "Remove {{skill}}",
+    "max": "You can pick up to {{count}}. Remove one to add another.",
+    "change": "Change or add"
+  },
+  "fields": {
+    "optional": "optional",
+    "type": "What are you posting?",
+    "title": "Title",
+    "jobTitle": "Job title",
+    "whatNeeded": "What do you need?",
+    "role": "Role",
+    "skills": "Skills needed",
+    "location": "Location",
+    "exactArea": "Exact area",
+    "where": "Where",
+    "salary": "Monthly in-hand salary",
+    "min": "Min",
+    "max": "Max",
+    "incentives": "Incentives",
+    "incentiveUpTo": "Incentives up to",
+    "openings": "Openings",
+    "openingsOther": "Other",
+    "shift": "Shift",
+    "jobTimings": "Timings",
+    "experience": "Experience",
+    "qualification": "Minimum qualification",
+    "english": "English",
+    "assets": "They need to have",
+    "interview": "Interview",
+    "description": "Description",
+    "budgetType": "Budget type",
+    "budgetProject": "Budget",
+    "budget": "Budget",
+    "duration": "How long",
+    "experienceLevel": "Experience level",
+    "questions": "Screening questions",
+    "questionN": "Question {{n}}",
+    "when": "When",
+    "preferredDate": "Preferred date",
+    "deadline": "Apply by",
+    "workMode": "Work mode",
+    "timing": "Timing",
+    "segment": "Is this your own opportunity?",
+    "pay": "Pay",
+    "amountUnreadable": "Type one amount, like 15000, 15k or 1.5 lakh."
+  },
+  "placeholders": {
+    "title": {
+      "employment": "e.g. Delivery rider for grocery orders",
+      "freelance": "e.g. Set up Tally and file GST for my shop",
+      "local_service": "e.g. Fix a leaking kitchen sink",
+      "other": "e.g. Weekend baking workshop"
+    },
+    "exactArea": "e.g. KPHB Colony, Kukatpally",
+    "location": "e.g. Madhapur, Hyderabad",
+    "jobTimings": "e.g. 9 am to 6 pm, Sunday off",
+    "interview": "Where and when to come, or how you will call",
+    "localBudget": "e.g. 800",
+    "timing": "e.g. Saturdays, 10 am to 1 pm",
+    "description": {
+      "employment": "What the work is, a normal day, anything they should know.",
+      "freelance": "What you need done, what you already have, what “done” looks like.",
+      "local_service": "What happened, the size of the job, anything to bring.",
+      "other": "Tell people what this is and who it suits."
+    }
+  },
+  "hints": {
+    "role": "Pick the role so the right people see it first.",
+    "exactArea": "The colony or landmark — nearby people respond most.",
+    "salary": "What they take home each month, before incentives.",
+    "qualification": "Asking for more than the work needs cuts responses.",
+    "skills": "Pick up to 5 — fewer, sharper skills get better proposals.",
+    "questions": "Up to 3. Freelancers answer them in their proposal.",
+    "where": "The area where the work is."
+  },
+  "options": {
+    "shift": {
+      "day": "Day",
+      "night": "Night",
+      "rotational": "Rotational",
+      "flexible": "Flexible"
+    },
+    "incentive": {
+      "none": "No incentives",
+      "fixed_plus_incentive": "Fixed + incentives",
+      "incentive_only": "Incentives only"
+    },
+    "qualification": {
+      "any": "Any",
+      "below_10th": "Below 10th",
+      "10th": "10th pass",
+      "12th": "12th pass",
+      "iti": "ITI",
+      "diploma": "Diploma",
+      "graduate": "Graduate",
+      "postgraduate": "Post-graduate"
+    },
+    "english": {
+      "none": "Not needed",
+      "basic": "Basic",
+      "good": "Good",
+      "fluent": "Fluent"
+    },
+    "asset": {
+      "two_wheeler": "Two-wheeler",
+      "driving_licence": "Driving licence",
+      "smartphone": "Smartphone",
+      "four_wheeler": "Car",
+      "laptop": "Laptop",
+      "own_tools": "Own tools"
+    },
+    "budgetType": {
+      "fixed": "Fixed price",
+      "hourly": "Hourly"
+    },
+    "duration": {
+      "under_1_week": "Under a week",
+      "1_4_weeks": "1–4 weeks",
+      "1_3_months": "1–3 months",
+      "3_6_months": "3–6 months",
+      "over_6_months": "Over 6 months",
+      "ongoing": "Ongoing"
+    },
+    "experienceLevel": {
+      "entry": "Entry",
+      "intermediate": "Intermediate",
+      "expert": "Expert"
+    },
+    "urgency": {
+      "today": "Today",
+      "this_week": "This week",
+      "flexible": "Flexible"
+    },
+    "experience": {
+      "fresher": "Fresher",
+      "freshersWelcome": "Freshers welcome",
+      "atLeast": "{{value}}+",
+      "months_one": "{{count}} month",
+      "months_other": "{{count}} months",
+      "years_one": "{{count}} year",
+      "years_other": "{{count}} years"
+    },
+    "deadlineIn_one": "In {{count}} day",
+    "deadlineIn_other": "In {{count}} days"
+  },
+  "presets": {
+    "timings": {
+      "a": "9 am – 6 pm",
+      "b": "10 am – 7 pm",
+      "c": "8 am – 5 pm",
+      "night": "9 pm – 6 am"
+    },
+    "interview": {
+      "walkIn": "Walk in, Monday to Saturday, 11 am – 1 pm, at the work address.",
+      "callFirst": "I will call shortlisted people to fix a time.",
+      "chatFirst": "We will chat here on Vyapar first, then meet."
+    },
+    "interviewShort": {
+      "walkIn": "Walk-in",
+      "callFirst": "I'll call first",
+      "chatFirst": "Chat on Vyapar first"
+    },
+    "questions": {
+      "similarWork": "Have you done similar work before? Share a link or a photo.",
+      "startWhen": "When can you start, and how many hours a week can you give?",
+      "tools": "Which tools or software will you use?"
+    }
+  },
+  "preview": {
+    "label": "Live preview",
+    "caption": "What people see before they apply",
+    "toggle": "Preview what applicants see",
+    "titlePlaceholder": "Your title appears here",
+    "noPay": "Add the pay — posts with pay get far more responses",
+    "perMonth": "{{range}} a month",
+    "aMonth": "a month",
+    "perHour": "{{range}} an hour",
+    "fixedPrice": "Fixed price {{range}}",
+    "budget": "Budget {{amount}}",
+    "incentiveOnly": "Incentives only",
+    "plusIncentives": "+ incentives",
+    "plusIncentivesUpTo": "+ incentives up to {{amount}}",
+    "openings_one": "{{count}} opening",
+    "openings_other": "{{count}} openings",
+    "questionsForYou": "The poster asks",
+    "postedToday": "Posted today"
+  },
+  "composer": {
+    "startTitle": "What do you need?",
+    "startSubtitle": "Describe it in your own words — type or speak. We fill in the form; you check it.",
+    "describeLabel": "Describe what you need",
+    "describePlaceholder": {
+      "any": "e.g. Need 2 delivery riders in Kukatpally, ₹15,000–18,000 a month, own bike, 9 am to 7 pm",
+      "employment": "e.g. Need 2 delivery riders in Kukatpally, ₹15,000–18,000 a month, own bike, 9 am to 7 pm",
+      "freelance": "e.g. Need someone to set up Tally for my kirana shop and file GST for 3 months, budget ₹20,000–30,000",
+      "local_service": "e.g. Plumber needed today in Madhapur, kitchen sink is leaking, budget ₹800"
+    },
+    "describeHint": "Hindi, Telugu, English or a mix — all fine.",
+    "tryExample": "Or start from an example:",
+    "examples": {
+      "employment": "Hiring 2 delivery riders in KPHB Colony, Kukatpally. ₹15,000 to ₹18,000 a month plus incentives. Own two-wheeler and licence. 10th pass, freshers welcome. 9 am to 7 pm.",
+      "freelance": "Need an accountant to set up Tally for my kirana shop in Ameerpet and file GST for 3 months. Fixed budget ₹20,000 to ₹30,000.",
+      "local_service": "Need a plumber today in Madhapur — kitchen sink is leaking. Budget ₹800."
+    },
+    "draftIt": "Draft it",
+    "readPhoto": "Read from a photo",
+    "fillMyself": "Skip — fill in myself",
+    "drafting": "Reading what you wrote…",
+    "readingPhoto": "Reading the photo…",
+    "otherWays": "Other ways to post",
+    "altShare": "Paste a forwarded message or link",
+    "altShareDesc": "Found it on WhatsApp or a website? Paste it; we pull out what we can.",
+    "altUpload": "Upload a screenshot",
+    "altUploadDesc": "Attach the photo and add a short note.",
+    "photoFallback": "Reading photos isn't switched on here yet, so we kept your photo. Add a short note about it and we'll pull out what we can.",
+    "howTitle": "How it works",
+    "how1Title": "Say what you need",
+    "how1": "In a line or two, in any language — or read it from a photo of a notice.",
+    "how2Title": "Check the form",
+    "how2": "We fill in pay, timings and the rest. Anything we're unsure of is marked for you to check.",
+    "how3Title": "Publish",
+    "how3": "One-tap tips show what would bring more responses before it goes live.",
+    "freeNote": "Posting on Vyapar is free, and nobody may charge the people who apply.",
+    "step1": "Step 1 of 2 · Details",
+    "step2": "Step 2 of 2 · Check & publish",
+    "formTitle": {
+      "employment": "Job details",
+      "freelance": "Project details",
+      "local_service": "Service details",
+      "other": "Details"
+    },
+    "reviewTitle": "Check & publish",
+    "drafted": "Drafted from what you wrote. Change anything that isn't right.",
+    "draftedCheck_one": "Drafted from what you wrote. {{count}} value is marked “Please check”.",
+    "draftedCheck_other": "Drafted from what you wrote. {{count}} values are marked “Please check”.",
+    "questionsIntro": "A few details are missing — answer here:",
+    "pleaseCheck": "Please check",
+    "looksRight": "Looks right",
+    "removeQuestion": "Remove question {{n}}",
+    "ownQuestion": "Write my own",
+    "moreOptions": "More options (apply-by date, remote work, where it's from)",
+    "continueToCheck": "Continue",
+    "backToStart": "Start over",
+    "publish": "Publish",
+    "publishing": "Publishing…",
+    "editDetails": "Edit details",
+    "draftSavedNote": "Saved as a draft. Nobody sees it until you publish.",
+    "stillUnchecked": "Not checked yet: {{fields}}.",
+    "checkNow": "Check now",
+    "error": {
+      "titleRequired": "Add a title.",
+      "locationRequired": "Add the area where the work is.",
+      "salaryRequired": "Add the monthly salary range — both minimum and maximum.",
+      "salaryRange": "The minimum salary is more than the maximum.",
+      "budgetRequired": "Add a budget or an hourly rate.",
+      "budgetRange": "The minimum is more than the maximum.",
+      "sourceRequired": "Say where you found it."
+    },
+    "ask": {
+      "salary": "What is the salary range? Give both the minimum and the maximum.",
+      "budget": "What is the budget range? Give both the lowest and the highest."
+    },
+    "checkBeforePublish": "Check the pay before publishing: {{fields}}. Tap “{{ok}}” or change it.",
+    "usePhoto": "Use a photo or screenshot",
+    "photoAttached": "Photo attached",
+    "photoAttachedHint": "It goes with your post. Add a line about it above — what, where and the pay — and tap “Draft it”.",
+    "removePhoto": "Remove"
+  },
+  "tips": {
+    "title": "Get more responses",
+    "subtitle": "Each change is one tap. Skip any that don't fit the work.",
+    "impact": {
+      "high": "Biggest difference",
+      "medium": "Helps",
+      "low": "Small touch"
+    },
+    "allGood": "Looks complete",
+    "allGoodBody": "Nothing to add — this post has what people look for.",
+    "accept12th": "Accept 12th pass",
+    "basicEnglish": "Basic English is enough",
+    "accept1Year": "1 year is enough",
+    "addIncentives": "Mention incentives",
+    "intermediateOk": "Intermediate is fine",
+    "allowRemote": "Allow remote work too",
+    "keepFirst5": "Keep the first 5 skills",
+    "tomorrow": "Tomorrow",
+    "inDays_one": "In {{count}} day",
+    "inDays_other": "In {{count}} days",
+    "addIt": "Add it",
+    "editIt": "Edit it"
+  },
+  "errors": {
+    "salary_required": "Add the monthly salary range before publishing — jobs with pay get far more responses.",
+    "budget_required": "Add a budget or an hourly rate before publishing.",
+    "salary_range_invalid": "The minimum salary is more than the maximum.",
+    "budget_range_invalid": "The minimum budget is more than the maximum.",
+    "budget_fields_mismatch": "Use either a fixed budget or an hourly rate, not both.",
+    "experience_range_invalid": "The minimum experience is more than the maximum.",
+    "too_many_screening_questions": "Keep to 3 screening questions.",
+    "seeker_charge_not_allowed": "Nobody may charge the people who apply. Remove “{{matched}}” (fees, deposits or kit charges) and try again.",
+    "structured_field_not_for_type": "One of the details doesn't apply to this type of post. Check the type.",
+    "ai_limit_reached": "You've used today's drafting help. Fill in the form yourself — it only takes a minute.",
+    "text_too_long": "That's a lot of text — shorten it to the key details.",
+    "unsupported_without_ai": "Reading photos isn't switched on here yet. Please type the details.",
+    "unavailable": "The drafting help didn't answer. Please try again or fill in the form yourself.",
+    "image_too_large": "That file is over 5 MB. Try a smaller photo.",
+    "image_not_found": "We couldn't find that photo. Please upload it again.",
+    "validation_error": "Something in the form isn't valid. Check the marked fields.",
+    "message_too_short": "Write at least 20 characters.",
+    "proposal_fields_not_allowed": "A price and timeline only go with a proposal.",
+    "bid_required": "Add your price and the number of days you need.",
+    "milestones_hourly": "Milestones only go with a fixed price.",
+    "milestones_total": "The milestones must add up to your price.",
+    "unknown_screening_question": "One answer is for a question this post doesn't ask. Reload and try again.",
+    "screening_answers_required": "Answer every question the poster asked.",
+    "screening_answers_not_allowed": "This isn't a post with questions.",
+    "already_declined": "The poster has already declined you for this.",
+    "stage_final": "This person was already hired or declined — that can't change now.",
+    "applicant_not_available": "This conversation has ended, so you can't hire them from here.",
+    "applicant_not_found": "That applicant is no longer on this post.",
+    "compare_count": "Pick 2 to 4 people to compare.",
+    "poster_only": "Only the person who posted this can see that.",
+    "opportunity_not_found": "This post is no longer available."
+  },
+  "precall": {
+    "label": "Calls before you accept",
+    "on": "On — people can call you about this post",
+    "off": "Off — people apply first, you call the ones you accept",
+    "explain": "Anyone who calls will see your number. Choose WhatsApp only to keep calls out. Your call hours and daily limit still apply.",
+    "setHours": "Set call hours and daily limit",
+    "previewLine": "Message or apply — the poster takes early contact about this post",
+    "channelLabel": "How early responders can reach you",
+    "channel": {
+      "whatsapp_only": "WhatsApp only",
+      "call_and_whatsapp": "Calls and WhatsApp"
+    },
+    "previewLineCall": "Call or apply — the poster takes calls about this post"
+  },
+  "apply": {
+    "sheetTitle": "Apply in one tap",
+    "apply": "Apply",
+    "youreApplyingFor": "You're applying for",
+    "posterSees": "The poster will see",
+    "years_one": "{{count}} year experience",
+    "years_other": "{{count}} years experience",
+    "availability": {
+      "now": "Available now",
+      "this_week": "Available this week",
+      "later": "Available later"
+    },
+    "noProfile": "{{name}} — no work profile yet. Add one so posters see what you can do.",
+    "editProfile": "Change what posters see",
+    "noteLabel": "A note to the poster",
+    "notePlaceholder": "e.g. I live nearby and can join from Monday.",
+    "sending": "Sending…",
+    "sentTitle": "Application sent",
+    "sentBody": "The poster has your details for “{{title}}”. Replies show in the conversation and in Activity.",
+    "openConversation": "Open the conversation",
+    "alreadyApplied": "You've already responded to this post.",
+    "dailyCap": "You've reached today's limit of 20 responses. Try again tomorrow.",
+    "privacy": "Your phone number is shared only when the poster accepts you.",
+    "appliedOpen": "Applied ✓ · Open conversation",
+    "hiredOpen": "Hired ✓ · Open conversation",
+    "notSelected": "Not selected this time · Open conversation"
+  },
+  "respond": {
+    "applyTitle": "Apply",
+    "proposeTitle": "Send a proposal",
+    "quoteTitle": "Reply to this request",
+    "backToPost": "Back to the post",
+    "youreAnswering": "You're answering",
+    "proposalSent": "Proposal sent",
+    "messageSent": "Message sent"
+  },
+  "proposal": {
+    "howCharge": "How you'll charge",
+    "bidType": {
+      "fixed": "Fixed price",
+      "hourly": "By the hour"
+    },
+    "totalPrice": "Your price for the whole job",
+    "hourlyRate": "Your hourly rate",
+    "bidPlaceholder": "e.g. 25,000",
+    "anHour": "an hour",
+    "theirBudget": "Their budget: {{range}}",
+    "theirRate": "Their rate: {{range}} an hour",
+    "net": "You receive {{amount}} — Vyapar takes no fee.",
+    "netHourly": "You receive {{amount}} an hour — Vyapar takes no fee.",
+    "timeline": "How many days you need",
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
+    "otherDays": "Other (days)",
+    "milestones": "Milestones",
+    "splitMilestones": "Split the price into milestones",
+    "milestoneTitle": "Milestone {{n}}",
+    "amount": "Amount",
+    "dueInDays": "Due in (days)",
+    "removeMilestone": "Remove milestone {{n}}",
+    "addMilestone": "Add a milestone",
+    "leftToAssign": "{{amount}} left to assign",
+    "overBy": "{{amount}} more than your price",
+    "allAssigned": "Adds up to your price ✓",
+    "setPriceFirst": "Set your price first",
+    "questionsTitle": "The poster asks",
+    "cover": "Your note to the poster",
+    "coverPlaceholder": "What you'd do, similar work you've done, and when you can start.",
+    "counter": "{{count}} / {{max}} · at least {{min}}",
+    "improve": "Improve with AI",
+    "writeForMe": "Write it for me",
+    "improving": "Thinking…",
+    "suggestedText": "Suggested note",
+    "useText": "Use this note",
+    "keepMine": "Keep mine",
+    "stillWorth": "Still worth adding",
+    "suggestedBid": "Suggested price",
+    "basis": {
+      "capability_overlap_one": "from {{count}} similar post",
+      "capability_overlap_other": "from {{count}} similar posts",
+      "same_type_one": "from {{count}} post of this kind",
+      "same_type_other": "from {{count}} posts of this kind",
+      "poster_budget": "from the poster's own budget"
+    },
+    "useBid": "Use {{amount}}",
+    "sample": "A work sample",
+    "send": "Send proposal",
+    "error": {
+      "bid": "Add your price.",
+      "timeline": "Say how many days you need.",
+      "milestoneRow": "Give every milestone a name, an amount and a due day.",
+      "cover": "Write at least {{min}} characters."
+    },
+    "dayPrefix": "Day",
+    "belowBudget": "This is below the poster's own budget of {{range}} — price for the work, not the average."
+  },
+  "quote": {
+    "modeLabel": "What do you want to send?",
+    "mode": {
+      "request_quote": "Send a quote",
+      "ask_question": "Ask a question"
+    },
+    "price": "Your price",
+    "pricePlaceholder": "e.g. 800",
+    "when": "When you can come",
+    "whenOption": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "this_week": "This week",
+      "weekend": "This weekend"
+    },
+    "whatToAsk": "What do you want to ask?",
+    "askShort": {
+      "photo": "A photo of the problem",
+      "address": "Exact address",
+      "time": "A good time",
+      "materials": "Parts or materials",
+      "budget": "Is the budget fixed?"
+    },
+    "ask": {
+      "photo": "Could you send a photo of the problem?",
+      "address": "What is the exact address or landmark?",
+      "time": "What time suits you?",
+      "materials": "Should I bring the parts or materials, or do you have them?",
+      "budget": "Is the budget fixed, or can we discuss it after I see the work?"
+    },
+    "msgIntro": "Hello, I can do this: “{{title}}”.",
+    "msgPrice": "My price is {{amount}}.",
+    "msgWhen": {
+      "today": "I can come today.",
+      "tomorrow": "I can come tomorrow.",
+      "this_week": "I can come this week.",
+      "weekend": "I can come this weekend."
+    },
+    "msgAskIntro": "Hello, about “{{title}}”:",
+    "note": "Anything else",
+    "notePlaceholder": "e.g. I've fixed many kitchen sinks nearby.",
+    "theyWillRead": "They will read",
+    "sendQuote": "Send quote",
+    "sendQuestion": "Send question"
+  },
+  "board": {
+    "title": {
+      "applicants": "Applicants",
+      "proposals": "Proposals",
+      "responses": "Responses"
+    },
+    "open": {
+      "applicants": "See applicants",
+      "proposals": "See proposals",
+      "responses": "See responses"
+    },
+    "reviewNew_one": "Review {{count}} new",
+    "reviewNew_other": "Review {{count}} new",
+    "noneYetShort": "No responses yet.",
+    "backToPost": "Back to the post",
+    "stagesLabel": "Stages",
+    "stage": {
+      "new": "New",
+      "shortlisted": "Shortlisted",
+      "hired": "Hired",
+      "declined": "Declined"
+    },
+    "sortLabel": "Sort",
+    "sort": {
+      "newest": "Newest",
+      "best": "Best match"
+    },
+    "ranking": "Ranking by fit…",
+    "rankedByAi": "Ranked by fit with Vyapar's assistant — scores out of 10.",
+    "rankedByRules": "Ranked by fit: skills, distance, experience and timing — scores out of 10.",
+    "rankedBySkills": "Ranked by skills matched (the fit score isn't available right now).",
+    "empty": {
+      "applicants": "No applicants yet.",
+      "proposals": "No proposals yet.",
+      "responses": "No responses yet."
+    },
+    "emptyHelps": "These would help more people respond:",
+    "emptyStage": {
+      "new": "Nothing new — you're up to date.",
+      "shortlisted": "No one shortlisted yet.",
+      "hired": "No one hired yet.",
+      "declined": "No one declined."
+    },
+    "someone": "Applicant",
+    "verified": "Verified",
+    "calledYou": "Called you",
+    "oneTap": "One-tap apply",
+    "kmAway": "{{km}} km away",
+    "appliedOn": "Applied {{date}}",
+    "scoreTitle": "Fit score out of 10",
+    "skillsTitle": "Skills matched out of those you asked for",
+    "bidFixed": "{{amount}} fixed",
+    "bidHourly": "{{amount}} an hour",
+    "milestones_one": "{{count}} milestone",
+    "milestones_other": "{{count}} milestones",
+    "matchesSkills": "Matches {{have}} of {{total}} skills: {{skills}}",
+    "shortlist": "Shortlist",
+    "hire": "Hire",
+    "decline": "Decline",
+    "moveBack": "Move back to new",
+    "confirmHireTitle": "Hire {{name}}?",
+    "confirmHireBody": "You'll both see each other's phone number, and the conversation moves to “in progress”. The others stay in your list.",
+    "confirmHire": "Yes, hire",
+    "openConversation": "Open conversation",
+    "startContract": "Start a contract",
+    "compare": "Compare",
+    "pickedN_one": "{{count}} picked",
+    "pickedN_other": "{{count}} picked",
+    "pickOneMore": "Pick one more",
+    "compareN": "Compare {{count}}",
+    "clear": "Clear",
+    "compareTitle": "Compare side by side",
+    "attribute": "Detail",
+    "stageLabel": "Stage",
+    "match": "Fit",
+    "nOfM": "{{have}} of {{total}}",
+    "price": "Price",
+    "timeline": "Timeline",
+    "where": "Where",
+    "why": "Why they fit",
+    "watchOut": "Watch out",
+    "applied": "Applied",
+    "undo": "Undo",
+    "toastShortlisted": "{{name}} shortlisted",
+    "toastDeclined": "{{name}} declined",
+    "toastHired": "{{name}} hired — contact shared",
+    "hiredTitle": "Hired — contact shared",
+    "contactInThread": "Their contact is in the conversation.",
+    "channel": {
+      "phone": "Phone",
+      "whatsapp": "WhatsApp",
+      "email": "Email",
+      "call": "Phone"
+    },
+    "skillsForThis": "Skills for this post",
+    "missingSkill": "No {{skill}}",
+    "theirMessage": "Their message",
+    "aiRead": "Fit {{score}}/10",
+    "byDay_one": "by day {{count}}",
+    "byDay_other": "by day {{count}}",
+    "appliedVia": "{{how}} · {{date}}",
+    "via": {
+      "form": "Applied with a message",
+      "one_tap": "Applied in one tap",
+      "voice": "Applied by voice",
+      "agent": "Applied through an assistant",
+      "call": "Called about the post"
+    },
+    "signal": {
+      "capability_fit": "Has the skills you asked for",
+      "experience_fit": "Has the experience you asked for",
+      "location_fit": "Lives or works nearby",
+      "timing_fit": "Available when you need",
+      "value_fit": "Price within your budget",
+      "trust_fit": "Verified profile",
+      "intent_fit": "Looking for this kind of work",
+      "freshness_fit": "Applied recently"
+    },
+    "skillsWord": "skills",
+    "call": "Call",
+    "whatsapp": "WhatsApp",
+    "opening": "Opening…",
+    "missingList": "Missing: {{skills}}",
+    "shortlistedContactTitle": "Call {{name}}",
+    "shortlistedContactHint": "Shortlisting shares their number with you, so you can talk before deciding. They don't see yours until you hire them.",
+    "noNumberShared": "{{name}} hasn't shared a phone number, so reach them in the conversation."
+  },
+  "accept": {
+    "title": {
+      "privacy": "Please accept the updated privacy notice",
+      "terms": "Please accept the updated terms of use"
+    },
+    "why": "Vyapar updated it. You need to accept it once before sending or publishing.",
+    "read": "Read “{{title}}”",
+    "acceptAndContinue": "Accept and continue"
+  }
+}
