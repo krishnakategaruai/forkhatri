@@ -1,0 +1,50 @@
+# ForKhatri — root .gitignore
+# Applies across platform/ and every modules/MOD*/ directory.
+
+# --- Secrets / local environment ---------------------------------------------
+.env
+.env.local
+.env.*.local
+.env.tunnel.bak
+.env.local.tunnel.bak
+!.env.example
+!.env.*.example
+
+# --- Logs ----------------------------------------------------------------
+*.log
+*.log.err
+.logs/
+.tunnel-logs/
+.dev-*.log
+
+# --- Python -----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+
+# --- Node / Next.js -----------------------------------------------------
+node_modules/
+.next/
+out/
+dist/
+build/
+.turbo/
+
+# --- Editors / OS ---------------------------------------------------------
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/*
+!.vscode/extensions.json
+
+# --- Backups / scratch --------------------------------------------------------
+*.bak
+*.tmp
+*.orig
