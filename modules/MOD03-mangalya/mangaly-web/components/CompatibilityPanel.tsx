@@ -15,7 +15,7 @@ import './compatibility-panel.css';
  * the backend, the user can also see them".
  *
  * Shaadi.com splits this into a "You & Her" tab (her preferences with ticks
- * and "You match 5/8") and an "Astro" pop-up (21/36 and eight rings). Mangaly
+ * and "You match 5/8") and an "Astro" pop-up (21/36 and eight rings). Mangalya
  * keeps the good part — both faces, one glance, then detail — and goes
  * further on what it can honestly show:
  *   · the summary line carries every signal at once: the engine's word

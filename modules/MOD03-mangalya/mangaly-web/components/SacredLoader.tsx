@@ -2,7 +2,7 @@
 
 import { useTranslation } from "react-i18next";
 
-/* Mangaly's loading state (owner, 2026-09-24: "Seeta Rama image to be used
+/* Mangalya's loading state (owner, 2026-09-24: "Seeta Rama image to be used
  * as loading"). The same Seeta–Rama Kalyanam as the splash, small and
  * breathing inside a turning kolam ring, so a wait reads as the brand's
  * moment rather than a bare "Loading…". Used for whole-screen waits only;

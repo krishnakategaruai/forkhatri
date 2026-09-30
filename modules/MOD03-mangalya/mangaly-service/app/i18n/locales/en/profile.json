@@ -1,7 +1,7 @@
 {
   "error": {
     "missingFields": "Please fill in every required field to save your profile.",
-    "tooYoung": "You must be at least {years} to create a profile on Mangaly.",
+    "tooYoung": "You must be at least {years} to create a profile on Mangalya.",
     "alreadyExists": "You already have a profile.",
     "unsupportedPhoto": "That photo couldn't be used — please try a JPEG, PNG, or WebP image under 8MB.",
     "notFound": "Create your profile first.",

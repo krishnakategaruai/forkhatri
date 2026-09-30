@@ -18,16 +18,22 @@
         "hint": "Your city helps families nearby find you first."
       },
       "4": {
+        "title": "Your work and life",
+        "hint": "Families search by these first. Without them your profile is not shown to anyone."
+      },
+      "5": {
         "title": "Add a photo",
-        "hint": "Optional now, and private until you both connect. You can add up to six later."
+        "hint": "Families look at the photo first. Add one clear photo to continue; you can add up to six later."
       }
     },
     "childPhone": "Their mobile number",
     "childName": "Their full name",
     "forSteps": {
       "0": {
-        "title": "Who is this profile for?",
-        "hint": "Your son's or daughter's mobile number. When they sign in with it, the profile becomes theirs — until then you fill it in."
+        "title": "How do we reach them?",
+        "hint": "Your son's or daughter's mobile number. When they sign in with it, the profile becomes theirs — until then you fill it in.",
+        "hint_son": "Your son's mobile number. When he signs in with it, the profile becomes his — until then you fill it in.",
+        "hint_daughter": "Your daughter's mobile number. When she signs in with it, the profile becomes hers — until then you fill it in."
       },
       "1": {
         "title": "What is their name?",
@@ -35,17 +41,39 @@
       },
       "2": {
         "title": "A few basics about them",
-        "hint": "Their date of birth, and who they are looking for."
+        "hint": "Their date of birth, and who they are looking for.",
+        "hint_son": "Your son's date of birth. He will see bride profiles.",
+        "hint_daughter": "Your daughter's date of birth. She will see groom profiles."
       },
       "3": {
         "title": "Where do they live?",
         "hint": "Their city helps families nearby find them first."
       },
       "4": {
+        "title": "Their work and life",
+        "hint": "Families search by these first. Without them the profile is not shown to anyone.",
+        "hint_son": "Families search by these first. Without them your son is not shown to anyone.",
+        "hint_daughter": "Families search by these first. Without them your daughter is not shown to anyone."
+      },
+      "5": {
         "title": "Add a photo of them",
         "hint": "Private until both sides connect. They can change it when they take over."
       }
-    }
+    },
+    "forWhom": {
+      "title": "Who is this profile for?",
+      "hint": "Families often set up the profile together. Choose whose search this is.",
+      "self": "Myself",
+      "son": "My son",
+      "daughter": "My daughter",
+      "relative": "Someone else in my family",
+      "already": "Does your son or daughter already have a Mangalya profile? Ask them to add you to their Home Circle using your mobile number. The invitation will appear here."
+    },
+    "iAm": "I am",
+    "theyAre": "They are",
+    "lookingForSelf": "You will see {{value}} profiles.",
+    "lookingForThem": "They will see {{value}} profiles.",
+    "pick": "Choose"
   },
   "field": {
     "name": "Your full name",
@@ -431,7 +459,7 @@
     "change": "Change photo"
   },
   "error": {
-    "network": "We couldn't reach Mangaly. Check your connection and try again."
+    "network": "We couldn't reach Mangalya. Check your connection and try again."
   },
   "hub": {
     "title": "My profile",
@@ -566,7 +594,7 @@
       "visibility": "Who can read this",
       "connectedOnly": "Only after you connect",
       "connectedOnlyHint": "The usual choice. Someone has to send a request and have it accepted before they can read this.",
-      "publicOne": "Anyone on Mangaly",
+      "publicOne": "Anyone on Mangalya",
       "publicOneHint": "Including parents and family members searching for someone else.",
       "limit": "{{count}} of {{max}} written"
     },
@@ -614,7 +642,9 @@
         "saved": "Your profile is saved.",
         "discoverable": "You are now appearing in search.",
         "complete": "Your profile is as full as it gets. Nicely done."
-      }
+      },
+      "nextDiscoverableNamed": "Add {{fields}} to appear in other families’ search.",
+      "fieldsJoiner": " and "
     },
     "tabDetails": "Details",
     "tabWords": "In my words",
@@ -669,7 +699,8 @@
       "horoscope": "Optional",
       "future": "Work, children, money",
       "partner": "Private to you"
-    }
+    },
+    "titleFor": "{{name}}'s profile"
   },
   "completeness": {
     "title": "Profile completeness",
@@ -801,7 +832,7 @@
   },
   "managed": {
     "editingTitle": "You are filling in {{name}}'s profile",
-    "editingBody": "{{name}} takes it over by signing in with their own mobile number. The prompts and ten choices are left for {{name}} to write — only a candidate speaks in their own words.",
+    "editingBody": "{{name}} takes it over by signing in with the mobile number you gave. The prompts and ten choices are left for {{name}} — only a candidate speaks in their own words.",
     "claimTitle": "{{name}} ({{relation}}) created this profile for you",
     "claimBody": "Look it over and change anything that is not right. Once you make it yours, only you can edit it — they stay in your Home Circle.",
     "claimCta": "Make it mine",

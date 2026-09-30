@@ -28,7 +28,7 @@
     "title": "Your Home Circle",
     "helping": "{{count}} helping your search",
     "none": "No one is helping yet",
-    "invite": "Invite family",
+    "invite": "Invite family, so they can search and answer requests with you",
     "titleFor": "{{name}}'s Home Circle",
     "helpingFor": "{{count}} helping {{name}}'s search"
   },
@@ -57,7 +57,9 @@
     "title": "Your turn",
     "request": "Wants to connect",
     "requestFor": "Wants to connect with {{name}}",
-    "someone": "Someone"
+    "someone": "Someone",
+    "invitation_one": "Invitation to a Home Circle",
+    "invitation_other": "Invitations to a Home Circle"
   },
   "intro": {
     "eyebrow": "Today's introduction",
@@ -112,7 +114,9 @@
       "emptyFor": "No family suggestions for {{name}} yet.",
       "by": "by {{name}}",
       "byYou": "by you"
-    }
+    },
+    "noneYet": "No requests sent or connections yet. Open any profile to send a request.",
+    "noneYetFor": "No requests sent or connections for {{name}} yet."
   },
   "plans": {
     "title": "Your plan",
@@ -123,5 +127,10 @@
     "free": "Free",
     "yours": "Current",
     "compare": "Compare plans"
+  },
+  "strong": {
+    "title": "Strong matches",
+    "titleMore": "Top matches for you",
+    "tag": "Strong"
   }
 }

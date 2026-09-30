@@ -23,6 +23,7 @@ import {
   type UnderstoodItem,
 } from '@/lib/matchmaker';
 import { useLoaderHold } from '@/lib/useLoaderHold';
+import { getOwnProfile } from '@/lib/profile';
 
 import './matchmaker.css';
 
@@ -97,6 +98,9 @@ export default function MatchmakerPage() {
   const [setup, setSetup] = useState(false);
   const [started, setStarted] = useState(false);
   const [matters, setMatters] = useState<Partial<Record<Theme, number>>>({});
+  // Whose partner this is, when a parent sets it up for their son or
+  // daughter: the copy then says "for Rohan", not "you" and "your profile".
+  const [forName, setForName] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -112,8 +116,12 @@ export default function MatchmakerPage() {
         setManaging(wantedFor);
         setManage(wantedFor);
       }
-      const saved = await getBrief();
+      const [saved, subject] = await Promise.all([
+        getBrief(),
+        wantedFor ? getOwnProfile() : Promise.resolve(null),
+      ]);
       if (!active) return;
+      if (subject?.name) setForName(subject.name.split(' ')[0]);
       if (!saved) {
         router.replace('/profile/create');
         return;
@@ -149,6 +157,12 @@ export default function MatchmakerPage() {
   const back = manage ? `/me?manage=${manage}` : '/me';
   // Where setting up continues: the profile they made, or Home.
   const done = manage ? `/me?manage=${manage}` : '/';
+  /** The copy for the person whose partner this is: "…for Rohan" when a
+   *  parent manages the profile, the "you" wording otherwise. */
+  const forSubject = (key: string, opts: Record<string, unknown> = {}) =>
+    forName
+      ? t(`${key}For`, { ...opts, name: forName, defaultValue: t(key, opts) })
+      : t(key, opts);
   const fieldLabel = (field: string) => t(`discover:matchmaker.field.${field}`);
   const optionLabel = (field: string, value: string) =>
     t(`profile:option.${OPTION_KEY[field] ?? field}.${value}`, { defaultValue: value });
@@ -304,9 +318,9 @@ export default function MatchmakerPage() {
           <span className="mm-scale__name">{name}</span>
         </div>
         <p className="caption">
-          {t(`discover:matchmaker.matters.theme.${theme}.note`)}
-          {factText && ` · ${t('discover:matchmaker.matters.yours', { facts: factText })}`}
-          {!usable && ` · ${t('discover:matchmaker.matters.noFacts')}`}
+          {forSubject(`discover:matchmaker.matters.theme.${theme}.note`)}
+          {factText && ` · ${forSubject('discover:matchmaker.matters.yours', { facts: factText })}`}
+          {!usable && ` · ${forSubject('discover:matchmaker.matters.noFacts')}`}
         </p>
         {usable && (
           <div className="mm-levels" role="radiogroup" aria-label={name}>
@@ -422,7 +436,7 @@ export default function MatchmakerPage() {
             ←
           </button>
         )}
-        <h1>{t(setup ? 'discover:matchmaker.setup.title' : 'discover:matchmaker.title')}</h1>
+        <h1>{forSubject(setup ? 'discover:matchmaker.setup.title' : 'discover:matchmaker.title')}</h1>
         {setup ? (
           <button type="button" className="mm-link" onClick={() => router.push(done)}>
             {t('discover:matchmaker.setup.skip')}
@@ -437,7 +451,7 @@ export default function MatchmakerPage() {
           <div className="mm-col">
             <section className="mm-words" aria-labelledby="mm-words-label">
               {setup && <p className="label">{t('discover:matchmaker.setup.step')}</p>}
-              <p className="mm-intro">{t('discover:matchmaker.intro')}</p>
+              <p className="mm-intro">{forSubject('discover:matchmaker.intro')}</p>
               <label id="mm-words-label" className="label" htmlFor="mm-words">
                 {t('discover:matchmaker.wordsLabel')}
               </label>
@@ -474,7 +488,7 @@ export default function MatchmakerPage() {
                 {source === 'basic'
                   ? t('discover:matchmaker.basicNote')
                   : started && !source
-                    ? t('discover:matchmaker.setup.started')
+                    ? forSubject('discover:matchmaker.setup.started')
                     : t('discover:matchmaker.understoodHint')}
               </p>
               {items.length === 0 && <p className="mm-empty">{t('discover:matchmaker.nothing')}</p>}
@@ -545,9 +559,9 @@ export default function MatchmakerPage() {
           <div className="mm-col">
             <section className="mm-scales" aria-labelledby="mm-matters-title">
               <h2 id="mm-matters-title" className="h2">
-                {t('discover:matchmaker.matters.title')}
+                {forSubject('discover:matchmaker.matters.title')}
               </h2>
-              <p className="caption">{t('discover:matchmaker.matters.hint')}</p>
+              <p className="caption">{forSubject('discover:matchmaker.matters.hint')}</p>
               {THEMES.map((theme) => renderTheme(theme))}
             </section>
 

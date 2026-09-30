@@ -5,7 +5,7 @@
  * has to. That is the point: a token JS can read is a token an injected script
  * can steal.
  *
- * [ADR-010] Every request also sends `X-Mangaly-Language` so the server can
+ * [ADR-010] Every request also sends `X-Mangalya-Language` so the server can
  * localize `detail`/`message` text itself (see `mangaly-service/app/i18n/`).
  * Because of that, `message` below is already-localized prose straight from
  * the server for any response the server actually returned — this module
@@ -185,7 +185,7 @@ export function signUp(identifier: string) {
 }
 
 /** [ForKhatri TR16, 2026-09-14] Log out = sign out of ForKhatri, then the
- *  entrance. Mangaly has no module-only session left to end. */
+ *  entrance. Mangalya has no module-only session left to end. */
 export async function logOut(): Promise<void> {
   await signOutOfForKhatri();
 }
@@ -233,7 +233,7 @@ export function confirmPasswordReset(identifier: string, code: string, newCreden
   });
 }
 
-/** Mangaly or the ForKhatri identity service cannot answer right now. */
+/** Mangalya or the ForKhatri identity service cannot answer right now. */
 export class SessionUnavailableError extends Error {}
 
 /** [FR090/TR090 → ForKhatri TR15/TR16] The signed-in ForKhatri member as

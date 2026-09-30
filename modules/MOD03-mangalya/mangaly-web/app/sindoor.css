@@ -1,5 +1,5 @@
 /* ===================================================================
-   Mangaly — "Sindoor & Manjal" (DEC-V1-030, owner brief 2026-09-24)
+   Mangalya — "Sindoor & Manjal" (DEC-V1-030, owner brief 2026-09-24)
    ===================================================================
    The owner set the two colours of the whole module:
      kumkum red   #cc0106  (HSL 359 99% 40%)
@@ -449,7 +449,7 @@ body::after {
 @keyframes mark-breathe {
   50% {
     transform: scale(1.06);
-    box-shadow: 0 14px 34px rgba(204, 1, 6, 0.4);
+    box-shadow: 0 14px 34px rgba(179, 38, 30, 0.24);
   }
 }
 
@@ -826,6 +826,12 @@ body::after {
 .picker__search {
   border-radius: 999px;
 }
+/* The shorthand above resets the chevron's repeat/position on selects. */
+.select {
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px 16px;
+}
 .field__input:focus,
 .input:focus,
 .select:focus,
@@ -848,9 +854,9 @@ body::after {
 }
 .progress__bar,
 .game__progress-bar {
-  background: linear-gradient(90deg, var(--accent), var(--gold-deep), var(--gold));
-  background-size: 200% 100%;
-  animation: bar-flow 4s linear infinite;
+  /* Calm gold, no flowing red: the moving red-to-gold band read as a
+     half-red, half-yellow bar on a phone (owner, 2026-09-30: less red). */
+  background: linear-gradient(90deg, var(--gold-deep), var(--gold));
 }
 @keyframes bar-flow {
   to {
@@ -1056,7 +1062,7 @@ html[data-splash='1'] body {
   animation: thread-draw 1100ms var(--ease-out) 600ms forwards;
 }
 .msplash__thread circle {
-  fill: #cc0106;
+  fill: var(--accent);
   stroke: #fbd946;
   stroke-width: 1.6;
   opacity: 0;
@@ -1655,7 +1661,7 @@ html[lang='te'] :is(.label, .bento__label, .duo__label, .dhead__for, .pview__pro
 /* Navigation: the active place is kumkum with a gold keyline. */
 .bottombar__item[aria-current='page'],
 .sidebar__item[aria-current='page'] {
-  box-shadow: 0 6px 16px rgba(204, 1, 6, 0.22), inset 0 0 0 1px rgba(251, 217, 70, 0.55);
+  box-shadow: 0 6px 16px rgba(179, 38, 30, 0.16), inset 0 0 0 1px rgba(251, 217, 70, 0.55);
 }
 .bottombar,
 .sidebar {
@@ -1816,4 +1822,54 @@ body::after {
   stroke-width: 2.4;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+/* [Owner, 2026-09-30] "for Mangalya, little redness should be lowered."
+   Same kumkum-and-turmeric identity, turned down a step: backgrounds keep a
+   maroon hint instead of reading red, the accent is a deep sindoor rather
+   than a neon red, and the red glow behind pages is halved. Gold is kept. */
+:root {
+  --accent: #b3261e;
+  --accent-hover: #971d16;
+  --accent-ink: #98201a;
+  --kumkum: #b3261e;
+  --shadow-accent: 0 10px 26px rgba(179, 38, 30, 0.22);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --paper: #150c0b;
+    --surface: #1f1311;
+    --surface-2: #2a1a17;
+    --surface-3: #36221d;
+    --line: #34211c;
+    --line-2: #4a2e26;
+    --accent: #c43a2e;
+    --accent-hover: #d64c3f;
+    --accent-tint: #33190f;
+    --kumkum: #e0685b;
+    --danger: #ec7468;
+    --glass: rgba(34, 18, 15, 0.66);
+    --glass-strong: rgba(34, 18, 15, 0.9);
+    --scrim: rgba(14, 7, 6, 0.82);
+    --shadow-accent: 0 10px 26px rgba(196, 58, 46, 0.22);
+    --ambient-a: rgba(190, 45, 32, 0.22);
+  }
+}
+:root[data-theme='dark'] {
+  --paper: #150c0b;
+  --surface: #1f1311;
+  --surface-2: #2a1a17;
+  --surface-3: #36221d;
+  --line: #34211c;
+  --line-2: #4a2e26;
+  --accent: #c43a2e;
+  --accent-hover: #d64c3f;
+  --accent-tint: #33190f;
+  --kumkum: #e0685b;
+  --danger: #ec7468;
+  --glass: rgba(34, 18, 15, 0.66);
+  --glass-strong: rgba(34, 18, 15, 0.9);
+  --scrim: rgba(14, 7, 6, 0.82);
+  --shadow-accent: 0 10px 26px rgba(196, 58, 46, 0.22);
+  --ambient-a: rgba(190, 45, 32, 0.22);
 }

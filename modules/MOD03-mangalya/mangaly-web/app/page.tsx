@@ -13,16 +13,26 @@ import { getJson, query, resolveMediaUrl } from "@/lib/api";
 import ContextChip from "@/components/ContextChip";
 import { useActiveContext, contextKey, firstName as firstOf } from "@/lib/activeContext";
 import type { HoroscopeMatchResponse } from "@/components/HoroscopeMatch";
-import type { Fit } from "@/components/HowYouFit";
+import HowYouFit, { type Fit } from "@/components/HowYouFit";
 import { getBrief, type Brief } from "@/lib/matchmaker";
 import { listConversations, type ConversationSummary } from "@/lib/messages";
 import AccountButton from "@/components/AccountButton";
 import ForKhatriHubLink from "@/components/ForKhatriHubLink";
 import { Avatar } from "@/components/Avatar";
 import { getSession, type Session } from "@/lib/auth";
+import ClaimProfileNote from "@/components/ClaimProfileNote";
+import { getMyAgentRecord } from "@/lib/agents";
 import { reportOutage } from "@/lib/outage";
 import { redirectToEntrance } from "@/lib/platform";
-import { listMembers, type Member } from "@/lib/homeCircle";
+import {
+  acceptInvitation,
+  declineInvitation,
+  invitationText,
+  listMembers,
+  listPendingInvitations,
+  type Member,
+  type PendingInvitation,
+} from "@/lib/homeCircle";
 import {
   getCompleteness,
   getOwnProfile,
@@ -59,6 +69,13 @@ import { listSuggestions, suggestProfile, type Suggestion } from "@/lib/homeCirc
  * not a UX03 contradiction: onboarding is purely explanatory content with no
  * gating behaviour of its own. */
 
+/** Where each "Your search" lane's full list lives. */
+const LANE_HREF = {
+  awaiting: "/circle#sent",
+  connected: "/messages",
+  suggested: "/circle#suggestions",
+} as const;
+
 type State =
   | { phase: "checking" }
   | {
@@ -69,6 +86,8 @@ type State =
       matches: Picked[];
       matchTotal: number;
       incoming: Connection[];
+      /** Home Circle invitations waiting on this person's answer. */
+      invitations: PendingInvitation[];
       members: Member[];
       /** [Owner, 2026-09-28] Today's introduction: the daily pick. */
       hero: Hero | null;
@@ -132,7 +151,22 @@ async function waitingOnThisFamily(
 export default function HomePage() {
   // [owner 2026-09-25] The loader stays at least a second, never a flash.
   const loaderHold = useLoaderHold();
-  const { t, i18n } = useTranslation(["common", "auth", "home", "profile", "discover"]);
+  const { t, i18n } = useTranslation(["common", "auth", "home", "profile", "discover", "circle"]);
+  const [inviteBusy, setInviteBusy] = useState<string | null>(null);
+  const [fitOpen, setFitOpen] = useState(false);
+
+  async function onInvitation(id: string, accept: boolean) {
+    setInviteBusy(id);
+    await (accept ? acceptInvitation(id) : declineInvitation(id));
+    // Accepting can add a new circle (a new seat to act in): reload so the
+    // contexts and Home read from it. Declining just drops the row.
+    if (accept) {
+      window.location.reload();
+      return;
+    }
+    setInviteBusy(null);
+    setState((s) => (s.phase === "in" ? { ...s, invitations: s.invitations.filter((i) => i.id !== id) } : s));
+  }
   const router = useRouter();
   const [state, setState] = useState<State>({ phase: "checking" });
   // The introduction's own action: a request (parents) or a suggestion.
@@ -153,7 +187,7 @@ export default function HomePage() {
       try {
         session = await getSession();
       } catch {
-        // [ForKhatri TR15/TR16] Mangaly or ForKhatri sign-in is unreachable:
+        // [ForKhatri TR15/TR16] Mangalya or ForKhatri sign-in is unreachable:
         // the shared retry state (OutageGate), never "signed out" (a loop).
         if (alive) reportOutage();
         return;
@@ -165,9 +199,22 @@ export default function HomePage() {
         redirectToEntrance();
         return;
       }
-      const profile = await getOwnProfile();
+      const [profile, invitations] = await Promise.all([
+        getOwnProfile(),
+        listPendingInvitations().catch(() => [] as PendingInvitation[]),
+      ]);
       if (!alive) return;
-      if (!profile && !contexts?.circles.length) {
+      // Someone invited into a circle answers that first, even before they
+      // have a profile or a circle of their own.
+      // [Owner walkthrough, 2026-09-30] A marriage agent with no search of
+      // their own belongs in the agent workspace, not in "create a profile".
+      if (!profile && !contexts?.circles.length && invitations.length === 0) {
+        const agent = await getMyAgentRecord().catch(() => null);
+        if (!alive) return;
+        if (agent?.kind === "agent") {
+          router.replace("/agent");
+          return;
+        }
         // No candidate profile of their own and no circle to belong to: the
         // wizard is the only useful next step. A parent or relative who is in
         // someone's circle is a full member and keeps Home.
@@ -263,6 +310,7 @@ export default function HomePage() {
         matches: picked.length > 0 ? picked : (found?.results ?? []),
         matchTotal: found?.total ?? 0,
         incoming,
+        invitations,
         members,
         hero,
         unreadChats: chats.filter((c) => (c.unread_count ?? 0) > 0),
@@ -324,7 +372,7 @@ export default function HomePage() {
     );
   }
 
-  const { profile, completeness, matchTotal, incoming, members, hero, unreadChats, brief, progress, because, plan, catalogue } =
+  const { profile, completeness, matches, matchTotal, incoming, invitations, members, hero, unreadChats, brief, progress, because, plan, catalogue } =
     state;
   // [Owner, 2026-09-28] Home reads by role. Someone searching for their child
   // or relative reads the formal view (biodata facts first, larger type);
@@ -370,6 +418,13 @@ export default function HomePage() {
     : 0;
   const milestonePct = Math.round(((milestonesReached + enhancedShare) / 4) * 100);
   const profileIncomplete = !!answered && answered.done < answered.total;
+  /* [Owner walkthrough, 2026-09-29] "A few more details" named nothing, so a
+     new member had no idea what to do next. Name the actual missing fields,
+     up to two, the way the field appears when editing (profile:field.*). */
+  const missingFieldLabels = (completeness?.discoverability_missing ?? [])
+    .filter((k) => k !== "partner_preference.age_range_or_locality")
+    .slice(0, 2)
+    .map((k) => t(`profile:field.${k}`));
   // The candidate's own Home Circle: the family helping *them*. (Circles the
   // account belongs to for someone else live on the Circle screen.)
   const circleCount = members.length;
@@ -397,15 +452,23 @@ export default function HomePage() {
             text={`${t("home:greetingWord")} ${firstName}`}
             accent={[1]}
           />
+          {/* Whose search this is and who is being looked for, right under
+              the greeting on every screen size. */}
+          {contexts && active && (
+            <div className="home-head__context">
+              <ContextChip contexts={contexts} active={active} onChoose={choose} />
+            </div>
+          )}
         </div>
         <div className="topbar__actions">
-          {contexts && active && <ContextChip contexts={contexts} active={active} onChoose={choose} />}
           <ForKhatriHubLink />
           <AccountButton />
         </div>
       </header>
 
       <main className={`home${familyView ? " home--family" : ""}`}>
+        {/* A profile a parent made for this person: take it over or remove it, first. */}
+        <ClaimProfileNote session={state.session} />
         {/* Only what is waiting on this person, and only when something is.
             A zero is not news, so nothing renders for it. */}
         {/* [Owner, 2026-09-28] YOUR TURN — Hinge's "Your turn": the people
@@ -452,12 +515,45 @@ export default function HomePage() {
             phone screen with the next peeking: the face first, the name set
             big on the photo, two or three facts as glass chips. */}
         <section className="hfeed" aria-labelledby="home-matches">
+          {/* Home Circle invitations: first thing in the page's main column
+              on every screen size, answered right here — no detour to Circle. */}
+          {invitations.length > 0 && (
+            <section className="hinvite" aria-labelledby="home-invite">
+              <h2 className="hturn__title" id="home-invite">
+                {t("home:turn.invitation", { count: invitations.length })}
+              </h2>
+              <ul className="hinvite__list">
+              {invitations.map((inv) => (
+                <li key={inv.id} className="hinvite__row">
+                  <span className="hturn__item">
+                    <Avatar name={inv.inviter_name ?? ""} anonymized={!inv.inviter_name} size={44} />
+                    <span className="hturn__text">
+                      <span>{invitationText(t, inv)}</span>
+                    </span>
+                  </span>
+                  <span className="hturn__actions">
+                    <button className="cta" type="button" disabled={inviteBusy === inv.id} onClick={() => onInvitation(inv.id, true)}>
+                      {t("circle:pendingInvitations.accept")}
+                    </button>
+                    <button className="icon-btn icon-btn--text" type="button" disabled={inviteBusy === inv.id} onClick={() => onInvitation(inv.id, false)}>
+                      {t("circle:pendingInvitations.decline")}
+                    </button>
+                  </span>
+                </li>
+              ))}
+              </ul>
+            </section>
+          )}
           {/* [Owner, 2026-09-28] TODAY'S INTRODUCTION — Sitch's
               "Introductions" and Hinge's "Most Compatible": one person the
               nightly pairing chose for this seat, with why, not a feed. */}
           {hero && (
             <article className="hintro" aria-labelledby="home-intro">
-              <Link className="hintro__photo" href={`/profile/${hero.person.candidate_account_id}`} tabIndex={-1}>
+              <Link
+                className={`hintro__photo${hero.person.photo_url ? "" : " hintro__photo--none"}`}
+                href={`/profile/${hero.person.candidate_account_id}`}
+                tabIndex={-1}
+              >
                 {hero.person.photo_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={resolveMediaUrl(hero.person.photo_url) ?? ""} alt="" />
@@ -466,6 +562,33 @@ export default function HomePage() {
                     <Avatar anonymized size={88} />
                   </span>
                 )}
+                {/* [Owner walkthrough, 2026-09-30] On a phone the photo and the
+                    "who is this" text used to be two separate stacked blocks,
+                    so a first-time visitor scrolled past a full-screen photo
+                    of a stranger with nothing said about them. This overlay —
+                    the same scrim-and-name .hcard already uses elsewhere —
+                    repeats the eyebrow and name ON the photo, phone widths
+                    only (home.css hides it from 640px up, where the name
+                    already sits beside the photo). */}
+                <span className="hintro__overlay">
+                  <span className="hintro__overlay-eyebrow">
+                    {hero.daily
+                      ? forName
+                        ? t("home:intro.eyebrowFor", { name: forName })
+                        : t("home:intro.eyebrow")
+                      : forName
+                        ? t("home:intro.topFor", { name: forName })
+                        : t("home:intro.top")}
+                  </span>
+                  <span className="hintro__overlay-name">
+                    {hero.person.open_name?.trim().split(/\s+/)[0] ??
+                      (hero.person.profession ||
+                        t("profile:hub.ageYears", { age: hero.person.age ?? "" }))}
+                    {hero.person.open_name && hero.person.age ? (
+                      <span className="hintro__age"> {hero.person.age}</span>
+                    ) : null}
+                  </span>
+                </span>
               </Link>
               <div className="hintro__body">
                 <p className="hintro__eyebrow">
@@ -610,31 +733,108 @@ export default function HomePage() {
                           : t("home:intro.suggestTo", { name: forName })}
                     </button>
                   )}
-                  <Link className="hintro__link" href={`/profile/${hero.person.candidate_account_id}#compatibility`}>
+                  {/* [Owner, 2026-09-30] "why refresh of page is happening, it is
+                      just inner component" — opens right here instead of
+                      loading the whole profile page. */}
+                  <button
+                    type="button"
+                    className="hintro__link"
+                    aria-expanded={fitOpen}
+                    onClick={() => setFitOpen((o) => !o)}
+                  >
                     {forName ? t("home:intro.fitFor", { name: forName }) : t("home:intro.fit")}
-                  </Link>
+                  </button>
                   {introAction === "error" && (
                     <p className="hintro__error" role="alert">
                       {t("home:intro.actionFailed")}
                     </p>
                   )}
                 </div>
+                {fitOpen && (
+                  <div className="hintro__fit">
+                    <HowYouFit
+                      candidateId={hero.person.candidate_account_id}
+                      forCandidate={forId && forName ? { accountId: forId, name: forName } : undefined}
+                      bare
+                    />
+                  </div>
+                )}
               </div>
             </article>
           )}
+
+          {/* [Owner, 2026-09-30] "a card for today's matches, and down a row of
+              strong matches, 2 to 3 in a row, then See all → Discover." The
+              engine's own word decides "strong"; when nobody is strong yet the
+              row says plainly that these are the next best, never a false
+              label. */}
+          {(() => {
+            const pool = matches.filter((m) => m.candidate_account_id !== hero?.person.candidate_account_id);
+            const strong = pool.filter((m) => m.match_label === "strong");
+            // Strong first, topped up with the next best so the row is full.
+            const row = [...strong, ...pool.filter((m) => m.match_label !== "strong")].slice(0, 3);
+            if (row.length === 0) return null;
+            const allStrong = row.every((m) => m.match_label === "strong");
+            return (
+              <section className="hstrong" aria-labelledby="home-strong">
+                <div className="hstrong__head">
+                  <h2 className="hfeed__title" id="home-strong">
+                    {t(allStrong ? "home:strong.title" : "home:strong.titleMore")}
+                  </h2>
+                  <Link className="hfeed__all" href="/discover">
+                    {matchTotal > row.length ? t("home:matches.seeAllCount", { count: matchTotal }) : t("home:matches.seeAll")}
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M5 12h14M13 6l6 6-6 6" />
+                    </svg>
+                  </Link>
+                </div>
+                <ul className="hstrong__list">
+                  {row.map((m) => {
+                    const first = m.open_name?.trim().split(/\s+/)[0] ?? null;
+                    const city = m.locality?.split(",")[0]?.trim();
+                    return (
+                      <li key={m.candidate_account_id}>
+                        <Link className="hstrong__card" href={`/profile/${m.candidate_account_id}`}>
+                          {m.photo_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img className="hstrong__img" src={resolveMediaUrl(m.photo_url) ?? ""} alt="" loading="lazy" />
+                          ) : (
+                            <span className="hstrong__img hstrong__img--none">
+                              <Avatar anonymized size={48} />
+                            </span>
+                          )}
+                          {m.match_label === "strong" && !allStrong && (
+                            <span className="hstrong__tag">{t("home:strong.tag")}</span>
+                          )}
+                          <span className="hstrong__name">
+                            {first ?? t("profile:hub.ageYears", { age: m.age ?? "" })}
+                            {first && m.age ? <span className="hstrong__age"> {m.age}</span> : null}
+                          </span>
+                          <span className="hstrong__meta">{[m.profession, city].filter(Boolean).join(" · ")}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            );
+          })()}
 
           {/* YOUR SEARCH — where things stand, not more people to browse. */}
           <div className="hfeed__head">
             <h2 className="hfeed__title" id="home-matches">
               {forName ? t("home:search.titleFor", { name: forName }) : t("home:search.title")}
             </h2>
-            <Link className="hfeed__all" href="/discover">
-              {t("home:search.browse", { count: matchTotal })}
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M5 12h14M13 6l6 6-6 6" />
-              </svg>
-            </Link>
+            {/* One way to Discover per screen: the top-matches row carries it. */}
           </div>
+          {/* [Owner, 2026-09-30] "don't waste unnecessary space": three boxes
+              of 0 said nothing to a new member. One line until something
+              has happened; the boxes return with the first request. */}
+          {progress.awaitingTotal + progress.connectedTotal + progress.suggestedTotal === 0 ? (
+            <p className="hsearch__none">
+              {forName ? t("home:search.noneYetFor", { name: forName }) : t("home:search.noneYet")}
+            </p>
+          ) : (
           <div className="hsearch">
             {(
               [
@@ -644,8 +844,11 @@ export default function HomePage() {
               ] as const
             ).map(([lane, faces, total]) => (
               <div key={lane} className={`hsearch__lane${total === 0 ? " is-empty" : ""}`}>
-                <span className="hsearch__n">{total}</span>
-                <span className="hsearch__label">{t(`home:search.${lane}.label`, { count: total })}</span>
+                {/* The number and its words open the full list behind them. */}
+                <Link className="hsearch__head" href={LANE_HREF[lane]}>
+                  <span className="hsearch__n">{total}</span>
+                  <span className="hsearch__label">{t(`home:search.${lane}.label`, { count: total })}</span>
+                </Link>
                 {total > 0 ? (
                   <ul className="hsearch__faces">
                     {faces.map((f) => {
@@ -685,6 +888,7 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+          )}
 
           {/* [Owner, 2026-09-28] BECAUSE OF THIS, THESE — rows from what the
               family did (a request, a suggestion, a save), each explaining
@@ -741,6 +945,22 @@ export default function HomePage() {
         {/* Two small tiles, side by side even on a phone: how ready your
             profile is, and who is searching with you. */}
         <div className="home-duo">
+          {/* [Owner, 2026-09-28] Sitch's "Talk to your matchmaker": what
+              this family told the engine, or the ask to tell it. First in the
+              column: who you are looking for drives everything else. */}
+          {!forId && profile && (
+            <Link className="duo duo--mm" href="/me/matchmaker">
+              <span className="duo__plus" aria-hidden="true">
+                <Icon name="heart" />
+              </span>
+              <span className="duo__label">{t("home:mm.title")}</span>
+              <span className="duo__body">
+                {briefPoints.length > 0
+                  ? t("home:mm.matters", { list: briefPoints.slice(0, 3).join(", ") })
+                  : t("home:mm.ask")}
+              </span>
+            </Link>
+          )}
           {/* Desktop only: the right column lists what is waiting even when
               it is nothing, so the column is a complete status panel. On a
               phone the alerts above say it only when something waits. */}
@@ -766,21 +986,6 @@ export default function HomePage() {
                 : t("home:tiles.allRead")}
             </span>
           </Link>
-          {/* [Owner, 2026-09-28] Sitch's "Talk to your matchmaker": what
-              this family told the engine, or the ask to tell it. */}
-          {!forId && profile && (
-            <Link className="duo duo--mm" href="/me/matchmaker">
-              <span className="duo__plus" aria-hidden="true">
-                <Icon name="heart" />
-              </span>
-              <span className="duo__label">{t("home:mm.title")}</span>
-              <span className="duo__body">
-                {briefPoints.length > 0
-                  ? t("home:mm.matters", { list: briefPoints.slice(0, 3).join(", ") })
-                  : t("home:mm.ask")}
-              </span>
-            </Link>
-          )}
           {profile && !forId && (
             <Link className="duo duo--profile" href="/me">
               <span
@@ -793,11 +998,13 @@ export default function HomePage() {
               <span className="duo__label">{t("home:tiles.profile")}</span>
               <span className="duo__body">
                 {profileIncomplete
-                  ? t(
-                      completeness?.discoverability_complete
-                        ? "profile:hub.milestone.nextEnhanced"
-                        : "profile:hub.milestone.nextDiscoverable",
-                    )
+                  ? completeness?.discoverability_complete
+                    ? t("profile:hub.milestone.nextEnhanced")
+                    : missingFieldLabels.length > 0
+                      ? t("profile:hub.milestone.nextDiscoverableNamed", {
+                          fields: missingFieldLabels.join(t("profile:hub.milestone.fieldsJoiner")),
+                        })
+                      : t("profile:hub.milestone.nextDiscoverable")
                   : t("home:tiles.profileDone")}
               </span>
             </Link>
@@ -833,7 +1040,7 @@ export default function HomePage() {
           </Link>
 
           {/* Kundli matching for any two people (a proposal from outside
-              Mangaly, relatives). A profile already shows its own match. */}
+              Mangalya, relatives). A profile already shows its own match. */}
           <Link className="duo duo--kundli" href="/horoscope/check">
             <span className="duo__plus" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round">

@@ -25,9 +25,9 @@
     },
     "search": "Name or phone number",
     "searchCandidate": "Their name or phone number",
-    "hasProfile": "has a Mangaly profile",
+    "hasProfile": "has a Mangalya profile",
     "noOne": "No one on ForKhatri matches that. You can type their phone number instead.",
-    "noCandidate": "No Mangaly profile matches that.",
+    "noCandidate": "No Mangalya profile matches that.",
     "inviteNumber": "Not on ForKhatri yet — we will invite {{number}} by phone.",
     "change": "Change",
     "youAreTheir": "You are their",
@@ -69,7 +69,9 @@
       "accepted": "Accepted",
       "declined": "Declined",
       "withdrawn": "Withdrawn"
-    }
+    },
+    "titleOwn": "Requests you sent",
+    "you": "you"
   },
   "suggestions": {
     "title": "Suggestions from your circle",
@@ -113,7 +115,7 @@
     "match": "A match"
   },
   "error": {
-    "network": "We couldn't reach Mangaly. Check your connection and try again.",
+    "network": "We couldn't reach Mangalya. Check your connection and try again.",
     "inviteSelf": "You can't invite yourself.",
     "alreadyInvited": "There's already a pending invitation for that phone number or email."
   },

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import { isOutage, retryAfterOutage, subscribeOutage } from '@/lib/outage';
 
-/* [ForKhatri TR15/TR16] The single retry state every Mangaly screen shows when
+/* [ForKhatri TR15/TR16] The single retry state every Mangalya screen shows when
  * it cannot load because MangalyService or ForKhatri sign-in is unreachable.
  * Mounted once, in the root layout, around the page — pages do not render
  * their own copy. See `lib/outage.ts` for what triggers it and why. */

@@ -6,7 +6,7 @@
 # slow identity service cannot pin request workers) calling
 # `POST /internal/v1/sessions/resolve` with this service's name and key.
 # Results are cached in-process per token for at most 30 s (positive) or 5 s
-# (negative), exactly the bound TR15 sets — so a sign-out reaches Mangaly within
+# (negative), exactly the bound TR15 sets — so a sign-out reaches Mangalya within
 # 30 s while ordinary page loads (several parallel API calls) cost one
 # round-trip. The cache key is the SHA-256 digest of the token: the raw bearer
 # credential is never held as a dict key where a heap dump or debug print could
@@ -58,7 +58,7 @@ class PlatformIdentityUnavailable(Exception):
 
 @dataclass(frozen=True, slots=True)
 class PlatformClaims:
-    """The subset of TR14 `SessionClaims` Mangaly uses."""
+    """The subset of TR14 `SessionClaims` Mangalya uses."""
 
     member_id: UUID
     status: str
@@ -185,7 +185,7 @@ async def resolve_token(token: str) -> PlatformClaims:
             raise PlatformSessionInvalid
         # Our own service credentials were rejected: a deployment fault, not a
         # signed-out member. Loud log, fail closed, never cached.
-        logger.error("ForKhatri identity service rejected Mangaly's service credentials (%s)", code)
+        logger.error("ForKhatri identity service rejected Mangalya's service credentials (%s)", code)
         raise PlatformIdentityUnavailable
 
     if response.status_code != 200:

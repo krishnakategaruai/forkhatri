@@ -42,6 +42,46 @@ function readable(value: unknown): string {
   return String(value).replace(/_/g, " ");
 }
 
+type T = (key: string, options?: Record<string, unknown>) => string;
+
+/* [Owner walkthrough, 2026-09-30] What the family is looking for, the way an
+ * agent or relationship manager reads it: "Age 27–32 · Hyderabad · Telugu ·
+ * Vegetarian", then the family's own words once. The raw stored brief used to
+ * be printed as-is — map coordinates, importance scores, a version stamp and
+ * the same quote three times. Internal keys (scales, priorities, the brief's
+ * scoring) never reach the screen. */
+function preferenceSummary(pp: Record<string, unknown>, t: T): { facts: string[]; words: string[] } {
+  const facts: string[] = [];
+  const list = (v: unknown): string[] =>
+    Array.isArray(v) ? v.map(String) : typeof v === "string" && v ? [v] : [];
+  const age = pp.age_range as { min?: number; max?: number } | undefined;
+  if (age && (age.min != null || age.max != null)) {
+    facts.push(t("rm:console.pref.age", { min: age.min ?? "", max: age.max ?? "" }));
+  }
+  for (const place of list(pp.locality)) facts.push(place);
+  // The matchmaker brief is stored as {text, items, …}; older rows as a bare list.
+  const rawBrief = pp.brief as unknown;
+  const briefObj = rawBrief && !Array.isArray(rawBrief) && typeof rawBrief === "object" ? (rawBrief as Record<string, unknown>) : null;
+  const brief = (Array.isArray(rawBrief) ? rawBrief : Array.isArray(briefObj?.items) ? briefObj?.items : []) as Array<Record<string, unknown>>;
+  for (const item of brief) {
+    const field = String(item.field ?? "");
+    for (const v of list(item.values)) {
+      if (field === "mother_tongue") facts.push(t(`profile:option.mother_tongue.${v}`, { defaultValue: v }));
+      if (field === "diet") facts.push(t(`profile:option.diet.${v}`, { defaultValue: v }));
+    }
+  }
+  for (const v of list(pp.diet)) facts.push(t(`profile:option.diet.${v}`, { defaultValue: v }));
+  for (const v of list(pp.education)) {
+    facts.push(t(`profile:option.highest_education_level.${v}`, { defaultValue: v }));
+  }
+  // The family's own words: the whole sentence they wrote when there is one.
+  const fullText = typeof briefObj?.text === "string" ? briefObj.text.trim() : "";
+  const words = fullText
+    ? [fullText]
+    : brief.map((item) => String(item.quote ?? "").trim()).filter((q, i, all) => q && all.indexOf(q) === i);
+  return { facts: facts.filter((f, i, all) => f && all.indexOf(f) === i), words };
+}
+
 export default function RmAssignmentPage() {
   const { t, i18n } = useTranslation(["rm", "common", "circle", "profile"]);
   const router = useRouter();
@@ -216,19 +256,24 @@ export default function RmAssignmentPage() {
                   {(member.profession || member.education_level) && (
                     <>
                       <dt>{t("rm:console.member.work")}</dt>
-                      <dd>{[member.profession, member.education_level].filter(Boolean).join(" · ")}</dd>
+                      <dd>{[member.profession, member.education_level ? t(`profile:option.highest_education_level.${member.education_level}`, { defaultValue: member.education_level }) : null].filter(Boolean).join(" · ")}</dd>
                     </>
                   )}
-                  {Object.keys(member.partner_preference).length > 0 && (
-                    <>
-                      <dt>{t("rm:console.member.partner")}</dt>
-                      <dd>
-                        {Object.entries(member.partner_preference)
-                          .map(([k, v]) => `${k.replace(/_/g, " ")}: ${readable(v)}`)
-                          .join(" · ")}
-                      </dd>
-                    </>
-                  )}
+                  {(() => {
+                    const { facts, words } = preferenceSummary(member.partner_preference, t as T);
+                    if (facts.length === 0 && words.length === 0) return null;
+                    return (
+                      <>
+                        <dt>{t("rm:console.member.partner")}</dt>
+                        <dd>
+                          {facts.length > 0 && <span>{facts.join(" · ")}</span>}
+                          {words.length > 0 && (
+                            <span className="rm-facts__words">“{words.join(" · ")}”</span>
+                          )}
+                        </dd>
+                      </>
+                    );
+                  })()}
                   {Object.keys(member.family_involvement).length > 0 && (
                     <>
                       <dt>{t("rm:console.member.family")}</dt>
@@ -343,7 +388,7 @@ export default function RmAssignmentPage() {
                               <div className="rm-tile__text">
                                 <span className="rm-tile__title">{[title, city].filter(Boolean).join(" · ")}</span>
                                 {(r.profession || r.education_level) && (
-                                  <span className="rm-tile__line">{[r.profession, r.education_level].filter(Boolean).join(" · ")}</span>
+                                  <span className="rm-tile__line">{[r.profession, r.education_level ? t(`profile:option.highest_education_level.${r.education_level}`, { defaultValue: r.education_level }) : null].filter(Boolean).join(" · ")}</span>
                                 )}
                               </div>
                             </Link>

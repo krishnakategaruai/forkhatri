@@ -1,7 +1,7 @@
 """Identity Bridge ORM models — `mangaly_identity` schema.
 
 [TR092 / SP104] This schema is the module's INTERIM credential store. It exists
-only because Mangaly is first in build order and no Common Platform Identity &
+only because Mangalya is first in build order and no Common Platform Identity &
 Trust Service exists yet to delegate to (ADR-016/017). It is named technical
 debt in `v1-decisions.md`, not a permanent design, and SP104 threat-models it
 as the module's highest-value single target: it holds credentials, OTP
@@ -59,7 +59,7 @@ class Account(Base):
     # [Migration 019] The member's ForKhatri display name, refreshed on sign-in.
     display_name: Mapped[str | None] = mapped_column(default=None)
     # [Migration 014] NULL for a ForKhatri platform member's link row: they
-    # authenticate to the platform, never to Mangaly.
+    # authenticate to the platform, never to Mangalya.
     credential_hash: Mapped[str | None] = mapped_column(default=None)
     status: Mapped[AccountStatus] = mapped_column(
         SqlEnum(

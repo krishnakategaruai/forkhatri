@@ -1,7 +1,7 @@
 /* Marriage agents (DEC-V1-033).
  *
  * Agent seat: apply, the membership, clients (one at a time or from a sheet),
- * biodata of people not on Mangaly, sharing, numbers and exports.
+ * biodata of people not on Mangalya, sharing, numbers and exports.
  * Family seat: the directory, Agent Connect, the agent dashboard (everything
  * shared, both kinds), answers, and the switch that closes the family's
  * number to agents. Administrators: applications and prices. */

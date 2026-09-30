@@ -1,16 +1,16 @@
 {
   "workspace": {
     "title": "Agent workspace",
-    "eyebrow": "Mangaly for marriage agents",
+    "eyebrow": "Mangalya for marriage agents",
     "loading": "Opening your workspace…"
   },
   "join": {
-    "title": "Bring your marriage bureau to Mangaly",
-    "lede": "Keep your families, your fees and your way of working. Mangaly gives you one place for every biodata, the search, the numbers and the follow-ups.",
+    "title": "Bring your marriage bureau to Mangalya",
+    "lede": "Keep your families, your fees and your way of working. Mangalya gives you one place for every biodata, the search, the numbers and the follow-ups.",
     "benefit": {
       "clients": "Add your families one by one, or a whole Excel sheet at once",
-      "search": "Search Mangaly for each family, their way, and share profiles in one tap",
-      "offline": "Share biodata of people who are not on Mangaly too",
+      "search": "Search Mangalya for each family, their way, and share profiles in one tap",
+      "offline": "Share biodata of people who are not on Mangalya too",
       "export": "Numbers, Excel and printable biodata for your own records"
     },
     "form": {
@@ -29,7 +29,7 @@
       "submit": "Send for checking",
       "save": "Save details",
       "saved": "Saved.",
-      "promise": "Mangaly checks every agent before families can choose them. Your fees stay yours: Mangaly never takes a share and never collects them for you."
+      "promise": "Mangalya checks every agent before families can choose them. Your fees stay yours: Mangalya never takes a share and never collects them for you."
     },
     "language": {
       "te": "Telugu",
@@ -43,13 +43,13 @@
   "status": {
     "pending": {
       "title": "We are checking your details",
-      "body": "A Mangaly moderator checks every agent, usually within two working days. You will get a notification as soon as it is done."
+      "body": "A Mangalya moderator checks every agent, usually within two working days. You will get a notification as soon as it is done."
     },
     "rejected": {
       "title": "We could not verify your details",
       "body": "Correct your details below and send them again. We will check once more."
     },
-    "verified": "Verified by Mangaly",
+    "verified": "Verified by Mangalya",
     "editDetails": "Edit your details",
     "suspended": "Suspended",
     "contactSuspended": "Numbers closed after reports"
@@ -69,7 +69,7 @@
   "tabs": {
     "clients": "Clients",
     "add": "Add clients",
-    "offline": "Not on Mangaly",
+    "offline": "Not on Mangalya",
     "review": "Agent applications"
   },
   "stats": {
@@ -94,7 +94,7 @@
     "claimed": "Took over their profile"
   },
   "clients": {
-    "empty": "No families yet. Add your first family, or share your bureau's name so families can choose you on Mangaly.",
+    "empty": "No families yet. Add your first family, or share your bureau's name so families can choose you on Mangalya.",
     "searchPlaceholder": "Search by name or city",
     "age": "{{age}} yrs",
     "lookingFor": {
@@ -126,7 +126,7 @@
   "add": {
     "one": {
       "title": "Add one family",
-      "lede": "Mangaly makes the profile with the candidate's own mobile number. They get a message and can take it over, or remove it if it is not them."
+      "lede": "Mangalya makes the profile with the candidate's own mobile number. They get a message and can take it over, or remove it if it is not them."
     },
     "mobile": "Candidate's mobile number",
     "name": "Full name",
@@ -139,7 +139,7 @@
     "groom": "A groom",
     "city": "City",
     "photo": "Photo",
-    "consent": "This family has given me permission to put their details on Mangaly.",
+    "consent": "This family has given me permission to put their details on Mangalya.",
     "submit": "Add family",
     "added": "{{name}} is in your list. Open the family to fill in more of the biodata.",
     "faceCheck": "Before you add families, confirm it is you with a quick face check.",
@@ -169,15 +169,15 @@
       "bad:mobile": "Mobile number not valid",
       "bad:photo": "Photo must be JPG, PNG or WebP, up to 8 MB",
       "photo_not_uploaded": "The photo named in this row was not uploaded",
-      "number_has_account": "This number already has an account: ask the family to choose you on Mangaly",
+      "number_has_account": "This number already has an account: ask the family to choose you on Mangalya",
       "too_young": "Below the legal marriage age",
       "identity_unavailable": "Could not reach ForKhatri; try this row again",
       "unexpected": "Could not add this row; try again"
     }
   },
   "offline": {
-    "title": "Biodata of people not on Mangaly",
-    "lede": "The families you share these with see them marked \"Not on Mangaly\", with your name. Only you and those families can open them.",
+    "title": "Biodata of people not on Mangalya",
+    "lede": "The families you share these with see them marked \"Not on Mangalya\", with your name. Only you and those families can open them.",
     "empty": "None yet.",
     "add": "Add a biodata",
     "name": "Full name",
@@ -204,8 +204,8 @@
   },
   "share": {
     "title": "Share with {{name}}",
-    "offlineTitle": "Biodata not on Mangaly",
-    "offlineEmpty": "Add biodata of people not on Mangaly in your workspace, then share them here.",
+    "offlineTitle": "Biodata not on Mangalya",
+    "offlineEmpty": "Add biodata of people not on Mangalya in your workspace, then share them here.",
     "note": "A note for the family",
     "notePlaceholder": "Why you think this could work",
     "send": "Share",
@@ -224,13 +224,13 @@
   },
   "family": {
     "title": "Marriage agents",
-    "lede": "Trusted marriage agents search for you, on Mangaly and beyond, and share what they find here.",
+    "lede": "Trusted marriage agents search for you, on Mangalya and beyond, and share what they find here.",
     "connect": {
       "title": "Work with verified marriage agents",
-      "point1": "Agents search Mangaly for you, and share biodata of families who are not on Mangaly",
-      "point2": "Every agent is checked by Mangaly before you can choose them",
+      "point1": "Agents search Mangalya for you, and share biodata of families who are not on Mangalya",
+      "point2": "Every agent is checked by Mangalya before you can choose them",
       "point3": "You see who opened your number, and you can close it to agents at any time",
-      "point4": "Any agent's fee is between you and them. Mangaly never collects it.",
+      "point4": "Any agent's fee is between you and them. Mangalya never collects it.",
       "buy": "Get Agent Connect",
       "active": "Agent Connect active until {{date}}",
       "onlyParents": "The candidate or a parent can get Agent Connect."
@@ -262,10 +262,10 @@
     "todayEmpty": "Nothing new today.",
     "earlier": "Earlier",
     "empty": "When your agent shares a profile, it appears here.",
-    "onMangaly": "On Mangaly",
-    "notOnMangaly": "Not on Mangaly",
+    "onMangaly": "On Mangalya",
+    "notOnMangaly": "Not on Mangalya",
     "sharedBy": "Shared by {{name}}",
-    "notVerified": "Not checked by Mangaly: ask your agent about this family.",
+    "notVerified": "Not checked by Mangalya: ask your agent about this family.",
     "age": "{{age}} yrs",
     "view": "View profile",
     "viewBiodata": "View biodata",
@@ -327,12 +327,12 @@
       "save": "Save",
       "saved": "Saved"
     },
-    "notModerator": "This page is for Mangaly moderators."
+    "notModerator": "This page is for Mangalya moderators."
   },
   "biodata": {
     "title": "Biodata",
     "print": "Print or save as PDF",
-    "stamp": "Shared by {{agent}} through Mangaly on {{date}}. For the families concerned only.",
+    "stamp": "Shared by {{agent}} through Mangalya on {{date}}. For the families concerned only.",
     "contacts": "Contact",
     "loading": "Preparing biodata…",
     "empty": "Nothing to print."
@@ -376,17 +376,17 @@
     "exports": "Non-client profiles exported today: {{used}} of {{limit}}",
     "added": "{{used}} of {{limit}} profiles added today",
     "clientsFree": "Your own clients never count.",
-    "suspended": "Several families reported unwanted calls, so other families' numbers are closed to you until a Mangaly moderator looks into it. Your own clients are not affected.",
+    "suspended": "Several families reported unwanted calls, so other families' numbers are closed to you until a Mangalya moderator looks into it. Your own clients are not affected.",
     "rules": "How fair use works",
     "rule1": "Your clients' numbers, and their parents', are always open and never counted.",
     "rule2": "Other families' details sit behind the eye. Each new family you open uses one of the day's opens; opening them again within 30 days is free.",
     "rule3": "Exports carry only numbers you have opened. Profiles that are not your clients can be exported up to {{limit}} a day.",
-    "rule4": "Every open and every export is shown to that family. If families report unwanted calls after you opened their number, your eye closes until Mangaly looks into it.",
-    "rule5": "What you do in your own WhatsApp groups is your business. On Mangaly, families trust us to keep their number safe."
+    "rule4": "Every open and every export is shown to that family. If families report unwanted calls after you opened their number, your eye closes until Mangalya looks into it.",
+    "rule5": "What you do in your own WhatsApp groups is your business. On Mangalya, families trust us to keep their number safe."
   },
   "suspendedStatus": {
     "title": "Your agent workspace is suspended",
-    "body": "After families' reports, a Mangaly moderator suspended your workspace. Write to Mangaly support if you think this is a mistake."
+    "body": "After families' reports, a Mangalya moderator suspended your workspace. Write to Mangalya support if you think this is a mistake."
   },
   "safety": {
     "title": "Your number and agents",
@@ -410,12 +410,12 @@
       "note": "What happened (optional)",
       "notePlaceholder": "For example: he kept calling after we said no",
       "send": "Send report",
-      "sent": "Thank you. A Mangaly moderator will look into it and tell you what we did.",
+      "sent": "Thank you. A Mangalya moderator will look into it and tell you what we did.",
       "closeToo": "Also close our number to agents",
       "mine": "Your reports",
       "onDay": "{{channel}} on {{date}}",
       "status": {
-        "open": "Mangaly is looking into it",
+        "open": "Mangalya is looking into it",
         "dismissed": "Looked into: not linked to an agent",
         "warned": "The agent was warned",
         "suspended": "The agent was suspended"

@@ -5,10 +5,10 @@ import { useTranslation } from 'react-i18next';
 
 import { entranceUrl, mangalyUrl, redirectToEntrance } from '@/lib/platform';
 
-/* [TR16, 2026-09-14] What Mangaly's retired /login, /signup, /otp and /reset
+/* [TR16, 2026-09-14] What Mangalya's retired /login, /signup, /otp and /reset
  * routes render: an immediate hand-off to the ForKhatri entrance.
  *
- * `return_to` is Mangaly's home, never the current URL: returning a signed-in
+ * `return_to` is Mangalya's home, never the current URL: returning a signed-in
  * member to /login would bounce them straight back here in a loop. The link is
  * a fallback for the moment before the navigation starts (or if script is
  * blocked). */

@@ -94,7 +94,7 @@
     "LOW": "Low Mangal Dosha",
     "levelRule": "High when Mars is in one of these houses from both the ascendant and the Moon; low when from one."
   },
-  "notice": "A traditional calculation, shown as it is. It is not a prediction and not Mangaly's compatibility score; your family decides what it means.",
+  "notice": "A traditional calculation, shown as it is. It is not a prediction and not Mangalya's compatibility score; your family decides what it means.",
   "warning": {
     "BIRTH_TIME_APPROXIMATE": "Based on an approximate birth time.",
     "BIRTH_TIME_UNKNOWN": "Birth time not known: only what holds for the whole day is used.",

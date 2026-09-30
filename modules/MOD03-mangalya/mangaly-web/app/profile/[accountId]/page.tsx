@@ -581,7 +581,7 @@ export default function MemberProfilePage() {
 
   if (view === null) {
     /* Not connected yet. Shaadi.com shows a registered member another member's
-       full biodata and gates only identity and contact; Mangaly does the same
+       full biodata and gates only identity and contact; Mangalya does the same
        (DEC-V1-020) — the facts are here, the name and contact are not. A family
        member evaluating a match reads them as a biodata sheet, the way every
        matrimony service presents them; a candidate reads the same facts the

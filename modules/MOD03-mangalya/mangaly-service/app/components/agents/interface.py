@@ -8,7 +8,7 @@ profiles forward with a note, the call and meeting log and chat with the
 family all come from `components/assisted_matching` unchanged. This module
 adds what an independent agent needs on top:
 
-  * applying, Mangaly's check, and the Agent membership (a plan like Gold);
+  * applying, Mangalya's check, and the Agent membership (a plan like Gold);
   * adding clients — one at a time or many from an Excel/CSV sheet with their
     photos — as profiles "made for someone" (DEC-V1-019): the phone owner is
     told, and takes the profile over or removes it;
@@ -335,7 +335,7 @@ async def apply(
     about: str | None,
 ) -> AgentRecord:
     """Apply to be an agent, or update the details. A new application waits
-    for Mangaly's check; details change freely afterwards."""
+    for Mangalya's check; details change freely afterwards."""
     await session.execute(
         text(
             "SELECT mangaly_operations.apply_as_agent(:name, :biz, :phone, :city, "
@@ -461,7 +461,7 @@ async def add_client(
         phone=phone, display_name=name, preferred_language=lang
     )
     # The platform hands back a still-unclaimed member for a number it already
-    # provisioned; if Mangaly already has that person, it is the same answer
+    # provisioned; if Mangalya already has that person, it is the same answer
     # as "this number has an account" — never a server error.
     from sqlalchemy.exc import DBAPIError
 
@@ -1198,7 +1198,7 @@ async def set_agents_may_see_contact(
 
 
 # ---------------------------------------------------------------------------
-# Mangaly's check (moderators, 'operations' operator role)
+# Mangalya's check (moderators, 'operations' operator role)
 # ---------------------------------------------------------------------------
 
 
@@ -1240,7 +1240,7 @@ async def may_decide_for(session: AsyncSession, *, acting: UUID, member: UUID) -
 
 # ---------------------------------------------------------------------------
 # Part 2 (owner, 2026-09-29): families connect to agents; agents share
-# profiles on Mangaly and beyond into the family's agent dashboard.
+# profiles on Mangalya and beyond into the family's agent dashboard.
 # ---------------------------------------------------------------------------
 
 OFFLINE_DETAIL_KEYS = (
@@ -1287,7 +1287,7 @@ class OfflineProfile:
 
 @dataclass(frozen=True, slots=True)
 class SharedProfile:
-    """One profile an agent shared with the family: a Mangaly member (the
+    """One profile an agent shared with the family: a Mangalya member (the
     Discover card) or an offline biodata."""
 
     suggestion_id: UUID
@@ -1364,7 +1364,7 @@ async def create_offline_profile(
     photos: list[UploadFile],
     biodata: UploadFile | None,
 ) -> OfflineProfile:
-    """A biodata the agent holds for someone who is not on Mangaly. The agent
+    """A biodata the agent holds for someone who is not on Mangalya. The agent
     confirms the family's permission (the route checks the box); the record is
     the agent's own and reaches only the families the agent shares it with."""
     import json

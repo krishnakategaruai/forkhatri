@@ -20,7 +20,7 @@ import type { LookingFor } from "./auth";
 const PAGE_SIZE = 20;
 
 /* One verified fact about a candidate. A list of these, never a score:
- * Mangaly's baseline (§4.8, §13.1) rules out a trust score, a reputation
+ * Mangalya's baseline (§4.8, §13.1) rules out a trust score, a reputation
  * ranking and any aggregate. `verified_on` and `method` travel with the claim
  * so a reader can weigh how fresh the check is and how it was made (§13.4). */
 export type VerifiedLayer = {

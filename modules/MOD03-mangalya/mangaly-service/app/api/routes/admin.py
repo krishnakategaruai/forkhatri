@@ -2,7 +2,7 @@
 
 The platform console (entrance /admin, gateway in identity-service) reads
 every module through the same three shapes: a manifest of views, a queue of
-items, and item detail with actions. For Mangaly the one view is the
+items, and item detail with actions. For Mangalya the one view is the
 moderation case queue. These routes are thin wrappers over the existing
 `/operations/cases` logic: no new tables, the same `Moderator` chokepoint
 (which also admits the platform's `mangaly.moderate` admin scope), and every
@@ -238,7 +238,7 @@ async def act(
 
 
 # ---------------------------------------------------------------------------
-# [ADR-012] One member's Mangaly facts for the console's member page. Mangaly's
+# [ADR-012] One member's Mangalya facts for the console's member page. Mangalya's
 # own plan tier sits beside other modules' tiers there, never merged.
 # ---------------------------------------------------------------------------
 
@@ -270,8 +270,8 @@ class MemberSummary(BaseModel):
 
 @router.get("/members/{member_id}/summary", response_model=MemberSummary)
 async def member_summary(member_id: UUID, session: DbSession, operator: Moderator, lang: Locale) -> MemberSummary:
-    """`member_id` is the platform member id, which equals Mangaly's account id
-    by construction (TR10/TR23). 404 when they have no Mangaly account."""
+    """`member_id` is the platform member id, which equals Mangalya's account id
+    by construction (TR10/TR23). 404 when they have no Mangalya account."""
     row = (
         await session.execute(
             text("SELECT * FROM mangaly_operations.admin_member_summary(:id)"), {"id": member_id}

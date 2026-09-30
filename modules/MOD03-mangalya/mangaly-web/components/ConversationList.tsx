@@ -29,7 +29,7 @@ import {
  * the optional families' group (marked with its group of faces). Each row
  * answers who, what was said last and by whom, and when. "New message"
  * opens the people you may write to in place, grouped by family, because in
- * Mangaly a chat always rests on a real link: your own family, or the other
+ * Mangalya a chat always rests on a real link: your own family, or the other
  * family of a connection. */
 
 const REFRESH_MS = 8000;

@@ -37,14 +37,27 @@ export default function ContextChip({ contexts, active, onChoose }: Props) {
   }, [open]);
 
   const total = (contexts.own_profile ? 1 : 0) + contexts.circles.length;
-  if (active.kind === "self" && contexts.circles.length === 0) return null;
+  // [Owner, 2026-09-29] Always say whose search this is and who is being
+  // looked for — also for someone with only their own search, on every
+  // screen size. Nothing to say only when there is no search at all.
+  if (total === 0) return null;
 
   const family = active.kind === "family";
-  const label = family
-    ? t("common:context.viewing", {
-        name: firstName(active.circle.candidate_name),
+  const lookingFor = family
+    ? active.circle.looking_for
+    : (contexts.own_profile?.looking_for ?? null);
+  // [Owner, 2026-09-30] "for whom search is happening … not user friendly":
+  // one plain sentence a first-time member reads without decoding a pill —
+  // "Finding a groom for you", "Finding a groom for Priya".
+  const name = family ? firstName(active.circle.candidate_name) : "";
+  const label = lookingFor
+    ? t(family ? "common:context.findingFor" : "common:context.findingForYou", {
+        what: t(`common:context.what.${lookingFor}`),
+        name,
       })
-    : t("common:context.yourSearch");
+    : family
+      ? t("common:context.viewing", { name })
+      : t("common:context.yourSearch");
   const switchable = total > 1;
 
   function select(next: ActiveContext) {
@@ -69,7 +82,14 @@ export default function ContextChip({ contexts, active, onChoose }: Props) {
         aria-disabled={!switchable}
       >
         <span className="context-chip__dot" aria-hidden="true" />
-        <span>{label}</span>
+        <span className="context-chip__full">{label}</span>
+        {lookingFor && (
+          <span className="context-chip__short" aria-hidden="true">
+            {family && name ? `${name} · ` : ""}
+            {t(`common:context.what.${lookingFor}`)}
+          </span>
+        )}
+        {switchable && <span className="context-chip__change">{t("common:context.change")}</span>}
         {switchable && (
           <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
             <path

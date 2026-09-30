@@ -14,7 +14,7 @@ import { getCategoryAttributes, getOwnProfile } from "@/lib/profile";
 import "../../me/me.css";
 
 /* Kundli matching: any two people's birth details — a proposal that came
- * from outside Mangaly, relatives — calculated with exactly the same rules as
+ * from outside Mangalya, relatives — calculated with exactly the same rules as
  * the profiles (Guna Milan as AstroSage, Porutham as ProKerala, Mangal Dosha)
  * and shown the same way. Nothing typed here is saved. Traditional matching
  * only: no predictions. A candidate's own saved details fill their side. */

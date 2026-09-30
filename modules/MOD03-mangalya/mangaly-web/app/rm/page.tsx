@@ -138,7 +138,7 @@ function RmPage() {
                             <span className="rm-tile__title">{[title, city].filter(Boolean).join(" · ")}</span>
                             {(p?.profession || p?.education_level) && (
                               <span className="rm-tile__line">
-                                {[p?.profession, p?.education_level].filter(Boolean).join(" · ")}
+                                {[p?.profession, p?.education_level ? t(`profile:option.highest_education_level.${p.education_level}`, { defaultValue: p.education_level }) : null].filter(Boolean).join(" · ")}
                               </span>
                             )}
                           </div>

@@ -25,8 +25,8 @@ import "./me.css";
 import ForKhatriHubLink from "@/components/ForKhatriHubLink";
 import { requireSession, logOut, type Session } from "@/lib/auth";
 import { setManaging } from "@/lib/api";
-import { claimProfile, disownProfile } from "@/lib/profile";
 import { entranceUrl } from "@/lib/platform";
+import ClaimProfileNote from "@/components/ClaimProfileNote";
 import { SUPPORTED_LANGUAGES, type Language } from "@/lib/i18n/config";
 import { setPreferredLanguage } from "@/lib/i18n/provider";
 import {
@@ -82,7 +82,7 @@ import PlaceSearch, { type PlaceValue } from "@/components/PlaceSearch";
  *   • Prompts placed between photos and sections, not in one block — the
  *     way Hinge interleaves them through a profile, so a person can add one
  *     wherever it fits.
- *   • Edit / Preview toggle — Hinge's editor has exactly this. Mangaly's
+ *   • Edit / Preview toggle — Hinge's editor has exactly this. Mangalya's
  *     twist: two Preview lenses, "Before you connect" (the anonymized
  *     snippet a stranger actually sees) and "After you connect" (photos,
  *     prompts and full biodata), so the privacy promise is visible.
@@ -376,8 +376,6 @@ export default function ProfileHubPage() {
   } | null>(null);
   const [me, setMe] = useState<Session | null>(null);
   const [memberView, setMemberView] = useState(false);
-  const [claiming, setClaiming] = useState(false);
-  const [disowning, setDisowning] = useState(false);
   // Leaving the screen stops acting on the child's profile.
   useEffect(() => () => setManaging(null), []);
   /* The Details tab speaks to the candidate ("What you studied"). When a
@@ -1383,7 +1381,11 @@ export default function ProfileHubPage() {
           settings sheet carry the account, so your own face is not repeated
           beside the one this page is about. */}
       <header className="topbar me-top">
-        <h1>{t("profile:hub.title")}</h1>
+        <h1>
+          {managing
+            ? t("profile:hub.titleFor", { name: managing.name.split(" ")[0] })
+            : t("profile:hub.title")}
+        </h1>
         <div className="topbar__actions">
           <ForKhatriHubLink />
           <button
@@ -1420,70 +1422,7 @@ export default function ProfileHubPage() {
             </span>
           </div>
         )}
-        {!managing &&
-          me?.own_profile?.created_by_name &&
-          me.own_profile.claimed === false && (
-            <div className="managed-note managed-note--claim" role="status">
-              <strong>
-                {t("profile:managed.claimTitle", {
-                  name: me.own_profile.created_by_name,
-                  relation: me.own_profile.created_by_relation
-                    ? t(`circle:relation.${me.own_profile.created_by_relation}`)
-                    : t(
-                        `circle:invite.relationshipOption.${me.own_profile.created_by_role ?? "relative"}`,
-                      ),
-                })}
-              </strong>
-              <span>{t("profile:managed.claimBody")}</span>
-              <button
-                type="button"
-                className="btn btn--primary"
-                disabled={claiming}
-                onClick={async () => {
-                  setClaiming(true);
-                  if (await claimProfile()) window.location.reload();
-                  setClaiming(false);
-                }}
-              >
-                {t("profile:managed.claimCta")}
-              </button>
-              {/* The number's owner did not ask for this profile: remove it,
-                confirmed in place rather than on another screen. */}
-              {disowning ? (
-                <div className="managed-note__confirm">
-                  <span>{t("profile:managed.disownConfirm")}</span>
-                  <button
-                    type="button"
-                    className="btn btn--ghost"
-                    disabled={claiming}
-                    onClick={async () => {
-                      setClaiming(true);
-                      if (await disownProfile())
-                        window.location.assign(entranceUrl());
-                      setClaiming(false);
-                    }}
-                  >
-                    {t("profile:managed.disownYes")}
-                  </button>
-                  <button
-                    type="button"
-                    className="link link--button"
-                    onClick={() => setDisowning(false)}
-                  >
-                    {t("profile:managed.disownNo")}
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  className="link link--button"
-                  onClick={() => setDisowning(true)}
-                >
-                  {t("profile:managed.disownCta")}
-                </button>
-              )}
-            </div>
-          )}
+        {!managing && me && <ClaimProfileNote session={me} />}
 
         <div className="me-grid">
           {/* The person: photos, name, and the one next step. Sticky beside
@@ -1589,7 +1528,9 @@ export default function ProfileHubPage() {
                   className="me-sec"
                 >
                   <span className="me-sec__title">
-                    {t("discover:matchmaker.title")}
+                    {managing
+                      ? t("discover:matchmaker.titleFor", { name: managing.name.split(" ")[0] })
+                      : t("discover:matchmaker.title")}
                     <Icon name="lock" size={16} />
                   </span>
                   <span className="me-sec__text">{t("discover:matchmaker.entry.body")}</span>

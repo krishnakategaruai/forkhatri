@@ -111,7 +111,7 @@ class CheckRequest(BaseModel):
 @router.post("/check", response_model=MatchResponse)
 async def check(body: CheckRequest, account_id: AuthenticatedAccount) -> MatchResponse:
     """Guna Milan, Porutham and Mangal Dosha for two people entered by hand
-    (a proposal from outside Mangaly, relatives…). Signed-in members only;
+    (a proposal from outside Mangalya, relatives…). Signed-in members only;
     nothing entered here is stored or logged."""
     import re
     from datetime import date

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-/* The first moment of Mangaly (DEC-V1-030).
+/* The first moment of Mangalya (DEC-V1-030).
  *
  * Once per browser tab, the app opens on Seeta–Rama Kalyanam: the divine
  * wedding every South Indian family invokes on a wedding card, set on the

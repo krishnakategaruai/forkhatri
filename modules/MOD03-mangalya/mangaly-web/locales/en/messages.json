@@ -30,7 +30,7 @@
     "reportDetails": "Anything we should know (optional)",
     "reportSend": "Send report",
     "reportSent": "Thank you. Our safety team will look at this.",
-    "incognitoSub": "Incognito · disappears when you leave",
+    "incognitoSub": "Incognito · nothing is kept",
     "directNote": "Your conversation, kept like any chat. Only the two of you can read it.",
     "endSessionHint": "Deletes everything here for both of you",
     "placeholderIncognito": "Message in incognito…",
@@ -40,7 +40,7 @@
     "familyWithYou": "{{name}}'s family & yours"
   },
   "error": {
-    "network": "We couldn't reach Mangaly. Check your connection and try again.",
+    "network": "We couldn't reach Mangalya. Check your connection and try again.",
     "notAvailable": "You can only message a connection you've both accepted.",
     "rateLimited": "You're sending messages too quickly. Please slow down."
   },

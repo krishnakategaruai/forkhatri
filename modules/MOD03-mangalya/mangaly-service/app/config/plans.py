@@ -5,7 +5,7 @@
 # you, asking a connection for their phone, the full kundli report, a
 # relationship manager. No plan ever buys VISIBILITY: nothing here feeds
 # "For you", search order, or the photo wall (v1-decisions: evidence not
-# score, no engagement metrics, and the product-values line that Mangaly
+# score, no engagement metrics, and the product-values line that Mangalya
 # does not sell a place in someone else's results).
 #
 # Versioned: `CATALOGUE_VERSION` is stored on every order so a later price
@@ -29,7 +29,7 @@ CATALOGUE_VERSION: Final = "2026-09"
 CURRENCY: Final = "INR"
 GST_RATE_BPS: Final = 1800  # 18.00 % as basis points
 
-PlanCode = Literal["FREE", "GOLD", "ASSISTED"]
+PlanCode = Literal["FREE", "GOLD", "ASSISTED", "AGENT", "AGENT_CONNECT"]
 
 # Entitlement flags. `daily_requests` is a number; the rest are booleans.
 DAILY_REQUESTS: Final = "daily_requests"
@@ -153,6 +153,33 @@ PLANS: Final[dict[str, Plan]] = {
         includes="GOLD",
     ),
 }
+
+# [DEC-V1-033, owner 2026-09-29] Two add-on plans beside a member's plan.
+# AGENT is a marriage broker's membership; AGENT_CONNECT is the family's
+# plan that lets them choose agents ("a premium tier which admin can
+# decide"). Neither changes a member's own entitlements, so neither is in
+# PLAN_ORDER. The prices here are placeholders: an administrator sets the
+# price in force in `mangaly_billing.plan_price` (/agents/admin/prices), and
+# `effective_term()` in billing reads that first.
+PLANS["AGENT"] = Plan(
+    code="AGENT",
+    entitlements=FREE_ENTITLEMENTS,
+    terms=(
+        Term(months=3, amount_paise=299_900),
+        Term(months=6, amount_paise=499_900),
+        Term(months=12, amount_paise=899_900),
+    ),
+)
+PLANS["AGENT_CONNECT"] = Plan(
+    code="AGENT_CONNECT",
+    entitlements=FREE_ENTITLEMENTS,
+    terms=(
+        Term(months=3, amount_paise=149_900),
+        Term(months=6, amount_paise=249_900),
+        Term(months=12, amount_paise=399_900),
+    ),
+)
+ADD_ON_PLANS: Final = ("AGENT", "AGENT_CONNECT")
 
 # The order plans are shown, and the rank used to answer "which plan do I
 # need for this flag?" (the cheapest plan that carries it).

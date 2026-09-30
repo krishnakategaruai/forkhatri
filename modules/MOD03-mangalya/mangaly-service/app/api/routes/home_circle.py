@@ -222,7 +222,7 @@ class MemberResponse(BaseModel):
     joined_at: str
     member_name: str | None = None
     relation: str | None = None
-    # [Migration 047] The member's own Mangaly photo, when they have added one.
+    # [Migration 047] The member's own Mangalya photo, when they have added one.
     member_photo_url: str | None = None
 
 
@@ -689,6 +689,19 @@ class ContextsResponse(BaseModel):
 async def list_contexts(session: DbSession, account_id: AuthenticatedAccount) -> ContextsResponse:
     """[FR097] Every search the caller can act in: their own (if they have a
     candidate profile) and each candidate whose Home Circle they belong to."""
+    # [Owner walkthrough, 2026-09-29] This route never called authz.resolve(),
+    # so `mangaly.authz_context` was unset for the whole request. That is
+    # fine for the caller's own row (`is_self()` also falls back to the
+    # always-set `mangaly.account_id`), but `discovery_profile_index`'s
+    # family-member policy checks `has_scope()`, which has no such fallback —
+    # so a circle member's read of a candidate's `looking_for` silently
+    # returned nothing, correct grant and all. TR017's "one request, one
+    # authz context" rule means the fix is to bind it explicitly here, the
+    # same way `deps.py`'s manage-header path and the other components that
+    # read across a grant already do.
+    from app.db.session import set_authz_context
+
+    await set_authz_context(session, account_id)
     own = await profile.get_own_profile(session, account_id=account_id)
     circles = await home_circle.list_member_contexts(session, account_id=account_id)
 

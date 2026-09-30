@@ -48,6 +48,29 @@ export function relationKey(relation: string | null | undefined, role: string): 
   return relation ? `circle:relation.${relation}` : `circle:invite.relationshipOption.${role}`;
 }
 
+/** Who asked what, in words — one wording for Circle and Home. `to_candidate`:
+ *  someone asks to join YOUR circle. `to_member`: you are asked into a
+ *  candidate's circle, by the candidate or by someone already helping them. */
+export function invitationText(
+  t: (key: string, options?: Record<string, unknown>) => string,
+  inv: PendingInvitation,
+): string {
+  const relationship = t(relationKey(inv.relation, inv.relationship_type)).toLowerCase();
+  const name = inv.inviter_name ?? t('circle:pendingInvitations.someone');
+  if (inv.direction === 'to_candidate') {
+    return t('circle:pendingInvitations.asksToJoin', { name, relationship });
+  }
+  if (inv.candidate_name && inv.inviter_account_id !== inv.candidate_account_id) {
+    return t('circle:pendingInvitations.addsYouTo', {
+      name,
+      candidate: inv.candidate_name,
+      first: inv.candidate_name.split(' ')[0],
+      relationship,
+    });
+  }
+  return t('circle:pendingInvitations.invitesYou', { name, relationship });
+}
+
 export type PendingInvitation = {
   id: string;
   candidate_account_id: string;

@@ -2,7 +2,7 @@
  *
  * Every pole of the outlook activity is a small line drawing rather than a
  * text button, so answering is picking the picture that looks like your
- * life. The owner's brief for all Mangaly art: specific to Mangaly and
+ * life. The owner's brief for all Mangalya art: specific to Mangalya and
  * rooted mostly in South Indian household life — never a generic stock
  * scene. So the vocabulary here is the one a Khatri family in Hyderabad,
  * Bengaluru or Chennai would recognise: the filter-coffee tumbler and

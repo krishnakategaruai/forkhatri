@@ -26,6 +26,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import (
     admin,
+    agents,
     operations,
     auth,
     billing,
@@ -102,7 +103,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="MangalyService",
         description=(
-            "MOD03 Mangaly — matrimonial module. One process, one package per "
+            "MOD03 Mangalya — matrimonial module. One process, one package per "
             "component (architecture.md §2)."
         ),
         version="0.1.0",
@@ -127,8 +128,8 @@ def create_app() -> FastAPI:
             "Content-Type",
             "Authorization",
             "Idempotency-Key",
-            "X-Mangaly-Language",
-            "X-Mangaly-Manage",
+            "X-Mangalya-Language",
+            "X-Mangalya-Manage",
         ],
     )
 
@@ -164,6 +165,10 @@ def create_app() -> FastAPI:
     app.include_router(billing.router)
     # [DEC-V1-032] Assisted matching: a member's relationship manager and the RM console.
     app.include_router(rm.router)
+    # [Owner walkthrough, 2026-09-30] The marriage-broker (agent) routes were
+    # built but never registered, so every /agents call answered 404 and the
+    # agent screens could not load for anyone.
+    app.include_router(agents.router)
     # [2026-09-27] Facts for the platform's Members dashboard (server to server only).
     app.include_router(insights.router)
 

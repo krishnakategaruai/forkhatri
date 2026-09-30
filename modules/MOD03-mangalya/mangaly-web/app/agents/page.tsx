@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useMounted } from "@/lib/useMounted";
 import { useSearchParams } from "next/navigation";
 import {
   Suspense,
@@ -46,7 +47,7 @@ import "../agent/agent.css";
 
 /* [DEC-V1-033] The family's agent dashboard. The owner (2026-09-29): people
  * connect to an agent "to enhance their profiling", the agent shares profiles
- * on Mangaly and beyond, connecting is a premium tier an administrator
+ * on Mangalya and beyond, connecting is a premium tier an administrator
  * prices, and the family gets a dashboard — "communication on the right side,
  * middle part profiles of the day, and down all the old profiles."
  *
@@ -57,7 +58,7 @@ import "../agent/agent.css";
  * family decides more slowly than a dating app); the chat with the agent on
  * the right, where the family's answers also appear as small lines, so the
  * agent's thread is the whole story. Every share is Interested / Not for us /
- * Ask the agent. Biodata of someone not on Mangaly is its own card, always
+ * Ask the agent. Biodata of someone not on Mangalya is its own card, always
  * labelled. On a phone: Profiles and Chat as two tabs. */
 
 type Filter = "all" | "new" | "liked" | "passed" | "ask";
@@ -141,7 +142,9 @@ function AgentsDashboard() {
     setError(null);
     const out = await chooseAgent(agent.account_id, forCandidate);
     if (!out.ok) {
-      setError(out.message ?? null);
+      // Never fail silently: a server error without its own message still
+      // says that the choice did not go through.
+      setError(out.message ?? t("common:state.failed"));
       return;
     }
     setChatAgent(agent.account_id);
@@ -175,47 +178,22 @@ function AgentsDashboard() {
         : d,
     );
 
-  /* ---- not connected yet: what it is, the price, who the agents are ---- */
+  /* ---- not connected yet: who the agents are, the price, what it is ----
+     [Owner walkthrough, 2026-09-30] The agents came last, under four
+     explanations and three tall price cards. The people a family is choosing
+     between come first; the price is one compact row with Pay; the four
+     points follow for whoever wants to read them. */
   if (!connected) {
     return (
       <Frame>
-        <div className="ag-connect">
-          <div className="ag-head" style={{ gap: "var(--space-4)" }}>
-            {forName && (
-              <p className="ag-eyebrow">
-                {t("agents:family.for", { name: forName })}
-              </p>
-            )}
-            <h2 className="ag-title">{t("agents:family.connect.title")}</h2>
-            <p className="ag-lede">{t("agents:family.lede")}</p>
-            <ul className="ag-benefits">
-              {(["point1", "point2", "point3", "point4"] as const).map(
-                (k, i) => (
-                  <li key={k}>
-                    <span className="ag-benefits__mark">{i + 1}</span>
-                    <span>{t(`agents:family.connect.${k}`)}</span>
-                  </li>
-                ),
-              )}
-            </ul>
-          </div>
-          <div className="card ag-form">
-            {dash.may_decide ? (
-              <AgentPlanCheckout code="AGENT_CONNECT" onPaid={reload} />
-            ) : (
-              <p className="caption">
-                {t("agents:family.connect.onlyParents")}
-              </p>
-            )}
-            <Link
-              href={`/me/contact-safety${forCandidate ? `?for=${forCandidate}` : ""}`}
-              className="btn btn--ghost btn--sm"
-              style={{ alignSelf: "flex-start" }}
-              prefetch={false}
-            >
-              {t("agents:safety.link")}
-            </Link>
-          </div>
+        <div className="ag-head ag-head--tight">
+          {forName && (
+            <p className="ag-eyebrow">
+              {t("agents:family.for", { name: forName })}
+            </p>
+          )}
+          <h2 className="ag-title">{t("agents:family.connect.title")}</h2>
+          <p className="ag-lede">{t("agents:family.lede")}</p>
         </div>
         <Directory
           agents={directory}
@@ -223,6 +201,33 @@ function AgentsDashboard() {
           canChoose={false}
           onChoose={choose}
         />
+        <div className="card ag-form ag-form--compact">
+          {dash.may_decide ? (
+            <AgentPlanCheckout code="AGENT_CONNECT" onPaid={reload} />
+          ) : (
+            <p className="caption">
+              {t("agents:family.connect.onlyParents")}
+            </p>
+          )}
+          <Link
+            href={`/me/contact-safety${forCandidate ? `?for=${forCandidate}` : ""}`}
+            className="btn btn--ghost btn--sm"
+            style={{ alignSelf: "flex-start" }}
+            prefetch={false}
+          >
+            {t("agents:safety.link")}
+          </Link>
+        </div>
+        <ul className="ag-benefits">
+          {(["point1", "point2", "point3", "point4"] as const).map(
+            (k, i) => (
+              <li key={k}>
+                <span className="ag-benefits__mark">{i + 1}</span>
+                <span>{t(`agents:family.connect.${k}`)}</span>
+              </li>
+            ),
+          )}
+        </ul>
       </Frame>
     );
   }
@@ -617,7 +622,7 @@ function SharedCard({
           display: "block",
           fontSize: "0.75rem",
           fontWeight: 600,
-          color: "var(--accent)",
+          color: "var(--ink-2)",
         }}
       >
         {t("agents:family.sharedBy", { name: agentName })}
@@ -678,11 +683,11 @@ function SharedCard({
         >
           {t("agents:family.onMangaly")}
         </span>
-        <span className="ag-card__title">
+        <Link href={`/profile/${shared.member_account_id}`} className="ag-card__title" prefetch={false}>
           {[title, p?.locality?.split(",")[0]?.trim()]
             .filter(Boolean)
             .join(" · ")}
-        </span>
+        </Link>
         {(p?.profession || p?.education_level) && (
           <span className="ag-card__line">
             {[p?.profession, p?.education_level ? t(`profile:option.highest_education_level.${p?.education_level}`, { defaultValue: p?.education_level.replace(/_/g, " ") }) : null].filter(Boolean).join(" · ")}
@@ -691,7 +696,7 @@ function SharedCard({
         {note}
         <Link
           href={`/profile/${shared.member_account_id}`}
-          className="btn btn--ghost btn--sm"
+          className="btn btn--ghost btn--sm ag-card__view"
           style={{ alignSelf: "flex-start" }}
           prefetch={false}
         >
@@ -991,6 +996,9 @@ function AgentChat({
 }
 
 export default function AgentsPage() {
+  // Client only: the first paint is in the member's own language.
+  const mounted = useMounted();
+  if (!mounted) return null;
   return (
     <Suspense fallback={null}>
       <AgentsDashboard />

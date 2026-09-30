@@ -58,7 +58,7 @@ def _is_dev_allowed(identifier: str, settings) -> bool:  # type: ignore[no-untyp
 
 def _otp_body(challenge: IssuedChallenge, ttl_minutes: int) -> str:
     return (
-        f"Your Mangaly verification code is {challenge.code}. "
+        f"Your Mangalya verification code is {challenge.code}. "
         f"It expires in {ttl_minutes} minutes. Never share this code with anyone."
     )
 

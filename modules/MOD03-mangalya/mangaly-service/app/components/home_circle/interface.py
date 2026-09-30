@@ -67,6 +67,44 @@ from app.config.settings import get_settings
 from app.events import bus
 from app.rate_limiting import limiter
 
+
+def _normalize_identifier(raw: str | None) -> str | None:
+    """[Owner walkthrough, 2026-09-29] One spelling for a typed phone or email.
+
+    A daughter typing her mother's number as "9800123402" stored exactly
+    that, while the mother's account holds "+919800123402" — so the
+    invitation never reached her when she signed up. Indian mobile numbers
+    are stored as +91XXXXXXXXXX and emails in lower case."""
+    value = (raw or "").strip()
+    if not value:
+        return None
+    if "@" in value:
+        return value.lower()
+    digits = "".join(ch for ch in value if ch.isdigit())
+    if len(digits) == 10:
+        return "+91" + digits
+    if len(digits) == 11 and digits.startswith("0"):
+        return "+91" + digits[1:]
+    if len(digits) == 12 and digits.startswith("91"):
+        return "+" + digits
+    return value
+
+
+def _identifier_variants(*values: str | None) -> list[str]:
+    """The reader's own identifiers in every spelling an older invitation
+    may have been stored under (with and without +91)."""
+    out: list[str] = []
+    for v in values:
+        if not v:
+            continue
+        for form in (v, _normalize_identifier(v)):
+            if form and form not in out:
+                out.append(form)
+        digits = "".join(ch for ch in v if ch.isdigit())
+        if "@" not in v and len(digits) >= 10 and digits[-10:] not in out:
+            out.append(digits[-10:])
+    return out
+
 __all__ = [
     "AlreadyMember",
     "InvitationNotFound",
@@ -213,7 +251,7 @@ async def invite(
 
     if direction not in ("to_member", "to_candidate"):
         raise ValueError("direction must be to_member or to_candidate")
-    identifier = (invitee_identifier or "").strip() or None
+    identifier = _normalize_identifier(invitee_identifier)
     if identifier is None and invitee_account_id is None:
         raise InviteSelf  # nothing to address; treated as an invalid invite
 
@@ -337,6 +375,7 @@ async def invite(
             payload={
                 "invitation_id": invitation_id,
                 "relationship": relationship_type.value,
+                "relation": relation,
                 "direction": direction,
             },
             link="/circle",
@@ -352,7 +391,7 @@ async def list_pending_invitations(
     migration 030; see this module's docstring for why a plain SELECT cannot
     see these rows at all."""
     phone, email = await identity.get_own_identifiers(session, account_id=account_id)
-    identifiers = [i for i in (phone, email) if i is not None]
+    identifiers = _identifier_variants(phone, email)
 
     rows = await session.execute(
         text(
@@ -391,7 +430,7 @@ async def _respond(
     session: AsyncSession, *, invitation_id: UUID, account_id: UUID, response: InvitationStatus
 ) -> _Response:
     phone, email = await identity.get_own_identifiers(session, account_id=account_id)
-    identifiers = [i for i in (phone, email) if i is not None]
+    identifiers = _identifier_variants(phone, email)
     row = (
         await session.execute(
             text(
@@ -489,6 +528,24 @@ async def accept_invitation(
     await session.execute(
         text("SELECT mangaly_communication.sync_family_participants_for(:candidate)"),
         {"candidate": candidate_account_id},
+    )
+    # The person who sent the invitation hears that it was accepted.
+    from app.components.notification_bridge import interface as notifications
+
+    await notifications.notify(
+        session,
+        recipients=[answer.inviter_account_id],
+        # Filed under the candidate's circle: the inviter's own inbox when the
+        # inviter is the candidate, that family's context otherwise.
+        subject_account_id=candidate_account_id,
+        kind="invitation_accepted",
+        payload={
+            "invitation_id": invitation_id,
+            "relationship": relationship_type.value,
+            "relation": answer.relation,
+            "direction": answer.direction,
+        },
+        link="/circle",
     )
     return membership_id
 
@@ -1190,7 +1247,7 @@ class PersonSummary:
 async def search_people(session: AsyncSession, *, q: str) -> list[PersonSummary]:
     """[Rework contract §6] Find people to invite, by name or phone. The
     identity service exposes only an id-based member lookup, so this searches
-    Mangaly's own member-link rows (id = platform member id) through
+    Mangalya's own member-link rows (id = platform member id) through
     `mangaly_identity.search_people()` (migration 030): signed-in callers only,
     never the caller themselves, phone masked, at most 20 rows."""
     cleaned = (q or "").strip()

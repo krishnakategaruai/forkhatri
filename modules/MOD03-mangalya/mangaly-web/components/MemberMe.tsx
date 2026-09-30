@@ -25,8 +25,8 @@ import "@/app/me/me.css";
  *
  * Owner: "basic authentication of login happens in ForKhatri and each module
  * has its own way of my profile." Someone who is not looking for a match
- * still has a Mangaly profile of their own: their photo, a line about them,
- * their city and work, the families they belong to in Mangaly, and the
+ * still has a Mangalya profile of their own: their photo, a line about them,
+ * their city and work, the families they belong to in Mangalya, and the
  * profiles they made for a child. It is never searchable and carries no
  * biodata. Their photo is what the families they talk to see, and what the
  * face check compares against before they may make a profile for a child. */

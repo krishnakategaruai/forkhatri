@@ -15,6 +15,7 @@ import './editorial.css';
 import OutageGate from '@/components/OutageGate';
 import AppShell from '@/components/AppShell';
 import MangalySplash from '@/components/MangalySplash';
+import ScreenGuard from '@/components/ScreenGuard';
 import { I18nProvider } from '@/lib/i18n/provider';
 
 /* Typography (DEC-V1-030, revised 2026-09-25: the owner found the earlier
@@ -65,9 +66,9 @@ const bodyFont = Instrument_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'Mangaly',
+  title: 'Mangalya',
   description:
-    'Mangaly — a family-involved, evidence-based matrimonial search. Part of ForKhatri.',
+    'Mangalya — a family-involved, evidence-based matrimonial search. Part of ForKhatri.',
 };
 
 // Mobile-first: lock the layout viewport and respect device safe areas. The
@@ -115,10 +116,11 @@ export default function RootLayout({
         />
         <I18nProvider>
           <MangalySplash />
+          <ScreenGuard />
           {/* AppShell emits the responsive nav markup: a rail/sidebar at
               desktop widths, a floating bar below. */}
           <AppShell>
-            {/* [ForKhatri TR15/TR16] One shared "can't reach Mangaly" retry state. */}
+            {/* [ForKhatri TR15/TR16] One shared "can't reach Mangalya" retry state. */}
             <OutageGate>{children}</OutageGate>
           </AppShell>
         </I18nProvider>

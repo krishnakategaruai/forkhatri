@@ -9,5 +9,28 @@
     "noteEmpty": "నోట్ సేవ్ చేసే ముందు ఏదైనా రాయండి.",
     "noteSubject": "నోట్ ఒక మ్యాచ్ గురించి ఉండాలి.",
     "candidateNotFound": "ఆ వ్యక్తి ఇంకా ForKhatriలో లేరు. ముందు చేరమని అడగండి, తర్వాత ఆహ్వానించండి."
+  },
+  "relationship": {
+    "parent": "తల్లిదండ్రులు",
+    "guardian": "సంరక్షకులు",
+    "sibling": "తోబుట్టువు",
+    "relative": "బంధువు"
+  },
+  "relation": {
+    "mother": "అమ్మ",
+    "father": "నాన్న",
+    "brother": "అన్న / తమ్ముడు",
+    "sister": "అక్క / చెల్లెలు",
+    "guardian": "సంరక్షకులు",
+    "grandmother": "నానమ్మ / అమ్మమ్మ",
+    "grandfather": "తాతయ్య",
+    "paternal_uncle": "బాబాయి / పెదనాన్న",
+    "maternal_uncle": "మావయ్య",
+    "paternal_aunt": "అత్త",
+    "maternal_aunt": "పిన్ని / పెద్దమ్మ",
+    "cousin": "కజిన్",
+    "brother_in_law": "బావ / బావమరిది",
+    "sister_in_law": "వదిన / మరదలు",
+    "family_friend": "కుటుంబ స్నేహితులు"
   }
 }

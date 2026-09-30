@@ -21,11 +21,11 @@ import {
 
 import "../agent.css";
 
-/* [DEC-V1-033] Mangaly moderators: check agents before families can choose
+/* [DEC-V1-033] Mangalya moderators: check agents before families can choose
  * them, and set what each plan costs — the owner asked that Agent Connect be
  * "a premium tier which admin can decide", so every plan term's price is
  * editable here over the catalogue placeholder. The same applications also
- * appear in the platform console's Mangaly view. */
+ * appear in the platform console's Mangalya view. */
 
 function PriceRow({ price, onSaved }: { price: AdminPrice; onSaved: () => void }) {
   const { t } = useTranslation(["agents", "billing"]);

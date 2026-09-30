@@ -14,7 +14,7 @@
  *     Pleasing, Emotionally Stable.
  *   - Gottman — how a disagreement starts, and whether a repair attempt is
  *     accepted, predict outcomes better than almost anything else.
- * Mangaly's own §12 list (communication, conflict, independence, family
+ * Mangalya's own §12 list (communication, conflict, independence, family
  * involvement, career orientation, decision-making, money, social
  * preferences) is covered by these ten.
  *

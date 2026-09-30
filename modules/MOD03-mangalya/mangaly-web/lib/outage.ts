@@ -1,4 +1,4 @@
-/* One shared "cannot reach Mangaly right now" signal.
+/* One shared "cannot reach Mangalya right now" signal.
  *
  * [ForKhatri TR15/TR16, 2026-09-14] When MangalyService is unreachable, or
  * answers 502/503/504 (503 is also what it returns when the ForKhatri identity

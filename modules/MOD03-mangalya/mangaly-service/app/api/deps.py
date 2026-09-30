@@ -36,19 +36,30 @@ from app.i18n import resolve_language
 
 
 def get_locale(
-    x_mangaly_language: Annotated[str | None, Header()] = None,
+    # [Owner walkthrough, 2026-09-29] Renamed from x_mangaly_language: FastAPI
+    # derives the wire header name from this parameter's own spelling
+    # (x_mangaly_language -> "X-Mangaly-Language"), so it had silently
+    # stopped matching the "X-Mangalya-Language" header the frontend has sent
+    # since the MOD03 "Mangaly" -> "Mangalya" rename. Every server-rendered
+    # string (match reasons, plan features, notifications) fell back to
+    # Accept-Language — usually English — regardless of the member's chosen
+    # language, while client-rendered text kept translating correctly through
+    # its own, unrelated i18next path. That split is what made the bug hard
+    # to spot: most of a screen was in the right language and a few strings
+    # on the same screen were not.
+    x_mangalya_language: Annotated[str | None, Header()] = None,
     accept_language: Annotated[str | None, Header()] = None,
 ) -> str:
     """[ADR-010] Resolve the caller's language for localized responses.
 
-    `X-Mangaly-Language` takes priority — it carries the frontend's actual
+    `X-Mangalya-Language` takes priority — it carries the frontend's actual
     resolved i18next language (the user's saved choice, per
     `mangaly-web/lib/i18n/provider.tsx`), which is more specific than the
     browser's `Accept-Language` and is what should win once a user has made an
     explicit choice. `Accept-Language` remains the fallback for any caller that
     does not send the custom header (a script, a future non-web client).
     """
-    return resolve_language(x_mangaly_language or accept_language)
+    return resolve_language(x_mangalya_language or accept_language)
 
 
 Locale = Annotated[str, Depends(get_locale)]
@@ -162,7 +173,7 @@ async def get_authenticated_session(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail={
                     "code": exc.code,
-                    "message": "This ForKhatri account cannot open Mangaly right now. "
+                    "message": "This ForKhatri account cannot open Mangalya right now. "
                     "Please contact support.",
                 },
             ) from None
@@ -191,7 +202,7 @@ async def _refuse_if_suspended(session: AsyncSession, account_id: UUID, request:
         from app.i18n import translate
 
         lang = resolve_language(
-            request.headers.get("x-mangaly-language") or request.headers.get("accept-language")
+            request.headers.get("x-mangalya-language") or request.headers.get("accept-language")
         )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -216,12 +227,19 @@ async def get_authenticated_account(
     """The caller's account id. FastAPI caches `get_authenticated_session` per
     request, so a route using both resolves the session once.
 
-    With `X-Mangaly-Manage: <candidate id>` on a /profile or /media request, a
+    With `X-Mangalya-Manage: <candidate id>` on a /profile or /media request, a
     parent editing a profile they created (and which is not yet claimed) acts
     as that candidate for this one request: `can_manage()` is checked in the
     database, then both RLS variables are rebound to the candidate. Any other
-    path, or a failed check, ignores the header entirely."""
-    target = request.headers.get("x-mangaly-manage")
+    path, or a failed check, ignores the header entirely.
+
+    [Owner walkthrough, 2026-09-29] Was reading "x-mangaly-manage" — one more
+    header spelling the MOD03 rename left behind while the frontend already
+    sent "X-Mangalya-Manage" (`lib/api.ts`). This override never fired: a
+    parent editing a not-yet-claimed child profile was silently editing their
+    OWN account instead, the same shape of bug as the language header above.
+    """
+    target = request.headers.get("x-mangalya-manage")
     path = request.url.path
     if not target or not path.startswith(_MANAGE_PATH_PREFIXES) or path.startswith(_MANAGE_EXCLUDED):
         return caller.account_id

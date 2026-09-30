@@ -57,6 +57,15 @@ import teHoroscope from "@/locales/te/horoscope.json";
 import enBilling from "@/locales/en/billing.json";
 import hiBilling from "@/locales/hi/billing.json";
 import teBilling from "@/locales/te/billing.json";
+// [Owner walkthrough, 2026-09-30] The agent (marriage broker) screens' text
+// was written in all three languages but never registered here, so every
+// agent screen showed raw keys ("workspace.title", "status.verified").
+import enAgents from "@/locales/en/agents.json";
+import hiAgents from "@/locales/hi/agents.json";
+import teAgents from "@/locales/te/agents.json";
+import enHelp from "@/locales/en/help.json";
+import hiHelp from "@/locales/hi/help.json";
+import teHelp from "@/locales/te/help.json";
 
 export const SUPPORTED_LANGUAGES = ["en", "hi", "te"] as const;
 export type Language = (typeof SUPPORTED_LANGUAGES)[number];
@@ -77,6 +86,8 @@ export const NAMESPACES = [
   "rm",
   "horoscope",
   "billing",
+  "agents",
+  "help",
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 
@@ -94,6 +105,8 @@ const resources = {
     rm: enRm,
     horoscope: enHoroscope,
     billing: enBilling,
+    agents: enAgents,
+    help: enHelp,
   },
   hi: {
     common: hiCommon,
@@ -108,6 +121,8 @@ const resources = {
     rm: hiRm,
     horoscope: hiHoroscope,
     billing: hiBilling,
+    agents: hiAgents,
+    help: hiHelp,
   },
   te: {
     common: teCommon,
@@ -122,6 +137,8 @@ const resources = {
     rm: teRm,
     horoscope: teHoroscope,
     billing: teBilling,
+    agents: teAgents,
+    help: teHelp,
   },
 } as const;
 

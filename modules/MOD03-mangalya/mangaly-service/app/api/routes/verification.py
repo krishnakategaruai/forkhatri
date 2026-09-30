@@ -1,7 +1,7 @@
 """Verification endpoints — the live face match (DEC-V1-016, DEC-V1-025).
 
 Thin HTTP layer over `components/trust/interface.py`. Every endpoint acts on
-the signed-in person only: `/verification` is outside the `X-Mangaly-Manage`
+the signed-in person only: `/verification` is outside the `X-Mangalya-Manage`
 paths (`api/deps.py`), so a parent filling in a child's profile is still
 themselves here — a face check is never done on someone else's behalf.
 

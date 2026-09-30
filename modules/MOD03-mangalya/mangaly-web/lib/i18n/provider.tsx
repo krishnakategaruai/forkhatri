@@ -42,7 +42,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 
     // [Owner, 2026-09-27] The language chosen in ForKhatri is the person's
     // language everywhere: read it from their ForKhatri account (identity
-    // service) when Mangaly opens, and again whenever the tab comes back into
+    // service) when Mangalya opens, and again whenever the tab comes back into
     // view (they may have changed it in ForKhatri meanwhile). The local value
     // above is only the first paint and the signed-out fallback.
     let alive = true;
@@ -91,7 +91,7 @@ export function setPreferredLanguage(lang: Language): void {
     // Non-fatal: the choice just will not survive a reload.
   }
   document.documentElement.lang = lang;
-  // A choice made in Mangaly is the person's choice everywhere: save it to
+  // A choice made in Mangalya is the person's choice everywhere: save it to
   // their ForKhatri account, which every module reads. Best effort — the
   // visible switch never waits on it.
   void fetch(`${IDENTITY_API}/v1/me`, {

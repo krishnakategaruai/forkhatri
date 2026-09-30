@@ -9,5 +9,28 @@
     "noteEmpty": "Write something before saving the note.",
     "noteSubject": "A note must be about a match.",
     "candidateNotFound": "That person isn't on ForKhatri yet. Ask them to join first, then invite them."
+  },
+  "relationship": {
+    "parent": "parent",
+    "guardian": "guardian",
+    "sibling": "sibling",
+    "relative": "relative"
+  },
+  "relation": {
+    "mother": "mother",
+    "father": "father",
+    "brother": "brother",
+    "sister": "sister",
+    "guardian": "guardian",
+    "grandmother": "grandmother",
+    "grandfather": "grandfather",
+    "paternal_uncle": "uncle (father's side)",
+    "maternal_uncle": "uncle (mother's side)",
+    "paternal_aunt": "aunt (father's side)",
+    "maternal_aunt": "aunt (mother's side)",
+    "cousin": "cousin",
+    "brother_in_law": "brother-in-law",
+    "sister_in_law": "sister-in-law",
+    "family_friend": "family friend"
   }
 }

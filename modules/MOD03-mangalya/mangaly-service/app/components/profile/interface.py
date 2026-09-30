@@ -165,9 +165,14 @@ async def create_profile(
     city_locality: str,
     photo: UploadFile,
     looking_for: str,
+    first_details: dict[tuple[str, str], str] | None = None,
 ) -> ProfileSummary:
     """[FR001/TR001] Create the existence-tier profile row plus its one
     required photo, in one transaction, publishing `ProfileCreated`.
+
+    `first_details` are the discoverability-tier answers the wizard collects
+    (education, occupation, marital status, relocation): a profile made with
+    them is searchable from the first minute instead of silently invisible.
 
     Raises `MissingRequiredFields`, `TooYoung`, or `AlreadyExists` — never a
     generic failure (SP001's own validation-failure-rate threshold).
@@ -243,6 +248,30 @@ async def create_profile(
             value=looking_for,
         )
     )
+
+    # A starting partner preference (age range around their own age, and
+    # their own city) so a finished wizard is searchable at once; the
+    # matchmaker screen shows these as "we started from your profile".
+    own_age = _age_years(date_of_birth, date.today())
+    seeded: dict[tuple[str, str], object] = {
+        ("partner_preference", "age_range"): (
+            {"min": own_age, "max": own_age + 5}
+            if looking_for == "groom"
+            else {"min": max(MARRIAGEABLE_AGE_DEFAULT_YEARS, own_age - 5), "max": own_age}
+        ),
+        ("partner_preference", "locality"): city_locality.split(",")[-1].strip() or city_locality,
+    }
+    for (category, key), value in {**seeded, **(first_details or {})}.items():
+        await session.execute(
+            insert(ProfileAttribute).values(
+                id=uuid4(),
+                profile_id=profile_id,
+                category=category,
+                attribute_key=key,
+                state=FieldState.VALUE,
+                value=value,
+            )
+        )
 
     # [TR001] "publishes a ProfileCreated domain event ... consumed by the
     # Audit Bridge for BR15" — same transaction as the insert (TR069's outbox rule).
@@ -694,7 +723,10 @@ async def media_path_for_viewer(
                     "OR mangaly_profile.is_openly_shared_photo(:ref) "
                     "OR mangaly_profile.is_member_photo_visible(:ref) "
                     "OR mangaly_home_circle.is_candidate_primary_photo_for_member(:ref) "
-                    "OR mangaly_communication.is_conversation_photo(:ref)"
+                    "OR mangaly_communication.is_conversation_photo(:ref) "
+                    # [Migration 061] The RM or agent a family chose sees that
+                    # family's photos while the assignment is active.
+                    "OR mangaly_operations.is_client_photo(:ref)"
                 ),
                 {"ref": storage_ref},
             )
@@ -1134,7 +1166,7 @@ async def lens_data(
 
 
 # ---------------------------------------------------------------------------
-# [Migration 047 / DEC-V1-027] The Mangaly profile of an account that is not a
+# [Migration 047 / DEC-V1-027] The Mangalya profile of an account that is not a
 # candidate: a parent, sibling or relative. Owner: "basic authentication of
 # login happens in ForKhatri and each module has its own way of my profile."
 # ---------------------------------------------------------------------------

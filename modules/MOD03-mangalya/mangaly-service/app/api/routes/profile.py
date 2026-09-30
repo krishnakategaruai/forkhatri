@@ -50,6 +50,21 @@ def _to_response(p: profile.ProfileSummary) -> ProfileResponse:
     )
 
 
+def _first_details(
+    education_level: str | None,
+    occupation: str | None,
+    marital_status: str | None,
+    relocation_willingness: str | None,
+) -> dict[tuple[str, str], str]:
+    given = {
+        ("education", "highest_education_level"): education_level,
+        ("profession", "occupation"): (occupation or "").strip() or None,
+        ("marital_history", "marital_status"): marital_status,
+        ("relocation", "relocation_willingness"): relocation_willingness,
+    }
+    return {k: v for k, v in given.items() if v}
+
+
 @router.post("", response_model=ProfileResponse, status_code=status.HTTP_201_CREATED)
 async def create_profile(
     session: DbSession,
@@ -61,6 +76,10 @@ async def create_profile(
     looking_for: str = Form(..., pattern="^(bride|groom)$"),  # noqa: B008
     city_locality: str = Form(..., min_length=1, max_length=200),  # noqa: B008
     photo: UploadFile = File(...),  # noqa: B008
+    education_level: str | None = Form(None, pattern="^(high_school|bachelors|masters|doctorate|other)$"),  # noqa: B008
+    occupation: str | None = Form(None, max_length=120),  # noqa: B008
+    marital_status: str | None = Form(None, pattern="^(never_married|divorced|widowed|awaiting_divorce)$"),  # noqa: B008
+    relocation_willingness: str | None = Form(None, pattern="^(yes|no|open_to_discussion|open_to_relocate)$"),  # noqa: B008
 ) -> ProfileResponse:
     """[FR001/TR001] Create the existence-tier profile. `multipart/form-data`
     because a photo is required, not optional — DEC-V1-001's own existence
@@ -75,6 +94,9 @@ async def create_profile(
             city_locality=city_locality,
             photo=photo,
             looking_for=looking_for,
+            first_details=_first_details(
+                education_level, occupation, marital_status, relocation_willingness
+            ),
         )
     except profile.MissingRequiredFields as exc:
         raise HTTPException(
@@ -122,6 +144,10 @@ async def create_profile_for_child(
     looking_for: str = Form(..., pattern="^(bride|groom)$"),  # noqa: B008
     city_locality: str = Form(..., min_length=1, max_length=200),  # noqa: B008
     photo: UploadFile = File(...),  # noqa: B008
+    education_level: str | None = Form(None, pattern="^(high_school|bachelors|masters|doctorate|other)$"),  # noqa: B008
+    occupation: str | None = Form(None, max_length=120),  # noqa: B008
+    marital_status: str | None = Form(None, pattern="^(never_married|divorced|widowed|awaiting_divorce)$"),  # noqa: B008
+    relocation_willingness: str | None = Form(None, pattern="^(yes|no|open_to_discussion|open_to_relocate)$"),  # noqa: B008
 ) -> dict[str, str]:
     """[DEC-V1-019] A parent (or other relation) creates a candidate profile for
     their son or daughter — the Shaadi.com "profile for: son / daughter" model.
@@ -129,7 +155,7 @@ async def create_profile_for_child(
     1. ForKhatri provisions a member for the child's mobile number (refused if
        that number already belongs to someone: then the parent asks to join
        the child's circle instead — it is their account).
-    2. Mangaly makes the child's account on that same id, and builds the
+    2. Mangalya makes the child's account on that same id, and builds the
        profile with the child's account bound — so every write is the child's.
     3. The creator becomes the circle's first member, as their exact relation.
     When the child signs in with an OTP to that number, the profile is theirs."""
@@ -193,6 +219,9 @@ async def create_profile_for_child(
             city_locality=city_locality,
             photo=photo,
             looking_for=looking_for,
+            first_details=_first_details(
+                education_level, occupation, marital_status, relocation_willingness
+            ),
         )
     except profile.TooYoung as exc:
         raise HTTPException(
@@ -824,7 +853,7 @@ async def put_member_photo(
 # ---------------------------------------------------------------------------
 # [DEC-V1-031] The AI matchmaker: the family's own words, what was understood,
 # and the 1–10 scales. Under /profile so a parent editing a profile they made
-# (X-Mangaly-Manage, DEC-V1-019) can describe the partner they want for their
+# (X-Mangalya-Manage, DEC-V1-019) can describe the partner they want for their
 # child; the candidate's ratings of themselves stay candidate-only.
 # Two path segments each, so nothing collides with GET/PATCH /{category}.
 # ---------------------------------------------------------------------------

@@ -5,12 +5,12 @@
     "heading": "Show that your photos are really you",
     "body": "Look into your camera for a few seconds and make two small head turns. We compare you with the photos on your profile, and your profile then shows “Photos confirmed as you”.",
     "point1Title": "Checked on this device",
-    "point1": "The camera picture is checked on your phone or computer and discarded the moment the check ends. Mangaly never receives it.",
+    "point1": "The camera picture is checked on your phone or computer and discarded the moment the check ends. Mangalya never receives it.",
     "point2Title": "Only the outcome is kept",
     "point2": "We keep whether the check passed and the date. No picture, no face data, no score.",
     "point3Title": "You can take it back",
     "point3": "Withdraw your consent at any time on this screen. The confirmation is removed straight away.",
-    "consent": "I agree that Mangaly may compare a live picture of my face with my own profile photos, only to confirm that the photos are me. The picture is discarded after the check, and I can withdraw this consent at any time.",
+    "consent": "I agree that Mangalya may compare a live picture of my face with my own profile photos, only to confirm that the photos are me. The picture is discarded after the check, and I can withdraw this consent at any time.",
     "tips": "Find soft, even light, take off sunglasses, and keep only your face in the frame.",
     "start": "Start the camera"
   },
@@ -19,7 +19,7 @@
     "videoLabel": "Your camera, shown like a mirror",
     "denied": {
       "title": "Camera permission is off",
-      "body": "Allow camera access for Mangaly in your browser’s site settings, then try again."
+      "body": "Allow camera access for Mangalya in your browser’s site settings, then try again."
     },
     "unavailable": {
       "title": "No camera found",
@@ -66,7 +66,7 @@
       "cta": "Go to my photos"
     },
     "retry": "Try again",
-    "help": "Still not working? Write to Mangaly support and a person will look at it."
+    "help": "Still not working? Write to Mangalya support and a person will look at it."
   },
   "noPhotos": {
     "title": "Add a photo of yourself first",
@@ -75,7 +75,7 @@
   },
   "noProfile": {
     "title": "Add a photo of yourself first",
-    "body": "The photo check compares you with the photo on your own Mangaly profile. Add a clear photo of yourself on My profile, then come back.",
+    "body": "The photo check compares you with the photo on your own Mangalya profile. Add a clear photo of yourself on My profile, then come back.",
     "cta": "Go to My profile"
   },
   "rateLimited": {
@@ -99,12 +99,18 @@
     "since": "Since {{date}}"
   },
   "gate": {
-    "title": "First, confirm your own photos",
-    "body": "Anyone who creates a profile for someone else must be a verified person. Your phone is confirmed by sign-in; a one-minute camera check confirms your photos are you.",
-    "cta": "Confirm my photos",
-    "later": "Not now"
+    "title": "A quick check that it is you",
+    "body": "You are setting up a profile for someone else, so Mangalya first confirms you are a real person. Take a selfie in your camera; it takes about a minute and the picture is not kept. After that you continue straight to your son or daughter’s profile.",
+    "cta": "Take the selfie check",
+    "later": "Back"
   },
   "error": {
-    "network": "Couldn’t reach Mangaly. Check your connection and try again."
+    "network": "Couldn’t reach Mangalya. Check your connection and try again."
+  },
+  "addSelf": {
+    "title": "First, a clear photo of you",
+    "body": "Anyone who makes a profile for someone else is checked to be a real person. Take a selfie or pick a clear photo of your face; then a one-minute camera check confirms it is you.",
+    "cta": "Take or choose a photo",
+    "saving": "Saving your photo…"
   }
 }

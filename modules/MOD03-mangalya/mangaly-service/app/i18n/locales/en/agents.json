@@ -1,9 +1,9 @@
 {
   "error": {
     "notAgent": "This page is for marriage agents.",
-    "alreadyStaff": "You already work for Mangaly as a relationship manager.",
-    "consentRequired": "Confirm that each family gave you permission to put their details on Mangaly.",
-    "numberHasAccount": "This number already has a ForKhatri account. Ask the family to choose you as their agent from Mangaly.",
+    "alreadyStaff": "You already work for Mangalya as a relationship manager.",
+    "consentRequired": "Confirm that each family gave you permission to put their details on Mangalya.",
+    "numberHasAccount": "This number already has a ForKhatri account. Ask the family to choose you as their agent from Mangalya.",
     "sheetUnreadable": "We could not read this file. Upload the Excel template (.xlsx) or a .csv file.",
     "sheetEmpty": "The sheet has no rows under the header.",
     "sheetTooLong": "Add up to {limit} people at a time.",
@@ -17,15 +17,15 @@
     "agentNotLive": "This agent is not taking families right now.",
     "questionRequired": "Write your question for the agent.",
     "contactsPerDay": "You have opened {limit} new families' details today, the most for one day. Your own clients are not limited. You can open more tomorrow.",
-    "contactsPerMonth": "You have opened {limit} new families' details in the last 30 days, the most Mangaly allows. Your own clients are not limited.",
-    "contactSuspended": "Several families reported unwanted calls, so other families' numbers are closed to you until a Mangaly moderator looks into it. Your own clients are not affected.",
+    "contactsPerMonth": "You have opened {limit} new families' details in the last 30 days, the most Mangalya allows. Your own clients are not limited.",
+    "contactSuspended": "Several families reported unwanted calls, so other families' numbers are closed to you until a Mangalya moderator looks into it. Your own clients are not affected.",
     "exportOthersPerDay": "Profiles that are not your clients can be exported up to {limit} a day. You have {left} left today.",
     "profilesAddedPerDay": "You can add up to {limit} profiles a day. Add the rest tomorrow.",
     "reportDate": "Choose a day within the last 90 days.",
     "familyReports": "Only the family can report this."
   },
   "export": {
-    "stamp": "Shared by {agent} through Mangaly on {date}. For the families concerned only.",
+    "stamp": "Shared by {agent} through Mangalya on {date}. For the families concerned only.",
     "name": "Name",
     "age": "Age",
     "gender": "Gender",
@@ -43,7 +43,7 @@
   },
   "admin": {
     "title": "Marriage agents",
-    "summary": "{name}, {city}: applied to be a Mangaly agent",
+    "summary": "{name}, {city}: applied to be a Mangalya agent",
     "reason": "Agent application",
     "field": {
       "name": "Name",

@@ -17,7 +17,7 @@ Agent seat (`AgentAccount`: verified, membership live, bound as an RM):
     POST  /agents/contact-open                   which of these people I may call
     POST  /agents/export/excel                   an .xlsx of biodata (logged)
     POST  /agents/export/biodata                 biodata for the print page (logged)
-    GET   /agents/offline                        biodata of people not on Mangaly
+    GET   /agents/offline                        biodata of people not on Mangalya
     POST  /agents/offline                        add one
     POST  /agents/offline/{id}/archive
     POST  /agents/share                          profiles → clients
@@ -32,7 +32,7 @@ Family seat (the candidate, or a parent/guardian with `for_candidate`):
     GET  /agents/reports/suspects?day=           agents who opened our number before that day
     GET  /agents/reports | POST /agents/reports  report an unwanted call or message
 
-Mangaly administrators (`Moderator`):
+Mangalya administrators (`Moderator`):
     GET  /agents/admin/applications
     POST /agents/admin/applications/{account}/review
     GET  /agents/admin/prices | PATCH /agents/admin/prices
@@ -73,7 +73,7 @@ def _iso(value: datetime | date | None) -> str | None:
 
 
 async def get_agent_account(session: DbSession, rm_account_id: RmAccount, lang: Locale) -> UUID:
-    """An RM seat that is an independent agent (not Mangaly staff)."""
+    """An RM seat that is an independent agent (not Mangalya staff)."""
     from sqlalchemy import text
 
     if not (await session.execute(text("SELECT mangaly_operations.is_agent()"))).scalar_one():
@@ -305,7 +305,7 @@ class SharedOut(BaseModel):
     decided_at: str | None
     question: str | None
     member_account_id: str | None
-    person: dict[str, Any] | None = None  # the Discover card of a Mangaly member
+    person: dict[str, Any] | None = None  # the Discover card of a Mangalya member
     offline: OfflineOut | None = None
 
 
@@ -348,7 +348,7 @@ async def me(session: DbSession, account_id: AuthenticatedAccount) -> AgentRecor
 async def apply(
     body: ApplyBody, session: DbSession, account_id: AuthenticatedAccount, lang: Locale
 ) -> AgentRecordOut:
-    """Apply to be a marriage agent (Mangaly checks the details before the
+    """Apply to be a marriage agent (Mangalya checks the details before the
     agent goes live), or update the details later."""
     try:
         async with session.begin_nested():
@@ -364,7 +364,7 @@ async def apply(
                 about=(body.about or "").strip() or None,
             )
     except Exception as exc:
-        if "already Mangaly staff" in str(exc):
+        if "already Mangalya staff" in str(exc):
             raise _error(status.HTTP_409_CONFLICT, "alreadyStaff", lang) from exc
         raise
     return _record_out(record)
@@ -766,7 +766,7 @@ async def offline_add(
     photos: list[UploadFile] = File(default=[]),  # noqa: B008
     biodata: UploadFile | None = File(None),  # noqa: B008
 ) -> OfflineOut:
-    """A biodata of someone not on Mangaly (a photo or the biodata file is
+    """A biodata of someone not on Mangalya (a photo or the biodata file is
     required: families expect to see the person)."""
     import json
 
@@ -1012,7 +1012,7 @@ async def answer(
 
 
 # ---------------------------------------------------------------------------
-# Mangaly administrators
+# Mangalya administrators
 # ---------------------------------------------------------------------------
 
 

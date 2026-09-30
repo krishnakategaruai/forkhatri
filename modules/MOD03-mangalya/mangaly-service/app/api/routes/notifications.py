@@ -37,7 +37,12 @@ def _render(
 ) -> tuple[str, str]:
     p = dict(n.payload)
     relationship = str(p.get("sent_by_relationship") or p.get("relationship") or "")
-    if relationship and relationship != "self":
+    relation = str(p.get("relation") or "")
+    relation_text = translate(f"home_circle.relation.{relation}", lang) if relation else ""
+    if relation_text and relation_text != f"home_circle.relation.{relation}":
+        # The exact relation ("maternal aunt") reads better than the role.
+        p["relationship_text"] = relation_text
+    elif relationship and relationship != "self":
         p["relationship_text"] = translate(f"home_circle.relationship.{relationship}", lang)
     else:
         p["relationship_text"] = ""
@@ -67,6 +72,13 @@ def _render(
             else "notifications.invitation_received.body"
         )
         return translate("notifications.invitation_received.title", lang), translate(body_key, lang, **p)
+    if n.kind == "invitation_accepted":
+        body_key = (
+            "notifications.invitation_accepted.bodyToCandidate"
+            if p.get("direction") == "to_candidate"
+            else "notifications.invitation_accepted.body"
+        )
+        return translate("notifications.invitation_accepted.title", lang), translate(body_key, lang, **p)
     title_key, body_key = f"notifications.{n.kind}.title", f"notifications.{n.kind}.body"
     title, body = translate(title_key, lang), translate(body_key, lang, **p)
     # A kind with no catalog entry (older rows, a new event not yet worded)

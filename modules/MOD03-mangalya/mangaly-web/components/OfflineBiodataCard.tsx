@@ -6,8 +6,8 @@ import { Avatar } from "@/components/Avatar";
 import type { OfflineProfile } from "@/lib/agents";
 import { resolveMediaUrl } from "@/lib/api";
 
-/* [DEC-V1-033] The biodata of someone who is not on Mangaly, as a card: always
- * marked "Not on Mangaly", so a family never mistakes it for a checked member.
+/* [DEC-V1-033] The biodata of someone who is not on Mangalya, as a card: always
+ * marked "Not on Mangalya", so a family never mistakes it for a checked member.
  * Closed, it shows the photo and two facts; open, everything the agent entered,
  * the other photos and the biodata file as received. */
 

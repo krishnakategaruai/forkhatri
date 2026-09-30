@@ -1,6 +1,6 @@
 "use client";
 
-/* Mangaly's one icon language (DEC-V1-030, critique agent + owner,
+/* Mangalya's one icon language (DEC-V1-030, critique agent + owner,
  * 2026-09-25). Every icon comes from a single set — Phosphor, "light"
  * weight (a 1.5px stroke on a 24px grid, round caps and joins) — so glyphs
  * never mix weights or styles. Icons inherit their colour from the text
@@ -10,6 +10,9 @@
  * of colour behind an icon is never used at rest. */
 
 import {
+  ArrowLeft,
+  Briefcase,
+  Handshake,
   ArrowsLeftRight,
   BookmarkSimple,
   Camera,
@@ -36,6 +39,9 @@ import {
 } from "@phosphor-icons/react";
 
 const SET = {
+  back: ArrowLeft,
+  briefcase: Briefcase,
+  handshake: Handshake,
   bookmark: BookmarkSimple,
   camera: Camera,
   caretRight: CaretRight,

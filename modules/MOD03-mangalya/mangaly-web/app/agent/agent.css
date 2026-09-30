@@ -254,3 +254,153 @@
 .ag-report__field { display: flex; flex-direction: column; gap: 6px; border: 0; padding: 0; margin: 0; min-width: 0; }
 .ag-report__field legend { padding: 0; margin-bottom: 6px; }
 .ag-safety { display: flex; flex-direction: column; gap: var(--space-5, 20px); max-width: 640px; }
+
+/* [Owner walkthrough, 2026-09-30] On a phone the agent's clients started
+   below the fold: a giant title, a boxed "edit details" button, a boxed
+   fair-use card and wide gaps came first. The client list is the agent's
+   work, so the top is now two quiet lines — bureau and status with "Edit"
+   as a small link, fair use as one line with the rules behind a tap — and
+   the redness of the eyebrow and links is toned down. */
+@media (max-width: 639px) {
+  .ag-screen {
+    gap: var(--space-3);
+  }
+  .topbar:has(+ .ag-screen) .topbar__title {
+    font-size: clamp(1.5rem, 6.5vw, 1.875rem);
+  }
+  .ag-bar {
+    gap: 6px 12px;
+  }
+  .ag-bar > .btn {
+    min-height: 0;
+    padding: 4px 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    font-size: 0.8125rem;
+    color: var(--ink-2);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .ag-head {
+    gap: 4px;
+  }
+  .ag-fair {
+    padding: 8px 12px;
+    gap: 4px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--surface) 70%, transparent);
+  }
+  .ag-fair__row {
+    gap: 2px 10px;
+    font-size: 0.8125rem;
+  }
+  .ag-fair__row .label {
+    display: none;
+  }
+  .ag-stats {
+    gap: var(--space-3);
+  }
+}
+.ag-eyebrow {
+  color: var(--ink-2);
+}
+.ag-fair__rules summary {
+  color: var(--ink-2);
+}
+
+/* Families' agent page: the price as one row of three small choices, not
+   three tall cards; the four points as quiet small text at the end. */
+.ag-head--tight {
+  gap: 6px;
+}
+.ag-form--compact {
+  gap: 10px;
+}
+.ag-form--compact .ag-terms {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.ag-form--compact .ag-term {
+  padding: 10px 8px;
+  gap: 2px;
+  border-radius: 12px;
+  text-align: center;
+  align-items: center;
+}
+.ag-form--compact .ag-term :is(h3, strong, .ag-term__months) {
+  font-size: 0.9375rem;
+}
+.ag-form--compact .ag-term :is(p, span, .caption) {
+  font-size: 0.75rem;
+}
+.ag-connect ~ .ag-benefits,
+.ag-screen > .ag-benefits,
+.ag-benefits {
+  font-size: 0.875rem;
+  color: var(--ink-2);
+}
+
+/* [Owner walkthrough, 2026-09-30] A shared profile on a phone: photo and
+   facts side by side, the agent's note and the three answers full width
+   beneath — one row of actions instead of four stacked lines. "View
+   profile" is the photo and the name, as everywhere else. The note is
+   marked in gold, not red. */
+@media (max-width: 559px) {
+  .ag-card {
+    grid-template-columns: 88px minmax(0, 1fr);
+    column-gap: 12px;
+    row-gap: 4px;
+    align-items: start;
+  }
+  .ag-card > .ag-card__body {
+    display: contents;
+  }
+  .ag-card > .ag-card__photo {
+    grid-row: 1 / span 4;
+  }
+  .ag-card > .ag-card__body > * {
+    grid-column: 2;
+  }
+  .ag-card > .ag-card__body > .ag-card__note,
+  .ag-card > .ag-card__body > .ag-card__actions,
+  .ag-card > .ag-card__body > .ag-form {
+    grid-column: 1 / -1;
+  }
+  .ag-card__actions {
+    flex-wrap: nowrap;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .ag-card__actions > .btn {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 38px;
+    padding: 0 8px;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+  }
+}
+.ag-card__note {
+  border-left-color: var(--gold) !important;
+}
+.ag-card__note :is(strong, .label, b) {
+  color: var(--ink-2) !important;
+}
+a.ag-card__title {
+  text-decoration: none;
+}
+@media (max-width: 559px) {
+  /* The photo and the name already open the profile. */
+  .ag-card__view {
+    display: none !important;
+  }
+}
+.ag-agent.is-active {
+  border-color: color-mix(in srgb, var(--gold) 45%, var(--line));
+}
+@media (max-width: 559px) {
+  .ag-card > .ag-card__body > .ag-pill {
+    justify-self: start;
+  }
+}

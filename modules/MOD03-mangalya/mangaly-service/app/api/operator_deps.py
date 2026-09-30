@@ -27,8 +27,8 @@ from app.db.session import VAR_OPERATOR_ROLE, set_local
 __all__ = ["OperatorAccount", "OperatorInfo", "Moderator", "effective_roles"]
 
 # [ADR-012] The shared ForKhatri console appoints moderators on the platform;
-# its scope counts the same as Mangaly's own operator role, so whoever the
-# samaj appoints there can work this queue. Mangaly's operator table stays
+# its scope counts the same as Mangalya's own operator role, so whoever the
+# samaj appoints there can work this queue. Mangalya's operator table stays
 # the other way in.
 SCOPE_TO_ROLE: dict[str, str] = {"mangaly.moderate": "moderator"}
 

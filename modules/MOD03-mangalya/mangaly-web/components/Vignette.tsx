@@ -1,7 +1,7 @@
 /* Small drawn vignettes for section cards and the Home greeting.
  *
  * Same brief as the outlook scenes (components/OutlookScene): specific to
- * Mangaly and drawn from South Indian household life, in one ink and one
+ * Mangalya and drawn from South Indian household life, in one ink and one
  * accent. Each one stands for what the section is actually about in this
  * community rather than a generic pictogram — a kolam at the doorstep for
  * "About you", the gopuram for "Community", the palm-leaf horoscope

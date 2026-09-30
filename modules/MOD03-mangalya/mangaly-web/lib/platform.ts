@@ -1,7 +1,7 @@
-/* ForKhatri platform integration for the Mangaly web client.
+/* ForKhatri platform integration for the Mangalya web client.
  *
  * docs/ParentApp/07-tech-reqs.md TR12/TR16/TR17/TR24 (2026-09-14): ForKhatri
- * is one app with one sign-in. Mangaly renders no sign-in, sign-up, OTP or
+ * is one app with one sign-in. Mangalya renders no sign-in, sign-up, OTP or
  * password-reset screen of its own. The browser's only credential is the
  * HttpOnly `fk_session` cookie issued by the ForKhatri Identity & Trust
  * Service; page JS never sees it, it simply rides along on every
@@ -9,9 +9,9 @@
  *
  *  - Signed out, or any API call answering 401 → a full-page navigation to the
  *    ForKhatri entrance with `return_to` set to where the member was, so they
- *    land back on the same Mangaly screen after signing in.
+ *    land back on the same Mangalya screen after signing in.
  *  - Log out → the platform sign-out endpoint, then the entrance. Signing out
- *    of Mangaly IS signing out of ForKhatri; there is no module-only session.
+ *    of Mangalya IS signing out of ForKhatri; there is no module-only session.
  *
  * No URL is hardcoded at a call site (TR24): both come from NEXT_PUBLIC_* env
  * values, with the development ports as fallbacks. */
@@ -24,10 +24,10 @@ export const IDENTITY_API = (
   process.env.NEXT_PUBLIC_IDENTITY_API ?? 'http://localhost:8100'
 ).replace(/\/+$/, '');
 
-/** [TR22] Mangaly's zone prefix in production (`/mangaly`); empty in development. */
+/** [TR22] Mangalya's zone prefix in production (`/mangaly`); empty in development. */
 export const BASE_PATH = (process.env.NEXT_PUBLIC_BASE_PATH ?? '').replace(/\/+$/, '');
 
-/** Absolute URL of a Mangaly page, for places that leave the Next router (return_to). */
+/** Absolute URL of a Mangalya page, for places that leave the Next router (return_to). */
 export function mangalyUrl(path = '/'): string {
   return `${window.location.origin}${BASE_PATH}${path}`;
 }
@@ -49,7 +49,7 @@ export function redirectToEntrance(returnTo?: string): void {
   window.location.assign(entranceUrl(returnTo ?? window.location.href));
 }
 
-/** [TR16] Sign out of ForKhatri (not just Mangaly), then go to the entrance. */
+/** [TR16] Sign out of ForKhatri (not just Mangalya), then go to the entrance. */
 export async function signOutOfForKhatri(): Promise<void> {
   try {
     await fetch(`${IDENTITY_API}/v1/auth/sign-out`, {

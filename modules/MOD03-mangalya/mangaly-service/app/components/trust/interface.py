@@ -1,6 +1,6 @@
 """Trust & verification — the evidence behind a profile (M01-F, baseline §13).
 
-Mangaly's whole thesis is that trust is EVIDENCE, NOT A SCORE (baseline §4.8,
+Mangalya's whole thesis is that trust is EVIDENCE, NOT A SCORE (baseline §4.8,
 §13.1). There is deliberately no trust score, no reputation ranking and no
 public rating here, and there must never be one: this module answers "what has
 actually been verified about this person, how, and when", and nothing else.
@@ -153,7 +153,7 @@ def snapshot_form(layers: list[VerifiedLayer]) -> list[dict[str, str | None]]:
 # ---------------------------------------------------------------------------
 
 # face-api.js documents 0.6 (Euclidean, 128-d descriptors) as its same-person
-# threshold. Mangaly sits well below it: a false accept attaches a confirming
+# threshold. Mangalya sits well below it: a false accept attaches a confirming
 # badge to someone else's photos, a false reject costs a retry in better light.
 FACE_MATCH_THRESHOLD = 0.45
 

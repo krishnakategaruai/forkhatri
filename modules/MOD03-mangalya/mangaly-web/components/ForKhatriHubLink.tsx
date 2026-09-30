@@ -6,11 +6,11 @@ import { entranceUrl } from '@/lib/platform';
 
 /* [TR16/TR22, 2026-09-14] The persistent way back to the ForKhatri hub.
  *
- * Mangaly is one module inside ForKhatri, so every top-level Mangaly surface
+ * Mangalya is one module inside ForKhatri, so every top-level Mangalya surface
  * carries a small, quiet route home. A plain <a> rather than next/link: the
  * hub is a different zone (a different app in development, a different
  * basePath in production), and links between zones are full navigations.
- * Styled with Mangaly's own `.icon-btn` chrome so it reads as part of this
+ * Styled with Mangalya's own `.icon-btn` chrome so it reads as part of this
  * top bar, not as a foreign widget dropped into it. */
 
 export default function ForKhatriHubLink() {

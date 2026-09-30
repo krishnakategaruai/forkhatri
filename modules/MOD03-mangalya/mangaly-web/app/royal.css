@@ -258,7 +258,7 @@
 }
 :root .btn--primary,
 :root .cta {
-  box-shadow: 0 6px 16px rgba(204, 1, 6, 0.16);
+  box-shadow: 0 6px 16px rgba(179, 38, 30, 0.12);
 }
 /* Labels in soft ink, not gold. */
 .label,

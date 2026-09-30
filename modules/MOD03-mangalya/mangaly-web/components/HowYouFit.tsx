@@ -12,7 +12,7 @@ import './how-you-fit.css';
 /* [DEC-V1-031] "How you fit each other" on a profile.
  *
  * Shaadi.com shows one side only — her preference list with ticks and a
- * "7/10" count. Mangaly shows both directions, weighted by what matters:
+ * "7/10" count. Mangalya shows both directions, weighted by what matters:
  *   · what YOU are looking for, point by point — met, close, different, or
  *     not shared — with your must-haves marked (your own list, so shown in
  *     full, and editable from here);

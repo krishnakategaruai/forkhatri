@@ -3,12 +3,12 @@
     GET /internal/v1/insights/members
 
 Called only by the platform Identity & Trust Service, server to server, never by
-a browser. The caller proves itself with the same shared key Mangaly presents to
+a browser. The caller proves itself with the same shared key Mangalya presents to
 the platform (`PLATFORM_SERVICE_KEY`), and a request that came through the public
 edge (it carries X-Forwarded-For) is answered as if the route did not exist.
 
 The platform turns these rows into totals; the browser only ever receives counts.
-See migration 057 for exactly which columns leave Mangaly.
+See migration 057 for exactly which columns leave Mangalya.
 """
 
 from __future__ import annotations

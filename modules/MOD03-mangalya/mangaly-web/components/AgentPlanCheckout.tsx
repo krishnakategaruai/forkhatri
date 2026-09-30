@@ -14,7 +14,7 @@ import {
 } from "@/lib/billing";
 
 /* [DEC-V1-033] Buying one of the two agent plans in place — the agent's own
- * membership (AGENT) or a family's Agent Connect — at the price a Mangaly
+ * membership (AGENT) or a family's Agent Connect — at the price a Mangalya
  * administrator set. Terms side by side, one button; the same order,
  * Razorpay and development-sandbox path as /plans. */
 
@@ -67,7 +67,7 @@ export default function AgentPlanCheckout({
       confirmed = await sandboxPay(checkout.order.id);
     } else {
       const proof = await openRazorpayCheckout(checkout, {
-        name: "Mangaly",
+        name: "Mangalya",
         description: plan?.name ?? "",
         accent: "#cc0106",
       });

@@ -210,3 +210,16 @@ body {
 :root .chat__faces--lg > * + * {
   margin-left: -6px;
 }
+
+/* [Owner, 2026-09-30] Phones: the Home header scrolls away, so the fixed
+   menu button floats over photos and text — a small frosted disc keeps it
+   legible. Placed here, after the icon-button reset above. */
+@media (max-width: 1023px) {
+  :root button.menu-btn.menu-btn {
+    background: color-mix(in srgb, var(--paper) 72%, transparent);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4);
+    backdrop-filter: blur(14px) saturate(1.4);
+    border-radius: 999px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  }
+}

@@ -1,13 +1,13 @@
 {
   "app": {
-    "name": "Mangaly",
+    "name": "Mangalya",
     "tagline": "A family-involved search, built on evidence."
   },
   "platform": {
     "name": "ForKhatri",
     "backToHub": "Back to ForKhatri",
     "redirecting": "Taking you to ForKhatri…",
-    "unavailable": "Mangaly can't be reached right now. Your details are safe — please try again in a moment."
+    "unavailable": "Mangalya can't be reached right now. Your details are safe — please try again in a moment."
   },
   "nav": {
     "home": "Home",
@@ -16,7 +16,10 @@
     "messages": "Messages",
     "me": "Me",
     "menu": "Menu",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "agentWorkspace": "Workspace",
+    "agents": "Marriage agents",
+    "help": "How Mangalya works"
   },
   "language": {
     "en": "English",
@@ -53,7 +56,8 @@
   "state": {
     "loading": "Loading…",
     "empty": "Nothing here yet",
-    "offline": "You're offline"
+    "offline": "You're offline",
+    "failed": "That didn't go through. Please try again."
   },
   "status": {
     "apiConnected": "API connected",
@@ -75,14 +79,25 @@
     "foundationsBlurb": "Cross-cutting infrastructure every feature sits on. Not user-visible, but nothing else is correct without it."
   },
   "context": {
-    "viewing": "Viewing {{name}}'s search",
+    "viewing": "{{name}}'s search",
     "yourSearch": "Your search",
     "switchTitle": "Whose search are you viewing?",
     "you": "You",
     "yourProfile": "Your own profile",
     "role": "You're in this circle as: {{relationship}}",
     "nowViewing": "Now viewing {{name}}'s search",
-    "nowViewingSelf": "Now viewing your own search"
+    "nowViewingSelf": "Now viewing your own search",
+    "lookingFor": {
+      "bride": "looking for a bride",
+      "groom": "looking for a groom"
+    },
+    "findingForYou": "Finding a {{what}} for you",
+    "findingFor": "Finding a {{what}} for {{name}}",
+    "what": {
+      "bride": "bride",
+      "groom": "groom"
+    },
+    "change": "Change"
   },
   "account": {
     "menu": "Account: {{name}}",
@@ -120,5 +135,8 @@
     "blessing": "Two families. One auspicious beginning.",
     "art": "Seeta and Rama at their wedding",
     "skip": "Skip"
+  },
+  "screenGuard": {
+    "message": "Screenshots are not allowed in Mangalya, to keep every family's photos and details private."
   }
 }

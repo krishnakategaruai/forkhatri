@@ -335,7 +335,7 @@
   gap: 8px;
   padding: 24px;
   text-align: center;
-  background: linear-gradient(160deg, #cc0106, #7a0104);
+  background: linear-gradient(160deg, #b3261e, #6e1a13);
   color: #fff3d6;
   font-weight: 700;
 }
@@ -1035,7 +1035,7 @@ html:is([lang='hi'], [lang='te']) .home-head__date {
   grid-auto-flow: column;
   grid-auto-columns: 150px;
   gap: 12px;
-  padding: 4px 0 24px;
+  padding: 4px 0 4px;
   margin: 0;
   overflow-x: auto;
 }
@@ -1077,10 +1077,16 @@ html:is([lang='hi'], [lang='te']) .home-head__date {
    each card: the reason chip on top. */
 .similar {
   margin-top: 24px;
-  padding: 22px 22px 6px;
+  /* [Owner walkthrough, 2026-09-30] "bottom border is not clearly visible,
+     looks like a bottom card" — 6px left the row of photos almost touching
+     the panel's rounded corner, so the panel read as cut off rather than a
+     deliberate, self-contained card. Even on both ends, and the edge itself
+     drawn instead of only implied by a 1px near-invisible line. */
+  padding: 22px 22px 22px;
   border-radius: 28px;
   background: linear-gradient(160deg, color-mix(in srgb, var(--glass) 92%, transparent), color-mix(in srgb, var(--glass) 55%, transparent));
   border: 1px solid var(--glass-edge);
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 14%, var(--glass-edge));
   -webkit-backdrop-filter: blur(22px) saturate(1.5);
   backdrop-filter: blur(22px) saturate(1.5);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 18px 40px -24px rgba(74, 20, 10, 0.28);
@@ -1693,9 +1699,11 @@ html:is([lang='hi'], [lang='te']) .home-head__date {
   gap: 12px;
   padding-top: 8px;
 }
+/* Feed column only: the right column is sticky and slides down as the page
+   scrolls, so a full-width row here ended up underneath it. */
 @media (min-width: 1024px) {
   .hplans {
-    grid-column: 1 / -1;
+    grid-column: 1;
   }
 }
 .hplans__head {
@@ -1844,4 +1852,481 @@ html:is([lang='hi'], [lang='te']) .home-head__date {
   letter-spacing: 0;
   text-transform: none;
   font-weight: 600;
+}
+
+/* Home Circle invitations: a short list at the top of the main column,
+   each row the invitation in words with Accept / Decline beside it. */
+.hinvite {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.hinvite__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.hinvite__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.hinvite__row .hturn__item {
+  flex: 1 1 260px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.hinvite__row .hturn__text span {
+  color: var(--ink);
+  font-size: 0.9375rem;
+}
+.hturn__actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.hturn__actions .cta {
+  min-height: 40px;
+}
+
+/* "Your search" lanes: the number and label are the way into the list. */
+.hsearch__head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 12px;
+}
+.hsearch__head:hover .hsearch__label,
+.hsearch__head:focus-visible .hsearch__label {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+/* The whole card is the target; the faces inside stay their own links. */
+.hsearch__lane {
+  position: relative;
+}
+.hsearch__head::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 22px;
+}
+.hsearch__lane:hover {
+  border-color: color-mix(in srgb, var(--gold) 45%, var(--line));
+}
+.hsearch__faces {
+  position: relative;
+  z-index: 1;
+}
+
+/* Whose search, under the greeting. */
+.home-head__context {
+  margin-top: 8px;
+}
+/* Under the greeting the chip has the full width: never cut it short. */
+:root .home-head__context .context-chip {
+  max-width: 100%;
+  white-space: normal;
+}
+:root .home-head__context .context-chip > span:not(.context-chip__dot) {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+/* No photo shared yet: a short band with the placeholder face, not a
+   screen-tall empty frame that pushes the person's details off the screen. */
+.hintro__photo--none {
+  aspect-ratio: auto;
+  min-height: 0;
+  height: 120px;
+  display: grid;
+  place-items: center;
+}
+@media (min-width: 640px) {
+  .hintro__photo--none {
+    min-height: 0;
+    height: auto;
+  }
+}
+
+/* [Owner walkthrough, 2026-09-30] Hero intro photo: name+eyebrow overlaid on
+   the photo itself on a phone, so who this is is never hidden behind a
+   scroll. Hidden from 640px, where .hintro__body already sits beside the
+   photo with the same text. */
+.hintro__photo {
+  position: relative;
+}
+.hintro__overlay {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 44px 20px 18px;
+  background: linear-gradient(to top, rgba(42, 5, 5, 0.88) 0%, rgba(42, 5, 5, 0.55) 55%, rgba(42, 5, 5, 0) 100%);
+  color: #fff6e0;
+}
+.hintro__overlay-eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 246, 224, 0.85);
+}
+.hintro__overlay-name {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: 1.75rem;
+  line-height: 1.15;
+}
+.hintro__photo--none .hintro__overlay {
+  display: none;
+}
+@media (min-width: 640px) {
+  .hintro__overlay {
+    display: none;
+  }
+}
+
+/* [Owner walkthrough, 2026-09-30] "love button, which is saved" — the same
+   save/shortlist toggle Discover's cards already have, sized for this row's
+   small ~150x200 card. A sibling of the link (not nested inside it), so it
+   is its own tap target instead of fighting the card's own link. */
+.similar .hcard {
+  position: relative;
+}
+.similar .hcard__save {
+  position: absolute;
+  z-index: 2;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  background: rgba(42, 5, 5, 0.35);
+  border: 0;
+  border-radius: 999px;
+  color: #fff6e0;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+}
+.similar .hcard__save svg {
+  width: 16px;
+  height: 16px;
+}
+.similar .hcard__save.is-on {
+  color: var(--gold);
+}
+
+/* The overlay above already says eyebrow+name on the photo at phone widths;
+   .hintro__body repeating them right below read as a stutter. */
+@media (max-width: 639px) {
+  .hintro__body > .hintro__eyebrow,
+  .hintro__body > .hintro__name {
+    display: none;
+  }
+}
+
+/* .similar__why was written for the old top-of-card spot: position:absolute,
+   pinned to .hcard__link. Moved inside .hcard__text (itself absolutely
+   positioned) to sit with the name, that made .hcard__text ITS containing
+   block instead, so it landed on top of the name rather than above it in
+   the flex column. Back to normal flow, only inside this row's cards. */
+.similar .hcard__text .similar__why {
+  position: static;
+  align-self: flex-start;
+  margin-bottom: 2px;
+}
+
+/* [Owner walkthrough, 2026-09-30] "there is not clear view of person" — the
+   row's grid stretched every card to its tallest item (~503px) while the
+   width stayed 150px, so cover-fit zoomed a well-framed 4:5 portrait into a
+   thin strip of eyes and nose. Cards keep their own shape now, and the shape
+   is the photos' own 4:5, so a whole face shows. */
+.similar .hrail {
+  align-items: start;
+  grid-auto-columns: 160px;
+}
+.similar .hrail > .hcard {
+  align-self: start;
+}
+.similar .hcard__link {
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  aspect-ratio: 4 / 5;
+}
+@media (min-width: 1024px) {
+  .similar .hrail {
+    grid-auto-columns: 184px;
+  }
+  .similar .hcard__link {
+    aspect-ratio: 4 / 5;
+  }
+}
+
+/* [Owner walkthrough, 2026-09-30] Similar profiles: the photo on top, the
+   words underneath — the Instagram / Shaadi grid pattern. On a 160px card,
+   name and work laid over the photo covered the mouth and chin; now the
+   whole face stays clear and the caption reads on the panel itself. */
+.similar .hcard__link {
+  aspect-ratio: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: visible;
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+  color: var(--ink);
+}
+.similar .hcard__link::after {
+  display: none;
+}
+.similar .hcard__img,
+.similar .hcard__empty {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 5;
+  border-radius: 20px;
+  object-fit: cover;
+  background: var(--surface-2);
+  box-shadow: 0 6px 14px -8px rgba(110, 40, 10, 0.35);
+}
+.similar .hcard__empty {
+  display: grid;
+  place-items: center;
+}
+.similar .hcard__link:hover .hcard__img {
+  transform: none;
+}
+.similar .hcard__text {
+  position: static;
+  padding: 0 2px;
+  gap: 2px;
+}
+.similar .hcard__name {
+  font-size: 1.0625rem;
+  line-height: 1.2;
+  color: var(--ink);
+}
+.similar .hcard__age {
+  color: var(--ink-2);
+}
+.similar .hcard__meta {
+  color: var(--ink-2);
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+.similar .hcard__text .similar__why {
+  height: 22px;
+  padding: 0 8px;
+  font-size: 0.6875rem;
+  color: var(--accent-ink);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  text-shadow: none;
+}
+.similar .hcard--more .hcard__link {
+  aspect-ratio: 4 / 5;
+  justify-content: center;
+  align-items: center;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+}
+
+/* The profile's sticky "Send a request" bar is fixed to the bottom of a
+   phone screen; without room for it, the last panel slid underneath and
+   read as a card stacked below another card. */
+body:has(.pview__actions) .pview-screen {
+  padding-bottom: calc(108px + env(safe-area-inset-bottom, 0px));
+}
+
+/* [Owner, 2026-09-30] "don't waste unnecessary space" — .pview kept 96px at
+   its bottom for the sticky request bar, and Similar profiles added its own
+   margin on top: a ~140px empty band. The page end now reserves the bar's
+   room once (body:has(.pview__actions) .pview-screen), so the card and the
+   panel sit a normal gap apart. */
+.pview:has(+ .similar) {
+  padding-bottom: 0;
+}
+.pview + .similar {
+  margin-top: 14px;
+}
+
+/* [Owner, 2026-09-30] Phones: the Home greeting scrolls away with the page
+   (Instagram, Hinge). Pinned, it kept a third of a small screen — date,
+   greeting and the search line — over every photo. The menu button stays
+   fixed on its own. */
+@media (max-width: 1023px) {
+  :root .app__content > .home-head {
+    position: static;
+    background: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Whose search, as a plain line under the greeting rather than a pill:
+   "Finding a groom for you". A "Change" link only when there is more than
+   one search to switch between. */
+:root .home-head__context .context-chip,
+:root .page-context .context-chip {
+  padding: 0;
+  min-height: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--ink-2);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  gap: 8px;
+}
+:root .home-head__context .context-chip .context-chip__dot,
+:root .page-context .context-chip .context-chip__dot {
+  display: none;
+}
+:root .home-head__context .context-chip svg,
+:root .page-context .context-chip svg {
+  display: none;
+}
+.context-chip__change {
+  color: var(--accent-ink);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.home-head__context {
+  margin-top: 4px;
+}
+
+/* "How you fit" opened in place on Home. */
+button.hintro__link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+.hintro__fit {
+  margin-top: 6px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+/* With the Home header no longer pinned, the fixed menu button floats over
+   whatever scrolls beneath it: a small frosted disc keeps it legible. */
+@media (max-width: 1023px) {
+  :root .menu-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--paper) 70%, transparent);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4);
+    backdrop-filter: blur(14px) saturate(1.4);
+  }
+}
+
+/* Home: strong matches under today's match — three portraits in a row on a
+   phone, photo on top and the words underneath, then See all → Discover. */
+.hstrong {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 4px 0 18px;
+}
+.hstrong__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.hstrong__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.hstrong__card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--ink);
+  text-decoration: none;
+  min-width: 0;
+}
+.hstrong__img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border-radius: 16px;
+  background: var(--surface-2);
+}
+.hstrong__img--none {
+  display: grid;
+  place-items: center;
+}
+.hstrong__name {
+  margin-top: 4px;
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hstrong__age {
+  color: var(--ink-2);
+}
+.hstrong__meta {
+  font-size: 0.75rem;
+  line-height: 1.3;
+  color: var(--ink-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+@media (min-width: 1024px) {
+  .hstrong__list {
+    gap: 16px;
+  }
+}
+.hstrong__card {
+  position: relative;
+}
+.hstrong__tag {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--on-gold, #2a0506);
+  background: var(--gold);
+}
+.hsearch__none {
+  margin: 0 0 16px;
+  font-size: 0.9375rem;
+  color: var(--ink-2);
 }

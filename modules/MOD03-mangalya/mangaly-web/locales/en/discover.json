@@ -29,7 +29,7 @@
     "noReasons": "Not enough shared information yet to explain this match."
   },
   "error": {
-    "network": "We couldn't reach Mangaly. Check your connection and try again.",
+    "network": "We couldn't reach Mangalya. Check your connection and try again.",
     "invalidTarget": "You can't send a connection request to yourself.",
     "alreadyPending": "You already have a pending request to this profile.",
     "rateLimited": "Too many connection requests. Please try again later."
@@ -267,7 +267,7 @@
     "intro": "Describe the partner you hope for, the way you would tell a family elder. Say what matters most, and what doesn't.",
     "placeholder": "For example: a vegetarian family, Hyderabad or Bengaluru, doesn't drink. A master's degree would be nice. Height doesn't matter much.",
     "wordsLabel": "In your own words",
-    "understand": "Understand",
+    "understand": "Read my words",
     "understanding": "Reading your words…",
     "aiNote": "Our AI reads these words only to understand them. Nobody else sees them.",
     "basicNote": "We picked out the points below from your words. Change anything we got wrong.",
@@ -358,10 +358,12 @@
     "back": "Back",
     "setup": {
       "title": "Who are you looking for?",
-      "step": "Last step",
-      "skip": "Skip for now",
+      "step": "One more step",
+      "skip": "Skip",
       "continue": "Save and see matches",
-      "started": "We started from your profile. Change or remove anything."
+      "started": "We started from your profile. Change or remove anything.",
+      "titleFor": "Who is right for {{name}}?",
+      "startedFor": "We started from {{name}}'s profile. Change or remove anything."
     },
     "matters": {
       "title": "What matters to you",
@@ -371,7 +373,8 @@
       "theme": {
         "horoscope": {
           "name": "Horoscope match",
-          "note": "Guna Milan with your chart"
+          "note": "Guna Milan with your chart",
+          "noteFor": "Guna Milan with {{name}}'s chart"
         },
         "roots": {
           "name": "Same roots",
@@ -379,7 +382,8 @@
         },
         "near": {
           "name": "Close to home",
-          "note": "Lives near you"
+          "note": "Lives near you",
+          "noteFor": "Lives near {{name}}"
         },
         "life": {
           "name": "Same way of life",
@@ -391,7 +395,8 @@
         },
         "education": {
           "name": "Similar education",
-          "note": "At least your level of study"
+          "note": "At least your level of study",
+          "noteFor": "At least {{name}}'s level of study"
         }
       },
       "level": {
@@ -399,12 +404,18 @@
         "nice": "Nice to have",
         "important": "Important",
         "must": "Must"
-      }
+      },
+      "titleFor": "What matters for {{name}}",
+      "hintFor": "Tap how much each one matters. We compare with {{name}}'s profile, so nothing is asked twice. \"Must\" means people who clearly don't meet it are not shown.",
+      "yoursFor": "{{name}}: {{facts}}",
+      "noFactsFor": "add it to {{name}}'s profile to use this"
     },
     "fine": {
       "title": "Fine-tune with scales",
       "hint": "Optional. Faith, outlook, family life, career, social and active life, for your partner and for you."
-    }
+    },
+    "titleFor": "Who is right for {{name}}",
+    "introFor": "Describe the partner you hope for {{name}}, the way you would tell a family elder. Say what matters most, and what doesn't."
   },
   "fit": {
     "title": "How you fit each other",

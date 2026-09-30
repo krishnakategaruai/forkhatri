@@ -343,11 +343,11 @@ async def _open_session(session: AsyncSession, account_id: UUID) -> SessionToken
 
 
 class PlatformLinkRefused(Exception):
-    """The member is signed in to ForKhatri but may not enter Mangaly as-is.
+    """The member is signed in to ForKhatri but may not enter Mangalya as-is.
 
-    `code` is `platform_identity_conflict` (another proven Mangaly account holds
+    `code` is `platform_identity_conflict` (another proven Mangalya account holds
     one of the member's identifiers) or `platform_account_not_active` (the
-    member's own Mangaly account is locked or deleted). Both need a human; the
+    member's own Mangalya account is locked or deleted). Both need a human; the
     request fails closed rather than guessing.
     """
 
@@ -358,7 +358,7 @@ class PlatformLinkRefused(Exception):
 
 @dataclass(frozen=True, slots=True)
 class PlatformSession:
-    """A resolved ForKhatri session as Mangaly sees it."""
+    """A resolved ForKhatri session as Mangalya sees it."""
 
     account_id: UUID
     expires_at: datetime | None
@@ -389,7 +389,7 @@ def _link_refusal_code(exc: DBAPIError) -> str | None:
 
 
 async def resolve_platform_session(session: AsyncSession, token: str) -> PlatformSession:
-    """[ForKhatri TR15] Resolve an `fk_session` token to Mangaly's account id.
+    """[ForKhatri TR15] Resolve an `fk_session` token to Mangalya's account id.
 
     1. Claims come from the Identity & Trust Service (cached ≤30 s / 5 s,
        `platform.py`).
@@ -422,7 +422,7 @@ async def resolve_platform_session(session: AsyncSession, token: str) -> Platfor
         if code is not None:
             raise PlatformLinkRefused(code) from exc
         if "platform_identity_invalid" in str(exc.orig):
-            # Claims without identifiers: the platform is not sending Mangaly
+            # Claims without identifiers: the platform is not sending Mangalya
             # what TR14 says it must. A configuration fault — fail closed.
             raise PlatformIdentityUnavailable from exc
         raise

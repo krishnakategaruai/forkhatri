@@ -14,7 +14,7 @@ import {
   loadFaceApi,
   readLive,
 } from "@/lib/faceMatch";
-import { getMemberProfile, listPhotos, type Photo } from "@/lib/profile";
+import { getMemberProfile, listPhotos, uploadMemberPhoto, type Photo } from "@/lib/profile";
 import {
   getVerification,
   monthYear,
@@ -100,6 +100,7 @@ function VerifyFlow() {
     if (videoRef.current) videoRef.current.srcObject = null;
   }, []);
 
+  const [addingPhoto, setAddingPhoto] = useState(false);
   const load = useCallback(async () => {
     const s = await getVerification();
     if (!s) {
@@ -555,21 +556,36 @@ function VerifyFlow() {
           </Outcome>
         )}
 
-        {phase.k === "noPhotos" && (
-          <Outcome title={t("verify:noPhotos.title")} body={t("verify:noPhotos.body")}>
-            <Link href="/me" className="btn btn--primary">
-              {t("verify:noPhotos.cta")}
-            </Link>
+        {/* [Owner walkthrough, 2026-09-30] A father making his son's profile
+            has no Mangalya profile and no photos of his own, and was sent to
+            "My profile" — which would make him a matrimony profile of his
+            own. The photo the check compares against is added right here
+            instead, as his member photo (a selfie on a phone), and the check
+            continues from this screen. */}
+        {(phase.k === "noPhotos" || phase.k === "noProfile") && (
+          <Outcome title={t("verify:addSelf.title")} body={t("verify:addSelf.body")}>
+            <label className="btn btn--primary verify-addself">
+              {addingPhoto ? t("verify:addSelf.saving") : t("verify:addSelf.cta")}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                capture="user"
+                hidden
+                disabled={addingPhoto}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setAddingPhoto(true);
+                  const saved = await uploadMemberPhoto(file);
+                  setAddingPhoto(false);
+                  if (saved) await load();
+                  else setPhase({ k: "network" });
+                }}
+              />
+            </label>
           </Outcome>
         )}
 
-        {phase.k === "noProfile" && (
-          <Outcome title={t("verify:noProfile.title")} body={t("verify:noProfile.body")}>
-            <Link href="/me" className="btn btn--primary">
-              {t("verify:noProfile.cta")}
-            </Link>
-          </Outcome>
-        )}
 
         {phase.k === "rateLimited" && (
           <Outcome title={t("verify:rateLimited.title")} body={t("verify:rateLimited.body")} />

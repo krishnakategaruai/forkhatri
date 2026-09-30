@@ -23,7 +23,7 @@
 #   * exposes `ALLOW_LIST` so SP081's required build-blocking contract test
 #     asserts against a declared constant rather than re-deriving the expected
 #     field set from the same code it is testing.
-# Traces to: TR081, SP081, ARCHITECTURE.md (Mangaly -> MOD05 Dashboard edge).
+# Traces to: TR081, SP081, ARCHITECTURE.md (Mangalya -> MOD05 Dashboard edge).
 """
 
 from __future__ import annotations
@@ -88,7 +88,7 @@ ACTIVITY_SUMMARY_ALLOW_LIST: Final[frozenset[str]] = frozenset(
 
 @dataclass(frozen=True, slots=True)
 class ActivitySummaryEvent:
-    """The only Mangaly payload that leaves the module's isolation boundary.
+    """The only Mangalya payload that leaves the module's isolation boundary.
 
     Deliberately carries no profile name, no match, no connection, no counterparty
     and no free-text field of any kind. `lifecycle_state` is a closed vocabulary
@@ -123,7 +123,7 @@ class ActivitySummaryEvent:
         if unexpected:
             raise ValueError(
                 f"activity_summary payload contains non-allow-listed field(s) "
-                f"{sorted(unexpected)} — this event crosses Mangaly's isolation "
+                f"{sorted(unexpected)} — this event crosses Mangalya's isolation "
                 "boundary and is unrecallable once published (SP081)."
             )
         return payload

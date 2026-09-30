@@ -1,8 +1,31 @@
 {
   "plan": {
-    "FREE": { "name": "Free", "blurb": "Browse every profile, send a few requests a day, and receive as many as you like." },
-    "GOLD": { "name": "Gold", "blurb": "Unlimited requests, who shortlisted and viewed you, contact requests and the full kundli report." },
-    "ASSISTED": { "name": "Assisted", "blurb": "Everything in Gold, plus a relationship manager who works your search with your family." }
+    "FREE": {
+      "name": "Free",
+      "blurb": "Browse every profile, send a few requests a day, and receive as many as you like."
+    },
+    "GOLD": {
+      "name": "Gold",
+      "blurb": "Unlimited requests, who shortlisted and viewed you, contact requests and the full kundli report."
+    },
+    "ASSISTED": {
+      "name": "Assisted",
+      "blurb": "Everything in Gold, plus a relationship manager who works your search with your family."
+    },
+    "AGENT": {
+      "name": "Agent membership",
+      "blurb": "For marriage bureaus and brokers: add and manage many client families, share Mangalya and offline profiles, and export biodata.",
+      "feature1": "Add and manage many client families",
+      "feature2": "Share Mangalya and offline biodata with families",
+      "feature3": "Excel and biodata export"
+    },
+    "AGENT_CONNECT": {
+      "name": "Connect to an agent",
+      "blurb": "Work with a verified marriage bureau: they share suitable profiles from Mangalya and beyond, and you answer each one here.",
+      "feature1": "Choose a verified agent near you",
+      "feature2": "Profiles shared by your agent, on Mangalya and offline",
+      "feature3": "Chat with your agent inside Mangalya"
+    }
   },
   "feature": {
     "daily_requests": "Requests a day",
@@ -14,7 +37,9 @@
     "kundli_full_report": "Full kundli matching report",
     "assisted_matching": "A dedicated relationship manager"
   },
-  "term": { "months": "{months} months" },
+  "term": {
+    "months": "{months} months"
+  },
   "error": {
     "upgradeRequired": "This needs the {plan} plan.",
     "dailyLimit": "You have sent today's {limit} requests. Gold lifts the limit, or try again tomorrow.",

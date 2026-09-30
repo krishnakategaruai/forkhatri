@@ -23,7 +23,18 @@ export type CreateProfileInput = {
   gender: string;
   cityLocality: string;
   photo: File;
+  educationLevel?: string;
+  occupation?: string;
+  maritalStatus?: string;
+  relocationWillingness?: string;
 };
+
+function setFirstDetails(form: FormData, input: CreateProfileInput) {
+  if (input.educationLevel) form.set('education_level', input.educationLevel);
+  if (input.occupation?.trim()) form.set('occupation', input.occupation.trim());
+  if (input.maritalStatus) form.set('marital_status', input.maritalStatus);
+  if (input.relocationWillingness) form.set('relocation_willingness', input.relocationWillingness);
+}
 
 export type CreateProfileOutcome =
   | { ok: true; data: Profile }
@@ -38,6 +49,7 @@ export async function createProfile(input: CreateProfileInput): Promise<CreatePr
   form.set('city_locality', input.cityLocality);
   form.set('looking_for', input.lookingFor);
   form.set('photo', input.photo);
+  setFirstDetails(form, input);
 
   let res: Response;
   try {
@@ -77,6 +89,7 @@ export async function createProfileForChild(
   form.set('city_locality', input.cityLocality);
   form.set('looking_for', input.lookingFor);
   form.set('photo', input.photo);
+  setFirstDetails(form, input);
   let res: Response;
   try {
     res = await apiFetch(`${API_BASE}/profile/managed`, {

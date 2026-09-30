@@ -21,10 +21,10 @@ import {
 
 /* [DEC-V1-033] What an agent adds to a family's desk on the RM console: the
  * family's stage, their numbers (each look written down for them), a
- * printable biodata, and sharing biodata of people not on Mangaly — plus the
- * family's answers and questions on everything shared. Mangaly profiles are
- * searched and shared with the console's own search, as Mangaly's RMs do.
- * Renders nothing for Mangaly's own relationship managers. */
+ * printable biodata, and sharing biodata of people not on Mangalya — plus the
+ * family's answers and questions on everything shared. Mangalya profiles are
+ * searched and shared with the console's own search, as Mangalya's RMs do.
+ * Renders nothing for Mangalya's own relationship managers. */
 
 export default function AgentClientTools({
   assignmentId,
@@ -143,7 +143,7 @@ export default function AgentClientTools({
         )}
       </div>
 
-      {/* ---- share biodata of people not on Mangaly ---- */}
+      {/* ---- share biodata of people not on Mangalya ---- */}
       <div className="ag-head">
         <span className="label">{t("agents:share.offlineTitle")}</span>
         {offline.length === 0 ? (

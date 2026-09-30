@@ -15,7 +15,7 @@
     }
   },
   "admin": {
-    "casesTitle": "Mangaly moderation cases",
+    "casesTitle": "Mangalya moderation cases",
     "someone": "a member",
     "summary": "{category} reported about {name}",
     "member": {
@@ -67,6 +67,6 @@
       "account_suspended": "Account suspended",
       "escalated_to_investigation": "Sent for investigation"
     },
-    "suspended": "Suspended in Mangaly"
+    "suspended": "Suspended in Mangalya"
   }
 }

@@ -73,7 +73,7 @@ export async function getHealth(signal?: AbortSignal): Promise<HealthResult> {
  *  `detail` text in. */
 export function currentLanguageHeader(): Record<string, string> {
   try {
-    return { 'X-Mangaly-Language': getI18n().language };
+    return { 'X-Mangalya-Language': getI18n().language };
   } catch {
     return {};
   }
@@ -94,7 +94,7 @@ export function currentLanguageHeader(): Record<string, string> {
 const OUTAGE_STATUSES = new Set([502, 503, 504]);
 
 /* [DEC-V1-019] While a parent is filling in a profile they created for their
- * son or daughter, profile and photo calls carry `X-Mangaly-Manage`. The
+ * son or daughter, profile and photo calls carry `X-Mangalya-Manage`. The
  * server honours it only on /profile and /media, only for a profile this
  * caller created and the candidate has not taken over — everything else runs
  * as the parent, whatever the header says. */
@@ -111,7 +111,7 @@ export async function apiFetch(input: string, init: RequestInit = {}): Promise<R
   let res: Response;
   if (managingFor) {
     const headers = new Headers(init.headers);
-    headers.set('X-Mangaly-Manage', managingFor);
+    headers.set('X-Mangalya-Manage', managingFor);
     init = { ...init, headers };
   }
   try {
@@ -143,6 +143,9 @@ export function newIdempotencyKey(): string {
 export function resolveMediaUrl(path: string | null | undefined): string | null {
   if (!path) return null;
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  // Already resolved once (a same-origin base such as the tunnel's
+  // "/tunnel-proxy/api"): prefixing again gave ".../tunnel-proxy/api/tunnel-proxy/api/media/…".
+  if (API_BASE && path.startsWith(`${API_BASE}/`)) return path;
   return `${API_BASE}${path}`;
 }
 

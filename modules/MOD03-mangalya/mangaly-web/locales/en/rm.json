@@ -13,7 +13,7 @@
     "title": "Relationship manager",
     "none": {
       "title": "No relationship manager yet",
-      "body": "A relationship manager is a person from Mangaly who gets to know your family, suggests matches and speaks with the other family for you."
+      "body": "A relationship manager is a person from Mangalya who gets to know your family, suggests matches and speaks with the other family for you."
     },
     "role": "Your relationship manager",
     "promise": "Suggestions come from people who match what you are looking for. You decide on each one; nothing is sent without you.",
@@ -128,6 +128,9 @@
       "when": "When",
       "summary": "Summary",
       "submit": "Save"
+    },
+    "pref": {
+      "age": "Age {{min}}–{{max}}"
     }
   }
 }

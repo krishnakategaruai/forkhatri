@@ -106,7 +106,7 @@ export default function PlansPage() {
       confirmed = await sandboxPay(checkout.order.id);
     } else {
       const proof = await openRazorpayCheckout(checkout, {
-        name: "Mangaly",
+        name: "Mangalya",
         description: plan.name,
         accent: "#cc0106",
       });

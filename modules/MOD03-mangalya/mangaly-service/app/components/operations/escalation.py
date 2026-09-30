@@ -147,7 +147,7 @@ async def page_for_case(
         case_id=str(case_id),
         tier=tier,
         dedup_key=f"mangaly-safety-case-{case_id}",
-        summary=f"Mangaly safety Tier {int(tier)} case {case_id} ({reference})",
+        summary=f"Mangalya safety Tier {int(tier)} case {case_id} ({reference})",
     )
     result = await (pager or get_pager()).page(trigger)
     event_id = (

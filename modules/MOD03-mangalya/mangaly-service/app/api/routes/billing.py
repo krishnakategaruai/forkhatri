@@ -90,14 +90,18 @@ class CatalogueOut(BaseModel):
     plans: list[PlanOut]
 
 
-def _plan_out(plan: catalogue.Plan, lang: str) -> PlanOut:
+def _plan_out(plan: catalogue.Plan, lang: str, terms: tuple[catalogue.Term, ...] | None = None) -> PlanOut:
     ents = plan.entitlements
-    features = [
-        translate("billing.feature.daily_requests_unlimited", lang)
-        if ents.daily_requests is catalogue.UNLIMITED
-        else translate("billing.feature.daily_requests_limited", lang, limit=ents.daily_requests)
-    ]
-    features += [translate(f"billing.feature.{f}", lang) for f in catalogue.BOOLEAN_FLAGS if ents.flag(f)]
+    if plan.code in catalogue.ADD_ON_PLANS:
+        # An agent plan adds no member entitlements; its blurb says what it is.
+        features = [translate(f"billing.plan.{plan.code}.feature{i}", lang) for i in (1, 2, 3)]
+    else:
+        features = [
+            translate("billing.feature.daily_requests_unlimited", lang)
+            if ents.daily_requests is catalogue.UNLIMITED
+            else translate("billing.feature.daily_requests_limited", lang, limit=ents.daily_requests)
+        ]
+        features += [translate(f"billing.feature.{f}", lang) for f in catalogue.BOOLEAN_FLAGS if ents.flag(f)]
     return PlanOut(
         code=plan.code,
         name=translate(f"billing.plan.{plan.code}.name", lang),
@@ -111,7 +115,7 @@ def _plan_out(plan: catalogue.Plan, lang: str) -> PlanOut:
                 total_paise=t.total_paise,
                 label=translate("billing.term.months", lang, months=t.months),
             )
-            for t in plan.terms
+            for t in (plan.terms if terms is None else terms)
         ],
         entitlements=ents.as_dict(),
         features=features,
@@ -119,12 +123,24 @@ def _plan_out(plan: catalogue.Plan, lang: str) -> PlanOut:
 
 
 @router.get("/plans", response_model=CatalogueOut)
-async def list_plans(lang: Locale) -> CatalogueOut:
+async def list_plans(session: DbSession, lang: Locale, codes: str | None = None) -> CatalogueOut:
+    """The member plans, or the plans named in `codes` (e.g. `AGENT` or
+    `AGENT_CONNECT`), each at the price in force — an administrator's price
+    from `plan_price` when set, the catalogue's otherwise."""
+    wanted = (
+        [c for c in codes.split(",") if c in catalogue.PLANS]
+        if codes
+        else list(catalogue.PLAN_ORDER)
+    )
+    plans = []
+    for c in wanted:
+        terms = await billing.effective_terms(session, plan_code=c)
+        plans.append(_plan_out(catalogue.PLANS[c], lang, terms))
     return CatalogueOut(
         version=catalogue.CATALOGUE_VERSION,
         currency=catalogue.CURRENCY,
         gst_rate_bps=catalogue.GST_RATE_BPS,
-        plans=[_plan_out(catalogue.PLANS[c], lang) for c in catalogue.PLAN_ORDER],
+        plans=plans,
     )
 
 
@@ -183,7 +199,7 @@ async def my_plan(
 
 
 class CreateOrderBody(BaseModel):
-    plan_code: str = Field(pattern=r"^[A-Z]+$")
+    plan_code: str = Field(pattern=r"^[A-Z_]+$")
     term_months: int
 
 

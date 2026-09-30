@@ -44,10 +44,10 @@ import "./discover-wall.css";
  *   * A photo wall, not a list of forms. Two columns on a phone, up to five on
  *     a wide screen. Each tile is the main photo and three short lines; the
  *     profile opens on a tap. Nothing else competes with the faces.
- *   * The tabs established matrimony apps use, filtered through Mangaly's own
+ *   * The tabs established matrimony apps use, filtered through Mangalya's own
  *     rules. Shaadi.com's Matches has Today's / My / New Matches, Near Me,
  *     Recently Viewed and Recent Visitors; Jeevansathi has Daily
- *     Recommendations and Just Joined. Mangaly keeps For you, New, Near you
+ *     Recommendations and Just Joined. Mangalya keeps For you, New, Near you
  *     and Saved — and drops visitor lists, because the baseline rules out
  *     view counts and being watched.
  *   * What someone chose to show openly shows: their first name, a published

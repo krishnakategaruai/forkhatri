@@ -5,8 +5,10 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Avatar } from "@/components/Avatar";
+import Icon from "@/components/Icon";
 import { resolveMediaUrl } from "@/lib/api";
 import { getSnippet, search, type SearchResult, type Snippet } from "@/lib/discovery";
+import { listShortlist, save, unsave } from "@/lib/shortlist";
 
 /* "Similar profiles" at the foot of a profile: after reading one person, the
  * next few worth reading. Drawn from the same Discover search the viewer is
@@ -50,16 +52,23 @@ export default function SimilarProfiles({ viewedId, forCandidate }: Props) {
   const [people, setPeople] = useState<SearchResult[] | null>(null);
   const [total, setTotal] = useState<number | null>(null);
   const [basis, setBasis] = useState<Snippet | null>(null);
+  // [Owner walkthrough, 2026-09-30] "I want picture in this 4 pictures place,
+  // that's the magic, and love button, which is saved." — the same
+  // save/shortlist a person already has on Discover, so tapping it here and
+  // there agree with each other.
+  const [saved, setSaved] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     let active = true;
     (async () => {
-      const [basis, found] = await Promise.all([
+      const [basis, found, shortlist] = await Promise.all([
         getSnippet(viewedId).catch(() => null),
         search({}, { forCandidate }).catch(() => null),
+        listShortlist(forCandidate).catch(() => []),
       ]);
       if (!active) return;
       setBasis(basis);
+      setSaved(new Set(shortlist.map((s) => s.candidate_account_id)));
       const pool = (found?.results ?? []).filter((r) => r.candidate_account_id !== viewedId);
       const ranked = basis
         ? pool
@@ -76,6 +85,26 @@ export default function SimilarProfiles({ viewedId, forCandidate }: Props) {
       active = false;
     };
   }, [viewedId, forCandidate]);
+
+  async function toggleSave(id: string) {
+    const on = saved.has(id);
+    setSaved((s) => {
+      const next = new Set(s);
+      if (on) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    const outcome = on ? await unsave(id, forCandidate) : await save(id, forCandidate);
+    if (!outcome.ok) {
+      // Put it back as it was: the save did not happen.
+      setSaved((s) => {
+        const next = new Set(s);
+        if (on) next.add(id);
+        else next.delete(id);
+        return next;
+      });
+    }
+  }
 
   if (!people || people.length === 0) return null;
 
@@ -106,11 +135,15 @@ export default function SimilarProfiles({ viewedId, forCandidate }: Props) {
                     <Avatar anonymized size={72} />
                   </span>
                 )}
-                {(() => {
-                  const why = reasonOf(basis, p);
-                  return why ? <span className="similar__why">{t(`profile:view.similarReason.${why}`)}</span> : null;
-                })()}
                 <span className="hcard__text">
+                  {(() => {
+                    const why = reasonOf(basis, p);
+                    // [Owner walkthrough, 2026-09-30] "Similar profiles is not
+                    // beautiful" — this pill used to sit at the top of a
+                    // ~150x200 card, right across the face. It now sits with
+                    // the name, where a small card always has room for it.
+                    return why ? <span className="similar__why">{t(`profile:view.similarReason.${why}`)}</span> : null;
+                  })()}
                   <span className="hcard__name">
                     {name ?? t("profile:hub.ageYears", { age: p.age ?? "" })}
                     {name && p.age ? <span className="hcard__age"> {p.age}</span> : null}
@@ -118,6 +151,18 @@ export default function SimilarProfiles({ viewedId, forCandidate }: Props) {
                   <span className="hcard__meta">{[p.profession, city].filter(Boolean).join(" · ")}</span>
                 </span>
               </Link>
+              <button
+                type="button"
+                className={`hcard__save${saved.has(p.candidate_account_id) ? " is-on" : ""}`}
+                aria-pressed={saved.has(p.candidate_account_id)}
+                aria-label={t(saved.has(p.candidate_account_id) ? "discover:tile.unsave" : "discover:tile.save")}
+                onClick={(e) => {
+                  e.preventDefault();
+                  void toggleSave(p.candidate_account_id);
+                }}
+              >
+                <Icon name="bookmark" filled={saved.has(p.candidate_account_id)} />
+              </button>
             </li>
           );
         })}

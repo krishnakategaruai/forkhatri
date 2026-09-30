@@ -701,6 +701,17 @@ async def search(
     if seeker_word:
         clauses.append("looking_for = :seeker_word")
         params["seeker_word"] = seeker_word
+    # [Owner, 2026-09-30] Matching is mutual: someone whose own stated age
+    # range excludes this seeker is never shown to them ("if she limited to
+    # 30, her profile must not appear on a 40-year-old's dashboard").
+    seeker_age = _age_years(seeker.get("date_of_birth"))
+    if seeker_age is not None:
+        clauses.append(
+            "(jsonb_typeof(ranking_input_snapshot->'partner_age_range') IS DISTINCT FROM 'object' OR ("
+            "COALESCE(NULLIF(ranking_input_snapshot->'partner_age_range'->>'min', '')::int, 0) <= :seeker_age"
+            " AND COALESCE(NULLIF(ranking_input_snapshot->'partner_age_range'->>'max', '')::int, 200) >= :seeker_age))"
+        )
+        params["seeker_age"] = seeker_age
     if filters.age_min is not None:
         clauses.append("date_part('year', age(current_date, date_of_birth)) >= :age_min")
         params["age_min"] = filters.age_min
@@ -885,7 +896,7 @@ async def cards_for(session: AsyncSession, *, account_ids: list[UUID]) -> dict[U
 #
 # Netflix's home is titled rows whose title is the explanation ("Because you
 # watched…"); Bumble's Discover groups people by shared interests and
-# communities; Hinge's Most Compatible leads with mutual preferences. Mangaly
+# communities; Hinge's Most Compatible leads with mutual preferences. Mangalya
 # takes the pattern and keeps its own rules: every row is a fact both people can
 # check (same city, same mother tongue, both vegetarian, the family suggested
 # them), no row is ranked by popularity or attention (Hinge's Standouts is the
@@ -1403,7 +1414,7 @@ async def shelves(
 # ---------------------------------------------------------------------------
 #
 # Netflix's "Because you watched…" row, applied to what a family actually
-# does in Mangaly: a request sent, a profile someone in the circle suggested,
+# does in Mangalya: a request sent, a profile someone in the circle suggested,
 # a profile saved. Each row is people who share the most checkable facts
 # with that one person (city, studies, work, mother tongue, community, food,
 # family values, interests, age), so the row explains itself: "Like Kunal:

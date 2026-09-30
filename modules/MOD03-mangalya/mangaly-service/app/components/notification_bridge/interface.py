@@ -40,6 +40,8 @@ KINDS: Final[frozenset[str]] = frozenset(
         "request_received",
         "request_accepted",
         "invitation_received",
+        # The inviter hears back when their Home Circle invitation is accepted.
+        "invitation_accepted",
         "suggestion_received",
         "family_conversation_opened",
         "note_forwarded",
@@ -53,6 +55,13 @@ KINDS: Final[frozenset[str]] = frozenset(
         "rm_suggested",
         "rm_interaction_scheduled",
         "rm_suggestion_decided",
+        # [DEC-V1-033/034] Marriage agents: a family chose this agent; the
+        # agent's access to other families' contacts was paused after
+        # reports; the agent was suspended. These were sent by the agent
+        # code but never registered here, so choosing an agent crashed.
+        "agent_chosen",
+        "agent_contact_suspended",
+        "agent_suspended",
     }
 )
 

@@ -1,7 +1,7 @@
-"""Horoscope — Mangaly's side of kundli matching.
+"""Horoscope — Mangalya's side of kundli matching.
 
 The calculation lives in `modules/MOD03-mangaly/horoscope-service`: planet
-positions from a pinned, validated library; Guna Milan scored with Mangaly's
+positions from a pinned, validated library; Guna Milan scored with Mangalya's
 own koota tables, checked against Drik Panchang and AstroSage; Mangal Dosha
 with the placements that cause it. This module:
 

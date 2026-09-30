@@ -55,7 +55,24 @@
     "body": "People looking for someone like you can now find you in Discover."
   },
   "generic": {
-    "title": "Update from Mangaly",
-    "body": "Something changed on your account. Open Mangaly to see it."
+    "title": "Update from Mangalya",
+    "body": "Something changed on your account. Open Mangalya to see it."
+  },
+  "invitation_accepted": {
+    "title": "Invitation accepted",
+    "body": "Your Home Circle invitation was accepted. They have joined as {relationship_text}.",
+    "bodyToCandidate": "Your request was accepted. You are now in their Home Circle as {relationship_text}."
+  },
+  "agent_chosen": {
+    "title": "A family chose you",
+    "body": "A family connected with you on Mangalya. Open their search to start sharing profiles."
+  },
+  "agent_contact_suspended": {
+    "title": "Contact access paused",
+    "body": "Families reported unwanted calls, so opening other families’ contact details is paused for now. Your own clients are not affected."
+  },
+  "agent_suspended": {
+    "title": "Your agent membership is suspended",
+    "body": "Mangalya has suspended your agent account. Contact support to know more."
   }
 }

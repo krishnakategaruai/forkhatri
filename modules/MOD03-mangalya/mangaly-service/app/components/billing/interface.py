@@ -137,7 +137,11 @@ async def resolve_plan(session: AsyncSession, *, account_id: UUID) -> PlanState:
     ).mappings().all()
     best = None
     for row in rows:
-        rank = catalogue.PLAN_ORDER.index(row["plan_code"]) if row["plan_code"] in catalogue.PLAN_ORDER else -1
+        # An agent's membership or a family's agent-connect plan is not a
+        # member plan: it must never stand in for FREE / GOLD / ASSISTED.
+        if row["plan_code"] not in catalogue.PLAN_ORDER:
+            continue
+        rank = catalogue.PLAN_ORDER.index(row["plan_code"])
         if best is None or rank > best[0]:
             best = (rank, row)
     if best is None:
@@ -246,6 +250,56 @@ async def _get_order(session: AsyncSession, *, order_id: UUID) -> OrderSummary:
     return _order_from_row(row)
 
 
+async def effective_term(
+    session: AsyncSession, *, plan_code: str, term_months: int
+) -> "catalogue.Term | None":
+    """The price in force for one plan term: an administrator's price from
+    `plan_price` when set, else the catalogue's. An inactive admin row
+    withdraws the term. Used by the catalogue a member sees and by
+    `create_order`, so what is shown and what is charged are the same."""
+    plan = catalogue.PLANS.get(plan_code)
+    if plan is None:
+        return None
+    row = (
+        await session.execute(
+            text(
+                "SELECT amount_paise, active FROM mangaly_billing.plan_price "
+                "WHERE plan_code = :p AND term_months = :m"
+            ),
+            {"p": plan_code, "m": term_months},
+        )
+    ).first()
+    if row is not None:
+        return catalogue.Term(months=term_months, amount_paise=int(row.amount_paise)) if row.active else None
+    return plan.term(term_months)
+
+
+async def effective_terms(session: AsyncSession, *, plan_code: str) -> tuple["catalogue.Term", ...]:
+    """Every term of a plan at the price in force (see `effective_term`)."""
+    plan = catalogue.PLANS.get(plan_code)
+    if plan is None:
+        return ()
+    rows = {
+        int(r.term_months): r
+        for r in (
+            await session.execute(
+                text("SELECT term_months, amount_paise, active FROM mangaly_billing.plan_price WHERE plan_code = :p"),
+                {"p": plan_code},
+            )
+        ).all()
+    }
+    months = sorted({t.months for t in plan.terms} | set(rows))
+    out = []
+    for m in months:
+        r = rows.get(m)
+        if r is not None:
+            if r.active:
+                out.append(catalogue.Term(months=m, amount_paise=int(r.amount_paise)))
+        elif plan.term(m) is not None:
+            out.append(plan.term(m))
+    return tuple(out)
+
+
 async def create_order(
     session: AsyncSession,
     *,
@@ -261,7 +315,8 @@ async def create_order(
     plan = catalogue.PLANS.get(plan_code)
     if plan is None or not plan.terms:
         raise UnknownPlanOrTerm
-    term = plan.term(term_months)
+    # The administrator's price when one is set (agent plans are priced there).
+    term = await effective_term(session, plan_code=plan_code, term_months=term_months)
     if term is None:
         raise UnknownPlanOrTerm
 

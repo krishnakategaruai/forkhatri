@@ -185,7 +185,7 @@ async def request_resend(
 
     Uses the DURABLE limiter: a resend that fails downstream still counted as an
     attempt, and a counter rolled back with the request would let an attacker
-    drive unlimited SMS. SMS bombing costs Mangaly money directly, so this is a
+    drive unlimited SMS. SMS bombing costs Mangalya money directly, so this is a
     cost control as much as a user-harassment one.
     """
     settings = get_settings()

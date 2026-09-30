@@ -3,7 +3,7 @@
  * Evidence (docs/PreStartResearch/mangaly-2030-evidence-research.md): users
  * over 65 complete 55% of tasks against 75% for younger users, and Nielsen
  * Norman Group asks for a way to enlarge text. Parents in South India make
- * nearly half the profiles, so Mangaly offers the control to everyone and
+ * nearly half the profiles, so Mangalya offers the control to everyone and
  * never switches it on by age. The whole interface is set in rem, so one
  * root size scales every screen. */
 

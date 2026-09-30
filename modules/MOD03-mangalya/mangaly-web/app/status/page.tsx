@@ -106,7 +106,7 @@ export default function HomePage() {
           <span className="brand-mark" aria-hidden="true">
             m
           </span>
-          <h1>Mangaly</h1>
+          <h1>Mangalya</h1>
         </div>
         <span className="pill pill--wip">In build</span>
       </header>

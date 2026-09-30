@@ -99,7 +99,7 @@
 
 .rm-detail { display: grid; gap: var(--space-5); align-items: start; }
 @media (min-width: 960px) { .rm-detail { grid-template-columns: 340px minmax(0, 1fr); } }
-.rm-summary { display: flex; flex-direction: column; gap: var(--space-3); background: var(--family-tint); }
+.rm-summary { display: flex; flex-direction: column; gap: var(--space-3); background: var(--surface); }
 .rm-summary__head { display: flex; align-items: center; gap: var(--space-3); }
 .rm-summary__name { font-family: var(--font-serif); font-size: 1.25rem; font-weight: 600; }
 .rm-facts { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px var(--space-3); font-size: 0.875rem; }
@@ -125,3 +125,11 @@
 .rm-interaction-form .textarea { min-height: 44px; }
 
 .rm-inline-error { margin: 0; color: var(--danger); font-size: 0.875rem; }
+
+/* The family's own words, once, under the facts. */
+.rm-facts__words {
+  display: block;
+  margin-top: 4px;
+  font-style: italic;
+  color: var(--ink-2);
+}

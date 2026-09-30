@@ -9,6 +9,7 @@ import ForKhatriHubLink from "@/components/ForKhatriHubLink";
 import Icon from "@/components/Icon";
 import RequestPrompt from "@/components/RequestPrompt";
 import { getSession, type Session } from "@/lib/auth";
+import { getMyAgentRecord } from "@/lib/agents";
 
 /* The navigation shell — one component for both form factors, because they
  * are the same navigation and must never drift apart.
@@ -21,7 +22,7 @@ import { getSession, type Session } from "@/lib/auth";
  * phone-only `.tabbar` (which has no CSS at all) inside a 480px-capped
  * `.shell` — a phone column stranded in the middle of a desktop window.
  * This component emits the markup the stylesheet was written for, so
- * Mangaly is a genuine desktop web app as well as a mobile-first one.
+ * Mangalya is a genuine desktop web app as well as a mobile-first one.
  *
  * Counts come from the session `/auth/me` already returns, so the badges
  * cost no extra request. */
@@ -64,6 +65,22 @@ const DESTINATIONS: Dest[] = [
   },
 ];
 
+/* [Owner walkthrough, 2026-09-30] "why i am not seeing agent or agent
+ * screen?" — the agent workspace (/agent) and the families' agent page
+ * (/agents) were built but linked from nowhere. A verified or applying agent
+ * gets their workspace first in the menu; every other member gets "Marriage
+ * agents", the way to find and work with one. */
+const AGENT_WORKSPACE: Dest = {
+  href: "/agent",
+  labelKey: "common:nav.agentWorkspace",
+  icon: (active) => <Icon name="briefcase" filled={active} />,
+};
+const FIND_AGENTS: Dest = {
+  href: "/agents",
+  labelKey: "common:nav.agents",
+  icon: (active) => <Icon name="handshake" filled={active} />,
+};
+
 /* Routes outside the signed-in shell. Navigation on a sign-in screen would
  * imply places you can go before you can go anywhere. These keep the narrow
  * centred column, which is the right measure for a single form. */
@@ -77,6 +94,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { t } = useTranslation("common");
   const [session, setSession] = useState<Session | null>(null);
+  const [isAgent, setIsAgent] = useState(false);
+  useEffect(() => {
+    getMyAgentRecord()
+      .then((r) => setIsAgent(r?.kind === "agent"))
+      .catch(() => undefined);
+  }, []);
+  const destinations = isAgent
+    ? [AGENT_WORKSPACE, ...DESTINATIONS]
+    : [...DESTINATIONS.slice(0, 4), FIND_AGENTS, DESTINATIONS[4]];
   /* [DEC-V1-030, owner 2026-09-24] Below desktop width the navigation is a
      left drawer opened from a menu button, not a bottom bar — the page keeps
      its full width for photos. Detail screens (a profile, an open chat)
@@ -144,11 +170,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <span className="brand-mark" aria-hidden="true">
             m
           </span>
-          {t("common:app.name", { defaultValue: "Mangaly" })}
+          {t("common:app.name", { defaultValue: "Mangalya" })}
         </Link>
 
         <nav className="sidebar__nav" aria-label={t("common:nav.home")}>
-          {DESTINATIONS.map((dest) => {
+          {destinations.map((dest) => {
             const active = isActive(pathname, dest.href);
             const count = countFor(dest);
             return (
@@ -167,6 +193,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="sidebar__foot">
+          <Link className="sidebar__help" href="/help">
+            {t("common:nav.help")}
+          </Link>
           <ForKhatriHubLink />
         </div>
       </aside>
@@ -180,7 +209,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <RequestPrompt />
 
       <nav className="bottombar" aria-label="Primary">
-        {DESTINATIONS.map((dest) => {
+        {destinations.map((dest) => {
           const active = isActive(pathname, dest.href);
           const count = countFor(dest);
           return (

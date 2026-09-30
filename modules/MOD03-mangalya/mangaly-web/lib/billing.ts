@@ -8,7 +8,7 @@
 
 import { getJson, postJson, query, type Outcome } from './api';
 
-export type PlanCode = 'FREE' | 'GOLD' | 'ASSISTED';
+export type PlanCode = 'FREE' | 'GOLD' | 'ASSISTED' | 'AGENT' | 'AGENT_CONNECT';
 
 export type EntitlementFlag =
   | 'daily_requests'
@@ -113,8 +113,10 @@ export type UpgradeRequiredDetail = {
   message: string;
 };
 
-export function getCatalogue(): Promise<Catalogue | null> {
-  return getJson<Catalogue>('/billing/plans');
+/** Member plans by default; `codes` asks for named plans instead — the agent
+ *  membership (`AGENT`) or a family's agent-connect plan (`AGENT_CONNECT`). */
+export function getCatalogue(codes?: PlanCode[]): Promise<Catalogue | null> {
+  return getJson<Catalogue>(`/billing/plans${codes?.length ? `?codes=${codes.join(',')}` : ''}`);
 }
 
 export function getMyPlan(forCandidate?: string): Promise<MyPlan | null> {

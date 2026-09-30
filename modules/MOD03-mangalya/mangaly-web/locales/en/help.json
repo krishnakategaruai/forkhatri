@@ -1,0 +1,75 @@
+{
+  "title": "How Mangalya works",
+  "storyTitle": "The story of Mangalya",
+  "intro": "Two minutes, and everyone in the family knows how this works.",
+  "next": "Next",
+  "back": "Back",
+  "skip": "Skip the story",
+  "begin": "Begin",
+  "seeAgain": "Read the story again",
+  "story": [
+    {
+      "title": "Mangalya is for the whole family",
+      "body": "One search, done together. A profile can be made by the person, or by a mother, father, brother, sister, grandparent or guardian on their behalf."
+    },
+    {
+      "title": "First, whose search is it?",
+      "body": "You choose: myself, my son, my daughter, or someone else in the family. Everything after that is about that person, and Mangalya shows brides or grooms accordingly."
+    },
+    {
+      "title": "Your Home Circle",
+      "body": "Add the family members who help — by name or mobile number. They search with you and can answer requests. Each person’s role stays clear: who is the candidate, who is the parent."
+    },
+    {
+      "title": "Requests, accepted by both sides",
+      "body": "You send a request; the other family sees it. Names, contact details and the full profile are shared only after both sides accept."
+    },
+    {
+      "title": "Matches work both ways",
+      "body": "Describe the partner you hope for in your own words. Mangalya shows people who fit your wishes and whose wishes you fit. Someone who asked for a different age or place will not appear."
+    },
+    {
+      "title": "Chats that suit each person",
+      "body": "The two candidates get a private chat that keeps nothing. Parents and relatives chat normally, like on WhatsApp. A chat for both families together is optional."
+    },
+    {
+      "title": "A marriage agent, if you want one",
+      "body": "Trusted bureaus on Mangalya can search for you and bring families who are not on the app. You choose the agent; they never see your contact until you allow it."
+    }
+  ],
+  "faqTitle": "Common questions",
+  "faq": [
+    {
+      "q": "Who can make a profile?",
+      "a": "The person themselves, or any family member for them. The person takes it over when they sign in with their own mobile number."
+    },
+    {
+      "q": "Why a selfie check when I set up someone else’s profile?",
+      "a": "So every profile on Mangalya is made by a real, known person. It takes a minute; the picture is not kept."
+    },
+    {
+      "q": "Why am I not shown to anyone?",
+      "a": "A profile appears in search once it has education, work, marital status and relocation. The wizard asks these; you can change them on My profile."
+    },
+    {
+      "q": "Why don’t I see some people?",
+      "a": "Mangalya only shows brides to those looking for a bride, grooms to those looking for a groom, and never someone whose own age or place preference leaves you out."
+    },
+    {
+      "q": "How do I add my family?",
+      "a": "Open Circle, type their name or mobile number, choose how they are related, and send. They join once they accept."
+    },
+    {
+      "q": "Who can answer a request?",
+      "a": "The candidate, or any parent or guardian in their Home Circle. Whoever answers first answers for the family."
+    },
+    {
+      "q": "Is my chat private?",
+      "a": "The candidates’ chat is deleted when it ends. Family chats are kept, like any messenger, and only the two people in them can read them. Screenshots are blocked across Mangalya."
+    },
+    {
+      "q": "How do marriage agents work?",
+      "a": "Open Marriage agents, read their record, and choose one. They see your search and share profiles with you; you decide on every proposal."
+    }
+  ]
+}

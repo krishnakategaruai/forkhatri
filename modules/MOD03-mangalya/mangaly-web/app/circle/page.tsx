@@ -24,6 +24,7 @@ import { getSnippet, type Snippet } from "@/lib/discovery";
 import {
   acceptInvitation,
   declineInvitation,
+  invitationText,
   declineNote,
   listMembers,
   listNoteRequests,
@@ -128,9 +129,11 @@ export default function CirclePage() {
       listSent(),
     ]);
     const subject = circleOf;
+    // Own context: `/connections/sent` is already scoped to this member's
+    // own search, so every row is a request sent for them.
     const sentForCandidate = subject
       ? sent.filter((c) => c.subject_account_id === subject)
-      : [];
+      : sent;
     const profileIds = [
       ...new Set([
         ...suggestions.map((s) => s.suggested_profile_id),
@@ -232,7 +235,7 @@ export default function CirclePage() {
       : relation;
   }
 
-  function matchSummary(accountId: string) {
+  function matchSummary(accountId: string, avatarSize = 48) {
     const snippet = state.snippets[accountId];
     const headline = [
       snippet?.age ? t("profile:hub.ageYears", { age: snippet.age }) : null,
@@ -248,7 +251,7 @@ export default function CirclePage() {
       .join(" · ");
     return (
       <Link href={`/profile/${accountId}`} className="req__main note-match">
-        <Avatar photoUrl={snippet?.photo_url} anonymized size={48} />
+        <Avatar photoUrl={snippet?.photo_url} anonymized size={avatarSize} />
         <span className="note-match__text">
           <span className="note-match__headline">
             {headline || t("circle:notes.match")}
@@ -266,37 +269,6 @@ export default function CirclePage() {
     if (outcome.ok) await refresh();
   }
 
-  /* Who asked what, in words. `to_candidate`: someone asks to join YOUR
-     circle. `to_member`: you are asked into a candidate's circle — by the
-     candidate themself, or by someone already helping them. */
-  function invitationText(inv: PendingInvitation): string {
-    const relationship = t(
-      relationKey(inv.relation, inv.relationship_type),
-    ).toLowerCase();
-    const inviter = inv.inviter_name ?? t("circle:pendingInvitations.someone");
-    if (inv.direction === "to_candidate") {
-      return t("circle:pendingInvitations.asksToJoin", {
-        name: inviter,
-        relationship,
-      });
-    }
-    if (
-      inv.candidate_name &&
-      inv.inviter_account_id !== inv.candidate_account_id
-    ) {
-      return t("circle:pendingInvitations.addsYouTo", {
-        name: inviter,
-        candidate: inv.candidate_name,
-        first: inv.candidate_name.split(" ")[0],
-        relationship,
-      });
-    }
-    return t("circle:pendingInvitations.invitesYou", {
-      name: inviter,
-      relationship,
-    });
-  }
-
   const pendingInvitationsCard =
     state.pendingInvitations.length > 0 ? (
       <div className="card">
@@ -310,7 +282,7 @@ export default function CirclePage() {
                   anonymized={!inv.inviter_name}
                   size={40}
                 />
-                <span className="req__title">{invitationText(inv)}</span>
+                <span className="req__title">{invitationText(t, inv)}</span>
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button
@@ -373,16 +345,22 @@ export default function CirclePage() {
     ) : null;
 
   const header = (
-    <header className="topbar">
-      <MotionTitle as="h1" className="royal-title" text={t("circle:title")} />
-      <div className="topbar__actions">
-        {contexts && active && (
+    <>
+      <header className="topbar">
+        <MotionTitle as="h1" className="royal-title" text={t("circle:title")} />
+        <div className="topbar__actions">
+          <ForKhatriHubLink />
+          <AccountButton />
+        </div>
+      </header>
+      {/* Whose search and who is being looked for, on its own line so a
+          phone never cuts it short. */}
+      {contexts && active && (
+        <div className="page-context">
           <ContextChip contexts={contexts} active={active} onChoose={choose} />
-        )}
-        <ForKhatriHubLink />
-        <AccountButton />
-      </div>
-    </header>
+        </div>
+      )}
+    </>
   );
 
   /* The "Looking for" answer that governs this circle. Shown on every role's
@@ -390,13 +368,11 @@ export default function CirclePage() {
      candidate's own answer, and it is what the server ranks matches by and
      routes a family-sent request under. */
   function lookingForChip(value: "bride" | "groom" | null | undefined) {
+    // Answered: the context line under the title already says it.
+    if (value) return null;
     return (
-      <span className={`circle-chip${value ? "" : " circle-chip--muted"}`}>
-        {value
-          ? t("circle:lookingFor.chip", {
-              value: t(`profile:option.looking_for.${value}`),
-            })
-          : t("circle:lookingFor.unset")}
+      <span className="circle-chip circle-chip--muted">
+        {t("circle:lookingFor.unset")}
       </span>
     );
   }
@@ -592,38 +568,11 @@ export default function CirclePage() {
             onSent={() => void refresh()}
           />
 
-          <div className="card">
-            <h2 className="h2">
-              {t("circle:sent.title", { name: firstName })}
-            </h2>
-            {state.sentForCandidate.length === 0 ? (
-              <p className="caption">
-                {t("circle:sent.empty", { name: firstName })}
-              </p>
-            ) : (
-              <ul className="category-list">
-                {state.sentForCandidate.map((c) => (
-                  <li key={c.id} className="req req--stacked">
-                    {matchSummary(c.target_account_id)}
-                    <p className="caption" style={{ margin: 0 }}>
-                      {[
-                        t(`circle:sent.status.${c.status}`),
-                        c.acting_account_id === meAccountId
-                          ? t("circle:sent.byYou")
-                          : c.sent_by_family
-                            ? t("circle:sent.byFamily")
-                            : t("circle:sent.byCandidate", { name: firstName }),
-                        new Date(c.requested_at).toLocaleDateString(
-                          `${i18n.language}-IN`,
-                          { day: "numeric", month: "short", year: "numeric" },
-                        ),
-                      ].join(" · ")}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          {sentCard(
+            t("circle:sent.title", { name: firstName }),
+            t("circle:sent.empty", { name: firstName }),
+            firstName,
+          )}
 
           {state.suggestions.length > 0 &&
             suggestionsCard(
@@ -750,6 +699,9 @@ export default function CirclePage() {
           )}
         </div>
 
+        {state.sentForCandidate.length > 0 &&
+          sentCard(t("circle:sent.titleOwn"), "", t("circle:sent.you"))}
+
         {state.suggestions.length > 0 &&
           suggestionsCard(t("circle:suggestions.title"))}
       </main>
@@ -759,9 +711,52 @@ export default function CirclePage() {
   /* Shared by both roles: the candidate reads it as "suggestions from your
      circle", a family member as "what your circle has suggested to <name>" —
      same rows, same pre-connection-safe snippet, only the heading differs. */
+  /* Requests that went out for this search, with who sent them and where
+     each stands. Shared by both roles. */
+  function sentCard(title: string, empty: string, candidateFirst: string) {
+    return (
+      <div className="card" id="sent">
+            <h2 className="h2">
+              {title}
+            </h2>
+            {state.sentForCandidate.length === 0 ? (
+              <p className="caption">
+                {empty}
+              </p>
+            ) : (
+              <ul className="category-list">
+                {state.sentForCandidate.map((c) => (
+                  <li key={c.id} className="req sent-row">
+                    {matchSummary(c.target_account_id, 36)}
+                    <span className="sent-row__side">
+                      <span className={`sent-row__status sent-row__status--${c.status}`}>
+                        {t(`circle:sent.status.${c.status}`)}
+                      </span>
+                      <span className="caption">
+                        {[
+                          c.acting_account_id === meAccountId
+                            ? t("circle:sent.byYou")
+                            : c.sent_by_family
+                              ? t("circle:sent.byFamily")
+                              : t("circle:sent.byCandidate", { name: candidateFirst }),
+                          new Date(c.requested_at).toLocaleDateString(
+                            `${i18n.language}-IN`,
+                            { day: "numeric", month: "short" },
+                          ),
+                        ].join(" · ")}
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+    );
+  }
+
   function suggestionsCard(title: string, candidateFirst?: string) {
     return (
-      <div className="card">
+      <div className="card" id="suggestions">
         <h2 className="h2">{title}</h2>
         <ul className="category-list">
           {state.suggestions.map((s) => {

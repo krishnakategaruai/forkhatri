@@ -11,7 +11,7 @@ import { getJson, query } from "@/lib/api";
  * Dosha for both with exactly where Mars sits. Shown as it is — no verdict,
  * no colour for "good" or "bad" — with the notice that it is a traditional
  * calculation the family interprets. Numbers come from the horoscope service
- * (Mangaly's tables, checked against Drik Panchang and AstroSage). */
+ * (Mangalya's tables, checked against Drik Panchang and AstroSage). */
 
 type Koota = {
   koota: string;

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useMounted } from "@/lib/useMounted";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -42,11 +43,11 @@ import "./agent.css";
 /* [DEC-V1-033] The marriage agent's workspace. The owner (2026-09-29): a
  * marriage agent "exists without the app too, so I don't want to kill his
  * job, rather I want to enhance him." One page walks the agent from applying,
- * through Mangaly's check and the membership, into the workspace: every
+ * through Mangalya's check and the membership, into the workspace: every
  * family with its stage, adding families one by one or from an Excel sheet,
- * the biodata of people not on Mangaly, numbers and exports. Each family's
+ * the biodata of people not on Mangalya, numbers and exports. Each family's
  * own desk (search as the family, share, calls and meetings) is the
- * relationship-manager console, which agents share with Mangaly's own RMs. */
+ * relationship-manager console, which agents share with Mangalya's own RMs. */
 
 type Tab = "clients" | "add" | "offline";
 
@@ -212,7 +213,7 @@ function Join({ record, onSaved }: { record: AgentRecord | null; onSaved: () => 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Never ask for what Mangaly already knows: a new applicant's name comes
+  // Never ask for what Mangalya already knows: a new applicant's name comes
   // from their ForKhatri account.
   useEffect(() => {
     if (record) return;
@@ -795,7 +796,7 @@ function AddMany() {
 }
 
 /* ---------------------------------------------------------------------------
- * Biodata of people not on Mangaly
+ * Biodata of people not on Mangalya
  * ------------------------------------------------------------------------- */
 
 
@@ -960,6 +961,9 @@ function Offline() {
 }
 
 export default function AgentPage() {
+  // Client only: the first paint is in the member's own language.
+  const mounted = useMounted();
+  if (!mounted) return null;
   return (
     <Suspense fallback={null}>
       <AgentWorkspace />
