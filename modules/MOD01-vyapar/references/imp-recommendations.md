@@ -18,7 +18,7 @@ A member with no history ranks exactly as before.
 | Light taste term for profile search and similar profiles | `app/services/discovery.py`, `app/profile_cards.py` |
 | Privacy switch, export, deletion | `app/services/privacy.py` |
 | Table, column, switch, definer reads | `07a-db-implementation/migrations/030-member-taste.sql` (also in `schema.sql`) |
-| Checks (59, real API, full cleanup) | `vyapar-service/scripts/check_taste.py` |
+| Checks (67, real API, full cleanup) | `vyapar-service/scripts/check_taste.py` |
 | Offline evaluation | `vyapar-service/scripts/eval_recommendations.py` |
 | Localized phrases (en/hi/te) | server `app/i18n/locales/*/ranking.json`, `discover.json`; web `locales/*/ranking.json`, `explore.json`, `app/components/opportunity/labels.ts` |
 
@@ -32,7 +32,7 @@ A member with no history ranks exactly as before.
 | Marked done (`completed_at`) | +4 | applied |
 | Applied / sent a proposal or quote (any enquiry on a post) | +3 | applied |
 | Contacted / asked a price on a profile | +3 | (profiles) |
-| More like this | +3 | saved |
+| More like this | +3 | more_like_this |
 | Saved | +2 | saved |
 | Shared, opened the source | +1.5 | saved / other |
 | Opened the detail | +0.5 (not a "meaningful" action) | other |
@@ -146,6 +146,19 @@ A taste failure never breaks a feed (`taste_or_empty`, inside a savepoint).
   The listing diagnostic is viewer-independent, so it shows 0 there; opportunity scores stay
   "member relative" as before. No admin route writes taste.
 
+### Fixes from the web end-to-end test (2026-10-01)
+
+1. **Recent negative wins.** A "Not my skill" answer cancels every positive learned for that
+   skill *before* it (a correction, not one vote among many); a later application counts
+   again. A skill in avoids never gives a post a taste boost, never appears in likes or
+   "You often apply to", and never gets a "Because you applied to <trade>" row.
+2. **Trades, not words.** getMyTaste shows a learned title word only as the skill it names,
+   by its taxonomy label in the member's language ("rider" -> "Delivery rider"); words that
+   name no skill are not shown (they still count internally). One line per trade.
+3. **"More like this" has its own source** `more_like_this`: the line "From posts you asked
+   for more of: …" and the card phrase `taste_fit_more_like_this` ("like posts you asked for
+   more of"), en/hi/te.
+
 ## Contract
 
 ### `GET /v1/me/taste` — getMyTaste
@@ -167,7 +180,7 @@ A taste failure never breaks a feed (`taste_or_empty`, inside a savepoint).
     {"id": "skill:electrical", "kind": "skill", "label": "Electrical work", "direction": "like", "source": "applied", "strength": 1.0},
     {"id": "type:employment", "kind": "post_type", "label": "Jobs", "direction": "like", "source": "applied", "strength": 1.0},
     {"id": "dist:3_8", "kind": "distance", "label": "3–8 km away", "direction": "like", "source": "applied", "strength": 0.8},
-    {"id": "word:wiring", "kind": "word", "label": "wiring", "direction": "like", "source": "applied", "strength": 0.6}
+    {"id": "skill:ac_technician", "kind": "skill", "label": "AC technician", "direction": "like", "source": "more_like_this", "strength": 0.6}
   ],
   "avoids": [
     {"id": "skill:delivery", "kind": "skill", "label": "Delivery rider", "direction": "avoid", "source": null, "strength": 1.0},
@@ -209,7 +222,7 @@ No body. A strong positive (+3); also un-hides the post if it was hidden. Return
 ### Additive fields elsewhere
 
 - `relevance_reason` / "Why this?" `signals` may now be `taste_fit`, `taste_fit_applied`,
-  `taste_fit_saved` or `explore` (translated under `ranking:signal.*`).
+  `taste_fit_saved`, `taste_fit_more_like_this` or `explore` (translated under `ranking:signal.*`).
 - Rows: keys `taste_applied:<skill>` (title_key `becauseApplied`, `{trade}`) and
   `taste_saved` (title_key `moreLikeSaved`).
 - `GET/PATCH /v1/privacy`: `personalised_recommendations: boolean`.
@@ -226,18 +239,21 @@ taste; *c* = with taste and exploration (what Discover ships).
 | Persona | n | P@5 a | P@5 b | P@5 c | R@10 a | R@10 b | R@10 c | nDCG@10 a | nDCG@10 b | nDCG@10 c |
 |---|---|---|---|---|---|---|---|---|---|---|
 | Electrician, Dilsukhnagar (lists Electrical) | 22 | 0.191 | 0.191 | 0.191 | 0.955 | 0.955 | 0.955 | 0.955 | 0.955 | 0.955 |
-| CA, Begumpet (lists Accounting, saves GST work) | 40 | 0.025 | 0.080 | 0.080 | 0.275 | 0.675 | 0.675 | 0.097 | 0.405 | 0.404 |
-| Fresher, Ameerpet (no skills; delivery, telecalling) | 40 | 0.135 | 0.440 | 0.440 | 0.200 | 0.744 | 0.698 | 0.176 | 0.694 | 0.671 |
+| CA, Begumpet (lists Accounting, saves GST work) | 40 | 0.025 | 0.075 | 0.075 | 0.275 | 0.575 | 0.550 | 0.097 | 0.354 | 0.347 |
+| Fresher, Ameerpet (no skills; delivery, telecalling) | 40 | 0.135 | 0.435 | 0.435 | 0.200 | 0.744 | 0.698 | 0.164 | 0.693 | 0.670 |
 | Tailor, Charminar | 40 | 0.105 | 0.180 | 0.180 | 0.625 | 0.900 | 0.900 | 0.555 | 0.878 | 0.878 |
 | Driver, Miyapur | 40 | 0.215 | 0.360 | 0.360 | 0.575 | 0.912 | 0.912 | 0.551 | 0.928 | 0.928 |
-| **All** | 182 | **0.129** | **0.256** | **0.256** | **0.484** | **0.826** | **0.815** | **0.419** | **0.754** | **0.749** |
+| **All** | 182 | **0.129** | **0.254** | **0.254** | **0.484** | **0.804** | **0.788** | **0.416** | **0.743** | **0.736** |
 
-Reading it: taste doubles precision@5 and lifts nDCG@10 from 0.42 to 0.75 overall. The
+(Re-run on 2026-10-01 after the three web-test fixes below; the live marketplace had also
+changed slightly since the first run, which moved the baseline too.)
+
+Reading it: taste doubles precision@5 and lifts nDCG@10 from 0.42 to 0.74 overall. The
 biggest gain is where listed skills say least about what the person wants (the fresher with
 no skills, the CA whose GST work is a different skill from "Accounting"). The electrician
 already ranks well on his listed skill, and taste neither helps nor hurts there (the held-out
-set is 1–2 posts, so P@5 is capped near 0.2). Exploration costs about 1 point of recall for
-the fresher — the price of one slot in eight going to something new.
+set is 1–2 posts, so P@5 is capped near 0.2). Exploration costs 1–2 points of recall — the
+price of one slot in eight going to something new.
 
 **Fairness check: PASS.** The same histories and over 2,100 candidate scorings replayed with the
 posters' name, community, gender and religion flipped in the fixture give byte-identical
@@ -245,7 +261,7 @@ learned models and signals.
 
 ## Checks
 
-`scripts/check_taste.py` (59 checks, through the real API, two members who join through the
+`scripts/check_taste.py` (67 checks, through the real API, two members who join through the
 normal path, full cleanup and a sweep of every `vyapar_*` table): cold start identical to
 personalisation-off (results, rows, reasons); each action type teaches with the right source
 and order (hired > applied > saved > viewed); 30-day decay halves; "Not my skill", "Too far"

@@ -67,7 +67,7 @@ EVENT_WEIGHTS: dict[str, float] = {
 }
 MEANINGFUL = frozenset(EVENT_WEIGHTS) - {"viewed"}
 # The phrase a positive feature is explained with ("Like jobs you applied to").
-SOURCE_OF = {"hired": "applied", "applied": "applied", "contacted": "applied", "completed": "applied", "more_like_this": "saved",
+SOURCE_OF = {"hired": "applied", "applied": "applied", "contacted": "applied", "completed": "applied", "more_like_this": "more_like_this",
              "saved": "saved", "shared": "saved", "external_opened": "other", "viewed": "other"}
 
 # Which features a "Not interested" reason speaks about. A reason that says
@@ -166,6 +166,7 @@ def experience_band(row: Mapping) -> str | None:
 
 
 _VOCAB: dict[int, dict[str, str]] = {}
+_WORD_SKILL: dict[str, str] = {}  # folded trade word -> the skill it names (to show it by its taxonomy label)
 
 
 def trade_vocabulary() -> dict[str, str]:
@@ -187,10 +188,15 @@ def trade_vocabulary() -> dict[str, str]:
 
         for w in WORK_WORDS:
             add(w)
+        word_skill: dict[str, str] = {}
         for (kind, slug), term in taxonomy_cache._TERMS.items():
             if kind == "capability":
                 for text in [slug, *term.names.values(), *term.aliases]:
                     add(text)
+                    for fw in fold_words(text.replace("_", " ")):
+                        word_skill.setdefault(fw, slug)
+        _WORD_SKILL.clear()
+        _WORD_SKILL.update(word_skill)
         vocab = found
         _VOCAB.clear()
         _VOCAB[key] = vocab
@@ -199,6 +205,12 @@ def trade_vocabulary() -> dict[str, str]:
 
 def word_label(folded: str) -> str:
     return trade_vocabulary().get(folded, folded)
+
+
+def word_skill(folded: str) -> str | None:
+    """The skill a learned title word names (e.g. rider -> delivery), or None."""
+    trade_vocabulary()
+    return _WORD_SKILL.get(folded)
 
 
 def title_words(title: str | None) -> set[str]:
@@ -303,6 +315,18 @@ def build_model(events: list[PostEvents], *, now: datetime | None = None, reset_
     positives: list[tuple[datetime, PostEvents]] = []
     avoid_at: dict[str, datetime] = {}
 
+    # [Recent negative wins] A "Not my skill" answer cancels every positive
+    # learned for that skill BEFORE it (it is a correction, not one vote
+    # among many); a later application to that trade counts again.
+    wrong_trade_at: dict[str, datetime] = {}
+    for ev in events:
+        at = ev.actions.get("hidden")
+        if (at is not None and ev.hidden_reason == "not_my_capability" and (reset_at is None or at > reset_at)
+                and (now - at).days <= AVOID_WINDOW_DAYS):
+            for sk in ev.features.get("skill", ()):
+                if _counts(at, _key("skill", sk), None, removed):
+                    wrong_trade_at[sk] = max(at, wrong_trade_at.get(sk, at))
+
     for ev in events:
         acts = {a: t for a, t in ev.actions.items() if t is not None and (now - t).days <= WINDOW_DAYS
                 and (reset_at is None or t > reset_at)}
@@ -358,6 +382,8 @@ def build_model(events: list[PostEvents], *, now: datetime | None = None, reset_
                     k = _key(group, v)
                     if not _counts(at, k, None, removed):
                         continue
+                    if value > 0 and group == "skill" and v in wrong_trade_at and at <= wrong_trade_at[v]:
+                        continue  # cancelled by a later "Not my skill"
                     w[k] = w.get(k, 0.0) + value
                     if value > 0:
                         s = src_score.setdefault(k, {})
@@ -461,6 +487,10 @@ class Taste:
         w = self.weights
         if not w:
             return 0.0, None
+        avoid = self.avoid
+        post_skills = set(features.get("skill", ()))
+        if post_skills and post_skills <= avoid:
+            return 0.0, None  # no taste boost at all for a post in an avoided trade
         max_abs: dict[str, float] = {}
         for k, v in w.items():
             g = k.split(":", 1)[0]
@@ -472,7 +502,9 @@ class Taste:
             if not m:
                 continue
             denom += imp
-            vals = [(w.get(_key(g, v), 0.0) / m, _key(g, v)) for v in features.get(g, ())]
+            # a skill the member avoids never lends a post a positive boost
+            vals = [(w.get(_key(g, v), 0.0) / m, _key(g, v)) for v in features.get(g, ())
+                    if not (g == "skill" and v in avoid and w.get(_key(g, v), 0.0) > 0)]
             pos = max((x for x in vals if x[0] > 0), default=(0.0, None))
             neg = min((x[0] for x in vals if x[0] < 0), default=0.0)
             total += imp * (pos[0] + neg)
@@ -505,7 +537,8 @@ class Taste:
     def reason_key(self, features: dict[str, set[str]]) -> str:
         """Which "Why this?" phrase a taste match gets."""
         _, src = self.fit(features)
-        return {"applied": "taste_fit_applied", "saved": "taste_fit_saved"}.get(src or "", "taste_fit")
+        return {"applied": "taste_fit_applied", "saved": "taste_fit_saved",
+                "more_like_this": "taste_fit_more_like_this"}.get(src or "", "taste_fit")
 
     def value_fit(self, row: Mapping) -> float:
         """[Pay too low] value_fit against the member's raised pay floor; 0 when
@@ -546,8 +579,9 @@ class Taste:
 
     def top(self, group: str, source: str | None = None, positive: bool = True, limit: int = 3) -> list[str]:
         src = self.model.get("src") or {}
+        avoid = self.avoid if (group == "skill" and positive) else set()
         items = [(v, k.split(":", 1)[1]) for k, v in self.weights.items()
                  if k.startswith(group + ":") and ((v > 0) if positive else (v < 0))
-                 and (source is None or src.get(k) == source)]
+                 and (source is None or src.get(k) == source) and k.split(":", 1)[1] not in avoid]
         items.sort(key=lambda t: (-abs(t[0]), t[1]))
         return [v for _, v in items[:limit]]

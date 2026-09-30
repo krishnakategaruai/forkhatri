@@ -218,6 +218,11 @@ async def section_learning(r: Run) -> None:
 
     st, t = r.call("POST", f"/v1/opportunities/{ac[-1]}/more-like-this")
     check(st == 200 and t["confidence"] > 0, f"moreLikeThis returns the updated taste ({st}, confidence {t.get('confidence')})")
+    mlt = next((i for i in t.get("likes", []) if i["id"] == "skill:ac_technician"), None)
+    check(mlt is not None and mlt["source"] == "more_like_this" and "From posts you asked for more of" in t["summary_text"],
+          f"'More like this' has its own source and line ({mlt and mlt['source']}; {t.get('summary_text')})")
+    st, why = r.call("GET", f"/v1/opportunities/{ac[-1]}/why")
+    check(st == 200 and "taste_fit_saved" not in why["signals"], f"and is never explained as 'saved' ({why.get('signals')})")
     st, _ = r.call("POST", f"/v1/opportunities/{r.shop_job}/more-like-this", member=r.shop)
     check(st == 400, f"moreLikeThis on your own post is refused ({st})")
     st, _ = r.call("POST", "/v1/opportunities/00000000-0000-0000-0000-000000000000/more-like-this")
@@ -248,10 +253,32 @@ async def section_learning(r: Run) -> None:
 async def section_negatives(r: Run) -> None:
     print("\n== Hard negatives: Not my skill, Too far, Pay too low ==")
     delivery = await live_posts(r, "required_capabilities = ARRAY['delivery']")
+    delivery_jobs = await live_posts(r, "required_capabilities = ARRAY['delivery'] AND type = 'employment'")
+    # the contradiction found in the web test: he applied to a delivery job once, then says "wrong trade"
+    st, enq = r.call("POST", "/v1/enquiries", {"opportunity_id": delivery_jobs[-1], "message": "I have a bike and can do deliveries in the evening."})
+    if st == 201:
+        r.enquiries.add(enq["id"])
+    before = (await r.model()).get("w", {}).get("skill:delivery", 0)
+    check(st == 201 and before > 0, f"after applying to a delivery job, Delivery is a like ({st}, weight {before})")
+    delivery = [x for x in delivery if x != delivery_jobs[-1]]
     st, _ = r.call("POST", f"/v1/opportunities/{delivery[0]}/not-interested", {"reason": "not_my_capability"})
     t = r.taste()
     check(st == 200 and any(i["id"] == "skill:delivery" for i in t["avoids"]) and "Not interested in: Delivery" in t["summary_text"],
           f"'Not my skill' avoids Delivery at once ({t['summary_text']})")
+    delivery_label = next(i["label"] for i in t["avoids"] if i["id"] == "skill:delivery")
+    check(not any(i["label"] == delivery_label for i in t["likes"]) and "Delivery" not in t["summary_text"].split("Not interested in")[0],
+          "the recent 'wrong trade' wins: Delivery is no longer a like, and not in 'You often apply to'")
+    keys = [x["key"] for x in r.rows()["rows"]]
+    check(not any(k.startswith("taste_applied:") and k.split(":", 1)[1] == "delivery" for k in keys),
+          f"no 'Because you applied to Delivery' row ({keys})")
+    from app.taste import Taste, post_features
+
+    drow = await r.db.fetchrow("SELECT * FROM vyapar_opportunities.opportunities WHERE id = $1::uuid", delivery_jobs[0])
+    check(Taste(await r.model()).fit(post_features(drow, 3.0))[0] == 0, "and a delivery post gets no taste boost at all")
+    check(not any(i["kind"] == "word" for i in t["likes"] + t["avoids"]),
+          f"no bare title words are shown ({[i['label'] for i in t['likes'] + t['avoids'] if i['kind'] == 'word']})")
+    labels = [(i["direction"], i["label"]) for i in t["likes"] + t["avoids"]]
+    check(len(labels) == len(set(labels)), "one line per trade (a word that names a skill is shown by the skill's label)")
     res = r.results(full=True)
     items = res["items"]
     ids = [c["id"] for c in items]
@@ -273,7 +300,7 @@ async def section_negatives(r: Run) -> None:
         lim = t["distance_limit_km"]
         check(st == 200 and lim is not None and 3 <= lim < far[0]["d"], f"'Too far' at {far[0]['d']:.1f} km sets a limit of {lim} km")
         items = r.results()
-        avoided = set(delivery)
+        avoided = set(delivery) | set(delivery_jobs)
 
         def demoted(c) -> bool:
             return c["id"] in avoided or (c["work_mode"] != "remote" and c["distance_km"] is not None and c["distance_km"] > lim)

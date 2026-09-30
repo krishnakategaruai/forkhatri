@@ -37,7 +37,7 @@ from app.errors import ApiError
 from app.i18n import translate
 from app.identity import AuthzContext
 from app.taste import (
-    Taste, PostEvents, build_model, word_label, listing_features, monthly_top, post_features, project_top, WINDOW_DAYS,
+    Taste, PostEvents, build_model, word_label, word_skill, listing_features, monthly_top, post_features, project_top, WINDOW_DAYS,
 )
 from app.taxonomy_cache import label_for
 
@@ -62,7 +62,7 @@ class TasteItemOut(BaseModel):
                                   "profile_skill | profile_category | profile_kind | profile_distance | distance_limit | pay_floor")
     label: str = Field(description="What it is, in the member's language")
     direction: Literal["like", "avoid"]
-    source: Literal["applied", "saved", "other"] | None = Field(default=None, description="The kind of action it was mostly learned from")
+    source: Literal["applied", "saved", "more_like_this", "other"] | None = Field(default=None, description="The kind of action it was mostly learned from")
     strength: float = Field(description="0..1 relative to the strongest item of its kind")
 
 
@@ -222,12 +222,29 @@ def taste_out(taste: Taste, lang: str, updated_at: datetime | None = None) -> Ta
         g = k.split(":", 1)[0]
         max_abs[g] = max(max_abs.get(g, 0.0), abs(v))
     likes, avoids = [], []
+    avoid_skills = set(m.get("avoid") or [])
+    shown: set[tuple[str, str]] = set()  # (direction, label): one line per trade
     for k, v in sorted(w.items(), key=lambda kv: (-abs(kv[1]), kv[0])):
-        g = k.split(":", 1)[0]
+        g, value = k.split(":", 1)
         strength = abs(v) / max_abs[g] if max_abs.get(g) else 0.0
         if strength < 0.15 or g not in _KIND_OF:
             continue
-        item = TasteItemOut(id=k, kind=_KIND_OF[g], label=_label(k, lang), direction="like" if v > 0 else "avoid",
+        direction = "like" if v > 0 else "avoid"
+        kind, label = _KIND_OF[g], _label(k, lang)
+        if g == "word":
+            # a learned title word is shown only as the trade it names, by its taxonomy label
+            slug = word_skill(value)
+            if slug is None:
+                continue
+            kind, label = "skill", label_for(slug, lang)
+            if direction == "like" and slug in avoid_skills:
+                continue
+        if g == "skill" and direction == "like" and value in avoid_skills:
+            continue
+        if (direction, label) in shown:
+            continue
+        shown.add((direction, label))
+        item = TasteItemOut(id=k, kind=kind, label=label, direction=direction,
                             source=src.get(k) if v > 0 else None, strength=round(strength, 2))
         (likes if v > 0 else avoids).append(item)
     likes = likes[:15]
@@ -248,6 +265,9 @@ def taste_out(taste: Taste, lang: str, updated_at: datetime | None = None) -> Ta
     saved = [s for s in taste.top("skill", "saved") if s not in applied]
     if saved:
         summary.append(translate("ranking.taste.summary.saved", lang, items=", ".join(label_for(s, lang) for s in saved)))
+    more = [s for s in taste.top("skill", "more_like_this") if s not in applied and s not in saved]
+    if more:
+        summary.append(translate("ranking.taste.summary.moreLikeThis", lang, items=", ".join(label_for(s, lang) for s in more)))
     km = min(x for x in (dist_limit, usual.get("km")) if x) if (dist_limit or usual.get("km")) else None
     if km:
         summary.append(translate("ranking.taste.summary.within", lang, km=_km(km)))
