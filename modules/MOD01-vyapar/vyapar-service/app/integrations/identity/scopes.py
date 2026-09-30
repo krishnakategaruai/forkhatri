@@ -68,6 +68,7 @@ TOKEN_FORBIDDEN_SEGMENTS: tuple[str, ...] = ("/verification", "/otp/", "/credent
 WRITE_SCOPE_BY_PREFIX: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("/v1/opportunities", ("opportunities:write",)),
     ("/v1/listings", ("listings:write",)),
+    ("/v1/me/profile", ("listings:write",)),  # [Backend A] the one profile is a listing
     ("/v1/enquiries", ("enquiries:write",)),
     ("/v1/reviews", ("reviews:write",)),
     ("/v1/partnership-requests", ("partnerships:write",)),

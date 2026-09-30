@@ -4,15 +4,15 @@
     "textTooLong": "That text is too long — please keep it under {max} characters.",
     "unsupportedWithoutAi": "Reading a photo needs the AI assistant, which is not switched on here. Please type the details instead.",
     "unavailable": "The AI assistant is not answering right now. Please try again in a moment.",
-    "posterOnly": "Only the person who posted this opportunity can see its shortlist.",
+    "posterOnly": "Only the person who posted this can see its shortlist.",
     "imageNotFound": "We could not find that image. Please upload it again.",
     "imageTooLarge": "That image is too large — please use one under 5 MB.",
     "imageRequired": "Please upload a photo or give a link to one.",
     "pdfNeedsUpload": "Please upload the PDF file itself rather than a link to it.",
-    "draftOrOpportunityRequired": "Send a draft or the id of a posted opportunity."
+    "draftOrOpportunityRequired": "Send a draft or the id of a published post."
   },
   "ask": {
-    "type": "What kind of opportunity is this — a job, freelance work, a local service, a partnership, training or a community activity?",
+    "type": "What kind of post is this — a job, freelance work, a local service, a partnership, training or a community activity?",
     "title": "What should the heading say?",
     "description": "Describe the work in a few lines.",
     "location": "Where is the work? An area or locality is enough.",
@@ -91,7 +91,7 @@
     "mention_experience": "Say how many years you have done this.",
     "state_availability": "Say when you can start.",
     "state_price": "Give your price or rate.",
-    "answer_screening_questions": "Answer the questions the poster asked.",
+    "answer_screening_questions": "Answer the questions the person who posted asked.",
     "keep_it_short": "Keep it short — a few lines are read, a page is not.",
     "remove_contact_details": "Leave out phone numbers and e-mail; share them in the chat once connected.",
     "be_specific_to_this_work": "Refer to this particular work, not a general message.",
@@ -99,10 +99,10 @@
     "clear_next_step": "End with a clear next step, such as a time to talk."
   },
   "bid": {
-    "market": "Based on {n} similar opportunities ({market}).",
-    "poster_budget": "Based on the budget the poster stated: {poster}.",
-    "clamped_to_poster_budget": "Similar work usually goes for {market}, but this poster has offered {poster} — so the suggestion stays within their budget.",
-    "market_above_poster_budget": "Similar work usually pays {market}, more than this poster's budget of {poster}. The suggestion stays at their budget; if the work needs more, say why in your message.",
+    "market": "Based on {n} similar posts ({market}).",
+    "poster_budget": "Based on the budget the person who posted stated: {poster}.",
+    "clamped_to_poster_budget": "Similar work usually goes for {market}, but this person has offered {poster} — so the suggestion stays within their budget.",
+    "market_above_poster_budget": "Similar work usually pays {market}, more than this person's budget of {poster}. The suggestion stays at their budget; if the work needs more, say why in your message.",
     "none": "No budget was given and there is too little similar work to compare — quote what the work is worth to you."
   },
   "proposal": {

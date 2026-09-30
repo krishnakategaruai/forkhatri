@@ -2,16 +2,26 @@
 
 // [FE1 — 2026-09-29] In-place legal acceptance. Sending a response or
 // publishing a post is refused with 403 `acceptance_required` when the
-// member has not accepted the latest privacy notice or terms (FR53). Found
-// live: a proposal simply failed with "Something went wrong". Instead of a
-// detour to another screen, the document is shown here (collapsed, readable)
-// with one "Accept and continue" that accepts it and retries the action.
+// member has not accepted the latest privacy notice or terms (FR53). Instead
+// of a detour to another screen, the document is shown here (collapsed,
+// readable) with one "Accept and continue" that accepts it and retries.
+// [Critique N12] Both documents are checked up front (`GET /v1/legal/{kind}`
+// carries `accepted`), and every one still outstanding is shown and accepted
+// with the same single tap — never two prompts one after the other.
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/lib/sdk";
 import { useSdk } from "@/lib/sdk/react";
 
 export type LegalKind = "privacy" | "terms";
+const KINDS: LegalKind[] = ["privacy", "terms"];
+
+interface LegalDoc {
+  kind: LegalKind;
+  title: string;
+  body: string;
+  accepted: boolean;
+}
 
 /** The document kind when `e` is an acceptance_required refusal, else null. */
 export function acceptanceKind(e: unknown): LegalKind | null {
@@ -23,19 +33,25 @@ export function acceptanceKind(e: unknown): LegalKind | null {
 export default function AcceptancePrompt({ kind, onAccepted }: { kind: LegalKind; onAccepted: () => void }) {
   const { t } = useTranslation(["hiring", "common"]);
   const sdk = useSdk();
-  const [doc, setDoc] = useState<{ title: string; body: string } | null>(null);
+  const [docs, setDocs] = useState<LegalDoc[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    sdk.client.get<{ title: string; body: string }>(`/v1/legal/${kind}`).then(setDoc).catch(() => setDoc(null));
-  }, [sdk, kind]);
+    Promise.all(KINDS.map((k) => sdk.client.get<LegalDoc>(`/v1/legal/${k}`).catch(() => null))).then((rows) =>
+      setDocs(rows.filter((d): d is LegalDoc => !!d)),
+    );
+  }, [sdk]);
+
+  // The refused kind is always outstanding; the other one only if not yet accepted.
+  const pending = (docs ?? []).filter((d) => d.kind === kind || !d.accepted);
+  const kinds = pending.length ? pending.map((d) => d.kind) : [kind];
 
   async function accept() {
     setBusy(true);
     setError(null);
     try {
-      await sdk.client.post(`/v1/legal/${kind}/accept`);
+      for (const k of kinds) await sdk.client.post(`/v1/legal/${k}/accept`);
       onAccepted();
     } catch {
       setError(t("common:state.actionFailed"));
@@ -46,16 +62,16 @@ export default function AcceptancePrompt({ kind, onAccepted }: { kind: LegalKind
 
   return (
     <div className="vy-confirm-inline" role="alert">
-      <strong style={{ color: "var(--text-primary)" }}>{t(`hiring:accept.title.${kind}`)}</strong>
+      <strong style={{ color: "var(--text-primary)" }}>{kinds.length > 1 ? t("hiring:accept.title.both") : t(`hiring:accept.title.${kinds[0]}`)}</strong>
       <p style={{ fontSize: 13 }}>{t("hiring:accept.why")}</p>
-      {doc && (
-        <details>
+      {pending.map((doc) => (
+        <details key={doc.kind}>
           <summary style={{ cursor: "pointer", fontSize: 13, fontWeight: 600 }}>{t("hiring:accept.read", { title: doc.title })}</summary>
           <p style={{ fontSize: 13, whiteSpace: "pre-wrap", marginTop: 8, maxHeight: 220, overflow: "auto" }}>{doc.body}</p>
         </details>
-      )}
+      ))}
       {error && <p className="vy-error">{error}</p>}
-      <button type="button" className="vy-btn vy-btn-primary" style={{ alignSelf: "flex-start" }} disabled={busy} onClick={accept}>
+      <button type="button" className="vy-btn vy-btn-primary" style={{ alignSelf: "flex-start" }} disabled={busy || docs === null} onClick={accept}>
         {busy ? t("hiring:apply.sending") : t("hiring:accept.acceptAndContinue")}
       </button>
     </div>

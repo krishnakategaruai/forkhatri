@@ -160,6 +160,28 @@ const t = (key: string, target: string): RailTrade => {
   return { key, icon: v.icon, family: v.family, target };
 };
 
+/** The taxonomy category a rail target belongs to. */
+export function railCategory(target: string): string | null {
+  if (target.startsWith("cat:")) return target.slice(4);
+  return SPECIALTY[target]?.[1] ?? null;
+}
+
+/**
+ * [Critique N2] The rail, with the viewer's own categories first (in their
+ * order; Accounting for a CA, Electricians for an electrician), the rest
+ * in the usual order. Without categories it is unchanged.
+ */
+export function orderedRail(viewerCategories: readonly string[] | undefined): RailTrade[] {
+  if (!viewerCategories || viewerCategories.length === 0) return RAIL_TRADES;
+  const rank = (r: RailTrade) => {
+    const i = viewerCategories.indexOf(railCategory(r.target) ?? "");
+    return i < 0 ? viewerCategories.length : i;
+  };
+  return RAIL_TRADES.map((r, i) => [r, i] as const)
+    .sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1])
+    .map(([r]) => r);
+}
+
 export const RAIL_TRADES: RailTrade[] = [
   t("electricians", "electrical"),
   t("plumbers", "plumbing"),

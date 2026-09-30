@@ -36,10 +36,15 @@ import ApplicantCard from "@/app/components/applicants/ApplicantCard";
 import ApplicantDetail from "@/app/components/applicants/ApplicantDetail";
 import CompareTable from "@/app/components/applicants/CompareTable";
 import { useApplicantsBoard, type SortKey } from "@/app/components/applicants/useApplicantsBoard";
+import { payLines } from "@/app/components/discover/DiscoverCard";
+import Link from "next/link";
+import { ChevronLeft, Users } from "lucide-react";
+import DealsEmpty from "@/app/components/deals/Empty";
+import "@/app/styles/deals-2026.css";
 
 export default function ApplicantsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = useParamsPromise(params);
-  const { t } = useTranslation(["hiring", "common"]);
+  const { t, i18n } = useTranslation(["hiring", "common", "explore"]);
   const sdk = useSdk();
   const b = useApplicantsBoard(id);
   // "Start a contract" follows FE2's one rule (ContractEntry.useContractEligible).
@@ -52,6 +57,10 @@ export default function ApplicantsPage({ params }: { params: Promise<{ id: strin
   const opp = b.opportunity;
   const type = opp?.type ?? "employment";
   const noun = type === "freelance" ? "proposals" : type === "employment" ? "applicants" : "responses";
+  // Never "LPA" (glossary): an annual figure reads as the monthly amount with the yearly one beside it.
+  const rawPay = opp?.compensation_label || opp?.compensation || "";
+  const payParts = rawPay ? payLines(rawPay, i18n.language) : null;
+  const pay = payParts ? (payParts.monthly ? `${t("explore:card.perMonth", { amount: payParts.main })} (${t("explore:card.lakhAYear", { range: payParts.yearlyLakh })})` : payParts.main) : "";
 
   async function openCompare() {
     setCompare(null);
@@ -76,11 +85,21 @@ export default function ApplicantsPage({ params }: { params: Promise<{ id: strin
 
   return (
     <Screen width="console">
-      <div className="vy-board-head">
-        <a href={`/opportunities/${id}`} style={{ fontSize: 14 }}>← {t("hiring:board.backToPost")}</a>
-        <div className="vy-stack" style={{ gap: 4 }}>
+      <div className="vy-board-head vy-dl-page" style={{ gap: "var(--space-3)" }}>
+        <Link href={`/opportunities/${id}`} transitionTypes={["vy-back"]} className="vy-dl-back">
+          <ChevronLeft size={18} strokeWidth={2} aria-hidden="true" />
+          {t("hiring:board.backToPost")}
+        </Link>
+        <div className="vy-dl-head">
           <h1>{t(`hiring:board.title.${noun}`)}</h1>
-          {opp ? <p>{opp.title}{opp.compensation_label || opp.compensation ? ` · ${opp.compensation_label ?? opp.compensation}` : ""}</p> : <div className="vy-skeleton" style={{ height: 18, width: 260 }} />}
+          {opp ? (
+            <p>
+              {opp.title}
+              {pay ? ` · ${pay}` : ""}
+            </p>
+          ) : (
+            <div className="vy-skeleton" style={{ height: 18, width: 260 }} />
+          )}
         </div>
         <div className="vy-board-bar">
           <div className="vy-stage-tabs" role="tablist" aria-label={t("hiring:board.stagesLabel")}>
@@ -120,25 +139,22 @@ export default function ApplicantsPage({ params }: { params: Promise<{ id: strin
         </div>
       ) : b.items.length === 0 ? (
         b.total === 0 ? (
-          <div className="vy-empty">
-            <span className="vy-empty-mark" aria-hidden="true">◌</span>
-            <strong style={{ color: "var(--text-primary)" }}>{t(`hiring:board.empty.${noun}`)}</strong>
-            {b.suggestions.length > 0 && (
-              <>
-                <p>{t("hiring:board.emptyHelps")}</p>
+          <DealsEmpty
+            icon={<Users size={24} strokeWidth={1.75} aria-hidden="true" />}
+            title={t(`hiring:board.empty.${noun}`)}
+            body={b.suggestions.length > 0 ? t("hiring:board.emptyHelps") : undefined}
+            action={
+              b.suggestions.length > 0 ? (
                 <ul className="vy-signal-list" style={{ textAlign: "left", maxWidth: 520 }}>
                   {b.suggestions.map((s) => (
                     <li key={s.code}>{s.message}</li>
                   ))}
                 </ul>
-              </>
-            )}
-          </div>
+              ) : undefined
+            }
+          />
         ) : (
-          <div className="vy-empty">
-            <span className="vy-empty-mark" aria-hidden="true">◌</span>
-            <p>{t(`hiring:board.emptyStage.${b.stage}`)}</p>
-          </div>
+          <DealsEmpty tone="neutral" icon={<Users size={24} strokeWidth={1.75} aria-hidden="true" />} title={t(`hiring:board.emptyStage.${b.stage}`)} />
         )
       ) : (
         <div className="vy-pane">
@@ -198,7 +214,7 @@ export default function ApplicantsPage({ params }: { params: Promise<{ id: strin
           </div>
           <div className="vy-pane-detail vy-console-only">
             {selected && (
-              <div className="vy-card" style={{ position: "sticky", top: 24 }}>
+              <div className="vy-dl-pane-detail">
                 <ApplicantDetail
                   a={selected}
                   name={b.displayName(selected)}

@@ -10,7 +10,7 @@
 // browser's localStorage.
 import { useEffect, useState } from "react";
 import { I18nextProvider } from "react-i18next";
-import { DEFAULT_LANGUAGE, type Language, getI18n, isSupported } from "./config";
+import { DEFAULT_LANGUAGE, LANGUAGE_COOKIE, type Language, getI18n, isSupported } from "./config";
 
 const STORAGE_KEY = "vyapar.language";
 
@@ -29,8 +29,16 @@ async function hostLanguage(): Promise<Language | null> {
   }
 }
 
-export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [i18n] = useState(() => getI18n(DEFAULT_LANGUAGE));
+function writeLanguageCookie(lang: Language) {
+  document.cookie = `${LANGUAGE_COOKIE}=${lang}; path=/; max-age=31536000; samesite=lax`;
+}
+
+// [Critique N10] `initialLanguage` comes from the language cookie, read by
+// the server layout, so server and first client render agree; the effect
+// below only corrects a first visit (no cookie yet) and keeps the cookie
+// in step with localStorage and the host account.
+export function I18nProvider({ children, initialLanguage = DEFAULT_LANGUAGE }: { children: React.ReactNode; initialLanguage?: Language }) {
+  const [i18n] = useState(() => getI18n(initialLanguage));
 
   useEffect(() => {
     let next: Language = DEFAULT_LANGUAGE;
@@ -48,6 +56,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     }
     if (i18n.language !== next) void i18n.changeLanguage(next);
     document.documentElement.lang = next;
+    writeLanguageCookie(next);
 
     // [Owner, 2026-09-27] Hosted in ForKhatri, the language chosen there is
     // the person's language here too. Vyapar stays host-independent: this runs
@@ -60,6 +69,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
       if (!alive || !lang || lang === i18n.language) return;
       void i18n.changeLanguage(lang);
       document.documentElement.lang = lang;
+      writeLanguageCookie(lang);
       try {
         localStorage.setItem(STORAGE_KEY, lang);
       } catch {
@@ -86,6 +96,7 @@ export function setPreferredLanguage(lang: Language): void {
   } catch {
     // Non-fatal: the choice just won't survive a reload on this device.
   }
+  writeLanguageCookie(lang);
   document.documentElement.lang = lang;
   // Best-effort sync to the member's own row — the backend is the source
   // of truth for the next device/session; localStorage is the same-device

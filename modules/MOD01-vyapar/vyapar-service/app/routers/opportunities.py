@@ -9,9 +9,10 @@ from typing import Literal
 import asyncpg
 from fastapi import APIRouter, Depends, Query
 
-from app.db import get_conn
+from app.config import get_settings
+from app.db import get_conn, get_pool
 from app.deps import Locale
-from app.errors import ERROR_RESPONSES
+from app.errors import ERROR_RESPONSES, ApiError
 from app.identity import AuthzContext, resolve_authz_context
 from app.profile_cards import ProfileCard
 from app.services import opportunities as svc
@@ -34,6 +35,13 @@ from app.services.pagination import DEFAULT_LIMIT, MAX_LIMIT, Page
 router = APIRouter(prefix="/v1/opportunities", tags=["opportunities"], responses=ERROR_RESPONSES)
 
 
+@router.post("/jobs/expire", response_model=svc.ExpiryPassOut, operation_id="runOpportunityExpiry", summary="Expire posts whose last date has passed, now (dev only; runs hourly anyway)")
+async def run_opportunity_expiry(lang: Locale, ctx: AuthzContext = Depends(resolve_authz_context)) -> svc.ExpiryPassOut:
+    if not get_settings().dev_mode:
+        raise ApiError(404, "opportunities.error.devOnly", lang)
+    return svc.ExpiryPassOut(**await svc.run_opportunity_expiry_pass(get_pool()))
+
+
 @router.post("", response_model=OpportunityOut, status_code=201, operation_id="createOpportunity", summary="Create an opportunity draft")
 async def create_opportunity(
     body: OpportunityCreate,
@@ -46,10 +54,11 @@ async def create_opportunity(
 
 @router.get("/mine", response_model=list[OpportunityOut], operation_id="listMyOpportunities", summary="List opportunities posted by the signed-in member")
 async def list_my_opportunities(
+    lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
     conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[OpportunityOut]:
-    return await svc.list_my_opportunities(conn, ctx)
+    return await svc.list_my_opportunities(conn, ctx, lang)
 
 
 @router.get("/mine/page", response_model=Page[OpportunityOut], operation_id="listMyOpportunitiesPage", summary="List opportunities posted by the signed-in member, one page at a time")
@@ -140,9 +149,9 @@ async def close_opportunity(opportunity_id: str, lang: Locale, ctx: AuthzContext
     return await svc.close_opportunity(conn, ctx, lang, opportunity_id=opportunity_id)
 
 
-@router.post("/{opportunity_id}/renew", response_model=OpportunityOut, operation_id="renewOpportunity", summary="Renew a stale or expired opportunity")
-async def renew_opportunity(opportunity_id: str, lang: Locale, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn, scope="function")) -> OpportunityOut:
-    return await svc.renew_opportunity(conn, ctx, lang, opportunity_id=opportunity_id)
+@router.post("/{opportunity_id}/renew", response_model=OpportunityOut, operation_id="renewOpportunity", summary="Renew a stale or expired opportunity (a passed last date is extended)")
+async def renew_opportunity(opportunity_id: str, lang: Locale, body: svc.RenewIn | None = None, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn, scope="function")) -> OpportunityOut:
+    return await svc.renew_opportunity(conn, ctx, lang, opportunity_id=opportunity_id, body=body)
 
 
 @router.post("/{opportunity_id}/save", response_model=OpportunityOut, operation_id="saveOpportunity", summary="Save an opportunity")

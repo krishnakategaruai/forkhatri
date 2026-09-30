@@ -3,19 +3,26 @@
 // [TR036] Six contextual privacy controls, one screen (FR36).
 // [TR037] Data export, correction, deletion, consent withdrawal (FR37).
 // [TR038] Inspect and confirm derived preferences (FR38).
-// One screen, per FR36's own "single Privacy screen" requirement, rather
-// than three separate pages — fewer taps to see and change everything about
-// what Vyapar shares. Each of the six controls carries a one-sentence
-// explanation of who sees what (FR36's own contextual-explainer rule,
-// satisfied here as a permanent visible caption rather than a one-time
-// interstitial the member would have to remember). Data rights and derived
-// preferences sit below as their own sections on the same screen.
+// One screen, per FR36's own "single Privacy screen" requirement. Each
+// control carries a one-sentence explanation of who sees what, as a
+// permanent visible caption. Data rights and learned preferences sit below
+// as their own sections on the same screen.
+// [Design language 2026-09-29] A page header; each section a card with a
+// tinted icon tile, a title and one line; each control a full-row switch
+// (the whole 52px row is the tap target, not a 16px checkbox); the contact
+// choice as chips instead of a native <select>; the export as a nested
+// block. The desktop "On this page" nav (globals .vy-settings) stays.
 // Traces to: FR36, FR37, FR38, TR036, TR037, TR038
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { BarChart3, Download, Eye, Sparkles, Trash } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import Screen from "@/app/components/Screen";
+import { SkeletonGrid } from "@/app/components/States";
+import PageHeader from "@/app/components/account/PageHeader";
+import SwitchRow from "@/app/components/account/SwitchRow";
 import { formatDate } from "@/lib/format"; // [FE2] Indian date order
+import "@/app/styles/account-2026.css";
 
 interface PrivacySettings {
   capability_visible: boolean;
@@ -47,6 +54,8 @@ interface Preference {
   proposed_at: string;
 }
 
+const DISCLOSURES: PrivacySettings["contact_disclosure"][] = ["public", "after_accept", "hidden"];
+
 export default function PrivacyPage() {
   const { t, i18n } = useTranslation(["privacy", "common"]);
   const [settings, setSettings] = useState<PrivacySettings | null>(null);
@@ -57,15 +66,16 @@ export default function PrivacyPage() {
   const [exportDoc, setExportDoc] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
-  async function load() {
-    const [s, r, p] = await Promise.all([
+  function load() {
+    return Promise.all([
       api.get<PrivacySettings>("/v1/privacy"),
       api.get<DataRequest[]>("/v1/privacy/requests"),
       api.get<Preference[]>("/v1/preferences/mine"),
-    ]);
-    setSettings(s);
-    setRequests(r);
-    setPreferences(p.filter((x) => x.state !== "removed"));
+    ]).then(([s, r, p]) => {
+      setSettings(s);
+      setRequests(r);
+      setPreferences(p.filter((x) => x.state !== "removed"));
+    });
   }
 
   useEffect(() => {
@@ -128,23 +138,29 @@ export default function PrivacyPage() {
     }
   }
 
-  if (!settings) return <Screen><p className="vy-muted">{t("common:state.loading")}</p></Screen>;
+  if (!settings)
+    return (
+      <Screen width="wide">
+        <div className="vy-skeleton" style={{ height: 40, width: 200, maxWidth: "60%" }} aria-hidden="true" />
+        <SkeletonGrid count={2} grid={false} />
+      </Screen>
+    );
 
-  const toggleRow = (labelKey: string, helpKey: string, field: keyof PrivacySettings, value: boolean) => (
-    <div className="vy-row vy-toggle-row" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
-      <div>
-        <div>{t(`privacy:control.${labelKey}` as "control.discoverable")}</div>
-        <p className="vy-muted" style={{ fontSize: 12, marginTop: 2 }}>{t(`privacy:control.${helpKey}` as "control.discoverableHelp")}</p>
-      </div>
-      <input type="checkbox" checked={value} disabled={busy} onChange={(e) => update(field, e.target.checked)} />
-    </div>
+  const toggle = (labelKey: string, helpKey: string, field: keyof PrivacySettings, value: boolean) => (
+    <SwitchRow
+      id={`privacy-${field}`}
+      label={t(`privacy:control.${labelKey}` as "control.discoverable")}
+      hint={t(`privacy:control.${helpKey}` as "control.discoverableHelp")}
+      checked={value}
+      disabled={busy}
+      onChange={(next) => update(field, next)}
+    />
   );
 
   // [IMP39 — desktop layout] A settings layout at ≥900px: a sticky list of
-  // this screen's sections on the left (plain in-page anchors, so it works
-  // without script and keeps the one-screen rule of FR36), the settings on
-  // the right at a comfortable measure. Below 900px the nav is display:none
-  // and both wrappers are display:contents — the phone screen is unchanged.
+  // this screen's sections on the left (plain in-page anchors), the settings
+  // on the right. Below 900px the nav is display:none and both wrappers are
+  // display:contents.
   const sections = [
     { id: "privacy-controls", label: t("privacy:controlsTitle") },
     { id: "privacy-analytics", label: t("privacy:analyticsTitle") },
@@ -154,96 +170,150 @@ export default function PrivacyPage() {
 
   return (
     <Screen width="wide">
-      <h1>{t("privacy:title")}</h1>
-      {notice && <p className="vy-error">{notice}</p>}
+      <PageHeader title={t("privacy:title")} purpose={t("privacy:purpose")} backHref="/profile" backLabel={t("common:nav.profile")} />
+      {notice && <p className="vy-error" role="status">{notice}</p>}
 
       <div className="vy-settings">
-      <nav className="vy-settings-nav" aria-label={t("common:layout.onThisPage")}>
-        <span className="vy-ctx-heading" style={{ padding: "0 12px 8px" }}>{t("common:layout.onThisPage")}</span>
-        {sections.map((sec) => (
-          <a key={sec.id} href={`#${sec.id}`}>{sec.label}</a>
-        ))}
-      </nav>
-      <div className="vy-settings-main">
-      <section id="privacy-controls" className="vy-card vy-stack">
-        <h2 className="vy-card-title">{t("privacy:controlsTitle")}</h2>
-        {toggleRow("discoverable", "discoverableHelp", "discoverable", settings.discoverable)}
-        {toggleRow("capabilityVisible", "capabilityVisibleHelp", "capability_visible", settings.capability_visible)}
-        {toggleRow("seekingVisible", "seekingVisibleHelp", "seeking_visible", settings.seeking_visible)}
-        <div className="vy-toggle-row">
-          <div>{t("privacy:control.contactDisclosure")}</div>
-          <p className="vy-muted" style={{ fontSize: 12, marginTop: 2, marginBottom: 6 }}>{t("privacy:control.contactDisclosureHelp")}</p>
-          <select className="vy-select" value={settings.contact_disclosure} disabled={busy} onChange={(e) => update("contact_disclosure", e.target.value)}>
-            <option value="public">{t("privacy:contactOption.public")}</option>
-            <option value="after_accept">{t("privacy:contactOption.after_accept")}</option>
-            <option value="hidden">{t("privacy:contactOption.hidden")}</option>
-          </select>
-        </div>
-        {toggleRow("notificationsEnabled", "notificationsEnabledHelp", "notifications_enabled", settings.notifications_enabled)}
-        {toggleRow("commercialComms", "commercialCommsHelp", "commercial_comms", settings.commercial_comms)}
-      </section>
+        <nav className="vy-settings-nav" aria-label={t("common:layout.onThisPage")}>
+          <span className="vy-ctx-heading" style={{ padding: "0 12px 8px" }}>{t("common:layout.onThisPage")}</span>
+          {sections.map((sec) => (
+            <a key={sec.id} href={`#${sec.id}`}>{sec.label}</a>
+          ))}
+        </nav>
+        <div className="vy-settings-main">
+          <section id="privacy-controls" className="vy-card vy-acct-card" aria-labelledby="privacy-controls-title">
+            <div className="vy-acct-card-head">
+              <span className="vy-acct-tile" data-tint="sky" aria-hidden="true">
+                <Eye size={20} strokeWidth={1.9} />
+              </span>
+              <h2 id="privacy-controls-title">{t("privacy:controlsTitle")}</h2>
+              <p>{t("privacy:controlsHelp")}</p>
+            </div>
+            <div className="vy-acct-card-body" style={{ gap: 0 }}>
+              {toggle("discoverable", "discoverableHelp", "discoverable", settings.discoverable)}
+              {toggle("capabilityVisible", "capabilityVisibleHelp", "capability_visible", settings.capability_visible)}
+              {toggle("seekingVisible", "seekingVisibleHelp", "seeking_visible", settings.seeking_visible)}
+              <div className="vy-acct-switch" style={{ gridTemplateColumns: "minmax(0, 1fr)", cursor: "default" }}>
+                <span className="vy-acct-switch-text">
+                  <span className="vy-acct-switch-label">{t("privacy:control.contactDisclosure")}</span>
+                  <span className="vy-acct-switch-hint">{t("privacy:control.contactDisclosureHelp")}</span>
+                </span>
+                <div className="vy-acct-inline-choices" role="group" aria-label={t("privacy:control.contactDisclosure")} style={{ marginTop: 6 }}>
+                  {DISCLOSURES.map((d) => (
+                    <button key={d} type="button" className="vy-chip" aria-pressed={settings.contact_disclosure === d} disabled={busy} onClick={() => update("contact_disclosure", d)}>
+                      {t(`privacy:contactOption.${d}` as "contactOption.public")}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {toggle("notificationsEnabled", "notificationsEnabledHelp", "notifications_enabled", settings.notifications_enabled)}
+              {toggle("commercialComms", "commercialCommsHelp", "commercial_comms", settings.commercial_comms)}
+            </div>
+          </section>
 
-      <section id="privacy-analytics" className="vy-card vy-stack">
-        <h2 className="vy-card-title">{t("privacy:analyticsTitle")}</h2>
-        {toggleRow("behavioralAnalytics", "behavioralAnalyticsHelp", "behavioral_analytics", settings.behavioral_analytics)}
-        {toggleRow("digestEnabled", "digestEnabledHelp", "digest_enabled", settings.digest_enabled)}
-      </section>
+          <section id="privacy-analytics" className="vy-card vy-acct-card" aria-labelledby="privacy-analytics-title">
+            <div className="vy-acct-card-head">
+              <span className="vy-acct-tile" data-tint="plum" aria-hidden="true">
+                <BarChart3 size={20} strokeWidth={1.9} />
+              </span>
+              <h2 id="privacy-analytics-title">{t("privacy:analyticsTitle")}</h2>
+              <p>{t("privacy:analyticsHelp")}</p>
+            </div>
+            <div className="vy-acct-card-body" style={{ gap: 0 }}>
+              {toggle("behavioralAnalytics", "behavioralAnalyticsHelp", "behavioral_analytics", settings.behavioral_analytics)}
+              {toggle("digestEnabled", "digestEnabledHelp", "digest_enabled", settings.digest_enabled)}
+            </div>
+          </section>
 
-      <section id="privacy-data" className="vy-stack">
-        <h2 className="vy-card-title">{t("privacy:dataRights.title")}</h2>
-        <div className="vy-row" style={{ flexWrap: "wrap" }}>
-          <button className="vy-btn vy-btn-secondary" disabled={busy} onClick={doExport}>{t("privacy:dataRights.export")}</button>
-          {!confirmingDelete ? (
-            <button className="vy-btn vy-btn-ghost" disabled={busy} onClick={() => setConfirmingDelete(true)}>{t("privacy:dataRights.delete")}</button>
-          ) : (
-            <>
-              <button className="vy-btn vy-btn-primary" disabled={busy} onClick={doDelete}>{t("privacy:dataRights.confirmDelete")}</button>
-              <button className="vy-btn vy-btn-ghost" disabled={busy} onClick={() => setConfirmingDelete(false)}>{t("common:action.cancel")}</button>
-            </>
-          )}
-        </div>
-        {confirmingDelete && <p className="vy-error" style={{ fontSize: 13 }}>{t("privacy:dataRights.deleteWarning")}</p>}
-        {exportDoc && (
-          <details className="vy-card">
-            <summary>{t("privacy:dataRights.exportReady")}</summary>
-            <pre style={{ whiteSpace: "pre-wrap", fontSize: 11, marginTop: 8 }}>{exportDoc}</pre>
-          </details>
-        )}
-        {requests.length > 0 && (
-          <div className="vy-stack" style={{ gap: 4 }}>
-            {requests.map((r) => (
-              <p key={r.id} className="vy-muted" style={{ fontSize: 13 }}>
-                {t(`privacy:requestKind.${r.kind}` as "requestKind.export")} · {t(`privacy:requestState.${r.state}` as "requestState.completed")} · {formatDate(r.created_at, i18n.language)}
-              </p>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {preferences.length > 0 && (
-        <section id="privacy-preferences" className="vy-stack">
-          <h2 className="vy-card-title">{t("privacy:preferences.title")}</h2>
-          {preferences.map((p) => (
-            <div key={p.id} className="vy-card vy-stack" style={{ gap: 6 }}>
-              <strong>{t(`privacy:preferences.key.${p.key}` as "preferences.key.max_distance_km", { defaultValue: p.key })}</strong>
-              <span className="vy-muted" style={{ fontSize: 13 }}>{p.evidence}</span>
-              {p.state === "proposed" && (
-                <div className="vy-row">
-                  <button className="vy-btn vy-btn-primary" style={{ fontSize: 13 }} disabled={busy} onClick={() => decidePreference(p.id, "confirm")}>{t("privacy:preferences.confirm")}</button>
-                  <button className="vy-btn vy-btn-ghost" style={{ fontSize: 13 }} disabled={busy} onClick={() => decidePreference(p.id, "decline")}>{t("privacy:preferences.decline")}</button>
+          <section id="privacy-data" className="vy-card vy-acct-card" aria-labelledby="privacy-data-title">
+            <div className="vy-acct-card-head">
+              <span className="vy-acct-tile" data-tint="green" aria-hidden="true">
+                <Download size={20} strokeWidth={1.9} />
+              </span>
+              <h2 id="privacy-data-title">{t("privacy:dataRights.title")}</h2>
+              <p>{t("privacy:dataRights.exportHint")}</p>
+            </div>
+            <div className="vy-acct-card-body">
+              <div className="vy-row" style={{ flexWrap: "wrap", gap: 10 }}>
+                <button className="vy-btn vy-btn-secondary" disabled={busy} onClick={doExport}>
+                  <Download size={18} strokeWidth={2} aria-hidden="true" />
+                  {t("privacy:dataRights.export")}
+                </button>
+                {!confirmingDelete && (
+                  <button className="vy-btn vy-btn-ghost" style={{ color: "var(--danger-text)" }} disabled={busy} onClick={() => setConfirmingDelete(true)}>
+                    <Trash size={18} strokeWidth={2} aria-hidden="true" />
+                    {t("privacy:dataRights.delete")}
+                  </button>
+                )}
+              </div>
+              {confirmingDelete && (
+                <div className="vy-acct-note" role="alertdialog" aria-label={t("privacy:dataRights.delete")}>
+                  <Trash size={18} strokeWidth={2} aria-hidden="true" />
+                  <div className="vy-stack" style={{ gap: 10 }}>
+                    <span style={{ color: "var(--text-primary)" }}>{t("privacy:dataRights.deleteWarning")}</span>
+                    <div className="vy-row" style={{ flexWrap: "wrap", gap: 8 }}>
+                      <button className="vy-btn vy-btn-secondary" style={{ color: "var(--danger-text)" }} disabled={busy} onClick={doDelete}>
+                        {t("privacy:dataRights.confirmDelete")}
+                      </button>
+                      <button className="vy-btn vy-btn-ghost" disabled={busy} onClick={() => setConfirmingDelete(false)}>
+                        {t("common:action.cancel")}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
-              {p.state === "active" && (
-                <div className="vy-row" style={{ justifyContent: "space-between" }}>
-                  <span className="vy-badge vy-badge-member-provided">{t("privacy:preferences.active")}</span>
-                  <button className="vy-btn vy-btn-ghost" style={{ fontSize: 13 }} disabled={busy} onClick={() => decidePreference(p.id, "remove")}>{t("privacy:preferences.remove")}</button>
+              {!confirmingDelete && <p className="vy-acct-hint">{t("privacy:dataRights.deleteHint")}</p>}
+              {exportDoc && (
+                <details>
+                  <summary style={{ cursor: "pointer", minHeight: 44, display: "flex", alignItems: "center", fontWeight: 650 }}>{t("privacy:dataRights.exportReady")}</summary>
+                  <pre className="vy-acct-pre">{exportDoc}</pre>
+                </details>
+              )}
+              {requests.length > 0 && (
+                <div className="vy-stack" style={{ gap: 6 }}>
+                  <span className="vy-acct-group" style={{ padding: 0 }}>{t("privacy:dataRights.historyTitle")}</span>
+                  {requests.map((r) => (
+                    <p key={r.id} className="vy-acct-hint">
+                      {t(`privacy:requestKind.${r.kind}` as "requestKind.export")} · {t(`privacy:requestState.${r.state}` as "requestState.completed")} · {formatDate(r.created_at, i18n.language)}
+                    </p>
+                  ))}
                 </div>
               )}
             </div>
-          ))}
-        </section>
-      )}
-      </div>
+          </section>
+
+          {preferences.length > 0 && (
+            <section id="privacy-preferences" className="vy-card vy-acct-card" aria-labelledby="privacy-preferences-title">
+              <div className="vy-acct-card-head">
+                <span className="vy-acct-tile" data-tint="amber" aria-hidden="true">
+                  <Sparkles size={20} strokeWidth={1.9} />
+                </span>
+                <h2 id="privacy-preferences-title">{t("privacy:preferences.title")}</h2>
+                <p>{t("privacy:preferences.help")}</p>
+              </div>
+              <div className="vy-acct-card-body">
+                {preferences.map((p) => (
+                  <div key={p.id} className="vy-card vy-card-nested vy-stack" style={{ gap: 8 }}>
+                    <strong style={{ color: "var(--text-primary)" }}>{t(`privacy:preferences.key.${p.key}` as "preferences.key.max_distance_km", { defaultValue: p.key })}</strong>
+                    <span className="vy-acct-hint">{p.evidence}</span>
+                    {p.state === "proposed" && (
+                      <div className="vy-row" style={{ flexWrap: "wrap", gap: 8 }}>
+                        <button className="vy-btn vy-btn-secondary" disabled={busy} onClick={() => decidePreference(p.id, "confirm")}>{t("privacy:preferences.confirm")}</button>
+                        <button className="vy-btn vy-btn-ghost" disabled={busy} onClick={() => decidePreference(p.id, "decline")}>{t("privacy:preferences.decline")}</button>
+                      </div>
+                    )}
+                    {p.state === "active" && (
+                      <div className="vy-row" style={{ justifyContent: "space-between" }}>
+                        <span className="vy-badge vy-badge-member-provided">{t("privacy:preferences.active")}</span>
+                        <button className="vy-btn vy-btn-ghost" disabled={busy} onClick={() => decidePreference(p.id, "remove")}>{t("privacy:preferences.remove")}</button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
       </div>
     </Screen>
   );

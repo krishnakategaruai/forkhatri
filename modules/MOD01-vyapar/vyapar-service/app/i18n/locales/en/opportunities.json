@@ -1,30 +1,30 @@
 {
   "actionLabel": {
     "apply": "Apply",
-    "submitProposal": "Submit a Proposal",
-    "enquireNow": "Enquire Now",
+    "submitProposal": "Send proposal",
+    "enquireNow": "Send a quote",
     "contact": "Contact",
-    "register": "Register"
+    "register": "I'm interested"
   },
   "type": {
-    "employment": "Employment",
-    "freelance": "Freelance",
+    "employment": "Job",
+    "freelance": "Project",
     "local_service": "Local service",
-    "partnership": "Partnership",
+    "partnership": "Business partnership",
     "training": "Training",
-    "community": "Community"
+    "community": "Community & government"
   },
   "error": {
-    "untitled": "Untitled opportunity",
+    "untitled": "Untitled post",
     "sourceRequired": "Tell us where you found it — a source name or link is required.",
-    "compensationRequired": "Employment opportunities need a compensation field.",
-    "locationRequired": "Local service opportunities need a location.",
-    "alreadyPublished": "This opportunity has already been published.",
+    "compensationRequired": "Job posts need the pay.",
+    "locationRequired": "Local service posts need a location.",
+    "alreadyPublished": "This post has already been published.",
     "confirmRequired": "Please confirm: {fields}",
-    "tooOldToRenew": "This listing is too old to renew directly — please review and re-confirm its details first.",
+    "tooOldToRenew": "This post is too old to renew directly — please review and re-confirm its details first.",
     "invalidTransition": "Can't do that from the current state.",
     "removedCannotShare": "This item has been removed and can't be shared.",
-    "fieldNotForType": "The field {field} doesn't apply to a {type} opportunity.",
+    "fieldNotForType": "The field {field} doesn't apply to a {type} post.",
     "salaryRangeInvalid": "The minimum salary can't be more than the maximum.",
     "experienceRangeInvalid": "The minimum experience can't be more than the maximum.",
     "budgetFieldsMismatch": "Give either a fixed budget or an hourly rate, not both.",
@@ -32,7 +32,9 @@
     "tooManyScreeningQuestions": "You can ask at most {max} screening questions.",
     "salaryRequired": "Add a monthly salary range before publishing this job.",
     "budgetRequired": "Add a budget or an hourly rate before publishing this project.",
-    "precallNotForType": "Calling before you accept is available only for jobs and local services."
+    "precallNotForType": "Calling before you accept is available only for jobs and local services.",
+    "deadlineInPast": "Choose a last date in the future.",
+    "devOnly": "Available in development only."
   },
   "compensation": {
     "monthly": "{amount} a month",
@@ -45,7 +47,19 @@
     "fixedRange": "Fixed price {min} to {max}",
     "hourly": "{amount} an hour",
     "hourlyRange": "{min} to {max} an hour",
-    "budget": "Budget {amount}"
+    "budget": "Budget {amount}",
+    "yearlyLakh": "{amount} lakh a year ({monthly} a month)",
+    "daily": "{amount} a day",
+    "perVisit": "{amount} a visit",
+    "weekly": "{amount} a week",
+    "startingFrom": "From {label}",
+    "negotiable": "Pay negotiable",
+    "unitOnly": {
+      "visit": "Paid per visit",
+      "day": "Paid by the day",
+      "hour": "Paid by the hour",
+      "month": "Monthly pay"
+    }
   },
   "suggestion": {
     "expand_description": "Describe the work in a few more lines. Clear posts get replies from people who actually fit.",
@@ -67,7 +81,7 @@
     "relax_experience_level": "Asking only for experts narrows the field. Allow intermediate if you can.",
     "add_deadline": "Add a deadline for proposals, so people apply sooner.",
     "add_preferred_date": "Add the date you need this done.",
-    "add_local_budget": "Add a rough budget, so providers can quote quickly.",
+    "add_local_budget": "Add a rough budget, so professionals can quote quickly.",
     "add_urgency": "Say how soon you need it: today, this week or flexible."
   },
   "precall": {

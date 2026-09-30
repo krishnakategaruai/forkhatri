@@ -7,6 +7,7 @@
 // control, and rupee inputs that read back in Indian format.
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { ChevronDown } from "lucide-react";
 import { formatRupees, rupeesToPaise } from "@/lib/money";
 
 export function fieldAnchor(code: string): string {
@@ -16,7 +17,7 @@ export function fieldAnchor(code: string): string {
 export function FieldBlock({
   code,
   label,
-  optional = false,
+  required = false,
   flagged = false,
   onLooksRight,
   error,
@@ -26,7 +27,15 @@ export function FieldBlock({
 }: {
   code: string;
   label: string;
-  optional?: boolean;
+  /**
+   * [FE1 — 2026-09-29, owner: "that is too worst"] Dropped the repeated
+   * "· optional" suffix on every field. A quiet dot now marks only the
+   * fields a post cannot be published without (what `validate()` checks);
+   * everything else says nothing, and a group that is entirely optional
+   * says so once, in its own header. Explicit, so a caller never grows a
+   * dot by forgetting a prop.
+   */
+  required?: boolean;
   flagged?: boolean;
   onLooksRight?: () => void;
   error?: string | null;
@@ -39,7 +48,14 @@ export function FieldBlock({
     <div id={fieldAnchor(code)} className={`vy-field${flagged ? " vy-field-flagged" : ""}`} style={{ scrollMarginTop: 96 }}>
       <div className="vy-field-head">
         <label className="vy-label" htmlFor={htmlFor}>
-          {label} {optional && <span className="vy-optional">· {t("fields.optional")}</span>}
+          {label}
+          {required && (
+            <span className="vy-required-dot" aria-hidden="true">
+              {" "}
+              •
+            </span>
+          )}
+          {required && <span className="vy-visually-hidden">{t("fields.required")}</span>}
         </label>
         {flagged && (
           <span className="vy-row" style={{ gap: 4 }}>
@@ -204,7 +220,7 @@ export function MoneyInput({
         <span aria-hidden="true">₹</span>
         <input
           id={id}
-          className="vy-input"
+          className="vy-input vy-num"
           inputMode="numeric"
           autoComplete="off"
           value={groupDigits(value)}
@@ -256,4 +272,43 @@ export function readbackRange(min: string, max: string, language: string): strin
   if (lo === null && hi === null) return null;
   if (lo === null || hi === null || lo === hi) return formatRupees((lo ?? hi) as number, language);
   return `${formatRupees(lo, language)} – ${formatRupees(hi, language)}`;
+}
+
+/**
+ * [FE1 — 2026-09-29, owner: "that is too worst" on a 14-field, one-scroll
+ * job form] A single tappable row — title, a live summary of what's set
+ * while closed, a chevron — that expands a cluster of related optional
+ * fields in place. Keeps a long form to "one screen and a bit" by default;
+ * the caller decides which fields belong in which group and computes the
+ * summary text from the draft.
+ */
+export function FieldGroup({
+  id,
+  title,
+  summary,
+  open,
+  onToggle,
+  children,
+}: {
+  id: string;
+  title: string;
+  summary?: string;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="vy-card vy-card-nested vy-field-group" data-open={open || undefined}>
+      <button type="button" className="vy-field-group-header" aria-expanded={open} aria-controls={id} onClick={onToggle}>
+        <span className="vy-field-group-title">{title}</span>
+        {!open && summary && <span className="vy-field-group-summary">{summary}</span>}
+        <ChevronDown size={18} aria-hidden="true" className="vy-field-group-chevron" data-open={open || undefined} />
+      </button>
+      {open && (
+        <div id={id} className="vy-stack vy-field-group-body" style={{ gap: 18 }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
 }

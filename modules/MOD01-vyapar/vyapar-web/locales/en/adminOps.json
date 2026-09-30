@@ -6,24 +6,24 @@
     "minGroupNote": "Any group smaller than {{n}} is hidden here, not shown as a rough number.",
     "notEnoughData": "Not enough data yet",
     "metric": {
-      "opportunity_coverage": "Opportunity coverage",
+      "opportunity_coverage": "Post coverage",
       "relevant_discovery_rate": "Relevant discovery rate",
       "zero_result_rate": "Zero-result rate",
-      "opportunity_action_rate": "Opportunity action rate",
+      "opportunity_action_rate": "Post action rate",
       "relevant_opportunity_connections": "Relevant connections",
       "successful_connection_rate": "Successful connection rate",
-      "discovery_to_enquiry_rate_listings": "Discovery → enquiry rate",
+      "discovery_to_enquiry_rate_listings": "Discovery → request rate",
       "freshness": "Freshness",
       "reports_per_1000_interactions": "Reports per 1,000 interactions",
       "notification_opt_out_rate": "Notification opt-out rate",
-      "promotion_repeat_rate": "Boost repeat rate",
+      "promotion_repeat_rate": "Promotion repeat rate",
       "revenue_paise": "Revenue (paise)",
       "refunds_paise": "Refunds (paise)",
-      "time_to_first_relevant_opportunity_hours": "Time to first relevant opportunity (hours)"
+      "time_to_first_relevant_opportunity_hours": "Time to first relevant post (hours)"
     }
   },
   "opportunitiesQueue": {
-    "title": "Opportunity review queue",
+    "title": "Post review queue",
     "empty": "Nothing waiting for review.",
     "ageDays": "{{n}} days old",
     "approve": "Approve",
@@ -32,28 +32,39 @@
     "flag": {
       "source_unreachable": "Source unreachable",
       "unconfirmed_fields": "Fields unconfirmed"
-    }
+    },
+    "hint": "Shared posts that need a look before they go live."
   },
   "staleQueue": {
-    "title": "Stale / expired queue",
-    "empty": "Nothing is stale right now.",
+    "title": "Not updated / expired",
+    "empty": "Every post is up to date right now.",
     "remind": "Remind ({{n}})",
     "expire": "Expire ({{n}})",
-    "done": "{{n}} items updated."
+    "done": "{{n}} items updated.",
+    "hint": "Posts with no recent update. Remind the person who posted, or expire them.",
+    "selectAll": "Select all",
+    "colPost": "Post",
+    "colAge": "Age"
   },
   "taxonomy": {
     "title": "Taxonomy",
     "kind": {
       "category": "Category",
-      "capability": "Capability"
+      "capability": "Skill"
     },
     "status": {
       "active": "Active",
       "unmapped": "Unmapped",
       "merged": "Merged"
-    }
+    },
+    "hint": "Every category and skill, with its storage name and status.",
+    "colName": "Name",
+    "colSlug": "Storage name",
+    "colKind": "Kind",
+    "colStatus": "Status"
   },
   "stale": {
     "done": "{{n}} items updated."
-  }
+  },
+  "subtitle": "Marketplace health, the post review queue, stale posts and the taxonomy, on one screen."
 }

@@ -1,17 +1,20 @@
 "use client";
 
-// [TR032] Provider performance report (FR32) — five separate counts for the
-// period (impressions, detail views, saves, enquiries, confirmed outcomes),
-// with "Boosted n · Organic n" only when a boost ran AND there are at least
-// 10 impressions; otherwise "Too little data to compare". No projections, no
-// ROI, no causal wording, no member data — the API has no field for any of
-// them. Inline on the owner's listing / opportunity / boost screen rather
-// than a separate report screen.
+// [TR032] Performance report (FR32): five separate counts for the period
+// (impressions, detail views, saves, requests, confirmed outcomes), with
+// "Promoted n · Organic n" only when a promotion ran AND there are at least
+// 10 impressions; otherwise "Too little data to compare". No projections,
+// no ROI, no causal wording, no member data. Inline on the owner's profile /
+// post / promotion screen rather than a separate report screen.
+// [Design language 2026-09-29] A section card with an icon tile and the
+// counts as metric tiles (number as the hero, label above, split below).
 // Traces to: FR32, TR032, SP032, UX20
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { BarChart3 } from "lucide-react";
 import { useSdk } from "@/lib/sdk/react";
-import { formatDate } from "@/lib/format"; // [FE2] Indian date order
+import { formatDate } from "@/lib/format";
+import "@/app/styles/deals-2026.css";
 
 interface Count {
   kind: string;
@@ -29,15 +32,7 @@ interface Report {
   counts: Count[];
 }
 
-export default function PerformanceReport({
-  targetKind,
-  targetId,
-  promotionId,
-}: {
-  targetKind: "listing" | "opportunity" | "campaign";
-  targetId: string;
-  promotionId?: string;
-}) {
+export default function PerformanceReport({ targetKind, targetId, promotionId }: { targetKind: "listing" | "opportunity" | "campaign"; targetId: string; promotionId?: string }) {
   const { t, i18n } = useTranslation(["commercial"]);
   const [report, setReport] = useState<Report | null>(null);
   const sdk = useSdk();
@@ -51,26 +46,30 @@ export default function PerformanceReport({
 
   if (!report) return null;
   const fmt = (d: string) => formatDate(d, i18n.language);
+  const number = (n: number) => new Intl.NumberFormat(`${(i18n.language || "en").slice(0, 2)}-IN`).format(n);
 
   return (
-    <section className="vy-card vy-stack" aria-labelledby={`perf-${targetId}`}>
-      <div className="vy-row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
-        <h2 id={`perf-${targetId}`} style={{ fontSize: 16 }}>{t("commercial:report.title")}</h2>
-        <span className="vy-muted" style={{ fontSize: 13 }}>{t("commercial:report.period", { from: fmt(report.from), to: fmt(report.to) })}</span>
+    <section className="vy-dl-sec" aria-labelledby={`perf-${targetId}`}>
+      <div className="vy-dl-sec-head">
+        <span className="vy-dl-tile vy-dl-tile-brand" aria-hidden="true"><BarChart3 size={20} strokeWidth={1.75} /></span>
+        <h2 id={`perf-${targetId}`} className="vy-card-title">{t("commercial:report.title")}</h2>
+        <span className="vy-dl-sec-hint">{t("commercial:report.period", { from: fmt(report.from), to: fmt(report.to) })}</span>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 8 }}>
+      <div className="vy-dl-metrics">
         {report.counts.map((c) => (
-          <div key={c.kind} style={{ padding: "10px 12px", borderRadius: 12, background: "var(--surface-overlay)" }}>
-            <div className="vy-muted" style={{ fontSize: 12 }}>{t(`commercial:report.kind.${c.kind}` as "report.kind.view")}</div>
-            <div style={{ fontSize: 22, fontWeight: 600 }}>{c.total}</div>
+          <div key={c.kind} className="vy-dl-metric">
+            <span className="vy-dl-metric-label">{t(`commercial:report.kind.${c.kind}` as "report.kind.view")}</span>
+            <span className="vy-dl-metric-value">{number(c.total)}</span>
             {report.comparable && c.boosted !== null && c.organic !== null && (
-              <div className="vy-muted" style={{ fontSize: 12 }}>{t("commercial:report.split", { b: c.boosted, o: c.organic })}</div>
+              <span className="vy-dl-metric-sub">{t("commercial:report.split", { b: number(c.boosted), o: number(c.organic) })}</span>
             )}
           </div>
         ))}
       </div>
-      {report.too_little_data && <p className="vy-muted" style={{ fontSize: 13 }}>{t("commercial:report.tooLittle")}</p>}
-      <p className="vy-muted" style={{ fontSize: 12 }}>{t("commercial:report.note")}</p>
+      <p className="vy-dl-fine">
+        {report.too_little_data ? `${t("commercial:report.tooLittle")} ` : ""}
+        {t("commercial:report.note")}
+      </p>
     </section>
   );
 }

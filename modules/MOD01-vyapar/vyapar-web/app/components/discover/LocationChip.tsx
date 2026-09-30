@@ -5,7 +5,8 @@
 // "Anywhere"), lifted out of FE2's DiscoverTop unchanged in behaviour so it
 // can sit in the quick-chip row (phones) and in the hero search pill's
 // "Where" segment (desktop).
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { usePopoverDismiss } from "@/lib/usePopoverDismiss";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { MapPin, ChevronDown } from "lucide-react";
@@ -27,29 +28,26 @@ export default function LocationChip({
   const { t } = useTranslation(["explore"]);
   const [open, setOpen] = useState(false);
   const [draftKm, setDraftKm] = useState(radiusKm ?? defaultRadiusKm ?? 10);
-  const pop = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => pop.current && !pop.current.contains(e.target as Node) && setOpen(false);
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    document.addEventListener("mousedown", onDown);
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
+  const pop = usePopoverDismiss(open, () => setOpen(false));
 
   // the radius in effect: the filter, else the member's own (the feed applies it either way)
   const effectiveKm = radiusKm ?? defaultRadiusKm;
+  // The framed chip lives in the phone chip row, where "Near Banjara Hills
+  // · 12 km" truncated at 360px; there the pin icon already says "near",
+  // so the label is the place and the distance ("Banjara Hills · 12 km").
+  // The bare form (desktop "Where" segment) keeps the full sentence.
   const label = effectiveKm
     ? place
-      ? t("explore:top.nearPlaceKm", { place, km: effectiveKm })
+      ? t(bare ? "explore:top.nearPlaceKm" : "explore:top.placeKm", { place, km: effectiveKm })
       : t("explore:filters.withinKm", { km: effectiveKm })
     : place
-      ? t("explore:top.nearPlace", { place })
+      ? bare
+        ? t("explore:top.nearPlace", { place })
+        : place
       : t("explore:filters.anyDistance");
+
+  // The phone chip drops "Near" so the place and distance both fit.
+  const short = effectiveKm && place ? t("explore:top.placeKm", { place, km: effectiveKm }) : label;
 
   return (
     <div ref={pop} className="vy-loc">
@@ -64,7 +62,7 @@ export default function LocationChip({
         }}
       >
         <MapPin size={16} strokeWidth={2} aria-hidden="true" />
-        <span className="vy-loc-text">{label}</span>
+        <span className="vy-loc-text">{bare ? label : short}</span>
         <ChevronDown size={14} strokeWidth={2.25} aria-hidden="true" />
       </button>
       {open && (

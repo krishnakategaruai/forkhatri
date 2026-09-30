@@ -1,7 +1,7 @@
 {
   "strongMatch": {
     "title": "New match: {title}",
-    "body": "This opportunity matches your capabilities."
+    "body": "This post matches your skills."
   },
   "moderationOutcome": {
     "title": "A moderation decision about your content",
@@ -20,8 +20,8 @@
     "body": "Your verification expires in a month. Submit a current document to keep your verified label."
   },
   "digest": {
-    "title": "{count} new opportunities for you",
-    "body": "Open Vyapar to see what's new since your last digest."
+    "title": "{count} new posts for you",
+    "body": "Open Vyapar to see today's new posts."
   },
   "reviewInvite": {
     "title": "How did it go? Leave a review",
@@ -44,19 +44,19 @@
     "body": "The conversation it was about was removed by moderation, so your review is hidden too. Grievances: {contact}"
   },
   "promotionActive": {
-    "title": "Your boost is live",
+    "title": "Your promotion is live",
     "body": "Sponsored until {date}. Eligibility, verification and organic ranking are unchanged."
   },
   "paymentFailed": {
     "title": "Payment didn't go through",
-    "body": "Your boost order is saved for 24 hours. Retry from the boost page."
+    "body": "Your promotion order is saved for 24 hours. Retry from the promotion page."
   },
   "promotionPaused": {
-    "title": "Boost paused and credited",
-    "body": "The boosted item is no longer active, so the boost stopped. Unused time credited: {amount}."
+    "title": "Promotion paused and credited",
+    "body": "The promoted item is no longer active, so the promotion stopped. Unused time credited: {amount}."
   },
   "promotionRejected": {
-    "title": "Boost rejected",
+    "title": "Promotion rejected",
     "body": "Reason: {reason}. A full refund has been requested. Grievances: grievance@forkhatri.example"
   },
   "entitlementActive": {
@@ -93,43 +93,43 @@
   },
   "campaignActive": {
     "title": "Your campaign is live",
-    "body": "Every item runs as a labelled Sponsored boost until {date}. Organic ranking is unchanged."
+    "body": "Every item runs as a labelled Sponsored promotion until {date}. Organic ranking is unchanged."
   },
   "campaignCompleted": {
     "title": "Campaign finished",
     "body": "{name} has ended. Its report stays available."
   },
   "contractProposed": {
-    "title": "Contract proposed: {title}",
+    "title": "Contract sent: {title}",
     "body": "{name} sent you a contract for {amount}. Review it and accept to start."
   },
   "contractAccepted": {
     "title": "Contract accepted: {title}",
-    "body": "{name} accepted the contract. Fund the first milestone to begin."
+    "body": "{name} accepted the contract. Pay the first stage in advance to begin."
   },
   "contractCancelled": {
     "title": "Contract cancelled: {title}",
-    "body": "{name} cancelled this contract. Any held payment is refunded."
+    "body": "{name} cancelled this contract. Any advance payment is refunded."
   },
   "contractCompleted": {
     "title": "Contract completed: {title}",
-    "body": "Every milestone is released. You can now leave a review."
+    "body": "Every stage is released. You can now leave a review."
   },
   "contractDisputed": {
     "title": "Dispute opened: {title}",
-    "body": "{name} opened a dispute. Held payments stay held until a Vyapar moderator records the outcome."
+    "body": "{name} opened a dispute. Advance payments stay with Vyapar until a moderator records the outcome."
   },
   "disputeResolved": {
     "title": "Dispute resolved: {title}",
     "body": "Outcome: {outcome}."
   },
   "milestoneFunded": {
-    "title": "Milestone funded: {milestone}",
-    "body": "{amount} is held for this milestone. You can start the work."
+    "title": "Stage paid in advance: {milestone}",
+    "body": "{amount} is paid in advance and kept safe by Vyapar. You can start the work."
   },
   "milestoneSubmitted": {
-    "title": "Work submitted: {milestone}",
-    "body": "{name} submitted this milestone. Approve it or send it back with a note; it releases on its own after 14 days."
+    "title": "Work sent: {milestone}",
+    "body": "{name} submitted this stage. Approve it or send it back with a note; it releases on its own after 14 days."
   },
   "milestoneReleased": {
     "title": "Payment released: {milestone}",
@@ -137,7 +137,7 @@
   },
   "milestoneRejected": {
     "title": "Sent back: {milestone}",
-    "body": "{name} sent this milestone back: {note}"
+    "body": "{name} sent this stage back: {note}"
   },
   "timesheetSubmitted": {
     "title": "Timesheet submitted: {week}",
@@ -153,19 +153,19 @@
   },
   "savedSearchMatch": {
     "title": "{count} new for your saved search \"{name}\"",
-    "body": "New opportunities match a search you saved. Open Vyapar to see them."
+    "body": "New posts match a search you saved. Open Vyapar to see them."
   },
   "opportunityPausedSeekerCharge": {
-    "title": "Your opportunity was paused",
+    "title": "Your post was paused",
     "body": "Two members reported being asked for money to apply. Vyapar never allows a fee, deposit or kit charge for applicants. Our team is reviewing it; you can appeal from Profile → My moderation outcomes. Grievances: {contact}"
   },
   "applicantHired": {
     "title": "You're hired: {title}",
-    "body": "The poster accepted your application. Open the conversation to see their contact details and next steps."
+    "body": "The person who posted accepted your application. Open the conversation to see their contact details and next steps."
   },
   "applicantDeclined": {
     "title": "Update on your application: {title}",
-    "body": "The poster has chosen other applicants this time. Keep going, there are similar opportunities on Vyapar."
+    "body": "The person who posted has chosen other applicants this time. Keep going: there are similar posts on Vyapar."
   },
   "precallContact": {
     "title_call": "{name} called about your {job} job",
@@ -175,5 +175,9 @@
   "applicantShortlisted": {
     "title": "Shortlisted: {title}",
     "body": "{poster} shortlisted your application and may call you. Keep your phone handy."
+  },
+  "opportunityExpired": {
+    "title": "Your post expired: {title}",
+    "body": "Its last date has passed, so it no longer shows in Discover or takes applications. Renew it to bring it back."
   }
 }

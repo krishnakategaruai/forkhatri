@@ -40,7 +40,15 @@
     ".next-palette/types/**/*.ts",
     ".next-palette/dev/types/**/*.ts",
     ".next-fe1/types/**/*.ts",
-    ".next-fe1/dev/types/**/*.ts"
+    ".next-fe1/dev/types/**/*.ts",
+    ".next-deals/types/**/*.ts",
+    ".next-deals/dev/types/**/*.ts",
+    ".next-account/types/**/*.ts",
+    ".next-account/dev/types/**/*.ts",
+    ".next-private/types/**/*.ts",
+    ".next-private/dev/types/**/*.ts",
+    ".next-type/types/**/*.ts",
+    ".next-type/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

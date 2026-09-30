@@ -17,6 +17,7 @@ import FileUpload from "@/app/components/FileUpload";
 import SkillPicker from "@/app/components/taxonomy/SkillPicker";
 import VoiceInput, { appendSpoken } from "@/app/components/VoiceInput";
 import { MAIN_KINDS, OTHER_KINDS, type PostKind } from "./draft";
+import DisabledReason from "@/app/components/DisabledReason";
 
 export default function LegacyComposer({
   mode,
@@ -128,11 +129,12 @@ export default function LegacyComposer({
       <button
         type="button"
         className="vy-btn vy-btn-primary vy-submit"
-        disabled={saving || !rawInput.trim() || (mode === "upload" && !imageUrl) || (segment === "public" && !sourceName.trim())}
+        aria-describedby={(!rawInput.trim() || (mode === "upload" && !imageUrl) || (segment === "public" && !sourceName.trim())) ? "why-legacy" : undefined} disabled={saving || !rawInput.trim() || (mode === "upload" && !imageUrl) || (segment === "public" && !sourceName.trim())}
         onClick={submit}
       >
         {saving ? t("common:state.saving") : t("common:action.continue")}
       </button>
+      <DisabledReason id={"why-legacy"} show={(!rawInput.trim() || (mode === "upload" && !imageUrl) || (segment === "public" && !sourceName.trim()))}>{t("common:disabled.composerInput")}</DisabledReason>
     </div>
   );
 }

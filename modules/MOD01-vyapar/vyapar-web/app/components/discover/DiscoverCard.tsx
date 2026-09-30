@@ -39,16 +39,25 @@ function km(d: number): string {
 }
 
 /**
- * "₹8–10 LPA" → { monthly: "₹66,700–₹83,300", yearly: "₹8–10 LPA" }.
+ * "₹8–10 LPA" → { monthly: "₹66,700–₹83,300", yearlyLakh: "₹8–10" }.
  * Anything that is not a lakh-per-annum figure is returned as written.
+ * The caller words the yearly line ("₹8–10 lakh a year") through a
+ * translation key: the recruiter shorthand "LPA" never reaches the screen
+ * (owner, 2026-09-30), and the wording follows the reader's language.
  */
-export function payLines(label: string, language: string): { main: string; monthly: boolean; yearly: string | null } {
+export function payLines(label: string, language: string): { main: string; monthly: boolean; yearlyLakh: string | null } {
+  // [2026-09-30, glossary] one wording for a monthly figure everywhere:
+  // "₹12,000 a month". A poster's "₹12,000 / month", "per month", "/mo",
+  // "pm" all become the bare amount, worded by the caller's key.
+  const perMonth = label.match(/^(.*?₹.*?)\s*(?:\/\s*(?:month|mo)|per\s+month|a\s+month|p\.?m\.?)\s*$/i);
+  if (perMonth) return { main: perMonth[1].trim(), monthly: true, yearlyLakh: null };
   const m = label.match(/₹\s?([\d.]+)\s?(?:[–-]\s?₹?\s?([\d.]+))?\s?(?:LPA|lpa|lakh(?:s)? (?:per|a) (?:annum|year))/);
-  if (!m) return { main: label, monthly: false, yearly: null };
-  const month = (lakh: string) => Math.round((parseFloat(lakh) * 100000) / 12 / 100) * 100 * 100; // paise, to ₹100
+  if (!m) return { main: label, monthly: false, yearlyLakh: null };
+  // A converted figure is an estimate: round it to ₹1,000 ("₹1,17,000", not "₹1,16,700").
+  const month = (lakh: string) => Math.round((parseFloat(lakh) * 100000) / 12 / 1000) * 1000 * 100; // paise
   const lo = formatRupees(month(m[1]), language);
   const main = m[2] ? `${lo}–${formatRupees(month(m[2]), language)}` : lo;
-  return { main, monthly: true, yearly: label.trim() };
+  return { main, monthly: true, yearlyLakh: m[2] ? `₹${m[1]}–${m[2]}` : `₹${m[1]}` };
 }
 
 const TRUST_ORDER = ["verified_business", "verified_professional", "verified", "id_verified", "top_rated", "rising"];
@@ -64,7 +73,17 @@ export default function DiscoverCard({ item }: { item: OpportunityCard }) {
   const place = [item.location, item.distance_km != null ? t("discover:businesses.distanceAway", { km: km(item.distance_km) }) : null]
     .filter(Boolean)
     .join(" · ");
-  const posted = freshnessLabel(t, item.posted_days_ago);
+  const postedFull = freshnessLabel(t, item.posted_days_ago);
+  // The clock icon already says "posted": the footer reads "23 days ago".
+  const days = item.posted_days_ago;
+  const posted =
+    days === null || days === undefined
+      ? ""
+      : days === 0
+        ? t("explore:card.agoToday")
+        : days === 1
+          ? t("explore:card.agoYesterday")
+          : t("explore:card.agoDays", { days });
   const badge = [...(item.poster_badges ?? [])].sort(
     (a, b) => (TRUST_ORDER.indexOf(a.key) + 99) % 99 - ((TRUST_ORDER.indexOf(b.key) + 99) % 99),
   )[0];
@@ -93,7 +112,7 @@ export default function DiscoverCard({ item }: { item: OpportunityCard }) {
       {pay && (
         <p className="vy-ocard-pay">
           <span>{pay.monthly ? t("explore:card.perMonth", { amount: pay.main }) : pay.main}</span>
-          {pay.yearly && <small>{pay.yearly}</small>}
+          {pay.yearlyLakh && <small>{t("explore:card.lakhAYear", { range: pay.yearlyLakh })}</small>}
         </p>
       )}
 
@@ -113,7 +132,7 @@ export default function DiscoverCard({ item }: { item: OpportunityCard }) {
         ) : (
           <span />
         )}
-        <span className="vy-ocard-when">
+        <span className="vy-ocard-when" title={postedFull || undefined}>
           {posted && (
             <>
               <Clock size={14} strokeWidth={2} aria-hidden="true" />

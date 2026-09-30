@@ -24,6 +24,7 @@ from app.services.contracts import (  # noqa: F401  schemas used below; the pass
     ContractCreateIn,
     ContractOut,
     ContractRole,
+    ContractRolesOut,
     ContractState,
     ContractSummaryOut,
     DisputeIn,
@@ -59,6 +60,16 @@ async def list_disputes(
     conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[AdminDisputeOut]:
     return await svc.list_disputes_for_operators(conn, ctx, lang, state=state, limit=limit)
+
+
+@router.get("/roles", response_model=ContractRolesOut, operation_id="getContractRoles", summary="Who pays and who works if this enquiry becomes a contract, and whether I can start it")
+async def get_contract_roles(
+    lang: Locale,
+    enquiry_id: str = Query(description="The enquiry to check"),
+    ctx: AuthzContext = Depends(resolve_authz_context),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
+) -> ContractRolesOut:
+    return await svc.get_contract_roles(conn, ctx, lang, enquiry_id=enquiry_id)
 
 
 # --- contracts ----------------------------------------------------------------

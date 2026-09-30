@@ -22,11 +22,11 @@
   },
   "error": {
     "emptyWindow": "Call hours must start and end at different times.",
-    "notRevealed": "Contact details open once the enquiry is accepted.",
+    "notRevealed": "Contact details open once the request is accepted.",
     "channelOff": "They don't accept contact on this channel.",
     "notMatching": "They take calls only from people whose skills match this work.",
     "dailyCapReached": "They have taken all the calls they accept today. Try again tomorrow.",
-    "precallOff": "The poster takes calls only after accepting an application. Apply instead.",
+    "precallOff": "The person who posted takes calls only after accepting an application. Apply instead.",
     "precallCallerLimit": "You have contacted them about this post {limit} times today. Try again tomorrow.",
     "outsideHours": "They take calls only in their call hours. Try again in the next window.",
     "ownPost": "This is your own post.",
@@ -34,9 +34,9 @@
   },
   "precall": {
     "reason": {
-      "precall_off": "The poster takes calls only after accepting an application. Apply instead.",
+      "precall_off": "The person who posted takes calls only after accepting an application. Apply instead.",
       "own_post": "This is your own post.",
-      "no_contact": "The poster has no phone or WhatsApp number to call. Apply instead."
+      "no_contact": "The person who posted has no phone or WhatsApp number to call. Apply instead."
     },
     "leadIntro": "I contacted you by {channel} from Vyapar about this job."
   },

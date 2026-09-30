@@ -8,7 +8,7 @@
   "oneDay": "1 day",
   "underReview": "{{count}} under review",
   "sectionTitle": "Reviews",
-  "empty": "No reviews yet. Reviews come only from completed enquiries and partnerships.",
+  "empty": "No reviews yet. Reviews come only from completed requests and partnerships.",
   "recommends": "Recommends",
   "doesNotRecommend": "Doesn't recommend",
   "verifiedInteraction": "verified interaction",
@@ -50,5 +50,6 @@
     "unclear_pricing": "Unclear pricing",
     "poor_communication": "Poor communication",
     "slow_response": "Slow to respond"
-  }
+  },
+  "recommendShort": "{{m}} of {{n}} recommend"
 }

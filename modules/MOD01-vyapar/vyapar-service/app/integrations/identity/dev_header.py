@@ -33,11 +33,16 @@ class DevHeaderProvider:
         if request.headers.get("Authorization"):
             return None
         settings = get_settings()
-        member_id = (
-            request.headers.get("X-Dev-Member-Id")
-            or request.cookies.get("vyapar_dev_member_id")
-            or settings.dev_default_member_id
-        )
+        chosen = request.headers.get("X-Dev-Member-Id") or request.cookies.get("vyapar_dev_member_id")
+        # [IMP-ADMIN fix, 2026-09-29] A real platform session must not be
+        # swallowed by the default dev member. When nobody chose a dev member
+        # and the request carries the host's session cookie, step aside so
+        # the ForKhatri provider (configured after this one) resolves it —
+        # e.g. a samaj admin opening the console with only fk_session was
+        # silently turned into DEV_DEFAULT_MEMBER_ID and refused.
+        if not chosen and request.cookies.get("fk_session") and "forkhatri" in settings.identity_provider_names:
+            return None
+        member_id = chosen or settings.dev_default_member_id
         await ensure_member_row(member_id, member_id, None, "en")
         permissions: frozenset[str] = frozenset()
         if settings.dev_mode:

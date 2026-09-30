@@ -19,6 +19,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/lib/sdk";
 import { useSdk } from "@/lib/sdk/react";
+import DisabledReason from "@/app/components/DisabledReason";
 
 const REASONS = ["scam", "fake", "impersonation", "harassment", "discrimination", "spam", "stale", "privacy", "other"] as const;
 const MONEY_REASON_KINDS = ["opportunity", "enquiry"];
@@ -145,9 +146,10 @@ export default function ReportSheet({
       />
       {error && <p className="vy-error">{error}</p>}
       <div className="vy-row">
-        <button className="vy-btn vy-btn-primary" disabled={!reason || sending} onClick={send}>
+        <button className="vy-btn vy-btn-primary" aria-describedby={!reason ? "why-report" : undefined} disabled={!reason || sending} onClick={send}>
           {sending ? t("common:state.saving") : t("trustSafety:report.submit")}
         </button>
+        <DisabledReason id={"why-report"} show={!reason}>{t("common:disabled.chooseReason")}</DisabledReason>
         <button className="vy-btn vy-btn-ghost" onClick={() => setOpen(false)}>
           {t("common:action.cancel")}
         </button>

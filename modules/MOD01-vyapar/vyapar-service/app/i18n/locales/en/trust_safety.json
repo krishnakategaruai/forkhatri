@@ -9,7 +9,7 @@
     "alreadyAppealed": "You've already appealed this decision.",
     "permissionRequired": "Operator 'moderation' permission required.",
     "appealNotFound": "Appeal not found.",
-    "seekerChargeNotAllowed": "No fee, deposit or kit charge may be asked from applicants. Remove it to post this opportunity."
+    "seekerChargeNotAllowed": "No fee, deposit or kit charge may be asked from applicants. Remove it to publish this post."
   },
   "action": {
     "limit": "distribution limited",
@@ -38,8 +38,8 @@
     "overturned": "accepted — your content has been restored"
   },
   "seekerProtection": {
-    "title": "Nobody charges job seekers",
-    "body": "No fee, deposit or kit charge may be asked from applicants. Report if asked.",
+    "title": "Nobody may charge people who apply",
+    "body": "No fee, deposit or kit charge may be asked from people who apply. Report if asked.",
     "reportLabel": "Report: asked me for money"
   }
 }

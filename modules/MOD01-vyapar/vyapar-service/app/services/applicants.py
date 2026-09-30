@@ -37,7 +37,7 @@ from app.ranking import DEFAULT_WEIGHTS, RankingSignals, score, top_signal_keys
 from app.services import contact as contact_svc
 from app.services import enquiries as enquiries_svc
 from app.services.shortlist_contact import shortlist_contact_actions
-from app.services.enquiries import Milestone, ProfileSnapshot, _json
+from app.services.enquiries import Milestone, ProfileSnapshot, _json, render_message
 from app.services.opportunities import has_budget, structured_from_row
 from app.services.pagination import DEFAULT_LIMIT, decode_cursor, encode_cursor
 from app.taxonomy_cache import labels_for
@@ -95,7 +95,9 @@ class ApplicantOut(BaseModel):
     timeline_days: int | None
     milestones: list[Milestone]
     screening_answers: list[ScreeningAnswerOut]
-    message_preview: str | None = Field(description="First message of the thread, up to 200 characters")
+    message_preview: str | None = Field(description="First message of the thread, up to 200 characters, in the reader's language when Vyapar generated it")
+    message_language: str | None = Field(default=None, description="Language of message_preview (for a later 'Translate')")
+    message_templated: bool = Field(default=False, description="True when Vyapar generated the message (one tap); it is then in the reader's language")
     created_at: str
     match_score: int = Field(ge=0, le=100, description="Rule-based fit, 0-100, from the ranking signal allow-list")
     match_signals: list[str] = Field(description="Top contributing signal keys, e.g. capability_fit")
@@ -159,7 +161,12 @@ def _signals(opp: asyncpg.Record, snap: ProfileSnapshot, bid_paise: int | None) 
     if min_months is None and s.experience_level:
         min_months = {"entry": 0, "intermediate": 24, "expert": 60}[s.experience_level]
     have_months = snap.experience_years * 12 if snap.experience_years is not None else None
-    if not min_months:
+    if required and not (required & have):
+        # [critique N11] experience counts only in the matching trade (same
+        # rule as the AI shortlist): an electrician's 11 years are not
+        # experience for a bakery job.
+        experience_fit = 0.3 if have_months is None else 0.1
+    elif not min_months:
         experience_fit = 1.0 if have_months else 0.5
     elif have_months is None:
         experience_fit = 0.0
@@ -207,12 +214,19 @@ def skills_match(required: list[str], have: set[str], lang: str) -> SkillsMatch:
     )
 
 
-def _match_score(signals: RankingSignals) -> int:
+def _match_score(signals: RankingSignals, unrelated: bool = False) -> int:
     best = sum(DEFAULT_WEIGHTS[k] for k in _APPLICANT_SIGNALS)
-    return max(0, min(100, round(100 * score(signals) / best)))
+    value = max(0, min(100, round(100 * score(signals) / best)))
+    # [critique N11] nearby and available never outranks "cannot do this
+    # work" (the AI shortlist caps the same case at 3/10).
+    return min(value, 30) if unrelated else value
 
 
 def _to_applicant(opp: asyncpg.Record, row: asyncpg.Record, first_message: str | None, lang: str) -> ApplicantOut:
+    first = None
+    if row["first_message_id"] is not None:
+        first = render_message({"body": row["first_message"], "content_language": row["first_message_language"],
+                                "template_key": row["first_message_template"], "template_params": row["first_message_params"]}, lang)
     snap = ProfileSnapshot(**(_json(row["profile_snapshot"], None) or {}))
     required = list(opp["required_capabilities"] or [])
     have = set(snap.capabilities)
@@ -245,9 +259,11 @@ def _to_applicant(opp: asyncpg.Record, row: asyncpg.Record, first_message: str |
             ScreeningAnswerOut(question_id=a["question_id"], question=questions.get(a["question_id"]), answer=a["answer"])
             for a in _json(row["screening_answers"], [])
         ],
-        message_preview=(first_message[:200] if first_message else None),
+        message_preview=(first[0][:200] if first else None),
+        message_language=first[1] if first else None,
+        message_templated=first[2] if first else False,
         created_at=row["created_at"].isoformat(),
-        match_score=_match_score(signals),
+        match_score=_match_score(signals, unrelated=bool(required) and not (set(required) & have)),
         match_signals=keys,
         match_reasons=reasons[:3],
         match_risks=risks,
@@ -270,10 +286,12 @@ async def _with_contacts(conn: asyncpg.Connection, ctx: AuthzContext, lang: str,
 
 
 _APPLICANT_ROWS = """
-    SELECT e.*,
-           (SELECT m.body FROM vyapar_enquiries.enquiry_messages m
-             WHERE m.enquiry_id = e.id ORDER BY m.created_at LIMIT 1) AS first_message
+    SELECT e.*, fm.id AS first_message_id, fm.body AS first_message, fm.content_language AS first_message_language,
+           fm.template_key AS first_message_template, fm.template_params AS first_message_params
       FROM vyapar_enquiries.enquiries e
+      LEFT JOIN LATERAL (SELECT m.id, m.body, m.content_language, m.template_key, m.template_params
+                           FROM vyapar_enquiries.enquiry_messages m
+                          WHERE m.enquiry_id = e.id ORDER BY m.created_at LIMIT 1) fm ON true
      WHERE e.opportunity_id = $1 AND e.provider_id = $2
        AND e.delivered AND e.state <> 'withdrawn'
 """

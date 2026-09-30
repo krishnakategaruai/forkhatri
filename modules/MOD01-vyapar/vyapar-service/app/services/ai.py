@@ -44,8 +44,10 @@ from app.errors import ApiError
 from app.i18n import translate
 from app.identity import AuthzContext
 from app.integrations.ai import AiResult, AiUnavailable, ImageInput, get_ai_provider, get_ai_settings, get_rules_provider
+from app.integrations.ai.localities import find_known_locality
 from app.integrations.ai.rules_provider import (
     capability_mentioned_only_as_data,
+    draft_from_text,
     proposal_improvements,
     rank_applicant,
     rule_tips,
@@ -54,7 +56,9 @@ from app.integrations.ai.rules_provider import (
 from app.integrations.ai.vocab import (
     DRAFT_FIELDS,
     IMPACTS,
+    TIP_FIELD,
     clean_draft,
+    has_value,
     clean_proposal,
     clean_shortlist,
     clean_tips,
@@ -297,6 +301,31 @@ async def _capability_terms(conn: asyncpg.Connection) -> list[dict[str, Any]]:
     return [{"slug": r["slug"], "name_en": r["name_en"], "name_hi": r["name_hi"], "name_te": r["name_te"], "aliases": list(r["aliases"] or [])} for r in rows]
 
 
+async def _known_localities(conn: asyncpg.Connection) -> list[str]:
+    """The localities Vyapar already knows: those of active listings (the
+    same set Discover's locality filter offers) and active opportunities.
+    Read under the caller's RLS, so only places visible to them."""
+    rows = await conn.fetch(
+        """SELECT DISTINCT trim(x) AS name FROM (
+             SELECT locality AS x FROM vyapar_listings.listings WHERE state IN ('active_unverified', 'active_verified')
+             UNION SELECT location FROM vyapar_opportunities.opportunities WHERE state = 'active' AND location IS NOT NULL
+           ) s WHERE x <> '' LIMIT 1000"""
+    )
+    return [r["name"] for r in rows]
+
+
+def _canonical_location(clean: dict[str, Any], text: str | None, known: list[str]) -> None:
+    """N7: a place named in Hindi or Telugu ("हिमायतनगर की बेकरी") is the
+    known locality ("Himayatnagar"), stored in Vyapar's own spelling. Applies
+    to Claude's answer and the rules reader alike."""
+    found = find_known_locality(text, known) if text else None
+    if found is None and clean.get("location"):
+        found = find_known_locality(clean["location"], known)
+    if found:
+        clean["location"] = found
+        clean.setdefault("confidence", {})["location"] = max(clean.get("confidence", {}).get("location", 0), 0.8)
+
+
 async def _call(kind: str, ctx: AuthzContext, input_hash: str, primary, fallback) -> tuple[AiResult, str, str]:
     """Run the configured provider; on AiUnavailable use the rules engine.
     Returns (result, source, outcome) and writes the audit row."""
@@ -364,6 +393,7 @@ async def draft_opportunity(conn: asyncpg.Connection, ctx: AuthzContext, lang: s
         clean["required_capabilities"] = [
             s for s in clean["required_capabilities"] if not capability_mentioned_only_as_data(text, by_slug[s])
         ]
+    _canonical_location(clean, text, await _known_localities(conn))
     return _draft_out(clean, lang, source)
 
 
@@ -409,7 +439,9 @@ async def read_opportunity_image(conn: asyncpg.Connection, ctx: AuthzContext, la
         if exc.reason == "unsupported_without_ai":
             raise ApiError(501, "ai.error.unsupportedWithoutAi", lang) from exc
         raise ApiError(503, "ai.error.unavailable", lang) from exc
-    return _draft_out(clean_draft(result.data, slugs), lang, source)
+    clean = clean_draft(result.data, slugs)
+    _canonical_location(clean, None, await _known_localities(conn))
+    return _draft_out(clean, lang, source)
 
 
 # ---- 3. shortlist -----------------------------------------------------------
@@ -607,6 +639,33 @@ def _draft_dict_from_input(draft: DraftIn) -> dict[str, Any]:
     return d
 
 
+async def _with_stated_fields(conn: asyncpg.Connection, draft: dict[str, Any], text: str) -> dict[str, Any]:
+    """N7: a tip must never ask for what the poster already wrote. Reads the
+    title, description and requirements with the same rules reader as
+    drafting, and fills every EMPTY field of a copy of the draft with what the
+    text states (hours, headcount, qualification, place, pay …). Only used to
+    decide which tips apply; nothing is returned or saved from it."""
+    merged = {k: (dict(v) if isinstance(v, dict) else v) for k, v in draft.items()}
+    if not text.strip():
+        return merged
+    terms = await _capability_terms(conn)
+    stated = clean_draft(draft_from_text(text, terms, force_type=merged.get("type")), {t["slug"] for t in terms})
+    _canonical_location(stated, text, await _known_localities(conn))
+    for key in ("title", "location", "work_mode", "timing"):
+        if not merged.get(key) and stated.get(key):
+            merged[key] = stated[key]
+    if not merged.get("required_capabilities") and stated.get("required_capabilities"):
+        merged["required_capabilities"] = stated["required_capabilities"]
+    t = merged.get("type")
+    if t in ("employment", "freelance", "local_service") and stated.get(t):
+        block = dict(merged.get(t) or {})
+        for key, value in stated[t].items():
+            if block.get(key) in (None, "", [], {}) and value not in (None, "", [], {}):
+                block[key] = value
+        merged[t] = block
+    return merged
+
+
 async def get_posting_tips(conn: asyncpg.Connection, ctx: AuthzContext, lang: str, body: TipsRequest) -> TipsOut:
     lang = body.language or lang
     if body.opportunity_id:
@@ -626,6 +685,10 @@ async def get_posting_tips(conn: asyncpg.Connection, ctx: AuthzContext, lang: st
         raise ApiError(422, "ai.error.draftOrOpportunityRequired", lang)
 
     await _enforce_daily_limit(conn, ctx, lang)
+    written = " \n".join(str(draft.get(k) or "") for k in ("title", "description", "requirements") if draft.get(k))
+    if body.opportunity_id:
+        written += " \n" + str(opp.get("requirements") or "")
+    draft = await _with_stated_fields(conn, draft, written)
     base = rule_tips(draft)
     for tip in base:
         tip["text"] = translate(f"ai.tip.{tip['code']}", lang)
@@ -643,6 +706,8 @@ async def get_posting_tips(conn: asyncpg.Connection, ctx: AuthzContext, lang: st
             for t in ai_tips:
                 merged[t["code"]] = {"code": t["code"], "impact": t["impact"], "text": t["text"] or translate(f"ai.tip.{t['code']}", lang)}
             tips = list(merged.values())
+    # Claude included: a tip asking for a field the draft or its text already states is dropped.
+    tips = [t for t in tips if not (TIP_FIELD.get(t["code"]) and has_value(draft, TIP_FIELD[t["code"]]))]
     order = {v: i for i, v in enumerate(IMPACTS)}
     tips.sort(key=lambda t: order.get(t["impact"], 9))
     return TipsOut(tips=[Tip(**t) for t in tips[:8]], source=source, language=lang)  # type: ignore[arg-type]

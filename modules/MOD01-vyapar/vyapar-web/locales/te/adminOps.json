@@ -6,24 +6,24 @@
     "minGroupNote": "{{n}} కంటే తక్కువ ఉన్న గుంపు ఇక్కడ దాచబడుతుంది, అంచనా సంఖ్యగా చూపబడదు.",
     "notEnoughData": "ఇంకా తగినంత డేటా లేదు",
     "metric": {
-      "opportunity_coverage": "అవకాశ కవరేజ్",
+      "opportunity_coverage": "పోస్ట్ కవరేజ్",
       "relevant_discovery_rate": "సంబంధిత శోధన రేటు",
       "zero_result_rate": "సున్నా-ఫలిత రేటు",
-      "opportunity_action_rate": "అవకాశ చర్య రేటు",
+      "opportunity_action_rate": "పోస్ట్ యాక్షన్ రేటు",
       "relevant_opportunity_connections": "సంబంధిత కనెక్షన్‌లు",
       "successful_connection_rate": "విజయవంతమైన కనెక్షన్ రేటు",
-      "discovery_to_enquiry_rate_listings": "శోధన → విచారణ రేటు",
+      "discovery_to_enquiry_rate_listings": "వెతుకులాట → రిక్వెస్ట్ రేటు",
       "freshness": "తాజాదనం",
       "reports_per_1000_interactions": "ప్రతి 1,000 పరస్పర చర్యలకు నివేదికలు",
       "notification_opt_out_rate": "నోటిఫికేషన్ ఆఫ్ రేటు",
-      "promotion_repeat_rate": "బూస్ట్ పునరావృత రేటు",
+      "promotion_repeat_rate": "మళ్లీ ప్రమోషన్ రేటు",
       "revenue_paise": "ఆదాయం (పైసలు)",
       "refunds_paise": "రీఫండ్‌లు (పైసలు)",
-      "time_to_first_relevant_opportunity_hours": "మొదటి సంబంధిత అవకాశానికి సమయం (గంటలు)"
+      "time_to_first_relevant_opportunity_hours": "మొదటి సరిపడే పోస్ట్ వరకు సమయం (గంటలు)"
     }
   },
   "opportunitiesQueue": {
-    "title": "అవకాశ సమీక్ష క్యూ",
+    "title": "పోస్ట్ రివ్యూ క్యూ",
     "empty": "సమీక్ష కోసం ఏమీ వేచి లేదు.",
     "ageDays": "{{n}} రోజుల పాతది",
     "approve": "ఆమోదించండి",
@@ -32,28 +32,39 @@
     "flag": {
       "source_unreachable": "మూలం అందుబాటులో లేదు",
       "unconfirmed_fields": "ఫీల్డ్‌లు నిర్ధారించబడలేదు"
-    }
+    },
+    "hint": "లైవ్ అయ్యే ముందు చూడాల్సిన షేర్ చేసిన పోస్ట్‌లు."
   },
   "staleQueue": {
-    "title": "పాత / గడువు ముగిసిన క్యూ",
-    "empty": "ఇప్పుడు ఏదీ పాతది కాదు.",
+    "title": "అప్‌డేట్ కానివి / గడువు ముగిసినవి",
+    "empty": "ప్రస్తుతం అన్ని పోస్ట్‌లు అప్‌డేట్‌గా ఉన్నాయి.",
     "remind": "గుర్తు చేయండి ({{n}})",
     "expire": "గడువు ముగించండి ({{n}})",
-    "done": "{{n}} అంశాలు అప్‌డేట్ చేయబడ్డాయి."
+    "done": "{{n}} అంశాలు అప్‌డేట్ చేయబడ్డాయి.",
+    "hint": "ఇటీవల అప్‌డేట్ లేని పోస్ట్‌లు. పోస్ట్ చేసినవారికి గుర్తు చేయండి లేదా ముగించండి.",
+    "selectAll": "అన్నీ ఎంచుకోండి",
+    "colPost": "పోస్ట్",
+    "colAge": "వయసు"
   },
   "taxonomy": {
     "title": "వర్గీకరణ",
     "kind": {
       "category": "వర్గం",
-      "capability": "సామర్థ్యం"
+      "capability": "నైపుణ్యం"
     },
     "status": {
       "active": "యాక్టివ్",
       "unmapped": "అన్‌మ్యాప్డ్",
       "merged": "విలీనం చేయబడింది"
-    }
+    },
+    "hint": "ప్రతి కేటగిరీ, నైపుణ్యం, దాని స్టోరేజ్ పేరు, స్థితితో.",
+    "colName": "పేరు",
+    "colSlug": "స్టోరేజ్ పేరు",
+    "colKind": "రకం",
+    "colStatus": "స్థితి"
   },
   "stale": {
     "done": "{{n}} అంశాలు నవీకరించబడ్డాయి."
-  }
+  },
+  "subtitle": "మార్కెట్‌ప్లేస్ ఆరోగ్యం, పోస్ట్ రివ్యూ క్యూ, పాత పోస్ట్‌లు, టాక్సానమీ, ఒకే స్క్రీన్‌లో."
 }

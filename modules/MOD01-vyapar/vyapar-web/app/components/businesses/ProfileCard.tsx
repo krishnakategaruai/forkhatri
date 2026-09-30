@@ -15,9 +15,12 @@
 // opportunity phrase; distance is already on the card). The viewer's own
 // profile is labelled "Your profile" (the list puts it last).
 // Replaces LivingCard on the directory (LivingCard stays for its other uses).
+// [2026-09-30] An <article> with a stretched title link, so the two actions
+// can be real buttons: "Ask for a price" when the owner takes enquiries,
+// "Call" when the owner shares a number with this viewer. Never on your own.
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
-import { BadgeCheck, ChevronRight, MapPin, Star } from "lucide-react";
+import { BadgeCheck, ChevronRight, MapPin, MessageSquareText, Phone, Star } from "lucide-react";
 import type { SearchResult } from "@/lib/sdk";
 import { useRoutes } from "@/app/host/HostProvider";
 import { Morph } from "@/app/components/Screen";
@@ -42,6 +45,8 @@ export default function ProfileCard({ result, sponsored = false }: { result: Sea
     l.kind === "business" && (l.verification_state === "verified" || badge?.key === "verified_business")
       ? t("discover:businesses.verifiedLabel")
       : (badge?.label ?? null);
+  const canAsk = !own && l.enquiry_pref === "enabled";
+  const canCall = !own && !!l.primary_phone;
   const rep = l.reputation;
   const reputation = !rep
     ? null
@@ -50,7 +55,7 @@ export default function ProfileCard({ result, sponsored = false }: { result: Sea
       : t("reviews:recommendShort", { m: rep.recommends, n: rep.interactions });
 
   return (
-    <Link href={routes.listing(l.id)} transitionTypes={["vy-forward"]} className="vy-card vy-ocard">
+    <article className="vy-card vy-ocard vy-pcard">
       <div className="vy-ocard-top">
         <span className={`vy-trade-tile vy-trade-${visual.family}`} aria-hidden="true">
           <Icon size={22} strokeWidth={1.9} />
@@ -58,15 +63,19 @@ export default function ProfileCard({ result, sponsored = false }: { result: Sea
         <span className="vy-ocard-tags">
           {sponsored && <span className="vy-badge vy-badge-sponsored">{t("explore:card.sponsored")}</span>}
           {own && <span className="vy-badge vy-badge-own">{t("explore:biz.yourProfile")}</span>}
-          <span className="vy-ocard-action">
+          <span className="vy-ocard-action" aria-hidden="true">
             <span>{t("explore:biz.viewProfile")}</span>
-            <ChevronRight size={15} strokeWidth={2.25} aria-hidden="true" />
+            <ChevronRight size={15} strokeWidth={2.25} />
           </span>
         </span>
       </div>
 
       <Morph name={`listing-${l.id}`}>
-        <h3 className="vy-ocard-title">{l.name}</h3>
+        <h3 className="vy-ocard-title">
+          <Link href={routes.listing(l.id)} transitionTypes={["vy-forward"]} className="vy-pcard-link">
+            {l.name}
+          </Link>
+        </h3>
       </Morph>
       {what && <p className="vy-pcard-what">{what}</p>}
 
@@ -92,6 +101,23 @@ export default function ProfileCard({ result, sponsored = false }: { result: Sea
           </span>
         </div>
       )}
-    </Link>
+
+      {(canAsk || canCall) && (
+        <div className="vy-pcard-actions">
+          {canAsk && (
+            <Link href={routes.enquireListing(l.id)} className="vy-btn vy-btn-secondary">
+              <MessageSquareText size={18} strokeWidth={2} aria-hidden="true" />
+              {t("explore:biz.askPrice")}
+            </Link>
+          )}
+          {canCall && (
+            <a href={`tel:${l.primary_phone}`} className="vy-btn vy-btn-ghost">
+              <Phone size={18} strokeWidth={2} aria-hidden="true" />
+              {t("explore:biz.call")}
+            </a>
+          )}
+        </div>
+      )}
+    </article>
   );
 }

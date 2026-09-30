@@ -2,7 +2,7 @@
   "badge": {
     "responds_fast": {
       "label": "Responds fast",
-      "description": "Usually replies within 2 hours, over at least 5 enquiries"
+      "description": "Usually replies within 2 hours, over at least 5 requests"
     },
     "reliable": {
       "label": "Reliable",
@@ -17,8 +17,8 @@
       "description": "Recommended by 95% of at least 20 reviewers"
     },
     "verified_business": {
-      "label": "Verified business",
-      "description": "Business documents checked by Vyapar"
+      "label": "Verified business owner",
+      "description": "Runs a business whose documents Vyapar has checked"
     },
     "repeat_hires": {
       "label": "Repeat hires",

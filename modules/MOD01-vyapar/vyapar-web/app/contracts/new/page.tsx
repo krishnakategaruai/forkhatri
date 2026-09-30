@@ -1,23 +1,27 @@
 "use client";
 
 // [FE2 — imp-backend-d] /contracts/new?enquiry=<id> — start a contract from
-// an accepted enquiry. Reads the enquiry first: only the paying side (the
-// client) sees the form; the other side is told who starts it, and an
-// enquiry that is not accepted yet says so instead of offering a form the
-// server would refuse. The draft is pre-filled from the conversation.
+// an accepted request. Reads the request first: only the paying side (the
+// client, per getContractRoles / isClientOf — critique N1) sees the form;
+// the other side is told who starts it, and a request that is not accepted
+// yet says so instead of offering a form the server would refuse. The draft
+// is pre-filled from the conversation (the proposal's price and stages).
 import { use, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import { ChevronLeft, FileSignature, Info } from "lucide-react";
 import type { ContractCreateInput, EnquiryDetail } from "@/lib/sdk";
 import { useSdk } from "@/lib/sdk/react";
 import { paiseToInput } from "@/lib/format";
 import Screen from "@/app/components/Screen";
-import { EmptyState, SkeletonGrid } from "@/app/components/States";
+import { SkeletonGrid } from "@/app/components/States";
+import DealsEmpty from "@/app/components/deals/Empty";
 import { useResource } from "@/app/hooks/useResource";
 import { errorText } from "@/app/hooks/trade";
 import ContractCreateForm, { emptyMilestone, type ContractDraft } from "@/app/components/contracts/ContractCreateForm";
 import { isClientOf, useContractEligible } from "@/app/components/contracts/ContractEntry";
+import "@/app/styles/deals-2026.css";
 
 function addDays(days: number): string {
   const d = new Date();
@@ -31,7 +35,7 @@ function draftFrom(e: EnquiryDetail): { draft: ContractDraft; fromProposal: bool
   return {
     fromProposal: !!(e.bid_amount_paise || proposal),
     draft: {
-      // an opportunity's title names the work; a profile's name does not
+      // a post's title names the work; a profile's name does not
       title: e.opportunity_id ? (e.target_name ?? "") : "",
       description: "",
       kind: hourly ? "hourly" : "fixed",
@@ -51,7 +55,7 @@ export default function NewContractPage({ searchParams }: { searchParams: Promis
   const sdk = useSdk();
   const router = useRouter();
   // The detail read carries ids only; the names come from the member's own
-  // enquiry list row (the same source the thread's context card uses).
+  // request list row (the same source the thread's context card uses).
   const enquiry = useResource<EnquiryDetail>(
     async () => {
       const detail = await sdk.enquiries.get(enquiryId);
@@ -84,38 +88,39 @@ export default function NewContractPage({ searchParams }: { searchParams: Promis
   }
 
   const name = e?.counterpart_name ?? "";
+  const infoIcon = <Info size={24} strokeWidth={1.75} aria-hidden="true" />;
   return (
     <Screen width="wide">
-      <Link href={enquiryId ? `/enquiries/${enquiryId}` : "/contracts"} transitionTypes={["vy-back"]} className="vy-btn vy-btn-ghost" style={{ alignSelf: "flex-start", textDecoration: "none" }}>
-        ← {t("contracts:new.back")}
-      </Link>
-      {!enquiryId || enquiry.error ? (
-        <EmptyState mark="⚠" title={t("common:state.notFound")} />
-      ) : !e || !prefill || eligible === null ? (
-        <SkeletonGrid count={2} grid={false} />
-      ) : !isClientOf(e) ? (
-        <EmptyState mark="◌" title={t("contracts:new.notClientTitle", { name })} body={t("contracts:new.notClientBody")} />
-      ) : eligible === false ? (
-        <EmptyState mark="◌" title={t("contracts:new.title")} body={t("contracts:new.notForJobs")} />
-      ) : e.state !== "in_progress" ? (
-        <EmptyState mark="◌" title={t("contracts:new.title")} body={t("contracts:new.notAccepted")} />
-      ) : (
-        <>
-          <div className="vy-page-head">
-            <h1>{t("contracts:new.title")}</h1>
-            <p>{t("contracts:new.subtitle", { name })}</p>
-          </div>
-          <ContractCreateForm
-            initial={prefill.draft}
-            counterpart={name}
-            target={e.target_name ?? null}
-            fromProposal={prefill.fromProposal}
-            busy={busy}
-            error={error}
-            onSubmit={create}
-          />
-        </>
-      )}
+      <div className="vy-dl-page">
+        <Link href={enquiryId ? `/enquiries/${enquiryId}` : "/contracts"} transitionTypes={["vy-back"]} className="vy-dl-back">
+          <ChevronLeft size={18} strokeWidth={2} aria-hidden="true" />
+          {t("contracts:new.back")}
+        </Link>
+        {!enquiryId || enquiry.error ? (
+          <DealsEmpty tone="neutral" icon={infoIcon} title={t("common:state.notFound")} />
+        ) : !e || !prefill || eligible === null ? (
+          <SkeletonGrid count={2} grid={false} />
+        ) : !isClientOf(e) ? (
+          <DealsEmpty tone="neutral" icon={infoIcon} title={t("contracts:new.notClientTitle", { name })} body={t("contracts:new.notClientBody")} />
+        ) : eligible === false ? (
+          <DealsEmpty tone="neutral" icon={infoIcon} title={t("contracts:new.title")} body={t("contracts:new.notForJobs")} />
+        ) : e.state !== "in_progress" ? (
+          <DealsEmpty tone="neutral" icon={infoIcon} title={t("contracts:new.title")} body={t("contracts:new.notAccepted")} />
+        ) : (
+          <>
+            <div className="vy-dl-head">
+              <div className="vy-dl-tags">
+                <span className="vy-dl-tile vy-dl-tile-brand" aria-hidden="true">
+                  <FileSignature size={20} strokeWidth={1.75} />
+                </span>
+              </div>
+              <h1>{t("contracts:new.title")}</h1>
+              <p>{t("contracts:new.subtitle", { name })}</p>
+            </div>
+            <ContractCreateForm initial={prefill.draft} counterpart={name} target={e.target_name ?? null} fromProposal={prefill.fromProposal} busy={busy} error={error} onSubmit={create} />
+          </>
+        )}
+      </div>
     </Screen>
   );
 }

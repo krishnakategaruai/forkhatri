@@ -9,6 +9,7 @@ import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import VoiceInput, { appendSpoken } from "@/app/components/VoiceInput";
 import { MAIN_KINDS, type PostKind } from "./draft";
+import DisabledReason from "@/app/components/DisabledReason";
 
 export interface StartPanelProps {
   text: string;
@@ -112,9 +113,10 @@ export default function StartPanel(p: StartPanelProps) {
       {p.error && <p className="vy-error" role="alert">{p.error}</p>}
 
       <div className="vy-describe-actions">
-        <button type="button" className="vy-btn vy-btn-primary" disabled={!p.text.trim() || p.busy !== null} onClick={() => p.onDraft(p.spoken ? "voice" : "text")}>
+        <button type="button" className="vy-btn vy-btn-primary" aria-describedby={!p.text.trim() ? "why-draft" : undefined} disabled={!p.text.trim() || p.busy !== null} onClick={() => p.onDraft(p.spoken ? "voice" : "text")}>
           {t("composer.draftIt")}
         </button>
+        <DisabledReason id={"why-draft"} show={!p.text.trim()}>{t("common:disabled.describeFirst")}</DisabledReason>
         <button type="button" className="vy-btn vy-btn-secondary" disabled={p.busy !== null} onClick={() => fileRef.current?.click()}>
           {t("composer.usePhoto")}
         </button>

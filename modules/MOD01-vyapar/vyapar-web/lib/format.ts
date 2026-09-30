@@ -51,6 +51,11 @@ export function formatDayMonth(value: string | Date, language: string): string {
   return new Intl.DateTimeFormat(locale(language), { day: "numeric", month: "short" }).format(toDate(value));
 }
 
+/** "September 2026" — month and year, Indian locale. */
+export function formatMonthYear(value: string | Date, language: string): string {
+  return new Intl.DateTimeFormat(locale(language), { month: "long", year: "numeric" }).format(toDate(value));
+}
+
 /** "28 Sep 2026, 2:05 pm" — always India time, whatever the device clock's zone. */
 export function formatDateTime(value: string | Date, language: string): string {
   return new Intl.DateTimeFormat(locale(language), {

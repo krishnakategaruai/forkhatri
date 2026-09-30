@@ -3,8 +3,8 @@
   "controlsTitle": "Who sees what",
   "control": {
     "discoverable": "Show me in search",
-    "discoverableHelp": "Off hides your listing from Businesses & Professionals results; direct links still work.",
-    "capabilityVisible": "Show my capabilities",
+    "discoverableHelp": "Off hides your profiles from Businesses & Professionals; direct links still work.",
+    "capabilityVisible": "Show my skills",
     "capabilityVisibleHelp": "Anyone can see the skills or services you offer.",
     "seekingVisible": "Show that I'm looking",
     "seekingVisibleHelp": "Off by default. When on, others can see you're open to work or customers.",
@@ -13,15 +13,15 @@
     "notificationsEnabled": "Notifications",
     "notificationsEnabledHelp": "In-app alerts for strong matches and updates on things you're part of.",
     "commercialComms": "Promotional messages",
-    "commercialCommsHelp": "Off by default. When on, we may tell you about boosts, plans and offers.",
+    "commercialCommsHelp": "Off by default. When on, we may tell you about promotions, plans and offers.",
     "behavioralAnalytics": "Usage analytics",
     "behavioralAnalyticsHelp": "Lets Vyapar record how you use the app, without your name, to improve it. Nothing is recorded while this is off.",
     "digestEnabled": "Daily digest",
-    "digestEnabledHelp": "One message a day about new opportunities that match you."
+    "digestEnabledHelp": "One message a day about new posts that match you."
   },
   "contactOption": {
     "public": "Always visible",
-    "after_accept": "After I accept an enquiry",
+    "after_accept": "After I accept a request",
     "hidden": "Never shown"
   },
   "analyticsTitle": "Analytics",
@@ -31,10 +31,13 @@
     "export": "Download my data",
     "delete": "Delete my account",
     "confirmDelete": "Yes, delete my account",
-    "deleteWarning": "This anonymizes your profile everywhere on Vyapar. Your own listings, enquiries and reviews are kept but no longer show your name.",
+    "deleteWarning": "This anonymizes your profile everywhere on Vyapar. Your own profiles, requests and reviews are kept but no longer show your name.",
     "exportReady": "Your data is ready — tap to view",
     "blocked": "Deletion is on hold until an active paid order finishes.",
-    "done": "Your account has been anonymized."
+    "done": "Your account has been anonymized.",
+    "exportHint": "A copy of everything Vyapar holds about you.",
+    "deleteHint": "Your name is removed everywhere; your posts and requests stay without it.",
+    "historyTitle": "Data requests"
   },
   "requestKind": {
     "export": "Data export",
@@ -57,11 +60,15 @@
     "remove": "Remove",
     "active": "Applied",
     "key": {
-      "max_distance_km": "Show closer opportunities"
-    }
+      "max_distance_km": "Show closer posts"
+    },
+    "help": "Vyapar noticed these from how you use it. Confirm the ones that are right."
   },
   "delete": {
-    "blocked": "Your account can't be deleted yet: finish or close your open enquiries and contracts first.",
+    "blocked": "Your account can't be deleted yet: finish or close your open requests and contracts first.",
     "done": "Your account is scheduled for deletion. We'll confirm when it is done."
-  }
+  },
+  "purpose": "Who sees what, your data and your choices.",
+  "controlsHelp": "What others can see about you.",
+  "analyticsHelp": "What Vyapar records to improve itself."
 }

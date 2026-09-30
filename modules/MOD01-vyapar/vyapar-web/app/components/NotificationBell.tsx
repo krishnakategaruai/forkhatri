@@ -17,6 +17,7 @@
 // shipped hosts), through the SDK instance in scope. A host with its own
 // notification centre supplies a different source, or none at all.
 import { useEffect, useMemo, useState } from "react";
+import { usePopoverDismiss } from "@/lib/usePopoverDismiss";
 import { motion, AnimatePresence } from "motion/react";
 import { useTranslation } from "react-i18next";
 import type { Notification } from "@/lib/sdk";
@@ -32,6 +33,7 @@ export default function NotificationBell() {
   const sdk = useSdk();
   const host = useHost();
   const source = useMemo(() => host.notifications?.(sdk) ?? null, [host, sdk]);
+  const ref = usePopoverDismiss(open, () => setOpen(false));
 
   async function refreshCount() {
     if (!source) return;
@@ -43,7 +45,7 @@ export default function NotificationBell() {
   }
 
   useEffect(() => {
-    refreshCount();
+    queueMicrotask(refreshCount);
     const interval = setInterval(refreshCount, 30_000);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -68,7 +70,7 @@ export default function NotificationBell() {
   // hardcoded `right` offset; the parent flex row in layout.tsx now owns
   // placement for both this and DevMemberSwitcher.
   return (
-    <div className="vy-menu-anchor">
+    <div ref={ref} className="vy-menu-anchor">
       {/* [Design language 2026-09-29] an icon button in the top bar (bell
           left of the avatar), with the unread count as a small badge. */}
       <button type="button" className="vy-iconbtn" onClick={openPanel} aria-label={t("bellLabel")} aria-expanded={open} title={t("bellLabel")}>

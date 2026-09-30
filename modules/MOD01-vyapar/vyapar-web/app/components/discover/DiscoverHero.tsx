@@ -39,9 +39,21 @@ export default function DiscoverHero({
   defaultRadiusKm: number | null;
   onRadius: (km: number | null) => void;
 }) {
-  const { t } = useTranslation(["explore", "discover"]);
+  const { t } = useTranslation(["explore", "discover", "common"]);
   const [text, setText] = useState(query);
   const pill = useRef<HTMLFormElement>(null);
+
+  // [Typography 2026-09-29] Phone placeholder is the short one: the long
+  // sentence ran under the mic at 360px (owner, device emulation). Same
+  // breakpoint as the CSS (599px) so the tab labels and this agree.
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 599px)");
+    const on = () => setNarrow(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
 
   // keep the field in step when the URL changes (a chip removed, "Clear all")
   const [shownQuery, setShownQuery] = useState(query);
@@ -83,9 +95,12 @@ export default function DiscoverHero({
           <Briefcase size={18} strokeWidth={2} aria-hidden="true" />
           {t("explore:top.opportunities")}
         </button>
+        {/* Long label on desktop, the short word on phones (CSS picks one),
+            so "Businesses & professionals" is never clipped at 360px. */}
         <Link role="tab" aria-selected="false" href="/businesses" className="vy-hero-tab">
           <Store size={18} strokeWidth={2} aria-hidden="true" />
-          {t("explore:top.businesses")}
+          <span className="vy-hero-tab-long">{t("explore:top.businesses")}</span>
+          <span className="vy-hero-tab-short">{t("common:nav.businesses")}</span>
         </Link>
       </div>
 
@@ -116,7 +131,7 @@ export default function DiscoverHero({
               enterKeyHint="search"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder={t("explore:top.searchPlaceholder")}
+              placeholder={t(narrow ? "explore:top.searchPlaceholderShort" : "explore:top.searchPlaceholder")}
               aria-label={t("explore:top.searchLabel")}
             />
           </VoiceInput>

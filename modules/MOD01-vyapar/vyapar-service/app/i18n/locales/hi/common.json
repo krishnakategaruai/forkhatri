@@ -1,7 +1,7 @@
 {
   "error": {
-    "listingNotFound": "लिस्टिंग नहीं मिली या अब उपलब्ध नहीं है",
-    "opportunityNotFound": "यह अवसर अब उपलब्ध नहीं है",
+    "listingNotFound": "प्रोफ़ाइल नहीं मिली या अब उपलब्ध नहीं है",
+    "opportunityNotFound": "यह पोस्ट अब उपलब्ध नहीं है",
     "operatorPermissionRequired": "ऑपरेटर अनुमति आवश्यक है",
     "validation": "अनुरोध में कुछ फ़ील्ड गायब या अमान्य हैं।",
     "generic": "कुछ गलत हो गया। कृपया फिर से कोशिश करें।",

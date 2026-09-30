@@ -24,12 +24,18 @@
 //     blank field the member has to know to fill correctly.
 // Traces to: FR22, TR022, FR22 DEC-002
 import { Suspense, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import { AlertTriangle, BadgeCheck, Briefcase, ChevronLeft, HelpCircle, IndianRupee, Lock, Store, UserRound } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import FileUpload from "@/app/components/FileUpload";
 import Screen from "@/app/components/Screen";
 import ProfileSetup from "@/app/components/ProfileSetup";
+import DisabledReason from "@/app/components/DisabledReason";
+import { SkeletonGrid } from "@/app/components/States";
+import { useRoutes } from "@/app/host/HostProvider";
+import "@/app/styles/deals-2026.css";
 import type { Me } from "@/lib/sdk";
 import ComposerPreview, { PreviewCard } from "@/app/post/_components/ComposerPreview";
 import StructuredResponse, { isStructuredKind } from "@/app/components/respond/StructuredResponse";
@@ -49,6 +55,7 @@ interface MyProfessionalListing {
 function ComposeInner() {
   const { t, i18n } = useTranslation(["enquiries", "common", "listings"]);
   const router = useRouter();
+  const routes = useRoutes();
   const params = useSearchParams();
   const listingId = params.get("listing_id");
   const opportunityId = params.get("opportunity_id");
@@ -148,7 +155,7 @@ function ComposeInner() {
         sub_choice: subChoice ?? undefined,
         attachment_url: attachmentUrl.trim() || undefined,
       });
-      router.push(`/enquiries/${enquiry.id}`);
+      router.push(routes.enquiry(enquiry.id));
     } catch (e) {
       // [Critique agent finding, fixed here] the daily-cap (429) and
       // duplicate-open (409) responses were never parsed into UX12's own
@@ -175,8 +182,11 @@ function ComposeInner() {
 
   if (!target) {
     return (
-      <Screen>
-        <p className="vy-muted">{t("enquiries:compose.loading")}</p>
+      <Screen width="wide">
+        <div className="vy-dl-page">
+          <div className="vy-skeleton" style={{ height: 40, width: 280, maxWidth: "70%" }} aria-hidden="true" />
+          <SkeletonGrid count={2} grid={false} />
+        </div>
       </Screen>
     );
   }
@@ -184,222 +194,220 @@ function ComposeInner() {
   if (me?.profiles && !me.profiles.complete) {
     return (
       <Screen width="wide">
-        <h1>{t("enquiries:compose.toTitle", { name: target.name })}</h1>
-        <ProfileSetup profiles={me.profiles} required />
+        <div className="vy-dl-page">
+          <div className="vy-dl-head">
+            <h1>{t("enquiries:compose.toTitle", { name: target.name })}</h1>
+          </div>
+          <ProfileSetup profiles={me.profiles} required />
+        </div>
       </Screen>
     );
   }
 
-  // [IMP39] Desktop: the compose form on the left, and on the right a live
-  // preview of the exact message the provider will receive (finalMessage()
-  // — the same composed text `send()` posts, including the rate/timeline
-  // header for proposals and the default note for one-tap applications).
+  // [IMP39] Desktop: the form on the left and a live preview of the exact
+  // message the other person receives (finalMessage(), the same text send()
+  // posts) on the right.
   const outgoing = finalMessage();
+  const title =
+    actionLabel === "apply"
+      ? t("enquiries:compose.applyTitle")
+      : actionLabel === "propose"
+        ? t("enquiries:compose.proposeTitle")
+        : actionLabel === "register"
+          ? t("enquiries:compose.registerTitle")
+          : t("enquiries:compose.title");
+  const subtitle =
+    actionLabel === "apply"
+      ? t("enquiries:compose.applyHelp")
+      : actionLabel === "propose"
+        ? t("enquiries:compose.proposeHelp")
+        : actionLabel === "register"
+          ? t("enquiries:compose.registerHelp")
+          : t("enquiries:compose.enquireHelp");
+  const tooShort = !readyToSend && !sending;
+  const verified = target.targetKind === "listing" && target.verificationState === "verified";
+  const TargetIcon = target.targetKind === "listing" ? (target.kind === "business" ? Store : UserRound) : Briefcase;
+  const counter = (value: string) => (
+    <span className="vy-dl-counter" aria-live="polite">
+      <span className={value.trim().length >= 20 ? undefined : "vy-error"}>{t("enquiries:compose.counter", { count: value.length, max: 1000, min: 20 })}</span>
+    </span>
+  );
 
   return (
     <Screen width="wide">
-      <h1>
-        {actionLabel === "apply" && t("enquiries:compose.applyTitle")}
-        {actionLabel === "propose" && t("enquiries:compose.proposeTitle")}
-        {actionLabel === "register" && t("enquiries:compose.registerTitle")}
-        {/* [Bug fix] sub-choice buttons (Ask a question / Request a quote,
-            FR22 DEC-002) apply to every "Enquire Now" target, not only
-            listings — a local_service Opportunity uses the identical
-            action word and identical pattern, per 03-ux.md. */}
-        {actionLabel === "enquire" && t("enquiries:compose.title")}
-      </h1>
-      <div className="vy-compose">
-      <div className="vy-compose-main">
-      {/* [Critique agent finding, fixed here] UX12's own wireframe names a
-          "Context card: target name/title, one-line summary, trust label"
-          inside Compose enquiry — this was missing entirely; only a plain
-          "To {{name}}" line existed. */}
-      <div className="vy-card vy-stack" style={{ gap: 4 }}>
-        <strong>{target.name}</strong>
-        <span className="vy-muted" style={{ fontSize: 13 }}>
-          {target.targetKind === "listing"
-            ? t("enquiries:compose.contextSummary", { kind: target.kind === "business" ? t("listings:mine.kindBusiness") : t("listings:mine.kindProfessional"), locality: target.locality })
-            : target.location ?? t("enquiries:compose.contextSummary", { kind: target.type, locality: "" })}
-        </span>
-        {target.targetKind === "listing" && (
-          <span className="vy-badge" style={{ alignSelf: "flex-start" }}>
-            {target.verificationState === "verified" ? t("enquiries:compose.trustVerified") : t("enquiries:compose.trustUnverified")}
-          </span>
-        )}
-      </div>
+      <div className="vy-dl-page">
+        <Link href={target.targetKind === "listing" ? routes.listing(target.id) : routes.opportunity(target.id)} transitionTypes={["vy-back"]} className="vy-dl-back">
+          <ChevronLeft size={18} strokeWidth={2} aria-hidden="true" />
+          {target.name}
+        </Link>
+        <div className="vy-dl-head">
+          <h1>{title}</h1>
+          <p>{subtitle}</p>
+        </div>
+        <div className="vy-compose">
+          <div className="vy-compose-main">
+            <div className="vy-dl-page" style={{ gap: "var(--space-4)" }}>
+              {/* UX12's context card: who you are writing to, one line, one trust label */}
+              <div className="vy-dl-sec vy-dl-target">
+                <span className={`vy-dl-tile ${target.targetKind === "listing" ? "vy-dl-tile-teal" : "vy-dl-tile-brand"}`} aria-hidden="true">
+                  <TargetIcon size={20} strokeWidth={1.75} />
+                </span>
+                <div className="vy-dl-target-body">
+                  <strong>{target.name}</strong>
+                  <span>
+                    {target.targetKind === "listing"
+                      ? t("enquiries:compose.contextSummary", {
+                          kind: target.kind === "business" ? t("listings:mine.kindBusiness") : t("listings:mine.kindProfessional"),
+                          locality: target.locality,
+                        })
+                      : target.location ?? t(`enquiries:kind.${target.type}` as "kind.employment", { defaultValue: target.type })}
+                  </span>
+                  {target.targetKind === "listing" && (
+                    <span className="vy-dl-tags" style={{ marginTop: 4 }}>
+                      <span className="vy-dl-state" data-tone={verified ? "done" : undefined}>
+                        {verified && <BadgeCheck size={13} strokeWidth={2} aria-hidden="true" />}
+                        {verified ? t("enquiries:compose.trustVerified") : t("enquiries:compose.trustUnverified")}
+                      </span>
+                    </span>
+                  )}
+                </div>
+              </div>
 
-      {/* --- Enquire: WorkIndia-style fast structured ask, not a blank box --- */}
-      {actionLabel === "enquire" && (
-        <div className="vy-stack">
-          <p>{t("enquiries:compose.enquireHelp")}</p>
-          {(
-            <div className="vy-row" style={{ gap: 8 }}>
-              <button
-                className={`vy-btn ${subChoice === "ask_question" ? "vy-btn-primary" : "vy-btn-secondary"}`}
-                onClick={() => {
-                  setSubChoice("ask_question");
-                  if (!message) setMessage(t("enquiries:compose.enquireQuestionTemplate", { name: target.name }));
-                }}
-              >
-                {t("enquiries:compose.askQuestion")}
-              </button>
-              <button
-                className={`vy-btn ${subChoice === "request_quote" ? "vy-btn-primary" : "vy-btn-secondary"}`}
-                onClick={() => {
-                  setSubChoice("request_quote");
-                  if (!message) setMessage(t("enquiries:compose.enquireQuoteTemplate", { name: target.name }));
-                }}
-              >
-                {t("enquiries:compose.requestQuote")}
-              </button>
+              {/* --- Ask: a question or a price, then the details --- */}
+              {actionLabel === "enquire" && (
+                <div className="vy-dl-sec">
+                  <div className="vy-dl-choice-row" role="radiogroup" aria-label={t("enquiries:compose.whatYouNeed")}>
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={subChoice === "ask_question"}
+                      className="vy-dl-choice"
+                      onClick={() => {
+                        setSubChoice("ask_question");
+                        if (!message) setMessage(t("enquiries:compose.enquireQuestionTemplate", { name: target.name }));
+                      }}
+                    >
+                      <HelpCircle size={20} strokeWidth={1.75} aria-hidden="true" />
+                      {t("enquiries:compose.askQuestion")}
+                    </button>
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={subChoice === "request_quote"}
+                      className="vy-dl-choice"
+                      onClick={() => {
+                        setSubChoice("request_quote");
+                        if (!message) setMessage(t("enquiries:compose.enquireQuoteTemplate", { name: target.name }));
+                      }}
+                    >
+                      <IndianRupee size={20} strokeWidth={1.75} aria-hidden="true" />
+                      {t("enquiries:compose.requestQuote")}
+                    </button>
+                  </div>
+                  <label className="vy-field">
+                    <span className="vy-label">{t("enquiries:compose.messageLabel")}</span>
+                    <textarea className="vy-textarea" rows={6} maxLength={1000} value={message} onChange={(e) => setMessage(e.target.value)} placeholder={t("enquiries:compose.placeholder")} />
+                  </label>
+                  {counter(message)}
+                </div>
+              )}
+
+              {/* --- Apply (public-source job): your work profile does the talking --- */}
+              {actionLabel === "apply" && (
+                <div className="vy-dl-sec">
+                  <div className="vy-dl-panel">
+                    <span className="vy-label">{t("enquiries:compose.yourProfile")}</span>
+                    {myListing && myListing.capability_labels.length > 0 ? (
+                      <div className="vy-dl-tags">
+                        {myListing.capability_labels.map((c) => (
+                          <span key={c} className="vy-chip">{c}</span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="vy-dl-hint">{t("enquiries:compose.noExperienceListed")}</p>
+                    )}
+                    {myListing?.experience_years != null && <p className="vy-dl-hint">{t("enquiries:compose.yourExperience", { years: myListing.experience_years })}</p>}
+                  </div>
+                  <label className="vy-field">
+                    <span className="vy-label">{t("enquiries:compose.noteLabel")}</span>
+                    <textarea className="vy-textarea" rows={4} maxLength={1000} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("enquiries:compose.notePlaceholder")} />
+                  </label>
+                </div>
+              )}
+
+              {/* --- Propose (non-structured project): price, timeline, note --- */}
+              {actionLabel === "propose" && (
+                <div className="vy-dl-sec">
+                  <div className="vy-field">
+                    <span className="vy-label">{t("enquiries:compose.rateLabel")}</span>
+                    <div className="vy-dl-choice-row" role="radiogroup" aria-label={t("enquiries:compose.rateLabel")}>
+                      <button type="button" role="radio" aria-checked={rateType === "fixed"} className="vy-dl-choice" onClick={() => setRateType("fixed")}>
+                        {t("enquiries:compose.rateLabelFixed")}
+                      </button>
+                      <button type="button" role="radio" aria-checked={rateType === "hourly"} className="vy-dl-choice" onClick={() => setRateType("hourly")}>
+                        {t("enquiries:compose.rateLabelHourly")}
+                      </button>
+                    </div>
+                    <input className="vy-input" value={rate} onChange={(e) => setRate(e.target.value)} placeholder={t("enquiries:compose.ratePlaceholder")} aria-label={t("enquiries:compose.rateLabel")} />
+                  </div>
+                  <label className="vy-field">
+                    <span className="vy-label">{t("enquiries:compose.timelineLabel")}</span>
+                    <input className="vy-input" value={timeline} onChange={(e) => setTimeline(e.target.value)} placeholder={t("enquiries:compose.timelinePlaceholder")} />
+                  </label>
+                  <label className="vy-field">
+                    <span className="vy-label">{t("enquiries:compose.coverLetterLabel")}</span>
+                    <textarea className="vy-textarea" rows={6} maxLength={1000} value={message} onChange={(e) => setMessage(e.target.value)} placeholder={t("enquiries:compose.coverLetterPlaceholder")} />
+                  </label>
+                  {counter(message)}
+                  <div className="vy-field">
+                    <span className="vy-label">{t("enquiries:compose.attachmentLabel")}</span>
+                    <FileUpload value={attachmentUrl} onChange={setAttachmentUrl} />
+                  </div>
+                </div>
+              )}
+
+              {/* --- Interested: one tap, note optional --- */}
+              {actionLabel === "register" && (
+                <div className="vy-dl-sec">
+                  <label className="vy-field">
+                    <span className="vy-label">{t("enquiries:compose.noteLabel")}</span>
+                    <textarea className="vy-textarea" rows={3} maxLength={1000} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("enquiries:compose.notePlaceholder")} />
+                  </label>
+                </div>
+              )}
+
+              {error && (
+                <div className="vy-dl-notice" data-tone="bad" role="alert">
+                  <AlertTriangle size={18} strokeWidth={1.75} aria-hidden="true" />
+                  <div className="vy-dl-row-body">
+                    <span>{error}</span>
+                    {duplicateEnquiryId && (
+                      <a className="vy-btn vy-btn-secondary vy-dl-btn-sm" style={{ alignSelf: "flex-start", marginTop: 6 }} href={routes.enquiry(duplicateEnquiryId)}>
+                        {t("enquiries:compose.openIt")}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="vy-dl-page" style={{ gap: "var(--space-2)" }}>
+                <button className="vy-btn vy-btn-primary" aria-describedby={tooShort ? "compose-why" : undefined} disabled={!readyToSend || sending} onClick={send}>
+                  {sending ? t("common:state.saving") : t("enquiries:compose.send")}
+                </button>
+                <DisabledReason id="compose-why" show={tooShort}>
+                  {actionLabel === "enquire" && subChoice === null && !message.trim() ? t("enquiries:compose.chooseFirst") : t("enquiries:compose.messageTooShort")}
+                </DisabledReason>
+                <p className="vy-dl-safety">
+                  <Lock size={13} strokeWidth={2} aria-hidden="true" />
+                  <span>{t("enquiries:compose.privacyLine")}</span>
+                </p>
+              </div>
             </div>
-          )}
-          <textarea
-            className="vy-textarea"
-            rows={6}
-            maxLength={1000}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder={t("enquiries:compose.placeholder")}
-          />
-          {/* [Critique agent finding, fixed here] UX12 names a live counter
-              "0 / 1000 · at least 20" — there was none. */}
-          <span className={message.trim().length >= 20 ? "vy-muted" : "vy-error"} style={{ fontSize: 12 }}>
-            {t("enquiries:compose.counter", { count: message.length, max: 1000, min: 20 })}
-          </span>
-        </div>
-      )}
-
-      {/* --- Apply: WorkIndia-style — your profile does the talking --- */}
-      {actionLabel === "apply" && (
-        <div className="vy-stack">
-          <p className="vy-muted">{t("enquiries:compose.applyHelp")}</p>
-          <div className="vy-card vy-stack" style={{ gap: 6 }}>
-            <strong style={{ fontSize: 13, color: "var(--text-secondary)" }}>{t("enquiries:compose.yourProfile")}</strong>
-            {myListing && myListing.capability_labels.length > 0 ? (
-              <p>{myListing.capability_labels.join(", ")}</p>
-            ) : (
-              <p className="vy-muted">{t("enquiries:compose.noExperienceListed")}</p>
-            )}
-            {myListing?.experience_years != null && (
-              <p className="vy-muted">{t("enquiries:compose.yourExperience", { years: myListing.experience_years })}</p>
-            )}
           </div>
-          <label className="vy-label">{t("enquiries:compose.noteLabel")}</label>
-          <textarea
-            className="vy-textarea"
-            rows={4}
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder={t("enquiries:compose.notePlaceholder")}
-          />
+          <ComposerPreview caption={t("enquiries:compose.previewCaption", { name: target.name })} guide={[t("enquiries:compose.guide1"), t("enquiries:compose.guide2"), t("enquiries:compose.guide3")]}>
+            <PreviewCard title={target.name} body={outgoing} bodyEmpty={t("enquiries:compose.previewEmpty")} chips={attachmentUrl ? [attachmentUrl.split("/").pop() ?? ""] : undefined} />
+          </ComposerPreview>
         </div>
-      )}
-
-      {/* --- Propose: Upwork-style — cover letter + rate + timeline --- */}
-      {actionLabel === "propose" && (
-        <div className="vy-stack">
-          <p className="vy-muted">{t("enquiries:compose.proposeHelp")}</p>
-          {/* [Critique agent finding, fixed here] Upwork's real proposal
-              screen foregrounds a Fixed/Hourly rate-TYPE choice, not just a
-              bare rate string — added as a real two-way toggle. */}
-          <div className="vy-row" role="radiogroup" aria-label={t("enquiries:compose.rateLabel")}>
-            <button
-              type="button"
-              role="radio"
-              aria-checked={rateType === "fixed"}
-              className={`vy-btn ${rateType === "fixed" ? "vy-btn-primary" : "vy-btn-secondary"}`}
-              onClick={() => setRateType("fixed")}
-            >
-              {t("enquiries:compose.rateLabelFixed")}
-            </button>
-            <button
-              type="button"
-              role="radio"
-              aria-checked={rateType === "hourly"}
-              className={`vy-btn ${rateType === "hourly" ? "vy-btn-primary" : "vy-btn-secondary"}`}
-              onClick={() => setRateType("hourly")}
-            >
-              {t("enquiries:compose.rateLabelHourly")}
-            </button>
-          </div>
-          <input className="vy-input" value={rate} onChange={(e) => setRate(e.target.value)} placeholder={t("enquiries:compose.ratePlaceholder")} />
-          <label className="vy-label">{t("enquiries:compose.timelineLabel")}</label>
-          <input className="vy-input" value={timeline} onChange={(e) => setTimeline(e.target.value)} placeholder={t("enquiries:compose.timelinePlaceholder")} />
-          <label className="vy-label">{t("enquiries:compose.coverLetterLabel")}</label>
-          <textarea
-            className="vy-textarea"
-            rows={6}
-            maxLength={1000}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder={t("enquiries:compose.coverLetterPlaceholder")}
-          />
-          <span className={message.trim().length >= 20 ? "vy-muted" : "vy-error"} style={{ fontSize: 12 }}>
-            {t("enquiries:compose.counter", { count: message.length, max: 1000, min: 20 })}
-          </span>
-          {/* [Critique agent finding, fixed here] FR22 allows one attachment
-              and Upwork's real screen foregrounds work samples — there was
-              no attachment control anywhere on this step. */}
-          <label className="vy-label">{t("enquiries:compose.attachmentLabel")}</label>
-          <FileUpload value={attachmentUrl} onChange={setAttachmentUrl} />
-        </div>
-      )}
-
-      {/* --- Register: one tap, note optional --- */}
-      {actionLabel === "register" && (
-        <div className="vy-stack">
-          <p className="vy-muted">{t("enquiries:compose.registerHelp")}</p>
-          <label className="vy-label">{t("enquiries:compose.noteLabel")}</label>
-          <textarea
-            className="vy-textarea"
-            rows={3}
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder={t("enquiries:compose.notePlaceholder")}
-          />
-        </div>
-      )}
-
-      {/* [Real bug found live via third critique pass, fixed here] the
-          409/429/400 error-parsing logic in `send()` already correctly
-          populated `error` and `duplicateEnquiryId` — but no JSX anywhere
-          in this file ever read `duplicateEnquiryId` or rendered a link to
-          the existing thread, so a member hitting the single most common
-          error on this screen (already having an open enquiry) saw only a
-          plain error sentence with nowhere to go, per UX12's own wireframe
-          which explicitly names "Open it" as a button, not just text. */}
-      {error && (
-        <div className="vy-card vy-stack" style={{ gap: 8 }}>
-          <p className="vy-error">{error}</p>
-          {duplicateEnquiryId && (
-            <a className="vy-btn vy-btn-secondary" style={{ alignSelf: "flex-start" }} href={`/enquiries/${duplicateEnquiryId}`}>
-              {t("enquiries:compose.openIt")}
-            </a>
-          )}
-        </div>
-      )}
-      {/* [Same critique finding] UX12's own compose wireframe names this
-          exact safety line inside Compose enquiry itself (not only in the
-          post-accept contact card) — `compose.privacyLine` existed in the
-          locale files since the earlier composer rewrite but was never
-          actually rendered anywhere on this screen. */}
-      <p className="vy-muted" style={{ fontSize: 12 }}>🔒 {t("enquiries:compose.privacyLine")}</p>
-      <button className="vy-btn vy-btn-primary vy-submit" disabled={!readyToSend || sending} onClick={send}>
-        {sending ? t("common:state.saving") : t("enquiries:compose.send")}
-      </button>
-      </div>
-      <ComposerPreview
-        caption={t("enquiries:compose.previewCaption", { name: target.name })}
-        guide={[t("enquiries:compose.guide1"), t("enquiries:compose.guide2"), t("enquiries:compose.guide3")]}
-      >
-        <PreviewCard
-          title={target.name}
-          body={outgoing}
-          bodyEmpty={t("enquiries:compose.previewEmpty")}
-          chips={attachmentUrl ? [attachmentUrl.split("/").pop() ?? ""] : undefined}
-        />
-      </ComposerPreview>
       </div>
     </Screen>
   );
@@ -416,7 +424,10 @@ function Router() {
   if (opportunityId && !opportunity.data && !opportunity.error) {
     return (
       <Screen width="wide">
-        <div className="vy-skeleton" style={{ height: 40, width: 280, maxWidth: "70%" }} aria-hidden="true" />
+        <div className="vy-dl-page">
+          <div className="vy-skeleton" style={{ height: 40, width: 280, maxWidth: "70%" }} aria-hidden="true" />
+          <SkeletonGrid count={2} grid={false} />
+        </div>
       </Screen>
     );
   }

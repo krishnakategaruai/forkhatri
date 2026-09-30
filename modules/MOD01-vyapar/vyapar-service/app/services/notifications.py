@@ -25,7 +25,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import date, datetime, timezone
+import hashlib
+import json
+from datetime import date, datetime, timedelta, timezone
 
 import asyncpg
 from pydantic import BaseModel
@@ -34,7 +36,8 @@ from app.config import get_settings
 from app.db import get_pool
 from app.i18n import translate
 from app.identity import AuthzContext
-from app.notifications import send_notification
+from app.notifications import render_notification, send_notification
+from app.viewer_profile import viewer_skills
 from app.ranking import score
 from app.services.feed import _distance_km, _opportunity_signals
 from app.services.pagination import DEFAULT_LIMIT, Page, keyset_after, keyset_cursor
@@ -65,18 +68,21 @@ class ReadOut(BaseModel):
     read: bool
 
 
+def _out(r, lang: str) -> NotificationOut:
+    title, body = render_notification(r, lang)
+    return NotificationOut(id=str(r["id"]), kind=r["kind"], title=title, body=body, link=r["link"], read=r["read_at"] is not None, created_at=r["created_at"])
+
+
 async def list_notifications(
     conn: asyncpg.Connection,
     ctx: AuthzContext,
+    lang: str = "en",
 ) -> list[NotificationOut]:
     rows = await conn.fetch(
         "SELECT * FROM vyapar_integration.notifications WHERE member_id = $1 ORDER BY created_at DESC LIMIT 50",
         ctx.member_id,
     )
-    return [
-        NotificationOut(id=str(r["id"]), kind=r["kind"], title=r["title"], body=r["body"], link=r["link"], read=r["read_at"] is not None, created_at=r["created_at"])
-        for r in rows
-    ]
+    return [_out(r, lang) for r in rows]
 
 
 async def list_notifications_page(
@@ -99,10 +105,7 @@ async def list_notifications_page(
     )
     page, more = rows[:limit], len(rows) > limit
     return Page[NotificationOut](
-        items=[
-            NotificationOut(id=str(r["id"]), kind=r["kind"], title=r["title"], body=r["body"], link=r["link"], read=r["read_at"] is not None, created_at=r["created_at"])
-            for r in page
-        ],
+        items=[_out(r, lang) for r in page],
         next_cursor=keyset_cursor(page[-1]["created_at"], page[-1]["id"]) if more else None,
     )
 
@@ -155,7 +158,43 @@ async def _set_dispatcher_context(conn: asyncpg.Connection) -> None:
     await conn.execute("SELECT set_config('vyapar.authz_context', 'm_neha_ops', true)")
 
 
+async def _notified_opportunity_ids(conn: asyncpg.Connection, member_id: str) -> set[str]:
+    """[IMP-B, owner 2026-09-30] Every post a member has already been told
+    about, by any kind (a match, a saved-search alert, a digest): the one
+    dedupe set, so no post is ever announced to the same person twice."""
+    rows = await conn.fetch(
+        """SELECT params->>'opportunity_id' AS one, params->'opportunity_ids' AS many
+             FROM vyapar_integration.notifications
+            WHERE member_id = $1 AND kind IN ('opportunity_match', 'digest')""",
+        member_id,
+    )
+    out: set[str] = set()
+    for r in rows:
+        if r["one"]:
+            out.add(r["one"])
+        many = r["many"]
+        if isinstance(many, str):
+            many = json.loads(many)
+        out.update(str(x) for x in (many or []))
+    return out
+
+
+async def _viewer(conn: asyncpg.Connection, member: asyncpg.Record) -> dict:
+    """The member row with skills from their profiles too (critique L14)."""
+    caps, cats = await viewer_skills(conn, member["id"])
+    return {**dict(member), "capabilities": caps, "categories": cats}
+
+
+_LIVE_POST_SQL = """state = 'active' AND NOT distribution_limited AND type = ANY($1)
+                    AND (deadline IS NULL OR deadline > now())"""
+
+
 async def run_strong_match_pass(pool: asyncpg.Pool) -> int:
+    """[TR021] One strong match per member per pass, under the daily cap.
+    [IMP-B, owner 2026-09-30] Never the same post twice to the same member
+    (permanent idempotency key + the notified set), never an expired post,
+    never the member's own post, and the notification stores its template so
+    it is read in the reader's language."""
     settings = get_settings()
     sent = 0
     async with pool.acquire() as conn:
@@ -166,24 +205,26 @@ async def run_strong_match_pass(pool: asyncpg.Pool) -> int:
             muted_by_member = {r["member_id"]: set(r["muted_types"]) for r in privacy_rows}
             if not enabled_ids:
                 return 0
-            members = await conn.fetch(
+            member_rows = await conn.fetch(
                 """SELECT id, capabilities, help_with, locality, lat, lng, radius_km, language
                    FROM vyapar_identity.members WHERE id = ANY($1)""",
                 enabled_ids,
             )
+            members = [await _viewer(conn, m) for m in member_rows]
             opps = await conn.fetch(
-                "SELECT * FROM vyapar_opportunities.opportunities WHERE state = 'active' AND NOT distribution_limited AND type = ANY($1)",
-                list(_NOTIFIABLE_TYPES),
+                f"SELECT * FROM vyapar_opportunities.opportunities WHERE {_LIVE_POST_SQL}", list(_NOTIFIABLE_TYPES),
             )
 
             for member in members:
                 if "opportunity" in muted_by_member.get(member["id"], set()):
                     continue
+                notified = await _notified_opportunity_ids(conn, member["id"])
                 best_score, best_opp = 0.0, None
                 for opp in opps:
+                    if opp["poster_id"] == member["id"] or str(opp["id"]) in notified:
+                        continue
                     distance = await _distance_km(conn, member, opp)
-                    signals = _opportunity_signals(opp, member, distance)
-                    s = score(signals)
+                    s = score(_opportunity_signals(opp, member, distance))
                     if s > best_score:
                         best_score, best_opp = s, opp
                 if best_opp is None or best_score < settings.notify_strong_match_threshold:
@@ -194,38 +235,36 @@ async def run_strong_match_pass(pool: asyncpg.Pool) -> int:
                 )
                 if not allowed:
                     continue
-                # [Coordinator bug #3 fix] never re-alert the same still-open
-                # match within 7 days — the daily idempotency key alone only
-                # guarantees no same-DAY duplicate, not "not effectively the
-                # same notification again tomorrow".
-                already_recent = await conn.fetchval(
-                    """SELECT EXISTS (SELECT 1 FROM vyapar_integration.notifications
-                         WHERE member_id = $1 AND template_id = 'strong_match'
-                           AND params->>'opportunity_id' = $2 AND created_at > now() - interval '7 days')""",
-                    member["id"], str(best_opp["id"]),
-                )
-                if already_recent:
-                    continue
-                idem_key = f"strong_match:{member['id']}:{best_opp['id']}:{date.today().isoformat()}"
-                title = translate("notifications.strongMatch.title", member["language"], title=best_opp["title"])
-                body = translate("notifications.strongMatch.body", member["language"])
+                spec = {"title": "notifications.strongMatch.title", "body": "notifications.strongMatch.body",
+                        "values": {"title": best_opp["title"]}}
                 written = await send_notification(
                     conn, member_id=member["id"], kind="opportunity_match", template_id="strong_match",
-                    title=title, body=body, link=f"/opportunities/{best_opp['id']}",
-                    params={"opportunity_id": str(best_opp["id"])}, idempotency_key=idem_key,
+                    title=translate(spec["title"], member["language"], title=best_opp["title"]),
+                    body=translate(spec["body"], member["language"]),
+                    link=f"/opportunities/{best_opp['id']}",
+                    params={"opportunity_id": str(best_opp["id"])},
+                    idempotency_key=f"match:{member['id']}:{best_opp['id']}",  # permanent: once per member and post
+                    i18n=spec,
                 )
                 if written:
                     sent += 1
 
-            # [IMP-B/FR21] Saved searches with alert=true: new posts matching
-            # the member's own saved filters, through the feed's query
-            # builder, under the SAME per-member daily cap and mute rules —
-            # never a second notification budget.
+            # [IMP-B/FR21] Saved searches with alert=true, under the SAME
+            # per-member daily cap and mute rules — never a second budget.
             sent += await _saved_search_alerts(conn, {m["id"]: m for m in members}, muted_by_member, settings)
     return sent
 
 
-async def _saved_search_alerts(conn: asyncpg.Connection, members: dict[str, asyncpg.Record], muted_by_member: dict, settings) -> int:
+def _saved_search_link(filters) -> str:
+    """Opens Discover with the saved search's own filters (the web reads them from the URL)."""
+    from urllib.parse import urlencode
+
+    data = filters.model_dump(exclude_none=True, exclude_defaults=True)
+    query = {k: (",".join(v) if isinstance(v, list) else ("true" if v is True else v)) for k, v in data.items() if v not in ([], "", False)}
+    return "/?" + urlencode(query) if query else "/"
+
+
+async def _saved_search_alerts(conn: asyncpg.Connection, members: dict, muted_by_member: dict, settings) -> int:
     from app.services.feed import saved_search_matches
     from app.services.saved_searches import _row_to_out
 
@@ -240,7 +279,9 @@ async def _saved_search_alerts(conn: asyncpg.Connection, members: dict[str, asyn
             continue
         saved = _row_to_out(search)
         since = search["last_alerted_at"] or search["created_at"]
-        matches = await saved_search_matches(conn, member, saved.query, saved.filters, since)
+        notified = await _notified_opportunity_ids(conn, member["id"])
+        matches = [m for m in await saved_search_matches(conn, member, saved.query, saved.filters, since)
+                   if str(m["id"]) not in notified and (m["deadline"] is None or m["deadline"] > datetime.now(timezone.utc))]
         if not matches:
             continue
         allowed = await conn.fetchval(
@@ -249,15 +290,19 @@ async def _saved_search_alerts(conn: asyncpg.Connection, members: dict[str, asyn
         )
         if not allowed:
             continue
-        name = saved.name or saved.query or ", ".join(saved.filters.skills) or translate("discover.section.for_you", member["language"])
-        idem_key = f"saved_search:{search['id']}:{date.today().isoformat()}"
+        name = saved.name or saved.query or ", ".join(saved.filters.skills)
+        spec = {"title": "notifications.savedSearchMatch.title", "body": "notifications.savedSearchMatch.body",
+                "values": {"count": len(matches), "name": name}}
+        ids = sorted(str(m["id"]) for m in matches)
         written = await send_notification(
             conn, member_id=member["id"], kind="opportunity_match", template_id="saved_search_match",
-            title=translate("notifications.savedSearchMatch.title", member["language"], count=len(matches), name=name),
-            body=translate("notifications.savedSearchMatch.body", member["language"]),
-            link=f"/opportunities/{matches[0]['id']}",
-            params={"saved_search_id": str(search["id"]), "opportunity_ids": [str(m["id"]) for m in matches]},
-            idempotency_key=idem_key,
+            title=translate(spec["title"], member["language"], count=len(matches), name=name),
+            body=translate(spec["body"], member["language"]),
+            # one post -> that post; several -> the saved search itself, opened as a filtered Discover
+            link=f"/opportunities/{ids[0]}" if len(ids) == 1 else _saved_search_link(saved.filters),
+            params={"saved_search_id": str(search["id"]), "opportunity_ids": ids},
+            idempotency_key=f"saved_search:{search['id']}:{hashlib.sha1(','.join(ids).encode()).hexdigest()[:16]}",
+            i18n=spec,
         )
         await conn.execute(
             "UPDATE vyapar_opportunities.saved_searches SET last_alerted_at = now(), updated_at = now() WHERE id = $1", search["id"]
@@ -268,36 +313,50 @@ async def _saved_search_alerts(conn: asyncpg.Connection, members: dict[str, asyn
 
 
 async def run_digest_pass(pool: asyncpg.Pool) -> int:
+    """[TR021] Once a day at the member's own hour (IST). [IMP-B, owner
+    2026-09-30] The digest counts only posts the member has NOT already been
+    told about (no match, no alert, no earlier digest), that are live and not
+    their own; it is skipped when there is nothing new, never sent twice
+    within 20 hours, lists its posts in params, and opens Discover on "New
+    today"."""
     settings = get_settings()
     sent = 0
-    current_hour = datetime.now(timezone.utc).hour
+    local_hour = datetime.now(timezone(timedelta(minutes=settings.contact_timezone_offset_minutes))).hour
     async with pool.acquire() as conn:
         async with conn.transaction():
             await _set_dispatcher_context(conn)
             privacy_rows = await conn.fetch(
-                "SELECT * FROM vyapar_privacy.notification_targets() WHERE digest_enabled AND digest_hour = $1", current_hour
+                "SELECT * FROM vyapar_privacy.notification_targets() WHERE digest_enabled AND digest_hour = $1", local_hour
             )
             digest_ids = [r["member_id"] for r in privacy_rows]
             if not digest_ids:
                 return 0
-            members = await conn.fetch(
-                "SELECT id, language FROM vyapar_identity.members WHERE id = ANY($1)", digest_ids
+            members = await conn.fetch("SELECT id, language FROM vyapar_identity.members WHERE id = ANY($1)", digest_ids)
+            fresh = await conn.fetch(
+                f"""SELECT id, poster_id FROM vyapar_opportunities.opportunities
+                     WHERE {_LIVE_POST_SQL} AND published_at > now() - interval '1 day'""",
+                list(_NOTIFIABLE_TYPES),
             )
             for member in members:
-                new_count = await conn.fetchval(
-                    """SELECT count(*) FROM vyapar_opportunities.opportunities
-                       WHERE state = 'active' AND type = ANY($1)
-                         AND published_at > now() - interval '1 day'""",
-                    list(_NOTIFIABLE_TYPES),
+                recent = await conn.fetchval(
+                    """SELECT EXISTS (SELECT 1 FROM vyapar_integration.notifications
+                         WHERE member_id = $1 AND kind = 'digest' AND created_at > now() - interval '20 hours')""",
+                    member["id"],
                 )
-                if not new_count:
+                if recent:
                     continue
-                idem_key = f"digest:{member['id']}:{date.today().isoformat()}"
-                title = translate("notifications.digest.title", member["language"], count=new_count)
-                body = translate("notifications.digest.body", member["language"])
+                notified = await _notified_opportunity_ids(conn, member["id"])
+                items = sorted(str(r["id"]) for r in fresh if r["poster_id"] != member["id"] and str(r["id"]) not in notified)
+                if not items:
+                    continue
+                spec = {"title": "notifications.digest.title", "body": "notifications.digest.body", "values": {"count": len(items)}}
                 written = await send_notification(
                     conn, member_id=member["id"], kind="digest", template_id="digest",
-                    title=title, body=body, link="/", params={"count": new_count}, idempotency_key=idem_key,
+                    title=translate(spec["title"], member["language"], count=len(items)),
+                    body=translate(spec["body"], member["language"]),
+                    link="/?posted_within=today&sort=freshness",
+                    params={"count": len(items), "opportunity_ids": items},
+                    idempotency_key=f"digest:{member['id']}:{date.today().isoformat()}", i18n=spec,
                 )
                 if written:
                     sent += 1

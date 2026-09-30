@@ -1,38 +1,31 @@
 "use client";
 
 // [Design direction / coordinator's "fewer taps" refinement] A single Post
-// entry point that asks the one real ambiguity (listing vs. opportunity)
-// once, instead of the CommandHub's Post destination silently assuming
-// one or the other. Not its own FR — a navigation-clarity fix sitting in
-// front of FR01/FR04 (listings/new) and FR11 (opportunities/new).
-// [Product-owner i18n rule] Converted to useTranslation().
-import { useRouter } from "next/navigation";
+// entry point that asks the one real ambiguity once: a post (a job, project,
+// local service need, training or event — FR11) or a profile (a business
+// profile or a work profile — FR01/FR04). Not its own FR; a navigation-
+// clarity step in front of /opportunities/new and /listings/new.
+// [Design language 2026-09-29] Two chooser cards with tinted icon tiles
+// under a page header, the post first because it is the hub's primary
+// action. Words per GLOSSARY.md ("post", "profile"; never "listing" or
+// "opportunity" on screen).
 import { useTranslation } from "react-i18next";
+import { Megaphone, Store } from "lucide-react";
 import Screen from "@/app/components/Screen";
-import Icon from "@/app/components/Icon";
+import PageHeader from "@/app/components/account/PageHeader";
+import ChoiceCard from "@/app/components/account/ChoiceCard";
+import { useRoutes } from "@/app/host/HostProvider";
+import "@/app/styles/account-2026.css";
 
 export default function PostChooserPage() {
   const { t } = useTranslation("discover");
-  const router = useRouter();
-  // [IMP39] On desktop the two choices sit side by side as real cards
-  // (glyph, title, description, arrow); on a phone the glyph and arrow are
-  // display:none and the stack is exactly as before.
+  const routes = useRoutes();
   return (
     <Screen>
-      <h1>{t("post.title")}</h1>
-      <div className="vy-stack vy-choice-grid">
-        <button className="vy-card vy-choice" onClick={() => router.push("/listings/new")}>
-          <span className="vy-choice-mark" aria-hidden="true"><Icon name="listing" size={22} /></span>
-          <h2 style={{ fontSize: 17 }}>{t("post.listingTitle")}</h2>
-          <p>{t("post.listingDesc")}</p>
-          <span className="vy-choice-arrow" aria-hidden="true">→</span>
-        </button>
-        <button className="vy-card vy-choice" onClick={() => router.push("/opportunities/new")}>
-          <span className="vy-choice-mark" aria-hidden="true"><Icon name="opportunity" size={22} /></span>
-          <h2 style={{ fontSize: 17 }}>{t("post.opportunityTitle")}</h2>
-          <p>{t("post.opportunityDesc")}</p>
-          <span className="vy-choice-arrow" aria-hidden="true">→</span>
-        </button>
+      <PageHeader title={t("post.title")} purpose={t("post.subtitle")} />
+      <div className="vy-acct-choices">
+        <ChoiceCard icon={Megaphone} tint="brand" title={t("post.opportunityTitle")} hint={t("post.opportunityDesc")} href="/opportunities/new" />
+        <ChoiceCard icon={Store} tint="indigo" title={t("post.listingTitle")} hint={t("post.listingDesc")} href={routes.newListing} />
       </div>
     </Screen>
   );

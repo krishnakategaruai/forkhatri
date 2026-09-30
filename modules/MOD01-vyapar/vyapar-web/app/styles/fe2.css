@@ -195,6 +195,19 @@
   color: var(--text-tertiary);
 }
 
+/* Touch floor (design language §1: 44px): the visible pill stays small,
+   the tap area grows to 44px on touch screens and 36px with a pointer. */
+.vy-trust-badge {
+  min-height: 36px;
+  padding-block: 6px;
+}
+
+@media (pointer: coarse) {
+  .vy-trust-badge {
+    min-height: 44px;
+  }
+}
+
 .vy-trust-badge[aria-expanded="true"] {
   border-color: var(--border-default);
   color: var(--text-primary);
@@ -1577,4 +1590,18 @@ html:has(.vy-contract-footer) {
 
 .vy-sheet .vy-fpanel-head .vy-link-btn {
   display: none;
+}
+
+/* A text link that is a real tap target (44px on touch), used on the post page. */
+.vy-tap-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: var(--type-sm);
+}
+
+@media (pointer: fine) {
+  .vy-tap-link {
+    min-height: 32px;
+  }
 }

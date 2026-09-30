@@ -1,0 +1,1835 @@
+/* ======================================================================
+   [Design language 2026-09-29] Deals: requests (inbox, thread, compose),
+   applicants, contracts, partnerships, promotions, workspace, campaigns,
+   checkout, outcomes and the operator consoles.
+   references/design-language-2026-09-29.md. Tokens only: no colour
+   literals, no gradients, glass or glow. Elevation is a lightness step
+   plus a hairline. Type sizes come from the --type-* tokens; the family
+   and weights come from the shared type classes (h1/h2, .vy-card-title,
+   .vy-label, .vy-eyebrow, .vy-muted), never from this file.
+   Imported by the pages that use it (app/enquiries, app/contracts, …).
+   ====================================================================== */
+
+/* ---- Page frame -------------------------------------------------------- */
+.vy-dl-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.vy-dl-page > * {
+  min-width: 0;
+}
+
+/* A quiet way back: chevron + the place you came from, 44px tall. */
+.vy-dl-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  margin-left: -10px;
+  padding: 0 12px 0 8px;
+  border-radius: var(--radius-pill);
+  color: var(--text-secondary);
+  font-size: var(--type-sm);
+  text-decoration: none;
+  align-self: flex-start;
+  transition: background-color 140ms var(--ease-out), color 140ms var(--ease-out);
+}
+
+@media (hover: hover) {
+  .vy-dl-back:hover {
+    background: var(--selected-bg);
+    color: var(--text-primary);
+  }
+}
+
+.vy-dl-back:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Page head: title + one line of purpose; on desktop an action can sit to
+   the right of the title. */
+.vy-dl-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.vy-dl-head > p,
+.vy-dl-head-sub {
+  color: var(--text-secondary);
+  max-width: 60ch;
+  line-height: 1.5;
+}
+
+.vy-dl-head h1 {
+  overflow-wrap: anywhere;
+}
+
+.vy-dl-head-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-4);
+}
+
+.vy-dl-head-row > .vy-dl-head {
+  flex: 1 1 280px;
+}
+
+/* Tags above a title (state chip, kind) */
+.vy-dl-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---- Icon tiles (the section marker) ------------------------------------ */
+.vy-dl-tile {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  background: var(--selected-bg);
+  color: var(--text-secondary);
+}
+
+.vy-dl-tile-brand {
+  background: var(--brand-soft);
+  color: var(--brand-text);
+}
+
+.vy-dl-tile-teal {
+  background: var(--secondary-soft);
+  color: var(--secondary-text);
+}
+
+.vy-dl-tile-green {
+  background: var(--success-soft);
+  color: var(--success-text);
+}
+
+.vy-dl-tile-amber {
+  background: var(--warning-soft);
+  color: var(--warning-text);
+}
+
+.vy-dl-tile-red {
+  background: var(--danger-soft);
+  color: var(--danger-text);
+}
+
+.vy-dl-tile-lg {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-tile);
+}
+
+/* ---- Section card: tile · bold title · muted hint ------------------------ */
+.vy-dl-sec {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-card);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-hairline);
+  box-shadow: var(--shadow-card);
+  min-width: 0;
+}
+
+@media (min-width: 900px) {
+  .vy-dl-sec {
+    padding: var(--space-5);
+  }
+}
+
+.vy-dl-sec-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.vy-dl-sec-head > .vy-dl-tile {
+  grid-row: 1 / span 2;
+}
+
+.vy-dl-sec-head .vy-card-title {
+  overflow-wrap: anywhere;
+}
+
+.vy-dl-sec-hint {
+  grid-column: 2;
+  color: var(--text-secondary);
+  font-size: var(--type-sm);
+  line-height: 1.45;
+}
+
+.vy-dl-sec-head-end {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  align-self: center;
+}
+
+.vy-dl-sec-head.vy-dl-sec-head-3 {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+/* A nested panel inside a section (a form, a sub-list): one lightness step. */
+.vy-dl-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-nested);
+  border: 1px solid var(--border-hairline);
+}
+
+/* ---- Status chips (quiet) ------------------------------------------------ */
+.vy-dl-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 2px 9px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-hairline);
+  background: var(--surface-nested);
+  color: var(--text-secondary);
+  font-size: var(--type-xs);
+  white-space: nowrap;
+  line-height: 1.3;
+}
+
+.vy-dl-state[data-tone="action"] {
+  border-color: transparent;
+  background: var(--brand-soft);
+  color: var(--brand-text);
+}
+
+.vy-dl-state[data-tone="done"] {
+  border-color: transparent;
+  background: var(--verified-soft);
+  color: var(--verified-text);
+}
+
+.vy-dl-state[data-tone="warn"] {
+  border-color: transparent;
+  background: var(--danger-soft);
+  color: var(--danger-text);
+}
+
+.vy-dl-state[data-tone="wait"] {
+  border-color: transparent;
+  background: var(--warning-soft);
+  color: var(--warning-text);
+}
+
+.vy-dl-state[data-tone="muted"] {
+  color: var(--text-tertiary);
+}
+
+.vy-dl-state > svg {
+  flex-shrink: 0;
+}
+
+/* ---- Segmented tabs with counts ----------------------------------------- */
+.vy-dl-tabs {
+  display: inline-flex;
+  align-self: flex-start;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.vy-dl-tabs > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  padding-inline: 14px;
+}
+
+.vy-dl-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary);
+  font-size: var(--type-xs);
+}
+
+.vy-dl-tabs > button[aria-selected="true"] .vy-dl-count,
+.vy-dl-tabs > button[aria-pressed="true"] .vy-dl-count {
+  color: var(--text-secondary);
+}
+
+/* Filter chip rail: scrolls on a phone, wraps on desktop. */
+.vy-dl-chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+  margin-inline: calc(-1 * var(--space-4));
+  padding-inline: var(--space-4);
+}
+
+.vy-dl-chips > .vy-chip {
+  flex-shrink: 0;
+}
+
+@media (min-width: 600px) {
+  .vy-dl-chips {
+    flex-wrap: wrap;
+    overflow: visible;
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+}
+
+/* ---- Rows (inbox, contracts list, admin lists) --------------------------- */
+.vy-dl-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.vy-dl-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  width: 100%;
+  padding: 14px var(--space-4);
+  border-radius: var(--radius-card);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-hairline);
+  box-shadow: var(--shadow-card);
+  color: var(--text-primary);
+  text-decoration: none;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  min-width: 0;
+  transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out), border-color 200ms var(--ease-out),
+    background-color 200ms var(--ease-out);
+}
+
+@media (hover: hover) {
+  .vy-dl-row:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-raise);
+    border-color: var(--border-default);
+  }
+}
+
+.vy-dl-row:active {
+  transform: scale(0.985);
+}
+
+.vy-dl-row:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.vy-dl-row[aria-current="true"],
+.vy-dl-row[aria-current="page"] {
+  border-color: var(--selected-border);
+  background: var(--selected-bg);
+  box-shadow: inset 0 0 0 1px var(--selected-border);
+}
+
+.vy-dl-row-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.vy-dl-row-title {
+  font-size: var(--type-body);
+  color: var(--text-primary);
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
+}
+
+.vy-dl-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+  min-width: 0;
+}
+
+.vy-dl-row-meta > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vy-dl-row-meta > svg {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+}
+
+.vy-dl-row-aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  align-self: flex-start;
+  gap: 6px;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.vy-dl-row-time {
+  font-size: var(--type-xs);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.vy-dl-row-amount {
+  font-size: var(--type-body);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.vy-dl-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--secondary-soft);
+  color: var(--secondary-text);
+  font-size: var(--type-sm);
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.vy-dl-avatar-lg {
+  width: 48px;
+  height: 48px;
+  font-size: var(--type-body);
+}
+
+/* The split-pane row exists twice (an <a> that navigates, a <button> that
+   selects); .vy-dl-row's own display would otherwise show both. */
+.vy-dl-row.vy-pane-row-console {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .vy-dl-row.vy-pane-row-mobile {
+    display: none;
+  }
+
+  .vy-dl-row.vy-pane-row-console {
+    display: grid;
+  }
+}
+
+/* ---- Split pane refinements (list + detail on desktop) ------------------ */
+@media (min-width: 1024px) {
+  .vy-dl-pane-detail {
+    position: sticky;
+    top: calc(var(--topbar-h) + var(--space-5));
+    max-height: calc(100dvh - var(--topbar-h) - 2 * var(--space-5));
+    overflow-y: auto;
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
+    background: var(--surface-raised);
+    border: 1px solid var(--border-hairline);
+    box-shadow: var(--shadow-card);
+  }
+
+  .vy-dl-pane-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    min-height: 320px;
+    text-align: center;
+    color: var(--text-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px dashed var(--border-default);
+  }
+}
+
+/* ---- Conversation thread ------------------------------------------------- */
+.vy-dl-thread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.vy-dl-thread-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.vy-dl-thread-head .vy-dl-avatar {
+  grid-row: 1 / span 2;
+}
+
+.vy-dl-thread-name {
+  font-size: var(--type-heading);
+  color: var(--text-primary);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.vy-dl-thread-about {
+  grid-column: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+  min-width: 0;
+}
+
+.vy-dl-thread-about a {
+  color: var(--text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--border-strong);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.vy-dl-msgs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.vy-dl-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: min(78%, 560px);
+  padding: 12px 14px;
+  border-radius: 18px 18px 18px 6px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-hairline);
+  box-shadow: var(--shadow-card);
+  color: var(--text-primary);
+  align-self: flex-start;
+  min-width: 0;
+}
+
+.vy-dl-msg p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+.vy-dl-msg-mine {
+  align-self: flex-end;
+  border-radius: 18px 18px 6px 18px;
+  background: var(--selected-bg);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.vy-dl-msg-time {
+  font-size: var(--type-xs);
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+  align-self: flex-end;
+}
+
+.vy-dl-msg-sys {
+  align-self: center;
+  text-align: center;
+  max-width: 88%;
+  font-size: var(--type-xs);
+  color: var(--text-tertiary);
+  padding: 4px 12px;
+}
+
+.vy-dl-attach {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  min-height: 36px;
+  padding: 4px 12px 4px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-control);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font-size: var(--type-sm);
+  text-decoration: none;
+  max-width: 100%;
+}
+
+.vy-dl-attach > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Composer: stays in reach at the bottom of the phone screen. The
+   `vy-actionbar-in` class on the same element hides the floating hub
+   (body:has(.vy-actionbar-in) in globals.css) so the two never stack. */
+.vy-dl-composer {
+  position: sticky;
+  bottom: 0;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0 calc(var(--space-3) + env(safe-area-inset-bottom));
+  background: var(--surface);
+  margin-bottom: calc(-1 * var(--hub-clear));
+}
+
+.vy-dl-composer > .vy-input {
+  flex: 1;
+  min-width: 0;
+  border-radius: var(--radius-pill);
+}
+
+.vy-dl-composer-send {
+  width: 48px;
+  height: 48px;
+  min-height: 48px;
+  padding: 0;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+@media (min-width: 900px) {
+  .vy-dl-composer {
+    position: static;
+    margin-bottom: 0;
+    padding: 0;
+    background: transparent;
+  }
+}
+
+/* The thread's closed / restricted footer line */
+.vy-dl-thread-closed {
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: var(--type-sm);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border-hairline);
+}
+
+/* Quiet secondary actions: one row of ghost buttons, or a menu in the aside */
+.vy-dl-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.vy-dl-actions-end {
+  justify-content: flex-end;
+}
+
+/* A row whose only child rendered nothing must not take a gap slot. */
+.vy-dl-actions:empty {
+  display: none;
+}
+
+/* A "more" menu for rarely used, destructive actions */
+.vy-dl-more {
+  position: relative;
+}
+
+.vy-dl-more-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 70;
+  min-width: 220px;
+  padding: 6px;
+  border-radius: var(--radius-md);
+  background: var(--surface-floating);
+  border: 1px solid var(--border-hairline);
+  box-shadow: var(--shadow-float);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vy-dl-more-menu > button {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--type-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.vy-dl-more-menu > button[data-danger] {
+  color: var(--danger-text);
+}
+
+@media (hover: hover) {
+  .vy-dl-more-menu > button:hover {
+    background: var(--selected-bg);
+  }
+}
+
+/* ---- Money ----------------------------------------------------------------- */
+.vy-dl-money {
+  font-size: var(--type-pay);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+
+.vy-dl-money-lg {
+  font-size: var(--type-title);
+}
+
+/* Receipt / price breakdown */
+.vy-dl-receipt {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px var(--space-3);
+  margin: 0;
+  align-items: baseline;
+}
+
+.vy-dl-receipt dt {
+  color: var(--text-secondary);
+  font-size: var(--type-sm);
+}
+
+.vy-dl-receipt dd {
+  margin: 0;
+  text-align: right;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--type-sm);
+}
+
+.vy-dl-receipt .vy-dl-receipt-total {
+  padding-top: 10px;
+  border-top: 1px solid var(--border-hairline);
+}
+
+.vy-dl-receipt dd.vy-dl-receipt-total {
+  font-size: var(--type-heading);
+}
+
+/* Long disclosure rows read as a definition list, label over text */
+.vy-dl-terms {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.vy-dl-terms > div {
+  display: grid;
+  gap: 2px;
+}
+
+.vy-dl-terms dt {
+  font-size: var(--type-xs);
+  color: var(--text-tertiary);
+  letter-spacing: 0.02em;
+}
+
+.vy-dl-terms dd {
+  margin: 0;
+  font-size: var(--type-sm);
+  color: var(--text-primary);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* ---- Pricing cards (radio) -------------------------------------------------- */
+.vy-dl-price-grid {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 600px) {
+  .vy-dl-price-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--space-3);
+  }
+}
+
+.vy-dl-price {
+  appearance: none;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 96px;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-control);
+  color: var(--text-primary);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  min-width: 0;
+  transition: border-color 140ms var(--ease-out), box-shadow 160ms var(--ease-out), transform var(--dur-press) var(--ease-spring);
+}
+
+.vy-dl-price:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) {
+  .vy-dl-price:hover {
+    box-shadow: var(--shadow-card);
+    border-color: var(--text-secondary);
+  }
+}
+
+.vy-dl-price[aria-checked="true"] {
+  border-color: var(--selected-border);
+  box-shadow: inset 0 0 0 1px var(--selected-border);
+  background: var(--selected-bg);
+}
+
+.vy-dl-price:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.vy-dl-price-check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--selected-solid-bg);
+  color: var(--selected-solid-fg);
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 140ms var(--ease-out), transform 220ms var(--ease-spring);
+}
+
+.vy-dl-price[aria-checked="true"] .vy-dl-price-check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.vy-dl-price-name {
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+  padding-right: 24px;
+}
+
+.vy-dl-price-amt {
+  font-size: var(--type-pay);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.vy-dl-price-sub {
+  font-size: var(--type-xs);
+  color: var(--text-tertiary);
+}
+
+/* Custom-duration slider */
+.vy-dl-range {
+  width: 100%;
+  accent-color: var(--brand);
+  min-height: 44px;
+}
+
+/* ---- Key/value facts (partnership request, profile snapshots) --------------- */
+.vy-dl-kv {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+}
+
+@media (min-width: 600px) {
+  .vy-dl-kv {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vy-dl-kv > .vy-dl-kv-wide {
+    grid-column: 1 / -1;
+  }
+}
+
+.vy-dl-kv dt {
+  font-size: var(--type-xs);
+  color: var(--text-tertiary);
+  letter-spacing: 0.02em;
+  margin-bottom: 4px;
+}
+
+.vy-dl-kv dd {
+  margin: 0;
+  color: var(--text-primary);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* ---- Metrics (operator health, performance report) ------------------------ */
+.vy-dl-metrics {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 600px) {
+  .vy-dl-metrics {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--space-3);
+  }
+}
+
+.vy-dl-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--surface-nested);
+  border: 1px solid var(--border-hairline);
+  min-width: 0;
+}
+
+.vy-dl-metric-label {
+  font-size: var(--type-xs);
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+.vy-dl-metric-value {
+  font-size: var(--type-pay);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.vy-dl-metric-value[data-empty] {
+  font-size: var(--type-sm);
+  color: var(--text-tertiary);
+  letter-spacing: 0;
+}
+
+.vy-dl-metric-sub {
+  font-size: var(--type-xs);
+  color: var(--text-tertiary);
+}
+
+/* ---- Dense tables (operator consoles) -------------------------------------- */
+.vy-dl-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-hairline);
+  background: var(--surface-raised);
+}
+
+.vy-dl-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--type-sm);
+  min-width: 560px;
+}
+
+.vy-dl-table th,
+.vy-dl-table td {
+  padding: 10px 14px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.vy-dl-table th {
+  font-size: var(--type-xs);
+  color: var(--text-tertiary);
+  letter-spacing: 0.02em;
+  background: var(--surface-nested);
+  white-space: nowrap;
+}
+
+.vy-dl-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+@media (hover: hover) {
+  .vy-dl-table tbody tr:hover td {
+    background: var(--selected-bg);
+  }
+}
+
+.vy-dl-table td.vy-dl-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.vy-dl-table .vy-dl-cell-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.vy-dl-table .vy-dl-cell-actions .vy-btn,
+.vy-dl-btn-sm.vy-btn {
+  min-height: 36px;
+  padding: 6px 14px;
+  font-size: var(--type-sm);
+}
+
+.vy-dl-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--type-xs);
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+/* ---- Console layout: sections flow in two columns on a wide desk ----------- */
+.vy-dl-console {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+@media (min-width: 1280px) {
+  .vy-dl-console-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-5);
+    align-items: start;
+  }
+
+  .vy-dl-console-2 > .vy-dl-span {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ---- Stage timeline (contracts): rail, dots, one action per row ------------ */
+.vy-dl-stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.vy-dl-stage {
+  position: relative;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: var(--space-3);
+  padding-bottom: var(--space-5);
+}
+
+.vy-dl-stage:last-child {
+  padding-bottom: 0;
+}
+
+.vy-dl-stage::before {
+  content: "";
+  position: absolute;
+  left: 11px;
+  top: 26px;
+  bottom: 4px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--border-hairline);
+}
+
+.vy-dl-stage:last-child::before {
+  display: none;
+}
+
+.vy-dl-stage-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--surface-raised);
+  border: 2px solid var(--border-strong);
+  color: var(--text-tertiary);
+  box-sizing: border-box;
+  margin-top: 1px;
+}
+
+.vy-dl-stage-dot[data-tone="action"] {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--on-brand);
+}
+
+.vy-dl-stage-dot[data-tone="held"] {
+  background: var(--warning-soft);
+  border-color: var(--warning-text);
+  color: var(--warning-text);
+}
+
+.vy-dl-stage-dot[data-tone="done"] {
+  background: var(--verified-soft);
+  border-color: var(--verified-text);
+  color: var(--verified-text);
+}
+
+.vy-dl-stage-dot[data-tone="warn"] {
+  background: var(--danger-soft);
+  border-color: var(--danger-text);
+  color: var(--danger-text);
+}
+
+.vy-dl-stage-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.vy-dl-stage-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px var(--space-3);
+}
+
+.vy-dl-stage-title {
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.vy-dl-stage-amt {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.vy-dl-stage-line {
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.vy-dl-stage-note {
+  font-size: var(--type-sm);
+  color: var(--text-primary);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-nested);
+  border-left: 2px solid var(--border-strong);
+  overflow-wrap: anywhere;
+}
+
+/* The "your turn" banner on a contract */
+.vy-dl-turn {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-4);
+  border-radius: var(--radius-card);
+  background: var(--brand-soft);
+  border: 1px solid transparent;
+  color: var(--text-primary);
+}
+
+.vy-dl-turn-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+@media (min-width: 600px) {
+  .vy-dl-turn {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .vy-dl-turn-actions {
+    grid-column: 3;
+  }
+}
+
+/* Phone footer for the current step: sits where the hub would be. */
+.vy-dl-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 55;
+  display: flex;
+  gap: var(--space-2);
+  padding: 10px var(--space-4) calc(10px + env(safe-area-inset-bottom));
+  background: var(--surface-raised);
+  border-top: 1px solid var(--border-hairline);
+  box-shadow: var(--shadow-raise);
+}
+
+.vy-dl-footer > .vy-btn {
+  flex: 1;
+}
+
+@media (min-width: 900px) {
+  .vy-dl-footer {
+    display: none;
+  }
+}
+
+/* ---- Compose (request) --------------------------------------------------------- */
+.vy-dl-choice-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.vy-dl-choice {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-control);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--type-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 140ms var(--ease-out), background-color 140ms var(--ease-out), transform var(--dur-press) var(--ease-spring);
+}
+
+.vy-dl-choice:active {
+  transform: scale(0.97);
+}
+
+.vy-dl-choice[aria-checked="true"] {
+  border-color: var(--selected-border);
+  background: var(--selected-bg);
+  box-shadow: inset 0 0 0 1px var(--selected-border);
+}
+
+.vy-dl-choice > svg {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.vy-dl-choice[aria-checked="true"] > svg {
+  color: var(--text-primary);
+}
+
+.vy-dl-counter {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--type-xs);
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.vy-dl-safety {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: var(--type-xs);
+  color: var(--text-tertiary);
+  line-height: 1.5;
+}
+
+.vy-dl-safety > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Target card at the top of a compose step */
+.vy-dl-target {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.vy-dl-target-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.vy-dl-target-body > strong {
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.vy-dl-target-body > span {
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+}
+
+/* ---- Result / notice banner ------------------------------------------------------- */
+.vy-dl-notice {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-nested);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-primary);
+  font-size: var(--type-sm);
+  line-height: 1.5;
+}
+
+.vy-dl-notice > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--text-secondary);
+}
+
+.vy-dl-notice[data-tone="good"] {
+  background: var(--success-soft);
+  border-color: transparent;
+}
+
+.vy-dl-notice[data-tone="good"] > svg {
+  color: var(--success-text);
+}
+
+.vy-dl-notice[data-tone="warn"] {
+  background: var(--warning-soft);
+  border-color: transparent;
+}
+
+.vy-dl-notice[data-tone="warn"] > svg {
+  color: var(--warning-text);
+}
+
+.vy-dl-notice[data-tone="bad"] {
+  background: var(--danger-soft);
+  border-color: transparent;
+}
+
+.vy-dl-notice[data-tone="bad"] > svg {
+  color: var(--danger-text);
+}
+
+/* ---- History (promotion / contract events) ----------------------------------------- */
+.vy-dl-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.vy-dl-history > li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px var(--space-3);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-hairline);
+  font-size: var(--type-sm);
+  color: var(--text-primary);
+  align-items: baseline;
+}
+
+.vy-dl-history > li:last-child {
+  border-bottom: none;
+}
+
+.vy-dl-history time {
+  font-size: var(--type-xs);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Team member rows / campaign items ------------------------------------------- */
+.vy-dl-person {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.vy-dl-person:last-of-type {
+  border-bottom: none;
+}
+
+/* ---- Compare sheet: table tokens ------------------------------------------------- */
+.vy-dl-compare-best {
+  color: var(--text-primary);
+}
+
+/* The reason a primary action is disabled (DisabledReason.tsx). */
+.vy-disabled-reason {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.vy-disabled-reason > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--text-tertiary);
+}
+
+/* ---- Utilities ------------------------------------------------------------------ */
+.vy-dl-hint {
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.vy-dl-fine {
+  font-size: var(--type-xs);
+  color: var(--text-tertiary);
+  line-height: 1.5;
+}
+
+.vy-dl-link {
+  color: var(--brand-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 140ms var(--ease-out);
+}
+
+@media (hover: hover) {
+  .vy-dl-link:hover {
+    text-decoration-color: currentColor;
+  }
+}
+
+.vy-dl-inline-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vy-dl-desktop-only {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .vy-dl-desktop-only {
+    display: revert;
+  }
+
+  .vy-dl-phone-only {
+    display: none !important;
+  }
+}
+
+/* Reduced motion: keep colour changes, drop transforms. */
+@media (prefers-reduced-motion: reduce) {
+  .vy-dl-row,
+  .vy-dl-price,
+  .vy-dl-choice,
+  .vy-dl-back,
+  .vy-dl-price-check {
+    transition-property: background-color, border-color, color, opacity, box-shadow !important;
+  }
+
+  .vy-dl-row:hover,
+  .vy-dl-row:active,
+  .vy-dl-price:active,
+  .vy-dl-choice:active {
+    transform: none !important;
+  }
+
+  .vy-dl-price-check {
+    transform: none;
+  }
+}
+
+/* High contrast: real edges on rows, chips and panels. */
+html[data-contrast="more"] .vy-dl-row,
+html[data-contrast="more"] .vy-dl-sec,
+html[data-contrast="more"] .vy-dl-panel,
+html[data-contrast="more"] .vy-dl-msg,
+html[data-contrast="more"] .vy-dl-state,
+html[data-contrast="more"] .vy-dl-metric,
+html[data-contrast="more"] .vy-dl-table-wrap {
+  border-color: var(--border-strong);
+}
+
+/* ======================================================================
+   Contracts list + detail, redesign 2026-09-30 (owner: "can't we find any
+   better?"). Pattern taken from Stripe's payments list and Linear's issue
+   list: ONE surface with hairline row dividers (not a stack of boxes),
+   status as a coloured dot + word, the amount right-aligned in tabular
+   figures with the date muted under it, and selection shown as a soft
+   brand tint with a 3px left accent bar — never a heavy outline.
+   ====================================================================== */
+.vy-seg-solid {
+  display: inline-flex;
+  align-self: flex-start;
+  max-width: 100%;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-hairline);
+  background: var(--surface-raised);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.vy-seg-solid > button {
+  appearance: none;
+  min-height: 44px;
+  padding: 0 16px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--type-sm);
+  font-weight: var(--weight-ui);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--dur-hover) var(--ease-out), color var(--dur-hover) var(--ease-out);
+}
+
+.vy-seg-solid > button[aria-selected="true"],
+.vy-seg-solid > button[aria-pressed="true"] {
+  background: var(--selected-solid-bg);
+  color: var(--selected-solid-fg);
+}
+
+@media (hover: hover) {
+  .vy-seg-solid > button[aria-selected="false"]:hover {
+    background: var(--selected-bg);
+    color: var(--text-primary);
+  }
+}
+
+.vy-cl-pane {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .vy-cl-pane {
+    grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
+  }
+}
+
+.vy-cl-pane > * {
+  min-width: 0;
+}
+
+.vy-cl-list {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-card);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-hairline);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+  .vy-cl-list {
+    position: sticky;
+    top: calc(var(--topbar-h) + var(--space-5));
+  }
+}
+
+.vy-cl-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  min-height: 72px;
+  padding: 12px 16px;
+  border: none;
+  border-top: 1px solid var(--border-hairline);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--dur-hover) var(--ease-out);
+}
+
+.vy-cl-list > :first-child .vy-cl-row,
+.vy-cl-list > .vy-cl-row:first-child {
+  border-top: none;
+}
+
+@media (hover: hover) {
+  .vy-cl-row:hover {
+    background: var(--surface-nested);
+  }
+}
+
+.vy-cl-row:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.vy-cl-row[aria-current="true"] {
+  background: var(--brand-soft);
+}
+
+.vy-cl-row[aria-current="true"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--brand);
+}
+
+.vy-cl-row.vy-pane-row-console {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .vy-cl-row.vy-pane-row-mobile {
+    display: none;
+  }
+
+  .vy-cl-row.vy-pane-row-console {
+    display: grid;
+  }
+}
+
+.vy-cl-mono {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--secondary-soft);
+  color: var(--secondary-text);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-heading);
+}
+
+.vy-cl-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.vy-cl-title {
+  font-weight: var(--weight-heading);
+  line-height: var(--leading-heading);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vy-cl-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+}
+
+.vy-cl-meta > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vy-cl-end {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.vy-cl-amt {
+  font-weight: var(--weight-heading);
+}
+
+.vy-cl-date {
+  font-size: var(--type-xs);
+  color: var(--text-tertiary);
+}
+
+/* Status: a dot and a word, the colour carried by the dot. */
+.vy-dot-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.vy-dot-status::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border-strong);
+  flex-shrink: 0;
+}
+
+.vy-dot-status[data-tone="wait"] { color: var(--warning-text); }
+.vy-dot-status[data-tone="wait"]::before { background: var(--warning-text); }
+.vy-dot-status[data-tone="action"]::before { background: var(--brand); }
+.vy-dot-status[data-tone="done"]::before { background: var(--verified-text); }
+.vy-dot-status[data-tone="warn"] { color: var(--danger-text); }
+.vy-dot-status[data-tone="warn"]::before { background: var(--danger-text); }
+
+/* The detail pane: one calm surface, never wider than its track. */
+.vy-cl-detail {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 1024px) {
+  .vy-cl-detail {
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
+    background: var(--surface-raised);
+    border: 1px solid var(--border-hairline);
+    box-shadow: var(--shadow-card);
+  }
+}
+
+/* Inside the pane the detail is a single column (the pane is narrow). */
+.vy-dl-embedded .vy-detail {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.vy-dl-embedded .vy-detail > .vy-detail-aside {
+  grid-column: auto !important;
+  grid-row: auto !important;
+  position: static !important;
+}
+
+.vy-dl-embedded .vy-dl-sec {
+  box-shadow: none;
+}
+
+/* The calm "your turn" card on a contract: text, facts, one full-width action. */
+.vy-cl-offer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-card);
+  background: var(--brand-soft);
+  color: var(--text-primary);
+}
+
+.vy-cl-offer-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  margin: 0;
+}
+
+.vy-cl-offer-facts > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vy-cl-offer-facts dt {
+  font-size: var(--type-xs);
+  color: var(--text-secondary);
+}
+
+.vy-cl-offer-facts dd {
+  margin: 0;
+  font-weight: var(--weight-heading);
+}
+
+.vy-cl-offer > .vy-btn-primary {
+  width: 100%;
+}
+
+.vy-cl-textbtn {
+  appearance: none;
+  align-self: center;
+  min-height: 44px;
+  padding: 0 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--type-sm);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vy-cl-row,
+  .vy-seg-solid > button {
+    transition: none;
+  }
+}

@@ -1,22 +1,22 @@
 {
   "home": {
     "greeting": "नमस्ते, {{name}}",
-    "postOpportunity": "+ अवसर पोस्ट करें",
-    "openDirectory": "व्यवसाय और पेशेवर",
+    "postOpportunity": "+ पोस्ट करें",
+    "openDirectory": "बिज़नेस और प्रोफ़ेशनल",
     "loadingFeed": "आपकी फ़ीड लोड हो रही है…",
-    "addCapabilities": "अपनी क्षमताएँ जोड़ें",
-    "noOpportunities": "अभी दिखाने के लिए कोई अवसर नहीं है — इसके बजाय लिस्टिंग ब्राउज़ करने के लिए व्यवसाय व पेशेवर देखें।",
+    "addCapabilities": "अपनी स्किल जोड़ें",
+    "noOpportunities": "अभी दिखाने के लिए कोई पोस्ट नहीं है — इसके बजाय प्रोफ़ाइल ब्राउज़ करने के लिए बिज़नेस व प्रोफ़ेशनल देखें।",
     "sectionForYou": "आपके लिए",
-    "sectionExplore": "एक्सप्लोर करें",
+    "sectionExplore": "और देखें",
     "sectionNearYou": "आपके पास",
-    "sectionCommunity": "समुदाय",
-    "sectionPublic": "सार्वजनिक",
+    "sectionCommunity": "आपके समाज से",
+    "sectionPublic": "बाहर से शेयर की गई",
     "seeAll": "सभी {{count}} देखें",
-    "emptyBody": "अभी तक आपसे मेल खाता कुछ भी पोस्ट नहीं हुआ है। आपको जो चाहिए वह पोस्ट करें, आपके समुदाय के लोग उसे देखेंगे।",
+    "emptyBody": "अभी तक आपसे मेल खाता कुछ भी पोस्ट नहीं हुआ है। आपको जो चाहिए वह पोस्ट करें, आपके समाज के लोग उसे देखेंगे।",
     "emptyAction": "कुछ पोस्ट करें"
   },
   "enrichment": {
-    "sparseProfile": "बेहतर मैच पाने के लिए अपनी क्षमताएँ जोड़ें — हम अभी आपकी फ़ीड को ज़्यादा व्यक्तिगत नहीं बना पा रहे।"
+    "sparseProfile": "बेहतर मैच पाने के लिए अपनी स्किल जोड़ें — हम अभी आपकी फ़ीड को ज़्यादा व्यक्तिगत नहीं बना पा रहे।"
   },
   "card": {
     "postedToday": "आज पोस्ट किया गया",
@@ -24,21 +24,21 @@
     "postedDaysAgo": "{{days}} दिन पहले पोस्ट किया गया"
   },
   "businesses": {
-    "title": "व्यवसाय और पेशेवर",
+    "title": "बिज़नेस और प्रोफ़ेशनल",
     "searchPlaceholder": "जैसे \"अमीरपेट के पास प्लंबर\"",
     "search": "खोजें",
     "chipCategory": "श्रेणी: {{category}}",
     "chipNear": "पास: {{locality}}",
-    "verifiedLabel": "व्यवसाय अस्तित्व सत्यापित",
+    "verifiedLabel": "बिज़नेस वेरिफ़ाइड",
     "noExactMatch": "कोई सटीक मिलान नहीं मिला।",
     "postWhatYouNeed": "आपको जो चाहिए वह पोस्ट करें",
     "hint": "नाम, श्रेणी या इलाके से खोजें — या केवल खोजें दबाकर ब्राउज़ करें।",
     "broadenRadius": "{{km}} किमी तक बढ़ाएँ",
     "broadenAdjacentCategories": "समान श्रेणियाँ शामिल करें",
     "broadenRemoveFilter": "एक फ़िल्टर हटाएँ",
-    "broadenIncludeUnverified": "असत्यापित लिस्टिंग शामिल करें",
+    "broadenIncludeUnverified": "बिना वेरिफ़िकेशन वाली प्रोफ़ाइल शामिल करें",
     "tooManySearches": "बहुत अधिक खोजें — कृपया धीमे करें।",
-    "searchUnavailable": "खोज अभी अस्थायी रूप से उपलब्ध नहीं है — इसके बजाय हाल ही में जोड़ी गई लिस्टिंग दिखा रहे हैं।",
+    "searchUnavailable": "खोज अभी अस्थायी रूप से उपलब्ध नहीं है — इसके बजाय हाल ही में जोड़ी गई प्रोफ़ाइल दिखा रहे हैं।",
     "recentlyAdded": "हाल ही में जोड़ा गया",
     "filters": "फ़िल्टर",
     "filtersActive": "फ़िल्टर ({{count}})",
@@ -55,36 +55,39 @@
     "availabilityNow": "अभी उपलब्ध",
     "availabilityThisWeek": "इस सप्ताह",
     "availabilityLater": "बाद में",
-    "verifiedOnly": "केवल सत्यापित",
+    "verifiedOnly": "केवल वेरिफ़ाइड",
     "sortBy": "इस क्रम में दिखाएँ",
     "sortRelevance": "प्रासंगिकता",
     "sortDistance": "दूरी",
     "sortFreshness": "नवीनतम",
-    "sortVerifiedFirst": "पहले सत्यापित",
-    "skills": "कौशल",
-    "skillsSearchPlaceholder": "कौशल खोजें",
+    "sortVerifiedFirst": "पहले वेरिफ़ाइड",
+    "skills": "स्किल",
+    "skillsSearchPlaceholder": "स्किल खोजें",
     "clearFilters": "फ़िल्टर हटाएँ",
     "applyFilters": "लागू करें",
     "distanceAway": "{{km}} किमी दूर",
-    "resultsCount": "{{count}} परिणाम"
+    "resultsCount": "{{count}} परिणाम",
+    "resultsCount_one": "1 परिणाम",
+    "resultsCount_other": "{{count}} परिणाम"
   },
   "post": {
-    "title": "आप क्या पोस्ट कर रहे हैं?",
-    "listingTitle": "एक व्यवसाय या पेशेवर लिस्टिंग",
-    "listingDesc": "एक स्थायी उपस्थिति जिसे लोग खोज और संपर्क कर सकते हैं।",
-    "opportunityTitle": "एक अवसर",
-    "opportunityDesc": "एक नौकरी, गिग, या साझा करने लायक कुछ समय-सीमित।"
+    "title": "आप क्या पोस्ट करना चाहते हैं?",
+    "listingTitle": "आपकी प्रोफ़ाइल",
+    "listingDesc": "अपनी काम की प्रोफ़ाइल और बिज़नेस बनाएँ या अपडेट करें, ताकि लोग आपको ढूँढ सकें।",
+    "opportunityTitle": "एक पोस्ट",
+    "opportunityDesc": "नौकरी, प्रोजेक्ट, लोकल सर्विस की ज़रूरत, ट्रेनिंग या इवेंट।",
+    "subtitle": "पोस्ट लोगों तक अभी पहुँचती है। आपकी प्रोफ़ाइल से लोग आपको कभी भी ढूँढ सकते हैं।"
   },
   "profiles": {
     "similarTitle": "मिलती-जुलती प्रोफ़ाइलें",
     "matchingTitle": "इससे मेल खाती प्रोफ़ाइलें",
-    "matchingHelp": "व्यापार पर वे लोग और व्यवसाय जिनके पास पहले से आपके माँगे कौशल हैं।",
+    "matchingHelp": "व्यापार पर वे लोग और बिज़नेस जिनके पास पहले से आपके माँगे स्किल हैं।",
     "hasSkills": "{{skills}} आता है",
     "availableNow": "अभी उपलब्ध",
     "experience_one": "{{count}} साल का अनुभव",
     "experience_other": "{{count}} साल का अनुभव",
     "kind": {
-      "business": "व्यवसाय",
+      "business": "बिज़नेस",
       "professional": "प्रोफेशनल"
     }
   },
@@ -92,6 +95,6 @@
     "radius": "{{km}} किमी तक बढ़ाएँ",
     "adjacent_categories": "मिलती-जुलती श्रेणियाँ भी दिखाएँ",
     "remove_filter": "एक फ़िल्टर हटाएँ",
-    "include_unverified": "असत्यापित लिस्टिंग भी दिखाएँ"
+    "include_unverified": "बिना वेरिफ़िकेशन वाली प्रोफ़ाइल भी दिखाएँ"
   }
 }

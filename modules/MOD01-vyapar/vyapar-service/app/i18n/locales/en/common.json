@@ -1,7 +1,7 @@
 {
   "error": {
-    "listingNotFound": "Listing not found or no longer available",
-    "opportunityNotFound": "This opportunity is no longer available",
+    "listingNotFound": "Profile not found or no longer available",
+    "opportunityNotFound": "This post is no longer available",
     "operatorPermissionRequired": "Operator permission required",
     "validation": "The request has missing or invalid fields.",
     "generic": "Something went wrong. Please try again.",

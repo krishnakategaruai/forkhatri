@@ -26,6 +26,7 @@ export const DOC_KEY: Record<string, string> = {
   shops_est: "typeShopsEst",
   credential: "typeCredential",
 };
+import DisabledReason from "@/app/components/DisabledReason";
 
 export interface VerificationFields {
   verification_state: string;
@@ -151,12 +152,12 @@ export function VerificationPanel({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  async function load() {
-    setRecords(await sdk.listings.verification<RecordOut[]>(listingId));
+  function load() {
+    return sdk.listings.verification<RecordOut[]>(listingId).then(setRecords);
   }
 
   useEffect(() => {
-    load().catch(() => setRecords([]));
+    queueMicrotask(() => void load().catch(() => setRecords([])));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listingId]);
 
@@ -207,13 +208,9 @@ export function VerificationPanel({
         {options.map((o) => (
           <button
             key={o}
+            type="button"
             className="vy-chip"
-            style={{
-              border: `1px solid ${docType === o ? "var(--selected-border)" : "var(--border-hairline)"}`,
-              cursor: "pointer",
-              background: docType === o ? "var(--selected-bg)" : "var(--surface-overlay)",
-              color: docType === o ? "var(--selected-fg)" : "var(--text-primary)",
-            }}
+            aria-pressed={docType === o}
             onClick={() => setDocType(o)}
           >
             {t(`verification:${DOC_KEY[o]}` as "typeGst")}
@@ -229,9 +226,10 @@ export function VerificationPanel({
         <input className="vy-input" value={identifier} onChange={(e) => setIdentifier(e.target.value.toUpperCase())} placeholder={t("verification:identifierLabel")} />
       )}
       {error && <p className="vy-error">{error}</p>}
-      <button className="vy-btn vy-btn-primary" disabled={!ready || busy} onClick={submit}>
+      <button className="vy-btn vy-btn-primary" aria-describedby={!ready ? "why-verification" : undefined} disabled={!ready || busy} onClick={submit}>
         {busy ? t("common:state.saving") : t("verification:submit")}
       </button>
+      <DisabledReason id={"why-verification"} show={!ready}>{t("common:disabled.verification")}</DisabledReason>
     </div>
   );
 }

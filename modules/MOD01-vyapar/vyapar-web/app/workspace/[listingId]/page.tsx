@@ -4,33 +4,33 @@
 // with its full disclosure, the team, and the campaigns — no separate plan,
 // team and billing screens to walk through.
 // - The plan section is the FR54 disclosure: price with tax, renewal date,
-//   what is included, an explicit "never included" line (verification,
-//   reputation, ranking, eligibility, private member data), and the
+//   what is included, an explicit "never included" line, and the
 //   cancellation terms — then one Confirm button that names the amount.
 // - Renewal is honest: cancelling stops it at period end and can be turned
 //   back on; a Paused plan says why, keeps all data, and offers to complete
 //   the payment.
-// - Team: invite by phone with a role, pending invites shown with their expiry,
-//   role change and revoke in place. What each role may do is stated, not
-//   implied.
-// - Campaigns: create inline (name, package, up to 10 items, duration) and
-//   open any campaign's own screen.
+// - Team: invite by phone with a role, pending invites shown with their
+//   expiry, role change and revoke in place. What each role may do is stated.
+// - Campaigns: create inline (name, package, up to 10 items) and open any
+//   campaign's own screen.
 // The API decides every permission; this screen only renders what the
 // Authorization Engine reported in `capabilities`.
-// [IMP39 — desktop layout] At ≥900px the workspace reads as a dashboard:
-// a facts strip (your role, plan, team size, campaigns — all from this
-// response), then the sections in a two-column grid. With no plan yet, the
-// plan chooser spans the width with the choices on the left and the full
-// disclosure (or, before a choice, what a plan includes and never
-// includes) on the right. Below 900px the strip is hidden and every wrapper
-// is display:contents — the phone screen is unchanged.
+// [Design language 2026-09-29] A page head, a facts strip, then section
+// cards (plan · team · campaigns) each with an icon tile and a one-line
+// hint; pricing as radio cards with a check; one filled button per screen.
 // Traces to: FR33, FR34, FR35, FR54, TR033, TR034, UX21
 import { useCallback, useEffect, useState, use as useParamsPromise } from "react";
 import { useTranslation } from "react-i18next";
+import { AlertTriangle, BadgeCheck, Check, ChevronRight, Layers, Plus, ShieldCheck, Users } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { formatPaise } from "@/lib/money";
 import Screen from "@/app/components/Screen";
-import { formatDate } from "@/lib/format"; // [FE2] Indian date order
+import { SkeletonGrid } from "@/app/components/States";
+import DealsEmpty from "@/app/components/deals/Empty";
+import DisabledReason from "@/app/components/DisabledReason";
+import { formatDate } from "@/lib/format";
+import { promotionTone } from "@/app/promotions/tone";
+import "@/app/styles/deals-2026.css";
 
 interface Plan {
   id: string;
@@ -104,6 +104,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ listingId:
   const [campaignName, setCampaignName] = useState("");
   const [packageId, setPackageId] = useState<string | null>(null);
   const [chosenItems, setChosenItems] = useState<string[]>([]);
+  const [newCampaign, setNewCampaign] = useState(false);
 
   const money = (p: number) => formatPaise(p, i18n.language);
   const fmt = (d: string) => formatDate(d, i18n.language);
@@ -122,6 +123,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ listingId:
   }, [listingId]);
 
   useEffect(() => {
+    // The initial load runs once per id (the pattern this module's data hooks use).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
 
@@ -203,246 +206,322 @@ export default function WorkspacePage({ params }: { params: Promise<{ listingId:
     }
   }
 
-  if (error) return <Screen><h1>{t("workspace:title")}</h1><p className="vy-error">{error}</p></Screen>;
-  if (!ws) return <Screen><p className="vy-muted">{t("common:state.loading")}</p></Screen>;
+  if (error)
+    return (
+      <Screen width="wide">
+        <div className="vy-dl-page">
+          <DealsEmpty tone="neutral" icon={<AlertTriangle size={24} strokeWidth={1.75} aria-hidden="true" />} title={t("workspace:title")} body={error} />
+        </div>
+      </Screen>
+    );
+  if (!ws)
+    return (
+      <Screen width="wide">
+        <div className="vy-dl-page">
+          <SkeletonGrid count={3} grid={false} />
+        </div>
+      </Screen>
+    );
 
   const plan = ws.plans.find((p) => p.id === planId) ?? null;
-  const chipStyle = (active: boolean) => ({
-    border: "none",
-    cursor: "pointer",
-    background: active ? "var(--selected-solid-bg)" : "var(--surface-overlay)",
-    color: active ? "var(--selected-solid-fg)" : "var(--text-primary)",
-  });
-
-  const planFact = ws.entitlement
-    ? ws.entitlement.active
-      ? t("workspace:dash.planOn")
-      : t(`workspace:plan.state.${ws.entitlement.state}` as "plan.state.paused")
-    : t("workspace:dash.noPlan");
+  const planFact = ws.entitlement ? (ws.entitlement.active ? t("workspace:dash.planOn") : t(`workspace:plan.state.${ws.entitlement.state}` as "plan.state.paused")) : t("workspace:dash.noPlan");
   const activeMembers = ws.members.filter((m) => m.state === "active" || m.state === "pending").length;
+  const hasTeam = ws.capabilities.includes("team");
+  const hasCampaigns = ws.capabilities.includes("campaigns");
+  const campaignBlocker = !campaignName.trim() || campaignName.trim().length < 2 ? t("workspace:campaigns.needName") : !packageId ? t("workspace:campaigns.needPackage") : chosenItems.length === 0 ? t("workspace:campaigns.needItems") : null;
 
   return (
     <Screen width="wide">
-      <div>
-        <span className="vy-badge vy-badge-member-provided vy-m-only">{t(`workspace:role.${ws.role}` as "role.owner")}</span>
-        <h1 style={{ marginTop: 8 }}>{t("workspace:title")}</h1>
-        <p className="vy-muted">{ws.listing_name}</p>
-      </div>
-      {notice && <p className="vy-error">{notice}</p>}
-
-      <div className="vy-facts vy-dash-facts">
-        <div className="vy-fact">
-          <span className="vy-fact-label">{t("workspace:dash.role")}</span>
-          <span className="vy-fact-value">{t(`workspace:role.${ws.role}` as "role.owner")}</span>
-        </div>
-        <div className="vy-fact">
-          <span className="vy-fact-label">{t("workspace:dash.plan")}</span>
-          <span className="vy-fact-value">{planFact}</span>
-        </div>
-        <div className="vy-fact">
-          <span className="vy-fact-label">{t("workspace:dash.team")}</span>
-          <span className="vy-fact-value">{ws.capabilities.includes("team") ? activeMembers : t("workspace:dash.withPlan")}</span>
-        </div>
-        <div className="vy-fact">
-          <span className="vy-fact-label">{t("workspace:dash.campaigns")}</span>
-          <span className="vy-fact-value">{ws.capabilities.includes("campaigns") ? ws.campaigns.length : t("workspace:dash.withPlan")}</span>
-        </div>
-      </div>
-
-      <div className="vy-dash">
-
-      {/* [FR33] plan state, or the disclosure + purchase when there is none */}
-      {ws.entitlement?.active && (
-        <section className="vy-card vy-stack">
-          <div className="vy-row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
-            <strong>{t("workspace:plan.active")}</strong>
-            <span className="vy-muted">{ws.entitlement.renews_at ? t("workspace:plan.renewsOn", { date: fmt(ws.entitlement.renews_at) }) : ""}</span>
+      <div className="vy-dl-page">
+        <div className="vy-dl-head">
+          <div className="vy-dl-tags">
+            <span className="vy-dl-state">{t(`workspace:role.${ws.role}` as "role.owner")}</span>
+            <span className="vy-dl-state" data-tone={ws.entitlement?.active ? "done" : ws.entitlement ? "warn" : undefined}>{planFact}</span>
           </div>
-          {ws.entitlement.grace_until && (
-            <p className="vy-error">{t("workspace:plan.graceBanner", { date: fmt(ws.entitlement.grace_until) })}</p>
-          )}
-          <p className="vy-muted">{t("workspace:plan.neverIncluded")}</p>
-          {ws.capabilities.includes("billing") && (
-            <>
-              {ws.entitlement.cancel_at_period_end ? (
-                <div className="vy-stack" style={{ gap: 4 }}>
-                  <p className="vy-muted">{t("workspace:plan.cancelScheduled", { date: ws.entitlement.renews_at ? fmt(ws.entitlement.renews_at) : "" })}</p>
-                  <button className="vy-btn vy-btn-secondary" style={{ alignSelf: "flex-start" }} disabled={busy}
-                          onClick={() => act(() => api.post(`/v1/entitlements/${ws.entitlement!.id}/renewal`, { cancel_at_period_end: false }))}>
+          <h1>{t("workspace:title")}</h1>
+          <p>{ws.listing_name ? t("workspace:subtitle", { name: ws.listing_name }) : t("workspace:subtitlePlain")}</p>
+        </div>
+        {notice && (
+          <p className="vy-dl-notice" data-tone="bad" role="alert">
+            <AlertTriangle size={18} strokeWidth={1.75} aria-hidden="true" />
+            <span>{notice}</span>
+          </p>
+        )}
+
+        <div className="vy-dl-metrics">
+          <div className="vy-dl-metric">
+            <span className="vy-dl-metric-label">{t("workspace:dash.plan")}</span>
+            <span className="vy-dl-metric-value" data-empty={ws.entitlement?.active ? undefined : true}>{planFact}</span>
+            {ws.entitlement?.active && ws.entitlement.renews_at && <span className="vy-dl-metric-sub">{t("workspace:plan.renewsOn", { date: fmt(ws.entitlement.renews_at) })}</span>}
+          </div>
+          <div className="vy-dl-metric">
+            <span className="vy-dl-metric-label">{t("workspace:dash.team")}</span>
+            <span className="vy-dl-metric-value" data-empty={hasTeam ? undefined : true}>{hasTeam ? activeMembers : t("workspace:dash.withPlan")}</span>
+          </div>
+          <div className="vy-dl-metric">
+            <span className="vy-dl-metric-label">{t("workspace:dash.campaigns")}</span>
+            <span className="vy-dl-metric-value" data-empty={hasCampaigns ? undefined : true}>{hasCampaigns ? ws.campaigns.length : t("workspace:dash.withPlan")}</span>
+          </div>
+        </div>
+
+        {/* [FR33] plan state, or the disclosure + purchase when there is none */}
+        {ws.entitlement?.active && (
+          <section className="vy-dl-sec" aria-labelledby="ws-plan">
+            <div className="vy-dl-sec-head">
+              <span className="vy-dl-tile vy-dl-tile-green" aria-hidden="true"><BadgeCheck size={20} strokeWidth={1.75} /></span>
+              <h2 id="ws-plan" className="vy-card-title">{t("workspace:plan.active")}</h2>
+              <span className="vy-dl-sec-hint">{ws.entitlement.renews_at ? t("workspace:plan.renewsOn", { date: fmt(ws.entitlement.renews_at) }) : ""}</span>
+            </div>
+            {ws.entitlement.grace_until && (
+              <p className="vy-dl-notice" data-tone="warn">
+                <AlertTriangle size={18} strokeWidth={1.75} aria-hidden="true" />
+                <span>{t("workspace:plan.graceBanner", { date: fmt(ws.entitlement.grace_until) })}</span>
+              </p>
+            )}
+            <p className="vy-dl-fine">{t("workspace:plan.neverIncluded")}</p>
+            {ws.capabilities.includes("billing") &&
+              (ws.entitlement.cancel_at_period_end ? (
+                <div className="vy-dl-page" style={{ gap: 6 }}>
+                  <p className="vy-dl-hint">{t("workspace:plan.cancelScheduled", { date: ws.entitlement.renews_at ? fmt(ws.entitlement.renews_at) : "" })}</p>
+                  <button className="vy-btn vy-btn-secondary" style={{ alignSelf: "flex-start" }} disabled={busy} onClick={() => act(() => api.post(`/v1/entitlements/${ws.entitlement!.id}/renewal`, { cancel_at_period_end: false }))}>
                     {t("workspace:plan.resumeRenewal")}
                   </button>
                 </div>
               ) : (
-                <button className="vy-btn vy-btn-ghost" style={{ alignSelf: "flex-start" }} disabled={busy}
-                        onClick={() => act(() => api.post(`/v1/entitlements/${ws.entitlement!.id}/renewal`, { cancel_at_period_end: true }))}>
+                <button className="vy-btn vy-btn-ghost" style={{ alignSelf: "flex-start" }} disabled={busy} onClick={() => act(() => api.post(`/v1/entitlements/${ws.entitlement!.id}/renewal`, { cancel_at_period_end: true }))}>
                   {t("workspace:plan.cancelRenewal")}
                 </button>
-              )}
-            </>
-          )}
-        </section>
-      )}
-
-      {ws.entitlement && !ws.entitlement.active && (
-        <section className="vy-card vy-stack">
-          <strong>{t(`workspace:plan.state.${ws.entitlement.state}` as "plan.state.paused")}</strong>
-          <p className="vy-muted">{t("workspace:plan.pausedHelp")}</p>
-          {ws.capabilities.includes("billing") && ws.is_owner && (
-            <button className="vy-btn vy-btn-primary" style={{ alignSelf: "flex-start" }} disabled={busy} onClick={completePayment}>
-              {t("workspace:plan.completePayment")}
-            </button>
-          )}
-        </section>
-      )}
-
-      {!ws.entitlement && ws.is_owner && (
-        <section className="vy-card vy-stack vy-dash-full vy-plan-choose">
-          <h2 className="vy-card-title">{t("workspace:plan.chooseTitle")}</h2>
-          <div className="vy-stack" role="radiogroup" aria-label={t("workspace:plan.chooseTitle")} style={{ gap: 8 }}>
-            {ws.plans.map((p) => (
-              <button key={p.id} role="radio" aria-checked={planId === p.id} className="vy-card vy-row"
-                      style={{ justifyContent: "space-between", cursor: "pointer", color: "inherit", borderColor: planId === p.id ? "var(--selected-border)" : undefined }}
-                      onClick={() => setPlanId(p.id)}>
-                <strong>{planId === p.id ? "● " : "○ "}{t(`workspace:plan.billing.${p.billing}` as "plan.billing.monthly")}</strong>
-                <span className="vy-muted">{t("commercial:boost.inclTax", { amount: money(p.total_paise) })}</span>
-              </button>
-            ))}
-          </div>
-          <div className="vy-plan-side">
-          {!plan && (
-            <div className="vy-d-flex vy-stack">
-              <h3 className="vy-card-title">{t("workspace:dash.whatYouGet")}</h3>
-              <dl className="vy-ctx-card vy-plan-hint" style={{ margin: 0 }}>
-                <div><dt>{t("workspace:plan.included")}</dt><dd>{t("workspace:plan.includedText")}</dd></div>
-                <div><dt>{t("workspace:plan.notIncluded")}</dt><dd>{t("workspace:plan.neverIncluded")}</dd></div>
-              </dl>
-            </div>
-          )}
-          {plan && (
-            <dl className="vy-stack" style={{ gap: 10, margin: 0 }}>
-              <div><dt className="vy-label">{t("commercial:disclosure.price")}</dt><dd style={{ margin: 0 }}>{money(plan.price_paise)}</dd></div>
-              <div><dt className="vy-label">{t("commercial:disclosure.tax")}</dt><dd style={{ margin: 0 }}>{money(plan.tax_paise)}</dd></div>
-              <div><dt className="vy-label">{t("commercial:disclosure.total")}</dt><dd style={{ margin: 0 }}>{money(plan.total_paise)}</dd></div>
-              <div><dt className="vy-label">{t("workspace:plan.included")}</dt><dd style={{ margin: 0 }}>{t("workspace:plan.includedText")}</dd></div>
-              <div><dt className="vy-label">{t("workspace:plan.notIncluded")}</dt><dd style={{ margin: 0 }}>{t("workspace:plan.neverIncluded")}</dd></div>
-              <div><dt className="vy-label">{t("commercial:disclosure.renewal")}</dt><dd style={{ margin: 0 }}>{t("workspace:plan.renewalTerms", { days: plan.duration_days ?? 30 })}</dd></div>
-              <div><dt className="vy-label">{t("commercial:disclosure.refund")}</dt><dd style={{ margin: 0 }}>{t("workspace:plan.cancelTerms")}</dd></div>
-            </dl>
-          )}
-          </div>
-          <button className="vy-btn vy-btn-primary" disabled={!plan || busy} onClick={buyPlan}>
-            {plan ? t("commercial:disclosure.confirmPay", { amount: money(plan.total_paise) }) : t("workspace:plan.choosePrompt")}
-          </button>
-        </section>
-      )}
-
-      {/* [FR34] team */}
-      {ws.capabilities.includes("team") && (
-        <section className="vy-stack">
-          <h2 className="vy-card-title">{t("workspace:team.title")}</h2>
-          <p className="vy-muted" style={{ fontSize: 13 }}>{t("workspace:team.roleHelp")}</p>
-          {ws.members.length === 0 && <p className="vy-muted">{t("workspace:team.empty")}</p>}
-          {ws.members.map((m) => (
-            <div key={m.id} className="vy-card vy-stack" style={{ gap: 6 }}>
-              <div className="vy-row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
-                <strong>{m.display_name ?? m.phone_masked}</strong>
-                <span className="vy-badge vy-badge-member-provided">{t(`workspace:role.${m.role}` as "role.admin")}</span>
-              </div>
-              <span className="vy-muted" style={{ fontSize: 13 }}>
-                {t(`workspace:team.state.${m.state}` as "team.state.active")}
-                {m.state === "pending" && m.expires_at ? ` · ${t("workspace:team.expires", { date: fmt(m.expires_at) })}` : ""}
-              </span>
-              {["pending", "active"].includes(m.state) && (
-                <div className="vy-row" style={{ flexWrap: "wrap" }}>
-                  <button className="vy-btn vy-btn-ghost" style={{ fontSize: 13 }} disabled={busy}
-                          onClick={() => act(() => api.post(`/v1/workspace/members/${m.id}/role`, { state: "revoked" }))}>
-                    {t("workspace:team.revoke")}
-                  </button>
-                  {m.state === "active" && (
-                    <button className="vy-btn vy-btn-ghost" style={{ fontSize: 13 }} disabled={busy}
-                            onClick={() => act(() => api.post(`/v1/workspace/members/${m.id}/role`, { state: "active", role: m.role === "admin" ? "operator" : "admin" }))}>
-                      {t("workspace:team.switchTo", { role: t(`workspace:role.${m.role === "admin" ? "operator" : "admin"}` as "role.admin") })}
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-          {/* [Design-enhancement pass, DESIGN-ENHANCEMENT.md] a secondary
-              sub-panel within the team section, not the section's primary
-              list content — steps to --surface-nested. */}
-          <div className="vy-card vy-card-nested vy-stack">
-            <label className="vy-field">
-              <span className="vy-label">{t("workspace:team.invitePhone")}</span>
-              <input className="vy-input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t("workspace:team.phonePlaceholder")} />
-            </label>
-            <div className="vy-row" role="radiogroup" aria-label={t("workspace:team.roleLabel")}>
-              {(["admin", "operator"] as const).map((r) => (
-                <button key={r} role="radio" aria-checked={inviteRole === r} className="vy-chip" style={chipStyle(inviteRole === r)} onClick={() => setInviteRole(r)}>
-                  {t(`workspace:role.${r}` as "role.admin")}
-                </button>
               ))}
-            </div>
-            <button className="vy-btn vy-btn-secondary" style={{ alignSelf: "flex-start" }} disabled={busy || phone.trim().length < 8}
-                    onClick={() => act(async () => { await api.post(`/v1/workspace/${listingId}/invite`, { phone: phone.trim(), role: inviteRole }); setPhone(""); })}>
-              {t("workspace:team.sendInvite")}
-            </button>
-            <p className="vy-muted" style={{ fontSize: 12 }}>{t("workspace:team.inviteHelp")}</p>
-          </div>
-        </section>
-      )}
+          </section>
+        )}
 
-      {/* [FR35] campaigns */}
-      {ws.capabilities.includes("campaigns") && (
-        <section className="vy-stack">
-          <h2 className="vy-card-title">{t("workspace:campaigns.title")}</h2>
-          {ws.campaigns.length === 0 && <p className="vy-muted">{t("workspace:campaigns.empty")}</p>}
-          {ws.campaigns.map((c) => (
-            <a key={c.id} className="vy-card" href={`/campaigns/${c.id}`} style={{ textDecoration: "none" }}>
-              <div className="vy-row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
-                <strong>{c.name}</strong>
-                <span className="vy-badge vy-badge-member-provided">{t(`commercial:state.${c.state}` as "state.active")}</span>
+        {ws.entitlement && !ws.entitlement.active && (
+          <section className="vy-dl-sec" aria-labelledby="ws-paused">
+            <div className="vy-dl-sec-head">
+              <span className="vy-dl-tile vy-dl-tile-amber" aria-hidden="true"><AlertTriangle size={20} strokeWidth={1.75} /></span>
+              <h2 id="ws-paused" className="vy-card-title">{t(`workspace:plan.state.${ws.entitlement.state}` as "plan.state.paused")}</h2>
+              <span className="vy-dl-sec-hint">{t("workspace:plan.pausedHelp")}</span>
+            </div>
+            {ws.capabilities.includes("billing") && ws.is_owner && (
+              <button className="vy-btn vy-btn-primary" style={{ alignSelf: "flex-start" }} disabled={busy} onClick={completePayment}>
+                {t("workspace:plan.completePayment")}
+              </button>
+            )}
+          </section>
+        )}
+
+        {!ws.entitlement && ws.is_owner && (
+          <section className="vy-dl-sec" aria-labelledby="ws-choose">
+            <div className="vy-dl-sec-head">
+              <span className="vy-dl-tile vy-dl-tile-brand" aria-hidden="true"><ShieldCheck size={20} strokeWidth={1.75} /></span>
+              <h2 id="ws-choose" className="vy-card-title">{t("workspace:plan.chooseTitle")}</h2>
+              <span className="vy-dl-sec-hint">{t("workspace:plan.chooseHint")}</span>
+            </div>
+            <div className="vy-detail" style={{ gap: "var(--space-4)" }}>
+              <div className="vy-detail-main">
+                <div className="vy-dl-price-grid" role="radiogroup" aria-labelledby="ws-choose">
+                  {ws.plans.map((p) => (
+                    <button key={p.id} type="button" role="radio" aria-checked={planId === p.id} className="vy-dl-price" onClick={() => setPlanId(p.id)}>
+                      <span className="vy-dl-price-check" aria-hidden="true"><Check size={14} strokeWidth={3} /></span>
+                      <span className="vy-dl-price-name">{t(`workspace:plan.billing.${p.billing}` as "plan.billing.monthly")}</span>
+                      <span className="vy-dl-price-amt">{money(p.total_paise)}</span>
+                      <span className="vy-dl-price-sub">{t("commercial:boost.inclTaxShort")}</span>
+                    </button>
+                  ))}
+                </div>
+                <dl className="vy-dl-terms">
+                  <div><dt>{t("workspace:plan.included")}</dt><dd>{t("workspace:plan.includedText")}</dd></div>
+                  <div><dt>{t("workspace:plan.notIncluded")}</dt><dd>{t("workspace:plan.neverIncluded")}</dd></div>
+                  {plan && <div><dt>{t("commercial:disclosure.renewal")}</dt><dd>{t("workspace:plan.renewalTerms", { days: plan.duration_days ?? 30 })}</dd></div>}
+                  {plan && <div><dt>{t("commercial:disclosure.refund")}</dt><dd>{t("workspace:plan.cancelTerms")}</dd></div>}
+                </dl>
               </div>
-              {c.ends_at && <p className="vy-muted" style={{ fontSize: 13 }}>{t("commercial:list.endsOn", { date: fmt(c.ends_at) })}</p>}
-            </a>
-          ))}
-          {options && options.items.length > 0 && (
-            <div className="vy-card vy-card-nested vy-stack">
-              <h3 style={{ fontSize: 14 }}>{t("workspace:campaigns.newTitle")}</h3>
-              <label className="vy-field">
-                <span className="vy-label">{t("workspace:campaigns.name")}</span>
-                <input className="vy-input" value={campaignName} maxLength={120} onChange={(e) => setCampaignName(e.target.value)} />
-              </label>
-              <span className="vy-label">{t("workspace:campaigns.package")}</span>
-              <div className="vy-row" style={{ flexWrap: "wrap" }}>
-                {options.packages.map((p) => (
-                  <button key={p.id} className="vy-chip" aria-pressed={packageId === p.id} style={chipStyle(packageId === p.id)} onClick={() => setPackageId(p.id)}>
-                    {t("workspace:campaigns.packageOption", { days: p.duration_days, amount: money(p.total_paise) })}
+              <div className="vy-detail-aside">
+                <div className="vy-dl-panel">
+                  <span className="vy-label">{t("commercial:disclosure.title")}</span>
+                  {plan ? (
+                    <dl className="vy-dl-receipt">
+                      <dt>{t("commercial:disclosure.price")}</dt>
+                      <dd>{money(plan.price_paise)}</dd>
+                      <dt>{t("commercial:disclosure.tax")}</dt>
+                      <dd>{money(plan.tax_paise)}</dd>
+                      <dt className="vy-dl-receipt-total">{t("commercial:disclosure.total")}</dt>
+                      <dd className="vy-dl-receipt-total"><strong>{money(plan.total_paise)}</strong></dd>
+                    </dl>
+                  ) : (
+                    <p className="vy-dl-hint">{t("workspace:plan.choosePrompt")}</p>
+                  )}
+                  <button className="vy-btn vy-btn-primary" aria-describedby={!plan ? "ws-plan-why" : undefined} disabled={!plan || busy} onClick={buyPlan}>
+                    {plan ? t("commercial:disclosure.confirmPay", { amount: money(plan.total_paise) }) : t("commercial:disclosure.confirmPayPlain")}
                   </button>
-                ))}
+                  <DisabledReason id="ws-plan-why" show={!plan && !busy}>{t("workspace:plan.choosePrompt")}</DisabledReason>
+                </div>
               </div>
-              <span className="vy-label">{t("workspace:campaigns.items", { n: chosenItems.length, max: options.max_items })}</span>
-              <div className="vy-stack" style={{ gap: 4 }}>
-                {options.items.map((item) => {
-                  const key = `${item.kind}:${item.id}`;
-                  const checked = chosenItems.includes(key);
+            </div>
+          </section>
+        )}
+
+        <div className="vy-dl-console-2">
+          {/* [FR34] team */}
+          {hasTeam && (
+            <section className="vy-dl-sec" aria-labelledby="ws-team">
+              <div className="vy-dl-sec-head">
+                <span className="vy-dl-tile vy-dl-tile-teal" aria-hidden="true"><Users size={20} strokeWidth={1.75} /></span>
+                <h2 id="ws-team" className="vy-card-title">{t("workspace:team.title")}</h2>
+                <span className="vy-dl-sec-hint">{t("workspace:team.roleHelp")}</span>
+              </div>
+              {ws.members.length === 0 && <p className="vy-dl-hint">{t("workspace:team.empty")}</p>}
+              <div>
+                {ws.members.map((m) => {
+                  const name = m.display_name ?? m.phone_masked;
                   return (
-                    <label key={key} className="vy-row" style={{ justifyContent: "space-between" }}>
-                      <span>{item.title}</span>
-                      <input type="checkbox" checked={checked} disabled={!checked && chosenItems.length >= options.max_items}
-                             onChange={() => setChosenItems((c) => (checked ? c.filter((x) => x !== key) : [...c, key]))} />
-                    </label>
+                    <div key={m.id} className="vy-dl-person">
+                      <span className="vy-dl-avatar" aria-hidden="true">{(name.trim().charAt(0) || "?").toUpperCase()}</span>
+                      <span className="vy-dl-row-body">
+                        <span className="vy-dl-row-title">{name}</span>
+                        <span className="vy-dl-row-meta">
+                          <span>
+                            {t(`workspace:role.${m.role}` as "role.admin")} · {t(`workspace:team.state.${m.state}` as "team.state.active")}
+                            {m.state === "pending" && m.expires_at ? ` · ${t("workspace:team.expires", { date: fmt(m.expires_at) })}` : ""}
+                          </span>
+                        </span>
+                      </span>
+                      {["pending", "active"].includes(m.state) && (
+                        <span className="vy-dl-actions vy-dl-actions-end">
+                          {m.state === "active" && (
+                            <button className="vy-btn vy-btn-ghost vy-dl-btn-sm" disabled={busy} onClick={() => act(() => api.post(`/v1/workspace/members/${m.id}/role`, { state: "active", role: m.role === "admin" ? "operator" : "admin" }))}>
+                              {t("workspace:team.switchTo", { role: t(`workspace:role.${m.role === "admin" ? "operator" : "admin"}` as "role.admin") })}
+                            </button>
+                          )}
+                          <button className="vy-btn vy-btn-ghost vy-dl-btn-sm" disabled={busy} onClick={() => act(() => api.post(`/v1/workspace/members/${m.id}/role`, { state: "revoked" }))}>
+                            {t("workspace:team.revoke")}
+                          </button>
+                        </span>
+                      )}
+                    </div>
                   );
                 })}
               </div>
-              <p className="vy-muted" style={{ fontSize: 12 }}>{t("workspace:campaigns.disclosure")}</p>
-              <button className="vy-btn vy-btn-primary" disabled={busy || !packageId || chosenItems.length === 0 || campaignName.trim().length < 2} onClick={createCampaign}>
-                {t("workspace:campaigns.createAndPay")}
-              </button>
-            </div>
+              <div className="vy-dl-panel">
+                <span className="vy-label">{t("workspace:team.inviteTitle")}</span>
+                <label className="vy-field">
+                  <span className="vy-label">{t("workspace:team.invitePhone")}</span>
+                  <input className="vy-input" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t("workspace:team.phonePlaceholder")} />
+                </label>
+                <div className="vy-dl-choice-row" role="radiogroup" aria-label={t("workspace:team.roleLabel")}>
+                  {(["admin", "operator"] as const).map((r) => (
+                    <button key={r} type="button" role="radio" aria-checked={inviteRole === r} className="vy-dl-choice" onClick={() => setInviteRole(r)}>
+                      {t(`workspace:role.${r}` as "role.admin")}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  className="vy-btn vy-btn-secondary"
+                  style={{ alignSelf: "flex-start" }}
+                  disabled={busy || phone.trim().length < 8}
+                  onClick={() =>
+                    act(async () => {
+                      await api.post(`/v1/workspace/${listingId}/invite`, { phone: phone.trim(), role: inviteRole });
+                      setPhone("");
+                    })
+                  }
+                >
+                  {t("workspace:team.sendInvite")}
+                </button>
+                <p className="vy-dl-fine">{t("workspace:team.inviteHelp")}</p>
+              </div>
+            </section>
           )}
-        </section>
-      )}
+
+          {/* [FR35] campaigns */}
+          {hasCampaigns && (
+            <section className="vy-dl-sec" aria-labelledby="ws-campaigns">
+              <div className="vy-dl-sec-head">
+                <span className="vy-dl-tile vy-dl-tile-brand" aria-hidden="true"><Layers size={20} strokeWidth={1.75} /></span>
+                <h2 id="ws-campaigns" className="vy-card-title">{t("workspace:campaigns.title")}</h2>
+                <span className="vy-dl-sec-hint">{t("workspace:campaigns.hint")}</span>
+              </div>
+              {ws.campaigns.length === 0 && <p className="vy-dl-hint">{t("workspace:campaigns.empty")}</p>}
+              {ws.campaigns.length > 0 && (
+                <div className="vy-dl-list">
+                  {ws.campaigns.map((c) => (
+                    <a key={c.id} className="vy-dl-row" href={`/campaigns/${c.id}`} style={{ boxShadow: "none" }}>
+                      <span className="vy-dl-row-body" style={{ gridColumn: "1 / span 2" }}>
+                        <span className="vy-dl-row-title">{c.name}</span>
+                        <span className="vy-dl-row-meta">
+                          <span>{c.ends_at ? t("commercial:list.endsOn", { date: fmt(c.ends_at) }) : ""}</span>
+                        </span>
+                        <span className="vy-dl-tags" style={{ marginTop: 4 }}>
+                          <span className="vy-dl-state" data-tone={promotionTone(c.state)}>{t(`commercial:state.${c.state}` as "state.active")}</span>
+                        </span>
+                      </span>
+                      <span className="vy-dl-row-aside">
+                        <ChevronRight size={18} strokeWidth={2} aria-hidden="true" style={{ color: "var(--text-tertiary)" }} />
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              )}
+              {options && options.items.length > 0 && !newCampaign && (
+                <button type="button" className="vy-btn vy-btn-secondary" style={{ alignSelf: "flex-start" }} onClick={() => setNewCampaign(true)}>
+                  <Plus size={16} strokeWidth={2} aria-hidden="true" /> {t("workspace:campaigns.newTitle")}
+                </button>
+              )}
+              {options && options.items.length > 0 && newCampaign && (
+                <div className="vy-dl-panel">
+                  <span className="vy-label">{t("workspace:campaigns.newTitle")}</span>
+                  <label className="vy-field">
+                    <span className="vy-label">{t("workspace:campaigns.name")}</span>
+                    <input className="vy-input" value={campaignName} maxLength={120} onChange={(e) => setCampaignName(e.target.value)} />
+                  </label>
+                  <div className="vy-field">
+                    <span className="vy-label">{t("workspace:campaigns.package")}</span>
+                    <div className="vy-dl-price-grid" role="radiogroup" aria-label={t("workspace:campaigns.package")}>
+                      {options.packages.map((p) => (
+                        <button key={p.id} type="button" role="radio" aria-checked={packageId === p.id} className="vy-dl-price" onClick={() => setPackageId(p.id)}>
+                          <span className="vy-dl-price-check" aria-hidden="true"><Check size={14} strokeWidth={3} /></span>
+                          <span className="vy-dl-price-name">{t("commercial:boost.days", { n: p.duration_days })}</span>
+                          <span className="vy-dl-price-amt">{money(p.total_paise)}</span>
+                          <span className="vy-dl-price-sub">{t("commercial:boost.inclTaxShort")}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="vy-field">
+                    <span className="vy-label">{t("workspace:campaigns.items", { n: chosenItems.length, max: options.max_items })}</span>
+                    <div className="vy-dl-tags">
+                      {options.items.map((item) => {
+                        const key = `${item.kind}:${item.id}`;
+                        const checked = chosenItems.includes(key);
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            className="vy-chip"
+                            aria-pressed={checked}
+                            disabled={!checked && chosenItems.length >= options.max_items}
+                            onClick={() => setChosenItems((c) => (checked ? c.filter((x) => x !== key) : [...c, key]))}
+                          >
+                            {checked && <Check size={14} strokeWidth={2.5} aria-hidden="true" />}
+                            {item.title}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <p className="vy-dl-fine">{t("workspace:campaigns.disclosure")}</p>
+                  <div className="vy-dl-actions">
+                    <button className="vy-btn vy-btn-primary" aria-describedby={campaignBlocker ? "ws-camp-why" : undefined} disabled={busy || !!campaignBlocker} onClick={createCampaign}>
+                      {t("workspace:campaigns.createAndPay")}
+                    </button>
+                    <button className="vy-btn vy-btn-ghost" disabled={busy} onClick={() => setNewCampaign(false)}>{t("common:action.cancel")}</button>
+                  </div>
+                  <DisabledReason id="ws-camp-why" show={!!campaignBlocker && !busy}>{campaignBlocker}</DisabledReason>
+                </div>
+              )}
+            </section>
+          )}
+        </div>
       </div>
     </Screen>
   );

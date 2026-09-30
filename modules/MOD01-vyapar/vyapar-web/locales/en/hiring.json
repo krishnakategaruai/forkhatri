@@ -1,7 +1,7 @@
 {
   "kinds": {
     "employment": "Job",
-    "freelance": "Freelance project",
+    "freelance": "Project",
     "local_service": "Local service",
     "more": "More types…"
   },
@@ -43,10 +43,18 @@
     "selected": "Selected skills",
     "remove": "Remove {{skill}}",
     "max": "You can pick up to {{count}}. Remove one to add another.",
-    "change": "Change or add"
+    "change": "Change or add",
+    "chooseTrigger": "Choose a role or skill",
+    "browseCategories": "Browse categories"
+  },
+  "select": {
+    "any": "Any",
+    "none": "None",
+    "selectedCount": "{{count}} selected"
   },
   "fields": {
     "optional": "optional",
+    "required": "required",
     "type": "What are you posting?",
     "title": "Title",
     "jobTitle": "Job title",
@@ -65,6 +73,7 @@
     "openingsOther": "Other",
     "shift": "Shift",
     "jobTimings": "Timings",
+    "commonHours": "Common hours",
     "experience": "Experience",
     "qualification": "Minimum qualification",
     "english": "English",
@@ -83,7 +92,7 @@
     "deadline": "Apply by",
     "workMode": "Work mode",
     "timing": "Timing",
-    "segment": "Is this your own opportunity?",
+    "segment": "Is this your own post?",
     "pay": "Pay",
     "amountUnreadable": "Type one amount, like 15000, 15k or 1.5 lakh."
   },
@@ -225,7 +234,7 @@
     "plusIncentivesUpTo": "+ incentives up to {{amount}}",
     "openings_one": "{{count}} opening",
     "openings_other": "{{count}} openings",
-    "questionsForYou": "The poster asks",
+    "questionsForYou": "The person who posted asks",
     "postedToday": "Posted today"
   },
   "composer": {
@@ -282,6 +291,12 @@
     "removeQuestion": "Remove question {{n}}",
     "ownQuestion": "Write my own",
     "moreOptions": "More options (apply-by date, remote work, where it's from)",
+    "groupWhenHowMany": "When and how many",
+    "groupWhoYouNeed": "Who you need",
+    "groupInterviewContact": "Interview & contact",
+    "groupProjectDetails": "More about the project",
+    "groupWhen": "When",
+    "callsOn": "Calls before accepting",
     "continueToCheck": "Continue",
     "backToStart": "Start over",
     "publish": "Publish",
@@ -352,12 +367,12 @@
     "message_too_short": "Write at least 20 characters.",
     "proposal_fields_not_allowed": "A price and timeline only go with a proposal.",
     "bid_required": "Add your price and the number of days you need.",
-    "milestones_hourly": "Milestones only go with a fixed price.",
-    "milestones_total": "The milestones must add up to your price.",
+    "milestones_hourly": "Stages only go with a fixed price.",
+    "milestones_total": "The stages must add up to your price.",
     "unknown_screening_question": "One answer is for a question this post doesn't ask. Reload and try again.",
-    "screening_answers_required": "Answer every question the poster asked.",
+    "screening_answers_required": "Answer every question the person who posted asked.",
     "screening_answers_not_allowed": "This isn't a post with questions.",
-    "already_declined": "The poster has already declined you for this.",
+    "already_declined": "The person who posted has already declined you for this.",
     "stage_final": "This person was already hired or declined — that can't change now.",
     "applicant_not_available": "This conversation has ended, so you can't hire them from here.",
     "applicant_not_found": "That applicant is no longer on this post.",
@@ -367,23 +382,23 @@
   },
   "precall": {
     "label": "Calls before you accept",
-    "on": "On — people can call you about this post",
+    "on": "On — people can reach you before you accept",
     "off": "Off — people apply first, you call the ones you accept",
     "explain": "Anyone who calls will see your number. Choose WhatsApp only to keep calls out. Your call hours and daily limit still apply.",
     "setHours": "Set call hours and daily limit",
-    "previewLine": "Message or apply — the poster takes early contact about this post",
+    "previewLine": "Message or apply — the person who posted takes early contact about this post",
     "channelLabel": "How early responders can reach you",
     "channel": {
       "whatsapp_only": "WhatsApp only",
       "call_and_whatsapp": "Calls and WhatsApp"
     },
-    "previewLineCall": "Call or apply — the poster takes calls about this post"
+    "previewLineCall": "Call or apply — the person who posted takes calls about this post"
   },
   "apply": {
     "sheetTitle": "Apply in one tap",
     "apply": "Apply",
     "youreApplyingFor": "You're applying for",
-    "posterSees": "The poster will see",
+    "posterSees": "The person who posted will see",
     "years_one": "{{count}} year experience",
     "years_other": "{{count}} years experience",
     "availability": {
@@ -391,17 +406,17 @@
       "this_week": "Available this week",
       "later": "Available later"
     },
-    "noProfile": "{{name}} — no work profile yet. Add one so posters see what you can do.",
-    "editProfile": "Change what posters see",
-    "noteLabel": "A note to the poster",
+    "noProfile": "{{name}} — no work profile yet. Add one so people who post see what you can do.",
+    "editProfile": "Change what people who post see",
+    "noteLabel": "A note to the person who posted",
     "notePlaceholder": "e.g. I live nearby and can join from Monday.",
     "sending": "Sending…",
     "sentTitle": "Application sent",
-    "sentBody": "The poster has your details for “{{title}}”. Replies show in the conversation and in Activity.",
+    "sentBody": "The person who posted has your details for “{{title}}”. Replies show in the conversation and in Activity.",
     "openConversation": "Open the conversation",
     "alreadyApplied": "You've already responded to this post.",
     "dailyCap": "You've reached today's limit of 20 responses. Try again tomorrow.",
-    "privacy": "Your phone number is shared only when the poster accepts you.",
+    "privacy": "Your number is shared if the person who posted shortlists you.",
     "appliedOpen": "Applied ✓ · Open conversation",
     "hiredOpen": "Hired ✓ · Open conversation",
     "notSelected": "Not selected this time · Open conversation"
@@ -433,19 +448,19 @@
     "days_one": "{{count}} day",
     "days_other": "{{count}} days",
     "otherDays": "Other (days)",
-    "milestones": "Milestones",
-    "splitMilestones": "Split the price into milestones",
-    "milestoneTitle": "Milestone {{n}}",
+    "milestones": "Stages",
+    "splitMilestones": "Split the price into stages",
+    "milestoneTitle": "Stage {{n}}",
     "amount": "Amount",
     "dueInDays": "Due in (days)",
-    "removeMilestone": "Remove milestone {{n}}",
-    "addMilestone": "Add a milestone",
+    "removeMilestone": "Remove stage {{n}}",
+    "addMilestone": "Add a stage",
     "leftToAssign": "{{amount}} left to assign",
     "overBy": "{{amount}} more than your price",
     "allAssigned": "Adds up to your price ✓",
     "setPriceFirst": "Set your price first",
-    "questionsTitle": "The poster asks",
-    "cover": "Your note to the poster",
+    "questionsTitle": "The person who posted asks",
+    "cover": "Your note to the person who posted",
     "coverPlaceholder": "What you'd do, similar work you've done, and when you can start.",
     "counter": "{{count}} / {{max}} · at least {{min}}",
     "improve": "Improve with AI",
@@ -461,7 +476,7 @@
       "capability_overlap_other": "from {{count}} similar posts",
       "same_type_one": "from {{count}} post of this kind",
       "same_type_other": "from {{count}} posts of this kind",
-      "poster_budget": "from the poster's own budget"
+      "poster_budget": "from their own budget"
     },
     "useBid": "Use {{amount}}",
     "sample": "A work sample",
@@ -469,11 +484,11 @@
     "error": {
       "bid": "Add your price.",
       "timeline": "Say how many days you need.",
-      "milestoneRow": "Give every milestone a name, an amount and a due day.",
+      "milestoneRow": "Give every stage a name, an amount and a due day.",
       "cover": "Write at least {{min}} characters."
     },
     "dayPrefix": "Day",
-    "belowBudget": "This is below the poster's own budget of {{range}} — price for the work, not the average."
+    "belowBudget": "This is below their own budget of {{range}} — price for the work, not the average."
   },
   "quote": {
     "modeLabel": "What do you want to send?",
@@ -573,8 +588,8 @@
     "skillsTitle": "Skills matched out of those you asked for",
     "bidFixed": "{{amount}} fixed",
     "bidHourly": "{{amount}} an hour",
-    "milestones_one": "{{count}} milestone",
-    "milestones_other": "{{count}} milestones",
+    "milestones_one": "{{count}} stage",
+    "milestones_other": "{{count}} stages",
     "matchesSkills": "Matches {{have}} of {{total}} skills: {{skills}}",
     "shortlist": "Shortlist",
     "hire": "Hire",
@@ -650,10 +665,23 @@
   "accept": {
     "title": {
       "privacy": "Please accept the updated privacy notice",
-      "terms": "Please accept the updated terms of use"
+      "terms": "Please accept the updated terms of use",
+      "both": "Please accept the updated privacy notice and terms of use"
     },
     "why": "Vyapar updated it. You need to accept it once before sending or publishing.",
     "read": "Read “{{title}}”",
     "acceptAndContinue": "Accept and continue"
+  },
+  "proposalCard": {
+    "title": "Proposal terms",
+    "question": "Question"
+  },
+  "location": {
+    "useCurrent": "Use my current location",
+    "finding": "Finding your area…",
+    "failed": "Couldn't find your area. Type it instead."
+  },
+  "translate": {
+    "link": "Translate from {{language}}"
   }
 }

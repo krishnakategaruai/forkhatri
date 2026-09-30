@@ -155,17 +155,17 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     /* @palette-dark */
-    --surface: #121419;
-    --surface-raised: #1a1d24;
-    --surface-overlay: #1f232b;
-    --surface-nested: #242933;
-    --surface-sunken: #0d0f13;
-    --surface-floating: #292e39;
+    --surface: #151821;
+    --surface-raised: #1d212b;
+    --surface-overlay: #232834;
+    --surface-nested: #282e3a;
+    --surface-sunken: #10131a;
+    --surface-floating: #2c3240;
 
-    --border-hairline: #2c313c;
-    --border-subtle: #2c313c;
-    --border-default: #3c4250;
-    --border-strong: #767e8f;
+    --border-hairline: #313745;
+    --border-subtle: #313745;
+    --border-default: #414858;
+    --border-strong: #7d8596;
 
     --text-primary: #eceef2;
     --text-quaternary: #d3d7de;
@@ -230,17 +230,17 @@
 }
 
 :root[data-theme="dark"] {
-  --surface: #121419;
-  --surface-raised: #1a1d24;
-  --surface-overlay: #1f232b;
-  --surface-nested: #242933;
-  --surface-sunken: #0d0f13;
-  --surface-floating: #292e39;
+  --surface: #151821;
+  --surface-raised: #1d212b;
+  --surface-overlay: #232834;
+  --surface-nested: #282e3a;
+  --surface-sunken: #10131a;
+  --surface-floating: #2c3240;
 
-  --border-hairline: #2c313c;
-  --border-subtle: #2c313c;
-  --border-default: #3c4250;
-  --border-strong: #767e8f;
+  --border-hairline: #313745;
+  --border-subtle: #313745;
+  --border-default: #414858;
+  --border-strong: #7d8596;
 
   --text-primary: #eceef2;
   --text-quaternary: #d3d7de;
@@ -360,15 +360,40 @@ html[data-contrast="more"]:root {
      ramp already used throughout this codebase. */
   /* [Design language 2026-09-29] Every size in rem so the OS font-size
      setting and Vyapar's own Text size control (html[data-text]) scale
-     the whole UI. At the default 16px root the values match the old px. */
-  --type-hero: clamp(2rem, 1.45rem + 2.2vw, 3.25rem);
-  --type-display: clamp(1.75rem, 1.35rem + 1.7vw, 2.625rem);
-  --type-title: clamp(1.3rem, 1.1rem + 0.8vw, 1.75rem);
-  --type-heading: clamp(1.0625rem, 0.95rem + 0.35vw, 1.1875rem);
-  --type-pay: clamp(1.25rem, 1.15rem + 0.3vw, 1.375rem);
-  --type-body: 1rem;
-  --type-sm: 0.875rem;
-  --type-xs: 0.8125rem;
+     the whole UI. */
+  /* [Typography 2026-09-29 (premium)] Anek has a lower x-height than Noto
+     Sans, so at equal px it reads a step smaller; the scale is lifted one
+     notch (body 17px, small 15px, fine print 13.5px at the default root)
+     and the display steps gain more range, so desktop gets a confident
+     editorial scale and the phone stays airy. Nothing renders below 13px. */
+  --type-hero: clamp(2.125rem, 1.5rem + 2.4vw, 3.5rem);
+  --type-display: clamp(1.875rem, 1.4rem + 1.9vw, 2.75rem);
+  --type-title: clamp(1.375rem, 1.15rem + 0.9vw, 1.875rem);
+  --type-heading: clamp(1.125rem, 1rem + 0.4vw, 1.25rem);
+  --type-pay: clamp(1.375rem, 1.25rem + 0.35vw, 1.5rem);
+  --type-body: 1.0625rem;
+  --type-sm: 0.9375rem;
+  --type-xs: 0.84375rem;
+
+  /* Type roles: weight, tracking and leading per role, so a heading class
+     never re-invents these three numbers. Indic overrides live in
+     language-2026.css (:lang(hi), :lang(te)): tracking 0, taller lines. */
+  --weight-display: 700;
+  --weight-title: 650;
+  --weight-heading: 600;
+  --weight-ui: 600;
+  --weight-body: 400;
+  --tracking-hero: -0.03em;
+  --tracking-display: -0.024em;
+  --tracking-title: -0.016em;
+  --tracking-heading: -0.008em;
+  --tracking-ui: 0;
+  --tracking-label: 0.01em;
+  --leading-display: 1.05;
+  --leading-title: 1.15;
+  --leading-heading: 1.3;
+  --leading-body: 1.55;
+  --leading-ui: 1.2;
 
   /* [IMP33 — motion] One shared motion vocabulary. Durations follow the
      asymmetric exit/enter pairing the Next.js 16 view-transitions guide
@@ -379,7 +404,11 @@ html[data-contrast="more"]:root {
   --dur-exit: 140ms;
   --dur-enter: 210ms;
   --dur-move: 380ms;
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  /* [Typography 2026-09-29 (premium)] sheets and drawers: 240ms, one
+     decelerating curve; hover/colour: 160ms. */
+  --dur-sheet: 240ms;
+  --dur-hover: 160ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 
   --radius-xs: 8px;
@@ -390,16 +419,29 @@ html[data-contrast="more"]:root {
   --radius-lg: 28px;
   --radius-pill: 999px;
 
-  /* Springy release for anything a finger or pointer presses. */
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --dur-press: 220ms;
+  /* Springy release for anything a finger or pointer presses: short, so
+     it reads as tactile rather than bouncy. */
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --dur-press: 180ms;
 
-  /* Shell metrics (design language §11). */
+  /* Shell metrics (design language §11). --hub-clear is the phone hub's
+     height plus its 12px float plus breathing room; every scrolling page
+     pads its bottom by it (+ the safe-area inset) so the hub never covers
+     the last card. */
   --topbar-h: 56px;
-  --hub-clear: 112px;
+  --hub-h: 78px;
+  --hub-clear: calc(var(--hub-h) + 12px + var(--space-5));
 
+  /* [Typography 2026-09-29 (premium)] One family, three scripts: Anek
+     Latin / Devanagari / Telugu (Ek Type), loaded in layout.tsx. Display
+     and body share the family; the roles differ in weight, tracking and
+     leading (tokens above). --font-sans stays as the legacy alias. */
+  --font-display: var(--font-anek-latin), var(--font-anek-deva), var(--font-anek-telugu), system-ui, sans-serif;
+  --font-body: var(--font-anek-latin), var(--font-anek-deva), var(--font-anek-telugu), system-ui, sans-serif;
+  --font-sans: var(--font-body);
 
-  --font-sans: "Noto Sans", "Noto Sans Devanagari", "Noto Sans Telugu", system-ui, sans-serif;
+  /* Card padding steps with the viewport (language-2026.css applies it). */
+  --card-pad: 16px;
 
   --space-1: 4px;
   --space-2: 8px;
@@ -919,6 +961,121 @@ a:focus-visible,
 .vy-textarea:focus {
   outline: 2px solid var(--focus-ring);
   outline-offset: 1px;
+}
+
+/* [FE1 — 2026-09-29] FieldSelect / MultiFieldSelect: a closed-by-default
+   dropdown for fields that used to be a permanently-open chip row (owner,
+   live review: "all tags are seen and its really looking bad, can we keep
+   them in dropdowns" — then, on the redesign pass, "premium website... see
+   the fonts also"). Tokens and vy-* type scale only, nothing hard-coded:
+   same shape as .vy-input so it sits quietly in the form, and opens the
+   shared .vy-popover / .vy-menu-item already used by the top-bar menus, so
+   the whole thing reads as one calm, considered system (Airbnb/Stripe/
+   Linear register), not a bespoke control. */
+.vy-field-select {
+  display: inline-block;
+  width: 100%;
+}
+
+.vy-field-select-trigger {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font: inherit;
+  font-size: var(--type-body);
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--dur-exit) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .vy-field-select-trigger:hover {
+    border-color: var(--text-tertiary);
+  }
+}
+
+.vy-field-select-trigger[aria-expanded="true"] {
+  border-color: var(--focus-ring);
+}
+
+.vy-field-select-trigger:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.vy-field-select-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  font-size: var(--type-body);
+}
+
+.vy-field-select-chevron {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  transition: transform var(--dur-exit) var(--ease-out);
+}
+
+.vy-field-select-chevron[data-open] {
+  transform: rotate(180deg);
+}
+
+.vy-field-select-popover {
+  right: 0;
+  left: 0;
+  min-width: 0;
+  max-height: min(320px, calc(100vh - 120px));
+  overflow-y: auto;
+  transform-origin: top center;
+  animation: vy-field-select-in var(--dur-enter) var(--ease-spring) both;
+}
+
+/* Flips above the trigger when the viewport doesn't have room below it
+   (e.g. a field near the sticky action bar) — see usePlacement in
+   FieldSelect.tsx. */
+.vy-field-select-popover[data-placement="up"] {
+  top: auto;
+  bottom: calc(100% + 8px);
+  transform-origin: bottom center;
+  animation-name: vy-field-select-in-up;
+}
+
+@keyframes vy-field-select-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes vy-field-select-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vy-field-select-popover {
+    animation: none;
+  }
 }
 
 .vy-label {
@@ -1542,11 +1699,29 @@ a:focus-visible,
   font-size: 18px;
 }
 
-/* The command orb shares the bottom edge; lift it above the bar while the
-   bar is showing so neither covers the other. */
+/* [Typography 2026-09-29 (premium), owner on device emulation: sticky bars
+   must not stack] While a screen's own action bar is showing, the phone
+   hub steps out of the way instead of sitting on top of it — one bar at the
+   bottom, the way Swiggy, Zomato and Amazon detail screens do it. The top
+   bar's wordmark and the browser's back still navigate. */
 body:has(.vy-actionbar-in) .vy-hub-float {
-  bottom: 84px !important;
-  transition: bottom 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  opacity: 0;
+  transform: translateY(16px);
+  pointer-events: none;
+  transition: opacity var(--dur-exit) var(--ease-out), transform var(--dur-exit) var(--ease-out);
+}
+
+.vy-hub-float {
+  transition: opacity var(--dur-enter) var(--ease-out), transform var(--dur-enter) var(--ease-out);
+}
+
+/* [FE1 — 2026-09-29] Room for the sticky bar itself (its own height plus the
+   safe area it already pads itself with) so the last field or button in the
+   scrolling content is never left underneath it. */
+@media (max-width: 899.98px) {
+  body:has(.vy-actionbar-in) .vy-composer-screen {
+    padding-bottom: calc(68px + env(safe-area-inset-bottom));
+  }
 }
 
 @media (min-width: 900px) {

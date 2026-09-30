@@ -8,17 +8,17 @@
     "archived": "archived"
   },
   "reason": {
-    "prohibited_content": "This listing's text matched content we don't allow.",
-    "spam_pattern": "This listing's text looked like spam (repeated links or characters)."
+    "prohibited_content": "This profile's text matched content we don't allow.",
+    "spam_pattern": "This profile's text looked like spam (repeated links or characters)."
   },
   "error": {
-    "duplicate": "You already have a listing with this name and locality.",
-    "noReachWarning": "Every contact channel is hidden and enquiries are disabled — customers cannot reach this business. Confirm to proceed anyway.",
-    "alreadySubmitted": "This listing is already {state} and can't be submitted again.",
-    "missingNameOrCapability": "Missing mandatory field: name and at least one category/capability",
+    "duplicate": "You already have a profile with this name and locality.",
+    "noReachWarning": "Every contact channel is hidden and requests are disabled — customers cannot reach this business. Confirm to proceed anyway.",
+    "alreadySubmitted": "This profile is already {state} and can't be submitted again.",
+    "missingNameOrCapability": "Missing mandatory field: name and at least one category or skill",
     "missingLocality": "Missing mandatory field: locality",
-    "activeCapReached": "You have reached the limit of {cap} active listings",
-    "verifyContactFirst": "Verify your listing's contact number before submitting",
+    "activeCapReached": "You have reached the limit of {cap} active profiles",
+    "verifyContactFirst": "Verify your profile's contact number before submitting",
     "noCredentialFound": "No verified credential found for your account (dev stand-in).",
     "alreadyArchived": "Already archived",
     "otpLockedUntil": "Too many attempts. Try again after {time}",
@@ -28,10 +28,14 @@
     "otpExpired": "Code expired — request a new one",
     "otpLockedNow": "Too many failed attempts — locked for 15 minutes",
     "otpIncorrect": "Incorrect code ({attempts}/5 attempts)",
-    "profileRequired": "Set up a business or professional profile first — either one is enough.",
+    "profileRequired": "Set up a business or work profile first — either one is enough.",
     "duplicatePackageTier": "Each tier (basic, standard, premium) can appear only once.",
-    "tooManyPackages": "A listing can offer at most {max} packages.",
-    "packageNotFound": "That package is no longer available."
+    "tooManyPackages": "A profile can offer at most {max} packages.",
+    "packageNotFound": "That package is no longer available.",
+    "profileExists": "You already have a Vyapar profile. Add your business to it instead of creating another.",
+    "profileFieldsMissing": "To set up your profile we still need: {fields}.",
+    "profileSuspended": "Your profile is suspended while it is reviewed, so it can't be changed right now.",
+    "businessVerifiedCannotRemove": "Your business is verified, so it can't be removed from your profile. Contact support if it has closed."
   },
   "success": {
     "otpSent": "OTP sent",

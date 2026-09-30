@@ -22,6 +22,7 @@ from app.routers import admin_commercial, admin_ops, campaigns, commercial, dev,
 from app.routers.commercial import run_commercial_lifecycle_pass
 from app.routers.privacy import run_preference_detection_pass
 from app.outbox import run_outbox_dispatch_pass
+from app.services.opportunities import run_opportunity_expiry_pass  # [Backend A] posts past their last date
 from app.routers.trust_safety import run_moderation_escalation_pass
 from app.routers.listings import sync_credential_refs
 from app.routers.notifications import notification_loop
@@ -64,6 +65,7 @@ async def verification_cleanup_loop() -> None:
             await run_preference_detection_pass(get_pool())  # [TR038] derived-preference proposals
             await run_outbox_dispatch_pass(get_pool())  # [TR052] Search Bridge stand-in dispatch
             await run_contract_auto_release_pass(get_pool())  # 14-day auto-release of submitted milestones
+            await run_opportunity_expiry_pass(get_pool())  # [Backend A] active -> expired when the last date passes
             await refresh_taxonomy_cache(get_pool())  # keep the label cache current
         except Exception:
             import logging
@@ -115,6 +117,8 @@ app.mount("/uploads", StaticFiles(directory=uploads.UPLOAD_DIR), name="uploads")
 
 app.include_router(first_run.router)
 app.include_router(taxonomy.router)  # [Backend A] categories -> skills tree, localized
+from app.routers import profile as profile_router  # noqa: E402  [Backend A] one profile per member
+app.include_router(profile_router.router)
 app.include_router(member_settings.router)
 # discovery.router's static "/v1/listings/search" path MUST be registered
 # before listings.router's "/v1/listings/{listing_id}" — Starlette matches

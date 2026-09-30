@@ -33,7 +33,7 @@ export function BrandMark({ size = 30 }: { size?: number }) {
 
 export default function AppTopBar() {
   const { t } = useTranslation("common");
-  const { brand } = useHost();
+  const { brand, platformLink } = useHost();
   const router = useRouter();
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
@@ -64,11 +64,24 @@ export default function AppTopBar() {
 
   return (
     <header className="vy-topbar" data-scrolled={scrolled ? "" : undefined}>
-      <Link href="/" className="vy-topbar-brand" aria-label={t("shell.home")}>
-        <BrandMark />
-        <span className="vy-topbar-word">{brand.name}</span>
-        {brand.qualifier && <span className="vy-topbar-qual">{brand.qualifier}</span>}
-      </Link>
+      <div className="vy-topbar-brandrow">
+        <Link href="/" className="vy-topbar-brand" aria-label={t("shell.home")}>
+          <BrandMark />
+          <span className="vy-topbar-word">{brand.name}</span>
+        </Link>
+        {/* [2026-09-30, owner: "i can't go to ForKhatri homepage from mobile
+            view of Vyapar"] the host's name is a link home to the host, on
+            every width; URL from the host adapter (.env), never hardcoded.
+            Without a platform link it is plain text, as before. */}
+        {brand.qualifier &&
+          (platformLink ? (
+            <a className="vy-topbar-host" href={platformLink.href} aria-label={t("shell.platformHome", { name: brand.qualifier })}>
+              {brand.qualifier}
+            </a>
+          ) : (
+            <span className="vy-topbar-host">{brand.qualifier}</span>
+          ))}
+      </div>
 
       {/* Upwork order: the two intents right after the wordmark (desktop). */}
       <div className="vy-topbar-menus">

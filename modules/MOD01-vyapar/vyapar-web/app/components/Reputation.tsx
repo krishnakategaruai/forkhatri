@@ -17,6 +17,7 @@ import { ApiError, type Reputation as SdkReputation } from "@/lib/sdk";
 import { useSdk } from "@/lib/sdk/react";
 // [FE2] Indian date order ("31 Aug 2026"), never the US "8/31/2026"
 import { formatDate } from "@/lib/format";
+import DisabledReason from "@/app/components/DisabledReason";
 
 // [IMP38] The wire type now lives in lib/sdk; kept here as an alias-compatible
 // interface so existing imports of `Reputation` from this file keep working.
@@ -94,12 +95,12 @@ export function ReviewList({ listingId }: { listingId: string }) {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
-  async function load() {
-    setRows(await sdk.listings.reviews<ReviewRow[]>(listingId));
+  function load() {
+    return sdk.listings.reviews<ReviewRow[]>(listingId).then(setRows);
   }
 
   useEffect(() => {
-    load().catch(() => setRows([]));
+    queueMicrotask(() => void load().catch(() => setRows([])));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listingId, sdk, i18n.language]);
 
@@ -157,15 +158,10 @@ export function ReviewList({ listingId }: { listingId: string }) {
                 {DISPUTE_REASONS.map((d) => (
                   <button
                     key={d}
+                    type="button"
                     role="radio"
                     aria-checked={reason === d}
-                    className="vy-chip"
-                    style={{
-                      border: `1px solid ${reason === d ? "var(--selected-border)" : "var(--border-hairline)"}`,
-                      cursor: "pointer",
-                      background: reason === d ? "var(--selected-bg)" : "var(--surface-overlay)",
-                      color: reason === d ? "var(--selected-fg)" : "var(--text-primary)",
-                    }}
+                    className={reason === d ? "vy-chip vy-chip-selected" : "vy-chip"}
                     onClick={() => setReason(d)}
                   >
                     {t(`reviews:disputeReason.${d}` as "disputeReason.abusive")}
@@ -173,9 +169,10 @@ export function ReviewList({ listingId }: { listingId: string }) {
                 ))}
               </div>
               <div className="vy-row">
-                <button className="vy-btn vy-btn-primary" disabled={!reason || busy} onClick={() => sendDispute(r.id)}>
+                <button className="vy-btn vy-btn-primary" aria-describedby={!reason ? "why-dispute-review" : undefined} disabled={!reason || busy} onClick={() => sendDispute(r.id)}>
                   {t("reviews:disputeSubmit")}
                 </button>
+                <DisabledReason id={"why-dispute-review"} show={!reason}>{t("common:disabled.chooseReason")}</DisabledReason>
                 <button className="vy-btn vy-btn-ghost" onClick={() => { setDisputing(null); setReason(null); }}>
                   {t("common:action.cancel")}
                 </button>

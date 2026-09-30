@@ -14,9 +14,10 @@
 //  zone with every destination as icon + word (low-literacy research:
 //  icons alone are opaque, hidden menus are missed; the old collapsed ✦
 //  orb hid all five). Post is the raised ink circle in the middle. While
-//  scrolling DOWN the hub condenses to icons only; scrolling up brings the
-//  words back (motion layout spring). Reduced motion: no animation, and
-//  it never condenses.
+//  scrolling DOWN the hub condenses (tighter padding, smaller Post circle)
+//  but keeps every word (critique N4). Reduced motion: no animation, and
+//  it never condenses. It steps away while a screen's own bottom action
+//  bar (Apply / Call on a job) is showing.
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -106,12 +107,13 @@ export default function CommandHub() {
                 href={d.href}
                 className={isPost ? "vy-hub-item vy-hub-post" : "vy-hub-item"}
                 aria-current={active ? "page" : undefined}
-                aria-label={condensed ? t(d.labelKey) : undefined}
               >
                 <span className="vy-hub-icon" aria-hidden="true">
                   <I size={isPost ? 24 : 22} strokeWidth={isPost ? 2.25 : active ? 2.1 : 1.75} />
                 </span>
-                <span className="vy-hub-label">{t(d.labelKey)}</span>
+                {/* [Critique N4] short per-language nav words, always shown (also
+                    when condensed), wrapping to two lines — never clipped. */}
+                <span className="vy-hub-label">{t(d.labelKey.replace("nav.", "nav.short."), { defaultValue: t(d.labelKey) })}</span>
               </Link>
             );
           })}

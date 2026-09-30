@@ -2,7 +2,8 @@
   "step0": {
     "title": "Welcome to Vyapar",
     "namePrompt": "What should we call you?",
-    "namePlaceholder": "Your name"
+    "namePlaceholder": "Your name",
+    "languagePrompt": "Which language do you read best?"
   },
   "step1": {
     "title": "Where are you based?",
@@ -18,7 +19,7 @@
   },
   "step2cap": {
     "title": "What can you offer?",
-    "help": "Pick what applies — this helps others find you and helps us match you to relevant opportunities. Add anything not listed below.",
+    "help": "Pick what applies — this helps others find you and helps us match you to relevant posts. Add anything not listed below.",
     "helpScoped": "Based on what you picked — tap what applies, or search to add something else.",
     "otherLabel": "Search or add a skill",
     "otherPlaceholder": "e.g. Handmade jewellery, tailoring",
@@ -35,14 +36,14 @@
     "help": "Pick as many as apply — this only shapes what we show first.",
     "options": {
       "findCustomers": "Find customers",
-      "findWork": "Find work / opportunities",
+      "findWork": "Find work",
       "hire": "Hire people",
       "partners": "Find business partners"
     }
   },
   "step3": {
     "title": "You're set, {{name}}.",
-    "help": "Post your business or professional listing next, or explore what others have shared.",
+    "help": "Add your work profile or business profile next, or explore what others have shared.",
     "cta": "Go to Vyapar"
   }
 }

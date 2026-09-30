@@ -2,9 +2,9 @@
 
 // [FE2 — imp-backend-d] "Start a contract" on an accepted enquiry thread.
 //
-// Who may start one follows the backend rule exactly: the client is the
-// side that pays — the poster for an `apply` enquiry (a hired applicant),
-// otherwise the sender. When a live contract already exists for this thread
+// Who may start one: the client is the side that pays — the poster for any
+// response to a post, the sender for a request to a profile (getContractRoles,
+// critique N1; FE1 owns this file since FE2 finished). When a live contract already exists for this thread
 // the button becomes "Open contract" for both sides instead, so no one tries
 // to create a duplicate (the server would refuse it with 409 anyway).
 import Link from "next/link";
@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { useContracts } from "@/app/hooks/trade";
 import { useSdk } from "@/lib/sdk/react";
 import { useResource } from "@/app/hooks/useResource";
+import type { ContractRoles } from "@/lib/sdk/domains/contracts";
 
 /**
  * [Critique L5] Contracts (milestones, timesheets) are for freelance projects
@@ -35,19 +36,27 @@ export function useContractEligible(opportunityId: string | null | undefined): b
 
 const LIVE = ["draft", "proposed", "active", "disputed"];
 
-export function isClientOf(enquiry: { action_type: string; is_sender: boolean }): boolean {
-  return enquiry.action_type === "apply" ? !enquiry.is_sender : enquiry.is_sender;
+/**
+ * [FE1 — critique N1, blocker] Who pays comes from the server
+ * (`getContractRoles`): a response to a post — the poster pays; a request to
+ * a profile — the sender pays. The old local rule made the freelancer pay
+ * for their own proposal; there is no client-side rule any more.
+ */
+export function useContractRoles(enquiryId: string | null | undefined, enabled = true) {
+  const sdk = useSdk();
+  return useResource<ContractRoles>(() => sdk.contracts.roles(enquiryId as string), [enquiryId ?? "", sdk], {
+    enabled: enabled && !!enquiryId,
+    language: false,
+  });
 }
 
 export default function ContractEntry({
   enquiryId,
   enquiryState,
-  isClient,
   opportunityId,
 }: {
   enquiryId: string;
   enquiryState: string;
-  isClient: boolean;
   /** The enquiry's opportunity, when it answers one (decides eligibility). */
   opportunityId?: string | null;
 }) {
@@ -58,6 +67,7 @@ export default function ContractEntry({
   const latest = live ?? existing[0];
 
   const eligible = useContractEligible(opportunityId);
+  const roles = useContractRoles(enquiryId, ["in_progress", "resolved", "closed"].includes(enquiryState));
   if (!data) return null;
   if (latest) {
     return (
@@ -66,7 +76,9 @@ export default function ContractEntry({
       </Link>
     );
   }
-  if (enquiryState !== "in_progress" || !isClient || eligible !== true) return null;
+  // Start only when the server says this viewer can (the client, accepted,
+  // no live contract) and the post is not a salaried job.
+  if (!roles.data?.can_create || eligible !== true) return null;
   return (
     <Link
       className="vy-btn vy-btn-secondary"

@@ -7,29 +7,41 @@
 // refreshing mid-flow resumes from the server's own first_run_step, never
 // the client's local state alone.
 // [Product-owner i18n rule] Converted to useTranslation(); picking a
-// language on step 0 now also calls the real i18next language switch
-// (previously it only saved the choice to the backend without changing
-// what the member saw for the rest of first-run).
+// language on step 0 also calls the real i18next language switch.
+// [Design language 2026-09-29] The step line and bar from the account
+// screens ("Step 1 of 5"), language as three equal chips, "what brings you
+// here" as tappable option cards with a check, one brand button per step,
+// the reason a button is disabled written under it.
 // Traces to: FR44, TR044
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { useTranslation } from "react-i18next";
+import { Briefcase, Check, Handshake, Search, Users, type LucideIcon } from "lucide-react";
 import { api } from "@/lib/api";
 import { setPreferredLanguage } from "@/lib/i18n/provider";
 import type { Language } from "@/lib/i18n/config";
 import Screen from "@/app/components/Screen";
+import DisabledReason from "@/app/components/DisabledReason";
 import SkillPicker from "@/app/components/taxonomy/SkillPicker";
+import Steps from "@/app/components/account/Steps";
+import LocalityField from "@/app/components/account/LocalityField";
 import { useTaxonomyAliases, useTaxonomyTree } from "@/app/hooks/hiring";
+import "@/app/styles/account-2026.css";
 
-const HELP_OPTION_IDS = ["find_customers", "find_work", "hire", "partners"];
+const HELP_OPTIONS: { id: string; key: string; icon: LucideIcon }[] = [
+  { id: "find_customers", key: "findCustomers", icon: Users },
+  { id: "find_work", key: "findWork", icon: Search },
+  { id: "hire", key: "hire", icon: Briefcase },
+  { id: "partners", key: "partners", icon: Handshake },
+];
 const LANGUAGE_IDS: Language[] = ["en", "hi", "te"];
 const WORK_MODES = ["on_site", "remote", "both"] as const;
 
 const TOTAL_VISIBLE_STEPS = 5;
 
 export default function FirstRunPage() {
-  const { t, i18n } = useTranslation(["firstRun", "common", "discover"]);
+  const { t, i18n } = useTranslation(["firstRun", "common", "discover", "listings"]);
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [displayName, setDisplayName] = useState("");
@@ -37,28 +49,16 @@ export default function FirstRunPage() {
   const [locality, setLocality] = useState("");
   const [radiusKm, setRadiusKm] = useState(10);
   const [workMode, setWorkMode] = useState<"on_site" | "remote" | "both">("both");
-  // [Original-Vyapar upgrade, 2026-09-17] FR44's own "capture capabilities
-  // via structured choices plus free text" criterion — genuinely missing
-  // before this change. `capabilityOptions` is the real, shared taxonomy
-  // capability list (same one every listing already picks from, not a
-  // second first-run-only list); `capabilities` is the structured
-  // multi-select, `capabilitiesOther` is the free-text half.
-  // [Original-Vyapar upgrade, 2026-09-17, product-owner-reaffirmed] two
-  // sub-phases within this ONE first-run step (never a 6th required
-  // screen — FR44's "<= 5 screens" limit is unchanged): phase "categories"
-  // (real taxonomy categories, searchable, tap cards with a one-line
-  // description) then phase "skills" (real capability suggestions SCOPED
-  // to whichever categories were just picked, plus a search box to add
-  // anything not suggested). Solves the same problem WorkIndia's
-  // screenshots show — guided, scoped capability capture instead of a
-  // blank textbox — as an original Vyapar screen: this app's own chip/
-  // card primitives, near-monochrome palette, no photos/gradients.
+  // [FR44] "capture capabilities via structured choices plus free text":
+  // `capabilities` is the structured multi-select from the shared taxonomy,
+  // `capabilitiesOther` the free-text half.
   const tree = useTaxonomyTree();
   const aliases = useTaxonomyAliases();
   const [capabilities, setCapabilities] = useState<string[]>([]);
   const [capabilitiesOther, setCapabilitiesOther] = useState("");
   const [help, setHelp] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     api.get<{
@@ -102,129 +102,103 @@ export default function FirstRunPage() {
     setPreferredLanguage(lang);
   }
 
+  const stepTitles = [t("firstRun:step0.title"), t("firstRun:step1.title"), t("firstRun:step2cap.title"), t("firstRun:step2.title"), t("firstRun:step3.title", { name: displayName.split(" ")[0] || "" })];
+
   return (
     // [IMP39 — desktop layout] `vy-firstrun` widens the focused column on
-    // desktop (inputs keep a readable measure, primary buttons stop being
-    // 880px bars) and turns the category cards and the help options into
-    // multi-column grids. No effect below 900px.
+    // desktop and turns the help options into a two-column grid.
     <Screen className="vy-shell-center vy-firstrun">
-      {/* [Original-Vyapar upgrade — step-progress indicator, own visual
-          language: quiet accent-filled segments, never a literal copy of
-          any reference app's stepper/rocket-icon chrome] */}
-      <div className="vy-row" aria-label={t("firstRun:progress.label", { step: step + 1, total: TOTAL_VISIBLE_STEPS })} style={{ gap: 4 }}>
-        {Array.from({ length: TOTAL_VISIBLE_STEPS }, (_, i) => (
-          <div
-            key={i}
-            style={{
-              height: 4,
-              flex: 1,
-              borderRadius: 2,
-              background: i <= step ? "var(--accent)" : "var(--surface-overlay)",
-            }}
-          />
-        ))}
-      </div>
+      <Steps step={step + 1} total={TOTAL_VISIBLE_STEPS} label={stepTitles[step] ?? ""} stepLabel={t("firstRun:progress.label", { step: step + 1, total: TOTAL_VISIBLE_STEPS })} />
       <AnimatePresence mode="wait">
         {step === 0 && (
-          <motion.div key="0" {...fade} className="vy-stack">
-            <h1>{t("firstRun:step0.title")}</h1>
-            <p>{t("firstRun:step0.namePrompt")}</p>
-            <input
-              className="vy-input"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder={t("firstRun:step0.namePlaceholder")}
-            />
-            <div className="vy-row" style={{ flexWrap: "wrap" }}>
-              {LANGUAGE_IDS.map((id) => (
-                <button
-                  key={id}
-                  className="vy-btn"
-                  style={{
-                    background: language === id ? "var(--selected-solid-bg)" : "var(--surface-overlay)",
-                    color: language === id ? "var(--selected-solid-fg)" : "var(--text-primary)",
-                  }}
-                  onClick={() => chooseLanguage(id)}
-                >
-                  {t(`common:language.${id}` as "language.en")}
-                </button>
-              ))}
+          <motion.div key="0" {...fade} className="vy-acct-form">
+            <div className="vy-acct-head">
+              <h1>{t("firstRun:step0.title")}</h1>
             </div>
-            <button
-              className="vy-btn vy-btn-primary"
-              disabled={!displayName || saving}
-              onClick={() => next(1, { display_name: displayName, language })}
-            >
-              {t("common:action.continue")}
-            </button>
+            <div className="vy-acct-field">
+              <label className="vy-label" htmlFor="fr-name">{t("firstRun:step0.namePrompt")}</label>
+              <input id="fr-name" className="vy-input" value={displayName} autoComplete="name" onChange={(e) => setDisplayName(e.target.value)} placeholder={t("firstRun:step0.namePlaceholder")} />
+            </div>
+            <div className="vy-acct-field">
+              <span className="vy-label">{t("firstRun:step0.languagePrompt")}</span>
+              <div className="vy-acct-fr-lang" role="group" aria-label={t("common:language.change")}>
+                {LANGUAGE_IDS.map((id) => (
+                  <button key={id} type="button" className="vy-chip" aria-pressed={language === id} lang={id} onClick={() => chooseLanguage(id)}>
+                    {t(`common:language.${id}` as "language.en")}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="vy-acct-form" style={{ gap: 8 }}>
+              <button className="vy-btn vy-btn-primary" aria-describedby="fr-reason-name" disabled={!displayName || saving} onClick={() => next(1, { display_name: displayName, language })}>
+                {t("common:action.continue")}
+              </button>
+              <DisabledReason id="fr-reason-name" show={!displayName.trim() && !saving}>
+                {t("listings:new.reasonName")}
+              </DisabledReason>
+            </div>
           </motion.div>
         )}
 
         {step === 1 && (
-          <motion.div key="1" {...fade} className="vy-stack">
-            <h1>{t("firstRun:step1.title")}</h1>
-            <p>{t("firstRun:step1.help")}</p>
-            <input
-              className="vy-input"
+          <motion.div key="1" {...fade} className="vy-acct-form">
+            <div className="vy-acct-head">
+              <h1>{t("firstRun:step1.title")}</h1>
+              <p>{t("firstRun:step1.help")}</p>
+            </div>
+            {/* [Owner, 2026-09-30] a known locality is shown filled; an unknown
+                one offers "Use my current location" before typing. */}
+            <LocalityField
+              id="fr-locality"
               value={locality}
-              onChange={(e) => setLocality(e.target.value)}
+              onChange={setLocality}
+              onCoords={(lat, lng) => setCoords({ lat, lng })}
+              label={t("listings:new.localityLabel")}
               placeholder={t("firstRun:step1.placeholder")}
             />
-            {/* [FR44 gap closed] radius and work mode existed on the member
-                row since the very first migration and were already used by
-                the Businesses & Professionals filter, but first-run never
-                asked for either — captured here on the same screen as
-                locality, not a separate 6th step, to stay within FR44's
-                own "<= 5 screens" limit. */}
-            <label className="vy-label">{t("firstRun:step1.radiusLabel")}</label>
-            <div className="vy-row">
-              {[5, 10, 25].map((km) => (
-                <button
-                  key={km}
-                  className="vy-chip"
-                  aria-pressed={radiusKm === km}
-                style={{ cursor: "pointer" }}
-                  onClick={() => setRadiusKm(km)}
-                >
-                  {t("discover:businesses.radiusKm", { km })}
-                </button>
-              ))}
+            {/* [FR44 gap closed] radius and work mode captured on the same
+                screen as locality, to stay within FR44's "<= 5 screens". */}
+            <div className="vy-acct-field">
+              <span className="vy-label">{t("firstRun:step1.radiusLabel")}</span>
+              <div className="vy-acct-inline-choices" role="group" aria-label={t("firstRun:step1.radiusLabel")}>
+                {[5, 10, 25].map((km) => (
+                  <button key={km} type="button" className="vy-chip" aria-pressed={radiusKm === km} onClick={() => setRadiusKm(km)}>
+                    {t("discover:businesses.radiusKm", { km })}
+                  </button>
+                ))}
+              </div>
             </div>
-            <label className="vy-label">{t("firstRun:step1.workModeLabel")}</label>
-            <div className="vy-row">
-              {WORK_MODES.map((m) => (
-                <button
-                  key={m}
-                  className="vy-chip"
-                  aria-pressed={workMode === m}
-                style={{ cursor: "pointer" }}
-                  onClick={() => setWorkMode(m)}
-                >
-                  {t(`discover:businesses.serviceMode${m === "on_site" ? "OnSite" : m === "remote" ? "Remote" : "Both"}` as "businesses.serviceModeBoth")}
-                </button>
-              ))}
+            <div className="vy-acct-field">
+              <span className="vy-label">{t("firstRun:step1.workModeLabel")}</span>
+              <div className="vy-acct-inline-choices" role="group" aria-label={t("firstRun:step1.workModeLabel")}>
+                {WORK_MODES.map((m) => (
+                  <button key={m} type="button" className="vy-chip" aria-pressed={workMode === m} onClick={() => setWorkMode(m)}>
+                    {t(`discover:businesses.serviceMode${m === "on_site" ? "OnSite" : m === "remote" ? "Remote" : "Both"}` as "businesses.serviceModeBoth")}
+                  </button>
+                ))}
+              </div>
             </div>
-            <button
-              className="vy-btn vy-btn-primary"
-              disabled={!locality || saving}
-              onClick={() => next(2, { locality, radius_km: radiusKm, work_mode: workMode })}
-            >
-              {t("common:action.continue")}
-            </button>
+            <div className="vy-acct-form" style={{ gap: 8 }}>
+              <button className="vy-btn vy-btn-primary" aria-describedby="fr-reason-loc" disabled={!locality || saving} onClick={() => next(2, { locality, radius_km: radiusKm, work_mode: workMode, ...(coords ?? {}) })}>
+                {t("common:action.continue")}
+              </button>
+              <DisabledReason id="fr-reason-loc" show={!locality.trim() && !saving}>
+                {t("listings:new.reasonLocality")}
+              </DisabledReason>
+            </div>
           </motion.div>
         )}
 
         {/* [FE1 — 2026-09-28] One step, one picker: the real two-level
-            taxonomy (GET /v1/taxonomy/tree) — category → skill/role with a
-            one-line description each, drill-in on a phone and two columns
-            on desktop, a search that matches both levels (and the English
-            name, in Hindi or Telugu). Anything not in the tree is kept as
-            free text in capabilities_other, exactly as before. Replaces
-            the earlier two sub-phases that fetched first-run-only lists. */}
+            taxonomy. This step's whole job is picking skills, so the grid
+            stays open (startOpen); only the posting composer's picker starts
+            closed. Anything not in the tree is kept as free text. */}
         {step === 2 && (
-          <motion.div key="2-skills" {...fade} className="vy-stack">
-            <h1>{t("firstRun:step2cap.title")}</h1>
-            <p>{t("firstRun:step2cat.help")}</p>
+          <motion.div key="2-skills" {...fade} className="vy-acct-form">
+            <div className="vy-acct-head">
+              <h1>{t("firstRun:step2cap.title")}</h1>
+              <p>{t("firstRun:step2cat.help")}</p>
+            </div>
             <SkillPicker
               tree={tree.data}
               selected={capabilities}
@@ -232,41 +206,42 @@ export default function FirstRunPage() {
               max={15}
               aliases={aliases}
               onFreeText={(text) => setCapabilitiesOther((prev) => (prev ? `${prev}, ${text}` : text))}
+              startOpen
             />
-            {capabilitiesOther && <p className="vy-muted" style={{ fontSize: 13 }}>{t("firstRun:step2cap.otherAdded", { text: capabilitiesOther })}</p>}
-            <button
-              className="vy-btn vy-btn-primary"
-              disabled={saving || (capabilities.length === 0 && !capabilitiesOther)}
-              onClick={() => next(3, { capabilities, capabilities_other: capabilitiesOther || null })}
-            >
-              {t("common:action.continue")}
-            </button>
-            <button className="vy-btn vy-btn-ghost" disabled={saving} onClick={() => next(3, {})}>
-              {t("firstRun:step2cap.skip")}
-            </button>
+            {capabilitiesOther && <p className="vy-acct-hint">{t("firstRun:step2cap.otherAdded", { text: capabilitiesOther })}</p>}
+            <div className="vy-row" style={{ flexWrap: "wrap", gap: 10 }}>
+              <button className="vy-btn vy-btn-primary" disabled={saving || (capabilities.length === 0 && !capabilitiesOther)} onClick={() => next(3, { capabilities, capabilities_other: capabilitiesOther || null })}>
+                {t("common:action.continue")}
+              </button>
+              <button className="vy-btn vy-btn-ghost" disabled={saving} onClick={() => next(3, {})}>
+                {t("firstRun:step2cap.skip")}
+              </button>
+            </div>
           </motion.div>
         )}
 
         {step === 3 && (
-          <motion.div key="3" {...fade} className="vy-stack">
-            <h1>{t("firstRun:step2.title")}</h1>
-            <p>{t("firstRun:step2.help")}</p>
-            <div className="vy-stack vy-firstrun-help">
-              {HELP_OPTION_IDS.map((id) => (
-                <button
-                  key={id}
-                  className="vy-btn"
-                  style={{
-                    justifyContent: "flex-start",
-                    background: help.includes(id) ? "var(--selected-bg)" : "var(--surface-overlay)",
-                    color: help.includes(id) ? "var(--selected-fg)" : "var(--text-primary)",
-                  }}
-                  onClick={() => toggleHelp(id)}
-                >
-                  {help.includes(id) ? "✓ " : ""}
-                  {t(`firstRun:step2.options.${id.replace(/_(.)/g, (_, c) => c.toUpperCase())}` as "step2.options.findCustomers")}
-                </button>
-              ))}
+          <motion.div key="3" {...fade} className="vy-acct-form">
+            <div className="vy-acct-head">
+              <h1>{t("firstRun:step2.title")}</h1>
+              <p>{t("firstRun:step2.help")}</p>
+            </div>
+            <div className="vy-acct-fr-help" role="group" aria-label={t("firstRun:step2.title")}>
+              {HELP_OPTIONS.map((o) => {
+                const on = help.includes(o.id);
+                const Icon = o.icon;
+                return (
+                  <button key={o.id} type="button" className="vy-card vy-acct-fr-option" aria-pressed={on} onClick={() => toggleHelp(o.id)}>
+                    <span className="vy-acct-tile" data-tint={on ? "brand" : undefined} aria-hidden="true">
+                      <Icon size={20} strokeWidth={1.9} />
+                    </span>
+                    <strong>{t(`firstRun:step2.options.${o.key}` as "step2.options.findCustomers")}</strong>
+                    <span className="vy-acct-fr-check" aria-hidden="true">
+                      <Check size={14} strokeWidth={3} />
+                    </span>
+                  </button>
+                );
+              })}
             </div>
             <button className="vy-btn vy-btn-primary" disabled={saving} onClick={() => next(4, { help_with: help })}>
               {t("common:action.continue")}
@@ -275,9 +250,11 @@ export default function FirstRunPage() {
         )}
 
         {step === 4 && (
-          <motion.div key="4" {...fade} className="vy-stack">
-            <h1>{t("firstRun:step3.title", { name: displayName.split(" ")[0] || "" })}</h1>
-            <p>{t("firstRun:step3.help")}</p>
+          <motion.div key="4" {...fade} className="vy-acct-form">
+            <div className="vy-acct-head">
+              <h1>{t("firstRun:step3.title", { name: displayName.split(" ")[0] || "" })}</h1>
+              <p>{t("firstRun:step3.help")}</p>
+            </div>
             <button className="vy-btn vy-btn-primary" disabled={saving} onClick={() => next(5)}>
               {t("firstRun:step3.cta")}
             </button>

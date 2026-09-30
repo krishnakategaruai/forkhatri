@@ -48,6 +48,16 @@ export interface SkillPickerProps {
    * form. The tree opens again on "Change".
    */
   collapsible?: boolean;
+  /**
+   * [FE1 — 2026-09-29, owner: "all tags are seen and its really looking
+   * bad"] Show the category/spec grid immediately. Default false: the
+   * picker starts as a single search box (the grid and its "Browse
+   * categories" opener stay closed until tapped or the search box is
+   * focused), so it does not dump the whole taxonomy into a form. First-run
+   * — where picking a skill IS the whole screen — passes true to keep its
+   * existing always-open behaviour.
+   */
+  startOpen?: boolean;
 }
 
 interface Flat {
@@ -61,9 +71,9 @@ function norm(s: string): string {
   return s.toLocaleLowerCase().normalize("NFKC");
 }
 
-export default function SkillPicker({ tree, selected, onChange, max = 10, searchLabel, aliases, onFreeText, collapsible = false }: SkillPickerProps) {
+export default function SkillPicker({ tree, selected, onChange, max = 10, searchLabel, aliases, onFreeText, collapsible = false, startOpen = false }: SkillPickerProps) {
   const { t } = useTranslation("hiring");
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(startOpen);
   const [active, setActive] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
@@ -106,7 +116,15 @@ export default function SkillPicker({ tree, selected, onChange, max = 10, search
 
   function toggle(slug: string) {
     if (selected.includes(slug)) onChange(selected.filter((s) => s !== slug));
-    else if (selected.length < max) onChange([...selected, slug]);
+    else if (selected.length < max) {
+      onChange([...selected, slug]);
+      // [FE1 — 2026-09-30] A pick from search results is done with the
+      // search: clear it, and in a form (collapsible) fold back to the chip.
+      if (query) {
+        setQuery("");
+        if (collapsible) setExpanded(false);
+      }
+    }
   }
 
   const countIn = (c: TaxonomyCategory) => (c.children ?? []).filter((s) => selected.includes(s.slug)).length;
@@ -179,7 +197,8 @@ export default function SkillPicker({ tree, selected, onChange, max = 10, search
         type="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder={t("picker.searchPlaceholder")}
+        onFocus={() => setExpanded(true)}
+        placeholder={selected.length === 0 && !expanded ? t("picker.chooseTrigger") : t("picker.searchPlaceholder")}
         aria-label={searchLabel ?? t("picker.searchPlaceholder")}
       />
 
@@ -196,7 +215,7 @@ export default function SkillPicker({ tree, selected, onChange, max = 10, search
             </button>
           )}
         </div>
-      ) : (
+      ) : expanded ? (
         <div className="vy-picker-body">
           <div className="vy-picker-cats" role="list">
             {categories.map((c) => {
@@ -233,6 +252,12 @@ export default function SkillPicker({ tree, selected, onChange, max = 10, search
             </div>
           )}
         </div>
+      ) : (
+        // [FE1 — 2026-09-29] Closed state: no grid dump. A single tap (or
+        // focusing the search box above) opens the category/spec grid.
+        <button type="button" className="vy-btn vy-btn-ghost" style={{ alignSelf: "flex-start" }} onClick={() => setExpanded(true)}>
+          {t("picker.browseCategories")}
+        </button>
       )}
 
       {atMax && <p className="vy-field-hint">{t("picker.max", { count: max })}</p>}

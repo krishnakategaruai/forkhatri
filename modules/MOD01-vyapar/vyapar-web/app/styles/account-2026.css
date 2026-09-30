@@ -1,0 +1,1301 @@
+/* ======================================================================
+   [Design language 2026-09-29] Account & profile screens: /profile,
+   /profile/contact, /listings/*, /post, /first-run, /activity, /privacy,
+   /moderation/outcomes. Imported by those pages only.
+
+   Rules followed here (references/design-language-2026-09-29.md,
+   palette-2026-09-29.md): tokens only, no colour literals; elevation is a
+   lightness step plus a hairline; one brand-filled button per screen;
+   selection is neutral ink; every size in rem via the --type-* tokens; no
+   font-family, gradients, glass or glow. Class prefix `vy-acct-` so nothing
+   here collides with the shell (the old profile hub reused `.vy-hub`, the
+   command hub's own class, which is what drew the oval "blob").
+   ====================================================================== */
+
+/* ---- Page header: optional back link, title, one line of purpose ------- */
+.vy-acct-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.vy-acct-head-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.vy-acct-head h1 {
+  font-size: var(--type-display);
+  line-height: 1.12;
+  letter-spacing: var(--tracking-title);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.vy-acct-head p {
+  color: var(--text-secondary);
+  max-width: 56ch;
+  line-height: 1.5;
+}
+
+.vy-acct-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 var(--space-2) 0 0;
+  margin-left: -2px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: var(--type-sm);
+  font-weight: var(--weight-ui);
+  border-radius: var(--radius-pill);
+  align-self: flex-start;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.vy-acct-back:hover {
+  color: var(--text-primary);
+}
+
+/* ---- Identity header --------------------------------------------------- */
+.vy-acct-identity {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: var(--space-3) var(--space-4);
+  align-items: center;
+  padding: var(--space-4);
+}
+
+.vy-acct-monogram {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--secondary-soft);
+  color: var(--secondary-text);
+  font-size: var(--type-title);
+  font-weight: var(--weight-title);
+  letter-spacing: var(--tracking-title);
+}
+
+.vy-acct-identity-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.vy-acct-identity-text h1 {
+  font-size: var(--type-title);
+  line-height: 1.15;
+  letter-spacing: var(--tracking-title);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.vy-acct-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  color: var(--text-secondary);
+  font-size: var(--type-sm);
+}
+
+.vy-acct-meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.vy-acct-meta svg {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.vy-acct-stats {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  border-top: 1px solid var(--border-hairline);
+  padding-top: var(--space-3);
+}
+
+.vy-acct-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-height: 48px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: background-color 160ms var(--ease-out);
+}
+
+.vy-acct-stat strong {
+  font-size: var(--type-pay);
+  font-weight: var(--weight-display);
+  letter-spacing: var(--tracking-title);
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.vy-acct-stat span {
+  font-size: var(--type-xs);
+  font-weight: var(--weight-ui);
+  color: var(--text-tertiary);
+}
+
+@media (hover: hover) {
+  .vy-acct-stat:hover {
+    background: var(--selected-bg);
+  }
+}
+
+/* ---- Sections ---------------------------------------------------------- */
+.vy-acct-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.vy-acct-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 0 2px;
+}
+
+.vy-acct-section-head .vy-section-title {
+  font-size: var(--type-heading);
+  line-height: 1.25;
+}
+
+.vy-acct-section-head p {
+  color: var(--text-tertiary);
+  font-size: var(--type-sm);
+}
+
+.vy-acct-section-link {
+  color: var(--brand-text);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-ui);
+  text-decoration: none;
+  white-space: nowrap;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ---- The two profile cards (business, work) ---------------------------- */
+.vy-acct-profiles {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+@media (min-width: 600px) {
+  .vy-acct-profiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+}
+
+.vy-acct-pcard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  min-width: 0;
+  text-decoration: none;
+  color: var(--text-primary);
+}
+
+@media (min-width: 600px) {
+  .vy-acct-pcard {
+    padding: 18px;
+  }
+}
+
+.vy-acct-pcard-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.vy-acct-pcard-kind {
+  font-size: var(--type-xs);
+  font-weight: var(--weight-title);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.vy-acct-pcard-title {
+  font-size: var(--type-heading);
+  font-weight: var(--weight-title);
+  line-height: 1.3;
+  letter-spacing: var(--tracking-heading);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.vy-acct-pcard-what {
+  color: var(--text-secondary);
+  font-size: var(--type-sm);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.vy-acct-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vy-acct-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-nested);
+  color: var(--text-secondary);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-ui);
+  max-width: 100%;
+}
+
+.vy-acct-chip > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vy-acct-pcard-foot {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-hairline);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 40px;
+}
+
+.vy-acct-trust {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--type-xs);
+  font-weight: var(--weight-title);
+  color: var(--verified-text);
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.vy-acct-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--type-xs);
+  font-weight: var(--weight-ui);
+  color: var(--text-tertiary);
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.vy-acct-status[data-tone="warning"] {
+  color: var(--warning-text);
+}
+
+.vy-acct-status[data-tone="danger"] {
+  color: var(--danger-text);
+}
+
+.vy-acct-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 32px;
+  padding: 0 8px 0 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-control);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-title);
+  color: var(--text-primary);
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background-color 160ms var(--ease-out);
+}
+
+@media (hover: hover) {
+  .vy-acct-pcard:hover .vy-acct-action {
+    background: var(--selected-bg);
+  }
+}
+
+/* The "add this kind" card: dashed, quiet, one action. */
+.vy-acct-pcard-empty {
+  border-style: dashed;
+  border-color: var(--border-control);
+  background: var(--surface);
+  justify-content: center;
+}
+
+.vy-acct-pcard-empty .vy-acct-pcard-title {
+  font-size: var(--type-body);
+}
+
+.vy-acct-pcard-empty .vy-acct-pcard-foot {
+  border-top: none;
+  padding-top: 4px;
+  min-height: 0;
+}
+
+.vy-acct-pcard-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--brand-text);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-title);
+}
+
+/* ---- Shortcut list (one card, rows with icon tile, label, hint) --------- */
+.vy-acct-list {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0;
+  overflow: hidden;
+}
+
+.vy-acct-group {
+  padding: 10px 16px 4px;
+  font-size: var(--type-xs);
+  font-weight: var(--weight-title);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.vy-acct-group + .vy-acct-row {
+  border-top: none;
+}
+
+.vy-acct-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 20px;
+  align-items: center;
+  gap: 0 14px;
+  min-height: 56px;
+  padding: 10px 16px;
+  text-decoration: none;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--border-hairline);
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  transition: background-color 160ms var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.vy-acct-row:first-child {
+  border-top: none;
+}
+
+.vy-acct-row:active {
+  background: var(--selected-bg);
+}
+
+@media (hover: hover) {
+  .vy-acct-row:hover {
+    background: var(--surface-nested);
+  }
+}
+
+.vy-acct-row:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.vy-acct-tile {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  display: grid;
+  place-items: center;
+  background: var(--surface-nested);
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.vy-acct-tile[data-tint="brand"] {
+  background: var(--brand-soft);
+  color: var(--brand-text);
+}
+
+.vy-acct-tile[data-tint="secondary"] {
+  background: var(--secondary-soft);
+  color: var(--secondary-text);
+}
+
+.vy-acct-tile[data-tint="amber"] { background: var(--tile-amber-bg); color: var(--tile-amber-fg); }
+.vy-acct-tile[data-tint="sky"] { background: var(--tile-sky-bg); color: var(--tile-sky-fg); }
+.vy-acct-tile[data-tint="green"] { background: var(--tile-green-bg); color: var(--tile-green-fg); }
+.vy-acct-tile[data-tint="indigo"] { background: var(--tile-indigo-bg); color: var(--tile-indigo-fg); }
+.vy-acct-tile[data-tint="plum"] { background: var(--tile-plum-bg); color: var(--tile-plum-fg); }
+.vy-acct-tile[data-tint="teal"] { background: var(--tile-teal-bg); color: var(--tile-teal-fg); }
+.vy-acct-tile[data-tint="danger"] { background: var(--danger-soft); color: var(--danger-text); }
+.vy-acct-tile[data-tint="warning"] { background: var(--warning-soft); color: var(--warning-text); }
+.vy-acct-tile[data-tint="verified"] { background: var(--verified-soft); color: var(--verified-text); }
+
+.vy-acct-tile-lg {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+}
+
+.vy-acct-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.vy-acct-row-label {
+  font-size: var(--type-body);
+  font-weight: var(--weight-ui);
+  line-height: 1.3;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.vy-acct-row-hint {
+  font-size: var(--type-sm);
+  color: var(--text-tertiary);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vy-acct-row-end {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  color: var(--text-tertiary);
+}
+
+.vy-acct-row-count {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: var(--radius-pill);
+  display: inline-grid;
+  place-items: center;
+  background: var(--selected-solid-bg);
+  color: var(--selected-solid-fg);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-title);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* A row with a badge on the right takes a wider end column. */
+.vy-acct-row[data-badge] {
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+}
+
+/* ---- Chooser cards (Post, Add a profile) ------------------------------- */
+.vy-acct-choices {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+@media (min-width: 720px) {
+  .vy-acct-choices {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+}
+
+.vy-acct-choice {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 20px;
+  align-items: center;
+  gap: 0 14px;
+  padding: 16px;
+  min-height: 84px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+@media (min-width: 720px) {
+  .vy-acct-choice {
+    grid-template-columns: 48px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-items: start;
+    padding: 20px;
+    min-height: 140px;
+    gap: 12px 14px;
+  }
+
+  .vy-acct-choice .vy-acct-tile-lg {
+    grid-row: 1 / span 2;
+  }
+
+  .vy-acct-choice > .vy-acct-choice-arrow {
+    display: none;
+  }
+}
+
+.vy-acct-choice-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.vy-acct-choice-title {
+  font-size: var(--type-heading);
+  font-weight: var(--weight-title);
+  line-height: 1.3;
+  letter-spacing: var(--tracking-heading);
+  color: var(--text-primary);
+}
+
+.vy-acct-choice-hint {
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.vy-acct-choice-arrow {
+  color: var(--text-tertiary);
+}
+
+/* ---- Stepper (the 3-step profile form) -------------------------------- */
+.vy-acct-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vy-acct-steps-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-title);
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.vy-acct-steps-bar {
+  display: flex;
+  gap: 4px;
+}
+
+.vy-acct-steps-bar > span {
+  flex: 1;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  transition: background-color 200ms var(--ease-out), border-color 200ms var(--ease-out);
+}
+
+.vy-acct-steps-bar > span[data-done] {
+  background: var(--selected-solid-bg);
+  border-color: var(--selected-solid-bg);
+}
+
+/* ---- Form pieces ------------------------------------------------------- */
+.vy-acct-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.vy-acct-form .vy-input,
+.vy-acct-form .vy-textarea {
+  border-color: var(--border-control);
+  width: 100%;
+}
+
+.vy-acct-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vy-acct-field .vy-label {
+  font-size: var(--type-body);
+  color: var(--text-primary);
+}
+
+.vy-acct-field-optional {
+  font-weight: var(--weight-body);
+  color: var(--text-tertiary);
+}
+
+.vy-acct-hint {
+  font-size: var(--type-sm);
+  color: var(--text-tertiary);
+  line-height: 1.45;
+}
+
+/* Prefix inside the field ("+91"), the input itself borderless. */
+.vy-acct-prefixed {
+  display: flex;
+  align-items: center;
+  min-height: 3rem;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  transition: border-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out);
+}
+
+.vy-acct-prefixed:focus-within {
+  outline: 2px solid var(--focus-ring);
+  border-color: var(--focus-ring);
+  box-shadow: 0 0 0 4px var(--brand-soft);
+}
+
+.vy-acct-prefixed > span {
+  padding: 0 0 0 0.9375rem;
+  color: var(--text-secondary);
+  font-weight: var(--weight-ui);
+  font-variant-numeric: tabular-nums lining-nums;
+  white-space: nowrap;
+}
+
+.vy-acct-prefixed > input {
+  flex: 1;
+  min-width: 0;
+  min-height: calc(3rem - 2px);
+  border: none;
+  background: transparent;
+  padding: 0.75rem 0.9375rem 0.75rem 0.5rem;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.vy-acct-prefixed > input:focus {
+  outline: none;
+}
+
+/* Business categories: the first few, then "Show all". */
+.vy-acct-fold {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.vy-acct-fold-more {
+  min-height: 2.25rem;
+  padding: 0.375rem 0.875rem;
+  border-radius: var(--radius-pill);
+  border: 1px dashed var(--border-control);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-ui);
+  cursor: pointer;
+}
+
+@media (pointer: coarse) {
+  .vy-acct-fold-more {
+    min-height: 2.5rem;
+  }
+}
+
+/* A segmented control from plain buttons (never a native <select>). */
+.vy-acct-segmented {
+  display: flex;
+  width: 100%;
+}
+
+.vy-acct-segmented > button {
+  flex: 1;
+  min-width: 0;
+  padding: 0 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The reason a primary action is disabled (DisabledReason.tsx). */
+.vy-disabled-reason {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.vy-disabled-reason > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--text-tertiary);
+}
+
+/* ---- Phone action bar for the stepper: fixed at the thumb; the command
+        hub steps aside while a focused flow is on screen ------------------ */
+.vy-acct-actionbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 16px calc(12px + env(safe-area-inset-bottom));
+  background: var(--surface-raised);
+  border-top: 1px solid var(--border-hairline);
+  box-shadow: var(--shadow-raise);
+}
+
+.vy-acct-actionbar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vy-acct-actionbar-row > .vy-btn-primary {
+  flex: 1;
+}
+
+.vy-acct-quiet {
+  min-height: 44px;
+  padding: 0 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-ui);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.vy-acct-quiet:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+body:has(.vy-acct-actionbar) .vy-hub-float {
+  display: none;
+}
+
+body:has(.vy-acct-actionbar) .vy-shell {
+  padding-bottom: calc(148px + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 900px) {
+  .vy-acct-actionbar {
+    position: static;
+    padding: 0;
+    background: transparent;
+    border-top: none;
+    box-shadow: none;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .vy-acct-actionbar-row {
+    flex: 0 0 auto;
+  }
+
+  .vy-acct-actionbar-row > .vy-btn-primary {
+    flex: 0 0 auto;
+    min-width: 200px;
+  }
+
+  body:has(.vy-acct-actionbar) .vy-hub-float {
+    display: flex;
+  }
+
+  body:has(.vy-acct-actionbar) .vy-shell {
+    padding-bottom: var(--space-7);
+  }
+}
+
+/* ---- Switch rows (privacy, listing visibility) ------------------------- */
+.vy-acct-switch {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px var(--space-4);
+  min-height: 52px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border-hairline);
+  cursor: pointer;
+}
+
+.vy-acct-switch:first-of-type {
+  border-top: none;
+}
+
+.vy-acct-switch-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.vy-acct-switch-label {
+  font-size: var(--type-body);
+  font-weight: var(--weight-ui);
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.vy-acct-switch-hint {
+  font-size: var(--type-sm);
+  color: var(--text-tertiary);
+  line-height: 1.45;
+}
+
+.vy-acct-switch input[type="checkbox"][role="switch"] {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+/* A settings card: icon tile + title on top, then rows. */
+.vy-acct-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 16px;
+}
+
+@media (min-width: 600px) {
+  .vy-acct-card {
+    padding: 20px;
+  }
+}
+
+.vy-acct-card-head {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 2px 14px;
+  align-items: center;
+}
+
+.vy-acct-card-head .vy-acct-tile {
+  grid-row: 1 / span 2;
+}
+
+.vy-acct-card-head h2 {
+  font-size: var(--type-heading);
+  line-height: 1.3;
+  letter-spacing: var(--tracking-heading);
+  color: var(--text-primary);
+}
+
+.vy-acct-card-head p {
+  font-size: var(--type-sm);
+  color: var(--text-tertiary);
+  line-height: 1.45;
+}
+
+.vy-acct-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.vy-acct-inline-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ---- Two-column desktop layouts -------------------------------------- */
+.vy-acct-two {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.vy-acct-two-main,
+.vy-acct-two-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+/* Contracts and saved searches (Activity) read first on a phone. */
+.vy-acct-two[data-side="left"] .vy-acct-two-side {
+  order: -1;
+}
+
+@media (min-width: 1024px) {
+  .vy-acct-two {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: var(--space-6);
+    align-items: start;
+  }
+
+  .vy-acct-two-side {
+    position: sticky;
+    top: calc(var(--topbar-h) + var(--space-5));
+  }
+
+  .vy-acct-two[data-side="left"] {
+    grid-template-columns: 380px minmax(0, 1fr);
+  }
+
+  .vy-acct-two[data-side="left"] .vy-acct-two-side {
+    order: -1;
+  }
+}
+
+/* ---- Activity list ---------------------------------------------------- */
+.vy-acct-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px 0;
+  margin: 0 calc(-1 * var(--space-4));
+  padding-inline: var(--space-4);
+  scroll-snap-type: x proximity;
+}
+
+.vy-acct-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.vy-acct-tabs > .vy-chip {
+  flex-shrink: 0;
+  scroll-snap-align: start;
+}
+
+@media (min-width: 600px) {
+  .vy-acct-tabs {
+    margin: 0;
+    padding-inline: 0;
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+}
+
+.vy-acct-tab-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-nested);
+  color: var(--text-secondary);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-title);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.vy-chip[aria-pressed="true"] .vy-acct-tab-count {
+  background: var(--selected-solid-bg);
+  color: var(--selected-solid-fg);
+}
+
+/* ---- Outcome and preference cards ------------------------------------- */
+.vy-acct-outcome {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+}
+
+.vy-acct-outcome-head {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 2px 14px;
+  align-items: center;
+}
+
+.vy-acct-outcome-head .vy-acct-tile {
+  grid-row: 1 / span 2;
+}
+
+.vy-acct-outcome-head strong {
+  font-size: var(--type-heading);
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+
+.vy-acct-outcome-head span {
+  font-size: var(--type-sm);
+  color: var(--text-tertiary);
+}
+
+.vy-acct-note {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--surface-nested);
+  color: var(--text-secondary);
+  font-size: var(--type-sm);
+  line-height: 1.5;
+}
+
+.vy-acct-note > svg {
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+.vy-acct-note a {
+  color: var(--brand-text);
+  font-weight: var(--weight-ui);
+  text-decoration: none;
+}
+
+.vy-acct-pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: var(--type-xs);
+  color: var(--text-secondary);
+  background: var(--surface-nested);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  max-height: 320px;
+  overflow: auto;
+}
+
+/* ---- Invite card ------------------------------------------------------- */
+.vy-acct-invite {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+}
+
+.vy-acct-invite .vy-row {
+  gap: 10px;
+}
+
+/* ---- Listing detail header --------------------------------------------- */
+.vy-acct-detail-head {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 6px 14px;
+  align-items: center;
+}
+
+.vy-acct-detail-head .vy-acct-tile-lg {
+  grid-row: 1 / span 2;
+  align-self: start;
+}
+
+.vy-acct-detail-head h1 {
+  font-size: var(--type-display);
+  line-height: 1.12;
+  letter-spacing: var(--tracking-title);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.vy-acct-detail-badges {
+  grid-column: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.vy-acct-detail-badges .vy-badge {
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
+}
+
+.vy-acct-contact-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border-hairline);
+}
+
+.vy-acct-contact-row:first-of-type {
+  border-top: none;
+}
+
+.vy-acct-contact-row > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: var(--weight-ui);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.vy-acct-contact-row > span > small {
+  font-weight: var(--weight-body);
+  color: var(--text-tertiary);
+  font-size: var(--type-sm);
+}
+
+/* ---- First-run --------------------------------------------------------- */
+.vy-acct-fr-lang {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.vy-acct-fr-lang > button {
+  min-height: 3rem;
+}
+
+.vy-acct-fr-help {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+@media (min-width: 600px) {
+  .vy-acct-fr-help {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.vy-acct-fr-option {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 22px;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 10px 14px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-primary);
+  border-radius: var(--radius-md);
+}
+
+.vy-acct-fr-option[aria-pressed="true"] {
+  background: var(--selected-bg);
+  border-color: var(--selected-border);
+  box-shadow: inset 0 0 0 1px var(--selected-border);
+}
+
+.vy-acct-fr-option strong {
+  font-size: var(--type-body);
+  font-weight: var(--weight-ui);
+  line-height: 1.3;
+}
+
+.vy-acct-fr-check {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-control);
+  display: grid;
+  place-items: center;
+  color: transparent;
+}
+
+.vy-acct-fr-option[aria-pressed="true"] .vy-acct-fr-check {
+  background: var(--selected-solid-bg);
+  border-color: var(--selected-solid-bg);
+  color: var(--selected-solid-fg);
+}
+
+/* ---- Indic scripts: room for matras and conjuncts ---------------------- */
+:lang(hi) .vy-acct-row-hint,
+:lang(te) .vy-acct-row-hint,
+:lang(hi) .vy-acct-pcard-what,
+:lang(te) .vy-acct-pcard-what {
+  line-height: 1.6;
+}
+
+:lang(hi) .vy-acct-head h1,
+:lang(te) .vy-acct-head h1,
+:lang(hi) .vy-acct-identity-text h1,
+:lang(te) .vy-acct-identity-text h1,
+:lang(hi) .vy-acct-detail-head h1,
+:lang(te) .vy-acct-detail-head h1 {
+  letter-spacing: 0;
+  line-height: 1.3;
+}
+
+/* ---- High contrast and reduced motion --------------------------------- */
+html[data-contrast="more"] .vy-acct-row,
+html[data-contrast="more"] .vy-acct-switch,
+html[data-contrast="more"] .vy-acct-contact-row,
+html[data-contrast="more"] .vy-acct-pcard-foot {
+  border-color: var(--border-strong);
+}
+
+html[data-contrast="more"] .vy-acct-row-hint,
+html[data-contrast="more"] .vy-acct-hint,
+html[data-contrast="more"] .vy-acct-status,
+html[data-contrast="more"] .vy-acct-switch-hint {
+  color: var(--text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vy-acct-row,
+  .vy-acct-stat,
+  .vy-acct-action,
+  .vy-acct-steps-bar > span,
+  .vy-acct-prefixed {
+    transition: none;
+  }
+}
+
+.vy-acct-strong {
+  color: var(--text-primary);
+  font-weight: var(--weight-ui);
+}
+
+/* Stats row: three columns on a phone, always one line per label. */
+.vy-acct-stat span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

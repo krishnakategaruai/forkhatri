@@ -11,7 +11,7 @@
 // on every width (the permanent desktop sidebar is gone — critique W4):
 // a bottom sheet rising from the thumb on phones, a right-side drawer
 // sliding from the pointer's side on desktop (≥900px), spring 380/36.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
@@ -48,6 +48,8 @@ export default function MobileFilterSheet({
   const [draft, setDraft] = useState<FeedFilterValues>(value);
   const [result, setResult] = useState<{ total: number; facets: FeedFacets } | null>(null);
   const key = JSON.stringify(draft);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => box.current?.focus(), []);
 
   useEffect(() => {
     let live = true;
@@ -80,6 +82,8 @@ export default function MobileFilterSheet({
     <>
       <div className="vy-sheet-scrim" onClick={onClose} aria-hidden="true" />
       <motion.div
+        ref={box}
+        tabIndex={-1}
         className="vy-sheet vy-sheet-drawer"
         role="dialog"
         aria-modal="true"
@@ -88,7 +92,7 @@ export default function MobileFilterSheet({
         animate={{ x: 0, y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 380, damping: 36 }}
       >
-        <button type="button" className="vy-iconbtn vy-sheet-close" onClick={onClose} aria-label={t("explore:filters.close")} autoFocus>
+        <button type="button" className="vy-iconbtn vy-sheet-close" onClick={onClose} aria-label={t("explore:filters.close")}>
           <X size={20} aria-hidden="true" />
         </button>
         <div className="vy-sheet-body">

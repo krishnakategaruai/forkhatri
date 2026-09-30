@@ -22,8 +22,9 @@ PRIVATE Vyapar API (never the owner's live 8011):
   disputes    m_vikram hires m_rahul through an enquiry and a contract, then
               opens a dispute -> disputes view -> closed with notes.
   members     person summary: plan/facts/flags, localized; 404 for no account.
-  forkhatri   (with --forkhatri-api) a real platform session resolves through
-              the corrected identity contract; admin_scopes arrive.
+  forkhatri   (with --forkhatri-api) real platform sessions resolve through the
+              corrected identity contract; the samaj president (vyapar.moderate)
+              gets the console on first contact, row provisioned normally.
 
 Everything it creates is deleted at the end (finally), seeded rows it touched
 are restored, and a sweep over every vyapar_* table confirms no row still
@@ -33,7 +34,7 @@ Usage (from vyapar-service/):
     .venv/Scripts/python scripts/check_admin_console.py --api http://127.0.0.1:<port> [--forkhatri-api http://127.0.0.1:<port2>]
 
 The API must run with DEV_MODE=true, PAYMENT_GATEWAY=dev_sandbox and migration
-024 applied. The --forkhatri-api instance runs with IDENTITY_PROVIDERS=bearer,forkhatri
+024 applied. The --forkhatri-api instance runs with IDENTITY_PROVIDERS=bearer,dev,forkhatri (the live dev setting)
 against the identity service on IDENTITY_SERVICE_INTERNAL_URL. Cleanup connects
 as the migration owner using ../07a-db-implementation/.env.
 """
@@ -455,13 +456,24 @@ async def main(api_base: str, forkhatri_base: str | None) -> int:
 
 
 async def forkhatri_checks(api: Api, db: asyncpg.Connection, tracked: dict[str, set[str]]) -> None:
-    print("\n== ForKhatri session: corrected resolve contract ==")
+    """Real platform sessions against an instance configured like the live dev
+    API (IDENTITY_PROVIDERS=bearer,dev,forkhatri)."""
+    print("\n== ForKhatri sessions: corrected resolve contract, admin on first contact ==")
+    await _forkhatri_persona(api, db, tracked, "milavn-moderator", expect_vyapar=False)
+    # Bug report 2026-09-29: the samaj president (vyapar.moderate) got 403 on
+    # first contact — the dev provider turned his cookie into the default dev
+    # member. He must get the console, and his member row must be provisioned
+    # the normal way (ensure_member) on that first request.
+    await _forkhatri_persona(api, db, tracked, "samaj-president", expect_vyapar=True)
+
+
+async def _forkhatri_persona(api: Api, db: asyncpg.Connection, tracked: dict[str, set[str]], persona: str, *, expect_vyapar: bool) -> None:
     identity_dir = REPO_ROOT / "platform" / "identity-service"
     py = identity_dir / ".venv" / "Scripts" / "python.exe"
-    out = subprocess.run([str(py), str(identity_dir / "scripts" / "dev_session.py"), "milavn-moderator", "--cookie-header"],
+    out = subprocess.run([str(py), str(identity_dir / "scripts" / "dev_session.py"), persona, "--cookie-header"],
                          capture_output=True, text=True, cwd=str(identity_dir), timeout=60)
     line = next((l for l in out.stdout.splitlines() if l.startswith("Cookie: ")), None)
-    check(line is not None, f"dev session opened for milavn-moderator ({out.stderr.strip()[:120]})")
+    check(line is not None, f"dev session opened for {persona} ({out.stderr.strip()[:120]})")
     if line is None:
         return
     name, _, token = line.removeprefix("Cookie: ").partition("=")
@@ -474,20 +486,36 @@ async def forkhatri_checks(api: Api, db: asyncpg.Connection, tracked: dict[str, 
                      "X-ForKhatri-Service-Key": settings.get("IDENTITY_SERVICE_KEY", "")})
         with urllib.request.urlopen(req, timeout=10) as resp:
             claims = json.loads(resp.read())
-        check("admin_scopes" in claims and "preferred_language" in claims,
-              f"identity resolve answers Vyapar's headers with admin_scopes ({claims.get('admin_scopes')})")
+        vy = [s for s in claims.get("admin_scopes") or [] if s.startswith("vyapar.")]
+        check("admin_scopes" in claims and bool(vy) == expect_vyapar,
+              f"{persona}: identity resolve answers Vyapar's headers with admin_scopes {claims.get('admin_scopes')}")
         member_id = claims["member_id"]
         existed = await db.fetchval("SELECT EXISTS (SELECT 1 FROM vyapar_identity.members WHERE id = $1)", member_id)
-        if not existed:
+        if existed:
+            print(f"  ({persona} already has a Vyapar row; left untouched, so this is not a first contact)")
+        else:
             tracked["member"].add(member_id)
         cookie = {"Cookie": f"{name}={token}"}
-        st, me = api.call("GET", "/v1/integrations/me", None, headers=cookie)
-        check(st == 200 and me.get("member_id") == member_id, f"Vyapar resolves the platform session (no longer 401/503) ({st})")
         st, body = api.call("GET", "/vyapar/admin/manifest", None, headers=cookie)
-        vy = [s for s in claims.get("admin_scopes") or [] if s.startswith("vyapar.")]
-        check((st == 403) if not vy else (st == 200), f"manifest follows the session's Vyapar scopes {vy or '(none)'} ({st})")
-        st, body = api.call("GET", "/vyapar/admin/manifest", None, headers={**cookie, "X-Dev-Admin-Scopes": "vyapar.moderate"})
-        check((st == 403) if not vy else (st == 200), f"the dev scope header is ignored on a platform session ({st})")
+        views = {v["view_id"] for v in body.get("views", [])} if st == 200 else set()
+        if expect_vyapar:
+            check(st == 200 and {"moderation", "opportunities", "appeals", "disputes"} <= views,
+                  f"{persona}: console manifest with only the platform cookie{'' if existed else ' on FIRST contact'} ({st} {sorted(views)})")
+            row = await db.fetchrow("SELECT display_name, is_operator, operator_permissions FROM vyapar_identity.members WHERE id = $1", member_id)
+            check(row is not None and not row["is_operator"] and list(row["operator_permissions"]) == [],
+                  f"{persona}: member row provisioned the normal way, no operator flags stored ({row and row['display_name']})")
+            st, queue = api.call("GET", "/vyapar/admin/moderation", None, headers=cookie)
+            check(st == 200, f"{persona}: moderation queue opens through RLS with session scopes ({st})")
+        else:
+            check(st == 403, f"{persona}: no Vyapar scope, no console ({st})")
+        st, me = api.call("GET", "/v1/integrations/me", None, headers=cookie)
+        check(st == 200 and me.get("member_id") == member_id and me.get("auth_method") == "member_session",
+              f"{persona}: resolved as the platform member, not the default dev member ({st} {me.get('member_id')})")
+        st, me = api.call("GET", "/v1/integrations/me", OUTSIDER, headers=cookie)
+        check(st == 200 and me.get("member_id") == OUTSIDER, "an explicit dev member still wins over the platform cookie")
+        st, body = api.call("GET", "/vyapar/admin/manifest", None, headers={**cookie, "X-Dev-Admin-Scopes": "vyapar.commercial"})
+        got = {v["view_id"] for v in body.get("views", [])} if st == 200 else set()
+        check("commercial" not in got, f"{persona}: the dev scope header is ignored on a platform session ({st})")
     finally:
         req = urllib.request.Request(f"{identity_url}/v1/auth/sign-out", method="POST", data=b"{}",
                                      headers={"Content-Type": "application/json", "Cookie": f"{name}={token}"})

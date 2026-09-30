@@ -9,7 +9,6 @@
 import { useTranslation } from "react-i18next";
 import type { FeedFilterValues } from "@/lib/sdk";
 import Icon from "@/app/components/Icon";
-import AppliedFilters from "./AppliedFilters";
 import SaveSearch from "./SaveSearch";
 
 export const SORTS = ["relevance", "distance", "freshness", "salary_high", "verified_first"] as const;
@@ -36,14 +35,14 @@ export default function ResultsHeader({
   place,
   filters,
   onChange,
-  skillLabel,
   searchName,
 }: {
   total: number | null;
   place: string | null;
   filters: FeedFilterValues;
   onChange: (next: FeedFilterValues) => void;
-  skillLabel: (slug: string) => string;
+  /** Kept for callers; applied values now show in the filter buttons. */
+  skillLabel?: (slug: string) => string;
   searchName: string;
 }) {
   const { t } = useTranslation(["explore"]);
@@ -61,8 +60,9 @@ export default function ResultsHeader({
           <SortSelect value={String(filters.sort ?? "relevance")} onChange={(s) => onChange({ ...filters, sort: s })} />
         </div>
       </div>
-      <AppliedFilters value={filters} skillLabel={skillLabel} onChange={onChange} />
-      <SaveSearch value={filters} name={searchName} />
+      {/* [2026-09-30] Applied values live in the filter buttons, not in a
+          second chip row; saving a search only makes sense with results. */}
+      {total !== null && total > 0 && <SaveSearch value={filters} name={searchName} />}
     </div>
   );
 }

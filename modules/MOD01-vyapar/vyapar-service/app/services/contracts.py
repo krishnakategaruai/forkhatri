@@ -19,9 +19,15 @@
 # Platform fee: CONTRACT_PLATFORM_FEE_BPS (default 0 — Vyapar takes no cut
 # from workers). A `fee` ledger entry is written only when the rate is > 0.
 #
-# Roles: the client is the side that pays. For an `apply` enquiry (a hired
-# applicant) that is the opportunity poster (`enquiries.provider_id`); for
-# every other enquiry it is the sender. Only the two parties (and moderation
+# Roles: the client is the side that pays — `contract_parties()` is the ONE
+# place this is decided (web and MCP read it from getContractRoles, never
+# re-derive it). Any response to a post (proposal, quote, application, price
+# request, registration: `opportunity_id` set) -> the poster pays, and for
+# those enquiries `provider_id` IS the poster (enquiries._resolve_action_type).
+# A request made to a profile (listing enquiry, price or package request)
+# -> the sender pays. [Fix, CRITIQUE-2026-09-28 N1: the earlier rule made the
+# freelancer the payer on an accepted proposal. Re-applied 2026-09-30 after an
+# external file restore reverted it — see references/imp-backend-d.md.] Only the two parties (and moderation
 # operators) can read a contract — RLS in migration 021 enforces it, this
 # service re-checks the role for each action.
 #
@@ -288,6 +294,22 @@ class AutoReleaseOut(BaseModel):
     completed: int
 
 
+class ContractRolesOut(BaseModel):
+    """Who would pay and who would work if this enquiry became a contract,
+    and whether the caller can start one now."""
+
+    enquiry_id: str
+    client_member_id: str = Field(description="The side that pays")
+    provider_member_id: str = Field(description="The side that does the work")
+    basis: Literal["poster_pays", "requester_pays"] = Field(
+        description="poster_pays: a response to a post (proposal, quote, price request, application) - the poster pays. requester_pays: a request to a profile (listing enquiry, price or package request) - the sender pays.")
+    my_role: Literal["client", "provider"]
+    can_create: bool = Field(description="True only for the client, on an accepted (in_progress) enquiry with no live contract")
+    blocked_reason: Literal["enquiry_not_accepted", "not_client", "duplicate_contract"] | None = Field(
+        default=None, description="Why can_create is false (same codes createContract would return)")
+    live_contract_id: str | None = Field(default=None, description="The enquiry's draft/proposed/active/disputed contract, if any")
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -310,6 +332,13 @@ def _inr(paise: int) -> str:
 
 def _amount_for_hours(hours: Decimal | float, rate_paise: int) -> int:
     return int((Decimal(str(hours)) * Decimal(rate_paise)).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+
+
+def contract_parties(enq: asyncpg.Record) -> tuple[str, str, str]:
+    """(client, provider, basis) for an enquiry. See the header note on roles."""
+    if enq["opportunity_id"] is not None:
+        return enq["provider_id"], enq["sender_id"], "poster_pays"
+    return enq["sender_id"], enq["provider_id"], "requester_pays"
 
 
 def _sandbox_mode() -> bool:
@@ -520,11 +549,7 @@ async def create_contract(conn: asyncpg.Connection, ctx: AuthzContext, lang: str
         raise ApiError(404, "contracts.error.enquiryNotFound", lang)
     if enq["state"] != "in_progress":
         raise ApiError(400, "contracts.error.enquiryNotAccepted", lang)
-    # Who pays: the poster for a hired applicant, otherwise the enquiry's sender.
-    if enq["action_type"] == "apply":
-        client, provider = enq["provider_id"], enq["sender_id"]
-    else:
-        client, provider = enq["sender_id"], enq["provider_id"]
+    client, provider, _basis = contract_parties(enq)
     if ctx.member_id != client:
         raise ApiError(403, "contracts.error.notClient", lang)
     if body.kind == "hourly" and (body.hourly_rate_paise is None or body.weekly_hours_cap is None):
@@ -560,6 +585,30 @@ async def create_contract(conn: asyncpg.Connection, ctx: AuthzContext, lang: str
     if body.propose:
         await _propose(conn, ctx, lang, row)
     return await _detail(conn, ctx, lang, row["id"])
+
+
+async def get_contract_roles(conn: asyncpg.Connection, ctx: AuthzContext, lang: str, enquiry_id: str) -> ContractRolesOut:
+    try:
+        enq = await conn.fetchrow("SELECT * FROM vyapar_enquiries.enquiries WHERE id = $1", enquiry_id)
+    except asyncpg.DataError:
+        enq = None
+    if enq is None or ctx.member_id not in (enq["sender_id"], enq["provider_id"]):
+        raise ApiError(404, "contracts.error.enquiryNotFound", lang)
+    client, provider, basis = contract_parties(enq)
+    live = await conn.fetchval(
+        "SELECT id::text FROM vyapar_contracts.contracts WHERE enquiry_id = $1 AND state IN ('draft','proposed','active','disputed')", enq["id"])
+    reason = None
+    if enq["state"] != "in_progress":
+        reason = "enquiry_not_accepted"
+    elif ctx.member_id != client:
+        reason = "not_client"
+    elif live:
+        reason = "duplicate_contract"
+    return ContractRolesOut(
+        enquiry_id=str(enq["id"]), client_member_id=client, provider_member_id=provider, basis=basis,
+        my_role="client" if ctx.member_id == client else "provider", can_create=reason is None,
+        blocked_reason=reason, live_contract_id=live,
+    )
 
 
 async def _check_milestones_for_proposal(conn: asyncpg.Connection, contract: asyncpg.Record, lang: str) -> None:

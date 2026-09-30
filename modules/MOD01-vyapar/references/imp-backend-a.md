@@ -478,6 +478,116 @@ How `state` maps to the text:
 - For the missing chip, the UI should show `missing_text` or build its own "Missing: …" line from `missing_skills[].label`, never "No <skill>".
 - `missing_capability_labels` stays for existing clients.
 
+> **Note (2026-09-30).** Sections 8–10 of this file (pay labels in the viewer's language; critique Pass 5 N2/N3/N5/N11/N12; the active → expired lifecycle), and the code behind them, are **not in the working tree**. They were swept into `git stash@{0}` ("WIP on main: 0f1825d", 29 Sep 17:46), which was never popped; three commits followed. The dev database still has their schema (migration 018 message templates) and data (expired posts). They come back when that stash is restored.
+
+## 11. One Vyapar profile per member (owner decision, 2026-09-30)
+
+Owner, on Meena's hub showing "3 Profiles": "how do a person have 3 profiles … each user will get one profile." And on being asked for their name and locality again: "i already logged in as user, but still it is asking me this", "locality can be taken current right".
+
+### Model (migration `026-one-profile-per-member.sql`)
+
+- **The profile is the member's one live `vyapar_listings.listings` row.** Live means draft, submitted, active_unverified or active_verified.
+- **Same table, same ids.** Verification records, reviews, packages, contacts, promotions, impressions, enquiries, partnerships, opportunities, campaigns, entitlements, workspace members, contracts, moderation cases, reports and saved rows all keep pointing at a valid id.
+- **Enforced by the database:** `listings_one_profile_per_owner`, a unique index on `owner_id` over the live states.
+- **Suspended listings** are moderation history. They are never merged into a live profile, and they do not count as "the profile".
+- **The business is a section of the profile:** `business_name`, `business_headline` and `business_description` on the same row.
+  - Business verification (GST/Udyam) stays on the row's `verification_state` and `verification_records`.
+  - `kind` keeps its meaning for existing readers: `business` when a business section exists, else `professional`.
+- **`name` is the person** (the identity display name). The search index covers both the person's name and the business name.
+- **`ensure_member()`** now refreshes the display name and phone from the ForKhatri identity on every sign-in. Before, it only inserted, so the name and phone could go stale. The dev stub, which passes the id as the name, never overwrites real values.
+
+### Consolidation (idempotent; dry run first)
+
+The dry run is `SELECT * FROM vyapar_listings.profile_consolidation_plan();`. It is empty after the migration.
+
+How the survivor is chosen, in order: verified or expiring first; then by state (active_verified, active_unverified, submitted, draft); then the most enquiries plus reviews; then the oldest.
+- **Business section:** from the survivor if it is a business, else from the best merged business listing.
+- **Person's headline, description and availability:** from a merged, non-draft professional listing.
+- **Skills, categories, languages, services and evidence:** the union of all non-draft listings. The largest experience wins.
+- **Every reference is re-pointed to the survivor:**
+  - duplicate contacts are dropped;
+  - package tiers: the survivor's own tier wins;
+  - saved and viewed rows are merged;
+  - an open enquiry that would duplicate another is closed (`state_reason = 'merged_duplicate'`), never dropped. None occurred.
+- **Merged listings** become `archived`, with `state_reason = 'merged_into:<id>'`. `merged_from` on the survivor records what was folded in.
+
+**What merged on the dev database:**
+
+| Member | Profile (id) | Business section | Merged into it |
+|---|---|---|---|
+| m_meena | "Meena Sahni" (…0007, verified) | Meena's Oven | …0018 "Meena Sahni — Baking classes" (professional); …dab9 "ravi" (junk draft, contributed nothing) |
+| m_sunita | "Sunita Kapoor" (…0003, verified) | Kapoor Caterers | …0014 "Kapoor Decor & Events" (verified business). Its name is kept in `merged_from`, its services folded in. |
+| m_deepak | "Deepak Bhalla" (…0009, verified) | Bhalla Design Studio | …0017 "Deepak Bhalla — Vastu-aware planning" (professional) |
+| m_vikram | "Vikram Sethi" (…0004) | Sethi Textiles | nothing. The suspended "Sethi Uniforms" (…0016) was not merged. |
+
+Every other live profile was renamed to the member's name. A business listing's own name moved into its business section, e.g. "Anita Khatri · Khatri & Associates". Afterwards, no enquiry, review, package, contact, verification record or promotion points at a merged listing.
+
+**Fresh databases.** `seeds.sql` drops the index before its (historical) listing inserts and re-applies migration 026 at the end, so a new database consolidates the same way.
+
+### API
+
+**`getMyProfile`** `GET /v1/me/profile`
+- Returns the member's one profile.
+- On first read it creates the profile from what the identity already knows: name, phone (as a contact shown after acceptance), language, plus locality and coordinates from the member row. A known locality supplies coordinates.
+- If a required field is missing, nothing is created and `missing` says what to ask.
+
+```json
+{"exists": true,
+ "profile": { "...every ListingOut field...": "", "id": "…0007", "name": "Meena Sahni",
+              "has_business": true, "business_name": "Meena's Oven", "business_headline": "…",
+              "business_description": "…", "card_title": "Meena Sahni · Meena's Oven", "kind": "business" },
+ "prefill": {"name": "Meena Sahni", "phone": "+919000000008", "locality": "Himayatnagar", "lat": 17.402, "lng": 78.484, "language": "en"},
+ "missing": [],
+ "prefilled_from_identity": ["name", "phone", "language"]}
+```
+
+For a new member with no locality yet, `exists` is false, `profile` is null, `missing` is `["locality"]`, and `prefill` carries the name, phone and language. The web asks only for what is in `missing`.
+
+**`updateMyProfile`** `PATCH /v1/me/profile`
+- **Body:** every listing-patch field, plus `business: {name, headline?, description?}` or `remove_business: true`. Only the fields sent change.
+- **Returns:** the same shape as `getMyProfile`.
+- **First PATCH:** creates the profile when it doesn't exist yet. It needs a name (from the identity or the body) and a locality; otherwise 422 `profile_fields_missing` (`details.missing`).
+- **A typed locality** is normalised to the known name ("KPHB" → "Kukatpally"). The member row learns it too, so no other screen asks again.
+- **Refusals:**
+  - 409 `business_verified_cannot_remove`: removing a verified business section.
+  - 409 `profile_suspended`: changing a suspended profile.
+
+**`locateMyProfile`** `POST /v1/me/profile/locate`
+- Body `{"lat": 17.4021, "lng": 78.4846}` → `{"matched": true, "locality": "Himayatnagar", "lat": 17.4021, "lng": 78.4846, "distance_km": 0.06}`.
+- The nearest known locality comes from the `app/geo.py` gazetteer, then from the places in Vyapar's own data (`vyapar_listings.nearest_locality`), within 15 km.
+- Beyond 15 km it returns `{"matched": false, "locality": null, …}`, and the web asks the member to type a locality.
+- It never saves anything: the client sends the result back in a PATCH.
+
+**`createListing`** `POST /v1/listings`
+- When the member already has any non-archived listing: 409 `profile_exists`, with `details.existing_listing_id` and `details.profile_id`.
+- A concurrent second create is caught by the index and gives the same 409.
+
+**Listing detail and search** keep the same ids. Every `ListingOut` now carries `has_business`, `business_name`, `business_headline`, `business_description` and `card_title` ("Meena Sahni · Meena's Oven", or just the name). Search matches the business name as strongly as the person's name.
+
+**`listMyListings`** no longer lists listings merged into the profile. Other archived listings are still shown.
+
+**Token scopes:** `GET /v1/me/profile` needs `read`; `PATCH` and `locate` need `listings:write` (added to `app/integrations/identity/scopes.py`).
+
+**MCP:** new `get_my_profile` and `update_my_profile` (headline, description, capabilities, locality, availability, experience_years, business_name, business_headline). The old listing tools (`get_profile`, `search_profiles`, …) are unchanged.
+
+**Errors** (en/hi/te, `listings.error.*`): `profile_exists`, `profile_fields_missing`, `profile_suspended`, `business_verified_cannot_remove`.
+
+**Checked:** `vyapar-service/scripts/check_profile.py`, **26/26** on private port 8018. It cleans up after itself, restores the views it caused, and a sweep found no leftover rows. It covers:
+- the one-profile constraint in the database;
+- 409 `profile_exists` with the id;
+- Meena's consolidated profile (person plus business, verification kept, skills folded in, two merged listings archived, one listing in her list, found by business name);
+- prefill from identity, where only the locality is asked;
+- locate, including a position far away;
+- the first PATCH creating the profile with phone and language;
+- adding and removing a business section;
+- locality normalisation.
+
+**Deployed:** 8011 was restarted after `import app.main` passed. `GET /v1/me/profile` as m_meena answers "Meena Sahni · Meena's Oven".
+
+**Not changed, for the web account agent:**
+- `/v1/members/me` still reports `profiles {business, professional}` by kind. For Meena, `business` is now the one profile and `professional` is null. Build the hub on `getMyProfile` instead.
+- The hub's profile count should read one profile.
+
 ## Notes for the frontend
 
 - The composer should send `structured` and stop writing free-text `compensation` for employment and freelance; the server derives it. Render `compensation_label`.

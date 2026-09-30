@@ -59,7 +59,9 @@ OPP_NO_APPLICANTS = "00000000-0000-4000-8000-000000000105"
 DRAFTER = "m_meena"
 LIMIT_MEMBER = "m_arjun"
 FE1_DRAFTER = "m_rahul"      # the FE1 regression cases, on their own daily allowance
-MEMBERS = [POSTER, APPLICANT, POSTER_NO_APPLICANTS, DRAFTER, LIMIT_MEMBER, FE1_DRAFTER]
+N7_DRAFTER = "m_suresh"      # the N7 critique cases (Hindi/Telugu stated facts), likewise
+MEMBERS = [POSTER, APPLICANT, POSTER_NO_APPLICANTS, DRAFTER, LIMIT_MEMBER, FE1_DRAFTER, N7_DRAFTER]
+N7_TEXT = "हिमायतनगर की बेकरी में 2 हेल्पर चाहिए। सुबह 6 से दोपहर 2 बजे तक। 8वीं पास चलेगा।"
 
 passed: list[str] = []
 failed: list[str] = []
@@ -260,10 +262,11 @@ def check_fe1_regressions() -> None:
 
     # (4) Devanagari places; "se … tak" and "nundi … varaku" ranges
     s, d = draft("Delivery boys needed in कुकटपल्ली, salary 12k to 15k")
-    check("FE1-4: Devanagari place inside an English sentence", s == 200 and d["location"] == "कुकटपल्ली", d)
+    # Since N7 a known locality comes back in Vyapar's stored spelling.
+    check("FE1-4: Devanagari place inside an English sentence", s == 200 and d["location"] == "Kukatpally", d)
     s, d = draft("डिलीवरी बॉय चाहिए। स्थान: कुकटपल्ली। वेतन 12 से 15 हज़ार तक", "hi")
     e = (d or {}).get("employment") or {}
-    check("FE1-4: 'स्थान:' label and '12 से 15 हज़ार तक' range", s == 200 and d["type"] == "employment" and d["location"] == "कुकटपल्ली"
+    check("FE1-4: 'स्थान:' label and '12 से 15 हज़ार तक' range", s == 200 and d["type"] == "employment" and d["location"] == "Kukatpally"
           and (e.get("salary_min_paise"), e.get("salary_max_paise")) == (1_200_000, 1_500_000), d)
     s, d = draft("Salary 12000 nundi 15000 varaku, delivery boys kavali Madhapur lo", "te")
     e = (d or {}).get("employment") or {}
@@ -288,6 +291,47 @@ def check_fe1_regressions() -> None:
     high = suggest_bid([7_000_000, 8_000_000, 9_000_000], 4, "same_type", 4_000_000, 6_000_000, "en")
     check("FE1-5: dearer similar work is held at the poster's ceiling, with a reason",
           high.min_paise == high.max_paise == 6_000_000 and high.note and high.note.code == "market_above_poster_budget", high)
+
+
+def check_n7_stated_facts() -> None:
+    """Critique N7 (2026-09-29): a Hindi notice stated the area, hours and
+    qualification; the draft left them empty and asked for all three, and the
+    tips asked for hours and headcount again."""
+    s, d = call("POST", "/v1/ai/draft-opportunity", N7_DRAFTER, {"text": N7_TEXT, "language": "hi"})
+    e = (d or {}).get("employment") or {}
+    check("N7: Devanagari 'हिमायतनगर' is the known locality Himayatnagar", s == 200 and d["location"] == "Himayatnagar", d)
+    check("N7: 'सुबह 6 से दोपहर 2 बजे तक' read as job timings", s == 200 and (e.get("job_timings") or "").startswith("सुबह 6"), e)
+    check("N7: '8वीं पास' read as below_10th, '2 हेल्पर' as 2 openings", s == 200 and e.get("min_qualification") == "below_10th"
+          and e.get("openings") == 2, e)
+    stated = {"location", "job_timings", "min_qualification", "openings"}
+    check("N7: nothing the poster wrote is asked again", s == 200 and not (stated & set(d["missing"]))
+          and len(d["questions"]) == len(d["missing"]), d.get("missing") if isinstance(d, dict) else d)
+
+    s, d = call("POST", "/v1/ai/draft-opportunity", N7_DRAFTER, {
+        "text": "హిమాయత్‌నగర్‌లో బేకరీకి ఇద్దరు హెల్పర్లు కావాలి. ఉదయం 6 నుండి సాయంత్రం 7 వరకు. 8వ తరగతి చాలు.", "language": "te"})
+    e = (d or {}).get("employment") or {}
+    check("N7: Telugu place, 'ఉదయం 6 నుండి సాయంత్రం 7 వరకు', '8వ తరగతి', 'ఇద్దరు'", s == 200 and d["location"] == "Himayatnagar"
+          and (e.get("job_timings") or "").startswith("ఉదయం 6") and e.get("min_qualification") == "below_10th" and e.get("openings") == 2, d)
+
+    s, d = call("POST", "/v1/ai/draft-opportunity", N7_DRAFTER, {"text": "Bakery helpers needed in Himayat Nagar, morning 7 to evening 4, 10th pass"})
+    e = (d or {}).get("employment") or {}
+    check("N7: transliterated 'Himayat Nagar' → Himayatnagar; 'morning 7 to evening 4'; 10th", s == 200 and d["location"] == "Himayatnagar"
+          and e.get("job_timings") == "morning 7 to evening 4" and e.get("min_qualification") == "10th", d)
+
+    s, d = call("POST", "/v1/ai/posting-tips", N7_DRAFTER, {"language": "hi", "draft": {"type": "employment", "title": "बेकरी हेल्पर", "description": N7_TEXT}})
+    codes = {t["code"] for t in (d or {}).get("tips", [])} if s == 200 else set()
+    check("N7: tips never ask for hours, headcount, area or a lower qualification already stated", s == 200
+          and not ({"add_job_timings", "add_openings", "add_location", "lower_min_qualification"} & codes), codes)
+    check("N7: tips still ask for what is missing (salary)", s == 200 and "add_salary" in codes, codes)
+
+    from app.integrations.ai.localities import find_known_locality
+
+    known = ["Himayatnagar", "Jubilee Hills", "Kukatpally", "Hyderabad", "Uppal"]
+    check("N7: locality matcher across scripts, locality preferred to city, no false match",
+          find_known_locality("जुबली हिल्स में ड्राइवर चाहिए", known) == "Jubilee Hills"
+          and find_known_locality("హైదరాబాద్ లో కూకట్‌పల్లి దగ్గర", known) == "Kukatpally"
+          and find_known_locality("बेकरी में काम, अच्छा वेतन", known) is None
+          and find_known_locality("पल्ली में काम", known) is None)
 
 
 def check_limit(pre_count: int) -> None:
@@ -333,6 +377,7 @@ async def main() -> int:
         check_tips()
         check_proposal()
         check_fe1_regressions()
+        check_n7_stated_facts()
         check_limit(int(pre_limit or 0))
 
         rows = await owner.fetch(

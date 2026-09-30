@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import type { ServicePackage } from "@/lib/sdk";
 import { formatRupees } from "@/lib/format";
 import Icon from "@/app/components/Icon";
+import DisabledReason from "@/app/components/DisabledReason";
 
 const TIER_ORDER = ["basic", "standard", "premium"];
 
@@ -38,8 +39,12 @@ export default function PackagesCompare({ packages, providerName, onRequest }: P
 
   const money = (p: number) => formatRupees(p, i18n.language);
   const allIncludes = [...new Set(tiers.flatMap((p) => p.includes))];
-  const delivery = (p: ServicePackage) => (p.delivery_days != null ? t("packages:days", { count: p.delivery_days }) : "—");
-  const revisions = (p: ServicePackage) => (p.revisions != null ? t("packages:revisionsCount", { count: p.revisions }) : "—");
+  // [FE1 — critique N12] "Ready in" instead of Fiverr's "Delivery"; revisions
+  // are optional and never shown as a lone dash.
+  const delivery = (p: ServicePackage) => (p.delivery_days != null ? t("packages:days", { count: p.delivery_days }) : null);
+  const revisions = (p: ServicePackage) => (p.revisions != null ? t("packages:revisionsCount", { count: p.revisions }) : null);
+  const anyRevisions = tiers.some((p) => p.revisions != null);
+  const anyDelivery = tiers.some((p) => p.delivery_days != null);
 
   function startRequest(p: ServicePackage) {
     setAsking(p.id);
@@ -75,9 +80,10 @@ export default function PackagesCompare({ packages, providerName, onRequest }: P
         <div className="vy-stack" style={{ gap: 8 }}>
           <textarea className="vy-textarea" rows={3} maxLength={2000} value={message} onChange={(e) => setMessage(e.target.value)} aria-label={t("packages:messageLabel")} />
           <div className="vy-row" style={{ flexWrap: "wrap" }}>
-            <button className="vy-btn vy-btn-primary" disabled={busy || message.trim().length < 5} onClick={() => send(p)}>
+            <button className="vy-btn vy-btn-primary" aria-describedby={message.trim().length < 5 ? "why-package-msg" : undefined} disabled={busy || message.trim().length < 5} onClick={() => send(p)}>
               {busy ? t("packages:sending") : t("packages:send")}
             </button>
+            <DisabledReason id={"why-package-msg"} show={message.trim().length < 5}>{t("common:disabled.min5")}</DisabledReason>
             <button className="vy-btn vy-btn-ghost" onClick={() => setAsking(null)}>{t("common:action.cancel")}</button>
           </div>
           {error && <p className="vy-error">{error}</p>}
@@ -118,7 +124,7 @@ export default function PackagesCompare({ packages, providerName, onRequest }: P
             <span className="vy-pkg-price">{money(current.price_paise)}</span>
           </div>
           {current.description && <p style={{ fontSize: 14 }}>{current.description}</p>}
-          <p className="vy-muted">{[delivery(current), revisions(current)].join(" · ")}</p>
+          {(delivery(current) || revisions(current)) && <p className="vy-muted">{[delivery(current), revisions(current)].filter(Boolean).join(" · ")}</p>}
           {current.includes.length > 0 && (
             <ul className="vy-pkg-list">
               {current.includes.map((x) => (
@@ -157,14 +163,18 @@ export default function PackagesCompare({ packages, providerName, onRequest }: P
               {tiers.map((p) => <td key={p.id}>{p.description ?? "—"}</td>)}
             </tr>
           )}
-          <tr>
-            <th scope="row">{t("packages:delivery")}</th>
-            {tiers.map((p) => <td key={p.id} data-yes>{delivery(p)}</td>)}
-          </tr>
-          <tr>
-            <th scope="row">{t("packages:revisions")}</th>
-            {tiers.map((p) => <td key={p.id} data-yes>{revisions(p)}</td>)}
-          </tr>
+          {anyDelivery && (
+            <tr>
+              <th scope="row">{t("packages:delivery")}</th>
+              {tiers.map((p) => <td key={p.id} data-yes>{delivery(p) ?? "—"}</td>)}
+            </tr>
+          )}
+          {anyRevisions && (
+            <tr>
+              <th scope="row">{t("packages:revisions")}</th>
+              {tiers.map((p) => <td key={p.id} data-yes>{revisions(p) ?? "—"}</td>)}
+            </tr>
+          )}
           {allIncludes.map((x) => (
             <tr key={x}>
               <th scope="row">{x}</th>

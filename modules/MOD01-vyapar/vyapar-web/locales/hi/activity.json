@@ -8,23 +8,23 @@
   "groupCompleted": "पूर्ण",
   "groupResponded": "जवाब दिया गया",
   "groupToReview": "समीक्षा करें",
-  "groupPartnerships": "साझेदारियाँ",
+  "groupPartnerships": "बिज़नेस पार्टनरशिप",
   "untitled": "बातचीत",
   "status": {
     "listing": {
       "draft": "ड्राफ्ट",
       "submitted": "सबमिट किया गया",
       "active_unverified": "सक्रिय",
-      "active_verified": "सक्रिय, सत्यापित",
+      "active_verified": "सक्रिय, वेरिफ़ाइड",
       "suspended": "निलंबित",
       "archived": "संग्रहीत"
     },
     "opportunity": {
       "draft": "ड्राफ्ट",
-      "pending_review": "समीक्षा लंबित",
-      "active": "सक्रिय",
+      "pending_review": "समीक्षा में",
+      "active": "खुली",
       "paused": "रुका हुआ",
-      "stale": "पुराना",
+      "stale": "हाल में अपडेट नहीं",
       "expired": "समाप्त",
       "closed": "बंद",
       "removed": "हटाया गया"
@@ -49,5 +49,13 @@
       "open": "खुला"
     }
   },
-  "emptyBody": "आप जो सहेजते, पोस्ट करते, जवाब देते या पूरा करते हैं, वह यहाँ जमा होगा।"
+  "emptyBody": "आप जो सहेजते, पोस्ट करते, जवाब देते या पूरा करते हैं, वह यहाँ जमा होगा।",
+  "purpose": "आपने जो सेव किया, पोस्ट किया, जवाब दिया और पूरा किया।",
+  "all": "सब",
+  "kind": {
+    "listing": "प्रोफ़ाइल",
+    "opportunity": "पोस्ट",
+    "enquiry": "रिक्वेस्ट",
+    "partnership": "बिज़नेस पार्टनरशिप"
+  }
 }

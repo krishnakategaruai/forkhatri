@@ -1,6 +1,6 @@
 {
   "title": "Get verified",
-  "help": "Choose one document to request business-existence verification.",
+  "help": "Choose one document to get your business verified.",
   "documentType": "Document type",
   "typeGst": "GST Certificate / GSTIN",
   "typeUdyam": "Udyam Registration",
@@ -15,12 +15,12 @@
   "stateVerified": "Verified",
   "stateRejected": "Not approved",
   "stateNeedsClearerCopy": "Needs a clearer copy — please submit again",
-  "reasonLabel": "reason: {{reason}}",
+  "reasonLabel": "Reason",
   "reconfirmNotice": "Your verification is about to expire — submit a current document to keep it.",
   "label": {
     "not_started": "Not verified",
     "pending": "Verification pending review",
-    "verified": "Business existence verified ({{scope}}) · {{date}}",
+    "verified": "Business verified ({{scope}}) · {{date}}",
     "credentialReviewed": "Credential reviewed: {{scope}} · {{date}}",
     "expiring": "Verified ({{scope}}) · reconfirm by {{date}}",
     "expired": "Verification expired",
@@ -43,16 +43,16 @@
     "credentialReviewed": "A credential ({{scope}}) was reviewed on {{date}}.",
     "expiring": "We checked a {{scope}} on {{date}} — it's due for reconfirmation soon.",
     "pending": "A document is being reviewed.",
-    "expired": "The yearly reconfirmation is overdue, so this listing is shown as unverified.",
+    "expired": "The yearly reconfirmation is overdue, so this profile is shown as unverified.",
     "rejected": "Unverified.",
     "revoked": "Unverified.",
     "disputed": "A report is being reviewed.",
-    "not_started": "This listing has not submitted anything for verification."
+    "not_started": "This profile has not submitted anything for verification."
   },
   "contactVerifiedExplain": "The phone number was confirmed by OTP.",
   "whatThisDoesntMeanTitle": "What this doesn't mean",
   "whatThisDoesntMean": "Verification does not check quality, pricing, licences beyond the document named, or that the business is safe to pay in advance.",
-  "reportProblem": "Report a problem with this listing",
+  "reportProblem": "Report a problem with this profile",
   "publicLookup": "Look up on the public {{doc}} registry",
   "chooseReason": "Choose a reason",
   "reasonCode": {
@@ -62,5 +62,7 @@
     "document_type_mismatch": "Wrong document type submitted",
     "suspected_fraud": "Suspected fraudulent document",
     "other": "Other"
-  }
+  },
+  "queueSubtitle": "Documents waiting for a decision, oldest first. Anything over 3 days is flagged.",
+  "openProfile": "Open the profile"
 }

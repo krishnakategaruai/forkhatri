@@ -199,6 +199,8 @@ export interface Applicant {
   /** §6 — Call / WhatsApp for the poster once shortlisted (B's shape). */
   contact_actions?: ContactAction[];
   contact_revealed?: boolean;
+  /** backend A (critique N5): language of the applicant's own note, when known. */
+  message_language?: string | null;
 }
 
 export interface ApplicantListParams {

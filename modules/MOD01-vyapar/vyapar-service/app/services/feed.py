@@ -81,6 +81,7 @@ from app.reputation import BadgeOut, badges_for_members
 from app.services.opportunities import OpportunityOut, _row_to_opp, format_inr
 from app.taxonomy_cache import categories as taxonomy_categories, children_of, label_for
 from app.viewer_profile import viewer_skills
+from app.trade_match import trade_matcher as _trade_matcher_uncached
 from app.i18n import translate
 from app.services.pagination import DEFAULT_LIMIT, MAX_LIMIT, Page, paginate
 from app.services.trust_safety import SeekerProtectionOut, seeker_protection_notice
@@ -255,11 +256,39 @@ def _row_to_feed_card(row: asyncpg.Record, caller_id: str, submitter_name: str, 
 # saved-search matcher all go through here, so a filter can never apply to
 # one surface and not another.
 # ---------------------------------------------------------------------------
+_MATCHERS: dict[tuple, object] = {}
+
+
+def trade_matcher(slugs: list[str]):
+    """One matcher per filter set and taxonomy generation: a taxonomy refresh
+    replaces the cache dict, so its id changes and stale matchers are never used."""
+    from app import taxonomy_cache
+
+    key = (id(taxonomy_cache._TERMS), *sorted(slugs))
+    m = _MATCHERS.get(key)
+    if m is None:
+        if len(_MATCHERS) > 500:
+            _MATCHERS.clear()
+        m = _MATCHERS[key] = _trade_matcher_uncached(sorted(slugs))
+    return m
+
+
 def _filter_clauses(filters: FeedFilters, params: list) -> list[str]:
     clauses: list[str] = []
     if filters.skills:
-        params.append(filters.skills)
-        clauses.append(f"o.required_capabilities && ${len(params)}::text[]")
+        # [IMP-B, owner 2026-09-30] a trade filter returns the trade's posts:
+        # category slugs expand to their skills, and free-text skills or a
+        # title naming the trade ("Need a plumber") match too (app/trade_match.py).
+        matcher = trade_matcher(filters.skills)
+        params.append(sorted(matcher.slugs))
+        slug_clause = f"o.required_capabilities && ${len(params)}::text[]"
+        regex = matcher.sql_regex()
+        if regex:
+            params.append(regex)
+            clauses.append(f"({slug_clause} OR o.title ~* ${len(params)} "
+                           f"OR replace(array_to_string(o.required_capabilities, ' '), '_', ' ') ~* ${len(params)})")
+        else:
+            clauses.append(slug_clause)
     if filters.q:
         params.append(filters.q)
         clauses.append(f"(o.search_tsv @@ websearch_to_tsquery('simple', ${len(params)}) OR o.title ILIKE '%' || ${len(params)} || '%')")
@@ -329,6 +358,9 @@ async def _candidates(
               FROM vyapar_opportunities.opportunities o
              WHERE o.state = 'active'
                AND NOT o.distribution_limited
+               -- [Backend A, critique N3] a post past its last date is Expired:
+               -- never in a feed row, section or result, whatever its state says.
+               AND (o.deadline IS NULL OR o.deadline >= now())
                -- [FE2, owner review] Discover never shows the viewer's own
                -- posts; the poster finds them in Activity → Posted.
                AND o.poster_id <> $1
@@ -656,9 +688,18 @@ PAY_ROW_MIN_PAISE = 2_000_000  # 20,000 rupees a month
 # [critique L13/L14] rows
 PROJECT_ROW_MIN_PAISE = 1_000_000  # projects / local work with a budget over 10,000 rupees
 ROWS_MAX = 6
-ROW_MIN_ITEMS = 3
+ROW_MIN_ITEMS = 3  # generic rows only
+# [Backend A, critique N2] rows about the member themself show with a single
+# card: on sparse data the 3-card minimum hid every personal row and left
+# everyone with one generic row.
+PERSONAL_ROW_MIN_ITEMS = 1
+
+
+def _is_personal_row(key: str) -> bool:
+    return key in ("for_you", "near_you") or key.startswith("category:")
 LOCAL_WORK_TYPES = ("employment", "local_service")
 PROJECT_TYPES = ("freelance", "local_service")
+CATEGORY_ROW_TYPES = ("employment", "freelance", "local_service")  # [Backend A] paid work only in skill-category rows
 
 
 def _col(row: asyncpg.Record, key: str):
@@ -698,7 +739,10 @@ def _dim_ok(row: asyncpg.Record, f: FeedFilters, dim: str, verified: set[str]) -
     if dim == "work_mode":
         return not f.work_mode or f.work_mode == "both" or row["work_mode"] in (f.work_mode, "both")
     if dim == "skills":
-        return not f.skills or bool(set(row["required_capabilities"] or []) & set(f.skills))
+        if not f.skills:
+            return True
+        matcher = trade_matcher(f.skills)  # cached per filter set
+        return matcher.matches(row["required_capabilities"], row["title"])
     if dim == "posted":
         if not f.posted_within:
             return True
@@ -772,7 +816,12 @@ async def list_opportunity_results(
     sql_filters = FeedFilters(q=filters.q, availability=filters.availability, segment=filters.segment)
     params = _base_params(ctx.member_id, member)
     rows = await _candidates(conn, ctx.member_id, member, sql_filters, None, params, limit=RESULTS_CANDIDATE_LIMIT)
-    rows = [r for r in rows if _passes_radius(r, member, filters)]
+    # [IMP-B, owner 2026-09-30: "tapped Plumbers, got 0 opportunities"] An
+    # explicit search or trade filter covers the whole city, ordered by
+    # distance within relevance; only a radius the person picked cuts it. The
+    # member's home radius stays a hard constraint on the home feed and rows.
+    if filters.radius_km is not None:
+        rows = [r for r in rows if _passes_radius(r, member, filters)]
     verified = await _verified_posters(conn, {r["poster_id"] for r in rows})
 
     def passes_all_but(r: asyncpg.Record, skip: str | None) -> bool:
@@ -802,8 +851,9 @@ async def list_opportunity_results(
             continue
         for slug in set(r["required_capabilities"] or []):
             skill_counts[slug] = skill_counts.get(slug, 0) + 1
-    for slug in filters.skills:  # a chosen skill always stays listed
-        skill_counts.setdefault(slug, 0)
+    for slug in filters.skills:  # a chosen skill (or trade) always stays listed, counted the way the filter matches
+        one = trade_matcher([slug])
+        skill_counts[slug] = sum(1 for r in rows if passes_all_but(r, "skills") and one.matches(r["required_capabilities"], r["title"]))
     top = sorted(skill_counts.items(), key=lambda kv: (kv[0] not in filters.skills, -kv[1], kv[0]))[:8]
     facets.skills = [FacetCount(value=slug, count=n, label=label_for(slug, lang)) for slug, n in top]
 
@@ -840,6 +890,11 @@ class RowsResponse(BaseModel):
     rows: list[FeedRow]
     enrichment_prompt: str | None = None
     distance_available: bool = False
+    # [Backend A, critique N2] true only when at least one row is about the
+    # member (For you, their trade, Near you), so "picked for you" is honest.
+    has_personal_rows: bool = False
+    # The member's own trade categories, most relevant first, for the trade rail.
+    viewer_categories: list[str] = []
 
 
 async def list_opportunity_rows(conn: asyncpg.Connection, ctx: AuthzContext, lang: str = "en", position: ViewerPosition = None) -> RowsResponse:
@@ -899,7 +954,10 @@ async def list_opportunity_rows(conn: asyncpg.Connection, ctx: AuthzContext, lan
         req = set(r["required_capabilities"] or [])
         if req & caps:
             return 0
-        if req & related:
+        if req & related and r["type"] in CATEGORY_ROW_TYPES:
+            # [Backend A, 2026-09-29] "related work" is paid work in the same
+            # trade; a startup grant tagged "startup" is not related work for
+            # a React developer and must not open their Near you.
             return 1
         if not req and r["type"] in LOCAL_WORK_TYPES:
             return 2
@@ -920,17 +978,24 @@ async def list_opportunity_rows(conn: asyncpg.Connection, ctx: AuthzContext, lan
 
     fresh = lambda r: -(r["published_at"] or r["created_at"]).timestamp()  # noqa: E731
     specs: list[tuple[str, str, dict, dict, list]] = []
+    by_cat: dict[str, int] = {}
+    for term in taxonomy_categories():
+        n = len(set(children_of(term.slug)) & caps) + (1 if term.slug in (member["categories"] or []) else 0)
+        if n:
+            by_cat[term.slug] = n
+    viewer_categories = [slug for slug, _ in sorted(by_cat.items(), key=lambda kv: (-kv[1], kv[0]))]
     if caps:
         specs.append(("for_you", "forYou", {}, {"skills": ",".join(sorted(caps))}, pick(skill_match)))
-        by_cat: dict[str, int] = {}
-        for term in taxonomy_categories():
-            n = len(set(children_of(term.slug)) & caps) + (1 if term.slug in member["categories"] else 0)
-            if n:
-                by_cat[term.slug] = n
-        for slug, _ in sorted(by_cat.items(), key=lambda kv: -kv[1])[:2]:
+        for slug in viewer_categories[:2]:
             kids = set(children_of(slug))
+            # [Backend A, 2026-09-29] A skill-category row is paid work in that
+            # trade: a job, project or local service whose required skills
+            # overlap the category. Grants, programmes and community calls
+            # (training/community/partnership) tagged with a skill ("startup")
+            # are not work in "Software & IT" and never appear here.
             specs.append((f"category:{slug}", "category", {"category": label_for(slug, lang)}, {"skills": ",".join(sorted(kids))},
-                          pick(lambda r, kids=kids: bool(set(r["required_capabilities"] or []) & kids))))
+                          pick(lambda r, kids=kids: r["type"] in CATEGORY_ROW_TYPES
+                               and bool(set(r["required_capabilities"] or []) & kids))))
     if has_coords:
         specs.append(("near_you", "nearYou", {"km": radius, "place": member["locality"] or ""}, {"radius_km": radius},
                       pick(lambda r: r["distance_km"] is not None and r["distance_km"] <= radius and does_this_kind(r))))
@@ -951,7 +1016,7 @@ async def list_opportunity_rows(conn: asyncpg.Connection, ctx: AuthzContext, lan
     specs += [
         ("new_today", "newToday", {}, {"posted_within": "today", "sort": "freshness"}, pick(lambda r: _posted_days(r) == 0, fresh)),
         ("starting_now", "startingNow", {}, {"availability": "now"},
-         pick(lambda r: r["deadline"] is not None and r["deadline"] <= now + timedelta(days=7))),
+         pick(lambda r: r["deadline"] is not None and now <= r["deadline"] <= now + timedelta(days=7))),
         ("projects", "projects", {}, {"types": "freelance"}, pick(lambda r: r["type"] == "freelance")),
         ("remote", "remote", {}, {"work_mode": "remote"}, pick(lambda r: r["work_mode"] == "remote")),
     ]
@@ -962,7 +1027,7 @@ async def list_opportunity_rows(conn: asyncpg.Connection, ctx: AuthzContext, lan
         if len(out) >= ROWS_MAX:
             break
         page = [r for r in chosen if str(r["id"]) not in claimed][:ROW_ITEM_LIMIT]
-        if len(page) < ROW_MIN_ITEMS:
+        if len(page) < (PERSONAL_ROW_MIN_ITEMS if _is_personal_row(key) else ROW_MIN_ITEMS):
             continue  # hidden, and it claims nothing
         claimed.update(str(r["id"]) for r in page)
         names, badges = await _names_and_badges(conn, {r["poster_id"] for r in page}, lang)
@@ -972,4 +1037,5 @@ async def list_opportunity_rows(conn: asyncpg.Connection, ctx: AuthzContext, lan
             items=_cards(page, ctx.member_id, names, badges, reason_by_id, lang), total=len(chosen),
         ))
     await log_events(conn, "opportunity", list(claimed), "impression", "feed", set())
-    return RowsResponse(rows=out, enrichment_prompt=None if caps else "sparseProfile", distance_available=has_coords)
+    return RowsResponse(rows=out, enrichment_prompt=None if caps else "sparseProfile", distance_available=has_coords,
+                        has_personal_rows=any(_is_personal_row(r.key) for r in out), viewer_categories=viewer_categories)

@@ -1,27 +1,27 @@
 {
   "error": {
     "contractNotFound": "Contract not found.",
-    "enquiryNotFound": "Enquiry not found.",
-    "enquiryNotAccepted": "A contract can only be created from an enquiry the provider has accepted.",
+    "enquiryNotFound": "Request not found.",
+    "enquiryNotAccepted": "A contract can only be created from a request the professional has accepted.",
     "notClient": "Only the client of this contract can do this.",
-    "notProvider": "Only the provider of this contract can do this.",
+    "notProvider": "Only the professional on this contract can do this.",
     "notParty": "Only the two parties of this contract can do this.",
-    "duplicateContract": "This enquiry already has a live contract.",
+    "duplicateContract": "This request already has a live contract.",
     "invalidTransition": "This action isn't possible in the contract's current state.",
-    "draftOnly": "Milestones can only be changed while the contract is a draft.",
-    "hourlyNoManualMilestones": "An hourly contract is paid from approved timesheets, not from manually added milestones.",
+    "draftOnly": "Stages can only be changed while the contract is a draft.",
+    "hourlyNoManualMilestones": "An hourly contract is paid from approved timesheets, not from manually added stages.",
     "hourlyRateRequired": "An hourly contract needs an hourly rate and a weekly hours cap.",
     "hourlyOnly": "Timesheets belong to hourly contracts.",
-    "milestonesRequired": "Add at least one milestone before sending the contract.",
-    "milestonesMustSumToTotal": "Milestones must add up to the contract total ({total}).",
-    "milestoneNotFound": "Milestone not found.",
-    "milestoneNotFundable": "This milestone can't be funded right now.",
-    "milestoneNotFunded": "This milestone has to be funded before work is submitted.",
-    "milestoneNotSubmitted": "This milestone hasn't been submitted for approval.",
+    "milestonesRequired": "Add at least one stage before sending the contract.",
+    "milestonesMustSumToTotal": "Stages must add up to the contract total ({total}).",
+    "milestoneNotFound": "Stage not found.",
+    "milestoneNotFundable": "This stage can't be paid in advance right now.",
+    "milestoneNotFunded": "This stage has to be paid in advance before work is sent.",
+    "milestoneNotSubmitted": "This stage hasn't been submitted for approval.",
     "paymentUnavailable": "Payment service is unavailable right now. Please try again later.",
-    "heldFundsClientOnly": "Held payments are still on this contract. Only the client can cancel it; you can open a dispute instead.",
-    "submittedBlocksCancel": "Approve or send back the submitted milestones before cancelling.",
-    "notCompletable": "Every funded milestone has to be released or refunded before the contract can be completed.",
+    "heldFundsClientOnly": "Advance payments are still on this contract. Only the client can cancel it; you can open a dispute instead.",
+    "submittedBlocksCancel": "Approve or send back the submitted stages before cancelling.",
+    "notCompletable": "Every advance-paid stage has to be released or refunded before the contract can be completed.",
     "weekStartNotMonday": "Week start must be a Monday.",
     "weekInFuture": "You can't submit hours for a week that hasn't started.",
     "weeklyCapExceeded": "Hours exceed this contract's weekly cap of {cap}.",
@@ -38,13 +38,13 @@
     "otherParty": "The other party",
     "weekOf": "Week of {week}",
     "outcome": {
-      "resolved_client": "resolved in the client's favour, held payments refunded",
-      "resolved_provider": "resolved in the provider's favour, held payments released",
+      "resolved_client": "resolved in the client's favour, advance payments refunded",
+      "resolved_provider": "resolved in the professional's favour, advance payments released",
       "closed": "closed without a change, the contract continues"
     },
     "paymentNotice": {
       "sandbox": "Test mode: payments on this contract go through a sandbox and no real money moves.",
-      "live": "The client pays each milestone in advance and Vyapar records it as held. It is released to the provider when the client approves the work, or automatically 14 days after submission."
+      "live": "The client pays each stage in advance and Vyapar keeps it safe. It is released to the professional when the client approves the work, or automatically 14 days after the work is sent."
     }
   }
 }

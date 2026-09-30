@@ -12,23 +12,37 @@
       "one_time": "One-time",
       "monthly": "Monthly",
       "annual": "Annual"
-    }
+    },
+    "colProduct": "Product",
+    "colBilling": "Billing",
+    "colPrice": "Price",
+    "colTax": "GST",
+    "colOrders": "Orders",
+    "colNewVersion": "New price version"
   },
   "orders": {
     "title": "Orders",
     "kind": {
-      "promotion": "Boosts",
+      "promotion": "Promotions",
       "entitlement": "Plans",
       "campaign": "Campaigns"
     },
     "empty": "No orders of this kind.",
-    "refunded": "refunded {{amount}}"
+    "refunded": "refunded {{amount}}",
+    "hint": "Every paid order, by kind. Refunds are bounded by what was actually paid.",
+    "colProduct": "Product",
+    "colMember": "Member",
+    "colDate": "Date",
+    "colState": "State",
+    "colPaid": "Paid"
   },
   "refund": {
     "open": "Refund or credit",
     "amount": "Amount (₹)",
     "submit": "Process refund",
-    "done": "Refund processed."
+    "done": "Refund processed.",
+    "title": "Refund: {{product}}",
+    "reason": "Reason"
   },
   "diagnostics": {
     "title": "Ranking diagnostics",
@@ -38,20 +52,31 @@
     "eligible": "Eligible for distribution",
     "excluded": "Excluded from distribution",
     "score": "Score {{total}}",
-    "memberRelative": "Relevance for opportunities is scored per viewer, so there is no single global score to show.",
+    "memberRelative": "Relevance for posts is scored per viewer, so there is no single global score to show.",
     "exclusion": {
       "state_not_active": "Not in an active state",
       "not_discoverable": "Owner turned off discoverability",
       "distribution_limited_pending_review": "Distribution limited pending moderation review",
       "unverified_excluded_from_verified_only_searches": "Unverified — excluded from verified-only searches",
       "material_fields_unconfirmed": "Material fields still unconfirmed"
-    }
+    },
+    "colSignal": "Signal",
+    "colValue": "Value",
+    "colWeight": "Weight",
+    "colContribution": "Contribution",
+    "scoreLabel": "Score"
   },
   "audit": {
     "title": "Audit log",
     "actorPlaceholder": "Actor id",
     "actionPlaceholder": "Action",
     "search": "Search",
-    "empty": "No audit entries match."
+    "empty": "No audit entries match.",
+    "hint": "Who did what, when. Read-only.",
+    "colWhen": "When",
+    "colActor": "Actor",
+    "colAction": "Action",
+    "colObject": "Object",
+    "colOutcome": "Outcome"
   }
 }

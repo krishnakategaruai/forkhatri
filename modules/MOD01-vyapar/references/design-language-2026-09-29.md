@@ -29,6 +29,66 @@ Where it lives:
 
 ---
 
+## Typography 2026-09-29 (premium) — supersedes §3 Type
+
+**Why.** Reviewing the live screens on 2026-09-29 the owner said "see the fonts also" and "i wanted this to be a premium website for vyapar, but this looks ugly." Noto Sans had been chosen for one reason only, script coverage, and it reads as the default Android face. This section replaces §3.
+
+### What premium products actually do
+
+| Reference | Evidence | What we take |
+|---|---|---|
+| **Airbnb (Cereal)** | One custom geometric sans, "from button to billboard", set small and confident with tight negative tracking and generous line-height; never a second typeface ([Creative Review](https://www.creativereview.co.uk/airbnb-introduces-custom-typeface-cereal/), [Refero](https://styles.refero.design/style/c2325884-4391-4688-85cd-e143f5107517)). | One family, roles by weight and tracking, not by mixing faces. |
+| **Revolut (Aeonik + Inter)** | A humanist display face at 500 for everything 20px and up, Inter as the workhorse for body, buttons and metadata ([Fonts In Use](https://fontsinuse.com/uses/61484/revolut), [CoType](https://cotypefoundry.com/fonts-in-use/revolut)). | A display role with character, a quiet UI role. |
+| **Notion (Inter + Lyon), Linear (Inter Display)** | Inter for UI, a serif only for editorial pull quotes; Linear uses Inter throughout ([Wikipedia: Inter](https://en.wikipedia.org/wiki/Inter_(typeface))). | Restraint: the premium feel is hierarchy and spacing, not decoration. |
+| **2026 trend write-ups** | "Big x-heights, tight letterfit, swaggering proportions"; display type as the statement piece over simple body copy; personality replacing uniform hyper-minimal sans ([Creative Bloq](https://www.creativebloq.com/design/fonts-typography/breaking-rules-and-bringing-joy-top-typography-trends-for-2026), [Untitled UI](https://www.untitledui.com/blog/best-free-fonts), [Fontfabric](https://www.fontfabric.com/blog/10-design-trends-shaping-the-visual-typographic-landscape-in-2026/)). | Tight-tracked heavy display, calm body. |
+
+### Indic-aware candidates on Google Fonts (verified against the font data shipped with `next/font/google`)
+
+| Family | Scripts in one design | Weights | Verdict |
+|---|---|---|---|
+| **Anek** (Ek Type): Anek Latin, Anek Devanagari, Anek Telugu | Latin, Devanagari, Telugu (plus seven more Indian scripts), all drawn together by one collective ([Google Design, "Design for Many"](https://design.google/library/anek-multiscript), [GitHub EkType/Anek](https://github.com/EkType/Anek), [ektype.in](https://ektype.in/anek-latin.html)) | Variable 100–800 (+ width 75–125) | **Chosen.** "Sharp terminals and tapered joineries" give the Latin character; the scripts share circular forms and terminals, so Hindi and Telugu screens look designed, not fallen back. Tabular figures present (measured in Chrome: `1111` and `0000` equal width with `tnum`). |
+| Tiro Devanagari Hindi / Tiro Telugu (Tiro Typeworks) | Serif text faces with a Latin subset (Castoro) ([Google Design](https://design.google/library/the-modern-tiro-indic-collection-font)) | 400 + italic only | A book face; no weight range for UI or display. Rejected. |
+| Hind / Hind Guntur (ITF) | Devanagari + Latin; Telugu + Latin ([Google Fonts](https://fonts.google.com/specimen/Hind%2BGuntur)) | 300–700 static | Solid UI humanist, but two separate families and a plain Latin; read as utility next to Anek in the specimen. Rejected. |
+| Poppins, Mukta, Yantramanav, Baloo 2, Martel, Khand, Teko | Devanagari + Latin only | various | No Telugu companion; Baloo, Teko and Khand are display-only. Rejected. |
+| Noto Serif / Noto Serif Devanagari / Noto Serif Telugu | all three | variable 100–900 | Coherent, but heavy Devanagari serif reads as newsprint, the "old fashioned" the owner already rejected. Rejected. |
+| Mallanna, Ramabhadra, Gotu | single script | 400 only | No range. Rejected. |
+| Inter / Inter Tight, Manrope, DM Sans, Geist, Plus Jakarta Sans | Latin only | variable | Would need Hind or Anek for Indic: two designs side by side. Rejected for the reason Airbnb never adds a second face. |
+
+Specimen: `screenshots/2026-09-29/type-specimen-candidates-1440-light.png` (Noto Sans vs Anek vs Inter Tight + Hind, in en, hi and te at card sizes).
+
+### The system
+
+- **Family:** Anek Latin, Anek Devanagari, Anek Telugu, loaded in `app/layout.tsx` via `next/font/google` (`display: "swap"`, weight axis only). Latin is preloaded; Devanagari and Telugu are declared with `unicode-range` and `preload: false`, so an English reader on a budget Android downloads one font.
+- **Tokens** (`app/globals.css`): `--font-display`, `--font-body` (both the Anek stack today; kept separate so the roles can diverge later), `--font-sans` as the legacy alias. Roles: `--weight-display` 700, `--weight-title` 650, `--weight-heading` 600, `--weight-ui` 600, `--weight-body` 400; `--tracking-hero` −0.03em, `--tracking-display` −0.024em, `--tracking-title` −0.016em, `--tracking-heading` −0.008em, `--tracking-ui` 0, `--tracking-label` 0.01em; `--leading-display` 1.05, `--leading-title` 1.15, `--leading-heading` 1.3, `--leading-body` 1.55, `--leading-ui` 1.2.
+- **Scripts:** `:lang(hi)` and `:lang(te)` reset every tracking token to 0 and raise the leading tokens (body 1.7, heading 1.4, title 1.3, display 1.25, UI 1.4) in `language-2026.css`; the family stack falls through per glyph, so digits and ₹ inside Hindi text stay in Anek Latin.
+- **Numbers:** `font-variant-numeric: tabular-nums lining-nums` on `.vy-num`, `.vy-money`, `.vy-ocard-pay`, `.vy-qbar-count`, `.vy-iconbtn-badge`, `.vy-fopt-count`, `.vy-avatar`, `time`, `[data-numeric]`. Screen agents: put `.vy-num` (or `data-numeric`) on any pay line, count, date or ID column.
+
+### Scale (Anek has a lower x-height than Noto, so every step is one notch larger; nothing renders below 13px)
+
+| Token | Size (phone to desktop, at a 16px root) | Role |
+|---|---|---|
+| `--type-hero` | 34px to 56px (fluid) | Discover greeting, one per screen: 700, `--tracking-hero` |
+| `--type-display` | 30px to 44px | Page `<h1>`: 700, `--tracking-display` |
+| `--type-title` | 22px to 30px | Row and sheet titles, `<h2>`: 700, `--tracking-title` |
+| `--type-heading` | 18px to 20px | Card titles, `<h3>`, `.vy-card-title`: 600, `--tracking-heading` |
+| `--type-pay` | 22px to 24px | The pay line: 700, tabular figures |
+| `--type-body` | 17px | Body: 400, leading 1.55 |
+| `--type-sm` | 15px | Buttons, chips, tabs, labels, meta: 600 (UI) / 400 (text) |
+| `--type-xs` | 13.5px | Badges, tile labels, fine print: 600 |
+
+Text size (A / A+ / A++, `html[data-text]`) and High contrast keep working: every size is rem, every colour is a token.
+
+### Shared components (tokens and `vy-*` classes only)
+
+- Heights: buttons 44 (primary 48), chips 40 (44 on touch), tabs 44, segmented options 40 (44 on touch), inputs 48, icon buttons 44, See-all and card info buttons 44. Chip, tab and button labels are `--type-sm` at 600, tracking 0.
+- Cards: `--card-pad` 16 / 20 / 24px (phone / 600px and up / 900px and up); hover lifts 1px with `--shadow-raise`.
+- Motion: `--ease-out` cubic-bezier(0.2, 0.8, 0.2, 1); press `--dur-press` 180ms on a short spring; sheets and drawers `--dur-sheet` 240ms (up on phones, in from the right on desktop); hover `--dur-hover` 160ms. Reduced motion removes every transform and animation.
+- Shell: the wordmark is a logotype in the display face (700, −0.035em). Phone pages pad their bottom by `--hub-clear` (hub height + float + breathing room) plus the safe-area inset, so the floating hub never covers the last card.
+- Dark theme: surfaces lifted one step to a blue-slate night (`#151821` canvas, `#1d212b` cards, `#2c3240` floating) after the owner's device check read them as black; `scripts/check-contrast.mjs` re-proves 264 pairs.
+- Phone Discover: the two tabs share the width and show the short "Businesses" label; the search placeholder is the short key on phones; the mic is a 44px quiet icon and the input reserves its width; trade names wrap to two lines and never ellipsize; the location chip drops "Near" (the pin says it).
+
+---
+
 ## 1. Research: what makes a 2026 product feel current
 
 | Reference | What we looked at | What we take | What we leave |
@@ -57,7 +117,7 @@ Where it lives:
 ## 2. Principles (the five rules every screen follows)
 
 1. **The first screen answers "what can I do here" with pictures and one line of words.** Every trade has its icon on a tile, a word under it, and a way to speak it (mic).
-2. **One hero per card, one primary action per screen.** On an opportunity card the hero is the pay, with its period. On a screen, only one button is filled with the brand colour.
+2. **One hero per card, one primary action per screen.** On an opportunity card the hero is the pay, with its period. On a screen, only one button is filled with the brand colour (critique D4). **Post** in the rail and the hub is therefore an *ink* button, not brand: on Discover the one brand fill is Search.
 3. **Filters come to you, not sit beside you.**
    - Quick chips cover the six filters people use most.
    - Everything else sits behind a **Filters** button: a bottom sheet on phones, a right drawer on desktop.
@@ -138,7 +198,7 @@ Desktop density is higher because the CA and the developer asked for speed. The 
 - **Sizes:** 16px inline with text, 20px in buttons, chips and rails, 24–28px in tiles.
 - **Every navigation icon and category icon has its word.** Icon-only buttons (bell, close, arrows) always carry an `aria-label` and a tooltip on desktop.
 - **Trade icons** (`trades.tsx`):
-  - Each of the 22 taxonomy categories and each of its 70 specialties maps to its own icon. Examples: electrician → plug, plumber → wrench, driver → steering wheel, delivery → package, cook → chef hat, tailor → scissors, CA / accounting → calculator, GST → receipt, developer → code, designer → pen tool, tutor → graduation cap, beautician → sparkles, security guard → shield, nurse → stethoscope, carpenter → hammer, painter → paint roller, photographer → camera, welder → flame, telecaller → headset, and so on.
+  - Each of the 22 taxonomy categories and each of its 62 specialties maps to its own icon. Examples: electrician → plug, plumber → wrench, driver → steering wheel, delivery → package, cook → chef hat, tailor → scissors, CA / accounting → calculator, GST → receipt, developer → code, designer → pen tool, tutor → graduation cap, beautician → sparkles, security guard → shield, nurse → stethoscope, carpenter → hammer, painter → paint roller, photographer → camera, welder → flame, telecaller → headset, and so on.
   - A specialty without its own icon falls back to its category's icon.
   - The UI never shows an empty tile.
 
@@ -225,7 +285,7 @@ Desktop density is higher because the CA and the developer asked for speed. The 
    - Cards snap, and the next card peeks.
 6. **Filtered mode** (any filter or sort): a result count heading (`24 opportunities near Madhapur`), the Sort menu, removable applied chips, "Save this search", then one flat ranked grid.
 7. **Floating command hub** (bottom, in the thumb zone):
-   - a pill with Discover, Businesses, **Post** (a filled brand circle, the one primary action), Activity and Profile;
+   - a pill with Discover, Businesses, **Post** (a raised ink circle), Activity and Profile;
    - an icon and a word on each;
    - it condenses to icons only while scrolling down and expands again on scroll up.
 
@@ -237,7 +297,7 @@ Desktop density is higher because the CA and the developer asked for speed. The 
   - the Hire / Find work menus;
   - language and display, the bell and the avatar.
 - **Side rail (232px):**
-  - a filled **Post** button first;
+  - an ink-filled **Post** button first (brand stays for the screen's own primary action);
   - then Discover, Businesses, Activity and Profile as 44px rows with icon and label;
   - the current page gets a selected fill and a brand icon;
   - the "Vyapar · ForKhatri" host qualifier sits quietly at the bottom.
@@ -290,3 +350,18 @@ The composer, detail, contracts, applicants, packages and every other screen pic
 - Kirana owner posting: **Post** is the one filled button in the hub and in the rail.
 - CA or developer on desktop: 4-column results; the top-bar search pill is always one click away; Hire / Find work menus; keyboard focus rings everywhere.
 - Older users: Text size A+ and A++, High contrast, the OS font size (everything in rem), and reduced motion.
+
+## 15. Decisions added during the build (critique and owner, 2026-09-29)
+
+- **First card above the fold (critique W1).** At 360×740 the first card's title and pay sit above the hub. The phone hero is compact: no subtitle, a 1.625rem greeting, short tab names ("Businesses"), and a short placeholder ("Search jobs or skills"). The trade rail is one lane of 52px tiles. Measured: pay bottom 620px (en) and 641px (hi), with the hub top at 650px.
+- **Control edges at 3:1 (critique P1/D2).**
+  - New token `--border-control` (an alias of `--border-strong`, at least 3.55:1 on every surface in both themes).
+  - It is used on inputs, selects, secondary buttons, chips, switches, the search pills and row arrows.
+  - `check-contrast.mjs` checks it as UI on all six surfaces.
+- **Monthly pay (critique W3 and the glossary).** A yearly "₹X–Y LPA" is shown as "₹A–B a month", rounded to ₹1,000, with "₹X–Y lakh a year" as the quiet second line. "LPA" never reaches the screen on a card.
+- **No sidebar (critique W4).** The desktop filter sidebar is gone. FE2's panel lives in the sheet or drawer.
+- **Trade names are never cut.** Tile labels wrap to two lines with no ellipsis, and tile columns are in rem, so Text size A++ never collides them.
+- **Server row titles.** Rows render the server-translated `title` when present (imp-backend-b L13) and fall back to `explore.rows.<title_key>`.
+- **Sparse home.** With three rows or fewer, or when the profile has no skills, the rows end in a "Want to see more work here?" block. It offers **Add my skills** (only when the member has none) and **Post what you need**. The trade tiles above stay as the way to browse. The home never leaves a blank gap.
+- **Error state.** If the feed, or the first-run check it waits on, fails to load, Discover shows "Couldn't load opportunities" with **Try again**, never endless skeletons.
+- **Dialogs** take focus on the sheet itself (screen readers land inside), with no focus ring drawn on touch.

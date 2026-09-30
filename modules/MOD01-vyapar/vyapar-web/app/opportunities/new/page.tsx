@@ -89,6 +89,26 @@ function Composer() {
     sdk.members.me().then(setMe).catch(() => setMe(null));
   }, [sdk, i18n.language]);
 
+  // [FE1 — 2026-09-30, owner: "never ask what we know"] The member's saved
+  // locality (set at first run; else the one on their work/business
+  // profile) prefills the post's area once, on entering the form. Anything
+  // they then type or clear is theirs — it is never re-filled.
+  const [firstRunLocality, setFirstRunLocality] = useState<string | null>(null);
+  useEffect(() => {
+    sdk.firstRun
+      .state()
+      .then((s) => setFirstRunLocality(((s as unknown as { locality?: string | null }).locality ?? "").trim() || null))
+      .catch(() => setFirstRunLocality(null));
+  }, [sdk]);
+  const savedLocality = firstRunLocality ?? me?.profiles?.professional?.locality ?? me?.profiles?.business?.locality ?? null;
+
+  // [FE1 — 2026-09-29, owner: "that is too worst" — the floating hub sat on
+  // top of mid-form fields] Phone: a sticky bottom bar carries the primary
+  // action for the whole of the form/review stage (same `.vy-actionbar` used
+  // by OpportunityDetailView), and the bottom hub lifts clear of it via the
+  // existing `body:has(.vy-actionbar-in)` rule, so the hub never sits over
+  // the fields. The in-page row stays for desktop, where `.vy-actionbar` is
+  // CSS-hidden (≥900px already has a persistent side layout).
   const [stage, setStage] = useState<Stage>("start");
   const [legacy, setLegacy] = useState<{ mode: "share" | "upload"; imageUrl?: string; notice?: string } | null>(null);
   const [kind, setKind] = useState<PostKind | null>(initialKind);
@@ -192,7 +212,7 @@ function Composer() {
     const base = kind ? { ...draft, type: kind } : draft;
     // The type the poster tapped wins over the type the draft inferred.
     const r = draftFromAi(kind ? retypeAiDraft(ai, kind) : ai, base);
-    setDraft(r.draft);
+    setDraft(r.draft.location.trim() || !savedLocality ? r.draft : { ...r.draft, location: savedLocality });
     setFlagged(new Set(r.flagged));
     setQuestions(r.questions);
     setFromAi(ai.source);
@@ -403,7 +423,7 @@ function Composer() {
               onDraft={onDraft}
               onPhoto={onPhoto}
               onManual={() => {
-                setDraft((d) => ({ ...d, type: kind ?? d.type }));
+                setDraft((d) => ({ ...d, type: kind ?? d.type, location: d.location.trim() || savedLocality || "" }));
                 setStage("form");
               }}
               onLegacy={(mode) => setLegacy({ mode })}
@@ -431,7 +451,7 @@ function Composer() {
   const preview = <OpportunityPreview draft={draft} skillLabel={skillLabel} posterName={me?.display_name} />;
 
   return (
-    <Screen width="wide">
+    <Screen width="wide" className="vy-composer-screen">
       <div className="vy-stack" style={{ gap: 6 }}>
         <span className="vy-step-label">
           {stage === "form" ? t("hiring:composer.step1") : t("hiring:composer.step2")}
@@ -485,10 +505,19 @@ function Composer() {
               </details>
 
               {formError && <p className="vy-error" role="alert">{formError}</p>}
-              <div className="vy-row" style={{ flexWrap: "wrap", gap: 8 }}>
-                <button type="button" className="vy-btn vy-btn-primary vy-submit" disabled={saving} onClick={toReview}>
-                  {saving ? t("common:state.saving") : t("hiring:composer.continueToCheck")}
-                </button>
+              {/* Wrapped, not combined: .vy-row / .vy-btn set display too and
+                  would out-cascade the breakpoint utility on the same element. */}
+              <div className="vy-desktop-only">
+                <div className="vy-row" style={{ flexWrap: "wrap", gap: 8 }}>
+                  <button type="button" className="vy-btn vy-btn-primary vy-submit" disabled={saving} onClick={toReview}>
+                    {saving ? t("common:state.saving") : t("hiring:composer.continueToCheck")}
+                  </button>
+                  <button type="button" className="vy-btn vy-btn-ghost" onClick={() => setStage("start")}>
+                    ← {t("hiring:composer.backToStart")}
+                  </button>
+                </div>
+              </div>
+              <div className="vy-mobile-only">
                 <button type="button" className="vy-btn vy-btn-ghost" onClick={() => setStage("start")}>
                   ← {t("hiring:composer.backToStart")}
                 </button>
@@ -520,10 +549,17 @@ function Composer() {
                 />
               )}
               {formError && <p className="vy-error" role="alert">{formError}</p>}
-              <div className="vy-row" style={{ flexWrap: "wrap", gap: 8 }}>
-                <button type="button" className="vy-btn vy-btn-primary vy-submit" disabled={publishing || applying !== null || mustCheck.length > 0} onClick={publish}>
-                  {publishing ? t("hiring:composer.publishing") : t("hiring:composer.publish")}
-                </button>
+              <div className="vy-desktop-only">
+                <div className="vy-row" style={{ flexWrap: "wrap", gap: 8 }}>
+                  <button type="button" className="vy-btn vy-btn-primary vy-submit" disabled={publishing || applying !== null || mustCheck.length > 0} onClick={publish}>
+                    {publishing ? t("hiring:composer.publishing") : t("hiring:composer.publish")}
+                  </button>
+                  <button type="button" className="vy-btn vy-btn-secondary" onClick={() => setStage("form")}>
+                    {t("hiring:composer.editDetails")}
+                  </button>
+                </div>
+              </div>
+              <div className="vy-mobile-only">
                 <button type="button" className="vy-btn vy-btn-secondary" onClick={() => setStage("form")}>
                   {t("hiring:composer.editDetails")}
                 </button>
@@ -539,6 +575,22 @@ function Composer() {
           {preview}
         </aside>
       </div>
+
+      {(stage === "form" || stage === "review") && (
+        <div className="vy-actionbar vy-actionbar-in vy-mobile-only">
+          <div className="vy-actionbar-main">
+            {stage === "form" ? (
+              <button type="button" className="vy-btn vy-btn-primary" disabled={saving} onClick={toReview}>
+                {saving ? t("common:state.saving") : t("hiring:composer.continueToCheck")}
+              </button>
+            ) : (
+              <button type="button" className="vy-btn vy-btn-primary" disabled={publishing || applying !== null || mustCheck.length > 0} onClick={publish}>
+                {publishing ? t("hiring:composer.publishing") : t("hiring:composer.publish")}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </Screen>
   );
 }

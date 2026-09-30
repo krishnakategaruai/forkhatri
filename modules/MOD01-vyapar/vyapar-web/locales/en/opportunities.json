@@ -1,19 +1,19 @@
 {
   "actionLabel": {
     "apply": "Apply",
-    "submitProposal": "Submit a Proposal",
-    "enquireNow": "Enquire Now",
+    "submitProposal": "Send proposal",
+    "enquireNow": "Send a quote",
     "contact": "Contact",
-    "register": "Register",
-    "applyOnSource": "Apply on source website"
+    "register": "I'm interested",
+    "applyOnSource": "Apply on the original website"
   },
   "type": {
-    "employment": "Employment",
-    "freelance": "Freelance",
+    "employment": "Job",
+    "freelance": "Project",
     "local_service": "Local service",
-    "partnership": "Partnership",
+    "partnership": "Business partnership",
     "training": "Training",
-    "community": "Community"
+    "community": "Community & government"
   },
   "workMode": {
     "on_site": "On-site",
@@ -21,7 +21,7 @@
     "both": "On-site or remote"
   },
   "new": {
-    "chooseModeTitle": "Share an opportunity",
+    "chooseModeTitle": "Share a post",
     "modeCreate": "Write it myself",
     "modeCreateDesc": "Fill in the details in a short form.",
     "modeShare": "Paste a link or text",
@@ -30,7 +30,7 @@
     "modeUploadDesc": "Got a screenshot? Upload it and add a short note.",
     "segmentCommunity": "My own",
     "segmentPublic": "Found elsewhere",
-    "titleCreate": "Describe the opportunity",
+    "titleCreate": "Describe the post",
     "titleShare": "Paste the link or text",
     "titleUpload": "Add the screenshot link",
     "sourceNameLabel": "Where did you find it? (name or link)",
@@ -48,14 +48,14 @@
     "typeLabel": "Type",
     "typeGroupCommon": "Common",
     "typeGroupOther": "Other",
-    "typeEmployment": "Employment",
-    "typeFreelance": "Freelance / Project",
-    "typeLocalService": "Local Business / Professional Service",
-    "typePartnership": "Business Partnership",
+    "typeEmployment": "Job",
+    "typeFreelance": "Project",
+    "typeLocalService": "Local service",
+    "typePartnership": "Business partnership",
     "typeTraining": "Training",
-    "typeCommunity": "Community / Government",
-    "compensationLabel": "Compensation / value (optional)",
-    "compensationPlaceholder": "e.g. ₹50,000/month, or unpaid",
+    "typeCommunity": "Community & government",
+    "compensationLabel": "Pay (optional)",
+    "compensationPlaceholder": "e.g. ₹18,000 a month, ₹700 a day, or unpaid",
     "skillsLabel": "Skills needed (optional, comma separated)",
     "skillsPlaceholder": "e.g. react, python",
     "sourceRequiredError": "Tell us where you found it — a source name or link is required.",
@@ -65,10 +65,10 @@
     "guide3": "Never ask for a fee or deposit to apply. Such posts are removed."
   },
   "detail": {
-    "stateActive": "Active",
+    "stateActive": "Open",
     "postedBy": "Posted by {{name}}",
-    "segmentCommunity": "Community",
-    "segmentPublic": "Public",
+    "segmentCommunity": "From your community",
+    "segmentPublic": "Shared from elsewhere",
     "noDetailsYet": "No further details yet",
     "confirmTitle": "Confirm before publishing",
     "allConfirmed": "Everything looks confirmed.",
@@ -81,11 +81,11 @@
     "close": "Close",
     "openOfficialWebsite": "Open official website ↗",
     "leavingVyaparNotice": "You'll leave Vyapar. We can't verify this source — never pay to apply.",
-    "enquireComingSoon": "Opens once Enquiries is live",
+    "enquireComingSoon": "Replies open soon",
     "whyThis": "Why this?",
     "notInterestedTooFar": "Too far",
     "notInterestedWrongType": "Wrong type",
-    "notInterestedNotMyCapability": "Not my capability",
+    "notInterestedNotMyCapability": "Not my kind of work",
     "notInterestedValueTooLow": "Value too low",
     "notInterestedWrongTiming": "Wrong timing",
     "notInterestedAlreadyFound": "Already found something",
@@ -108,7 +108,7 @@
     "skillsNeeded": "Skills",
     "experience_one": "{{count}}+ year of experience",
     "experience_other": "{{count}}+ years of experience",
-    "aboutRole": "About this opportunity",
+    "aboutRole": "About this post",
     "sourceTitle": "Source",
     "sourceFound": "Found on {{source}} and shared on Vyapar by {{name}}.",
     "sourceUnverified": "Vyapar hasn't verified this source. Apply on the original site, and never pay to apply.",
@@ -121,18 +121,18 @@
     },
     "aboutPoster": "About the person who posted",
     "memberSince": "On Vyapar since {{date}}",
-    "activeOpportunities_one": "{{count}} open opportunity",
-    "activeOpportunities_other": "{{count}} open opportunities",
+    "activeOpportunities_one": "{{count}} open post",
+    "activeOpportunities_other": "{{count}} open posts",
     "verifiedBusiness": "{{name}} · verified on Vyapar",
     "viewBusiness": "View profile",
     "notInterestedPrompt": "Tell us why and we'll show you better matches",
-    "similarTitle": "Similar opportunities",
+    "similarTitle": "Similar posts",
     "state": {
       "draft": "Draft",
       "pending_review": "Under review",
       "active": "Open",
       "paused": "Paused",
-      "stale": "Needs a refresh",
+      "stale": "No recent update",
       "expired": "Expired",
       "closed": "Closed",
       "removed": "Removed"
@@ -154,6 +154,7 @@
     "freeToRespond": "Free to respond. Never pay anyone to get this work.",
     "reportIfAsked": "Report if asked",
     "matchesYourSkill": "Matches your skill: {{skills}}",
-    "lookingForYours": "What you're looking for"
+    "lookingForYours": "What you're looking for",
+    "goneBody": "It may have been closed or removed by the person who posted it."
   }
 }

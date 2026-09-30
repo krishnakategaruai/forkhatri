@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "Vyapar",
-    "tagline": "Business, professional and opportunity discovery for the Khatri community."
+    "tagline": "Jobs, work and trusted businesses from the Khatri community."
   },
   "nav": {
     "discover": "Discover",
@@ -11,7 +11,14 @@
     "profile": "Profile",
     "collapse": "Collapse navigation",
     "open": "Open navigation",
-    "primary": "Primary"
+    "primary": "Primary",
+    "short": {
+      "discover": "Discover",
+      "businesses": "Businesses",
+      "post": "Post",
+      "activity": "Activity",
+      "profile": "Profile"
+    }
   },
   "action": {
     "save": "Save",
@@ -21,7 +28,7 @@
     "back": "Back",
     "cancel": "Cancel",
     "retry": "Retry",
-    "myListings": "My listings",
+    "myListings": "My profiles",
     "linkCopied": "Link copied.",
     "remove": "Remove",
     "close": "Close",
@@ -73,7 +80,8 @@
     "searchPlaceholder": "Search jobs, skills or businesses",
     "searchLabel": "Search Vyapar",
     "openSearch": "Search",
-    "account": "Account"
+    "account": "Account",
+    "platformHome": "{{name}} home"
   },
   "display": {
     "title": "Language and display",
@@ -84,5 +92,28 @@
     "sizeLarger": "Larger",
     "contrast": "High contrast",
     "contrastHint": "Darker text and clearer edges"
+  },
+  "disabled": {
+    "name": "Add your name to continue",
+    "area": "Choose your area to continue",
+    "skills": "Pick at least one kind of work, or skip for now",
+    "listing": "Add a name and your area to save",
+    "message": "Write at least 20 characters to send",
+    "refundAmount": "Enter a refund amount",
+    "chooseReason": "Choose a reason first",
+    "describeFirst": "Describe what you need first",
+    "composerInput": "Add the details above to continue",
+    "noChanges": "Nothing has changed yet",
+    "timesheet": "Choose the week and enter the hours",
+    "min10": "Write at least 10 characters",
+    "min5": "Write at least 5 characters",
+    "phone": "Enter your phone number",
+    "code": "Enter the 6-digit code",
+    "quote": "Add at least one detail to send",
+    "review": "Say whether you recommend them; a comment needs 20–500 characters",
+    "verification": "Fill in the details above to submit",
+    "appeal": "Write why you are appealing",
+    "partnership": "Fill in every field (at least 10 characters each) to send",
+    "campaign": "Choose a package, pick items and name the campaign"
   }
 }

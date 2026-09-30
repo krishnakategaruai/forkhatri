@@ -751,7 +751,9 @@ async def record_opportunity_contact_attempt(conn: asyncpg.Connection, ctx: Auth
         enquiry_id, opp["id"], ctx.member_id, opp["poster_id"], body.channel,
     )
     caller_name = (await conn.fetchval("SELECT display_name FROM vyapar_identity.members WHERE id = $1", ctx.member_id) or "").split(" ")[0]
-    texts = {
+    texts: dict = {"_i18n": {"title": f"notifications.precallContact.title_{body.channel}", "body": "notifications.precallContact.body",
+                             "values": {"name": caller_name, "job": opp["title"]}}}
+    texts |= {
         lg: {"title": translate(f"notifications.precallContact.title_{body.channel}", lg, name=caller_name, job=opp["title"]),
              "body": translate("notifications.precallContact.body", lg, name=caller_name)}
         for lg in LAUNCH_LANGUAGES

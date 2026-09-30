@@ -72,6 +72,16 @@ TIP_CODES = (
     "add_deadline", "mention_incentives",
 )
 IMPACTS = ("high", "medium", "low")
+# The field each "add …" tip asks for. A tip whose field the draft (or its
+# description) already states is never shown — for the rules and for Claude.
+TIP_FIELD = {
+    # (add_description is about length, not presence, so it is not listed)
+    "add_title": "title", "add_location": "location",
+    "add_capabilities": "required_capabilities", "add_salary": "salary", "add_job_timings": "job_timings",
+    "add_openings": "openings", "add_interview_details": "interview_details", "add_budget": "budget",
+    "add_hourly_rate": "hourly_rate", "add_duration": "duration", "add_screening_questions": "screening_questions",
+    "add_preferred_date": "preferred_date", "set_urgency": "urgency", "add_timing": "timing",
+}
 
 PROPOSAL_IMPROVEMENT_CODES = (
     "mention_matching_skills", "mention_experience", "state_availability", "state_price",

@@ -25,10 +25,11 @@ router = APIRouter(prefix="/v1/notifications", tags=["notifications"], responses
 
 @router.get("", response_model=list[NotificationOut], operation_id="listNotifications", summary="List the member's notifications")
 async def list_notifications(
+    lang: Locale,
     ctx: AuthzContext = Depends(resolve_authz_context),
     conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> list[NotificationOut]:
-    return await svc.list_notifications(conn, ctx)
+    return await svc.list_notifications(conn, ctx, lang)
 
 
 @router.get("/page", response_model=Page[NotificationOut], operation_id="listNotificationsPage", summary="List all of the member's notifications, one page at a time")

@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { apiFetch, api, ApiError } from "@/lib/api";
 import { formatDate } from "@/lib/format"; // [FE2] Indian date order
+import DisabledReason from "@/app/components/DisabledReason";
 
 interface InviteStatus {
   can_review: boolean;
@@ -119,15 +120,10 @@ export default function ReviewComposer({
         {[...status.tags_positive, ...status.tags_negative].map((tag) => (
           <button
             key={tag}
+            type="button"
             role="checkbox"
             aria-checked={tags.includes(tag)}
-            className="vy-chip"
-            style={{
-              border: `1px solid ${tags.includes(tag) ? "var(--selected-border)" : "var(--border-hairline)"}`,
-              cursor: "pointer",
-              background: tags.includes(tag) ? "var(--selected-bg)" : "var(--surface-overlay)",
-              color: tags.includes(tag) ? "var(--selected-fg)" : "var(--text-primary)",
-            }}
+            className={tags.includes(tag) ? "vy-chip vy-chip-selected" : "vy-chip"}
             onClick={() => toggleTag(tag)}
           >
             {t(`reviews:tag.${tag}` as "tag.on_time", { defaultValue: tag })}
@@ -141,9 +137,10 @@ export default function ReviewComposer({
       </label>
       <p className="vy-muted" style={{ fontSize: 13 }}>{t("reviews:composer.identityNote")}</p>
       {error && <p className="vy-error">{error}</p>}
-      <button className="vy-btn vy-btn-primary" disabled={recommend === null || !commentValid || busy} onClick={submit}>
+      <button className="vy-btn vy-btn-primary" aria-describedby={(recommend === null || !commentValid) ? "why-review" : undefined} disabled={recommend === null || !commentValid || busy} onClick={submit}>
         {t("reviews:composer.submit")}
       </button>
+      <DisabledReason id={"why-review"} show={(recommend === null || !commentValid)}>{t("common:disabled.review")}</DisabledReason>
     </div>
   );
 }

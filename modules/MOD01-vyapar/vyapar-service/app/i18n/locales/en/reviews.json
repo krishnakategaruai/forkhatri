@@ -1,6 +1,6 @@
 {
   "error": {
-    "noQualifyingInteraction": "Reviews can only be written after a completed enquiry or partnership.",
+    "noQualifyingInteraction": "Reviews can only be written after a completed request or partnership.",
     "alreadyReviewed": "You already reviewed this interaction.",
     "commentLength": "A comment must be 20–500 characters, or left empty.",
     "invalidTag": "Pick tags from the list.",

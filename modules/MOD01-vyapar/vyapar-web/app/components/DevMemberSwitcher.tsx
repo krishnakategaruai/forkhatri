@@ -18,7 +18,9 @@ import { useTranslation } from "react-i18next";
 // forkhatri.tsx) as its account control; the standalone host has none.
 import { getDevMemberId, setDevMemberId, type DevMember } from "@/lib/sdk";
 import { useSdk } from "@/lib/sdk/react";
-import { FlaskConical } from "lucide-react";
+import { FlaskConical, House } from "lucide-react";
+import { useHost } from "@/app/host/HostProvider";
+import { usePopoverDismiss } from "@/lib/usePopoverDismiss";
 
 function initials(name: string): string {
   const parts = name.replace(/^m_/, "").split(/[\s_]+/).filter(Boolean);
@@ -31,9 +33,11 @@ export default function DevMemberSwitcher() {
   const [members, setMembers] = useState<DevMember[]>([]);
   const [current, setCurrent] = useState("m_krishna");
   const sdk = useSdk();
+  const host = useHost();
+  const ref = usePopoverDismiss(open, () => setOpen(false));
 
   useEffect(() => {
-    setCurrent(getDevMemberId());
+    queueMicrotask(() => setCurrent(getDevMemberId()));
     sdk.dev.members().then(setMembers).catch(() => setMembers([]));
   }, [sdk]);
 
@@ -48,7 +52,7 @@ export default function DevMemberSwitcher() {
   // explicit max-width + ellipsis so even a very long real name can never
   // force the header wider than the viewport on a narrow phone.
   return (
-    <div className="vy-menu-anchor" style={{ minWidth: 0 }}>
+    <div ref={ref} className="vy-menu-anchor" style={{ minWidth: 0 }}>
       {/* [Design language 2026-09-29] the avatar: initials in a circle,
           plus the first name on desktop; always the right-most item. The
           small flask marks it as the development member switcher. */}
@@ -76,7 +80,18 @@ export default function DevMemberSwitcher() {
             className="vy-popover vy-popover-end"
             style={{ width: 280, maxHeight: 420, overflowY: "auto" }}
           >
-            <p className="vy-muted" style={{ marginBottom: 8 }}>
+            {/* [2026-09-30, owner: "i can't go to ForKhatri homepage from
+                mobile view of Vyapar"] the way back to the platform, first
+                in the account menu, from the host adapter (no URL here). */}
+            {host.platformLink && (
+              <a className="vy-menu-item vy-menu-home" href={host.platformLink.href}>
+                <span className="vy-row" style={{ gap: 10 }}>
+                  <House size={18} strokeWidth={1.9} aria-hidden="true" />
+                  {t("shell.platformHome", { name: host.brand.qualifier ?? "" })}
+                </span>
+              </a>
+            )}
+            <p className="vy-muted" style={{ margin: "8px 0" }}>
               {t("devTools.notSignIn")}
             </p>
             <div className="vy-stack" style={{ gap: 2 }}>

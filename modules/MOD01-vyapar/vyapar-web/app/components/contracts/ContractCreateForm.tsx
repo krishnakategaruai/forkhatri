@@ -1,23 +1,27 @@
 "use client";
 
 // [FE2 — imp-backend-d createContract, research §8] Start a contract from an
-// accepted enquiry.
+// accepted request.
 //
-// Minimal typing: the title, the kind, the total and the milestones come
-// pre-filled from the conversation (the enquiry's subject and, for a
-// proposal, the applicant's own bid and milestones), so the client usually
-// only checks and sends. Fixed price: milestone rows (name · ₹ · optional
-// due date) with a live "₹2,000 left to assign" counter — the server refuses
-// milestones that don't add up to the total, so the form says so before
-// anyone taps Send, and offers one-tap fixes ("Split evenly", "Put the rest
-// in the last one"). Hourly: rate, weekly cap and a total budget; each
-// approved week becomes a paid milestone.
+// Minimal typing: the title, the kind, the total and the stages come
+// pre-filled from the conversation (the request's subject and, for a
+// proposal, the professional's own price and stages), so the client usually
+// only checks and sends. Fixed price: stage rows (name · ₹ · optional due
+// date) with a live "₹2,000 left to assign" line — the server refuses stages
+// that don't add up to the total, so the form says so before anyone taps
+// Send, and offers one-tap fixes ("Split evenly", "Put the rest in the last
+// one"). Hourly: rate, weekly cap and a total budget; each approved week
+// becomes a paid stage.
 //
-// Desktop: form on the left, "How it works" in a sticky column beside it.
+// [Design language 2026-09-29] Three section cards, each with its icon
+// tile and one-line hint: the work · how you pay · the stages. Desktop: the
+// form on the left, "How it works" sticky beside it. One filled button.
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { AlertTriangle, CheckCircle2, ClipboardList, IndianRupee, ListChecks, Plus, X } from "lucide-react";
 import type { ContractCreateInput, ContractKind } from "@/lib/sdk";
 import { formatRupees, paiseToInput, rupeesToPaise } from "@/lib/format";
+import DisabledReason from "@/app/components/DisabledReason";
 
 export interface MilestoneDraft {
   title: string;
@@ -64,8 +68,7 @@ export default function ContractCreateForm({
     setD((cur) => ({ ...cur, ...patch }));
     setProblem(null);
   };
-  const setMs = (i: number, patch: Partial<MilestoneDraft>) =>
-    set({ milestones: d.milestones.map((m, j) => (j === i ? { ...m, ...patch } : m)) });
+  const setMs = (i: number, patch: Partial<MilestoneDraft>) => set({ milestones: d.milestones.map((m, j) => (j === i ? { ...m, ...patch } : m)) });
 
   const totalPaise = rupeesToPaise(d.total) ?? 0;
   const assigned = useMemo(() => d.milestones.reduce((sum, m) => sum + (rupeesToPaise(m.amount) ?? 0), 0), [d.milestones]);
@@ -126,14 +129,44 @@ export default function ContractCreateForm({
     if (body) onSubmit(body);
   }
 
+  // What still blocks Send, in words (critique P2): shown under the button.
+  const blocker = !d.title.trim()
+    ? t("contracts:new.errTitle")
+    : d.kind === "fixed"
+      ? totalPaise <= 0
+        ? t("contracts:new.errTotal")
+        : d.milestones.some((m) => !m.title.trim() || !((rupeesToPaise(m.amount) ?? 0) > 0))
+          ? t("contracts:new.errMilestone")
+          : left !== 0
+            ? t("contracts:new.errSum")
+            : null
+      : !((rupeesToPaise(d.rate) ?? 0) > 0) || !(Number(d.cap) > 0)
+        ? t("contracts:new.errRate")
+        : totalPaise <= 0
+          ? t("contracts:new.errTotal")
+          : null;
+
   const today = new Date();
   const minDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
   return (
     <div className="vy-detail">
       <div className="vy-detail-main">
-        <div className="vy-card vy-stack" style={{ gap: 20 }}>
-          {fromProposal && <p className="vy-muted">{t("contracts:new.fromProposal", { name: counterpart })}</p>}
+        {fromProposal && (
+          <p className="vy-dl-notice">
+            <CheckCircle2 size={18} strokeWidth={1.75} aria-hidden="true" />
+            <span>{t("contracts:new.fromProposal", { name: counterpart })}</span>
+          </p>
+        )}
+
+        <section className="vy-dl-sec" aria-labelledby="cn-work">
+          <div className="vy-dl-sec-head">
+            <span className="vy-dl-tile vy-dl-tile-brand" aria-hidden="true">
+              <ClipboardList size={20} strokeWidth={1.75} />
+            </span>
+            <h2 id="cn-work" className="vy-card-title">{t("contracts:new.secWork")}</h2>
+            <span className="vy-dl-sec-hint">{target ? t("contracts:new.about", { target }) : t("contracts:new.secWorkHint")}</span>
+          </div>
           <label className="vy-field">
             <span className="vy-label">{t("contracts:new.titleLabel")}</span>
             <input className="vy-input" maxLength={200} value={d.title} onChange={(e) => set({ title: e.target.value })} placeholder={t("contracts:new.titlePlaceholder")} />
@@ -142,84 +175,34 @@ export default function ContractCreateForm({
             <span className="vy-label">{t("contracts:new.descLabel")}</span>
             <textarea className="vy-textarea" rows={3} maxLength={4000} value={d.description} onChange={(e) => set({ description: e.target.value })} placeholder={t("contracts:new.descPlaceholder")} />
           </label>
+        </section>
 
-          <div className="vy-stack" style={{ gap: 8 }}>
-            <span className="vy-label">{t("contracts:new.kindLabel")}</span>
-            <div className="vy-segmented" role="group" aria-label={t("contracts:new.kindLabel")}>
-              {(["fixed", "hourly"] as const).map((k) => (
-                <button key={k} type="button" aria-pressed={d.kind === k} onClick={() => set({ kind: k })}>
-                  {t(`contracts:kind.${k}`)}
-                </button>
-              ))}
-            </div>
+        <section className="vy-dl-sec" aria-labelledby="cn-pay">
+          <div className="vy-dl-sec-head">
+            <span className="vy-dl-tile vy-dl-tile-green" aria-hidden="true">
+              <IndianRupee size={20} strokeWidth={1.75} />
+            </span>
+            <h2 id="cn-pay" className="vy-card-title">{t("contracts:new.kindLabel")}</h2>
+            <span className="vy-dl-sec-hint">{t("contracts:new.kindHint")}</span>
           </div>
-
+          <div className="vy-segmented vy-dl-tabs" role="group" aria-label={t("contracts:new.kindLabel")}>
+            {(["fixed", "hourly"] as const).map((k) => (
+              <button key={k} type="button" aria-pressed={d.kind === k} onClick={() => set({ kind: k })}>
+                {t(`contracts:kind.${k}`)}
+              </button>
+            ))}
+          </div>
           {d.kind === "fixed" ? (
-            <>
-              <label className="vy-field">
-                <span className="vy-label">{t("contracts:new.totalLabel")}</span>
-                <input className="vy-input" inputMode="decimal" value={d.total} onChange={(e) => set({ total: e.target.value })} />
-              </label>
-
-              <div className="vy-stack" style={{ gap: 10 }}>
-                <div className="vy-stack" style={{ gap: 2 }}>
-                  <span className="vy-label">{t("contracts:new.milestonesLabel")}</span>
-                  <span className="vy-muted">{t("contracts:new.milestonesHint")}</span>
-                </div>
-                {d.milestones.map((m, i) => (
-                  <div key={i} className="vy-ms-row">
-                    <label className="vy-field">
-                      <span className="vy-label">{t("contracts:new.msTitle", { n: i + 1 })}</span>
-                      <input className="vy-input" maxLength={200} value={m.title} onChange={(e) => setMs(i, { title: e.target.value })} placeholder={i === 0 ? t("contracts:new.msTitlePlaceholder") : undefined} />
-                    </label>
-                    <label className="vy-field">
-                      <span className="vy-label">{t("contracts:new.msAmount")}</span>
-                      <input className="vy-input" inputMode="decimal" value={m.amount} onChange={(e) => setMs(i, { amount: e.target.value })} />
-                    </label>
-                    <label className="vy-field">
-                      <span className="vy-label">{t("contracts:new.msDue")}</span>
-                      <input className="vy-input" type="date" min={minDate} value={m.due} onChange={(e) => setMs(i, { due: e.target.value })} />
-                    </label>
-                    {d.milestones.length > 1 && (
-                      <button type="button" className="vy-btn vy-btn-ghost" style={{ fontSize: 13 }} onClick={() => set({ milestones: d.milestones.filter((_, j) => j !== i) })}>
-                        {t("contracts:new.removeMilestone")}
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <div className="vy-row" style={{ flexWrap: "wrap", gap: 8 }}>
-                  {d.milestones.length < 10 && (
-                    <button type="button" className="vy-btn vy-btn-secondary" onClick={() => set({ milestones: [...d.milestones, emptyMilestone()] })}>
-                      + {t("contracts:new.addMilestone")}
-                    </button>
-                  )}
-                  {totalPaise > 0 && d.milestones.length > 1 && (
-                    <button type="button" className="vy-btn vy-btn-ghost" onClick={splitEven}>{t("contracts:new.splitEven")}</button>
-                  )}
-                  {totalPaise > 0 && left !== 0 && (
-                    <button type="button" className="vy-btn vy-btn-ghost" onClick={fillLast}>{t("contracts:new.fillLast")}</button>
-                  )}
-                </div>
-                {totalPaise > 0 && (
-                  <div className="vy-remaining" role="status" aria-live="polite" data-ok={left === 0 || undefined} data-over={left < 0 || undefined}>
-                    <span>
-                      {left === 0
-                        ? `✓ ${t("contracts:new.balanced")}`
-                        : left > 0
-                          ? t("contracts:new.remaining", { amount: money(left) })
-                          : t("contracts:new.over", { amount: money(-left) })}
-                    </span>
-                    <span>{money(assigned)} / {money(totalPaise)}</span>
-                  </div>
-                )}
-              </div>
-            </>
+            <label className="vy-field">
+              <span className="vy-label">{t("contracts:new.totalLabel")}</span>
+              <input className="vy-input" inputMode="decimal" value={d.total} onChange={(e) => set({ total: e.target.value })} placeholder="45,000" />
+            </label>
           ) : (
             <>
               <div className="vy-field-pair">
                 <label className="vy-field">
                   <span className="vy-label">{t("contracts:new.rateLabel")}</span>
-                  <input className="vy-input" inputMode="decimal" value={d.rate} onChange={(e) => set({ rate: e.target.value })} />
+                  <input className="vy-input" inputMode="decimal" value={d.rate} onChange={(e) => set({ rate: e.target.value })} placeholder="800" />
                 </label>
                 <label className="vy-field">
                   <span className="vy-label">{t("contracts:new.capLabel")}</span>
@@ -232,30 +215,109 @@ export default function ContractCreateForm({
               </label>
             </>
           )}
+        </section>
 
-          {(problem || error) && <p className="vy-error" role="alert">{problem ?? error}</p>}
-          <div className="vy-row" style={{ flexWrap: "wrap" }}>
-            <button className="vy-btn vy-btn-primary" disabled={busy} onClick={() => submit(true)}>
+        {d.kind === "fixed" && (
+          <section className="vy-dl-sec" aria-labelledby="cn-stages">
+            <div className="vy-dl-sec-head">
+              <span className="vy-dl-tile vy-dl-tile-teal" aria-hidden="true">
+                <ListChecks size={20} strokeWidth={1.75} />
+              </span>
+              <h2 id="cn-stages" className="vy-card-title">{t("contracts:new.milestonesLabel")}</h2>
+              <span className="vy-dl-sec-hint">{t("contracts:new.milestonesHint")}</span>
+            </div>
+            {d.milestones.map((m, i) => (
+              <div key={i} className="vy-dl-panel">
+                <div className="vy-dl-actions" style={{ justifyContent: "space-between" }}>
+                  <span className="vy-label">{t("contracts:new.msTitle", { n: i + 1 })}</span>
+                  {d.milestones.length > 1 && (
+                    <button type="button" className="vy-iconbtn" aria-label={t("contracts:new.removeMilestoneN", { n: i + 1 })} title={t("contracts:new.removeMilestone")} onClick={() => set({ milestones: d.milestones.filter((_, j) => j !== i) })}>
+                      <X size={18} strokeWidth={2} aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
+                <input className="vy-input" maxLength={200} value={m.title} aria-label={t("contracts:new.msName")} onChange={(e) => setMs(i, { title: e.target.value })} placeholder={i === 0 ? t("contracts:new.msTitlePlaceholder") : t("contracts:new.msName")} />
+                <div className="vy-field-pair">
+                  <label className="vy-field">
+                    <span className="vy-label">{t("contracts:new.msAmount")}</span>
+                    <input className="vy-input" inputMode="decimal" value={m.amount} onChange={(e) => setMs(i, { amount: e.target.value })} />
+                  </label>
+                  <label className="vy-field">
+                    <span className="vy-label">{t("contracts:new.msDue")}</span>
+                    <input className="vy-input" type="date" min={minDate} value={m.due} onChange={(e) => setMs(i, { due: e.target.value })} />
+                  </label>
+                </div>
+              </div>
+            ))}
+            <div className="vy-dl-actions">
+              {d.milestones.length < 10 && (
+                <button type="button" className="vy-btn vy-btn-secondary" onClick={() => set({ milestones: [...d.milestones, emptyMilestone()] })}>
+                  <Plus size={16} strokeWidth={2} aria-hidden="true" /> {t("contracts:new.addMilestone")}
+                </button>
+              )}
+              {totalPaise > 0 && d.milestones.length > 1 && (
+                <button type="button" className="vy-btn vy-btn-ghost" onClick={splitEven}>{t("contracts:new.splitEven")}</button>
+              )}
+              {totalPaise > 0 && left !== 0 && (
+                <button type="button" className="vy-btn vy-btn-ghost" onClick={fillLast}>{t("contracts:new.fillLast")}</button>
+              )}
+            </div>
+            {totalPaise > 0 && (
+              <div className="vy-dl-notice" data-tone={left === 0 ? "good" : left < 0 ? "bad" : "warn"} role="status" aria-live="polite">
+                {left === 0 ? <CheckCircle2 size={18} strokeWidth={1.75} aria-hidden="true" /> : <AlertTriangle size={18} strokeWidth={1.75} aria-hidden="true" />}
+                <span style={{ flex: 1 }}>
+                  {left === 0 ? t("contracts:new.balanced") : left > 0 ? t("contracts:new.remaining", { amount: money(left) }) : t("contracts:new.over", { amount: money(-left) })}
+                </span>
+                <span className="vy-dl-row-amount" style={{ fontSize: "var(--type-sm)" }}>
+                  {money(assigned)} / {money(totalPaise)}
+                </span>
+              </div>
+            )}
+          </section>
+        )}
+
+        {(problem || error) && (
+          <p className="vy-dl-notice" data-tone="bad" role="alert">
+            <AlertTriangle size={18} strokeWidth={1.75} aria-hidden="true" />
+            <span>{problem ?? error}</span>
+          </p>
+        )}
+        <div className="vy-dl-page" style={{ gap: "var(--space-2)" }}>
+          <div className="vy-dl-actions">
+            <button className="vy-btn vy-btn-primary" aria-describedby={blocker ? "cn-why" : undefined} disabled={busy || !!blocker} onClick={() => submit(true)}>
               {busy ? t("contracts:new.sending") : t("contracts:new.send", { name: counterpart })}
             </button>
-            <button className="vy-btn vy-btn-ghost" disabled={busy} onClick={() => submit(false)}>
+            <button className="vy-btn vy-btn-ghost" disabled={busy || !d.title.trim()} onClick={() => submit(false)}>
               {t("contracts:new.saveDraft")}
             </button>
           </div>
+          <DisabledReason id="cn-why" show={!!blocker && !busy}>{blocker}</DisabledReason>
         </div>
       </div>
+
       <aside className="vy-detail-aside">
-        <div className="vy-card vy-card-nested vy-stack" style={{ gap: 10 }}>
-          <strong>{t("contracts:new.howTitle")}</strong>
-          <ol className="vy-stack" style={{ gap: 8, margin: 0, paddingLeft: 18, color: "var(--text-secondary)", fontSize: 14 }}>
-            <li>{t("contracts:new.how1", { name: counterpart })}</li>
-            <li>{t("contracts:new.how2")}</li>
-            <li>{t("contracts:new.how3", { name: counterpart })}</li>
-            <li>{t("contracts:new.how4")}</li>
+        <div className="vy-dl-sec">
+          <div className="vy-dl-sec-head">
+            <span className="vy-dl-tile" aria-hidden="true">
+              <ListChecks size={20} strokeWidth={1.75} />
+            </span>
+            <h2 className="vy-card-title">{t("contracts:new.howTitle")}</h2>
+            <span className="vy-dl-sec-hint">{t("contracts:new.howHint")}</span>
+          </div>
+          <ol className="vy-dl-stages">
+            {[t("contracts:new.how1", { name: counterpart }), t("contracts:new.how2"), t("contracts:new.how3", { name: counterpart }), t("contracts:new.how4")].map((line, i) => (
+              <li key={i} className="vy-dl-stage">
+                <span className="vy-dl-stage-dot" aria-hidden="true">
+                  <span style={{ fontSize: "var(--type-xs)" }}>{i + 1}</span>
+                </span>
+                <div className="vy-dl-stage-body">
+                  <span className="vy-dl-stage-line">{line}</span>
+                </div>
+              </li>
+            ))}
           </ol>
+          <p className="vy-dl-fine">{t("contracts:sandbox.recorded")}</p>
         </div>
-        {target && <p className="vy-muted">{t("contracts:new.about", { target })}</p>}
-        <p className="vy-sandbox-note">{t("contracts:sandbox.recorded")}</p>
       </aside>
     </div>
   );

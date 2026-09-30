@@ -17,6 +17,7 @@ import AcceptancePrompt, { acceptanceKind, type LegalKind } from "@/app/componen
 import { formatRupees, rupeesToPaise } from "@/lib/money";
 import VoiceInput, { appendSpoken } from "@/app/components/VoiceInput";
 import { FieldBlock, MoneyInput, MultiChips, OptionChips, Segmented } from "@/app/components/composer/fields";
+import DisabledReason from "@/app/components/DisabledReason";
 
 const WHEN = ["today", "tomorrow", "this_week", "weekend"] as const;
 const QUESTIONS = ["photo", "address", "time", "materials", "budget"] as const;
@@ -91,10 +92,10 @@ export default function QuoteComposer({ opportunity, onSent }: { opportunity: Op
 
       {mode === "request_quote" ? (
         <>
-          <FieldBlock code="q-price" label={t("hiring:quote.price")} optional>
+          <FieldBlock code="q-price" label={t("hiring:quote.price")}>
             <MoneyInput value={price} onChange={setPrice} placeholder={t("hiring:quote.pricePlaceholder")} ariaLabel={t("hiring:quote.price")} />
           </FieldBlock>
-          <FieldBlock code="q-when" label={t("hiring:quote.when")} optional>
+          <FieldBlock code="q-when" label={t("hiring:quote.when")}>
             <OptionChips options={WHEN} value={when} onChange={setWhen} label={(v) => t(`hiring:quote.whenOption.${v}`)} />
           </FieldBlock>
         </>
@@ -104,7 +105,7 @@ export default function QuoteComposer({ opportunity, onSent }: { opportunity: Op
         </FieldBlock>
       )}
 
-      <FieldBlock code="q-note" label={t("hiring:quote.note")} optional>
+      <FieldBlock code="q-note" label={t("hiring:quote.note")}>
         <VoiceInput fieldLabel={t("hiring:quote.note")} onConfirm={(text) => setNote((v) => appendSpoken(v, text))}>
           <textarea className="vy-textarea" rows={3} maxLength={600} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("hiring:quote.notePlaceholder")} />
         </VoiceInput>
@@ -136,9 +137,10 @@ export default function QuoteComposer({ opportunity, onSent }: { opportunity: Op
           )}
         </div>
       )}
-      <button type="button" className="vy-btn vy-btn-primary vy-submit" disabled={!ready || sending} onClick={send}>
+      <button type="button" className="vy-btn vy-btn-primary vy-submit" aria-describedby={!ready ? "why-quote" : undefined} disabled={!ready || sending} onClick={send}>
         {sending ? t("hiring:apply.sending") : mode === "request_quote" ? t("hiring:quote.sendQuote") : t("hiring:quote.sendQuestion")}
       </button>
+      <DisabledReason id={"why-quote"} show={!ready}>{t("common:disabled.quote")}</DisabledReason>
       <p className="vy-field-hint">🔒 {t("hiring:apply.privacy")}</p>
     </div>
   );

@@ -8,7 +8,7 @@
   "groupCompleted": "Completed",
   "groupResponded": "Responded",
   "groupToReview": "To review",
-  "groupPartnerships": "Partnerships",
+  "groupPartnerships": "Business partnerships",
   "untitled": "Interaction",
   "status": {
     "listing": {
@@ -21,10 +21,10 @@
     },
     "opportunity": {
       "draft": "Draft",
-      "pending_review": "Pending review",
-      "active": "Active",
+      "pending_review": "Under review",
+      "active": "Open",
       "paused": "Paused",
-      "stale": "Stale",
+      "stale": "No recent update",
       "expired": "Expired",
       "closed": "Closed",
       "removed": "Removed"
@@ -49,5 +49,13 @@
       "open": "Open"
     }
   },
-  "emptyBody": "Things you save, post, respond to or complete will collect here."
+  "emptyBody": "Things you save, post, respond to or complete will collect here.",
+  "purpose": "What you saved, posted, responded to and finished.",
+  "all": "All",
+  "kind": {
+    "listing": "Profile",
+    "opportunity": "Post",
+    "enquiry": "Request",
+    "partnership": "Business partnership"
+  }
 }

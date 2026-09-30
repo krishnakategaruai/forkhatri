@@ -94,10 +94,8 @@ import teContracts from '@/locales/te/contracts.json';
 import tePackages from '@/locales/te/packages.json';
 import teExplore from '@/locales/te/explore.json';
 
-export const SUPPORTED_LANGUAGES = ['en', 'hi', 'te'] as const;
-export type Language = (typeof SUPPORTED_LANGUAGES)[number];
-
-export const DEFAULT_LANGUAGE: Language = 'en';
+import { DEFAULT_LANGUAGE, LANGUAGE_COOKIE, SUPPORTED_LANGUAGES, isSupported, type Language } from './languages';
+export { DEFAULT_LANGUAGE, LANGUAGE_COOKIE, SUPPORTED_LANGUAGES, isSupported, type Language };
 
 /** Namespaces map 1:1 to files in `locales/<lang>/`. */
 export const NAMESPACES = [
@@ -211,18 +209,22 @@ const resources = {
   },
 } as const;
 
-export function isSupported(value: string | null | undefined): value is Language {
-  return !!value && (SUPPORTED_LANGUAGES as readonly string[]).includes(value);
-}
 
 let instance: I18nInstance | null = null;
 
+// [Critique N10] On the server every request gets its OWN instance in the
+// request's language (a shared singleton would leak one visitor's language
+// into the next). In the browser there is one instance, created on the
+// first render with the language the server rendered.
 export function getI18n(initialLanguage: Language = DEFAULT_LANGUAGE): I18nInstance {
-  if (instance) return instance;
+  if (instance && typeof window !== 'undefined') return instance;
 
   const i18n = i18next.createInstance();
   void i18n.use(initReactI18next).init({
     resources,
+    // resources are bundled: initialise synchronously so the first render
+    // (server and client) is already translated
+    initAsync: false,
     lng: initialLanguage,
     fallbackLng: DEFAULT_LANGUAGE,
     ns: NAMESPACES,
@@ -244,6 +246,6 @@ export function getI18n(initialLanguage: Language = DEFAULT_LANGUAGE): I18nInsta
     },
   });
 
-  instance = i18n;
+  if (typeof window !== 'undefined') instance = i18n;
   return i18n;
 }

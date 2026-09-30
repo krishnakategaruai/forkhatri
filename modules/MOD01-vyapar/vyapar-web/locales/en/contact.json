@@ -8,7 +8,7 @@
     "unavailable": "Not available right now.",
     "takesCalls": "Takes calls {{days}}, {{hours}}.",
     "historyLabel": "Contact history",
-    "sharedBecause": "{{name}}'s number is shared because the enquiry was accepted.",
+    "sharedBecause": "{{name}}'s number is shared because the request was accepted.",
     "youContacted": "You contacted {{name}} {{channel}} on {{when}}",
     "theyContacted": "{{name}} contacted you {{channel}} on {{when}}",
     "byCall": "by call",
@@ -62,7 +62,7 @@
   },
   "tile": {
     "label": "Calls & WhatsApp",
-    "desc": "When people you accept can call or message you"
+    "desc": "When people can call or message you"
   },
   "channel": {
     "email": "Email",

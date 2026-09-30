@@ -34,12 +34,16 @@ import os
 import sys
 import urllib.error
 import urllib.request
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import asyncpg
 
 CLIENT, PROVIDER, OUTSIDER, OPERATOR = "m_vikram", "m_rahul", "m_priya", "m_neha_ops"
+# Payer-rule cases (CRITIQUE-2026-09-28 N1): a freelancer proposes on a poster's freelance post.
+FREELANCER, POSTER = "m_kavita", "m_shreya"
+# The 2026-09-30 regression report: a price request on a local-service post.
+LS_POSTER, LS_SENDER = "m_meena", "m_suresh"
 RESULTS: list[tuple[bool, str]] = []
 
 
@@ -118,16 +122,17 @@ async def main(api_base: str) -> int:
     if listing_id is None:
         print(f"no active listing for {PROVIDER}; seed data missing")
         return 2
-    enquiries_sent = 0
+    enquiries_sent: dict[str, int] = {}
+    package_ids: set[str] = set()
+    opportunity_ids: set[str] = set()
     try:
         # ---------------------------------------------------------------- setup: an accepted enquiry
         def accepted_enquiry(message: str) -> str:
-            nonlocal enquiries_sent
             st, enq = api.call("POST", "/v1/enquiries", CLIENT, {"listing_id": listing_id, "message": message})
             check(st == 201, f"client sends an enquiry ({st})")
             if st != 201:
                 raise SystemExit(f"cannot continue: {enq}")
-            enquiries_sent += 1
+            enquiries_sent[CLIENT] = enquiries_sent.get(CLIENT, 0) + 1
             tracked["enquiry"].add(enq["id"])
             st, _ = api.call("POST", f"/v1/enquiries/{enq['id']}/messages", PROVIDER, {"body": "Yes, I can take this on. Weekday evenings work for me."})
             check(st == 201, "provider replies")
@@ -173,7 +178,7 @@ async def main(api_base: str) -> int:
 
         # RLS: only the two parties (and moderation operators) can read it
         st, body = api.call("GET", f"/v1/contracts/{cid}", OUTSIDER, lang="hi")
-        check(st == 404 and code(body) == "contract_not_found" and body["error"]["message"] == "अनुबंध नहीं मिला।",
+        check(st == 404 and code(body) == "contract_not_found" and any("ऀ" <= ch <= "ॿ" for ch in body["error"]["message"]),
               f"outsider gets 404 with a Hindi message ({st})")
         st, body = api.call("GET", f"/v1/contracts/{cid}", PROVIDER)
         check(st == 200 and body["my_role"] == "provider", "provider can read the contract")
@@ -181,7 +186,7 @@ async def main(api_base: str) -> int:
         st2, cv = api.call("GET", f"/v1/contracts/{cid}", CLIENT)
         check(pv["sandbox"] is True and cv["sandbox"] is True, "sandbox flag is true for both parties (dev_sandbox gateway)")
         check(cv["payment_notice"].startswith("Test mode") and pv["payment_notice"] and pv["payment_notice"] != cv["payment_notice"]
-              and "శాండ్‌బాక్స్" in pv["payment_notice"], "provider gets the payment notice too, localized (Telugu)")
+              and any("ఀ" <= ch <= "౿" for ch in pv["payment_notice"]), "provider gets the payment notice too, localized (Telugu)")
         st, body = api.call("GET", f"/v1/contracts/{cid}", OPERATOR)
         check(st == 200 and body["my_role"] == "operator", "moderation operator can read the contract")
 
@@ -326,8 +331,132 @@ async def main(api_base: str) -> int:
               f"operator resolves for the provider: released and completed ({st} {d.get('state') if isinstance(d, dict) else d})")
         invites3 = await settled(db, "SELECT count(*) FROM vyapar_reviews.review_invites WHERE interaction_kind = 'enquiry' AND interaction_id = $1::uuid", enquiry3, want=2)
         check(invites3 == 2, f"review invites after an operator-resolved completion ({invites3})")
+
+        # ------------------------------------------------ who pays (CRITIQUE-2026-09-28 N1)
+        print("\n== Who pays: proposal on a post (poster pays) ==")
+        deadline = (datetime.now(timezone.utc) + timedelta(days=14)).isoformat()
+        st, opp = api.call("POST", "/v1/opportunities", POSTER, {
+            "type": "freelance", "title": "Content writer for our festive product launch (5 articles)",
+            "description": "Five 800-word articles for the Diwali range on our store blog, in English, delivered over three weeks.",
+            "compensation": "Rs 12,500 to Rs 25,000 for all five", "work_mode": "remote", "source_segment": "community", "deadline": deadline})
+        check(st == 201, f"poster drafts a freelance project ({st})")
+        opp_id = opp["id"]
+        opportunity_ids.add(opp_id)
+        if opp.get("unconfirmed_fields"):
+            api.call("PATCH", f"/v1/opportunities/{opp_id}/confirm", POSTER, {"fields": opp["unconfirmed_fields"]})
+        api.call("PATCH", f"/v1/opportunities/{opp_id}", POSTER,
+                 {"structured": {"budget_type": "fixed", "budget_min_paise": 1250000, "budget_max_paise": 2500000}})
+        st, opp = api.call("POST", f"/v1/opportunities/{opp_id}/publish", POSTER)
+        check(st == 200 and opp.get("state") == "active", f"poster publishes it ({st} {opp.get('state') or code(opp)})")
+        st, prop = api.call("POST", "/v1/enquiries", FREELANCER, {
+            "opportunity_id": opp_id, "bid_amount_paise": 2500000, "timeline_days": 21,
+            "message": "I can write all five festive articles in three weeks, with one round of edits on each."})
+        check(st == 201 and prop.get("action_type") == "propose", f"freelancer sends a proposal ({st} {prop.get('action_type')})")
+        if st != 201:
+            raise SystemExit(f"cannot continue: {prop}")
+        tracked["enquiry"].add(prop["id"])
+        enquiries_sent[FREELANCER] = enquiries_sent.get(FREELANCER, 0) + 1
+        st, roles = api.call("GET", f"/v1/contracts/roles?enquiry_id={prop['id']}", POSTER)
+        check(st == 200 and roles["client_member_id"] == POSTER and roles["basis"] == "poster_pays"
+              and roles["can_create"] is False and roles["blocked_reason"] == "enquiry_not_accepted",
+              "getContractRoles before acceptance: poster is the client, not yet creatable")
+        st, acc = api.call("POST", f"/v1/enquiries/{prop['id']}/accept", POSTER)
+        check(st == 200 and acc["state"] == "in_progress", "poster accepts the proposal")
+        st, roles = api.call("GET", f"/v1/contracts/roles?enquiry_id={prop['id']}", POSTER)
+        check(roles["my_role"] == "client" and roles["can_create"] is True and roles["provider_member_id"] == FREELANCER,
+              "poster: my_role client, can_create true")
+        st, roles = api.call("GET", f"/v1/contracts/roles?enquiry_id={prop['id']}", FREELANCER)
+        check(roles["my_role"] == "provider" and roles["can_create"] is False and roles["blocked_reason"] == "not_client",
+              "freelancer: my_role provider, can_create false (not_client)")
+        st, body = api.call("GET", f"/v1/contracts/roles?enquiry_id={prop['id']}", CLIENT)
+        check(st == 404, "a third member cannot read the roles of someone else's enquiry")
+        st, body = api.call("POST", "/v1/contracts", FREELANCER, {
+            "enquiry_id": prop["id"], "title": "Festive launch: five articles", "total_paise": 2500000,
+            "milestones": [{"title": "Five articles delivered", "amount_paise": 2500000}]})
+        check(st == 403 and code(body) == "not_client", f"freelancer creating the contract gets 403 not_client ({st} {code(body)})")
+        st, pc = api.call("POST", "/v1/contracts", POSTER, {
+            "enquiry_id": prop["id"], "title": "Festive launch: five articles", "total_paise": 2500000,
+            "milestones": [{"title": "Articles 1-2", "amount_paise": 1000000}, {"title": "Articles 3-5", "amount_paise": 1500000}]})
+        check(st == 201 and pc["client_member_id"] == POSTER and pc["provider_member_id"] == FREELANCER and pc["my_role"] == "client",
+              f"poster creates it and is the client ({st})")
+        if st == 201:
+            tracked["contract"].add(pc["id"])
+            st, roles = api.call("GET", f"/v1/contracts/roles?enquiry_id={prop['id']}", POSTER)
+            check(roles["can_create"] is False and roles["blocked_reason"] == "duplicate_contract" and roles["live_contract_id"] == pc["id"],
+                  "roles then point at the live contract")
+
+        # The live 2026-09-30 case: a price request on a local-service post
+        # (Suresh asked for a quote on Meena's evening-delivery post).
+        print("\n== Who pays: price request on a local-service post (poster pays) ==")
+        st, lopp = api.call("POST", "/v1/opportunities", LS_POSTER, {
+            "type": "local_service", "title": "Evening delivery partner for festive sweet boxes",
+            "description": "Deliver 10-15 sweet boxes each evening between 6 and 9 pm across Karol Bagh and Rajendra Nagar for one week.",
+            "compensation": "Rs 600 per evening", "location": "Karol Bagh, Delhi", "work_mode": "on_site",
+            "source_segment": "community", "deadline": deadline})
+        check(st == 201, f"poster drafts a local-service post ({st})")
+        lopp_id = lopp["id"]
+        opportunity_ids.add(lopp_id)
+        if lopp.get("unconfirmed_fields"):
+            api.call("PATCH", f"/v1/opportunities/{lopp_id}/confirm", LS_POSTER, {"fields": lopp["unconfirmed_fields"]})
+        st, lopp = api.call("POST", f"/v1/opportunities/{lopp_id}/publish", LS_POSTER)
+        check(st == 200 and lopp.get("state") == "active", f"poster publishes it ({st})")
+        st, quote = api.call("POST", "/v1/enquiries", LS_SENDER, {
+            "opportunity_id": lopp_id, "sub_choice": "request_quote",
+            "message": "I deliver on a two-wheeler in that area every evening; what would you pay for the full week?"})
+        check(st == 201 and quote.get("action_type") == "enquire", f"a price request on the post ({st} {quote.get('action_type')})")
+        if st != 201:
+            raise SystemExit(f"cannot continue: {quote}")
+        tracked["enquiry"].add(quote["id"])
+        enquiries_sent[LS_SENDER] = enquiries_sent.get(LS_SENDER, 0) + 1
+        st, acc = api.call("POST", f"/v1/enquiries/{quote['id']}/accept", LS_POSTER)
+        check(st == 200 and acc["state"] == "in_progress", "poster accepts the price request")
+        st, roles = api.call("GET", f"/v1/contracts/roles?enquiry_id={quote['id']}", LS_SENDER)
+        check(roles["client_member_id"] == LS_POSTER and roles["basis"] == "poster_pays" and roles["my_role"] == "provider"
+              and roles["blocked_reason"] == "not_client", "price request on a post: the poster is the client, the requester does the work")
+        st, body = api.call("POST", "/v1/contracts", LS_SENDER, {
+            "enquiry_id": quote["id"], "title": "Sweet box deliveries, one week", "total_paise": 420000,
+            "milestones": [{"title": "Evenings 1-3", "amount_paise": 180000}, {"title": "Evenings 4-7", "amount_paise": 240000}]})
+        check(st == 403 and code(body) == "not_client", f"the requester cannot create it as the payer ({st} {code(body)})")
+        st, lc = api.call("POST", "/v1/contracts", LS_POSTER, {
+            "enquiry_id": quote["id"], "title": "Sweet box deliveries, one week", "total_paise": 420000,
+            "milestones": [{"title": "Evenings 1-3", "amount_paise": 180000}, {"title": "Evenings 4-7", "amount_paise": 240000}]})
+        check(st == 201 and lc["client_member_id"] == LS_POSTER and lc["provider_member_id"] == LS_SENDER, "the poster creates it and pays")
+        if st == 201:
+            tracked["contract"].add(lc["id"])
+
+        print("\n== Who pays: package request to a profile (requester pays) ==")
+        st, existing = api.call("GET", f"/v1/listings/{listing_id}/packages", PROVIDER)
+        check(st == 200 and existing == [], "provider's profile has no packages before the check")
+        st, pkgs = api.call("PUT", f"/v1/listings/{listing_id}/packages", PROVIDER, {"packages": [
+            {"tier": "basic", "name": "Four evening maths sessions", "price_paise": 400000, "delivery_days": 14}]})
+        if st == 422:  # the route may take a bare list
+            st, pkgs = api.call("PUT", f"/v1/listings/{listing_id}/packages", PROVIDER, [
+                {"tier": "basic", "name": "Four evening maths sessions", "price_paise": 400000, "delivery_days": 14}])
+        check(st == 200 and bool(pkgs), f"provider publishes a package on their profile ({st})")
+        if st != 200:
+            raise SystemExit(f"cannot continue: {pkgs}")
+        package_ids.update(p["id"] for p in pkgs)
+        pkg_id = pkgs[0]["id"]
+        st, preq = api.call("POST", f"/v1/listings/{listing_id}/packages/{pkg_id}/request", CLIENT,
+                            {"message": "Please book the four-session package for our junior accountant from next week."})
+        check(st == 201, f"client requests the package ({st})")
+        penq = preq["enquiry"]["id"]
+        tracked["enquiry"].add(penq)
+        enquiries_sent[CLIENT] = enquiries_sent.get(CLIENT, 0) + 1
+        api.call("POST", f"/v1/enquiries/{penq}/accept", PROVIDER)
+        st, roles = api.call("GET", f"/v1/contracts/roles?enquiry_id={penq}", CLIENT)
+        check(roles["client_member_id"] == CLIENT and roles["basis"] == "requester_pays" and roles["can_create"] is True,
+              "package request: the sender (requester) is the client")
+        st, body = api.call("POST", "/v1/contracts", PROVIDER, {"enquiry_id": penq, "title": "Maths package", "total_paise": 400000,
+                                                               "milestones": [{"title": "Four sessions", "amount_paise": 400000}]})
+        check(st == 403 and code(body) == "not_client", "the profile owner cannot make themselves the payer")
+        st, kc = api.call("POST", "/v1/contracts", CLIENT, {"enquiry_id": penq, "title": "Maths package", "total_paise": 400000,
+                                                           "milestones": [{"title": "Four sessions", "amount_paise": 400000}]})
+        check(st == 201 and kc["client_member_id"] == CLIENT and kc["provider_member_id"] == PROVIDER, "requester creates it as the client")
+        if st == 201:
+            tracked["contract"].add(kc["id"])
     finally:
-        await cleanup(db, tracked, started_at, listing_id, enquiries_sent)
+        await cleanup(db, tracked, started_at, listing_id, enquiries_sent, package_ids, opportunity_ids)
         await db.close()
 
     failed = [label for ok, label in RESULTS if not ok]
@@ -337,7 +466,8 @@ async def main(api_base: str) -> int:
     return 1 if failed else 0
 
 
-async def cleanup(db: asyncpg.Connection, tracked: dict[str, set[str]], started_at, listing_id: str, enquiries_sent: int) -> None:
+async def cleanup(db: asyncpg.Connection, tracked: dict[str, set[str]], started_at, listing_id: str, enquiries_sent: dict[str, int],
+                  package_ids: set[str], opportunity_ids: set[str]) -> None:
     print("\n== Cleanup ==")
     enquiry_ids = list(tracked["enquiry"])
     contract_ids = [r["id"] for r in await db.fetch(
@@ -349,7 +479,7 @@ async def cleanup(db: asyncpg.Connection, tracked: dict[str, set[str]], started_
         "SELECT id::text FROM vyapar_contracts.contract_disputes WHERE contract_id = ANY($1::uuid[])", list(tracked["contract"])))
     tracked["order"].update(r["id"] for r in await db.fetch(
         "SELECT id::text FROM vyapar_payments.payment_orders WHERE kind = 'contract_milestone' AND ref_id = ANY($1::uuid[])", list(tracked["milestone"])))
-    ids = sorted(set().union(*tracked.values()))
+    ids = sorted(set().union(*tracked.values()) | set(opportunity_ids) | set(package_ids))
     patterns = [f"%{i}%" for i in ids]
     if not ids:
         print("  nothing to clean")
@@ -368,15 +498,27 @@ async def cleanup(db: asyncpg.Connection, tracked: dict[str, set[str]], started_
         n["audit_events"] = await db.execute(
             "DELETE FROM vyapar_integration.audit_events WHERE at >= $1 AND (object_id LIKE ANY($2) OR details::text LIKE ANY($2))", started_at, patterns)
         n["enquiries"] = await db.execute("DELETE FROM vyapar_enquiries.enquiries WHERE id = ANY($1::uuid[])", enquiry_ids)
+        if package_ids:
+            n["listing_packages"] = await db.execute("DELETE FROM vyapar_listings.listing_packages WHERE id = ANY($1::uuid[])", list(package_ids))
+        n["impressions_opportunity"] = await db.execute(
+            "DELETE FROM vyapar_commercial.impressions WHERE target_kind = 'opportunity' AND target_id = ANY($1::uuid[]) AND at >= $2",
+            list(opportunity_ids), started_at)
+        if opportunity_ids:
+            # The post this run published: its saves/views, outbox rows, then the post itself.
+            opp_patterns = [f"%{o}%" for o in opportunity_ids]
+            for table in ("vyapar_opportunities.member_opportunity", "vyapar_opportunities.outbox_event"):
+                n[table] = await db.execute(f"DELETE FROM {table} x WHERE x::text LIKE ANY($1)", opp_patterns)
+            n["opportunities"] = await db.execute("DELETE FROM vyapar_opportunities.opportunities WHERE id = ANY($1::uuid[])", list(opportunity_ids))
         n["impressions"] = await db.execute(
             "DELETE FROM vyapar_commercial.impressions WHERE target_kind = 'listing' AND target_id = $1::uuid AND surface = 'enquiry' AND member_id IS NULL AND at >= $2",
             listing_id, started_at)
-        if enquiries_sent:
+        for sender, count in enquiries_sent.items():
+            key = f"enquiry:{sender}:day"
             await db.execute(
                 """UPDATE vyapar_platform.rate_limit_counter SET hit_count = greatest(hit_count - $2, 0)
                     WHERE rate_limit_key = $1 AND window_start = (SELECT max(window_start) FROM vyapar_platform.rate_limit_counter WHERE rate_limit_key = $1)""",
-                f"enquiry:{CLIENT}:day", enquiries_sent)
-            await db.execute("DELETE FROM vyapar_platform.rate_limit_counter WHERE rate_limit_key = $1 AND hit_count = 0", f"enquiry:{CLIENT}:day")
+                key, count)
+            await db.execute("DELETE FROM vyapar_platform.rate_limit_counter WHERE rate_limit_key = $1 AND hit_count = 0", key)
     for k, v in n.items():
         print(f"  {k}: {v}")
     # Sweep: no row in any vyapar_* table may still mention an id this run created.

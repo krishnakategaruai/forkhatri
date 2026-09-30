@@ -11,7 +11,8 @@
 // The menu adds Text size (Normal / Large / Larger — the whole UI scales,
 // all type is rem) and High contrast, for older readers and bright
 // sunlight; both also follow the OS settings.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { usePopoverDismiss } from "@/lib/usePopoverDismiss";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { Check, Globe } from "lucide-react";
@@ -27,24 +28,15 @@ export default function LanguageSwitcher() {
   const [open, setOpen] = useState(false);
   const [size, setSize] = useState<TextSize>("m");
   const [more, setMore] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = usePopoverDismiss(open, () => setOpen(false));
 
   useEffect(() => {
-    setSize(getTextSize());
-    setMore(getContrast() === "more");
+    // localStorage is read after mount (never during SSR).
+    queueMicrotask(() => {
+      setSize(getTextSize());
+      setMore(getContrast() === "more");
+    });
   }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && setOpen(false);
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    document.addEventListener("mousedown", onDown);
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
 
   function choose(lang: Language) {
     void i18n.changeLanguage(lang);

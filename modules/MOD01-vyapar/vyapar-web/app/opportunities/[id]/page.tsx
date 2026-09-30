@@ -65,7 +65,7 @@ export default function OpportunityDetailPage({ params }: { params: Promise<{ id
   if (error)
     return (
       <Screen>
-        <EmptyState mark="⚠" title={t("common:state.notFound")} body={error} />
+        <EmptyState mark="⚠" title={t("common:state.notFound")} body={error && error !== t("common:state.notFound") ? error : t("opportunities:detail.goneBody")} />
       </Screen>
     );
   if (!opp)

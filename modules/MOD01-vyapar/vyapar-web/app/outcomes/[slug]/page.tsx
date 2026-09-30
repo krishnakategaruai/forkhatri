@@ -3,29 +3,31 @@
 // [FE2 — research §5] /outcomes/[slug] — "Get my home repaired", "Build my
 // website"… One outcome, in plain words: what Vyapar does for it, the
 // specialties that do it (with the taxonomy's own one-line descriptions),
-// profiles that match right now (the existing directory search, by the
-// outcome's skills), and one primary action, "Post this", which opens the
-// composer already set to the right kind of post and skills
-// (/opportunities/new?type=&skills=). Desktop: copy and specialties on the
-// left, the "Post this" card sticky on the right; profiles in a grid below.
+// profiles that match right now (the directory search, by the outcome's
+// skills), and one primary action, "Post this", which opens the composer
+// already set to the right kind of post and skills.
+// [Design language 2026-09-29] Specialties as trade tiles with their word
+// (§8), profiles as the directory's ProfileCard (§10), the "Post this" card
+// sticky on the right; the whole page in the same language as Discover.
 import { use } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
+import { ChevronRight, Send } from "lucide-react";
 import type { SearchResponse, TaxonomyTree } from "@/lib/sdk";
 import { useSdk } from "@/lib/sdk/react";
 import Screen from "@/app/components/Screen";
-import LivingCard from "@/app/components/LivingCard";
-import { EmptyState, SkeletonGrid } from "@/app/components/States";
-import { useReputationText } from "@/app/components/Reputation";
-import { BadgeList } from "@/app/components/trust/Badges";
+import ProfileCard from "@/app/components/businesses/ProfileCard";
+import { SkeletonGrid } from "@/app/components/States";
+import DealsEmpty from "@/app/components/deals/Empty";
 import { useResource } from "@/app/hooks/useResource";
 import { OUTCOMES, outcomeBySlug, postHref } from "@/app/components/explore/outcomes";
+import { categoryVisual, specialtyVisual } from "@/app/components/discover/trades";
+import "@/app/styles/deals-2026.css";
 
 export default function OutcomePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   const { t } = useTranslation(["explore", "discover", "common"]);
   const sdk = useSdk();
-  const reputationText = useReputationText();
   const outcome = outcomeBySlug(slug);
   const tree = useResource<TaxonomyTree | null>(() => sdk.taxonomy.tree(), [sdk], { fallback: null });
   // The viewer's own profiles are never offered back to them as "people who can do it".
@@ -45,8 +47,19 @@ export default function OutcomePage({ params }: { params: Promise<{ slug: string
 
   if (!outcome) {
     return (
-      <Screen>
-        <EmptyState mark="◌" title={t("common:state.notFound")} action={<Link className="vy-btn vy-btn-secondary" href="/" style={{ textDecoration: "none" }}>{t("explore:filters.backToDiscover")}</Link>} />
+      <Screen width="wide">
+        <div className="vy-dl-page">
+          <DealsEmpty
+            tone="neutral"
+            icon={<Send size={24} strokeWidth={1.75} aria-hidden="true" />}
+            title={t("common:state.notFound")}
+            action={
+              <Link className="vy-btn vy-btn-secondary" href="/" style={{ textDecoration: "none" }}>
+                {t("explore:filters.backToDiscover")}
+              </Link>
+            }
+          />
+        </div>
       </Screen>
     );
   }
@@ -57,89 +70,99 @@ export default function OutcomePage({ params }: { params: Promise<{ slug: string
     .sort((a, b) => outcome.skills.indexOf(a.slug) - outcome.skills.indexOf(b.slug));
   const results = profiles.data?.results ?? null;
   const others = OUTCOMES.filter((o) => o.slug !== slug);
+  const Hero = categoryVisual(outcome.category);
+  const HeroIcon = Hero.icon;
 
   return (
     <Screen width="wide">
-      <div className="vy-detail">
-        <div className="vy-detail-main">
-          <div className="vy-outcome-hero">
-            <span className="vy-eyebrow">{t("explore:outcome.eyebrow")}</span>
-            <h1>{t(`explore:outcome.${slug}.title`)}</h1>
-            <p>{t(`explore:outcome.${slug}.lead`)}</p>
-            <p className="vy-muted">{t("explore:outcome.how")}</p>
+      <div className="vy-dl-page">
+        <div className="vy-detail">
+          <div className="vy-detail-main">
+            <div className="vy-dl-head">
+              <span className={`vy-trade-tile vy-trade-${Hero.family}`} style={{ width: 56, height: 56, borderRadius: "var(--radius-tile)" }} aria-hidden="true">
+                <HeroIcon size={28} strokeWidth={1.75} />
+              </span>
+              <span className="vy-eyebrow">{t("explore:outcome.eyebrow")}</span>
+              <h1>{t(`explore:outcome.${slug}.title`)}</h1>
+              <p>{t(`explore:outcome.${slug}.lead`)}</p>
+              <p className="vy-dl-fine">{t("explore:outcome.how")}</p>
+            </div>
+
+            <section className="vy-dl-page" style={{ gap: "var(--space-3)" }} aria-labelledby="spec-title">
+              <h2 id="spec-title" className="vy-section-title">{t("explore:outcome.whoDoesIt")}</h2>
+              {tree.data === null && tree.loading ? (
+                <SkeletonGrid count={3} />
+              ) : (
+                <div className="vy-dl-list">
+                  {specialties.map((s) => {
+                    const v = specialtyVisual(s.slug);
+                    const Icon = v.icon;
+                    return (
+                      <Link key={s.slug} className="vy-dl-row" href={`/businesses?category=${outcome.category}&skills=${s.slug}`}>
+                        <span className={`vy-trade-tile vy-trade-${v.family}`} aria-hidden="true">
+                          <Icon size={22} strokeWidth={1.9} />
+                        </span>
+                        <span className="vy-dl-row-body">
+                          <span className="vy-dl-row-title">{s.label}</span>
+                          {s.description && <span className="vy-dl-row-meta"><span>{s.description}</span></span>}
+                        </span>
+                        <span className="vy-dl-row-aside">
+                          <ChevronRight size={18} strokeWidth={2} aria-hidden="true" style={{ color: "var(--text-tertiary)" }} />
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
           </div>
 
-          <section className="vy-stack" style={{ gap: 10 }} aria-labelledby="spec-title">
-            <h2 id="spec-title" className="vy-section-title">{t("explore:outcome.whoDoesIt")}</h2>
-            {tree.data === null && tree.loading ? (
-              <SkeletonGrid count={3} />
-            ) : (
-              <div className="vy-spec-grid">
-                {specialties.map((s) => (
-                  <Link key={s.slug} className="vy-card vy-spec" href={`/businesses?category=${outcome.category}&skills=${s.slug}`}>
-                    <strong>{s.label}</strong>
-                    {s.description && <span className="vy-muted">{s.description}</span>}
-                  </Link>
-                ))}
+          <aside className="vy-detail-aside">
+            <div className="vy-dl-sec">
+              <div className="vy-dl-sec-head">
+                <span className="vy-dl-tile vy-dl-tile-brand" aria-hidden="true"><Send size={20} strokeWidth={1.75} /></span>
+                <h2 className="vy-card-title">{t(`explore:outcome.${slug}.postTitle`)}</h2>
+                <span className="vy-dl-sec-hint">{t(`explore:outcome.${slug}.postBody`)}</span>
               </div>
-            )}
-          </section>
+              <Link className="vy-btn vy-btn-primary" href={postHref(outcome)} style={{ textDecoration: "none", textAlign: "center" }}>
+                {t("explore:outcome.postThis")}
+              </Link>
+              <p className="vy-dl-fine">{t("explore:outcome.free")}</p>
+            </div>
+          </aside>
         </div>
 
-        <aside className="vy-detail-aside">
-          <div className="vy-card vy-stack" style={{ gap: 12 }}>
-            <strong>{t(`explore:outcome.${slug}.postTitle`)}</strong>
-            <p style={{ fontSize: 14 }}>{t(`explore:outcome.${slug}.postBody`)}</p>
-            <Link className="vy-btn vy-btn-primary" href={postHref(outcome)} style={{ textDecoration: "none", textAlign: "center" }}>
-              {t("explore:outcome.postThis")}
+        <section className="vy-dl-page" style={{ gap: "var(--space-3)" }} aria-labelledby="profiles-title">
+          <div className="vy-dl-head-row">
+            <h2 id="profiles-title" className="vy-section-title">{t("explore:outcome.profiles")}</h2>
+            <Link className="vy-dl-link vy-dl-inline-icon" href={`/businesses?category=${outcome.category}&skills=${outcome.skills.join(",")}`}>
+              {t("explore:outcome.seeAllProfiles")} <ChevronRight size={16} strokeWidth={2} aria-hidden="true" />
             </Link>
-            <p className="vy-muted">{t("explore:outcome.free")}</p>
           </div>
-        </aside>
-      </div>
+          {results === null ? (
+            profiles.loading ? <SkeletonGrid count={3} /> : null
+          ) : results.length === 0 ? (
+            <p className="vy-dl-hint">{t("explore:outcome.noProfiles")}</p>
+          ) : (
+            <div className="vy-grid vy-grid-3">
+              {results.slice(0, 6).map((r) => (
+                <ProfileCard key={r.listing.id} result={r} />
+              ))}
+            </div>
+          )}
+        </section>
 
-      <section className="vy-stack" style={{ gap: 12 }} aria-labelledby="profiles-title">
-        <div className="vy-row" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-          <h2 id="profiles-title" className="vy-section-title">{t("explore:outcome.profiles")}</h2>
-          <Link className="vy-link-btn" href={`/businesses?category=${outcome.category}&skills=${outcome.skills.join(",")}`}>
-            {t("explore:outcome.seeAllProfiles")}
-          </Link>
-        </div>
-        {results === null ? (
-          profiles.loading ? <SkeletonGrid count={3} /> : null
-        ) : results.length === 0 ? (
-          <p className="vy-muted">{t("explore:outcome.noProfiles")}</p>
-        ) : (
-          <div className="vy-grid vy-grid-3">
-            {results.slice(0, 6).map((r, i) => (
-              <LivingCard
-                key={r.listing.id}
-                index={i}
-                href={`/listings/${r.listing.id}`}
-                morphName={`listing-${r.listing.id}`}
-                title={r.listing.name}
-                subtitle={`${r.listing.locality} · ${[...r.listing.category_labels, ...r.listing.capability_labels].join(", ")}`}
-                verified={r.listing.verification_state === "verified"}
-                verificationLabel={t("discover:businesses.verifiedLabel")}
-                meta={[reputationText(r.listing.reputation), r.distance_km != null ? t("discover:businesses.distanceAway", { km: r.distance_km }) : null].filter(Boolean).join(" · ")}
-              >
-                <BadgeList badges={r.listing.badges} compact max={3} />
-              </LivingCard>
+        <section className="vy-dl-page" style={{ gap: "var(--space-3)" }} aria-labelledby="more-title">
+          <h2 id="more-title" className="vy-section-title">{t("explore:outcome.more")}</h2>
+          <div className="vy-dl-tags">
+            {others.map((o) => (
+              <Link key={o.slug} href={`/outcomes/${o.slug}`} className="vy-chip" style={{ textDecoration: "none" }}>
+                {t(`explore:outcome.${o.slug}.title`)}
+              </Link>
             ))}
           </div>
-        )}
-      </section>
-
-      <section className="vy-stack" style={{ gap: 10 }} aria-labelledby="more-title">
-        <h2 id="more-title" className="vy-section-title">{t("explore:outcome.more")}</h2>
-        <div className="vy-row" style={{ flexWrap: "wrap", gap: 8 }}>
-          {others.map((o) => (
-            <Link key={o.slug} href={`/outcomes/${o.slug}`} className="vy-chip" style={{ textDecoration: "none" }}>
-              {t(`explore:outcome.${o.slug}.title`)}
-            </Link>
-          ))}
-        </div>
-      </section>
+        </section>
+      </div>
     </Screen>
   );
 }

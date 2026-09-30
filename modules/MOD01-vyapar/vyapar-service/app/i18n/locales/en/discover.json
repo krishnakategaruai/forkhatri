@@ -1,24 +1,27 @@
 {
   "section": {
-    "for_you": "For You",
-    "explore": "Explore",
-    "near_you": "Near You",
-    "community": "Community",
-    "public": "Public"
+    "for_you": "For you",
+    "explore": "More to explore",
+    "near_you": "Near you",
+    "community": "From your community",
+    "public": "Shared from elsewhere"
   },
   "notice": {
     "rateLimited": "Too many searches — please slow down.",
-    "degraded": "Search is temporarily unavailable — showing recently added listings instead.",
-    "noMatch": "No exact match found."
+    "degraded": "Search is temporarily unavailable — showing recently added profiles instead.",
+    "noMatch": "No exact match found.",
+    "widenedRadius": "Nothing close to {place}. Showing results within {km} km.",
+    "droppedPlace": "Nothing near {place}. Showing results from everywhere.",
+    "anyWord": "Nothing had every word you typed. Showing results with some of them."
   },
   "broaden": {
     "radius": "Widen to {km} km",
     "adjacent_categories": "Include adjacent categories",
     "remove_filter": "Remove one filter",
-    "include_unverified": "Include unverified listings"
+    "include_unverified": "Include unverified profiles"
   },
   "enrichment": {
-    "sparseProfile": "Add what you can do to your professional listing to see opportunities picked just for you."
+    "sparseProfile": "Add what you can do to your work profile to see posts picked just for you."
   },
   "error": {
     "tooManySavedSearches": "You can keep at most {max} saved searches. Delete one first.",

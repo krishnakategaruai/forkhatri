@@ -2,36 +2,35 @@
 
 // [TR015/TR017] Businesses & Professionals — standalone search/browse
 // surface (FR15 DEC-001: distinct from the Opportunity feed, works with
-// zero Opportunities in the system). Uses <IntentBar> instead of a
-// conventional multi-dropdown filter form per the design direction — fewer
-// taps for the common case ("plumber near Ameerpet" is one field, not four
-// separate pickers). Zero-result responses render FR17's explicit,
-// labelled broadening chips — never a silent filter relaxation.
-// [Product-owner i18n rule] `notice`/`broadening_options[].label`/
-// `relevance_reason` from the API are now i18n KEYS (discovery.py's own
-// i18n conversion) — this page translates them via discover.json/
-// ranking.json, never renders them as raw English/key text.
-// [IMP38 — Refactor C] Now only the route: search state and the query
-// building live here, the request goes through useListingSearch (SDK; the
-// last search re-runs on a live language switch), the markup is
-// <BusinessesView>.
+// zero Opportunities in the system). Zero-result responses render FR17's
+// explicit, labelled broadening options — never a silent relaxation.
+// [Product-owner i18n rule] `notice` / `broadening_options[].label` /
+// `relevance_reason` from the API are i18n KEYS, translated in the view.
+//
+// [2026-09-30 rebuild — owner: "boring and weak", "i really hate filters
+// section"] The route owns search state only:
+//   - the text searches as you type (debounced 350ms), no Search button;
+//   - the directory shows everyone on arrival (an empty query browses);
+//   - filters are structured state sent with every search (Trade, Distance,
+//     Available, Verified, More), set from the dropdown bar;
+//   - the URL (?q=&category=&skills=&locality=) seeds it, so the Hire menu,
+//     Discover's tab and outcome pages still land on a filtered directory.
+// The request goes through useListingSearch (SDK); markup is <BusinessesView>.
 // Traces to: FR15, FR16, FR17, TR015, TR016, TR017
 import { use, useEffect, useRef, useState } from "react";
 import type { ListingSearchParams } from "@/lib/sdk";
-import type { ParsedIntent } from "@/app/components/IntentBar";
 import { DEFAULT_FILTERS, type Filters } from "@/app/components/FilterSheet";
 import Screen from "@/app/components/Screen";
-import BusinessesView from "@/app/components/businesses/BusinessesView";
+import BusinessesView, { type BizFilters } from "@/app/components/businesses/BusinessesView";
 import { useListingSearch } from "@/app/hooks/listings";
 
-function buildParams(intent: ParsedIntent, attempt: number, f: Filters, extraParams: Record<string, string> = {}): ListingSearchParams {
+type BusinessesQuery = { q?: string; category?: string; locality?: string; skills?: string };
+
+function buildParams(q: string, f: BizFilters, attempt: number, extra: Record<string, string> = {}): ListingSearchParams {
   const params: ListingSearchParams = {};
-  if (intent.text) params.q = intent.text;
-  // [Third critique pass fix] intent.category is now a real taxonomy
-  // slug from IntentBar's own suggestion fetch, never a label needing a
-  // lossy space-to-underscore guess.
-  if (intent.category) params.category = intent.category;
-  if (intent.locality) params.locality = intent.locality;
+  if (q.trim()) params.q = q.trim();
+  if (f.category) params.category = f.category;
+  if (f.locality) params.locality = f.locality;
   if (f.radius_km) params.radius_km = String(f.radius_km);
   if (f.service_mode) params.service_mode = f.service_mode;
   if (f.availability) params.availability = f.availability;
@@ -39,88 +38,76 @@ function buildParams(intent: ParsedIntent, attempt: number, f: Filters, extraPar
   if (f.skills && f.skills.length > 0) params.skills = f.skills;
   params.sort_by = f.sort_by;
   params.broaden_attempt = attempt;
-  Object.entries(extraParams).forEach(([k, v]) => (params[k] = v));
+  Object.entries(extra).forEach(([k, v]) => (params[k] = v));
   return params;
 }
 
-// [FE2] The page now reads its URL (?q=&category=&locality=&skills=) and runs
-// that search on arrival — Discover's search box, the desktop Hire menu and
-// the outcome pages all link here with a query. Before this, those links
-// landed on an empty directory.
-type BusinessesQuery = { q?: string; category?: string; locality?: string; skills?: string };
+function fromQuery(query: BusinessesQuery): BizFilters {
+  return {
+    ...(DEFAULT_FILTERS as Filters),
+    skills: query.skills ? query.skills.split(",").filter(Boolean) : undefined,
+    category: query.category ?? null,
+    locality: query.locality ?? null,
+  };
+}
 
 export default function BusinessesPage({ searchParams }: { searchParams: Promise<BusinessesQuery> }) {
   const query = use(searchParams);
-  const [lastQuery, setLastQuery] = useState<ParsedIntent | null>(null);
-  const [broadenAttempt, setBroadenAttempt] = useState(0);
-  // [Real regression fix — FR15/FR17/FR19, coordinator direction] the
-  // free-text IntentBar had quietly become the ONLY way to narrow results.
-  // `filters` is real, structured state independent of the parsed intent —
-  // both are sent together on every search, and the intent bar is now a
-  // shortcut INTO these filters (it can set locality/category), never the
-  // only path to them.
-  const [filters, setFilters] = useState<Filters>(() =>
-    query.skills ? { ...DEFAULT_FILTERS, skills: query.skills.split(",").filter(Boolean) } : DEFAULT_FILTERS,
-  );
-  const { response, loading, search } = useListingSearch();
-  const ranFor = useRef<string | null>(null);
   const queryKey = JSON.stringify(query);
+  const [q, setQ] = useState(query.q ?? "");
+  const [filters, setFilters] = useState<BizFilters>(() => fromQuery(query));
+  const [attempt, setAttempt] = useState(0);
+  const { response, loading, search } = useListingSearch();
 
-  async function runSearch(intent: ParsedIntent, attempt = 0, extraParams: Record<string, string> = {}, f: Filters = filters) {
-    setLastQuery(intent);
-    setBroadenAttempt(attempt);
-    await search(buildParams(intent, attempt, f, extraParams));
-  }
-
+  // A new URL (Hire menu, a link) re-seeds the state.
+  const seeded = useRef(queryKey);
   useEffect(() => {
-    if (ranFor.current === queryKey) return;
-    ranFor.current = queryKey;
-    if (!query.q && !query.category && !query.locality && !query.skills) return;
-    const f: Filters = query.skills ? { ...DEFAULT_FILTERS, skills: query.skills.split(",").filter(Boolean) } : DEFAULT_FILTERS;
-    const intent: ParsedIntent = { text: query.q ?? "", category: query.category, locality: query.locality };
+    if (seeded.current === queryKey) return;
+    seeded.current = queryKey;
     queueMicrotask(() => {
-      setFilters(f);
-      void runSearch(intent, 0, {}, f);
+      setQ(query.q ?? "");
+      setFilters(fromQuery(query));
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryKey]);
+  }, [queryKey, query]);
 
-  function changeFilters(next: Filters) {
-    setFilters(next);
-    if (lastQuery) runSearch(lastQuery, 0, {}, next);
-  }
+  // Search as you type (debounced); filters apply at once.
+  const lastText = useRef<string | null>(null);
+  useEffect(() => {
+    const typed = lastText.current !== null && lastText.current !== q;
+    lastText.current = q;
+    const id = window.setTimeout(
+      () => {
+        setAttempt(0);
+        void search(buildParams(q, filters, 0));
+      },
+      typed ? 350 : 0,
+    );
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q, filters]);
 
   function applyBroadening(optionId: string) {
-    if (!lastQuery) return;
+    const next = attempt + 1;
+    setAttempt(next);
+    if (optionId === "remove_filter") {
+      void search(buildParams(q, { ...(DEFAULT_FILTERS as Filters) }, next));
+      return;
+    }
     const extra: Record<string, string> = {};
     if (optionId.startsWith("radius_")) extra.radius_km = optionId.replace("radius_", "");
     if (optionId === "include_unverified") extra.verified_only = "false";
-    if (optionId === "remove_filter") {
-      runSearch({ text: lastQuery.text }, broadenAttempt + 1);
-      return;
-    }
-    runSearch(lastQuery, broadenAttempt + 1, extra);
+    void search(buildParams(q, filters, next, extra));
   }
 
   return (
-    // [IMP33] Directory screen — wide measure, and the whole body becomes
-    // a sidebar layout at ≥900px. REQUIREMENT (owner, 2026-09-17):
-    // "filters should become a persistent left sidebar on desktop instead
-    // of a collapsible sheet, with results in a multi-column grid beside
-    // them." A toggle-to-reveal filter panel is a phone compromise for
-    // scarce vertical space; keeping it on a 1440px screen hides the
-    // single most useful control on the screen behind a click. The SAME
-    // <FilterSheet> component renders in both places — one filter
-    // implementation, two placements, chosen by CSS breakpoint
-    // (`vy-desktop-only` / `vy-mobile-only`) so there is no resize
-    // listener and no hydration mismatch.
     <Screen width="wide">
       <BusinessesView
+        query={q}
+        onQuery={setQ}
         response={response}
         loading={loading}
         filters={filters}
-        onFiltersChange={changeFilters}
-        onSearch={(intent) => runSearch(intent)}
+        onFiltersChange={setFilters}
         onBroaden={applyBroadening}
       />
     </Screen>

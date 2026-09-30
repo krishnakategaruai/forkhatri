@@ -308,6 +308,8 @@ async def run_verification_expiry_pass(pool: asyncpg.Pool) -> dict:
                     body=translate("notifications.verificationReminder.body", member_lang),
                     link=f"/listings/{r['id']}", params={"listing_id": str(r["id"])},
                     idempotency_key=f"verification_reminder:{r['id']}:{r['verified_at'].date().isoformat()}",
+                    i18n={"title": "notifications.verificationReminder.title", "body": "notifications.verificationReminder.body",
+                          "values": {"name": r["name"]}},
                 ):
                     reminded += 1
     return {"reminded": reminded, "expired": expired}

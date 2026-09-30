@@ -11,7 +11,8 @@
 // Find work → they open Discover filtered to it. If the taxonomy can't be
 // read, the menus simply don't render (the rail still has everything).
 // Escape or a click outside closes; desktop only (≥900px).
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { usePopoverDismiss } from "@/lib/usePopoverDismiss";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import type { TaxonomyTree } from "@/lib/sdk";
@@ -27,21 +28,7 @@ export default function HireMenu() {
   const tree = useResource<TaxonomyTree | null>(() => sdk.taxonomy.tree(), [sdk], { fallback: null });
   const [open, setOpen] = useState<Mode | null>(null);
   const [cat, setCat] = useState<string | null>(null);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(null);
-    };
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(null);
-    document.addEventListener("mousedown", onDown);
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
+  const ref = usePopoverDismiss(open !== null, () => setOpen(null));
 
   const categories = tree.data?.categories ?? [];
   if (categories.length === 0) return null;

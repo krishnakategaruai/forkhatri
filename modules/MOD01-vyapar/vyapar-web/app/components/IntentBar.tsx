@@ -19,9 +19,11 @@
 // real display label, while the value sent to search is the real slug
 // (previously a lossy space<->underscore guess).
 // Traces to: FR15 (search entry point), Design direction
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { useSdk } from "@/lib/sdk/react";
+import { Search } from "lucide-react";
+import VoiceInput, { appendSpoken } from "@/app/components/VoiceInput";
 
 interface Suggestion {
   slug: string;
@@ -38,12 +40,26 @@ export interface ParsedIntent {
 interface IntentBarProps {
   onSearch: (intent: ParsedIntent) => void;
   placeholder?: string;
+  /** [Design language 2026-09-29] "pill": the Discover-style search pill
+   *  (icon, field, mic, one round Search button); same parsing and chips. */
+  variant?: "stack" | "pill";
+  /** Placeholder below 600px (a phone cannot show the long example). */
+  shortPlaceholder?: string;
+  /** [FE1, critique N12] the active query, shown in the field (remount with a key to change it). */
+  initialValue?: string;
 }
 
-export default function IntentBar({ onSearch, placeholder }: IntentBarProps) {
+function subscribeNarrow(cb: () => void) {
+  const mq = window.matchMedia("(max-width: 599px)");
+  mq.addEventListener("change", cb);
+  return () => mq.removeEventListener("change", cb);
+}
+
+export default function IntentBar({ onSearch, placeholder, variant = "stack", shortPlaceholder, initialValue = "" }: IntentBarProps) {
+  const narrow = useSyncExternalStore(subscribeNarrow, () => window.matchMedia("(max-width: 599px)").matches, () => false);
   const { t, i18n } = useTranslation("discover");
   const sdk = useSdk();
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState(initialValue);
   const [categories, setCategories] = useState<Suggestion[]>([]);
   const [localities, setLocalities] = useState<string[]>([]);
 
@@ -71,6 +87,51 @@ export default function IntentBar({ onSearch, placeholder }: IntentBarProps) {
     const locality = localities.find((l) => lower.includes(l.toLowerCase()));
     return { text: value, category: category?.slug, categoryLabel: category?.label, locality };
   }, [value, categories, localities]);
+
+  const chips =
+    parsed.category || parsed.locality ? (
+      <div className="vy-row" style={{ flexWrap: "wrap" }}>
+        {parsed.category && <span className="vy-chip">{t("businesses.chipCategory", { category: parsed.categoryLabel ?? parsed.category })}</span>}
+        {parsed.locality && <span className="vy-chip">{t("businesses.chipNear", { locality: parsed.locality })}</span>}
+      </div>
+    ) : null;
+
+  if (variant === "pill") {
+    const label = placeholder ?? t("businesses.searchPlaceholder");
+    const shown = narrow && shortPlaceholder ? shortPlaceholder : label;
+    return (
+      <div className="vy-stack" style={{ gap: 8 }}>
+        <form
+          className="vy-hero-search"
+          role="search"
+          onSubmit={(e) => {
+            e.preventDefault();
+            onSearch(parsed);
+          }}
+        >
+          <div className="vy-hero-what">
+            <Search size={20} strokeWidth={2} className="vy-hero-search-icon" aria-hidden="true" />
+            <VoiceInput fieldLabel={label} compact onConfirm={(spoken) => setValue((v) => appendSpoken(v, spoken))}>
+              <input
+                className="vy-hero-input"
+                type="search"
+                enterKeyHint="search"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                placeholder={shown}
+                aria-label={label}
+              />
+            </VoiceInput>
+          </div>
+          <button type="submit" className="vy-hero-go" aria-label={t("businesses.search")}>
+            <Search size={20} strokeWidth={2.5} aria-hidden="true" />
+            <span className="vy-hero-go-label">{t("businesses.search")}</span>
+          </button>
+        </form>
+        {chips}
+      </div>
+    );
+  }
 
   return (
     <div className="vy-stack" style={{ gap: 8 }}>

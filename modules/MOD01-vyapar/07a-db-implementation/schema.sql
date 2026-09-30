@@ -626,6 +626,9 @@ CREATE TABLE IF NOT EXISTS vyapar_enquiries.enquiry_messages (
   content_language text CHECK (content_language IN ('en','hi','te')),  -- [TR042 gap]
   attachment_url text,
   system_note    boolean NOT NULL DEFAULT false,
+  -- [018] generated messages (one-tap application): rendered per reader's language
+  template_key    text,
+  template_params jsonb,
   created_at     timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS enquiry_messages_enquiry_idx ON vyapar_enquiries.enquiry_messages (enquiry_id);
@@ -2098,3 +2101,286 @@ CREATE POLICY listings_verification_operator_update ON vyapar_listings.listings
   FOR UPDATE
   USING (vyapar_identity.is_operator('verification'))
   WITH CHECK (vyapar_identity.is_operator('verification'));
+
+-- =============================================================================
+-- 19. Trade words and seed marker [Backend workstream B, migration 026]
+-- Same statements as migrations/026-trade-words-and-seed-marker.sql (idempotent).
+-- =============================================================================
+
+CREATE OR REPLACE FUNCTION pg_temp.add_aliases(p_slug text, p_aliases text[]) RETURNS void LANGUAGE sql AS $$
+  UPDATE vyapar_listings.taxonomy_terms
+     SET aliases = ARRAY(SELECT DISTINCT a FROM unnest(aliases || p_aliases) a WHERE a <> '' ORDER BY a),
+         updated_at = now()
+   WHERE kind = 'capability' AND slug = p_slug;
+$$;
+
+SELECT pg_temp.add_aliases('plumbing', ARRAY['plumber','plumbing work','pipe fitting','nal wala','प्लंबर','नलसाज','ప్లంబర్']);
+SELECT pg_temp.add_aliases('electrical', ARRAY['electrician','wiring','electrical work','bijli mistri','इलेक्ट्रीशियन','बिजली मिस्त्री','ఎలక్ట్రీషియన్']);
+SELECT pg_temp.add_aliases('carpenter', ARRAY['carpentry','woodwork','furniture work','कारपेंटर','बढ़ई','కార్పెంటర్','వడ్రంగి']);
+SELECT pg_temp.add_aliases('painter', ARRAY['painting','wall painting','house painting','पेंटर','పెయింటర్']);
+SELECT pg_temp.add_aliases('ac_technician', ARRAY['ac repair','ac service','ac mechanic','एसी मैकेनिक','ఏసీ టెక్నీషియన్']);
+SELECT pg_temp.add_aliases('tile_fitter', ARRAY['tile fitter','tiles work','टाइल मिस्त्री']);
+SELECT pg_temp.add_aliases('mason', ARRAY['masonry','construction worker','राज मिस्त्री','మేస్త్రీ']);
+SELECT pg_temp.add_aliases('cook', ARRAY['chef','cooking','kitchen staff','रसोइया','कुक','వంటవాడు','కుక్']);
+SELECT pg_temp.add_aliases('driver', ARRAY['driving','cab driver','car driver','ड्राइवर','డ్రైవర్']);
+SELECT pg_temp.add_aliases('delivery', ARRAY['delivery executive','delivery rider','डिलीवरी','డెలివరీ']);
+SELECT pg_temp.add_aliases('tailoring', ARRAY['tailor','stitching','darzi','दर्जी','टेलर','దర్జీ']);
+SELECT pg_temp.add_aliases('beautician', ARRAY['beauty parlour','makeup artist','salon','ब्यूटीशियन','బ్యూటీషియన్']);
+SELECT pg_temp.add_aliases('security_guard', ARRAY['security','watchman','guard','सिक्योरिटी गार्ड','సెక్యూరిటీ గార్డ్']);
+SELECT pg_temp.add_aliases('maid', ARRAY['house maid','domestic help','kaamwali','घरेलू काम','పనిమనిషి']);
+SELECT pg_temp.add_aliases('housekeeping', ARRAY['housekeeper','cleaning staff','हाउसकीपिंग','హౌస్‌కీపింగ్']);
+SELECT pg_temp.add_aliases('tutoring', ARRAY['tutor','tuition','home tuition','ट्यूशन','ట్యూషన్']);
+SELECT pg_temp.add_aliases('teacher', ARRAY['teaching','टीचर','शिक्षक','టీచర్']);
+SELECT pg_temp.add_aliases('accounting', ARRAY['bookkeeping','tally','अकाउंटिंग','అకౌంటింగ్']);
+SELECT pg_temp.add_aliases('accountant', ARRAY['accounts assistant','accounts executive','अकाउंटेंट','అకౌంటెంట్']);
+SELECT pg_temp.add_aliases('gst_filing', ARRAY['gst','gst return','जीएसटी','జీఎస్టీ']);
+SELECT pg_temp.add_aliases('tax', ARRAY['income tax','itr','tax filing','टैक्स','ట్యాక్స్']);
+SELECT pg_temp.add_aliases('mechanic', ARRAY['bike mechanic','motor mechanic','मैकेनिक','మెకానిక్']);
+SELECT pg_temp.add_aliases('car_repair', ARRAY['car mechanic','garage','car service']);
+SELECT pg_temp.add_aliases('telecaller', ARRAY['telecalling','calling executive','टेलीकॉलर','టెలికాలర్']);
+SELECT pg_temp.add_aliases('sales', ARRAY['salesman','sales executive','सेल्स','సేల్స్']);
+SELECT pg_temp.add_aliases('field_sales', ARRAY['field sales executive','field executive']);
+SELECT pg_temp.add_aliases('counter_sales', ARRAY['shop sales','counter staff','showroom sales']);
+SELECT pg_temp.add_aliases('data_entry', ARRAY['data entry operator','computer operator','डेटा एंट्री']);
+SELECT pg_temp.add_aliases('receptionist', ARRAY['front desk','front office','रिसेप्शनिस्ट']);
+SELECT pg_temp.add_aliases('office_assistant', ARRAY['office boy','peon','office helper']);
+SELECT pg_temp.add_aliases('software', ARRAY['developer','programmer','software engineer']);
+SELECT pg_temp.add_aliases('python', ARRAY['python developer','django']);
+SELECT pg_temp.add_aliases('react', ARRAY['react developer','frontend developer','front-end developer']);
+SELECT pg_temp.add_aliases('graphic_designer', ARRAY['graphic design','designer','ग्राफिक डिजाइनर']);
+SELECT pg_temp.add_aliases('photography', ARRAY['photographer','फोटोग्राफर','ఫోటోగ్రాఫర్']);
+SELECT pg_temp.add_aliases('video_editing', ARRAY['video editor','वीडियो एडिटर']);
+SELECT pg_temp.add_aliases('bakery', ARRAY['baker','बेकर','బేకర్']);
+SELECT pg_temp.add_aliases('cakes', ARRAY['cake maker','home baker']);
+SELECT pg_temp.add_aliases('catering', ARRAY['caterer','catering staff','कैटरिंग','క్యాటరింగ్']);
+SELECT pg_temp.add_aliases('nurse', ARRAY['nursing','staff nurse','नर्स','నర్స్']);
+SELECT pg_temp.add_aliases('labourer', ARRAY['helper','labour','mazdoor','मजदूर','కూలీ']);
+SELECT pg_temp.add_aliases('machine_operator', ARRAY['cnc operator','machine operator']);
+SELECT pg_temp.add_aliases('digital_marketer', ARRAY['digital marketing','seo']);
+SELECT pg_temp.add_aliases('content_writing', ARRAY['content writer','copywriter']);
+SELECT pg_temp.add_aliases('social_media', ARRAY['social media manager','instagram marketing']);
+SELECT pg_temp.add_aliases('interior_design', ARRAY['interior designer','इंटीरियर डिजाइनर']);
+SELECT pg_temp.add_aliases('architecture', ARRAY['architect','आर्किटेक्ट']);
+SELECT pg_temp.add_aliases('legal', ARRAY['lawyer','advocate','वकील','న్యాయవాది']);
+SELECT pg_temp.add_aliases('yoga', ARRAY['yoga teacher','yoga trainer','योग']);
+
+-- 2 -------------------------------------------------------------------------
+ALTER TABLE vyapar_identity.members ADD COLUMN IF NOT EXISTS seed_batch text;
+ALTER TABLE vyapar_listings.listings ADD COLUMN IF NOT EXISTS seed_batch text;
+ALTER TABLE vyapar_opportunities.opportunities ADD COLUMN IF NOT EXISTS seed_batch text;
+COMMENT ON COLUMN vyapar_opportunities.opportunities.seed_batch IS '[IMP-B] Set only by scripts/seed_marketplace.py (dev data); NULL for real posts.';
+CREATE INDEX IF NOT EXISTS opportunities_seed_batch_idx ON vyapar_opportunities.opportunities (seed_batch) WHERE seed_batch IS NOT NULL;
+CREATE INDEX IF NOT EXISTS listings_seed_batch_idx ON vyapar_listings.listings (seed_batch) WHERE seed_batch IS NOT NULL;
+
+-- =============================================================================
+-- 20. Notification texts kept for read-time language [Backend workstream B, migration 027]
+-- Same statements as migrations/027-notification-texts.sql (idempotent).
+-- =============================================================================
+
+-- notify_interaction_party
+CREATE OR REPLACE FUNCTION vyapar_integration.notify_interaction_party(p_interaction_kind text, p_interaction_id uuid, p_recipient text, p_template text, p_texts jsonb, p_link text, p_idem text)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'vyapar_integration', 'pg_temp'
+AS $function$
+DECLARE
+  v_caller text := current_setting('vyapar.authz_context', true);
+  v_ok boolean := false;
+  v_lang text;
+  v_id uuid;
+BEGIN
+  IF p_interaction_kind = 'enquiry' THEN
+    SELECT true INTO v_ok FROM vyapar_enquiries.enquiries e
+     WHERE e.id = p_interaction_id AND v_caller IN (e.sender_id, e.provider_id) AND p_recipient IN (e.sender_id, e.provider_id);
+  ELSIF p_interaction_kind = 'partnership' THEN
+    SELECT true INTO v_ok FROM vyapar_enquiries.partnership_requests p
+     WHERE p.id = p_interaction_id AND v_caller IN (p.sender_id, p.recipient_id) AND p_recipient IN (p.sender_id, p.recipient_id);
+  END IF;
+  IF NOT coalesce(v_ok, false) THEN RAISE EXCEPTION 'not_a_party'; END IF;
+  IF p_recipient <> v_caller AND vyapar_enquiries.is_blocked(p_recipient, v_caller) THEN RETURN false; END IF;
+
+  SELECT m.language INTO v_lang FROM vyapar_identity.members m WHERE m.id = p_recipient;
+  v_lang := coalesce(v_lang, 'en');
+  INSERT INTO vyapar_integration.notifications (member_id, kind, template_id, title, body, link, params, idempotency_key)
+  VALUES (p_recipient, p_template, p_template,
+          coalesce(p_texts -> v_lang ->> 'title', p_texts -> 'en' ->> 'title'),
+          coalesce(p_texts -> v_lang ->> 'body', p_texts -> 'en' ->> 'body'),
+          p_link, (jsonb_build_object('interaction_kind', p_interaction_kind, 'interaction_id', p_interaction_id) || jsonb_build_object('_texts', p_texts)), p_idem)
+  ON CONFLICT (idempotency_key) DO NOTHING
+  RETURNING id INTO v_id;
+  RETURN v_id IS NOT NULL;
+END;
+$function$;
+
+-- notify_workspace_member
+CREATE OR REPLACE FUNCTION vyapar_commercial.notify_workspace_member(p_listing_id uuid, p_recipient text, p_template text, p_texts jsonb, p_link text, p_idem text)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'vyapar_commercial', 'pg_temp'
+AS $function$
+DECLARE
+  v_role text;
+  v_lang text;
+  v_id uuid;
+BEGIN
+  SELECT w.role INTO v_role FROM vyapar_commercial.workspace_context(p_listing_id) w;
+  IF coalesce(v_role, 'none') NOT IN ('owner', 'admin') THEN RAISE EXCEPTION 'role_not_allowed'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM vyapar_commercial.workspace_members wm
+                  WHERE wm.listing_id = p_listing_id::text AND wm.member_id = p_recipient) THEN
+    RAISE EXCEPTION 'not_a_workspace_member';
+  END IF;
+  SELECT m.language INTO v_lang FROM vyapar_identity.members m WHERE m.id = p_recipient;
+  v_lang := coalesce(v_lang, 'en');
+  INSERT INTO vyapar_integration.notifications (member_id, kind, template_id, title, body, link, params, idempotency_key)
+  VALUES (p_recipient, p_template, p_template,
+          coalesce(p_texts -> v_lang ->> 'title', p_texts -> 'en' ->> 'title'),
+          coalesce(p_texts -> v_lang ->> 'body', p_texts -> 'en' ->> 'body'),
+          p_link, (jsonb_build_object('listing_id', p_listing_id) || jsonb_build_object('_texts', p_texts)), p_idem)
+  ON CONFLICT (idempotency_key) DO NOTHING
+  RETURNING id INTO v_id;
+  RETURN v_id IS NOT NULL;
+END;
+$function$;
+
+-- apply_seeker_charge_reports
+CREATE OR REPLACE FUNCTION vyapar_trust_safety.apply_seeker_charge_reports(p_opportunity_id uuid, p_threshold integer, p_texts jsonb)
+ RETURNS TABLE(reporters integer, paused boolean, case_id uuid)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'vyapar_trust_safety', 'pg_temp'
+AS $function$
+DECLARE
+  v_case uuid;
+  v_poster text;
+  v_state text;
+  v_title text;
+  v_n int := 0;
+  v_paused boolean := false;
+  v_lang text;
+BEGIN
+  SELECT c.id INTO v_case FROM vyapar_trust_safety.moderation_cases c
+   WHERE c.object_kind = 'opportunity' AND c.object_id = p_opportunity_id AND c.state IN ('open','in_review','escalated')
+   ORDER BY c.created_at LIMIT 1;
+  IF v_case IS NULL THEN RETURN QUERY SELECT 0, false, NULL::uuid; RETURN; END IF;
+
+  SELECT count(DISTINCT r.reporter_id)::int INTO v_n FROM vyapar_trust_safety.reports r
+   WHERE r.case_id = v_case AND r.reason = 'asked_for_money';
+
+  IF v_n >= p_threshold THEN
+    SELECT o.poster_id, o.state, o.title INTO v_poster, v_state, v_title
+      FROM vyapar_opportunities.opportunities o WHERE o.id = p_opportunity_id FOR UPDATE;
+    IF v_state IN ('active','stale') THEN
+      UPDATE vyapar_opportunities.opportunities
+         SET state = 'paused', state_reason = 'seeker_charge_reports', distribution_limited = true, updated_at = now()
+       WHERE id = p_opportunity_id;
+      v_paused := true;
+      SELECT m.language INTO v_lang FROM vyapar_identity.members m WHERE m.id = v_poster;
+      v_lang := coalesce(v_lang, 'en');
+      INSERT INTO vyapar_integration.notifications (member_id, kind, template_id, title, body, link, params, idempotency_key)
+      VALUES (v_poster, 'opportunityPausedSeekerCharge', 'opportunityPausedSeekerCharge',
+              coalesce(p_texts -> v_lang ->> 'title', p_texts -> 'en' ->> 'title'),
+              coalesce(p_texts -> v_lang ->> 'body', p_texts -> 'en' ->> 'body'),
+              '/opportunities/' || p_opportunity_id::text,
+              (jsonb_build_object('opportunity_id', p_opportunity_id, 'case_id', v_case) || jsonb_build_object('_texts', p_texts)),
+              'seeker_charge_paused:' || p_opportunity_id::text)
+      ON CONFLICT (idempotency_key) DO NOTHING;
+    END IF;
+    UPDATE vyapar_trust_safety.moderation_cases c
+       SET severity = CASE WHEN c.severity = 'critical' THEN c.severity ELSE 'high' END,
+           distribution_limited = true,
+           primary_reason = 'asked_for_money',
+           target_due_at = LEAST(c.target_due_at, now() + vyapar_trust_safety.target_interval('high')),
+           updated_at = now()
+     WHERE c.id = v_case;
+  END IF;
+  RETURN QUERY SELECT v_n, v_paused, v_case;
+END;
+$function$;
+
+-- notify_party
+CREATE OR REPLACE FUNCTION vyapar_contracts.notify_party(p_contract_id uuid, p_recipient text, p_template text, p_texts jsonb, p_link text, p_idem text)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'vyapar_contracts', 'pg_temp'
+AS $function$
+DECLARE
+  v_caller text := current_setting('vyapar.authz_context', true);
+  c vyapar_contracts.contracts%ROWTYPE;
+  v_lang text;
+  v_id uuid;
+BEGIN
+  SELECT * INTO c FROM vyapar_contracts.contracts WHERE id = p_contract_id;
+  IF c.id IS NULL OR p_recipient NOT IN (c.client_member_id, c.provider_member_id) THEN RAISE EXCEPTION 'not_a_party'; END IF;
+  IF v_caller NOT IN (c.client_member_id, c.provider_member_id) AND NOT vyapar_identity.is_operator('moderation') THEN
+    RAISE EXCEPTION 'not_a_party';
+  END IF;
+  IF p_recipient <> v_caller AND vyapar_enquiries.is_blocked(p_recipient, v_caller) THEN RETURN false; END IF;
+
+  SELECT m.language INTO v_lang FROM vyapar_identity.members m WHERE m.id = p_recipient;
+  v_lang := coalesce(v_lang, 'en');
+  INSERT INTO vyapar_integration.notifications (member_id, kind, template_id, title, body, link, params, idempotency_key)
+  VALUES (p_recipient, p_template, p_template,
+          coalesce(p_texts -> v_lang ->> 'title', p_texts -> 'en' ->> 'title'),
+          coalesce(p_texts -> v_lang ->> 'body', p_texts -> 'en' ->> 'body'),
+          p_link, (jsonb_build_object('contract_id', p_contract_id) || jsonb_build_object('_texts', p_texts)), p_idem)
+  ON CONFLICT (idempotency_key) DO NOTHING
+  RETURNING id INTO v_id;
+  RETURN v_id IS NOT NULL;
+END;
+$function$;
+
+-- notify_precall
+CREATE OR REPLACE FUNCTION vyapar_integration.notify_precall(p_attempt_id uuid, p_texts jsonb)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'vyapar_integration', 'pg_temp'
+AS $function$
+DECLARE
+  v_caller text := current_setting('vyapar.authz_context', true);
+  a vyapar_enquiries.contact_attempts%ROWTYPE;
+  v_ok boolean;
+  v_lang text;
+  v_id uuid;
+BEGIN
+  SELECT * INTO a FROM vyapar_enquiries.contact_attempts WHERE id = p_attempt_id;
+  IF NOT FOUND OR a.caller_id IS DISTINCT FROM v_caller OR a.opportunity_id IS NULL THEN
+    RAISE EXCEPTION 'not_your_attempt';
+  END IF;
+  SELECT true INTO v_ok FROM vyapar_opportunities.opportunities o
+   WHERE o.id = a.opportunity_id AND o.poster_id = a.callee_id AND o.allow_precall;
+  IF NOT coalesce(v_ok, false) THEN RAISE EXCEPTION 'precall_off'; END IF;
+  IF vyapar_enquiries.is_blocked(a.callee_id, v_caller) THEN RETURN false; END IF;
+
+  SELECT m.language INTO v_lang FROM vyapar_identity.members m WHERE m.id = a.callee_id;
+  v_lang := coalesce(v_lang, 'en');
+  INSERT INTO vyapar_integration.notifications (member_id, kind, template_id, title, body, link, params, idempotency_key)
+  VALUES (a.callee_id, 'precallContact', 'precallContact',
+          coalesce(p_texts -> v_lang ->> 'title', p_texts -> 'en' ->> 'title'),
+          coalesce(p_texts -> v_lang ->> 'body', p_texts -> 'en' ->> 'body'),
+          '/opportunities/' || a.opportunity_id::text,
+          (jsonb_build_object('opportunity_id', a.opportunity_id, 'attempt_id', a.id, 'channel', a.channel,
+                             'enquiry_id', a.enquiry_id) || jsonb_build_object('_texts', p_texts)),
+          'precall:' || a.id::text)
+  ON CONFLICT (idempotency_key) DO NOTHING
+  RETURNING id INTO v_id;
+  RETURN v_id IS NOT NULL;
+END;
+$function$;
+
+-- =============================================================================
+-- [026] One Vyapar profile per member (see migrations/026-one-profile-per-member.sql
+-- for the consolidation, the search trigger, ensure_member() and nearest_locality()).
+-- The profile is the member's one live listings row; a business is a section of it.
+-- =============================================================================
+ALTER TABLE vyapar_listings.listings
+  ADD COLUMN IF NOT EXISTS business_name        text,
+  ADD COLUMN IF NOT EXISTS business_headline    text,
+  ADD COLUMN IF NOT EXISTS business_description text,
+  ADD COLUMN IF NOT EXISTS merged_from          jsonb NOT NULL DEFAULT '[]';
+CREATE UNIQUE INDEX IF NOT EXISTS listings_one_profile_per_owner
+  ON vyapar_listings.listings (owner_id)
+  WHERE state IN ('draft','submitted','active_unverified','active_verified');

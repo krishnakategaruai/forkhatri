@@ -106,8 +106,10 @@ export default function HomePage({ searchParams }: { searchParams: Promise<FeedQ
         onAddCapabilities={() => router.push(routes.newListing)}
         onPost={() => router.push(routes.post)}
         lastFilterRemoved={withoutLastFilter(filters)}
-        failed={!!(curated ? rows.error && !rows.data : results.error && !results.data)}
-        onRetry={() => void (curated ? rows.refresh() : results.refresh())}
+        hasPersonalRows={rows.data?.has_personal_rows}
+        viewerCategories={rows.data?.viewer_categories}
+        failed={!!((firstRun.error && !state) || (curated ? rows.error && !rows.data : results.error && !results.data))}
+        onRetry={() => void (!state ? firstRun.refresh() : curated ? rows.refresh() : results.refresh())}
       />
     </Screen>
   );

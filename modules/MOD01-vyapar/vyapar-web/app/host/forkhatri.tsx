@@ -13,10 +13,11 @@ export const forkhatriHost: HostConfig = {
   id: "forkhatri",
   brand: { name: "Vyapar", qualifier: "ForKhatri" },
   AccountControl: DevMemberSwitcher,
-  platformLink: {
-    href: process.env.NEXT_PUBLIC_PLATFORM_URL ?? "http://localhost:3100",
-    labelKey: "profile:backToForKhatri",
-  },
+  // No hardcoded fallback (environment values live in .env): without
+  // NEXT_PUBLIC_PLATFORM_URL the way-back links are simply not shown.
+  platformLink: process.env.NEXT_PUBLIC_PLATFORM_URL
+    ? { href: process.env.NEXT_PUBLIC_PLATFORM_URL, labelKey: "profile:backToForKhatri" }
+    : null,
   notifications: vyaparInbox,
   routes: defaultRoutes,
 };

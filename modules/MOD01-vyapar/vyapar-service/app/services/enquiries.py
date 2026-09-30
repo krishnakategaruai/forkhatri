@@ -16,7 +16,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Literal
 
 import asyncpg
@@ -114,6 +114,11 @@ class EnquiryMessageOut(BaseModel):
     id: str
     sender_id: str
     body: str
+    # [critique N5] the language `body` is in. A generated message (one-tap
+    # application) is rendered in the READER's language (`templated` true);
+    # a person's own text is shown as written, in the language they wrote.
+    message_language: str | None = None
+    templated: bool = False
     system_note: bool
     created_at: str
     # [Critique agent finding, fixed here] attachment_url was stored on
@@ -197,9 +202,11 @@ async def _resolve_action_type(conn: asyncpg.Connection, listing_id: str | None,
             return "", None, "enquiries_disabled"
         return "enquire", row["owner_id"], None
     if opportunity_id:
-        row = await conn.fetchrow("SELECT poster_id, state, type FROM vyapar_opportunities.opportunities WHERE id = $1", opportunity_id)
+        row = await conn.fetchrow("SELECT poster_id, state, type, deadline FROM vyapar_opportunities.opportunities WHERE id = $1", opportunity_id)
         if row is None or row["state"] != "active":
             return "", None, "target_not_active"
+        if row["deadline"] is not None and row["deadline"] < datetime.now(timezone.utc):
+            return "", None, "expired"  # [critique N3] past its last date: Expired
         return ACTION_TYPE_BY_OPPORTUNITY_TYPE.get(row["type"], "contact"), row["poster_id"], None
     return "", None, "no_target"
 
@@ -257,17 +264,46 @@ async def build_profile_snapshot(conn: asyncpg.Connection, member_id: str) -> Pr
     )
 
 
-def _one_tap_message(snapshot: ProfileSnapshot, lang: str) -> str:
+def _one_tap_params(snapshot: ProfileSnapshot) -> dict[str, Any]:
+    return {"headline": snapshot.headline, "experience_years": snapshot.experience_years, "locality": snapshot.locality}
+
+
+def _one_tap_message(params: ProfileSnapshot | dict[str, Any], lang: str) -> str:
     """The first thread message of a one-tap application, built from the
-    profile so the poster never opens an empty thread."""
+    profile so the poster never opens an empty thread. [critique N5] Rendered
+    per reader: the stored row keeps the template key and these params."""
+    if isinstance(params, ProfileSnapshot):
+        params = _one_tap_params(params)
     parts = [translate("enquiries.oneTap.intro", lang)]
-    if snapshot.headline:
-        parts.append(snapshot.headline.strip().rstrip(".") + ".")
-    if snapshot.experience_years:
-        parts.append(translate("enquiries.oneTap.experience", lang, years=snapshot.experience_years))
-    if snapshot.locality:
-        parts.append(translate("enquiries.oneTap.locality", lang, locality=snapshot.locality))
+    if params.get("headline"):
+        parts.append(str(params["headline"]).strip().rstrip(".") + ".")
+    if params.get("experience_years"):
+        parts.append(translate("enquiries.oneTap.experience", lang, years=params["experience_years"]))
+    if params.get("locality"):
+        parts.append(translate("enquiries.oneTap.locality", lang, locality=params["locality"]))
     return " ".join(parts)[:1000]
+
+
+MESSAGE_TEMPLATES = {"oneTap": _one_tap_message}
+
+
+def render_message(m: asyncpg.Record | dict, lang: str) -> tuple[str, str | None, bool]:
+    """(body, message_language, templated) for one stored message, as the
+    reader in `lang` should see it."""
+    key = m["template_key"] if "template_key" in m.keys() else None
+    render = MESSAGE_TEMPLATES.get(key) if key else None
+    if render is not None:
+        return render(_json(m["template_params"], {}) or {}, lang), lang, True
+    return m["body"], (m["content_language"] if "content_language" in m.keys() else None), False
+
+
+def _message_out(m: asyncpg.Record, lang: str) -> EnquiryMessageOut:
+    body, message_language, templated = render_message(m, lang)
+    return EnquiryMessageOut(
+        id=str(m["id"]), sender_id=m["sender_id"], body=body, system_note=m["system_note"],
+        created_at=m["created_at"].isoformat(), attachment_url=m["attachment_url"],
+        message_language=message_language, templated=templated,
+    )
 
 
 def _validate_structured_response(body: EnquiryCreate, action_type: str, opp: asyncpg.Record | None, lang: str) -> tuple[str | None, list[dict]]:
@@ -335,6 +371,8 @@ async def create_enquiry(
     action_type, provider_id, err = await _resolve_action_type(conn, body.listing_id, body.opportunity_id)
     if err == "target_not_active":
         raise ApiError(400, "enquiries.error.targetNotActive", lang)
+    if err == "expired":
+        raise ApiError(400, "enquiries.error.opportunityExpired", lang)
     if err == "enquiries_disabled":
         raise ApiError(400, "enquiries.error.enquiriesDisabled", lang)
     if err or provider_id is None:
@@ -360,9 +398,13 @@ async def create_enquiry(
     message = body.message.strip()
     applied_via = body.applied_via or ("agent" if ctx.is_token else ("one_tap" if not message else "form"))
     snapshot = await build_profile_snapshot(conn, ctx.member_id) if body.opportunity_id else None
+    template_key: str | None = None
+    template_params: dict[str, Any] | None = None
     if not message:
-        # only an `apply` gets here (validated above): build the application from the profile
-        message = _one_tap_message(snapshot or ProfileSnapshot(), lang)
+        # only an `apply` gets here (validated above): build the application
+        # from the profile; stored as a template so each reader gets their language
+        template_key, template_params = "oneTap", _one_tap_params(snapshot or ProfileSnapshot())
+        message = _one_tap_message(template_params, lang)
 
     # [SP022] Rate limit — 20/day.
     allowed = await conn.fetchval(
@@ -416,8 +458,11 @@ async def create_enquiry(
         raise ApiError(409, "enquiries.error.alreadyOpen", lang, extra={"existing_enquiry_id": str(existing["id"]) if existing else None})
 
     await conn.execute(
-        "INSERT INTO vyapar_enquiries.enquiry_messages (enquiry_id, sender_id, body, attachment_url, content_language) VALUES ($1,$2,$3,$4,$5)",
-        row["id"], ctx.member_id, message, body.attachment_url, lang,
+        """INSERT INTO vyapar_enquiries.enquiry_messages
+             (enquiry_id, sender_id, body, attachment_url, content_language, template_key, template_params)
+           VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb)""",
+        row["id"], ctx.member_id, message, body.attachment_url, lang, template_key,
+        json.dumps(template_params) if template_params is not None else None,
     )
     # [FR32] enquiry event on the target (sponsored if it is boosted right now)
     if body.listing_id:
@@ -494,10 +539,7 @@ async def get_enquiry(
     row = await _get_enquiry_or_404(conn, enquiry_id, ctx.member_id, lang)
     messages = await conn.fetch("SELECT * FROM vyapar_enquiries.enquiry_messages WHERE enquiry_id = $1 ORDER BY created_at", enquiry_id)
     out = _row_to_enquiry(row, ctx.member_id)
-    out.messages = [
-        EnquiryMessageOut(id=str(m["id"]), sender_id=m["sender_id"], body=m["body"], system_note=m["system_note"], created_at=m["created_at"].isoformat(), attachment_url=m["attachment_url"])
-        for m in messages
-    ]
+    out.messages = [_message_out(m, lang) for m in messages]
     # [FR24/TR024] Contact disclosure ONLY after In Progress, ONLY for
     # listing-linked enquiries, ONLY via the one shared read function
     # (contacts_for_viewer) — never a second, independently-coded check.
@@ -574,7 +616,7 @@ async def reply_to_enquiry(
              last_activity_at = now(), updated_at = now() WHERE id = $1""",
         enquiry_id, new_state, is_provider,
     )
-    return EnquiryMessageOut(id=str(msg["id"]), sender_id=msg["sender_id"], body=msg["body"], system_note=msg["system_note"], created_at=msg["created_at"].isoformat(), attachment_url=msg["attachment_url"])
+    return _message_out(msg, lang)
 
 
 async def _transition(conn: asyncpg.Connection, enquiry_id: str, member_id: str, lang: str, *, from_states: set[str], to_state: str, require_provider: bool = False) -> EnquiryOut:

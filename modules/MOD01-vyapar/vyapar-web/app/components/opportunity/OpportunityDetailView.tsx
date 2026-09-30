@@ -27,6 +27,23 @@ import { useRoutes } from "@/app/host/HostProvider";
 import OpportunityCard from "./OpportunityCard";
 import { hostOf, NOT_INTERESTED_REASON_KEYS, signalLabel } from "./labels";
 import { structuredFacts, type T as LabelT } from "@/app/components/composer/labels";
+import { formatDayMonth, formatMonthYear } from "@/lib/format";
+import { payLines } from "@/app/components/discover/DiscoverCard";
+import { Star } from "lucide-react";
+
+/** [Design language 2026-09-29, glossary] A yearly "₹9–14 LPA" reads as
+ *  "₹75,000–₹1,17,000 a month" with "₹9–14 lakh a year" under it — the same
+ *  rule as the Discover card (payLines). Other pay lines show as written. */
+function PayFact({ label }: { label: string }) {
+  const { t, i18n } = useTranslation(["explore"]);
+  const pay = payLines(label, i18n.language);
+  return (
+    <span className="vy-fact-value">
+      {pay.monthly ? t("explore:card.perMonth", { amount: pay.main }) : pay.main}
+      {pay.lakhRange && <small className="vy-fact-sub">{t("explore:card.perYearLakh", { range: pay.lakhRange })}</small>}
+    </span>
+  );
+}
 
 export interface OpportunityDetailActions {
   onToggleSave: () => void;
@@ -95,8 +112,10 @@ export default function OpportunityDetailView(props: OpportunityDetailViewProps)
     return () => io.disconnect();
   }, [opp?.id]);
 
-  const fmtDay = (iso: string) => new Date(iso).toLocaleDateString(i18n.language, { day: "numeric", month: "short" });
-  const fmtMonthYear = (iso: string) => new Date(iso).toLocaleDateString(i18n.language, { month: "long", year: "numeric" });
+  // [Design language 2026-09-29] Indian day-first dates ("Apply by 4 Oct"),
+  // never the browser's US order ("Oct 4") — lib/format.ts.
+  const fmtDay = (iso: string) => formatDayMonth(iso, i18n.language);
+  const fmtMonthYear = (iso: string) => formatMonthYear(iso, i18n.language);
 
   const isPublic = opp.source_segment === "public";
   const sourceLabel = opp.source_name || hostOf(opp.source_url);
@@ -195,7 +214,11 @@ export default function OpportunityDetailView(props: OpportunityDetailViewProps)
               {facts.map((f) => (
                 <div key={f.key} className={f.wide ? "vy-fact vy-fact-wide" : "vy-fact"}>
                   <span className="vy-fact-label">{f.label}</span>
-                  <span className="vy-fact-value">{f.value}</span>
+                  {f.key === "pay" && typeof f.value === "string" ? (
+                    <PayFact label={f.value} />
+                  ) : (
+                    <span className="vy-fact-value">{f.value}</span>
+                  )}
                 </div>
               ))}
             </div>
@@ -278,7 +301,7 @@ export default function OpportunityDetailView(props: OpportunityDetailViewProps)
               {!isPublic && !opp.seeker_protection?.applies && (
                 <p className="vy-safety-line">
                   {t("opportunities:detail.freeToRespond")}{" "}
-                  <a href="#report-opportunity">{t("opportunities:detail.reportIfAsked")}</a>
+                  <a className="vy-tap-link" href="#report-opportunity">{t("opportunities:detail.reportIfAsked")}</a>
                 </p>
               )}
 
@@ -430,7 +453,7 @@ export default function OpportunityDetailView(props: OpportunityDetailViewProps)
                   <span className="vy-badge vy-badge-verified">✓</span>{" "}
                   {t("opportunities:detail.verifiedBusiness", { name: opp.poster.verified_listing_name })}
                   <br />
-                  <a href={routes.listing(opp.poster.verified_listing_id)} style={{ fontSize: 14 }}>{t("opportunities:detail.viewBusiness")} →</a>
+                  <a className="vy-tap-link" href={routes.listing(opp.poster.verified_listing_id)}>{t("opportunities:detail.viewBusiness")} →</a>
                 </p>
               )}
               <p className="vy-muted" style={{ fontSize: 13 }}>
@@ -474,7 +497,7 @@ export default function OpportunityDetailView(props: OpportunityDetailViewProps)
             onClick={props.onToggleSave}
             aria-label={opp.saved ? t("common:action.saved") : t("common:action.save")}
           >
-            {opp.saved ? "★" : "☆"}
+            <Star size={20} strokeWidth={2} fill={opp.saved ? "currentColor" : "none"} aria-hidden="true" />
           </button>
           <div className="vy-actionbar-main">
             {props.primaryActionSlot ?? primaryAction}

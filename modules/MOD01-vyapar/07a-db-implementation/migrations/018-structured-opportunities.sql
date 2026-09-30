@@ -311,3 +311,32 @@ ON CONFLICT (kind, slug) DO UPDATE SET
   name_hi        = COALESCE(vyapar_listings.taxonomy_terms.name_hi, EXCLUDED.name_hi),
   name_te        = COALESCE(vyapar_listings.taxonomy_terms.name_te, EXCLUDED.name_te),
   updated_at     = now();
+
+-- ---------------------------------------------------------------------------
+-- 5. [Backend A, 2026-09-29 — critique N5] A one-tap application message is
+--    built by Vyapar, not written by the applicant, so it is stored as a
+--    template key plus its parameters and rendered in each READER's language
+--    (the poster reading Telugu text built for a Telugu applicant was the
+--    bug). `body` keeps the sender-language rendering as the fallback every
+--    old reader already understands. Free-text messages leave both NULL and
+--    are shown exactly as written.
+-- ---------------------------------------------------------------------------
+ALTER TABLE vyapar_enquiries.enquiry_messages
+  ADD COLUMN IF NOT EXISTS template_key    text,
+  ADD COLUMN IF NOT EXISTS template_params jsonb;
+
+-- Backfill: the first message of every existing one-tap application is the
+-- generated one (the applicant sent no text). Idempotent.
+UPDATE vyapar_enquiries.enquiry_messages m
+   SET template_key = 'oneTap',
+       template_params = jsonb_build_object(
+         'headline', e.profile_snapshot ->> 'headline',
+         'experience_years', e.profile_snapshot -> 'experience_years',
+         'locality', e.profile_snapshot ->> 'locality')
+  FROM vyapar_enquiries.enquiries e
+ WHERE m.enquiry_id = e.id
+   AND e.applied_via = 'one_tap'
+   AND m.sender_id = e.sender_id
+   AND m.template_key IS NULL
+   AND NOT m.system_note
+   AND m.created_at = (SELECT min(m2.created_at) FROM vyapar_enquiries.enquiry_messages m2 WHERE m2.enquiry_id = e.id);

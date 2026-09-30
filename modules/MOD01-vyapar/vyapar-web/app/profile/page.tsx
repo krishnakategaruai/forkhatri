@@ -1,113 +1,96 @@
 "use client";
-// [Profile hub] No single FR names a standalone Profile screen; this is the
-// honest home for the member's own places — listings, enquiries, and their
+// [Profile hub] The home for the member's own places — their profile,
+// requests, contracts, saved items, promotions, workspaces, settings and
 // moderation outcomes (FR41, where FR53 wants the appeal path reachable) —
-// plus operator tools shown ONLY to members holding that permission, so
-// ordinary members never see links that would 403. Compact rows, not
-// full-size cards, so everything fits on the first phone screen.
+// plus operator tools shown ONLY to members holding that permission.
 // [Product-owner i18n rule] every string is a key in profile.json.
 //
-// [IMP39 — desktop layout, owner: "why do I see it as phone only?"] At
-// ≥900px the hub is two columns: a sticky identity card (name, the language
-// the member uses Vyapar in, and three real counts — listings, open
-// enquiries, saved items — each read from an existing endpoint and each a
-// link to the place it counts) and, beside it, a grid of described tiles.
-// The tiles are the SAME anchors the phone renders: on a phone the glyph and
-// description are display:none and the row reads "My listings →" exactly as
-// before; on desktop each becomes a tile with a one-line description of
-// what is inside. One DOM, two presentations — no second link list to drift.
+// [Owner, 2026-09-29/30] Rebuilt in the 2026 language, around ONE profile
+// ("each user will get one profile"):
+//   1. identity header — monogram, name, locality and language, all from
+//      what ForKhatri and first run already know (never re-asked), with
+//      three useful counts: open requests, saved, recommendations;
+//   2. "Your work profile" — the one profile (skills, headline, one trust or
+//      state line), or one card to set it up;
+//   3. "My business" — the optional business section, or a quiet card to
+//      add it;
+//   4. one list of shortcuts (Your work / Settings / Support), icon + label
+//      + one-line hint, 56px rows — not nine big tiles.
+// The old hub reused `.vy-hub`, the command hub's own class, so the page was
+// drawn as one grey pill, and the desktop tile grid leaked onto phones with
+// cards clipped off the right edge. Desktop (≥1024): profile on the left,
+// shortcuts in a sticky right column.
 // Traces to: FR41, FR47, FR40 (entry points), FR53
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useTranslation } from "react-i18next";
-import type { EnquirySummary, Me, WorkspaceInvite as Invite, WorkspaceRow } from "@/lib/sdk";
+import { Bookmark, FileText, Globe, Inbox, LayoutGrid, LifeBuoy, Lock, MapPin, Megaphone, Phone, ShieldCheck, Undo2, Wrench } from "lucide-react";
+import type { EnquirySummary, Listing, WorkspaceInvite as Invite, WorkspaceRow } from "@/lib/sdk";
 import { useSdk } from "@/lib/sdk/react";
 import Screen from "@/app/components/Screen";
-import ProfileSetup from "@/app/components/ProfileSetup";
-import Icon from "@/app/components/Icon";
+import ShortcutList, { type Shortcut, type ShortcutGroup } from "@/app/components/account/ShortcutList";
+import AccountProfileCard, { AddProfileCard } from "@/app/components/account/AccountProfileCard";
+import { useMyProfile } from "@/app/components/account/useMyProfile";
 // [IMP38 — Refactor C] The way back to the host platform ("Back to
 // ForKhatri" and its URL) comes from the host adapter; standalone has none.
 import { useHost, useRoutes } from "@/app/host/HostProvider";
 import { formatDate } from "@/lib/format"; // [FE2] Indian date order
+import "@/app/styles/account-2026.css";
 
 // [FR34] a team invitation is an account-level decision, so it waits here
 
 const OPEN_ENQUIRY_STATES = ["open", "awaiting_response", "in_progress"];
 
 interface HubStats {
-  listings: number;
   openEnquiries: number;
   saved: number;
-}
-
-interface Tile {
-  href: string;
-  label: string;
-  desc: string;
-  mark: string;
-  /** The phone row showed a trailing arrow for these; Help and Back never had one. */
-  arrow: boolean;
-}
-
-function HubTile({ tile }: { tile: Tile }) {
-  return (
-    <a className="vy-card vy-hub-tile" href={tile.href}>
-      <span className="vy-hub-tile-mark" aria-hidden="true"><Icon name={tile.mark} size={18} /></span>
-      <span className="vy-hub-tile-body">
-        <span className="vy-hub-tile-title">
-          {tile.label}
-          {/* phone: "Label →" inline, exactly as before; desktop: moved to the corner */}
-          {tile.arrow && (
-            <>
-              {" "}
-              <span className="vy-hub-tile-arrow" aria-hidden="true">→</span>
-            </>
-          )}
-        </span>
-        <span className="vy-hub-tile-desc">{tile.desc}</span>
-      </span>
-    </a>
-  );
+  recommends: number | null;
 }
 
 export default function ProfilePage() {
   const { t, i18n } = useTranslation(["profile", "workspace", "adminCommercial", "privacy", "adminOps", "common", "contracts", "contact"]);
-  const [me, setMe] = useState<Me | null>(null);
+  const profile = useMyProfile();
+  const me = profile.data;
   const [invites, setInvites] = useState<Invite[]>([]);
   const [workspaces, setWorkspaces] = useState<WorkspaceRow[]>([]);
   const [stats, setStats] = useState<HubStats | null>(null);
+  const [recommends, setRecommends] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const sdk = useSdk();
   const routes = useRoutes();
   const { platformLink } = useHost();
 
-  async function loadInvites() {
-    const [pending, mine] = await Promise.all([
+  function loadInvites() {
+    return Promise.all([
       sdk.workspace.invitesMine().catch((): Invite[] => []),
       sdk.workspace.mine().catch((): WorkspaceRow[] => []),
-    ]);
-    setInvites(pending);
-    setWorkspaces(mine);
+    ]).then(([pending, mine]) => {
+      setInvites(pending);
+      setWorkspaces(mine);
+    });
   }
 
   useEffect(() => {
-    sdk.members.me().then(setMe).catch(() => setMe(null));
-    loadInvites();
-    // [IMP39] The identity card's counts. Each comes from an endpoint the
-    // app already calls elsewhere; if any one fails the card simply omits
-    // the numbers rather than showing a misleading zero.
-    Promise.all([
-      sdk.listings.mine<unknown[]>(),
-      sdk.enquiries.mine("sent"),
-      sdk.enquiries.mine("received"),
-      sdk.activity.get(),
-    ])
-      .then(([listings, sent, received, activity]) => {
+    void loadInvites();
+    // Counts from endpoints the app already calls elsewhere; if one fails
+    // the numbers are left out rather than shown as a misleading zero.
+    Promise.all([sdk.enquiries.mine("sent"), sdk.enquiries.mine("received"), sdk.activity.get()])
+      .then(([sent, received, activity]) => {
         const open = (rows: EnquirySummary[]) => rows.filter((e) => OPEN_ENQUIRY_STATES.includes(e.state)).length;
-        setStats({ listings: listings.length, openEnquiries: open(sent) + open(received), saved: activity.saved.length });
+        setStats({ openEnquiries: open(sent) + open(received), saved: activity.saved.length, recommends: null });
       })
       .catch(() => setStats(null));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sdk]);
+
+  // Recommendations earned on the profile and the business section.
+  const ids = [me?.work?.id, me?.business?.id].filter((x): x is string => !!x).join(",");
+  useEffect(() => {
+    if (!ids) return;
+    Promise.all(ids.split(",").map((id) => sdk.listings.get<Listing>(id).catch(() => null)))
+      .then((rows) => setRecommends(rows.reduce((n, l) => n + (l?.reputation?.recommends ?? 0), 0)))
+      .catch(() => setRecommends(null));
+  }, [ids, sdk]);
 
   async function answerInvite(id: string, accept: boolean) {
     setBusy(true);
@@ -119,141 +102,154 @@ export default function ProfilePage() {
     }
   }
 
-  const memberTiles: Tile[] = [
-    { href: routes.myListings, label: t("profile:myListings"), desc: t("profile:hub.desc.myListings"), mark: "listings", arrow: true },
-    { href: "/enquiries/mine", label: t("profile:enquiries"), desc: t("profile:hub.desc.enquiries"), mark: "enquiries", arrow: true },
-    // [FE2] contracts and calling preferences
-    { href: "/contracts", label: t("contracts:nav.title"), desc: t("contracts:nav.desc"), mark: "contract", arrow: true },
-    { href: "/profile/contact", label: t("contact:tile.label"), desc: t("contact:tile.desc"), mark: "phone", arrow: true },
-    { href: "/moderation/outcomes", label: t("profile:moderationOutcomes"), desc: t("profile:hub.desc.moderationOutcomes"), mark: "moderation", arrow: true },
-    { href: "/promotions", label: t("profile:myBoosts"), desc: t("profile:hub.desc.myBoosts"), mark: "boost", arrow: true },
-    { href: "/privacy", label: t("privacy:title"), desc: t("profile:hub.desc.privacy"), mark: "privacy", arrow: true },
+  const name = me?.name || t("profile:title");
+  const langCode = (me?.language ?? i18n.language ?? "en").slice(0, 2);
+  const languageName = t(`common:language.${langCode}` as "common:language.en", { defaultValue: langCode });
+
+  const work: Shortcut[] = [
+    { href: "/enquiries/mine", label: t("profile:enquiries"), hint: t("profile:hub.desc.enquiries"), icon: Inbox, tint: "brand", count: stats?.openEnquiries },
+    { href: "/contracts", label: t("contracts:nav.title"), hint: t("contracts:nav.desc"), icon: FileText, tint: "indigo" },
+    { href: "/activity", label: t("profile:hub.saved"), hint: t("profile:hub.desc.saved"), icon: Bookmark, tint: "teal", count: stats?.saved },
+    { href: "/promotions", label: t("profile:myBoosts"), hint: t("profile:hub.desc.myBoosts"), icon: Megaphone, tint: "amber" },
+    ...workspaces.map(
+      (w): Shortcut => ({
+        href: routes.workspace(w.listing_id),
+        label: w.listing_name,
+        hint: `${t("profile:workspaces")} · ${t(`workspace:role.${w.role}` as "role.owner")}`,
+        icon: LayoutGrid,
+        tint: "plum",
+      }),
+    ),
   ];
-  const perms = me?.operator_permissions ?? [];
-  const operatorDesc = t("profile:hub.desc.operator");
-  const operatorTiles = [
+  const settings: Shortcut[] = [
+    { href: "/profile/contact", label: t("contact:tile.label"), hint: t("contact:tile.desc"), icon: Phone, tint: "green" },
+    { href: "/privacy", label: t("privacy:title"), hint: t("profile:hub.desc.privacy"), icon: Lock, tint: "sky" },
+    { href: "/moderation/outcomes", label: t("profile:moderationOutcomes"), hint: t("profile:hub.desc.moderationOutcomes"), icon: ShieldCheck },
+  ];
+  const perms = me?.operatorPermissions ?? [];
+  const operator: Shortcut[] = [
     perms.includes("verification") && { href: "/admin/verification", label: t("profile:verificationQueue") },
     perms.includes("moderation") && { href: "/admin/moderation", label: t("profile:moderationQueue") },
     perms.includes("commercial") && { href: "/admin/commercial", label: t("adminCommercial:title") },
     (perms.includes("content") || perms.includes("analytics")) && { href: "/admin/ops", label: t("adminOps:title") },
   ]
     .filter((x): x is { href: string; label: string } => Boolean(x))
-    .map((x): Tile => ({ ...x, desc: operatorDesc, mark: "settings", arrow: true }));
-  const supportTiles: Tile[] = [
-    { href: "/moderation/outcomes#grievance", label: t("profile:help"), desc: t("profile:hub.desc.help"), mark: "help", arrow: false },
-  ];
-  // [Platform auth rule, FR50] "log out" is the parent platform's action,
-  // never a Vyapar-owned confirmation flow — this just hands control back to
-  // the platform entrance that authenticated the member.
+    .map((x): Shortcut => ({ ...x, hint: t("profile:hub.desc.operator"), icon: Wrench, tint: "warning" }));
+  const support: Shortcut[] = [{ href: "/moderation/outcomes#grievance", label: t("profile:help"), hint: t("profile:hub.desc.help"), icon: LifeBuoy }];
+  // [Platform auth rule, FR50] "log out" is the parent platform's action;
+  // this just hands control back to the platform entrance.
   if (platformLink) {
-    supportTiles.push({
-      href: platformLink.href,
-      label: t(platformLink.labelKey as "profile:backToForKhatri"),
-      desc: t("profile:hub.desc.back"),
-      mark: "back",
-      arrow: false,
-    });
+    support.push({ href: platformLink.href, label: t(platformLink.labelKey as "profile:backToForKhatri"), hint: t("profile:hub.desc.back"), icon: Undo2 });
   }
+  const groups: ShortcutGroup[] = [
+    { title: t("profile:hub.sections.work"), items: work },
+    { title: t("profile:hub.sections.settings"), items: settings },
+    { title: t("profile:operatorTools"), items: operator },
+    { title: t("profile:hub.sections.support"), items: support },
+  ];
 
-  const name = me?.display_name ?? t("profile:title");
-  const langCode = (me?.language ?? i18n.language ?? "en").slice(0, 2);
-  const languageName = t(`common:language.${langCode}` as "common:language.en", { defaultValue: langCode });
+  const statCells = stats
+    ? [
+        { href: "/enquiries/mine", n: stats.openEnquiries, label: t("profile:hub.statOpenEnquiries") },
+        { href: "/activity", n: stats.saved, label: t("profile:hub.statSaved") },
+        ...(recommends != null ? [{ href: me?.work ? `/listings/${me.work.id}` : "/profile", n: recommends, label: t("profile:hub.statRecommends") }] : []),
+      ]
+    : [];
 
   return (
     <Screen width="wide">
-      {/* phone: the page title, as before; desktop: the name lives in the identity card */}
-      <h1 className="vy-m-only">{name}</h1>
-      <div className="vy-hub">
-        <aside className="vy-card vy-hub-identity" aria-label={t("profile:title")}>
-          <span className="vy-hub-monogram" aria-hidden="true">{name.trim().charAt(0).toUpperCase()}</span>
-          <div className="vy-stack" style={{ gap: 4 }}>
-            <h1>{name}</h1>
-            <p className="vy-muted">{t("profile:hub.languageLine", { language: languageName })}</p>
-          </div>
-          {stats && (
-            <div className="vy-hub-stats">
-              <a className="vy-hub-stat" href={routes.myListings}>
-                <strong>{stats.listings}</strong>
-                <span>{t("profile:hub.statListings")}</span>
-              </a>
-              <a className="vy-hub-stat" href="/enquiries/mine">
-                <strong>{stats.openEnquiries}</strong>
-                <span>{t("profile:hub.statOpenEnquiries")}</span>
-              </a>
-              <a className="vy-hub-stat" href="/activity">
-                <strong>{stats.saved}</strong>
-                <span>{t("profile:hub.statSaved")}</span>
-              </a>
+      <div className="vy-acct-two">
+        <div className="vy-acct-two-main">
+          <section className="vy-card vy-acct-identity" aria-label={t("profile:title")}>
+            <span className="vy-acct-monogram" aria-hidden="true">
+              {name.trim().charAt(0).toUpperCase()}
+            </span>
+            <div className="vy-acct-identity-text">
+              <h1>{name}</h1>
+              <p className="vy-acct-meta">
+                {me?.locality && (
+                  <span>
+                    <MapPin size={14} strokeWidth={2} aria-hidden="true" />
+                    {me.locality}
+                  </span>
+                )}
+                <span>
+                  <Globe size={14} strokeWidth={2} aria-hidden="true" />
+                  {t("profile:hub.languageLine", { language: languageName })}
+                </span>
+              </p>
             </div>
-          )}
-        </aside>
-
-        <div className="vy-hub-main">
-          {/* [Owner, 2026-09-22] Business and professional profile, both always
-              shown, either optional; the rest of the hub sits below. */}
-          <ProfileSetup profiles={me?.profiles} />
-
-          <div className="vy-stack vy-hub-grid" style={{ gap: 8 }}>
-            {memberTiles.map((tile) => (
-              <HubTile key={tile.href} tile={tile} />
-            ))}
-          </div>
+            {statCells.length > 0 && (
+              <div className="vy-acct-stats" style={{ gridTemplateColumns: `repeat(${statCells.length}, minmax(0, 1fr))` }}>
+                {statCells.map((s) => (
+                  <Link key={s.label} className="vy-acct-stat" href={s.href} transitionTypes={["vy-forward"]}>
+                    <strong className="vy-num">{s.n}</strong>
+                    <span>{s.label}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
 
           {invites.length > 0 && (
-            <div className="vy-stack" style={{ gap: 8 }}>
-              <h2 className="vy-eyebrow">{t("profile:pendingInvites")}</h2>
+            <section className="vy-acct-section" aria-labelledby="invites-title">
+              <div className="vy-acct-section-head">
+                <h2 id="invites-title" className="vy-section-title">{t("profile:pendingInvites")}</h2>
+              </div>
               {invites.map((invite) => (
-                <div key={invite.id} className="vy-card vy-stack" style={{ gap: 6 }}>
-                  <strong>{invite.listing_name ?? invite.listing_id}</strong>
-                  <span className="vy-muted" style={{ fontSize: 13 }}>
-                    {t("profile:inviteRole", { role: t(`workspace:role.${invite.role}` as "role.admin") })} · {t("workspace:team.expires", { date: formatDate(invite.expires_at, i18n.language) })}
-                  </span>
+                <div key={invite.id} className="vy-card vy-acct-invite">
+                  <div className="vy-acct-row-text">
+                    <span className="vy-acct-row-label">{invite.listing_name ?? invite.listing_id}</span>
+                    <span className="vy-acct-hint">
+                      {t("profile:inviteRole", { role: t(`workspace:role.${invite.role}` as "role.admin") })} · <span className="vy-num">{t("workspace:team.expires", { date: formatDate(invite.expires_at, i18n.language) })}</span>
+                    </span>
+                  </div>
                   <div className="vy-row">
                     <button className="vy-btn vy-btn-primary" disabled={busy} onClick={() => answerInvite(invite.id, true)}>{t("profile:accept")}</button>
                     <button className="vy-btn vy-btn-ghost" disabled={busy} onClick={() => answerInvite(invite.id, false)}>{t("profile:decline")}</button>
                   </div>
                 </div>
               ))}
-            </div>
+            </section>
           )}
 
-          {workspaces.length > 0 && (
-            <div className="vy-stack" style={{ gap: 8 }}>
-              <h2 className="vy-eyebrow">{t("profile:workspaces")}</h2>
-              <div className="vy-stack vy-hub-grid" style={{ gap: 8 }}>
-                {workspaces.map((w) => (
-                  <HubTile
-                    key={w.listing_id}
-                    tile={{
-                      href: routes.workspace(w.listing_id),
-                      label: `${w.listing_name} · ${t(`workspace:role.${w.role}` as "role.owner")}`,
-                      desc: t("profile:hub.desc.workspace"),
-                      mark: "workspace",
-                      arrow: true,
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+          {me && (
+            <>
+              <section className="vy-acct-section" aria-labelledby="work-title">
+                <div className="vy-acct-section-head">
+                  <div className="vy-stack" style={{ gap: 2, minWidth: 0 }}>
+                    <h2 id="work-title" className="vy-section-title">{t("profile:profiles.workSection")}</h2>
+                    <p>{t("profile:profiles.workSectionHint")}</p>
+                  </div>
+                </div>
+                {me.work ? (
+                  <AccountProfileCard profile={me.work} href={`/listings/${me.work.id}`} />
+                ) : (
+                  <AddProfileCard kind="professional" href={routes.newListing} />
+                )}
+              </section>
 
-          {operatorTiles.length > 0 && (
-            <div className="vy-stack" style={{ gap: 8 }}>
-              <h2 className="vy-eyebrow">{t("profile:operatorTools")}</h2>
-              <div className="vy-stack vy-hub-grid" style={{ gap: 8 }}>
-                {operatorTiles.map((tile) => (
-                  <HubTile key={tile.href} tile={tile} />
-                ))}
-              </div>
-            </div>
+              <section className="vy-acct-section" aria-labelledby="business-title">
+                <div className="vy-acct-section-head">
+                  <div className="vy-stack" style={{ gap: 2, minWidth: 0 }}>
+                    <h2 id="business-title" className="vy-section-title">{t("profile:profiles.businessSection")}</h2>
+                    <p>{t("profile:profiles.businessSectionHint")}</p>
+                  </div>
+                </div>
+                {me.business ? (
+                  <AccountProfileCard profile={me.business} href={`/listings/${me.business.id}`} />
+                ) : (
+                  <AddProfileCard kind="business" href={`${routes.newListing}?kind=business`} />
+                )}
+              </section>
+            </>
           )}
-
-          <div className="vy-stack vy-hub-grid" style={{ gap: 8 }}>
-            {supportTiles.map((tile) => (
-              <HubTile key={tile.href} tile={tile} />
-            ))}
-          </div>
+          {!me && !profile.error && <div className="vy-skeleton" style={{ height: 220, borderRadius: "var(--radius-card)" }} aria-hidden="true" />}
         </div>
+
+        <aside className="vy-acct-two-side">
+          <ShortcutList groups={groups} ariaLabel={t("profile:hub.shortcuts")} />
+        </aside>
       </div>
     </Screen>
   );

@@ -7,7 +7,7 @@
     "received": "Thanks — our team will review this. The other person won't know who reported it.",
     "grievance": "Need to escalate? Write to grievance@forkhatri.example — we reply within 7 days.",
     "block": "Also block this member",
-    "blocked": "Blocked. You won't see each other's enquiries."
+    "blocked": "Blocked. You won't see each other's requests."
   },
   "reason": {
     "asked_for_money": "Asked me for money (fee, deposit or kit)",
@@ -49,10 +49,10 @@
     "review_dispute": "Review dispute"
   },
   "objectKind": {
-    "listing": "Listing",
-    "opportunity": "Opportunity",
-    "enquiry": "Enquiry",
-    "partnership": "Partnership request",
+    "listing": "Profile",
+    "opportunity": "Post",
+    "enquiry": "Request",
+    "partnership": "Business partnership request",
     "review": "Review"
   },
   "action": {
@@ -100,11 +100,16 @@
     "appealsEmpty": "No open appeals.",
     "uphold": "Uphold decision",
     "overturn": "Overturn and restore",
-    "notOperator": "This queue is only for operators with moderation permission."
+    "notOperator": "This queue is only for operators with moderation permission.",
+    "subtitle": "Most urgent first. Every decision needs a reason code; appeals sit beside the cases.",
+    "casesTitle": "Cases",
+    "decisionLabel": "Decision",
+    "reasonLabel": "Reason",
+    "appealAgainst": "Appeal against: {{action}}"
   },
   "outcomes": {
-    "title": "My moderation outcomes",
-    "empty": "No moderation decisions on your content.",
+    "title": "Moderation outcomes",
+    "empty": "No decisions on your content",
     "process": "You can appeal a decision once, within 15 days. A different operator reviews appeals where possible, usually within 7 days.",
     "decidedOn": "Decided {{date}}",
     "appealBy": "by {{date}}",
@@ -117,6 +122,9 @@
       "upheld": "Appeal not accepted — decision stands",
       "overturned": "Appeal accepted — restored",
       "delayed": "Appeal delayed — escalated"
-    }
+    },
+    "purpose": "Every decision on your content, with its reason and how to appeal.",
+    "emptyBody": "Nothing has been limited or removed. If that changes, it will be listed here with the reason.",
+    "grievanceTitle": "Help & grievance"
   }
 }

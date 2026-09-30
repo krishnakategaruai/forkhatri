@@ -43,8 +43,8 @@
     "experience": "Your experience",
     "moreKinds": "More kinds",
     "noSkills": "No skills match that.",
-    "verifiedOnly": "Verified posters only",
-    "verifiedChip": "Verified posters"
+    "verifiedOnly": "Only from verified people",
+    "verifiedChip": "Verified people"
   },
   "sort": {
     "relevance": "Best match",
@@ -57,9 +57,9 @@
     "employment": "Jobs",
     "freelance": "Projects",
     "local_service": "Local services",
-    "partnership": "Partnerships",
+    "partnership": "Business partnerships",
     "training": "Training",
-    "community": "Community"
+    "community": "Community & government"
   },
   "workMode": {
     "on_site": "On site",
@@ -139,9 +139,9 @@
     "build-website": {
       "title": "Build my website",
       "short": "Developers and designers for your site",
-      "lead": "Developers and designers who can make a website or app for your business, paid by milestone so you pay for what is done.",
+      "lead": "Developers and designers who can make a website or app for your business, paid by stage so you pay for what is done.",
       "postTitle": "Post the project",
-      "postBody": "Describe the site and your budget. Compare proposals, then start a contract with milestones."
+      "postBody": "Describe the site and your budget. Compare proposals, then start a contract with stages."
     },
     "cater-event": {
       "title": "Cater an event",
@@ -185,17 +185,19 @@
   },
   "segment": {
     "community": "From your community",
-    "public": "Public sources"
+    "public": "Shared from elsewhere"
   },
   "top": {
     "switchLabel": "What to look for",
-    "opportunities": "Opportunities",
+    "opportunities": "Posts",
     "businesses": "Businesses & professionals",
-    "searchLabel": "Search opportunities",
+    "searchLabel": "Search posts",
     "searchPlaceholder": "Search jobs, projects or skills",
+    "searchPlaceholderShort": "Search jobs or skills",
     "clearSearch": "Clear search",
     "nearPlace": "Near {{place}}",
     "nearPlaceKm": "Near {{place}} · {{km}} km",
+    "placeKm": "{{place}} · {{km}} km",
     "locationTitle": "Distance",
     "area": "Your area",
     "noArea": "Not set yet",
@@ -222,11 +224,11 @@
     "projectsBudget": "Projects with a budget over {{amount}}"
   },
   "results": {
-    "loading": "Finding opportunities…",
-    "count_one": "1 opportunity",
-    "count_other": "{{count}} opportunities",
-    "countNear_one": "1 opportunity near {{place}}",
-    "countNear_other": "{{count}} opportunities near {{place}}",
+    "loading": "Finding posts…",
+    "count_one": "1 post",
+    "count_other": "{{count}} posts",
+    "countNear_one": "1 post near {{place}}",
+    "countNear_other": "{{count}} posts near {{place}}",
     "widen": "Widen to {{km}} km",
     "dropLast": "Remove the last filter"
   },
@@ -245,22 +247,30 @@
   "card": {
     "why": "Why this?",
     "fromCommunity": "From your community",
-    "publicSource": "From a public source",
+    "publicSource": "Shared from another website",
     "sponsored": "Sponsored",
     "whyShort": "Why am I seeing this?",
-    "perMonth": "{{amount}} a month"
+    "perMonth": "{{amount}} a month",
+    "lakhAYear": "{{range}} lakh a year",
+    "agoToday": "today",
+    "agoYesterday": "yesterday",
+    "agoDays": "{{days}} days ago",
+    "perYearLakh": "{{range}} lakh a year"
   },
   "hero": {
     "subtitleNear": "Work near {{place}}, picked for you",
     "subtitle": "Work picked for you",
     "search": "Search",
-    "where": "Where"
+    "where": "Where",
+    "placeholderShort": "Search jobs or skills",
+    "subtitleNearPlain": "Work near {{place}}",
+    "subtitlePlain": "Work near you"
   },
   "trades": {
     "label": "Browse by trade",
     "all": "All",
     "allTitle": "All kinds of work",
-    "allHint": "Pick one to see its opportunities.",
+    "allHint": "Pick one to see its posts.",
     "selected": "{{trade}}, selected",
     "electricians": "Electricians",
     "plumbers": "Plumbers",
@@ -282,7 +292,7 @@
     "painters": "Painters"
   },
   "state": {
-    "errorTitle": "Couldn't load opportunities",
+    "errorTitle": "Couldn't load posts",
     "errorBody": "Check your connection and try again.",
     "retry": "Try again"
   },
@@ -290,5 +300,63 @@
     "title": "Want to see more work here?",
     "body": "Add your skills and we'll show work that fits you. Or post what you need, and people nearby will see it.",
     "post": "Post what you need"
+  },
+  "fbar": {
+    "trade": "Trade",
+    "tradeSearch": "Find a trade or skill",
+    "tradeAny": "Any trade",
+    "tradeMore": "{{first}} +{{count}}",
+    "tradeNone": "No trade matches “{{q}}”",
+    "distance": "Distance",
+    "anyDistance": "Any distance",
+    "km": "{{km}} km",
+    "fromPlace": "From {{place}}",
+    "pay": "Pay",
+    "payAny": "Any pay",
+    "payAtLeast": "₹{{amount}}+ a month",
+    "posted": "Posted",
+    "more": "More",
+    "moreCount": "More · {{count}}",
+    "workMode": "Where",
+    "shift": "Shift",
+    "experience": "Experience",
+    "verifiedOnly": "Only verified",
+    "kind": "Kind of work",
+    "apply": "Apply",
+    "clear": "Clear",
+    "close": "Close",
+    "available": "Available",
+    "availAny": "Any time",
+    "availNow": "Now",
+    "availWeek": "This week",
+    "availLater": "Later",
+    "verified": "Verified",
+    "serviceMode": "How they work",
+    "modeOnSite": "Comes to you",
+    "modeRemote": "Online",
+    "modeBoth": "Either way",
+    "modeAny": "Any",
+    "sort": "Sort by",
+    "sortRelevance": "Best match",
+    "sortDistance": "Nearest",
+    "sortFreshness": "Newest",
+    "sortVerified": "Verified first",
+    "seeAllTrades": "See all trades",
+    "widen": "Widen to {{km}} km",
+    "clearFilters": "Clear filters",
+    "label": "Filters"
+  },
+  "biz": {
+    "searchPlaceholder": "Search businesses, skills or areas",
+    "searchShort": "Search businesses",
+    "askPrice": "Ask for a price",
+    "call": "Call",
+    "count_one": "{{count}} profile",
+    "count_other": "{{count}} profiles",
+    "subtitle": "People and businesses who do the work",
+    "browseAll": "Browse everyone",
+    "viewProfile": "View profile",
+    "yourProfile": "Your profile",
+    "placeholderShort": "Search plumber, CA, tailor…"
   }
 }

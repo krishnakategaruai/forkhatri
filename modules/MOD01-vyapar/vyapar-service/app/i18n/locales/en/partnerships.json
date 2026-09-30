@@ -1,12 +1,12 @@
 {
   "error": {
-    "targetNotActive": "This listing isn't active right now.",
-    "notAccepting": "This listing isn't accepting partnership requests.",
-    "cannotProposeOwn": "You can't propose a partnership to your own listing.",
-    "needActiveListing": "Create an active listing first to propose partnerships.",
-    "senderListingInvalid": "Choose one of your own active listings.",
+    "targetNotActive": "This profile isn't active right now.",
+    "notAccepting": "This profile isn't accepting partnership requests.",
+    "cannotProposeOwn": "You can't suggest a partnership to your own profile.",
+    "needActiveListing": "Create an active profile first to discuss partnerships.",
+    "senderListingInvalid": "Choose one of your own active profiles.",
     "cooldown": "They declined your last request. You can send a new one after {date}.",
-    "alreadyPending": "You already have a pending request to this listing.",
+    "alreadyPending": "You already have a pending request to this profile.",
     "pendingCap": "You have {cap} pending requests. Withdraw one to send more.",
     "notFound": "Partnership request not found.",
     "recipientOnly": "Only the recipient can do this.",

@@ -1,7 +1,7 @@
 {
   "error": {
-    "permissionRequired": "ऑपरेटर 'सत्यापन' अनुमति आवश्यक है।",
-    "recordNotFound": "सत्यापन रिकॉर्ड नहीं मिला",
+    "permissionRequired": "ऑपरेटर 'वेरिफ़िकेशन' अनुमति आवश्यक है।",
+    "recordNotFound": "वेरिफ़िकेशन रिकॉर्ड नहीं मिला",
     "credentialFieldsRequired": "क्रेडेंशियल का नाम और उसे जारी करने वाले प्राधिकरण का नाम जोड़ें।",
     "invalidFormat": {
       "gst": "यह मान्य 15-अक्षर वाला GSTIN नहीं लगता।",

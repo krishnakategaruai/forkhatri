@@ -27,6 +27,7 @@ from pydantic import BaseModel, Field
 
 from app.services import hooks
 from app.viewer_profile import viewer_capabilities
+from app.geo import resolve_place
 from app.services.listings import require_profile
 from app.errors import ApiError
 from app.i18n import translate
@@ -293,6 +294,36 @@ def compensation_label(struct: OpportunityStructured, type_: str, lang: str) -> 
 
 _BARE_AMOUNT = re.compile(r"^\s*(?:₹|rs\.?|inr)?\s*([0-9][0-9,]*)(?:\.(\d{1,2}))?\s*(?:/-)?\s*$", re.IGNORECASE)
 
+# [Terminology — GLOSSARY.md "Pay"] "LPA" is recruiter shorthand most members
+# don't read. A yearly lakh figure ("₹8–10 LPA", "6 lakh per annum") is shown
+# as "₹8–10 lakh a year (₹67,000–₹83,000 a month)" in the viewer's language.
+_YEARLY_LAKH = re.compile(
+    r"^\s*(?:₹|rs\.?|inr)?\s*([0-9]+(?:\.[0-9]+)?)\s*"
+    r"(?:(?:–|-|to)\s*(?:₹|rs\.?)?\s*([0-9]+(?:\.[0-9]+)?))?\s*"
+    r"(?:lpa|l\.p\.a\.?|lakhs?\s*(?:per\s+annum|p\.?\s?a\.?|a\s+year|per\s+year|/\s*year|yearly))\s*$",
+    re.IGNORECASE,
+)
+
+
+def _yearly_lakh_label(text: str, lang: str) -> str | None:
+    m = _YEARLY_LAKH.match(text)
+    if not m:
+        return None
+
+    def monthly_paise(lakh: str) -> int:
+        # to a clean ₹1,000 (a converted figure must not look exact; matches DiscoverCard)
+        return round(float(lakh) * 100_000 / 12 / 1000) * 1000 * 100
+
+    def lakh(v: str) -> str:
+        return v[:-2] if v.endswith(".0") else v
+
+    lo, hi = m.group(1), m.group(2)
+    amount = f"₹{lakh(lo)}–{lakh(hi)}" if hi else f"₹{lakh(lo)}"
+    monthly = (
+        f"{format_inr(monthly_paise(lo))}–{format_inr(monthly_paise(hi))}" if hi else format_inr(monthly_paise(lo))
+    )
+    return translate("opportunities.compensation.yearlyLakh", lang, amount=amount, monthly=monthly)
+
 
 def legacy_compensation_label(text: str | None, type_: str, lang: str) -> str | None:
     """[FE2 — owner review 2026-09-29] Older posts keep money only in the
@@ -302,14 +333,115 @@ def legacy_compensation_label(text: str | None, type_: str, lang: str) -> str | 
     service). Any other free text is kept exactly as the poster wrote it."""
     if not text:
         return None
+    yearly = _yearly_lakh_label(text, lang)
+    if yearly:
+        return yearly
     m = _BARE_AMOUNT.match(text)
     if not m:
-        return text
+        # [Backend A, 2026-09-29] unit words ("₹250 per visit", "from ₹300
+        # per visit", "Pay per visit", "700/day", "negotiable") in the
+        # viewer's language (GLOSSARY.md "Pay"); anything else stays as written.
+        return _unit_pay_label(text, lang) or text
     paise = int(m.group(1).replace(",", "")) * 100 + int((m.group(2) or "0").ljust(2, "0"))
     key = {"employment": "monthly", "freelance": "fixed", "local_service": "budget"}.get(type_)
     if key is None:
         return format_inr(paise)
     return translate(f"opportunities.compensation.{key}", lang, amount=format_inr(paise))
+
+
+# ---------------------------------------------------------------------------
+# [Backend A, 2026-09-29] Pay units in free text, and pay facts for clients.
+# ---------------------------------------------------------------------------
+_AMT = r"(?:₹|rs\.?|inr)?\s*([0-9][0-9,]*(?:\.[0-9]+)?)\s*(k)?"
+_UNIT_WORDS = {
+    "visit": "visit", "day": "day", "daily": "day", "hour": "hour", "hr": "hour", "hrs": "hour",
+    "week": "week", "month": "month", "mo": "month", "monthly": "month",
+}
+_UNIT_AMOUNT = re.compile(
+    r"^\s*(from\s+|starting\s+(?:at\s+|from\s+)?)?" + _AMT +
+    r"(?:\s*(?:–|-|to)\s*" + _AMT + r")?\s*(?:/-)?\s*(?:/|per|a|an|every)\s*"
+    r"(visit|day|daily|hour|hrs?|week|month|mo)\s*$",
+    re.IGNORECASE,
+)
+_UNIT_ONLY = re.compile(r"^\s*(?:(?:pay|paid|payment)\s+)?(?:per|by\s+the|a|/)\s*(visit|day|hour|month)\s*(?:basis)?\s*$", re.IGNORECASE)
+_NEGOTIABLE = re.compile(r"^\s*(?:pay\s+|salary\s+|price\s+)?negotiable\s*$", re.IGNORECASE)
+_UNIT_KEY = {"visit": "perVisit", "day": "daily", "hour": "hourly", "week": "weekly", "month": "monthly"}
+
+
+def _amount_paise(num: str, k: str | None) -> int:
+    value = float(num.replace(",", ""))
+    return int(round(value * (1000 if k else 1) * 100))
+
+
+def _parse_unit_pay(text: str) -> tuple[str, int | None, int | None, bool] | None:
+    """(unit, min_paise, max_paise, starting_from) for a unit phrase, else None."""
+    m = _UNIT_AMOUNT.match(text or "")
+    if m:
+        lo = _amount_paise(m.group(2), m.group(3))
+        hi = _amount_paise(m.group(4), m.group(5)) if m.group(4) else None
+        return _UNIT_WORDS[m.group(6).lower()], lo, hi, bool(m.group(1))
+    m = _UNIT_ONLY.match(text or "")
+    if m:
+        return m.group(1).lower(), None, None, False
+    return None
+
+
+def _unit_pay_label(text: str, lang: str) -> str | None:
+    if _NEGOTIABLE.match(text or ""):
+        return translate("opportunities.compensation.negotiable", lang)
+    parsed = _parse_unit_pay(text)
+    if parsed is None:
+        return None
+    unit, lo, hi, starting = parsed
+    if lo is None:
+        return translate(f"opportunities.compensation.unitOnly.{unit}", lang)
+    amount = f"{format_inr(lo)}–{format_inr(hi)}" if hi and hi != lo else format_inr(lo)
+    label = translate(f"opportunities.compensation.{_UNIT_KEY[unit]}", lang, amount=amount)
+    return translate("opportunities.compensation.startingFrom", lang, label=label) if starting else label
+
+
+PayPeriod = Literal["month", "year", "week", "day", "visit", "hour", "fixed", "budget"]
+
+
+def _round_1000(paise: int) -> int:
+    return int(round(paise / 100_000)) * 100_000
+
+
+def pay_facts(struct: OpportunityStructured, type_: str, compensation: str | None) -> tuple[str | None, int | None, int | None]:
+    """(pay_period, pay_monthly_min_paise, pay_monthly_max_paise), so a client
+    can show a monthly figure first. Stated monthly salaries are exact;
+    figures converted from a yearly amount are rounded to ₹1,000 (a converted
+    figure must not look exact, same rule as the yearly label)."""
+    if type_ == "employment" and (struct.salary_min_paise is not None or struct.salary_max_paise is not None):
+        lo = struct.salary_min_paise if struct.salary_min_paise is not None else struct.salary_max_paise
+        hi = struct.salary_max_paise if struct.salary_max_paise is not None else struct.salary_min_paise
+        return "month", lo, hi
+    if type_ == "employment" and struct.incentive_type == "incentive_only":
+        return "month", None, None
+    if type_ == "freelance" and has_budget(struct):
+        return ("hour" if struct.budget_type == "hourly" else "fixed"), None, None
+    if type_ == "local_service" and struct.budget_paise is not None:
+        return "budget", None, None
+    text = (compensation or "").strip()
+    if not text:
+        return None, None, None
+    y = _YEARLY_LAKH.match(text)
+    if y:
+        lo = _round_1000(int(round(float(y.group(1)) * 100_000 * 100 / 12)))
+        hi = _round_1000(int(round(float(y.group(2)) * 100_000 * 100 / 12))) if y.group(2) else lo
+        return "year", lo, hi
+    b = _BARE_AMOUNT.match(text)
+    if b:
+        paise = int(b.group(1).replace(",", "")) * 100
+        period = {"employment": "month", "freelance": "fixed", "local_service": "budget"}.get(type_)
+        return period, (paise if period == "month" else None), (paise if period == "month" else None)
+    u = _parse_unit_pay(text)
+    if u:
+        unit, lo, hi = u[0], u[1], u[2]
+        if unit == "month" and lo is not None:
+            return "month", lo, hi or lo
+        return unit, None, None
+    return None, None, None
 
 
 def has_budget(struct: OpportunityStructured) -> bool:
@@ -355,6 +487,25 @@ def _seeker_charge_check(
 # or a local job (Apna's "Call HR", WorkIndia's "Click to call HR"); a
 # freelance proposal or a partnership is a written conversation.
 PRECALL_TYPES = ("employment", "local_service")
+
+
+async def _set_position(conn: asyncpg.Connection, row: asyncpg.Record, lat: float | None, lng: float | None,
+                        location: str | None, force: bool = False) -> asyncpg.Record:
+    """[IMP-B, owner 2026-09-30] A post needs coordinates for distance, radius
+    and Near you. Explicit lat/lng win; otherwise a known locality named in the
+    location text is used (app/geo.py). `force` re-derives on a location edit."""
+    if lat is not None and lng is not None:
+        new = (lat, lng)
+    else:
+        if row["lat"] is not None and not force:
+            return row
+        place = resolve_place(location or row["location"])
+        if place is None:
+            return row
+        new = (place.lat, place.lng)
+    return await conn.fetchrow(
+        "UPDATE vyapar_opportunities.opportunities SET lat = $2, lng = $3 WHERE id = $1 RETURNING *", row["id"], *new
+    )
 
 
 def _check_precall(allow: bool | None, type_: str, lang: str) -> None:
@@ -410,6 +561,9 @@ class OpportunityCreate(BaseModel):
     allow_precall: bool = Field(default=False, description="Let people call or WhatsApp before an application is accepted (employment, local_service)")
     # [IMP-B/W2] how they may reach the poster before acceptance; WhatsApp only by default.
     precall_channel: Literal["call_and_whatsapp", "whatsapp_only"] = "whatsapp_only"
+    # [IMP-B] where the work is; when omitted, a known locality named in `location` is used (app/geo.py)
+    lat: float | None = Field(default=None, ge=-90, le=90)
+    lng: float | None = Field(default=None, ge=-180, le=180)
 
 
 class OpportunityPatch(BaseModel):
@@ -429,6 +583,8 @@ class OpportunityPatch(BaseModel):
     candidate_pays: bool | None = Field(default=None, description="Must be false or omitted; true is refused (seeker_charge_not_allowed)")
     allow_precall: bool | None = Field(default=None, description="Let people call or WhatsApp before accepting (employment, local_service)")
     precall_channel: Literal["call_and_whatsapp", "whatsapp_only"] | None = None
+    lat: float | None = Field(default=None, ge=-90, le=90)
+    lng: float | None = Field(default=None, ge=-180, le=180)
 
 
 class ConfirmFieldsIn(BaseModel):
@@ -466,6 +622,14 @@ class OpportunityOut(BaseModel):
     # caller's language (falls back to the free-text `compensation`).
     structured: OpportunityStructured = Field(default_factory=OpportunityStructured)
     compensation_label: str | None = None
+    # [Backend A, 2026-09-29] How the pay is counted and, where it is a
+    # salary, its monthly figure, so a card can lead with "a month".
+    pay_period: PayPeriod | None = None  # month|year|week|day|visit|hour|fixed|budget
+    pay_monthly_min_paise: int | None = None
+    pay_monthly_max_paise: int | None = None
+    # [critique N3] true once the post's last date has passed: show it as
+    # Expired (GLOSSARY "Post past its date"); applying is refused.
+    deadline_passed: bool = False
     # [Backend A, workstream B's enrichers] set on the detail read only.
     # Shapes are B's: seeker_protection = {applies, title, body, report_reason,
     # report_label} (employment only, else null); poster_badges =
@@ -554,6 +718,8 @@ def _row_to_opp(row: asyncpg.Record, caller_id: str, saved: bool = False, lang: 
         saved=saved,
         structured=structured,
         compensation_label=compensation_label(structured, row["type"], lang) or legacy_compensation_label(row["compensation"], row["type"], lang),
+        **dict(zip(("pay_period", "pay_monthly_min_paise", "pay_monthly_max_paise"), pay_facts(structured, row["type"], row["compensation"]))),
+        deadline_passed=bool(row["deadline"] and row["deadline"] < datetime.now(timezone.utc)),
         allow_precall=bool(_col(row, "allow_precall")),
         precall_channel=_col(row, "precall_channel") or "whatsapp_only",
         precall_disclosure=(
@@ -614,6 +780,7 @@ async def create_opportunity(
         body.source_segment, body.source_name, body.source_url, body.entry_mode, body.raw_input, body.raw_image_url,
         unconfirmed, lang, *_structured_values(columns),
     )
+    row = await _set_position(conn, row, body.lat, body.lng, body.location)
     if body.allow_precall or body.precall_channel != "whatsapp_only":
         row = await conn.fetchrow(
             "UPDATE vyapar_opportunities.opportunities SET allow_precall = $2, precall_channel = $3 WHERE id = $1 RETURNING *",
@@ -625,11 +792,12 @@ async def create_opportunity(
 async def list_my_opportunities(
     conn: asyncpg.Connection,
     ctx: AuthzContext,
+    lang: str = "en",
 ) -> list[OpportunityOut]:
     rows = await conn.fetch(
         "SELECT * FROM vyapar_opportunities.opportunities WHERE poster_id = $1 ORDER BY created_at DESC", ctx.member_id
     )
-    return [_row_to_opp(r, ctx.member_id) for r in rows]
+    return [_row_to_opp(r, ctx.member_id, lang=lang) for r in rows]
 
 
 async def get_opportunity(
@@ -738,6 +906,7 @@ async def list_similar_opportunities(
     rows = await conn.fetch(
         """SELECT o.* FROM vyapar_opportunities.opportunities o
             WHERE o.id <> $1 AND o.state = 'active' AND o.poster_id <> $2
+              AND (o.deadline IS NULL OR o.deadline >= now())
               AND (CASE WHEN cardinality($4::text[]) > 0
                         THEN o.required_capabilities && $4::text[]
                         ELSE o.type = $3 END)
@@ -858,6 +1027,8 @@ async def update_opportunity(
         body.value_amount, body.location, body.work_mode, body.timing, body.required_capabilities,
         body.response_method, body.deadline, *_structured_values(columns), allow_precall, body.precall_channel,
     )
+    if body.lat is not None or body.location is not None:
+        row = await _set_position(conn, row, body.lat, body.lng, body.location, force=True)
     return _row_to_opp(row, ctx.member_id, lang=lang)
 
 
@@ -888,7 +1059,7 @@ async def confirm_opportunity_fields(
            WHERE id = $1 RETURNING *""",
         opportunity_id, confirmed, unconfirmed,
     )
-    return _row_to_opp(row, ctx.member_id)
+    return _row_to_opp(row, ctx.member_id, lang=lang)
 
 
 async def publish_opportunity(
@@ -940,7 +1111,7 @@ async def publish_opportunity(
             "UPDATE vyapar_opportunities.opportunities SET distribution_limited = true, updated_at = now() WHERE id = $1 RETURNING *",
             opportunity_id,
         )
-    return _row_to_opp(row, ctx.member_id)
+    return _row_to_opp(row, ctx.member_id, lang=lang)
 
 
 # ---------------------------------------------------------------------------
@@ -974,11 +1145,19 @@ async def close_opportunity(
     return await _lifecycle_action(conn, ctx, opportunity_id, lang, from_states={"active", "paused", "stale"}, to_state="closed")
 
 
+class RenewIn(BaseModel):
+    deadline: datetime | None = Field(default=None, description="New last date (must be in the future). When omitted and the old one has passed, the post gets its original window again (7 to 30 days, 14 when unknown).")
+
+
+RENEW_MIN_DAYS, RENEW_MAX_DAYS, RENEW_DEFAULT_DAYS = 7, 30, 14
+
+
 async def renew_opportunity(
     conn: asyncpg.Connection,
     ctx: AuthzContext,
     lang: str,
     opportunity_id: str,
+    body: RenewIn | None = None,
 ) -> OpportunityOut:
     current = await conn.fetchrow("SELECT * FROM vyapar_opportunities.opportunities WHERE id = $1", opportunity_id)
     if current is None or current["poster_id"] != ctx.member_id:
@@ -987,11 +1166,85 @@ async def renew_opportunity(
         # [FR13] renewing an Expired record older than 90 days re-requires
         # material-field confirmation rather than a bare state flip.
         raise ApiError(422, "opportunities.error.tooOldToRenew", lang)
+    # [Backend A, 2026-09-29] A post that expired because its last date
+    # passed needs a new one, or renewing it would bring back a post the feed
+    # still hides and that still refuses applications.
+    now = datetime.now(timezone.utc)
+    deadline = current["deadline"]
+    if body is not None and body.deadline is not None:
+        new_deadline = body.deadline if body.deadline.tzinfo else body.deadline.replace(tzinfo=timezone.utc)
+        if new_deadline <= now:
+            raise ApiError(422, "opportunities.error.deadlineInPast", lang)
+        deadline = new_deadline
+    elif deadline is not None and deadline < now:
+        start = current["published_at"] or current["created_at"]
+        window = (deadline - start).days if start and deadline > start else RENEW_DEFAULT_DAYS
+        deadline = now + timedelta(days=max(RENEW_MIN_DAYS, min(RENEW_MAX_DAYS, window)))
     row = await conn.fetchrow(
-        "UPDATE vyapar_opportunities.opportunities SET state='active', last_confirmed_at=now(), updated_at=now() WHERE id=$1 RETURNING *",
-        opportunity_id,
+        """UPDATE vyapar_opportunities.opportunities SET state='active', state_reason=NULL, deadline=$2,
+             last_confirmed_at=now(), updated_at=now() WHERE id=$1 RETURNING *""",
+        opportunity_id, deadline,
     )
-    return _row_to_opp(row, ctx.member_id)
+    return _row_to_opp(row, ctx.member_id, lang=lang)
+
+
+# ---------------------------------------------------------------------------
+# [Backend A, 2026-09-29] Lifecycle: active/paused/stale -> expired when the
+# post's last date passes (FR13's Expired state; GLOSSARY "Post past its
+# date"). The feed already hides such posts and applying is refused; this
+# makes the state say so too, and tells the poster in their language, with a
+# link to renew. Runs from the hourly loop in main.py; each post is expired
+# in its own transaction AS ITS POSTER (the RLS rule every poster update
+# follows), so the opportunity.expired domain event and the notification go
+# out exactly as if the poster had closed it. Idempotent: an expired post is
+# never picked again, and the notification key includes the deadline.
+# ---------------------------------------------------------------------------
+EXPIRABLE_STATES = ("active", "paused", "stale")
+
+
+class ExpiryPassOut(BaseModel):
+    expired: int
+    notified: int
+
+
+async def run_opportunity_expiry_pass(pool: asyncpg.Pool) -> dict:
+    from app.notifications import notify_member
+
+    counts = {"expired": 0, "notified": 0}
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            await conn.execute("SELECT set_config('vyapar.service_role', 'dispatcher', true)")
+            due = await conn.fetch(
+                """SELECT id, poster_id FROM vyapar_opportunities.opportunities
+                    WHERE state = ANY($1::text[]) AND deadline < now() ORDER BY deadline LIMIT 500""",
+                list(EXPIRABLE_STATES),
+            )
+    for item in due:
+        try:
+            async with pool.acquire() as conn:
+                async with conn.transaction():
+                    await conn.execute("SELECT set_config('vyapar.authz_context', $1, true)", item["poster_id"])
+                    row = await conn.fetchrow(
+                        """UPDATE vyapar_opportunities.opportunities
+                              SET state = 'expired', state_reason = 'deadline_passed', updated_at = now()
+                            WHERE id = $1 AND state = ANY($2::text[]) AND deadline < now()
+                        RETURNING id, poster_id, title, deadline""",
+                        item["id"], list(EXPIRABLE_STATES),
+                    )
+                    if row is None:
+                        continue
+                    counts["expired"] += 1
+                    if await notify_member(
+                        conn, member_id=row["poster_id"], template="opportunityExpired", link=f"/opportunities/{row['id']}",
+                        idempotency_key=f"opportunity_expired:{row['id']}:{row['deadline'].date().isoformat()}",
+                        params={"title": row["title"]},
+                    ):
+                        counts["notified"] += 1
+        except Exception:  # one bad row never stops the pass
+            import logging
+
+            logging.getLogger(__name__).exception("opportunity expiry failed for %s", item["id"])
+    return counts
 
 
 async def _lifecycle_action(conn, ctx, opportunity_id, lang: str, *, from_states: set[str], to_state: str, reset_freshness: bool = False) -> OpportunityOut:
@@ -1010,7 +1263,7 @@ async def _lifecycle_action(conn, ctx, opportunity_id, lang: str, *, from_states
             "UPDATE vyapar_opportunities.opportunities SET state=$2, updated_at=now() WHERE id=$1 RETURNING *",
             opportunity_id, to_state,
         )
-    return _row_to_opp(row, ctx.member_id)
+    return _row_to_opp(row, ctx.member_id, lang=lang)
 
 
 # ---------------------------------------------------------------------------
@@ -1032,7 +1285,7 @@ async def save_opportunity(
         ctx.member_id, opportunity_id,
     )
     await log_events(conn, "opportunity", [row["id"]], "save", "opportunity_detail")  # [FR32]
-    return _row_to_opp(row, ctx.member_id, saved=True)
+    return _row_to_opp(row, ctx.member_id, saved=True, lang=lang)
 
 
 async def unsave_opportunity(
@@ -1048,7 +1301,7 @@ async def unsave_opportunity(
         "UPDATE vyapar_opportunities.member_opportunity SET saved_at = NULL WHERE member_id = $1 AND opportunity_id = $2",
         ctx.member_id, opportunity_id,
     )
-    return _row_to_opp(row, ctx.member_id, saved=False)
+    return _row_to_opp(row, ctx.member_id, saved=False, lang=lang)
 
 
 class NotInterestedIn(BaseModel):
@@ -1222,4 +1475,4 @@ async def list_my_opportunities_page(
     cursor: str | None = None,
 ) -> Page[OpportunityOut]:
     """[Refactor A] Cursor-paged `list_my_opportunities` — same rows, same order."""
-    return paginate(await list_my_opportunities(conn, ctx), limit, cursor, lang)
+    return paginate(await list_my_opportunities(conn, ctx, lang), limit, cursor, lang)

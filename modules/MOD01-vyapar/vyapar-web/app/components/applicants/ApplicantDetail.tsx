@@ -9,9 +9,10 @@
 import { useTranslation } from "react-i18next";
 import type { AiShortlistItem, Applicant, Badge, ContactAction } from "@/lib/sdk";
 import ApplicantContact from "./ApplicantContact";
-import { formatDateIN, formatRupees } from "@/lib/money";
+import { formatDateIN } from "@/lib/money";
 import { useDisclosedContacts } from "@/app/hooks/hiring";
-import { bidLine } from "./ApplicantCard";
+import ProposalSummary, { hasProposalTerms } from "./ProposalSummary";
+import TranslateLink from "@/app/components/respond/TranslateLink";
 import ContactActionsBlock from "@/app/components/contact/ContactActionsBlock";
 
 export default function ApplicantDetail({
@@ -19,7 +20,6 @@ export default function ApplicantDetail({
   name,
   ai,
   badges,
-  opportunityType,
   contractEligible,
   onContact,
   contactBusy,
@@ -28,7 +28,8 @@ export default function ApplicantDetail({
   name: string;
   ai?: AiShortlistItem;
   badges: Badge[];
-  opportunityType: string;
+  /** Kept for callers; the contract rule now comes in as contractEligible. */
+  opportunityType?: string;
   contractEligible: boolean;
   onContact?: (action: ContactAction) => void;
   contactBusy?: string | null;
@@ -36,7 +37,6 @@ export default function ApplicantDetail({
   const { t, i18n } = useTranslation(["hiring", "common"]);
   const lang = i18n.language;
   const contacts = useDisclosedContacts(a.enquiry_id, a.stage === "hired");
-  const bid = bidLine(t, a, lang);
 
   return (
     <div className="vy-applicant-detail">
@@ -131,54 +131,17 @@ export default function ApplicantDetail({
         </div>
       )}
 
-      {(bid || a.timeline_days != null) && (
-        <div className="vy-facts" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
-          {bid && (
-            <div className="vy-fact">
-              <span className="vy-fact-label">{t("hiring:board.price")}</span>
-              <span className="vy-fact-value">{bid}</span>
-            </div>
-          )}
-          {a.timeline_days != null && (
-            <div className="vy-fact">
-              <span className="vy-fact-label">{t("hiring:board.timeline")}</span>
-              <span className="vy-fact-value">{t("hiring:proposal.days", { count: a.timeline_days })}</span>
-            </div>
-          )}
-        </div>
+      {/* [N6] the same proposal card the thread shows */}
+      {hasProposalTerms(a) && (
+        <ProposalSummary terms={a} />
       )}
-
-      {a.milestones.length > 0 && (
-        <div className="vy-stack" style={{ gap: 6 }}>
-          <span className="vy-fact-label">{t("hiring:proposal.milestones")}</span>
-          <ol className="vy-milestone-list">
-            {a.milestones.map((m, i) => (
-              <li key={i}>
-                <span>
-                  {i + 1}. {m.title} · {t("hiring:board.byDay", { count: m.due_days })}
-                </span>
-                <strong style={{ color: "var(--text-primary)" }}>{formatRupees(m.amount_paise, lang)}</strong>
-              </li>
-            ))}
-          </ol>
-        </div>
-      )}
-
-      {a.screening_answers.length > 0 && (
-        <dl className="vy-qa" style={{ margin: 0 }}>
-          {a.screening_answers.map((s) => (
-            <div key={s.question_id}>
-              <dt>{s.question ?? s.question_id}</dt>
-              <dd>{s.answer}</dd>
-            </div>
-          ))}
-        </dl>
-      )}
+      {!hasProposalTerms(a) && a.screening_answers.length > 0 && <ProposalSummary terms={{ screening_answers: a.screening_answers }} />}
 
       {a.message_preview && (
         <div className="vy-stack" style={{ gap: 4 }}>
           <span className="vy-fact-label">{t("hiring:board.theirMessage")}</span>
           <p style={{ whiteSpace: "pre-wrap", color: "var(--text-primary)", fontSize: 14 }}>{a.message_preview}</p>
+          <TranslateLink text={a.message_preview} language={a.message_language} />
         </div>
       )}
 

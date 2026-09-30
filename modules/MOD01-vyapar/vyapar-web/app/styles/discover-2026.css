@@ -77,10 +77,10 @@
 }
 
 .vy-hero-title {
-  font-size: clamp(1.625rem, 1.2rem + 2.2vw, 3.25rem);
-  font-weight: 800;
-  letter-spacing: -0.035em;
-  line-height: 1.08;
+  font-size: var(--type-hero);
+  font-weight: var(--weight-display);
+  letter-spacing: var(--tracking-hero);
+  line-height: var(--leading-display);
   color: var(--text-primary);
 }
 
@@ -102,7 +102,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 14px;
   border: none;
   border-radius: var(--radius-pill);
@@ -110,11 +110,41 @@
   color: var(--text-secondary);
   font: inherit;
   font-size: var(--type-sm);
-  font-weight: 700;
+  font-weight: var(--weight-ui);
+  line-height: var(--leading-ui);
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color 140ms var(--ease-out), color 140ms var(--ease-out);
+  transition: background-color var(--dur-hover) var(--ease-out), color var(--dur-hover) var(--ease-out);
+}
+
+/* The long label ("Businesses & professionals") is for desktop; phones
+   show the short word so neither tab is ever clipped (owner, 360px
+   emulation: "Businesses & profe"). Both spans are in the markup; CSS
+   picks one. On phones the two tabs share the width equally. */
+.vy-hero-tab-short {
+  display: none;
+}
+
+@media (max-width: 599px) {
+  .vy-hero-tabs {
+    gap: 6px;
+  }
+
+  .vy-hero-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+    padding: 0 10px;
+  }
+
+  .vy-hero-tab-long {
+    display: none;
+  }
+
+  .vy-hero-tab-short {
+    display: inline;
+  }
 }
 
 .vy-hero-tab[aria-selected="true"] {
@@ -166,16 +196,38 @@
   min-width: 0;
 }
 
+/* The mic inside the search pill: a 44px quiet icon button, vertically
+   centred, and the input reserves its width so the placeholder never runs
+   under it (owner, 360px emulation: "Search jobs, project[mic]s"). */
+.vy-hero-what .vy-voice-tools {
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+}
+
+.vy-hero-what .vy-voice-mic {
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.vy-hero-what .vy-voice-field:has(.vy-voice-tools) > .vy-hero-input {
+  padding-right: 46px;
+}
+
 .vy-hero-input {
   width: 100%;
   min-width: 0;
   border: none;
   background: transparent;
   font: inherit;
-  font-size: 1rem;
+  font-size: var(--type-body);
   color: var(--text-primary);
   padding: 8px 0;
   outline: none;
+  text-overflow: ellipsis;
 }
 
 .vy-hero-input::placeholder {
@@ -313,7 +365,7 @@
 }
 
 .vy-loc-chip2 {
-  max-width: 62vw;
+  max-width: min(72vw, 300px);
 }
 
 .vy-loc-pop2 {
@@ -350,8 +402,8 @@
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  width: 76px;
-  flex: 0 0 76px;
+  width: 84px;
+  flex: 0 0 84px;
   padding: 4px 2px;
   border: none;
   border-radius: var(--radius-md);
@@ -369,16 +421,24 @@
   transition: box-shadow 160ms var(--ease-out);
 }
 
+/* A trade's name is never cut short ("Electricia…"): up to two lines on
+   every width, hyphenated in the reader's language if a word is longer
+   than the tile. */
 .vy-trade-label {
   font-size: var(--type-xs);
-  font-weight: 650;
+  font-weight: var(--weight-ui);
   line-height: 1.25;
   text-align: center;
   color: var(--text-secondary);
   max-width: 100%;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 .vy-trade[aria-pressed="true"] .vy-trade-lg {
@@ -433,12 +493,6 @@
     border-radius: var(--radius-tile);
   }
 
-  .vy-trade-label {
-    white-space: normal;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-  }
 }
 
 /* "All kinds of work" sheet: a grid of every category */
@@ -641,7 +695,7 @@
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 6px 0 12px;
   border: none;
   border-radius: var(--radius-pill);
@@ -649,7 +703,7 @@
   color: var(--brand-text);
   font: inherit;
   font-size: var(--type-sm);
-  font-weight: 700;
+  font-weight: var(--weight-ui);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -706,12 +760,32 @@
 
 .vy-row2-cell {
   flex: 0 0 min(80vw, 300px);
+  /* min-width: auto let a nowrap meta line ("Gachibowli · 4.6 km away",
+     "నమోదు చేయండి") widen the cell past its basis, so the first card ran
+     off a 360px screen. The cell keeps its width; the lines ellipsize. */
+  min-width: 0;
+  max-width: min(80vw, 300px);
   scroll-snap-align: start;
   display: flex;
 }
 
 .vy-row2-cell > .vy-ocard {
   flex: 1;
+  min-width: 0;
+}
+
+.vy-ocard-line > span,
+.vy-ocard-pay > span {
+  min-width: 0;
+}
+
+/* The tag group takes the rest of the top row, so the action pill's
+   ellipsis engages only when the row is genuinely out of room, not
+   because the group shrank to fit. */
+.vy-ocard-tags {
+  flex: 1 1 auto;
+  min-width: 0;
+  justify-content: flex-end;
 }
 
 @media (min-width: 900px) {
@@ -772,15 +846,33 @@
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  min-height: 30px;
+  min-height: 32px;
   padding: 0 8px 0 12px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border-control);
   font-size: var(--type-xs);
-  font-weight: 700;
+  font-weight: var(--weight-ui);
   color: var(--text-primary);
   white-space: nowrap;
-  transition: background-color 160ms var(--ease-out);
+  /* A long verb ("నమోదు చేయండి") must not widen the card past its cell:
+     the pill shrinks and ellipsizes, the card keeps its width. */
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 100%;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 30px;
+  transition: background-color var(--dur-hover) var(--ease-out);
+}
+
+.vy-ocard-action > svg {
+  vertical-align: -3px;
+  margin-left: 2px;
+}
+
+.vy-ocard-top {
+  min-width: 0;
 }
 
 .vy-ocard-title {
@@ -880,9 +972,9 @@
   border: none;
   background: transparent;
   color: var(--text-tertiary);
-  width: 36px;
-  height: 36px;
-  margin: -6px -8px -6px 0;
+  width: 44px;
+  height: 44px;
+  margin: -10px -12px -10px 0;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -1023,4 +1115,283 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+/* The mic (FE1's VoiceInput) sits inside the hero field, vertically centred. */
+.vy-hero-what .vy-voice-field > .vy-hero-input {
+  padding-right: 52px;
+}
+
+.vy-hero-what .vy-voice-tools {
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+}
+
+@media (min-width: 900px) {
+  .vy-row2-arrows {
+    display: inline-flex;
+  }
+}
+
+.vy-hero-what {
+  flex: 1 1 0;
+}
+
+.vy-hero-what > .vy-voice {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+}
+
+.vy-hero-where {
+  flex: 0 0 auto;
+}
+
+/* Trade lane arrows (desktop) and a denser desktop hero (critique: the CA
+   and developer want speed — rows start higher). */
+.vy-trades-wrap {
+  position: relative;
+}
+
+.vy-trades-arrow {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .vy-trades-arrow:not([hidden]) {
+    display: grid;
+    position: absolute;
+    top: 14px;
+    z-index: 2;
+    box-shadow: var(--shadow-float);
+  }
+
+  .vy-trades-prev {
+    left: -12px;
+  }
+
+  .vy-trades-next {
+    right: -12px;
+  }
+
+  .vy-hero-title {
+    font-size: clamp(2rem, 1.2rem + 1.4vw, 2.75rem);
+  }
+
+  .vy-trade-lg {
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
+  }
+
+  .vy-trade {
+    width: 84px;
+    flex-basis: 84px;
+  }
+}
+
+/* A long pay line or title never widens a row card past its column. */
+.vy-row2-cell,
+.vy-dgrid2 > * {
+  min-width: 0;
+}
+
+.vy-row2-cell > .vy-ocard {
+  width: 100%;
+}
+
+.vy-ocard-pay > span,
+.vy-ocard-title {
+  overflow-wrap: anywhere;
+}
+
+/* Phone: the switch uses the short names so neither tab is clipped. */
+.vy-hero-tab-long {
+  display: none;
+}
+
+@media (min-width: 600px) {
+  .vy-hero-tab-long {
+    display: inline;
+  }
+
+  .vy-hero-tab-short {
+    display: none;
+  }
+}
+
+/* Card footer: the trust badge keeps its words; posted time wraps under it
+   on narrow cards rather than cutting "Verified business" short. */
+.vy-ocard-foot {
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
+
+.vy-ocard-trust {
+  overflow: visible;
+  white-space: normal;
+}
+
+/* Sparse / nudge block: icon + words on one line, actions under them. */
+.vy-nudge {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 12px 14px;
+  padding: 18px;
+}
+
+.vy-nudge-actions {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 900px) {
+  .vy-nudge {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    padding: 20px 24px;
+  }
+
+  .vy-nudge-actions {
+    grid-column: auto;
+  }
+}
+
+/* Trade names are never cut: up to two lines, no ellipsis (critique). */
+.vy-trade {
+  width: 80px;
+  flex-basis: 80px;
+}
+
+.vy-trade-label,
+.vy-trade-grid .vy-trade-label {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  display: block;
+  -webkit-line-clamp: unset;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  hyphens: manual;
+}
+
+@media (min-width: 900px) {
+  .vy-trade-label {
+    font-size: var(--type-xs);
+  }
+
+  .vy-trade {
+    width: 88px;
+    flex-basis: 88px;
+  }
+}
+
+/* The action chip fits any wording and wraps safely in hi / te. */
+.vy-ocard-action {
+  white-space: normal;
+  text-align: right;
+  max-width: 62%;
+  padding-block: 4px;
+  line-height: 1.25;
+}
+
+.vy-ocard-tags {
+  flex: 0 1 auto;
+  max-width: 72%;
+}
+
+.vy-ocard-action {
+  max-width: 100%;
+  flex-shrink: 1;
+}
+
+.vy-ocard-action > span {
+  min-width: 0;
+}
+
+.vy-ocard-action > svg {
+  flex-shrink: 0;
+}
+
+.vy-nudge p,
+.vy-nudge-text p {
+  flex: none;
+}
+
+.vy-loc-chip2 {
+  max-width: 72vw;
+}
+
+/* Tile columns scale with the reader's text size (Text size A+ / A++). */
+.vy-trade {
+  width: 5rem;
+  flex-basis: 5rem;
+}
+
+@media (min-width: 900px) {
+  .vy-trade {
+    width: 5.5rem;
+    flex-basis: 5.5rem;
+  }
+}
+
+/* ---- Businesses directory (same language as Discover) ----------------- */
+.vy-biz-head {
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.vy-biz-sub {
+  display: block;
+  font-size: var(--type-sm);
+  margin-top: 4px;
+}
+
+@media (min-width: 900px) {
+  .vy-biz-sub {
+    font-size: 1.0625rem;
+  }
+}
+
+.vy-pcard-what {
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* The directory's FilterSheet inside the sheet / drawer: no card-in-card. */
+.vy-bizfilters > .vy-card {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+.vy-ocard-when {
+  white-space: normal;
+  flex-shrink: 1;
+  text-align: right;
+}
+
+.vy-bizfilters input[type="checkbox"]:not([role="switch"]) {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--selected-solid-bg);
+}
+
+.vy-bizfilters label.vy-row {
+  min-height: 44px;
+}
+
+.vy-badge-own {
+  background: var(--selected-bg);
+  color: var(--selected-fg);
+  box-shadow: inset 0 0 0 1px var(--border-control);
 }

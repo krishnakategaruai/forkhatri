@@ -33,6 +33,7 @@ from app.identity import AuthzContext
 from app.services.privacy import require_accepted
 from app.impressions import boosted_ids, log_events
 from app.taxonomy_cache import labels_for
+from app.geo import resolve_place
 from app.reputation import badges_for_member, reputation_for_listings
 from app.profile_cards import ProfileCard, recommend_profiles
 from app.services.pagination import DEFAULT_LIMIT, MAX_LIMIT, Page, paginate
@@ -199,6 +200,13 @@ class ListingOut(BaseModel):
     # and search reads; [IMP-B] priced service tiers, set on the detail read.
     badges: list[dict] = []
     packages: list[dict] = []
+    # [Backend A, 2026-09-30 — one profile per member] `name` is the person;
+    # a business is an optional section of the same profile.
+    has_business: bool = False
+    business_name: str | None = None
+    business_headline: str | None = None
+    business_description: str | None = None
+    card_title: str = ""  # "Meena Sahni · Meena's Oven", or just the name
 
 
 async def require_profile(conn: asyncpg.Connection, member_id: str, lang: str) -> None:
@@ -237,6 +245,14 @@ async def has_verified_listing(conn: asyncpg.Connection, member_id: str) -> bool
     return await conn.fetchval(
         "SELECT EXISTS (SELECT 1 FROM vyapar_listings.listings WHERE owner_id = $1 AND state = 'active_verified')", member_id
     )
+
+
+def _opt(row: asyncpg.Record, key: str):
+    """A column that a narrower SELECT may not include."""
+    try:
+        return row[key]
+    except (KeyError, IndexError):
+        return None
 
 
 def _row_to_out(
@@ -292,6 +308,11 @@ def _row_to_out(
         verification_state=row["verification_state"],
         owner_id=row["owner_id"],
         is_owner=is_owner,
+        has_business=bool(_opt(row, "business_name")),
+        business_name=_opt(row, "business_name"),
+        business_headline=_opt(row, "business_headline"),
+        business_description=_opt(row, "business_description"),
+        card_title=f"{row['name']} · {_opt(row, 'business_name')}" if _opt(row, "business_name") and _opt(row, "business_name") != row["name"] else row["name"],
         contacts=[dict(c) for c in contacts] if is_owner else [
             dict(c) for c in contacts if c["disclosure"] == "public"
         ],
@@ -307,6 +328,16 @@ async def create_listing(
     cat_matched, cat_unmapped = await _match_taxonomy(conn, "category", body.categories)
     cap_matched, cap_unmapped = await _match_taxonomy(conn, "capability", body.capabilities)
 
+    # [Backend A, 2026-09-30 — owner: "each user will get one profile"] a
+    # member has one profile; a business is a section of it (PATCH
+    # /v1/me/profile). Any non-archived listing is that profile.
+    profile = await conn.fetchval(
+        "SELECT id FROM vyapar_listings.listings WHERE owner_id = $1 AND state <> 'archived' ORDER BY updated_at DESC LIMIT 1",
+        ctx.member_id,
+    )
+    if profile:
+        raise ApiError(409, "listings.error.profileExists", lang,
+                       extra={"existing_listing_id": str(profile), "profile_id": str(profile)})
     existing = await conn.fetchrow(
         "SELECT id FROM vyapar_listings.listings WHERE owner_id = $1 AND name = $2 AND locality = $3",
         ctx.member_id, body.name, body.locality,
@@ -314,19 +345,31 @@ async def create_listing(
     if existing:
         raise ApiError(409, "listings.error.duplicate", lang, extra={"existing_listing_id": str(existing["id"])})
 
-    row = await conn.fetchrow(
-        """INSERT INTO vyapar_listings.listings
-             (owner_id, kind, name, headline, description, categories, capabilities, unmapped_labels,
-              locality, lat, lng, service_mode, service_radius_km, primary_phone,
-              opportunity_participation, setup_step, content_language)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
-           RETURNING *""",
-        ctx.member_id, body.kind, body.name, body.headline, body.description,
-        cat_matched, cap_matched, cat_unmapped + cap_unmapped,
-        body.locality, body.lat, body.lng, body.service_mode, body.service_radius_km,
-        body.primary_phone, body.opportunity_participation,
-        1 if body.kind == "professional" else 0, lang,
-    )
+    # [IMP-B] a profile needs coordinates for distance; a known locality is used when none are given
+    if body.lat is None or body.lng is None:
+        place = resolve_place(body.locality)
+        if place is not None:
+            body = body.model_copy(update={"lat": place.lat, "lng": place.lng})
+    try:
+        async with conn.transaction():  # savepoint: a lost race leaves the request usable for the 409
+            row = await conn.fetchrow(
+                """INSERT INTO vyapar_listings.listings
+                     (owner_id, kind, name, headline, description, categories, capabilities, unmapped_labels,
+                      locality, lat, lng, service_mode, service_radius_km, primary_phone,
+                      opportunity_participation, setup_step, content_language)
+                   VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+                   RETURNING *""",
+                ctx.member_id, body.kind, body.name, body.headline, body.description,
+                cat_matched, cap_matched, cat_unmapped + cap_unmapped,
+                body.locality, body.lat, body.lng, body.service_mode, body.service_radius_km,
+                body.primary_phone, body.opportunity_participation,
+                1 if body.kind == "professional" else 0, lang,
+            )
+    except asyncpg.UniqueViolationError:  # a concurrent create won the one-profile index
+        profile = await conn.fetchval(
+            "SELECT id FROM vyapar_listings.listings WHERE owner_id = $1 AND state <> 'archived' LIMIT 1", ctx.member_id)
+        raise ApiError(409, "listings.error.profileExists", lang,
+                       extra={"existing_listing_id": str(profile) if profile else None, "profile_id": str(profile) if profile else None})
     for c in body.contacts:
         await conn.execute(
             "INSERT INTO vyapar_listings.listing_contacts (listing_id, channel, value, disclosure) VALUES ($1,$2,$3,$4)",
@@ -344,7 +387,9 @@ async def list_my_listings(
     lang: str,
 ) -> list[ListingOut]:
     rows = await conn.fetch(
-        "SELECT * FROM vyapar_listings.listings WHERE owner_id = $1 ORDER BY created_at DESC", ctx.member_id
+        # merged into the one profile (migration 026): history, not a profile of theirs
+        """SELECT * FROM vyapar_listings.listings WHERE owner_id = $1
+             AND NOT (state = 'archived' AND coalesce(state_reason, '') LIKE 'merged_into:%') ORDER BY created_at DESC""", ctx.member_id
     )
     out = []
     for row in rows:
@@ -498,6 +543,11 @@ async def update_listing(
     if current is None:
         raise ApiError(404, "common.error.listingNotFound", lang)
 
+    # [IMP-B] a locality change without coordinates moves the pin to that locality
+    if body.locality is not None and body.lat is None and body.lng is None:
+        place = resolve_place(body.locality)
+        if place is not None:
+            body = body.model_copy(update={"lat": place.lat, "lng": place.lng})
     cat_matched, cat_unmapped, cap_matched, cap_unmapped = None, [], None, []
     if body.categories is not None:
         cat_matched, cat_unmapped = await _match_taxonomy(conn, "category", body.categories)

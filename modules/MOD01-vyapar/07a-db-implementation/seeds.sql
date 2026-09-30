@@ -112,6 +112,12 @@ INSERT INTO taxonomy_terms (kind, slug, name_en, status) VALUES ('capability','p
 \ir migrations/022-taxonomy-trade-roles.sql
 
 -- ---------------------------------------------------------------- listings
+-- [026] The seed data below predates "one profile per member" (several
+-- listings for Meena, Sunita, Deepak). The index is dropped for the inserts
+-- and migration 026 is re-applied at the end of this file, which
+-- consolidates exactly as it did on the live database and recreates it.
+DROP INDEX IF EXISTS vyapar_listings.listings_one_profile_per_owner;
+
 INSERT INTO listings (id, owner_id, kind, name, headline, description, categories, capabilities, services, locality, lat, lng, service_radius_km, service_mode, primary_phone, contact_verified, experience_years, languages, availability, rates, intent_state, intent_visible, state, verification_state, verification_document, verification_claim, verified_at, verification_expires_at, image_url, response_minutes, published_at, last_confirmed_at, credential_ref) VALUES
 ('00000000-0000-4000-8000-000000000001','m_anita','business','Khatri & Associates','Chartered Accountants for small businesses','GST registration and monthly filing, income-tax returns, bookkeeping and audit support for shops, traders and startups in Hyderabad. Fixed monthly packages, no surprises.','{accounting_tax}','{accounting,gst_filing,tax}','[{"name":"GST registration","price_hint":"₹1,500"},{"name":"Monthly GST filing","price_hint":"from ₹999/mo"},{"name":"ITR filing","price_hint":"from ₹799"}]','Banjara Hills',17.4156,78.4347,15,'both','+919000000002',true,12,'{en,hi}','this_week',NULL,NULL,false,'active_verified','verified','gst',NULL,now()-interval '40 days',now()+interval '325 days','/assets/accountant.jpg',45,now()-interval '70 days',now()-interval '3 days',NULL),
 ('00000000-0000-4000-8000-000000000002','m_ravi','professional','Ravi Mehra — Plumbing','Same-day plumbing repairs, Ameerpet & nearby','Leak repair, bathroom fittings, water-tank cleaning, new pipeline work. 15 years in Hyderabad. Call for emergency work after 8 pm too.','{home_repair}','{plumbing}','[{"name":"Leak repair","price_hint":"from ₹300"},{"name":"Bathroom fitting","price_hint":"quote"},{"name":"Tank cleaning","price_hint":"₹800"}]','Ameerpet',17.4375,78.4483,8,'on_site','+919000000003',true,15,'{hi,te}','now','from ₹300 per visit','open',false,'active_unverified','not_started',NULL,NULL,NULL,NULL,'/assets/plumber.jpg',15,now()-interval '20 days',now()-interval '1 day',NULL),
@@ -366,3 +372,6 @@ INSERT INTO audit_events (actor_id, object_kind, object_id, action, reason_code,
 ('m_neha_ops','listing','00000000-0000-4000-8000-000000000001','verification.verify','gst_lookup_ok','{"document":"gst"}',now()-interval '40 days'),
 ('m_neha_ops','listing','00000000-0000-4000-8000-000000000016','moderation.suspend','fake_listing','{"days":30}',now()-interval '31 days'),
 ('m_sunita','promotion','00000000-0000-4000-8000-000000000501','promotion.activate','payment_succeeded','{}',now()-interval '2 days');
+
+-- [026] One profile per member: consolidate the seeded listings, recreate the index.
+\ir migrations/026-one-profile-per-member.sql

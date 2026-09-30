@@ -181,10 +181,24 @@ export interface ContractListParams {
   cursor?: string | null;
 }
 
+/** getContractRoles (backend D, critique N1): who pays, who works, and whether I can start one now. */
+export interface ContractRoles {
+  enquiry_id: string;
+  client_member_id: string;
+  provider_member_id: string;
+  basis: "poster_pays" | "requester_pays";
+  my_role: "client" | "provider";
+  can_create: boolean;
+  blocked_reason: "enquiry_not_accepted" | "not_client" | "duplicate_contract" | null;
+  live_contract_id: string | null;
+}
+
 export function contractsApi(c: VyaparClient) {
   const base = (id: string) => `/v1/contracts/${seg(id)}`;
   const ms = (id: string, mid: string) => `${base(id)}/milestones/${seg(mid)}`;
   return {
+    /** getContractRoles — the server's payer rule; the UI never derives it itself */
+    roles: (enquiryId: string) => c.get<ContractRoles>("/v1/contracts/roles", { enquiry_id: enquiryId }),
     /** createContract — client only; the enquiry must be accepted */
     create: (body: ContractCreateInput, idempotencyKey?: string) => c.post<Contract>("/v1/contracts", body, { idempotencyKey }),
     /** listMyContracts */

@@ -1,22 +1,22 @@
 {
   "home": {
     "greeting": "Namaste, {{name}}",
-    "postOpportunity": "+ Post opportunity",
+    "postOpportunity": "+ Post",
     "openDirectory": "Businesses & Professionals",
     "loadingFeed": "Loading your feed…",
-    "addCapabilities": "Add my capabilities",
-    "noOpportunities": "No opportunities to show yet — check Businesses & Professionals to browse listings instead.",
-    "sectionForYou": "For You",
-    "sectionExplore": "Explore",
-    "sectionNearYou": "Near You",
-    "sectionCommunity": "Community",
-    "sectionPublic": "Public",
+    "addCapabilities": "Add my skills",
+    "noOpportunities": "No posts to show yet — check Businesses & Professionals to browse profiles instead.",
+    "sectionForYou": "For you",
+    "sectionExplore": "More to explore",
+    "sectionNearYou": "Near you",
+    "sectionCommunity": "From your community",
+    "sectionPublic": "Shared from elsewhere",
     "seeAll": "See all {{count}}",
     "emptyBody": "Nothing has been posted that matches you yet. Post what you need, and people in your community will see it.",
     "emptyAction": "Post something"
   },
   "enrichment": {
-    "sparseProfile": "Add your capabilities to get better matches — we can't personalize your feed much yet."
+    "sparseProfile": "Add your skills to get better matches — we can't personalize your feed much yet."
   },
   "card": {
     "postedToday": "posted today",
@@ -29,16 +29,16 @@
     "search": "Search",
     "chipCategory": "category: {{category}}",
     "chipNear": "near: {{locality}}",
-    "verifiedLabel": "Business existence verified",
+    "verifiedLabel": "Business verified",
     "noExactMatch": "No exact match found.",
     "postWhatYouNeed": "Post what you need",
     "hint": "Search by name, category or locality — or just browse by tapping Search.",
     "broadenRadius": "Widen to {{km}} km",
     "broadenAdjacentCategories": "Include adjacent categories",
     "broadenRemoveFilter": "Remove one filter",
-    "broadenIncludeUnverified": "Include unverified listings",
+    "broadenIncludeUnverified": "Include unverified profiles",
     "tooManySearches": "Too many searches — please slow down.",
-    "searchUnavailable": "Search is temporarily unavailable — showing recently added listings instead.",
+    "searchUnavailable": "Search is temporarily unavailable — showing recently added profiles instead.",
     "recentlyAdded": "recently added",
     "filters": "Filters",
     "filtersActive": "Filters ({{count}})",
@@ -66,14 +66,17 @@
     "clearFilters": "Clear filters",
     "applyFilters": "Apply",
     "distanceAway": "{{km}} km away",
-    "resultsCount": "{{count}} results"
+    "resultsCount": "{{count}} results",
+    "resultsCount_one": "1 result",
+    "resultsCount_other": "{{count}} results"
   },
   "post": {
-    "title": "What are you posting?",
-    "listingTitle": "A business or professional listing",
-    "listingDesc": "A durable presence people can find and contact.",
-    "opportunityTitle": "An opportunity",
-    "opportunityDesc": "A job, gig, or something time-bound worth sharing."
+    "title": "What do you want to post?",
+    "listingTitle": "Your profile",
+    "listingDesc": "Set up or update your work profile and your business, so people can find you.",
+    "opportunityTitle": "A post",
+    "opportunityDesc": "A job, project, local service need, training or event.",
+    "subtitle": "A post reaches people now. Your profile lets people find you any time."
   },
   "profiles": {
     "similarTitle": "Similar profiles",
@@ -92,6 +95,6 @@
     "radius": "Widen to {{km}} km",
     "adjacent_categories": "Include related categories",
     "remove_filter": "Remove one filter",
-    "include_unverified": "Include unverified listings"
+    "include_unverified": "Include unverified profiles"
   }
 }

@@ -19,10 +19,12 @@
 // answered with the very same control the form shows.
 // ======================================================================
 
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { TaxonomyTree } from "@/lib/sdk";
 import VoiceInput, { appendSpoken } from "@/app/components/VoiceInput";
 import SkillPicker from "@/app/components/taxonomy/SkillPicker";
+import { FieldSelect, MultiFieldSelect } from "@/app/components/ui/FieldSelect";
 import {
   ASSETS,
   DURATIONS,
@@ -42,7 +44,7 @@ import {
   type FieldCode,
   type PostKind,
 } from "./draft";
-import { FieldBlock, MoneyInput, MoneyRange, MultiChips, OptionChips, Segmented, readbackRange } from "./fields";
+import { FieldBlock, FieldGroup, MoneyInput, MoneyRange, OptionChips, Segmented, readbackRange } from "./fields";
 import { experienceLabel } from "./labels";
 import { rupeesToPaise } from "@/lib/money";
 
@@ -65,6 +67,48 @@ export interface ComposerFormProps {
   errors: Partial<Record<FieldCode, string>>;
   /** slug → English name for the skill search (see useTaxonomyAliases). */
   aliases?: ReadonlyMap<string, string>;
+}
+
+// [FE1 — 2026-09-30, owner: "never ask what we know"] Shown only while the
+// area is empty (the saved locality prefills it otherwise). The browser gives
+// coordinates; turning them into a colony name needs a reverse-geocoding
+// service, configured as NEXT_PUBLIC_REVERSE_GEOCODE_URL_TEMPLATE with
+// {lat}, {lon} and {lang} (see .env.example). Unset = the button is hidden,
+// never a guess. The response's first "area"-like field is used.
+const REVERSE_GEOCODE_TEMPLATE = process.env.NEXT_PUBLIC_REVERSE_GEOCODE_URL_TEMPLATE ?? "";
+
+function UseMyLocation({ onPlace }: { onPlace: (place: string) => void }) {
+  const { t, i18n } = useTranslation("hiring");
+  const [state, setState] = useState<"idle" | "busy" | "failed">("idle");
+  if (!REVERSE_GEOCODE_TEMPLATE || typeof navigator === "undefined" || !("geolocation" in navigator)) return null;
+  function locate() {
+    setState("busy");
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        try {
+          const url = REVERSE_GEOCODE_TEMPLATE.replace("{lat}", String(coords.latitude)).replace("{lon}", String(coords.longitude)).replace("{lang}", i18n.language);
+          const body = (await (await fetch(url)).json()) as { address?: Record<string, string>; display_name?: string };
+          const a = body.address ?? {};
+          const place = [a.suburb ?? a.neighbourhood ?? a.quarter, a.city ?? a.town ?? a.village].filter(Boolean).join(", ") || body.display_name || "";
+          if (!place) throw new Error("no place");
+          onPlace(place);
+          setState("idle");
+        } catch {
+          setState("failed");
+        }
+      },
+      () => setState("failed"),
+      { timeout: 10000, maximumAge: 600000 },
+    );
+  }
+  return (
+    <div className="vy-row" style={{ gap: 8, flexWrap: "wrap" }}>
+      <button type="button" className="vy-btn vy-btn-ghost" style={{ alignSelf: "flex-start" }} disabled={state === "busy"} onClick={locate}>
+        {state === "busy" ? t("location.finding") : t("location.useCurrent")}
+      </button>
+      {state === "failed" && <span className="vy-field-hint">{t("location.failed")}</span>}
+    </div>
+  );
 }
 
 export function useComposerControls({ draft, onChange, tree, errors, aliases }: Omit<ComposerFormProps, "flagged" | "onLooksRight">) {
@@ -90,14 +134,17 @@ export function useComposerControls({ draft, onChange, tree, errors, aliases }: 
         );
       case "location":
         return (
-          <input
-            id="vy-location"
-            className="vy-input"
-            value={d.location}
-            onChange={(e) => set({ location: e.target.value })}
-            placeholder={t(d.type === "employment" ? "hiring:placeholders.exactArea" : "hiring:placeholders.location")}
-            aria-invalid={!!errors.location || undefined}
-          />
+          <div className="vy-stack" style={{ gap: 6 }}>
+            <input
+              id="vy-location"
+              className="vy-input"
+              value={d.location}
+              onChange={(e) => set({ location: e.target.value })}
+              placeholder={t(d.type === "employment" ? "hiring:placeholders.exactArea" : "hiring:placeholders.location")}
+              aria-invalid={!!errors.location || undefined}
+            />
+            {!d.location.trim() && <UseMyLocation onPlace={(place) => set({ location: place })} />}
+          </div>
         );
       case "required_capabilities":
         return <SkillPicker tree={tree} selected={d.skills} onChange={(skills) => set({ skills })} max={10} aliases={aliases} collapsible />;
@@ -146,81 +193,111 @@ export function useComposerControls({ draft, onChange, tree, errors, aliases }: 
             )}
           </div>
         );
-      case "openings":
+      case "openings": {
+        const isOther = d.openings !== null && !(OPENINGS as readonly number[]).includes(d.openings);
         return (
-          <div className="vy-row" style={{ flexWrap: "wrap", gap: 6 }}>
-            <OptionChips options={OPENINGS} value={d.openings} onChange={(v) => set({ openings: v })} label={(v) => String(v)} ariaLabel={t("hiring:fields.openings")} />
-            <input
-              className="vy-input"
-              style={{ width: 96 }}
-              inputMode="numeric"
-              aria-label={t("hiring:fields.openingsOther")}
-              placeholder={t("hiring:fields.openingsOther")}
-              value={d.openings !== null && !(OPENINGS as readonly number[]).includes(d.openings) ? String(d.openings) : ""}
-              onChange={(e) => {
-                const n = Number(e.target.value.replace(/[^\d]/g, ""));
-                set({ openings: n > 0 ? Math.min(n, 1000) : null });
-              }}
+          <div className="vy-stack" style={{ gap: 8 }}>
+            <FieldSelect
+              options={[...OPENINGS.map((n) => ({ value: n, label: String(n) })), { value: -1, label: t("hiring:fields.openingsOther") }]}
+              value={isOther ? -1 : d.openings}
+              onChange={(v) => set({ openings: v === -1 ? d.openings ?? 1 : v })}
+              placeholder={t("hiring:select.any")}
+              ariaLabel={t("hiring:fields.openings")}
             />
+            {isOther && (
+              <input
+                className="vy-input vy-num"
+                style={{ maxWidth: 140 }}
+                inputMode="numeric"
+                aria-label={t("hiring:fields.openingsOther")}
+                placeholder={t("hiring:fields.openingsOther")}
+                value={d.openings !== null ? String(d.openings) : ""}
+                onChange={(e) => {
+                  const n = Number(e.target.value.replace(/[^\d]/g, ""));
+                  set({ openings: n > 0 ? Math.min(n, 1000) : null });
+                }}
+              />
+            )}
           </div>
         );
+      }
       case "shift":
-        return <OptionChips options={SHIFTS} value={d.shift} onChange={(v) => set({ shift: v })} label={(v) => t(`hiring:options.shift.${v}`)} ariaLabel={t("hiring:fields.shift")} />;
+        return (
+          <FieldSelect
+            options={SHIFTS.map((v) => ({ value: v, label: t(`hiring:options.shift.${v}`) }))}
+            value={d.shift}
+            onChange={(v) => set({ shift: v })}
+            placeholder={t("hiring:select.any")}
+            ariaLabel={t("hiring:fields.shift")}
+          />
+        );
       case "job_timings":
         return (
           <div className="vy-stack" style={{ gap: 8 }}>
             <input className="vy-input" value={d.jobTimings} maxLength={200} onChange={(e) => set({ jobTimings: e.target.value })} placeholder={t("hiring:placeholders.jobTimings")} />
-            <div className="vy-options">
-              {TIMING_PRESETS.map((p) => {
-                const text = t(`hiring:presets.timings.${p}`);
-                return (
-                  <button key={p} type="button" className="vy-chip" aria-pressed={d.jobTimings === text} onClick={() => set({ jobTimings: text })}>
-                    {text}
-                  </button>
-                );
-              })}
-            </div>
+            <FieldSelect
+              options={TIMING_PRESETS.map((p) => ({ value: p, label: t(`hiring:presets.timings.${p}`) }))}
+              value={TIMING_PRESETS.find((p) => t(`hiring:presets.timings.${p}`) === d.jobTimings) ?? null}
+              onChange={(p) => set({ jobTimings: p ? t(`hiring:presets.timings.${p}`) : "" })}
+              placeholder={t("hiring:fields.commonHours")}
+              ariaLabel={t("hiring:fields.commonHours")}
+            />
           </div>
         );
       case "experience":
         return (
-          <OptionChips
-            options={EXPERIENCE_MONTHS}
+          <FieldSelect
+            options={EXPERIENCE_MONTHS.map((v) => ({
+              value: v,
+              label: v === 0 ? t("hiring:options.experience.freshersWelcome") : t("hiring:options.experience.atLeast", { value: experienceLabel(t, v) }),
+            }))}
             value={d.experienceMonths as (typeof EXPERIENCE_MONTHS)[number] | null}
             onChange={(v) => set({ experienceMonths: v })}
-            label={(v) => (v === 0 ? t("hiring:options.experience.freshersWelcome") : t("hiring:options.experience.atLeast", { value: experienceLabel(t, v) }))}
+            placeholder={t("hiring:select.any")}
             ariaLabel={t("hiring:fields.experience")}
           />
         );
       case "min_qualification":
         return (
-          <OptionChips
-            options={QUALIFICATIONS}
+          <FieldSelect
+            options={QUALIFICATIONS.map((v) => ({ value: v, label: t(`hiring:options.qualification.${v}`) }))}
             value={d.qualification}
             onChange={(v) => set({ qualification: v })}
-            label={(v) => t(`hiring:options.qualification.${v}`)}
+            placeholder={t("hiring:select.any")}
             ariaLabel={t("hiring:fields.qualification")}
           />
         );
       case "english_level":
         return (
-          <OptionChips options={ENGLISH_LEVELS} value={d.english} onChange={(v) => set({ english: v })} label={(v) => t(`hiring:options.english.${v}`)} ariaLabel={t("hiring:fields.english")} />
+          <FieldSelect
+            options={ENGLISH_LEVELS.map((v) => ({ value: v, label: t(`hiring:options.english.${v}`) }))}
+            value={d.english}
+            onChange={(v) => set({ english: v })}
+            placeholder={t("hiring:select.any")}
+            ariaLabel={t("hiring:fields.english")}
+          />
         );
       case "requires_assets":
-        return <MultiChips options={ASSETS} value={d.assets} onChange={(assets) => set({ assets })} label={(v) => t(`hiring:options.asset.${v}`)} ariaLabel={t("hiring:fields.assets")} />;
+        return (
+          <MultiFieldSelect
+            options={ASSETS.map((v) => ({ value: v, label: t(`hiring:options.asset.${v}`) }))}
+            value={d.assets}
+            onChange={(assets) => set({ assets })}
+            placeholder={t("hiring:select.none")}
+            selectedCountLabel={(count) => t("hiring:select.selectedCount", { count })}
+            ariaLabel={t("hiring:fields.assets")}
+          />
+        );
       case "interview_details":
         return (
           <div className="vy-stack" style={{ gap: 8 }}>
-            <div className="vy-options">
-              {INTERVIEW_PRESETS.map((p) => {
-                const text = t(`hiring:presets.interview.${p}`);
-                return (
-                  <button key={p} type="button" className="vy-chip" aria-pressed={d.interview === text} onClick={() => set({ interview: text })}>
-                    {t(`hiring:presets.interviewShort.${p}`)}
-                  </button>
-                );
-              })}
-            </div>
+            <FieldSelect
+              options={INTERVIEW_PRESETS.map((p) => ({ value: p, label: t(`hiring:presets.interviewShort.${p}`) }))}
+              value={INTERVIEW_PRESETS.find((p) => t(`hiring:presets.interview.${p}`) === d.interview) ?? null}
+              onChange={(p) => set({ interview: p ? t(`hiring:presets.interview.${p}`) : "" })}
+              placeholder={t("hiring:select.any")}
+              ariaLabel={t("hiring:fields.interview")}
+            />
             <VoiceInput fieldLabel={t("hiring:fields.interview")} onConfirm={(text) => set({ interview: appendSpoken(d.interview, text) })}>
               <textarea
                 className="vy-textarea"
@@ -265,14 +342,22 @@ export function useComposerControls({ draft, onChange, tree, errors, aliases }: 
           </div>
         );
       case "duration":
-        return <OptionChips options={DURATIONS} value={d.duration} onChange={(v) => set({ duration: v })} label={(v) => t(`hiring:options.duration.${v}`)} ariaLabel={t("hiring:fields.duration")} />;
+        return (
+          <FieldSelect
+            options={DURATIONS.map((v) => ({ value: v, label: t(`hiring:options.duration.${v}`) }))}
+            value={d.duration}
+            onChange={(v) => set({ duration: v })}
+            placeholder={t("hiring:select.any")}
+            ariaLabel={t("hiring:fields.duration")}
+          />
+        );
       case "experience_level":
         return (
-          <OptionChips
-            options={EXPERIENCE_LEVELS}
+          <FieldSelect
+            options={EXPERIENCE_LEVELS.map((v) => ({ value: v, label: t(`hiring:options.experienceLevel.${v}`) }))}
             value={d.experienceLevel}
             onChange={(v) => set({ experienceLevel: v })}
-            label={(v) => t(`hiring:options.experienceLevel.${v}`)}
+            placeholder={t("hiring:select.any")}
             ariaLabel={t("hiring:fields.experienceLevel")}
           />
         );
@@ -316,11 +401,11 @@ export function useComposerControls({ draft, onChange, tree, errors, aliases }: 
       }
       case "urgency":
         return (
-          <OptionChips
-            options={URGENCIES}
+          <FieldSelect
+            options={URGENCIES.map((v) => ({ value: v, label: t(`hiring:options.urgency.${v}`) }))}
             value={d.urgency}
             onChange={(v) => set({ urgency: v, preferredDate: v === "today" ? isoInDays(0) : d.preferredDate })}
-            label={(v) => t(`hiring:options.urgency.${v}`)}
+            placeholder={t("hiring:select.any")}
             ariaLabel={t("hiring:fields.when")}
           />
         );
@@ -456,12 +541,187 @@ export const LAYOUT: Record<"employment" | "freelance" | "local_service" | "othe
   ],
 };
 
+// ======================================================================
+// [FE1 — 2026-09-29, owner: "that is too worst" on a 14-field, one-scroll
+// job form] The fields every type shows up front — enough to publish — are
+// LAYOUT minus whatever a group below claims. Everything a group claims is
+// tucked behind one tappable row (FieldGroup), open by default only when
+// the AI draft filled or flagged something inside it, or (for an existing
+// draft being edited) when a field in it already has a value.
+// ======================================================================
+interface ComposerGroup {
+  id: string;
+  titleKey: string;
+  fields: FieldCode[];
+  /** Employment only: fold the "calls before you accept" switch in here too. */
+  includesPrecall?: boolean;
+}
+
+const GROUPS: Record<"employment" | "freelance" | "local_service" | "other", ComposerGroup[]> = {
+  employment: [
+    { id: "whenHowMany", titleKey: "hiring:composer.groupWhenHowMany", fields: ["incentive_type", "openings", "shift", "job_timings"] },
+    { id: "whoYouNeed", titleKey: "hiring:composer.groupWhoYouNeed", fields: ["experience", "min_qualification", "english_level", "requires_assets"] },
+    { id: "interviewContact", titleKey: "hiring:composer.groupInterviewContact", fields: ["interview_details"], includesPrecall: true },
+  ],
+  freelance: [{ id: "projectDetails", titleKey: "hiring:composer.groupProjectDetails", fields: ["duration", "experience_level", "screening_questions"] }],
+  local_service: [{ id: "whenLocal", titleKey: "hiring:composer.groupWhen", fields: ["urgency", "preferred_date"] }],
+  other: [],
+};
+
+/** The fields a post of this type cannot be published without — mirrors validate() in draft.ts. */
+function isRequired(code: FieldCode, type: PostKind): boolean {
+  if (code === "title") return true;
+  if (code === "location") return type === "employment" || type === "local_service";
+  if (code === "salary") return type === "employment";
+  if (code === "budget") return type === "freelance";
+  return false;
+}
+
+function fieldHasValue(d: ComposerDraft, code: FieldCode): boolean {
+  switch (code) {
+    case "incentive_type":
+      return d.incentiveType !== "none";
+    case "openings":
+      return d.openings !== null;
+    case "shift":
+      return d.shift !== null;
+    case "job_timings":
+      return !!d.jobTimings.trim();
+    case "experience":
+      return d.experienceMonths !== null;
+    case "min_qualification":
+      return d.qualification !== null;
+    case "english_level":
+      return d.english !== null;
+    case "requires_assets":
+      return d.assets.length > 0;
+    case "interview_details":
+      return !!d.interview.trim();
+    case "duration":
+      return d.duration !== null;
+    case "experience_level":
+      return d.experienceLevel !== null;
+    case "screening_questions":
+      return d.questions.some((q) => q.trim());
+    case "urgency":
+      return d.urgency !== null;
+    case "preferred_date":
+      return !!d.preferredDate;
+    default:
+      return false;
+  }
+}
+
+function trunc(s: string, n: number): string {
+  return s.length > n ? `${s.slice(0, n - 1)}…` : s;
+}
+
+/** The closed-row summary — only the parts that are actually set, joined with " · ". */
+function summarizeGroup(g: ComposerGroup, d: ComposerDraft, t: (k: string, opts?: Record<string, unknown>) => string, lang: string): string | undefined {
+  const parts: string[] = [];
+  for (const code of g.fields) {
+    switch (code) {
+      case "incentive_type":
+        if (d.incentiveType !== "none") parts.push(t(`hiring:options.incentive.${d.incentiveType}`));
+        break;
+      case "openings":
+        if (d.openings !== null) parts.push(t("hiring:preview.openings", { count: d.openings }));
+        break;
+      case "shift":
+        if (d.shift !== null) parts.push(t(`hiring:options.shift.${d.shift}`));
+        break;
+      case "job_timings":
+        if (d.jobTimings.trim()) parts.push(trunc(d.jobTimings.trim(), 18));
+        break;
+      case "experience":
+        if (d.experienceMonths !== null)
+          parts.push(d.experienceMonths === 0 ? t("hiring:options.experience.freshersWelcome") : t("hiring:options.experience.atLeast", { value: experienceLabel(t, d.experienceMonths) }));
+        break;
+      case "min_qualification":
+        if (d.qualification !== null) parts.push(t(`hiring:options.qualification.${d.qualification}`));
+        break;
+      case "english_level":
+        if (d.english !== null) parts.push(t(`hiring:options.english.${d.english}`));
+        break;
+      case "requires_assets":
+        if (d.assets.length > 0) parts.push(t("hiring:select.selectedCount", { count: d.assets.length }));
+        break;
+      case "interview_details":
+        if (d.interview.trim()) {
+          const preset = INTERVIEW_PRESETS.find((p) => t(`hiring:presets.interview.${p}`) === d.interview);
+          parts.push(preset ? t(`hiring:presets.interviewShort.${preset}`) : trunc(d.interview.trim(), 24));
+        }
+        break;
+      case "duration":
+        if (d.duration !== null) parts.push(t(`hiring:options.duration.${d.duration}`));
+        break;
+      case "experience_level":
+        if (d.experienceLevel !== null) parts.push(t(`hiring:options.experienceLevel.${d.experienceLevel}`));
+        break;
+      case "screening_questions":
+        if (d.questions.some((q) => q.trim())) parts.push(t("hiring:fields.questions"));
+        break;
+      case "urgency":
+        if (d.urgency !== null) parts.push(t(`hiring:options.urgency.${d.urgency}`));
+        break;
+      case "preferred_date":
+        if (d.preferredDate) parts.push(new Date(d.preferredDate).toLocaleDateString(lang, { day: "numeric", month: "short" }));
+        break;
+    }
+  }
+  if (g.includesPrecall && d.allowPrecall) parts.push(t("hiring:composer.callsOn"));
+  return parts.length ? parts.join(" · ") : undefined;
+}
+
 export default function ComposerForm(props: ComposerFormProps) {
   const { draft, onChange, flagged, onLooksRight, errors } = props;
-  const { t } = useTranslation(["hiring", "opportunities"]);
+  const { t, i18n } = useTranslation(["hiring", "opportunities"]);
   const { renderControl } = useComposerControls(props);
   const layoutKey = draft.type === "employment" || draft.type === "freelance" || draft.type === "local_service" ? draft.type : "other";
   const otherOpen = OTHER_KINDS.includes(draft.type);
+  const groups = GROUPS[layoutKey];
+  const groupedCodes = new Set(groups.flatMap((g) => g.fields));
+  const coreItems = LAYOUT[layoutKey].filter((item) => !groupedCodes.has(item.code));
+
+  // Only explicit taps are stored; whether a group starts open is computed
+  // fresh every render from the draft/flags below, so a group the AI draft
+  // fills or flags (drafting is async and can land after the form already
+  // rendered) opens itself without needing an effect — right up until the
+  // poster taps it themselves, which always wins from then on.
+  const [manualOpen, setManualOpen] = useState<Record<string, boolean>>({});
+  function isGroupOpen(g: ComposerGroup): boolean {
+    if (g.id in manualOpen) return manualOpen[g.id];
+    return g.fields.some((f) => flagged.has(f) || fieldHasValue(draft, f)) || !!(g.includesPrecall && draft.allowPrecall);
+  }
+
+  function renderPrecall() {
+    // [Critique L1, owner-approved] Apna's "Call HR" / WorkIndia's "Click to
+    // call HR", off by default; the poster's call hours and daily limit
+    // (contact preferences) apply to every caller.
+    return (
+      <FieldBlock code="allow_precall" label={t("hiring:precall.label")}>
+        <button type="button" role="switch" aria-checked={draft.allowPrecall} className="vy-switch" onClick={() => onChange({ allowPrecall: !draft.allowPrecall })}>
+          <span className="vy-switch-track" aria-hidden="true">
+            <span className="vy-switch-thumb" />
+          </span>
+          <span>{draft.allowPrecall ? t("hiring:precall.on") : t("hiring:precall.off")}</span>
+        </button>
+        {draft.allowPrecall && (
+          <OptionChips
+            options={["whatsapp_only", "call_and_whatsapp"] as const}
+            value={draft.precallChannel}
+            allowClear={false}
+            onChange={(v) => onChange({ precallChannel: v ?? "whatsapp_only" })}
+            label={(v) => t(`hiring:precall.channel.${v}`)}
+            ariaLabel={t("hiring:precall.channelLabel")}
+          />
+        )}
+        <span className="vy-field-hint">
+          {t("hiring:precall.explain")} <a href="/profile/contact">{t("hiring:precall.setHours")}</a>
+        </span>
+      </FieldBlock>
+    );
+  }
 
   return (
     <div className="vy-stack" style={{ gap: 20 }}>
@@ -486,12 +746,12 @@ export default function ComposerForm(props: ComposerFormProps) {
         </div>
       </FieldBlock>
 
-      {LAYOUT[layoutKey].map(({ code, optional, hintKey }) => (
+      {coreItems.map(({ code, hintKey }) => (
         <FieldBlock
           key={code}
           code={code}
           label={fieldLabel(t, code, draft.type)}
-          optional={optional}
+          required={isRequired(code, draft.type)}
           flagged={flagged.has(code)}
           onLooksRight={() => onLooksRight(code)}
           error={errors[code] ?? null}
@@ -501,41 +761,39 @@ export default function ComposerForm(props: ComposerFormProps) {
         </FieldBlock>
       ))}
 
-      {(draft.type === "employment" || draft.type === "local_service") && (
-        // [Critique L1, owner-approved] Apna's "Call HR" / WorkIndia's
-        // "Click to call HR", off by default; the poster's call hours and
-        // daily limit (contact preferences) apply to every caller.
-        <FieldBlock code="allow_precall" label={t("hiring:precall.label")}>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={draft.allowPrecall}
-            className="vy-switch"
-            onClick={() => onChange({ allowPrecall: !draft.allowPrecall })}
+      {groups.map((g) => {
+        const items = LAYOUT[layoutKey].filter((item) => g.fields.includes(item.code));
+        return (
+          <FieldGroup
+            key={g.id}
+            id={`vy-group-${g.id}`}
+            title={`${t(g.titleKey)} · ${t("hiring:fields.optional")}`}
+            summary={summarizeGroup(g, draft, t, i18n.language)}
+            open={isGroupOpen(g)}
+            onToggle={() => setManualOpen((s) => ({ ...s, [g.id]: !isGroupOpen(g) }))}
           >
-            <span className="vy-switch-track" aria-hidden="true">
-              <span className="vy-switch-thumb" />
-            </span>
-            <span>{draft.allowPrecall ? t("hiring:precall.on") : t("hiring:precall.off")}</span>
-          </button>
-          {draft.allowPrecall && (
-            <OptionChips
-              options={["whatsapp_only", "call_and_whatsapp"] as const}
-              value={draft.precallChannel}
-              allowClear={false}
-              onChange={(v) => onChange({ precallChannel: v ?? "whatsapp_only" })}
-              label={(v) => t(`hiring:precall.channel.${v}`)}
-              ariaLabel={t("hiring:precall.channelLabel")}
-            />
-          )}
-          <span className="vy-field-hint">
-            {t("hiring:precall.explain")} <a href="/profile/contact">{t("hiring:precall.setHours")}</a>
-          </span>
-        </FieldBlock>
-      )}
+            {items.map(({ code, hintKey }) => (
+              <FieldBlock
+                key={code}
+                code={code}
+                label={fieldLabel(t, code, draft.type)}
+                flagged={flagged.has(code)}
+                onLooksRight={() => onLooksRight(code)}
+                error={errors[code] ?? null}
+                hint={hintKey ? t(hintKey) : undefined}
+              >
+                {renderControl(code)}
+              </FieldBlock>
+            ))}
+            {g.includesPrecall && renderPrecall()}
+          </FieldGroup>
+        );
+      })}
+
+      {draft.type === "local_service" && renderPrecall()}
 
       {layoutKey === "other" && (
-        <FieldBlock code="compensation" label={t("hiring:fields.pay")} optional>
+        <FieldBlock code="compensation" label={t("hiring:fields.pay")}>
           <input className="vy-input" value={draft.compensation} onChange={(e) => onChange({ compensation: e.target.value })} placeholder={t("opportunities:new.compensationPlaceholder")} />
         </FieldBlock>
       )}
@@ -544,11 +802,11 @@ export default function ComposerForm(props: ComposerFormProps) {
         <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--text-secondary)" }}>{t("hiring:composer.moreOptions")}</summary>
         <div className="vy-stack" style={{ gap: 18, marginTop: 16 }}>
           {draft.type !== "local_service" && (
-            <FieldBlock code="work_mode" label={t("hiring:fields.workMode")} optional>
+            <FieldBlock code="work_mode" label={t("hiring:fields.workMode")}>
               {renderControl("work_mode")}
             </FieldBlock>
           )}
-          <FieldBlock code="deadline" label={t("hiring:fields.deadline")} optional>
+          <FieldBlock code="deadline" label={t("hiring:fields.deadline")}>
             {renderControl("deadline")}
           </FieldBlock>
           <FieldBlock code="segment" label={t("hiring:fields.segment")} error={errors.type ?? null}>

@@ -22,6 +22,8 @@ import OpportunityCard from "@/app/components/opportunity/OpportunityCard";
 import AppliedFilters from "@/app/components/discover/AppliedFilters";
 import { filtersFromQuery, filtersToQuery, toFeedParams, type FeedQuery } from "@/app/components/discover/feedFilters";
 import { useResource } from "@/app/hooks/useResource";
+import { ChevronLeft } from "lucide-react";
+import "@/app/styles/deals-2026.css";
 
 const SECTION_LABEL_KEY: Record<string, string> = {
   for_you: "sectionForYou",
@@ -46,10 +48,14 @@ export default function FeedSectionPage({ params, searchParams }: { params: Prom
 
   return (
     <Screen width="wide">
-      <Link href={qs ? `/?${qs}` : "/"} transitionTypes={["vy-back"]} className="vy-btn vy-btn-ghost" style={{ alignSelf: "flex-start", textDecoration: "none" }}>
-        ← {t("explore:filters.backToDiscover")}
+      <Link href={qs ? `/?${qs}` : "/"} transitionTypes={["vy-back"]} className="vy-dl-back">
+        <ChevronLeft size={18} strokeWidth={2} aria-hidden="true" />
+        {t("explore:filters.backToDiscover")}
       </Link>
-      <h1>{t(`discover:home.${SECTION_LABEL_KEY[key] ?? "sectionForYou"}` as "home.sectionForYou")}</h1>
+      <div className="vy-dl-head">
+        <h1>{t(`discover:home.${SECTION_LABEL_KEY[key] ?? "sectionForYou"}` as "home.sectionForYou")}</h1>
+        {items.data && items.data.length > 0 && <p>{t("explore:results.count", { count: items.data.length })}</p>}
+      </div>
       <AppliedFilters
         value={filters}
         skillLabel={(slug) => skills.data?.find((s) => s.slug === slug)?.label ?? slug.replace(/_/g, " ")}

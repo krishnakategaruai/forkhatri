@@ -238,7 +238,7 @@ export default function ProposalComposer({ opportunity, onSent }: { opportunity:
 
       {bidType === "fixed" && (
         <div>
-          <FieldBlock code="p-milestones" label={t("hiring:proposal.milestones")} optional error={errors.milestones}>
+          <FieldBlock code="p-milestones" label={t("hiring:proposal.milestones")} error={errors.milestones}>
             <label className="vy-select-box" style={{ fontSize: 14, color: "var(--text-secondary)" }}>
               <input type="checkbox" checked={useMilestones} onChange={(e) => setUseMilestones(e.target.checked)} />
               {t("hiring:proposal.splitMilestones")}
@@ -410,7 +410,7 @@ export default function ProposalComposer({ opportunity, onSent }: { opportunity:
         )}
       </div>
 
-      <FieldBlock code="p-sample" label={t("hiring:proposal.sample")} optional>
+      <FieldBlock code="p-sample" label={t("hiring:proposal.sample")}>
         <FileUpload value={attachment} onChange={setAttachment} />
       </FieldBlock>
 

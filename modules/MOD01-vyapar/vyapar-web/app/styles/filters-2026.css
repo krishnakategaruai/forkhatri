@@ -1,0 +1,776 @@
+/* ======================================================================
+   [2026-09-30] Owner review round: filter dropdown bar and its panels,
+   card footer / pay / row fit, the sparse-home card, the Businesses
+   rebuild, the top-bar host link, button variants.
+   Imported from app/layout.tsx (after discover-2026.css) so it applies on
+   every route AND to panels portalled into <body>: no selector here
+   depends on a page ancestor. Tokens only; no painted gradients. The
+   scroll-edge fade is a mask (it hides overflow, it paints nothing).
+   ====================================================================== */
+
+/* ---- Filter bar: ONE horizontal row of dropdown buttons ---------------- */
+.vy-fbar {
+  position: sticky;
+  top: var(--topbar-h);
+  z-index: 30;
+  margin-inline: calc(-1 * var(--vy-gutter, 16px));
+  padding: 8px 0;
+  background: var(--surface);
+}
+
+.vy-fbar-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  padding-inline: var(--vy-gutter, 16px);
+  scroll-padding-inline: var(--vy-gutter, 16px);
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+}
+
+.vy-fbar-row::-webkit-scrollbar {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .vy-fbar {
+    margin-inline: 0;
+  }
+
+  .vy-fbar-row {
+    flex-wrap: wrap;
+    overflow: visible;
+    padding-inline: 0;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+
+.vy-fdd {
+  position: relative;
+  flex: 0 0 auto;
+  width: auto;
+  scroll-snap-align: start;
+}
+
+.vy-fdd-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  min-height: 40px;
+  padding: 0 12px 0 14px;
+  white-space: nowrap;
+  max-width: 240px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-pill);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--type-sm);
+  font-weight: var(--weight-ui);
+  cursor: pointer;
+}
+
+@media (pointer: coarse) {
+  .vy-fdd-btn {
+    min-height: 44px;
+  }
+}
+
+.vy-fdd-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* Chosen value: the neutral selected state (never the brand colour). */
+.vy-fdd-btn[data-active] {
+  background: var(--selected-bg);
+  border-color: var(--selected-border);
+  box-shadow: inset 0 0 0 1px var(--selected-border);
+}
+
+.vy-fdd-chev {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  transition: transform var(--dur-hover) var(--ease-out);
+}
+
+.vy-fdd-chev[data-open] {
+  transform: rotate(180deg);
+}
+
+/* ---- Filter panel: popover (desktop) / bottom sheet (phone) ------------ */
+.vy-fdd-pop {
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  gap: 0;
+  max-height: min(520px, calc(100dvh - 120px));
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: var(--surface-floating);
+  border: 1px solid var(--border-hairline);
+  box-shadow: var(--shadow-float);
+  animation: vy-fdd-in var(--dur-enter) var(--ease-out) both;
+}
+
+@keyframes vy-fdd-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.vy-fdd-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  background: var(--scrim);
+  animation: vy-fade-in var(--dur-sheet) var(--ease-out) both;
+}
+
+.vy-fdd-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  max-height: 86dvh;
+  background: var(--surface-floating);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border: 1px solid var(--border-hairline);
+  border-bottom: none;
+  box-shadow: var(--shadow-float);
+  animation: vy-fdd-up var(--dur-sheet) var(--ease-out) both;
+}
+
+.vy-fdd-sheet::before {
+  content: "";
+  display: block;
+  width: 40px;
+  height: 5px;
+  margin: 10px auto 0;
+  border-radius: var(--radius-pill);
+  background: var(--border-strong);
+  flex-shrink: 0;
+}
+
+@keyframes vy-fdd-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.vy-fdd-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 56px;
+  padding: 4px 8px 4px 20px;
+  flex-shrink: 0;
+}
+
+.vy-fdd-head strong {
+  font-family: var(--font-display);
+  font-size: var(--type-title);
+  font-weight: var(--weight-display);
+  letter-spacing: var(--tracking-title);
+  color: var(--text-primary);
+}
+
+.vy-fdd-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.vy-fdd-sheet .vy-fdd-body {
+  padding: 4px 20px 12px;
+}
+
+.vy-fdd-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--border-hairline);
+  background: var(--surface-floating);
+  flex-shrink: 0;
+}
+
+.vy-fdd-sheet .vy-fdd-foot {
+  padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+}
+
+.vy-fdd-foot .vy-btn {
+  flex: 1 1 0;
+  min-height: 48px;
+}
+
+.vy-fdd-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vy-fdd-list .vy-menu-item,
+.vy-trpick-item {
+  min-height: 48px;
+  font-size: var(--type-body);
+}
+
+.vy-fdd-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-control);
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.vy-menu-item[aria-checked="true"] .vy-fdd-dot {
+  border: 6px solid var(--selected-solid-bg);
+}
+
+.vy-fdd-range {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 6px 4px;
+}
+
+.vy-fdd-range-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.vy-fdd-range-head strong {
+  font-size: var(--type-title);
+  font-weight: var(--weight-display);
+  color: var(--text-primary);
+}
+
+.vy-fdd-range input[type="range"] {
+  width: 100%;
+  min-height: 44px;
+  accent-color: var(--selected-solid-bg);
+}
+
+.vy-fdd-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.vy-fdd-seg {
+  border: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.vy-fdd-seg legend {
+  padding: 0 0 8px;
+  font-size: var(--type-xs);
+  font-weight: var(--weight-ui);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+:lang(hi) .vy-fdd-seg legend,
+:lang(te) .vy-fdd-seg legend {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.vy-fdd-seg .vy-segmented {
+  display: flex;
+  flex-wrap: wrap;
+  border-radius: var(--radius-md);
+}
+
+.vy-fdd-seg .vy-segmented > button {
+  flex: 1 1 auto;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  font: inherit;
+  font-size: var(--type-sm);
+  cursor: pointer;
+}
+
+.vy-fdd-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  font-size: var(--type-body);
+  font-weight: var(--weight-ui);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+/* ---- Trade picker ------------------------------------------------------ */
+.vy-trpick {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+}
+
+.vy-trpick-search {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-control);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+}
+
+.vy-trpick-search:focus-within {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.vy-trpick-search input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: var(--type-body);
+  color: var(--text-primary);
+  outline: none;
+  appearance: none;
+}
+
+.vy-trpick-search input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.vy-trpick-search input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.vy-trpick-list {
+  max-height: 340px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vy-fdd-sheet .vy-trpick-list {
+  max-height: none;
+  overflow: visible;
+}
+
+.vy-trpick-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* A category name is a quiet label, not a control. */
+.vy-trpick-cat {
+  display: block;
+  padding: 6px 12px 4px;
+  font-size: var(--type-xs);
+  font-weight: var(--weight-ui);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+:lang(hi) .vy-trpick-cat,
+:lang(te) .vy-trpick-cat {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.vy-trpick-box {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  border: 1.5px solid var(--border-control);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.vy-trpick-item[aria-checked="true"] .vy-trpick-box {
+  background: var(--selected-solid-bg);
+  border-color: var(--selected-solid-bg);
+  color: var(--selected-solid-fg);
+}
+
+.vy-trpick-none {
+  padding: 12px;
+}
+
+/* ---- Trade tile rail: show there is more to the right ------------------ */
+@media (max-width: 899px) {
+  .vy-trades {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+  }
+}
+
+/* ---- Card: title, pay, footer ------------------------------------------ */
+.vy-ocard {
+  container-type: inline-size;
+}
+
+.vy-ocard-title {
+  font-weight: var(--weight-heading);
+  letter-spacing: var(--tracking-heading);
+  line-clamp: 2;
+}
+
+/* The pay line: ONE line in the pay size (the card's hero); a narrow card
+   steps the size down instead of wrapping. The yearly figure is muted. */
+.vy-ocard-pay > span {
+  font-weight: var(--weight-display);
+}
+
+/* An amount is never cut short: a narrow card steps the size down, and if
+   it still does not fit, it wraps. */
+@container (max-width: 320px) {
+  .vy-ocard-pay > span {
+    font-size: 1.1875rem;
+  }
+}
+
+/* [owner: "Verified bu…"] the badge keeps its full words; when the footer
+   is narrow the time wraps under it instead of squeezing it. */
+.vy-ocard-foot {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
+.vy-ocard-trust {
+  overflow: visible;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+
+.vy-ocard-when {
+  margin-left: auto;
+}
+
+/* Desktop rows: cards fit the row exactly (3 up; 4 up from 1280px) and the
+   strip scrolls by whole cards with the arrows — no card cut at the edge. */
+@media (min-width: 900px) {
+  .vy-row2-cell {
+    flex-basis: calc((100% - 2 * 16px) / 3);
+    max-width: calc((100% - 2 * 16px) / 3);
+  }
+}
+
+@media (min-width: 1560px) {
+  .vy-row2-cell {
+    flex-basis: calc((100% - 3 * 16px) / 4);
+    max-width: calc((100% - 3 * 16px) / 4);
+  }
+}
+
+/* ---- Sparse home: one calm card ---------------------------------------- */
+.vy-nudge {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex-wrap: nowrap;
+  gap: 14px;
+  padding: var(--card-pad);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.vy-nudge-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+}
+
+.vy-nudge-head .vy-trade-tile {
+  flex-shrink: 0;
+}
+
+.vy-nudge-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.vy-nudge-text p {
+  color: var(--text-secondary);
+  max-width: 62ch;
+}
+
+.vy-nudge-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-left: calc(44px + 14px);
+}
+
+@media (max-width: 599px) {
+  .vy-nudge-actions {
+    padding-left: 0;
+  }
+
+  .vy-nudge-actions .vy-btn {
+    flex: 1 1 auto;
+  }
+}
+
+/* ---- Businesses -------------------------------------------------------- */
+.vy-biz {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.vy-biz-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vy-biz-title {
+  font-size: var(--type-display);
+}
+
+@media (max-width: 599px) {
+  .vy-biz-title {
+    font-size: var(--type-title);
+  }
+}
+
+.vy-biz-sub {
+  display: block;
+}
+
+.vy-biz-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+}
+
+.vy-biz-count {
+  font-size: var(--type-sm);
+  font-weight: var(--weight-ui);
+  color: var(--text-secondary);
+}
+
+.vy-biz-mine {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  font-size: var(--type-sm);
+  font-weight: var(--weight-ui);
+  color: var(--text-primary);
+  text-decoration: none;
+  padding: 0 4px;
+}
+
+.vy-dgrid2[data-loading] {
+  opacity: 0.6;
+  transition: opacity var(--dur-hover) var(--ease-out);
+}
+
+.vy-pcard-what {
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Stretched link: the whole card opens the profile; actions sit above it. */
+.vy-pcard {
+  position: relative;
+}
+
+.vy-pcard-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.vy-pcard-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.vy-pcard-link:focus-visible {
+  outline: none;
+}
+
+.vy-pcard:focus-within {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.vy-pcard-actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.vy-pcard-actions .vy-btn {
+  flex: 1 1 auto;
+  min-height: 44px;
+  text-decoration: none;
+}
+
+@media (hover: hover) {
+  .vy-pcard:hover {
+    box-shadow: var(--shadow-raise);
+    border-color: var(--border-default);
+  }
+}
+
+/* ---- Button variants --------------------------------------------------- */
+/* Solid ink: a panel's own Apply (the screen's one brand fill stays the screen's). */
+.vy-btn-solid {
+  background: var(--selected-solid-bg);
+  color: var(--selected-solid-fg);
+  border: 1px solid var(--selected-solid-bg);
+}
+
+/* Soft brand: a quiet suggested action ("Add my skills"). */
+.vy-btn-soft {
+  background: var(--brand-soft);
+  color: var(--brand-text);
+  border: 1px solid transparent;
+}
+
+/* ---- Top bar: the host name links home to the host --------------------- */
+.vy-topbar-brandrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.vy-topbar-host,
+a.vy-topbar-host {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 4px 0 10px;
+  border-left: 1px solid var(--border-hairline);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-ui);
+  letter-spacing: var(--tracking-label);
+  color: var(--text-tertiary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+a.vy-topbar-host:hover {
+  color: var(--text-primary);
+}
+
+a.vy-topbar-host:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+@media (min-width: 900px) {
+  .vy-topbar-brandrow {
+    width: calc(var(--rail-w) - var(--space-5) - var(--space-4));
+  }
+
+  .vy-topbar-brand {
+    width: auto;
+  }
+}
+
+/* Phones: the language button shows its globe only. Below 400px the bar
+   cannot hold the host link AND search, language, bell and avatar on one
+   line (the avatar was pushed off at 360): there the way home is the first
+   item of the avatar menu, and the bar keeps the avatar right-most. */
+@media (max-width: 419px) {
+  .vy-topbar .vy-iconbtn-text > span {
+    display: none;
+  }
+}
+
+@media (max-width: 399px) {
+  .vy-topbar-host,
+  a.vy-topbar-host {
+    display: none;
+  }
+}
+
+.vy-topbar {
+  flex-wrap: nowrap;
+}
+
+.vy-topbar-end {
+  flex-shrink: 0;
+}
+
+.vy-menu-home {
+  text-decoration: none;
+  justify-content: flex-start;
+  color: var(--text-primary);
+}
+
+/* ---- Reduced motion ---------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .vy-fdd-pop,
+  .vy-fdd-sheet,
+  .vy-fdd-scrim {
+    animation: none;
+  }
+}

@@ -137,7 +137,9 @@ export default function PackagesEditor({
                 </label>
               </div>
               <label className="vy-field">
-                <span className="vy-label">{t("packages:editor.revisions")}</span>
+                <span className="vy-label">
+                  {t("packages:editor.revisions")} <span className="vy-optional">· {t("hiring:fields.optional")}</span>
+                </span>
                 <input className="vy-input" type="number" min={0} max={20} value={d.revisions} onChange={(e) => set(tier, { revisions: e.target.value })} />
               </label>
               <div className="vy-stack" style={{ gap: 6 }}>

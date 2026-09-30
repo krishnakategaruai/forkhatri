@@ -179,10 +179,15 @@ async def main(api_base: str) -> int:
         check(st == 200 and hi_view["compensation_label"].startswith("₹18,000 से ₹24,000 प्रति माह"), f"compensation_label localized ({hi_view.get('compensation_label')})")
         sp = hi_view.get("seeker_protection") or {}
         check(sp.get("applies") is True and sp.get("report_reason") == "asked_for_money" and bool(sp.get("title")), "detail carries seeker_protection on a job (enricher hook)")
+        st, en_view = api.call("GET", f"/v1/opportunities/{job_id}", BAKER)
+        st, te_view = api.call("GET", f"/v1/opportunities/{job_id}", BAKER, lang="te")
+        check(en_view["seeker_protection"]["title"] == "Nobody may charge people who apply"
+              and "అప్లై చేసినవారి" in te_view["seeker_protection"]["title"] and "అభ్యర్థు" not in te_view["seeker_protection"]["body"],
+              f"glossary term 'applicant' in the protection notice ({en_view['seeker_protection']['title']} / {te_view['seeker_protection']['title']})")
         check(isinstance(hi_view.get("poster_badges"), list), f"detail carries poster_badges (enricher hook) ({[b.get('key') for b in hi_view.get('poster_badges', [])]})")
 
         print("\n== Employment: applications ==")
-        st, meena_app = api.call("POST", "/v1/enquiries", BAKER, {"opportunity_id": job_id, "message": ""})
+        st, meena_app = api.call("POST", "/v1/enquiries", BAKER, {"opportunity_id": job_id, "message": ""}, lang="te")
         if st == 201:
             enquiry_ids.add(meena_app["id"]); sent[BAKER] += 1
         check(st == 201 and meena_app["applied_via"] == "one_tap" and meena_app["action_type"] == "apply", f"one-tap apply with no message ({st})")
@@ -190,6 +195,13 @@ async def main(api_base: str) -> int:
         check(snap.get("name") == "Meena Sahni" and "bakery" in snap.get("capabilities", []) and snap.get("experience_years") == 5, "profile snapshot stored")
         st, thread = api.call("GET", f"/v1/enquiries/{meena_app['id']}", EMPLOYER)
         check(st == 200 and thread["messages"] and "5" in thread["messages"][0]["body"], "poster's thread opens with a message built from the profile")
+        first = thread["messages"][0]
+        check(first["body"].startswith("Hello, I'd like to apply.") and first["templated"] and first["message_language"] == "en",
+              f"one-tap message applied from Telugu reads in the poster's English ({first['body'][:40]})")
+        st, own = api.call("GET", f"/v1/enquiries/{meena_app['id']}", BAKER, lang="te")
+        check(own["messages"][0]["body"].startswith("నమస్తే") and own["messages"][0]["message_language"] == "te", "and in Telugu for a Telugu reader")
+        stored = await db.fetchrow("SELECT template_key, content_language FROM vyapar_enquiries.enquiry_messages WHERE enquiry_id = $1", meena_app["id"])
+        check(stored["template_key"] == "oneTap" and stored["content_language"] == "te", "stored as a template key plus the snapshot")
         st, res = api.call("POST", "/v1/enquiries", HELPER, {"opportunity_id": job_id, "message": "", "bid_amount_paise": 100000})
         check(st == 422 and code(res) == "proposal_fields_not_allowed", "a bid on a job application is refused")
         st, ravi_app = api.call("POST", "/v1/enquiries", HELPER, {
@@ -217,6 +229,15 @@ async def main(api_base: str) -> int:
         check(skill_lines == [sm["text"]] and not any("your capabilities" in r for r in meena_row["match_reasons"]),
               f"exactly one skills line, worded for the poster ({meena_row['match_reasons']} / {meena_row['match_risks']})")
         rs = ravi_row["skills_match"]
+        check(meena_row["message_templated"] and meena_row["message_preview"].startswith("Hello") and meena_row["message_language"] == "en",
+              "board preview of a one-tap application is in the poster's language")
+        check(not ravi_row["message_templated"] and ravi_row["message_language"] == "hi" and ravi_row["message_preview"].startswith("I have helped"),
+              "a written note is shown as written, with its language for a later Translate")
+        check("Has the experience you asked for" not in ravi_row["match_reasons"] and ravi_row["match_score"] <= 30,
+              f"experience counts only in the matching trade ({ravi_row['match_reasons']}, score {ravi_row['match_score']})")
+        st, hi_page = api.call("GET", f"/v1/opportunities/{job_id}/applicants?sort=match", EMPLOYER, lang="hi")
+        hm = next(i for i in hi_page["items"] if i["sender_id"] == BAKER)
+        check(hm["message_preview"].startswith("नमस्ते"), "the same preview renders in Hindi for a Hindi reader")
         check(rs["state"] == "none" and rs["kind"] == "risk" and rs["text"] in ravi_row["match_risks"] and rs["text"] not in ravi_row["match_reasons"],
               f"no skills: a risk, not a reason ({rs['text']})")
         st, ai = api.call("GET", f"/v1/opportunities/{job_id}/ai-shortlist", EMPLOYER)
@@ -410,6 +431,112 @@ async def main(api_base: str) -> int:
         if st == 201:
             enquiry_ids.add(enq["id"]); sent[HELPER] += 1
         check(st == 201 and enq["action_type"] == "enquire", f"a response to a local service is stored as 'enquire' (was a CHECK violation) ({st})")
+
+        # ------------------------------------------------------------ pay labels
+        print("\n== Pay labels in the viewer's language ==")
+        legacy = {"title": "Plumber for a leaking kitchen sink, 2BHK", "type": "local_service", "location": "Charminar",
+                  "work_mode": "on_site", "response_method": "in_app", "source_segment": "community",
+                  "description": "Kitchen sink trap is leaking. Please bring fittings and quote before starting work.",
+                  "required_capabilities": ["plumbing"], "compensation": "Pay per visit"}
+        st, lp = api.call("POST", "/v1/opportunities", CLIENT, legacy)
+        if st == 201:
+            opp_ids.add(lp["id"])
+        st, lp_te = api.call("GET", f"/v1/opportunities/{lp['id']}", CLIENT, lang="te")
+        check(st == 200 and lp_te["compensation_label"] == "ఒక్కో విజిట్‌కు చెల్లింపు" and lp_te["pay_period"] == "visit"
+              and lp_te["compensation"] == "Pay per visit", f"'Pay per visit' localized in Telugu, stored text unchanged ({lp_te.get('compensation_label')})")
+        st, lp2 = api.call("PATCH", f"/v1/opportunities/{lp['id']}", CLIENT, {"compensation": "from ₹300 per visit"})
+        st, lp_hi = api.call("GET", f"/v1/opportunities/{lp['id']}", CLIENT, lang="hi")
+        check(lp_hi.get("compensation_label") == "₹300 प्रति विज़िट से शुरू", f"'from ₹300 per visit' in Hindi ({lp_hi.get('compensation_label')})")
+        yearly = {**legacy, "title": "Frontend developer (React) for a billing product", "type": "employment",
+                  "description": "Build the customer-facing web app for our billing product with a small team.",
+                  "required_capabilities": ["react", "software"], "work_mode": "both", "compensation": "₹9–14 LPA"}
+        st, yp = api.call("POST", "/v1/opportunities", CLIENT, yearly)
+        if st == 201:
+            opp_ids.add(yp["id"])
+        st, yp_te = api.call("GET", f"/v1/opportunities/{yp['id']}", CLIENT, lang="te")
+        check(st == 200 and "LPA" not in yp_te["compensation_label"] and "లక్షలు" in yp_te["compensation_label"],
+              f"yearly pay: no 'LPA', localized lakh ({yp_te.get('compensation_label')})")
+        check(yp_te["pay_period"] == "year" and yp_te["pay_monthly_min_paise"] == 7500000 and yp_te["pay_monthly_max_paise"] == 11700000,
+              f"yearly pay: monthly figures rounded to ₹1,000 ({yp_te['pay_monthly_min_paise']}, {yp_te['pay_monthly_max_paise']})")
+        st, keep = api.call("PATCH", f"/v1/opportunities/{yp['id']}", CLIENT, {"compensation": "Best in industry"})
+        st, keep = api.call("GET", f"/v1/opportunities/{yp['id']}", CLIENT, lang="te")
+        check(keep["compensation_label"] == "Best in industry" and keep["pay_period"] is None, "unparseable free text stays as written")
+        st, jte = api.call("GET", f"/v1/opportunities/{job_id}", BAKER, lang="te")
+        check(jte["pay_period"] == "month" and jte["pay_monthly_min_paise"] == 1800000 and jte["pay_monthly_max_paise"] == 2400000
+              and jte["compensation_label"].startswith("నెలకు"), f"structured salary: monthly facts and Telugu label ({jte['compensation_label']})")
+
+        print("\n== Discover rows: skill categories are paid work ==")
+        max_imp = await db.fetchval("SELECT coalesce(max(id), 0) FROM vyapar_commercial.impressions")
+        st, rows = api.call("GET", "/v1/opportunities/feed/rows", "m_priya")
+        shown = {i["id"] for r in rows.get("rows", []) for i in r["items"]}
+        await db.execute("DELETE FROM vyapar_commercial.impressions WHERE id > $1 AND surface = 'feed' AND member_id IS NULL AND target_id = ANY($2::uuid[])",
+                         max_imp, list(shown))  # the check's own impressions, not the owner's
+        cat_rows = [r for r in rows.get("rows", []) if r["key"].startswith("category:")]
+        bad = [(r["key"], i["title"]) for r in cat_rows for i in r["items"] if i["type"] not in ("employment", "freelance", "local_service")]
+        check(st == 200 and not bad, f"no grant, programme or community post in a skill-category row ({bad or [r['key'] for r in cat_rows]})")
+        grants = [i["title"] for r in cat_rows for i in r["items"] if "grant" in i["title"].lower() or "seed fund" in i["title"].lower()]
+        check(not grants, "T-Hub grant / Startup India seed fund are not in Priya's Software & IT row")
+        near = next((r for r in rows.get("rows", []) if r["key"] == "near_you"), None)
+        near_bad = [i["title"] for i in (near or {}).get("items", []) if i["type"] not in ("employment", "freelance", "local_service")
+                    and not set(i["required_capabilities"]) & {"software", "react", "python"}]
+        check(not near_bad, f"a grant tagged with a merely related skill is not 'related work' in Near you ({near_bad})")
+        keys = [r["key"] for r in rows.get("rows", [])]
+        check(rows.get("has_personal_rows") is True and any(k in ("for_you", "near_you") or k.startswith("category:") for k in keys),
+              f"sparse data still gives personal rows ({keys})")
+        check((rows.get("viewer_categories") or [None])[0] == "software_it", f"viewer_categories puts the member's trade first ({rows.get('viewer_categories')})")
+        expired_ids = {r["id"] for r in await db.fetch(
+            "SELECT id::text FROM vyapar_opportunities.opportunities WHERE deadline < now()")}
+        max_imp = await db.fetchval("SELECT coalesce(max(id), 0) FROM vyapar_commercial.impressions")
+        st, rows2 = api.call("GET", "/v1/opportunities/feed/rows", "m_new")
+        st3, results = api.call("GET", "/v1/opportunities/feed/results", "m_priya")
+        shown2 = {i["id"] for r in rows2.get("rows", []) for i in r["items"]}
+        result_ids = {i["id"] for i in results.get("items", [])} if st3 == 200 else set()
+        await db.execute("DELETE FROM vyapar_commercial.impressions WHERE id > $1 AND member_id IS NULL AND target_id = ANY($2::uuid[])",
+                         max_imp, list(shown2 | result_ids))
+        check(rows2.get("has_personal_rows") is False, f"a member with no skills or place gets no 'picked for you' ({[r['key'] for r in rows2.get('rows', [])]})")
+        leaked = (shown | shown2 | result_ids) & expired_ids
+        check(not leaked, f"no past-deadline post in any row or result ({len(expired_ids)} past their date in data, leaked {len(leaked)})")
+        starting = [i for r in rows.get("rows", []) + rows2.get("rows", []) if r["key"] == "starting_now" for i in r["items"]]
+        check(all(not i["deadline_passed"] for i in starting), "Starting this week holds only posts still open")
+
+        print("\n== Expired posts refuse applications ==")
+        st, ex = api.call("POST", "/v1/opportunities", CLIENT, {**legacy, "title": "Tap washer replacement at our Charminar shop",
+                                                                "compensation": "₹250 per visit", "deadline": "2026-12-31T18:00:00+05:30"})
+        if st == 201:
+            opp_ids.add(ex["id"])
+        st, ex = api.call("POST", f"/v1/opportunities/{ex['id']}/publish", CLIENT)
+        # time passes: the post's last date is now yesterday (the one thing a check cannot wait for)
+        await db.execute("UPDATE vyapar_opportunities.opportunities SET deadline = now() - interval '1 day' WHERE id = $1", ex["id"])
+        st, res = api.call("POST", "/v1/enquiries", HELPER, {"opportunity_id": ex["id"], "message": "I can replace the washer this evening, 30 minutes of work."})
+        check(st == 400 and code(res) == "opportunity_expired" and "expired" in res["error"]["message"], f"Apply on an expired post is refused clearly ({code(res)})")
+        st, exv = api.call("GET", f"/v1/opportunities/{ex['id']}", HELPER, lang="te")
+        check(st == 200 and exv["deadline_passed"] is True, "the post reads as Expired (deadline_passed)")
+
+        print("\n== Lifecycle: active -> expired, then renew ==")
+        st, res = api.call("POST", "/v1/opportunities/jobs/expire", CLIENT)
+        check(st == 200 and res.get("expired", 0) >= 1, f"the expiry pass runs ({res})")
+        st, exv = api.call("GET", f"/v1/opportunities/{ex['id']}", CLIENT)
+        check(exv["state"] == "expired" and exv["state_reason"] == "deadline_passed", f"the post's state is now expired ({exv['state']})")
+        left = await db.fetchval("SELECT count(*) FROM vyapar_opportunities.opportunities WHERE state IN ('active','paused','stale') AND deadline < now()")
+        check(left == 0, f"no active, paused or stale post is left past its date (seeded 103 and 111 included) ({left})")
+        st, notes = api.call("GET", "/v1/notifications", CLIENT)
+        mine = [n for n in notes if n["kind"] == "opportunityExpired" and ex["id"] in (n.get("link") or "")]
+        check(len(mine) == 1 and mine[0]["title"].startswith("Your post expired") and "Renew" in (mine[0]["body"] or ""),
+              f"the poster is told, with a way back ({mine[0]['title'] if mine else None})")
+        ev = await db.fetchval("SELECT count(*) FROM vyapar_opportunities.outbox_event WHERE event_type = 'opportunity.expired' AND payload->>'id' = $1", ex["id"])
+        check(ev == 1, "opportunity.expired domain event in the outbox")
+        st, res = api.call("POST", "/v1/opportunities/jobs/expire", CLIENT)
+        st, notes = api.call("GET", "/v1/notifications", CLIENT)
+        check(len([n for n in notes if n["kind"] == "opportunityExpired" and ex["id"] in (n.get("link") or "")]) == 1, "a second pass changes nothing (idempotent)")
+        st, res = api.call("POST", f"/v1/opportunities/{ex['id']}/renew", CLIENT, {"deadline": "2020-01-01T00:00:00+05:30"})
+        check(st == 422 and code(res) == "deadline_in_past", "renew refuses a last date in the past")
+        st, ren = api.call("POST", f"/v1/opportunities/{ex['id']}/renew", CLIENT)
+        check(st == 200 and ren["state"] == "active" and ren["deadline_passed"] is False and ren["state_reason"] is None,
+              f"renew brings it back with a new last date ({ren.get('deadline')})")
+        st, app2 = api.call("POST", "/v1/enquiries", HELPER, {"opportunity_id": ex["id"], "message": "I can replace the washer this evening, 30 minutes of work."})
+        if st == 201:
+            enquiry_ids.add(app2["id"]); sent[HELPER] += 1
+        check(st == 201, f"after renewing, applying works again ({st})")
 
         # ------------------------------------------------------------ compat
         print("\n== Existing behaviour ==")

@@ -367,6 +367,18 @@ export interface SearchListing {
   contact_verified: boolean;
   reputation?: Reputation | null;
   badges?: Badge[];
+  /** Fields the search endpoint already returns (GET /v1/listings/search). */
+  /** "business" or "professional". */
+  kind?: string;
+  /** True on the viewer's own profile. */
+  is_owner?: boolean;
+  headline?: string | null;
+  /** "enabled" when the owner takes price enquiries. */
+  enquiry_pref?: string | null;
+  /** Only present when the owner shares it with this viewer. */
+  primary_phone?: string | null;
+  availability?: string | null;
+  service_mode?: string | null;
 }
 
 export interface SearchResult {

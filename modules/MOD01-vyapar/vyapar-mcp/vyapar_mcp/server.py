@@ -328,6 +328,36 @@ async def get_profile(listing_id: ListingId) -> dict:
 
 
 @mcp.tool(annotations=READ)
+async def get_my_profile() -> dict:
+    """The member's own (one) Vyapar profile. A business, when they have one, is a section of it
+    (has_business, business_name). Created from their ForKhatri identity on first read; `missing`
+    lists the only fields still to ask for (e.g. locality), `prefill` what is already known."""
+    return await _call(client().get("/v1/me/profile"))
+
+
+@mcp.tool(annotations=WRITE_IDEMPOTENT)
+async def update_my_profile(
+    headline: Annotated[str | None, Field(description="One line about the member's work.")] = None,
+    description: Annotated[str | None, Field(description="A few lines about their work.")] = None,
+    capabilities: Annotated[list[str] | None, Field(description="Skill slugs or names.")] = None,
+    locality: Annotated[str | None, Field(description="Locality, e.g. 'Himayatnagar'.")] = None,
+    availability: Annotated[Literal["now", "this_week", "later"] | None, Field(description="How soon they can start.")] = None,
+    experience_years: Annotated[int | None, Field(ge=0, le=70, description="Years of experience.")] = None,
+    business_name: Annotated[str | None, Field(description="Adds or renames the business section, e.g. \"Meena's Oven\".")] = None,
+    business_headline: Annotated[str | None, Field(description="One line about the business.")] = None,
+) -> dict:
+    """Update the member's own profile, including its business section. Only the fields given
+    change. Needs the listings:write scope. Confirm with the member first: the profile is public."""
+    body: dict[str, Any] = {k: v for k, v in {
+        "headline": headline, "description": description, "capabilities": capabilities, "locality": locality,
+        "availability": availability, "experience_years": experience_years,
+    }.items() if v is not None}
+    if business_name is not None:
+        body["business"] = {"name": business_name, "headline": business_headline}
+    return await _call(client().patch("/v1/me/profile", body))
+
+
+@mcp.tool(annotations=READ)
 async def list_similar_profiles(listing_id: ListingId) -> Any:
     """Other profiles similar to this one."""
     return await _call(client().get(f"/v1/listings/{listing_id}/similar"))
@@ -717,6 +747,15 @@ async def get_ai_shortlist(opportunity_id: OpportunityId) -> Any:
 ContractId = Annotated[str, Field(description="Contract UUID.")]
 
 
+@mcp.tool(annotations=READ)
+async def get_contract_roles(
+    enquiry_id: Annotated[str, Field(description="The enquiry to check.")],
+) -> dict:
+    """Who would pay (client) and who would do the work (provider) if this enquiry became a contract,
+    the member's own role, and whether they can start the contract now (can_create, blocked_reason)."""
+    return await _call(client().get("/v1/contracts/roles", enquiry_id=enquiry_id))
+
+
 @mcp.tool(annotations=WRITE)
 async def create_contract(
     enquiry_id: Annotated[str, Field(description="The accepted enquiry this contract comes from.")],
@@ -729,8 +768,11 @@ async def create_contract(
     description: Annotated[str | None, Field(description="Scope in plain words.")] = None,
     propose: Annotated[bool, Field(description="Send to the provider straight away.")] = False,
 ) -> dict:
-    """Create a contract (as the client) from an accepted enquiry. Confirm the amounts with the member first.
-    Needs the contracts:write scope."""
+    """Create a contract from an accepted enquiry. Only the paying side (the client) can do this: for a
+    response to a post (proposal, quote, price request, application) the poster pays; for a request to a
+    profile (listing enquiry, price or package request) the sender pays. Never work this out yourself - call
+    get_contract_roles first and only proceed when can_create is true (the worker gets 403 not_client).
+    Confirm the amounts with the member first. Needs the contracts:write scope."""
     body = {"enquiry_id": enquiry_id, "title": title, "total_paise": total_paise, "milestones": milestones or [],
             "kind": kind, "hourly_rate_paise": hourly_rate_paise, "weekly_hours_cap": weekly_hours_cap,
             "description": description, "propose": propose}

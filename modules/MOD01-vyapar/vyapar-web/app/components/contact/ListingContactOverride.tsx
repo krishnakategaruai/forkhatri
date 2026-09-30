@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import type { ContactPreferenceField } from "@/lib/sdk";
 import { errorText, useListingContactPreferences } from "@/app/hooks/trade";
 import ContactPreferencesForm, { ContactPreview, toValue, type ContactPrefsValue } from "./ContactPreferencesForm";
+import DisabledReason from "@/app/components/DisabledReason";
 
 const FIELDS: ContactPreferenceField[] = ["call_hours_start", "call_hours_end", "call_days", "max_calls_per_day", "calls_from", "whatsapp_ok", "call_ok"];
 
@@ -66,9 +67,10 @@ export default function ListingContactOverride({ listingId }: { listingId: strin
         <>
           <ContactPreferencesForm value={value} onChange={setDraft} disabled={busy} />
           <ContactPreview value={value} />
-          <button className="vy-btn vy-btn-primary" style={{ alignSelf: "flex-start" }} disabled={busy || (!draft && hasOverrides)} onClick={() => run(() => prefs.save({ ...value }))}>
+          <button className="vy-btn vy-btn-primary" style={{ alignSelf: "flex-start" }} aria-describedby={!draft && hasOverrides ? "why-override" : undefined} disabled={busy || (!draft && hasOverrides)} onClick={() => run(() => prefs.save({ ...value }))}>
             {busy ? t("contact:prefs.saving") : t("contact:prefs.save")}
           </button>
+          <DisabledReason id={"why-override"} show={!draft && hasOverrides}>{t("common:disabled.noChanges")}</DisabledReason>
         </>
       ) : (
         <>

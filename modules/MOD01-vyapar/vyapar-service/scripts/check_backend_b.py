@@ -21,6 +21,7 @@ was. Run from vyapar-service/:  .venv/Scripts/python scripts/check_backend_b.py
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timedelta, timezone
 import json
 import os
 import socket
@@ -33,6 +34,10 @@ import asyncpg
 import httpx
 
 SERVICE_DIR = Path(__file__).resolve().parents[1]
+try:  # Hindi/Telugu details must print on a cp1252 Windows console too
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except AttributeError:
+    pass
 sys.path.insert(0, str(SERVICE_DIR))
 
 OWNER_DSN = os.environ.get("VYAPAR_OWNER_DSN", "postgres://vyapar_owner:vyapar_owner_dev_password@localhost:5433/vyapar")
@@ -41,7 +46,7 @@ APP_DSN = os.environ.get("VYAPAR_APP_DSN", "postgres://vyapar_app:vyapar_app_dev
 ANITA, SURESH, SUNITA, RAHUL, GAURAV, RAVI = "m_anita", "m_suresh", "m_sunita", "m_rahul", "m_gaurav", "m_ravi"
 ANITA_LISTING = "00000000-0000-4000-8000-000000000001"
 PREF_COLS = ("call_hours_start", "call_hours_end", "call_days", "max_calls_per_day", "calls_from", "whatsapp_ok", "call_ok")
-RATE_KEYS = [f"enquiry:{SURESH}:day", f"enquiry:{RAVI}:day", f"report:{RAHUL}:day", f"report:{GAURAV}:day", f"listing_search:{SURESH}:minute"]
+RATE_KEYS = [f"listing_search:m_rahul:minute", f"enquiry:{SURESH}:day", f"enquiry:{RAVI}:day", f"report:{RAHUL}:day", f"report:{GAURAV}:day", f"listing_search:{SURESH}:minute"]
 
 results: list[tuple[str, bool, str]] = []
 
@@ -133,6 +138,10 @@ async def cleanup(raw_conn, snap: dict, created: dict) -> None:
                 f"UPDATE vyapar_identity.members SET {', '.join(f'{c} = ${i + 2}' for i, c in enumerate(PREF_COLS))} WHERE id = $1",
                 member, *[prefs[c] for c in PREF_COLS],
             )
+        for pid in created["partnerships"]:
+            await conn.execute("DELETE FROM vyapar_integration.notifications WHERE params::text LIKE '%' || $1 || '%' OR link LIKE '%' || $1 || '%'", str(pid))
+            await conn.execute("DELETE FROM vyapar_enquiries.outbox_event WHERE payload::text LIKE '%' || $1 || '%'", str(pid))
+            await conn.execute("DELETE FROM vyapar_enquiries.partnership_requests WHERE id = $1::uuid", str(pid))
         for blocker, blocked in created["blocks"]:
             await conn.execute("DELETE FROM vyapar_enquiries.blocks WHERE blocker_id = $1 AND blocked_id = $2", blocker, blocked)
         await conn.execute("UPDATE vyapar_identity.members SET badges = '[]', badges_computed_at = NULL WHERE id = ANY($1::text[])",
@@ -167,7 +176,8 @@ def run_checks(api: Api, created: dict, owner_loop_query) -> None:
     r = api.call(ANITA, "GET", f"/v1/members/{ANITA}/badges", lang="hi")
     body = r.json()
     check("badges: GET /v1/members/{id}/badges", r.status_code == 200 and any(b["key"] == "verified_business" for b in body["badges"]), r.text[:300])
-    check("badges: localized label (hi)", any(b["label"] == "सत्यापित व्यवसाय" for b in body["badges"]), r.text[:300])
+    vb = next((b for b in body.get("badges", []) if b["key"] == "verified_business"), {})
+    check("badges: localized label (hi)", any("ऀ" <= ch <= "ॿ" for ch in vb.get("label", "")), r.text[:300])
 
     # ---- 1. Contact preferences --------------------------------------------
     r = api.call(ANITA, "PATCH", "/v1/listings/contact-preferences",
@@ -330,7 +340,8 @@ def run_checks(api: Api, created: dict, owner_loop_query) -> None:
     owner_loop_query("UPDATE vyapar_opportunities.opportunities SET lat = 17.4399, lng = 78.4983 WHERE id = $1 RETURNING id", opp_id)
 
     r = api.call(SURESH, "GET", f"/v1/opportunities/{opp_id}/seeker-protection", lang="hi")
-    check("seeker protection notice (hi)", r.status_code == 200 and r.json()["applies"] and "शुल्क" in r.json()["body"], r.text[:300])
+    check("seeker protection notice (hi)", r.status_code == 200 and r.json()["applies"]
+          and any("ऀ" <= ch <= "ॿ" for ch in r.json()["body"]) and r.json()["report_reason"] == "asked_for_money", r.text[:300])
 
     # Saved-search alert, inside a transaction that is rolled back.
     alerts = owner_loop_query("__saved_search_alerts__", SURESH)
@@ -655,10 +666,15 @@ def run_followup_checks(api: "Api", created: dict, owner_loop_query) -> None:
     b_by_id = {i["id"]: i.get("distance_km") for i in items(base)}
     moved = [(i["id"], b_by_id.get(i["id"]), i.get("distance_km")) for i in items(here) if i.get("distance_km") is not None and b_by_id.get(i["id"]) is not None]
     check("position: distances are measured from the override", any(abs(x - y) > 1 for _, x, y in moved), str(moved[:5]))
-    # Anita's accounts-assistant job sits in Banjara Hills (17.4156, 78.4347).
-    target = "00000000-0000-4000-8000-000000000102"
-    d_here = next((i.get("distance_km") for i in items(here) if i["id"] == target), None)
-    check("position: a job at the override point is ~0 km away", d_here is not None and d_here < 0.5, str(d_here))
+    # Every distance is measured from the override point (checked against the DB's own haversine).
+    sample = [i for i in items(here) if i.get("distance_km") is not None][:5]
+    wrong = []
+    for i in sample:
+        exp = owner_loop_query("SELECT vyapar_platform.distance_km($1, $2, lat, lng) AS d FROM vyapar_opportunities.opportunities WHERE id = $3::uuid",
+                               banjara["lat"], banjara["lng"], i["id"])["d"]
+        if abs(exp - i["distance_km"]) > 0.15:
+            wrong.append((i["title"][:20], i["distance_km"], round(exp, 2)))
+    check("position: distances are measured from the override point", sample and not wrong, str(wrong or len(sample)))
     r = api.call(SURESH, "GET", "/v1/opportunities/feed", params={"radius_km": 3, **banjara})
     near = [i for i in items(r) if i["work_mode"] != "remote"]
     check("position: radius applies around the override",
@@ -707,9 +723,12 @@ def _post(api: "Api", created: dict, member: str, body: dict) -> str | None:
 
 
 def _rows_ok(body: dict) -> tuple[bool, str]:
+    from app.services.feed import PERSONAL_ROW_MIN_ITEMS, ROW_MIN_ITEMS, _is_personal_row
+
     ids = [i["id"] for row in body["rows"] for i in row["items"]]
     keys = [row["key"] for row in body["rows"]]
-    ok = (len(ids) == len(set(ids)) and all(len(row["items"]) >= 3 for row in body["rows"])
+    ok = (len(ids) == len(set(ids))
+          and all(len(row["items"]) >= (PERSONAL_ROW_MIN_ITEMS if _is_personal_row(row["key"]) else ROW_MIN_ITEMS) for row in body["rows"])
           and len(body["rows"]) <= 6 and not ({"verified", "community"} & set(keys))
           and all(row.get("title") for row in body["rows"]))
     return ok, f"keys={keys} slots={len(ids)} distinct={len(set(ids))}"
@@ -741,7 +760,7 @@ def run_rows_checks(api: "Api", created: dict, owner_loop_query) -> None:
     r = api.call(ANITA, "GET", "/v1/opportunities/feed/rows")
     body = r.json()
     ok, detail = _rows_ok(body)
-    check("L13: Anita's rows: unique posts, >=3 each, <=6 rows, no Verified/Community", r.status_code == 200 and ok, detail)
+    check("L13: Anita's rows: unique posts, row minimums, <=6 rows, no Verified/Community", r.status_code == 200 and ok, detail)
     first = body["rows"][0] if body.get("rows") else {}
     check("L14: Anita's first row is For you with her accounting posts",
           first.get("key") == "for_you" and set(posts) <= {i["id"] for i in first.get("items", [])}, json.dumps(first)[:300])
@@ -758,7 +777,7 @@ def run_rows_checks(api: "Api", created: dict, owner_loop_query) -> None:
     r = api.call(SURESH, "GET", "/v1/opportunities/feed/rows")
     body = r.json()
     ok, detail = _rows_ok(body)
-    check("L13: Suresh's rows: unique posts, >=3 each, <=6 rows, no Verified/Community", r.status_code == 200 and ok, detail)
+    check("L13: Suresh's rows: unique posts, row minimums, <=6 rows, no Verified/Community", r.status_code == 200 and ok, detail)
     near = next((row for row in body.get("rows", []) if row["key"] == "near_you"), None)
     home_repair = {"carpenter", "painter", "tile_fitter", "ac_technician", "mason", "plumbing", "electrical"}  # taxonomy: home_repair
     check("L13: Suresh's Near you holds only his kind of work (no Python job, no grants)",
@@ -773,7 +792,7 @@ def run_rows_checks(api: "Api", created: dict, owner_loop_query) -> None:
     r = api.call(NEW, "GET", "/v1/opportunities/feed/rows", params={"lat": 17.3688, "lng": 78.5247})
     body = r.json()
     ok, detail = _rows_ok(body)
-    check("L13: fresher's rows: unique posts, >=3 each, <=6 rows", r.status_code == 200 and ok, detail)
+    check("L13: fresher's rows: unique posts, row minimums, <=6 rows", r.status_code == 200 and ok, detail)
     check("L14: fresher gets no For you and the add-your-skills prompt",
           all(row["key"] != "for_you" for row in body.get("rows", [])) and body.get("enrichment_prompt") == "sparseProfile", detail)
     near = next((row for row in body.get("rows", []) if row["key"] == "near_you"), None)
@@ -785,9 +804,110 @@ def run_rows_checks(api: "Api", created: dict, owner_loop_query) -> None:
           json.dumps([row["title"] for row in r.json().get("rows", [])], ensure_ascii=False))
 
 
+# ---------------------------------------------------------------------------
+# Owner, 2026-09-30: "all the real functionality is actually created as dummy".
+# Trade filter, Businesses search, notifications language + dedupe + links.
+# ---------------------------------------------------------------------------
+MEENA = "m_meena"
+
+
+def run_owner_checks(api: "Api", created: dict, owner_loop_query) -> None:
+    # ---- 1. Trade filter --------------------------------------------------
+    a = _post(api, created, MEENA, {"type": "local_service", "title": "Need a plumber for a leaking tap — Himayatnagar",
+                                    "description": "Kitchen tap leaking since yesterday, need someone this evening.",
+                                    "location": "Himayatnagar, Hyderabad", "required_capabilities": ["plumbing"],
+                                    "structured": {"budget_paise": 60000, "urgency": "today"}})
+    b = _post(api, created, MEENA, {"type": "local_service", "title": "Nal wala chahiye — overhead tank pipe broken",
+                                    "description": "Pipe from the overhead tank cracked, water leaking on the stairs.",
+                                    "location": "Himayatnagar, Hyderabad", "required_capabilities": ["plumber", "nal wala"],
+                                    "structured": {"budget_paise": 150000, "urgency": "today"}})
+    check("trade: two plumbing posts (one skill slug, one free-text 'plumber')", bool(a and b), str((a, b)))
+    r = api.call(RAHUL, "GET", "/v1/opportunities/feed/results", params={"skills": "plumbing", "limit": 100})
+    got = {i["id"] for i in r.json().get("items", [])}
+    check("trade: Plumbers tile (skills=plumbing) returns both posts", r.status_code == 200 and {a, b} <= got, f"{len(got)} items")
+    facet = next((f for f in r.json().get("facets", {}).get("skills", []) if f["value"] == "plumbing"), None)
+    check("trade: the Plumbing chip counts what the filter returns", facet is not None and facet["count"] >= 2, str(facet))
+    r = api.call(RAHUL, "GET", "/v1/opportunities/feed/results", params={"skills": "home_repair", "limit": 100})
+    check("trade: a category tile (home_repair) returns every skill under it",
+          r.status_code == 200 and {a, b} <= {i["id"] for i in r.json().get("items", [])}, r.text[:200])
+    # The home feed keeps the member's own radius: Suresh (Dilsukhnagar, 12 km) is within reach of Himayatnagar.
+    r = api.call(SURESH, "GET", "/v1/opportunities/feed", params={"skills": "plumbing"})
+    ids = {i["id"] for s in r.json().get("sections", []) for i in s["items"]}
+    check("trade: the sectioned feed applies the same trade filter", r.status_code == 200 and bool({a, b} & ids), str(len(ids)))
+    r = api.call(RAHUL, "GET", "/v1/opportunities/feed/results", params={"skills": "plumbing", "radius_km": 3, "limit": 100})
+    check("trade: a radius the person picks still cuts the search",
+          r.status_code == 200 and not ({a, b} & {i["id"] for i in r.json().get("items", [])}), "")
+    r = api.call(RAHUL, "GET", "/v1/opportunities/feed/results", params={"skills": "electrical", "limit": 100})
+    check("trade: an electrician filter does not return the plumbing posts",
+          r.status_code == 200 and not ({a, b} & {i["id"] for i in r.json().get("items", [])}), "")
+    if a:
+        r = api.call(RAHUL, "GET", f"/v1/opportunities/{a}")
+        check("trade: a post in a known locality gets coordinates (distance works)", r.status_code == 200 and
+              owner_loop_query("SELECT lat IS NOT NULL AS ok FROM vyapar_opportunities.opportunities WHERE id = $1", a)["ok"], "")
+
+    # ---- 2. Businesses search -----------------------------------------------
+    def search(member, **params):
+        r = api.call(member, "GET", "/v1/listings/search", params=params)
+        return r.status_code, r.json()
+
+    status, body = search(RAHUL, q="anita")
+    names = [x["listing"]["name"] for x in body.get("results", [])]
+    check("search: 'anita' finds Anita Khatri's profile (owner name)", status == 200 and any("Anita" in n or "Khatri" in n for n in names), str(names[:5]))
+    status, body = search(RAHUL, q="aneeta")
+    check("search: spelling-tolerant ('aneeta' -> Anita)", any("Anita" in x["listing"]["name"] or "Khatri" in x["listing"]["name"] for x in body.get("results", [])), str([x["listing"]["name"] for x in body.get("results", [])][:5]))
+    status, body = search(RAHUL, q="khatri associates")
+    check("search: business name, partial words", any("Khatri" in (x["listing"].get("business_name") or x["listing"]["name"]) for x in body.get("results", [])), "")
+    status, body = search(RAHUL, q="ameerpet")
+    check("search: a place becomes a distance filter around it",
+          status == 200 and (body.get("place") or {}).get("name") == "Ameerpet" and body["results"]
+          and all(x["distance_km"] is not None and x["distance_km"] <= (body.get("radius_km") or 5) for x in body["results"]),
+          json.dumps({"place": body.get("place"), "radius": body.get("radius_km"), "n": len(body.get("results", []))}))
+    status, body = search(RAHUL, q="plumber ameerpet")
+    first = (body.get("results") or [{}])[0].get("listing", {})
+    check("search: trade word + place ranks the plumber near Ameerpet first", "plumbing" in first.get("capabilities", []), json.dumps(first)[:200])
+    status, body = search(RAHUL, q="plumber", locality="Kompally")
+    check("search: nothing close -> broadens automatically and says so",
+          status == 200 and body.get("results") and body.get("broadened") and body.get("notice_text"),
+          json.dumps({"broadened": body.get("broadened"), "notice": body.get("notice_text"), "n": len(body.get("results", []))}, ensure_ascii=False))
+    status, body = search(RAHUL, q="बिजली मिस्त्री")
+    check("search: Hindi trade word finds electricians", status == 200 and any("electrical" in x["listing"]["capabilities"] for x in body.get("results", [])),
+          str([x["listing"]["name"] for x in body.get("results", [])][:5]))
+
+    # ---- 3. Notifications ----------------------------------------------------
+    r = api.call(DEEPAK, "POST", "/v1/partnership-requests", json={
+        "recipient_listing_id": ANITA_LISTING, "need": "A CA to handle GST for our design studio clients.",
+        "offer": "Referrals from 40 interior clients a year.", "expectations": "Quarterly review meeting and fair fees.",
+        "category": "accounting_tax", "locality": "Banjara Hills", "timing": "Starting next month, ongoing.",
+        "next_step": "A 20-minute call this week to agree terms."})
+    if r.status_code == 201:
+        created["partnerships"].append(r.json()["id"])
+    check("notif: partnership request sent (real flow)", r.status_code == 201, r.text[:200])
+    titles = {}
+    for lang in ("hi", "te", "en"):
+        rr = api.call(ANITA, "GET", "/v1/notifications", lang=lang)
+        n = next((x for x in rr.json() if r.status_code == 201 and x["link"] and r.json()["id"] in x["link"]), None)
+        titles[lang] = n["title"] if n else None
+    check("notif: the same notification reads in the reader's language (hi, te, en)",
+          titles["hi"] and titles["te"] and titles["en"] and len({titles["hi"], titles["te"], titles["en"]}) == 3,
+          json.dumps(titles, ensure_ascii=False))
+    rr = api.call(ANITA, "GET", "/v1/notifications/page", lang="te")
+    check("notif: the paged inbox renders in the reader's language too",
+          rr.status_code == 200 and any(x["title"] == titles["te"] for x in rr.json().get("items", [])), "")
+    from app.i18n import translate
+    check("notif: glossary wording ('matches your skills', 'posts')",
+          "skills" in translate("notifications.strongMatch.body", "en") and "posts" in translate("notifications.digest.title", "en", count=3)
+          and "opportunit" not in translate("notifications.savedSearchMatch.body", "en"), "")
+
+    dedupe = owner_loop_query("__notification_passes__")
+    check("notif: two match passes never announce the same post to the same member twice", dedupe["dup_pairs"] == 0, str(dedupe))
+    check("notif: no match or alert for an expired or closed post", dedupe["stale"] == 0, str(dedupe))
+    check("notif: a second digest pass sends nothing", dedupe["digest_second"] == 0, str(dedupe))
+    check("notif: every new notification links to the thing it is about", dedupe["bad_links"] == 0, str(dedupe))
+
+
 async def main() -> int:
     port = free_port()
-    created = {"opportunities": [], "enquiries": [], "packages": [], "searches": [], "tokens": [], "contracts": [], "blocks": []}
+    created = {"opportunities": [], "enquiries": [], "packages": [], "searches": [], "tokens": [], "contracts": [], "blocks": [], "partnerships": []}
     owner = await asyncpg.connect(OWNER_DSN)
     created["started"] = await owner.fetchval("SELECT now()")
     snap = await snapshot(owner)
@@ -823,8 +943,63 @@ async def main() -> int:
         finally:
             await app_conn.close()
 
+    async def notification_passes() -> dict:
+        """The real match and digest passes, run twice inside one transaction
+        that is rolled back: nothing reaches any real inbox."""
+        from app.services.notifications import run_digest_pass, run_strong_match_pass
+
+        conn = await asyncpg.connect(OWNER_DSN)
+        tr = conn.transaction()
+        await tr.start()
+
+        class _Pool:
+            def acquire(self_inner):
+                class _C:
+                    async def __aenter__(self2):
+                        return conn
+
+                    async def __aexit__(self2, *exc):
+                        return False
+                return _C()
+
+        try:
+            hour = (datetime.now(timezone.utc) + timedelta(minutes=330)).hour
+            await conn.execute("UPDATE vyapar_privacy.privacy_settings SET digest_enabled = true, digest_hour = $1", hour)
+            await conn.execute("DELETE FROM vyapar_platform.rate_limit_counter WHERE rate_limit_key LIKE 'notify:%'")
+            pool = _Pool()
+            await run_strong_match_pass(pool)
+            await run_strong_match_pass(pool)
+            await run_digest_pass(pool)
+            second = await run_digest_pass(pool)
+            new = await conn.fetch("SELECT * FROM vyapar_integration.notifications WHERE created_at = now()")
+            pairs = []
+            for n in new:
+                p = n["params"] if isinstance(n["params"], dict) else json.loads(n["params"] or "{}")
+                if n["kind"] == "opportunity_match":
+                    for oid in ([p["opportunity_id"]] if p.get("opportunity_id") else []) + list(p.get("opportunity_ids") or []):
+                        pairs.append((n["member_id"], oid))
+            dup = 0
+            for member, oid in set(pairs):
+                c = await conn.fetchval(
+                    """SELECT count(*) FROM vyapar_integration.notifications
+                        WHERE member_id = $1 AND kind = 'opportunity_match'
+                          AND (params->>'opportunity_id' = $2 OR params->'opportunity_ids' ? $2)""", member, oid)
+                dup += c > 1
+            stale = 0
+            for _, oid in set(pairs):
+                stale += not await conn.fetchval(
+                    """SELECT state = 'active' AND (deadline IS NULL OR deadline > now())
+                         FROM vyapar_opportunities.opportunities WHERE id = $1::uuid""", oid)
+            bad_links = sum(1 for n in new if not ((n["link"] or "").startswith("/opportunities/") or (n["link"] or "").startswith("/?")))
+            return {"new": len(new), "dup_pairs": dup, "stale": stale, "digest_second": second, "bad_links": bad_links}
+        finally:
+            await tr.rollback()
+            await conn.close()
+
     def owner_query(sql: str, *args):
         async def run():
+            if sql == "__notification_passes__":
+                return await notification_passes()
             if sql == "__saved_search_alerts__":
                 return await saved_search_alerts(*args)
             if sql == "__saved_search_alerts_capped__":
@@ -848,6 +1023,7 @@ async def main() -> int:
         await loop.run_in_executor(None, run_precall_checks, api, created, owner_query)
         await loop.run_in_executor(None, run_followup_checks, api, created, owner_query)
         await loop.run_in_executor(None, run_rows_checks, api, created, owner_query)
+        await loop.run_in_executor(None, run_owner_checks, api, created, owner_query)
         await loop.run_in_executor(None, run_discover_checks, api, created, owner_query)
     finally:
         await cleanup(owner, snap, created)

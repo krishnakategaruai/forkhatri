@@ -347,8 +347,30 @@ Access rules:
 
 They run as a separate persona (Rahul Chadha), who is included in the cleanup.
 
+## Update 2026-09-29 (later): critique N7, Hindi and Telugu drafts ignored what the poster wrote
+
+**Finding.** The input was "हिमायतनगर की बेकरी में 2 हेल्पर चाहिए। सुबह 6 से दोपहर 2 बजे तक। 8वीं पास चलेगा।". The draft left the area, timings and qualification empty and asked for all three. The posting tips then asked for hours and headcount again.
+
+| What | Fix |
+|---|---|
+| **Known localities in any script.** New `app/integrations/ai/localities.py`. | Every name is reduced to a *consonant skeleton*. Devanagari and Telugu are transliterated letter by letter, keeping syllable vowels until the end (so हिल्स keeps its h). Aspiration and spelling variants are then folded (dh→d, sh→s, c→k, w→v, "ow"→vowel, m→n before p/b), vowels are dropped, and repeats collapse. हिमायतनगर, హిమాయత్‌నగర్‌లో, "Himayat Nagar" and "Himayatnagar" all become h-m-y-t-n-g-r. Glued Telugu case endings (లో, కి, నుండి …) are stripped. A match returns **the name exactly as Vyapar stores it**. A locality beats a city ("हैदराबाद के कुकटपल्ली में" → Kukatpally). Skeletons under four letters ("Uppal", "Abids") match only by their exact Latin name, to avoid false hits. **Known names are not hardcoded.** The service reads the distinct localities of active listings (the set Discover's filter offers) and active opportunities, under the caller's RLS. The lookup runs in the service after the provider answers, so it applies to **Claude's answer as well as the rules reader's**, for both text drafts and photo drafts. Tested on 14 place forms across the three scripts plus 3 negatives. The rules-only reader also no longer takes a phrase with a grammar word ("की बेकरी") as a place. |
+| **Timings with a time of day.** | `_TIMINGS_DAYPART` reads a number next to a time-of-day word as a clock time, with or without बजे/గంటల and तक/వరకు: "सुबह 6 से दोपहर 2 बजे तक", "ఉదయం 6 నుండి సాయంత్రం 7 వరకు", "morning 7 to evening 4". The time-of-day words are सुबह, दोपहर, शाम, रात, ఉదయం, మధ్యాహ్నం, సాయంత్రం, రాత్రి, morning, evening and their romanised forms. The poster's own words are kept as `job_timings`. A salary range such as "12 से 15 हज़ार" is still not read as hours. |
+| **Numeric qualification.** | `find_qualification()` reads "Nवीं पास", "Nth pass", "class N pass", "Nవ తరగతి" and "కక్ష/class N": 1–9 → `below_10th`, 10–11 → `10th`, 12 → `12th`. A pass or class word is required, so "9th floor" is not a qualification. The keyword list still covers degree, ITI, diploma and so on. |
+| **Headcount.** | `find_openings()` reads a number, at most one word, then who is wanted: "2 हेल्पर", "3 सेल्स स्टाफ", "5 delivery boys". It also reads number words in Hindi, Telugu and English ("दो लोग", "ఇద్దరు హెల్పర్లు", "three helpers"). |
+| **Tips never ask for what is already written.** | Before choosing tips, `get_posting_tips` reads the draft's title, description and requirements with the same rules reader and the same known-locality lookup, reading the text as the draft's own type. Every *empty* field is filled from what the text states. The copy is used only to decide tips and is never returned or saved. Then every tip whose field (`vocab.TIP_FIELD`: `add_job_timings`→job_timings, `add_openings`→openings, `add_location`→location, `add_salary`→salary …) now has a value is dropped. **Claude's tips pass through the same filter.** `lower_min_qualification` sees the stated 8th pass and no longer fires. `add_description` is about length, not presence, so it is not filtered. |
+
+`check_ai.py` gains 9 N7 cases, run as a separate persona (Suresh Kohli), included in the cleanup:
+- **Hindi draft:** Himayatnagar, timings, `below_10th`, 2 openings, and none of those four in `missing`.
+- **Telugu draft:** the same, with "ఇద్దరు".
+- **Transliterated Latin:** "Himayat Nagar" → Himayatnagar, "morning 7 to evening 4", 10th.
+- **Tips from the N7 draft:** no hours, headcount, area or lower-qualification tip, while the missing salary is still asked for.
+- **Locality matcher, direct call:** Hindi "Jubilee Hills", the locality preferred over the city, and no false match on "बेकरी में काम" or "पल्ली".
+
+**Behaviour change for the web app.** A Devanagari or Telugu place that is a known locality now comes back in its stored Latin spelling ("कुकटपल्ली" → "Kukatpally"). The two FE1 checks that expected the Devanagari form were updated to match.
+
 ## Verification
 
+- **2026-09-29, after N7: `scripts/check_ai.py` 68/68 passed.** That is 44 base cases, 15 FE1 cases and 9 N7 cases. It ran on the private port 8021 (`AI_PROVIDER=rules AI_DAILY_LIMIT=15`), and the instance was stopped by its own PID. Cleanup removed all 42 `ai_events` rows the run created and restored 10 rate-limit counters. Rows from other sessions' live-service testing (dated before the run) were left untouched. `python -c "import app.main"` passes.
 - **2026-09-29: `scripts/check_ai.py` 59/59 passed** (44 earlier plus 15 FE1 cases). It ran on the private port 8021 with `AI_PROVIDER=rules AI_DAILY_LIMIT=15`, and the instance was stopped by its own PID. Cleanup removed all 38 `ai_events` rows the run created and restored 6 rate-limit counters. The dev DB still holds a few `ai_events` rows and counters dated 2026-09-28 from other sessions' browser testing on the live service. They were left untouched.
 - **Earlier run: `scripts/check_ai.py`: 44/44 passed** against a private uvicorn on port 8021, run with `AI_PROVIDER=rules AI_DAILY_LIMIT=15`. It covered:
   - drafts in en/hi/te/Hinglish, including freelance;

@@ -165,7 +165,11 @@ def run_seeker_charge_check(body: SeekerChargeCheckIn, lang: str) -> SeekerCharg
 async def _apply_seeker_charge_reports(conn: asyncpg.Connection, opportunity_id: str) -> None:
     from app.i18n import LAUNCH_LANGUAGES
 
-    texts = {
+    texts: dict = {
+        "_i18n": {"title": "notifications.opportunityPausedSeekerCharge.title", "body": "notifications.opportunityPausedSeekerCharge.body",
+                  "values": {"contact": GRIEVANCE_CONTACT}},
+    }
+    texts |= {
         lang: {"title": translate("notifications.opportunityPausedSeekerCharge.title", lang),
                "body": translate("notifications.opportunityPausedSeekerCharge.body", lang, contact=GRIEVANCE_CONTACT)}
         for lang in LAUNCH_LANGUAGES
@@ -510,11 +514,18 @@ async def _notify(conn: asyncpg.Connection, member_id: str, template: str, idem:
         translated["outcome"] = translate(f"reviews.outcome.{params['outcome']}", member_lang)
     if "decision" in params:
         translated["decision"] = translate(f"trust_safety.appealDecision.{params['decision']}", member_lang)
+    key_values = {}
+    for name, prefix in (("action", "trust_safety.action."), ("reason", "trust_safety.reasonCode."),
+                         ("outcome", "reviews.outcome."), ("decision", "trust_safety.appealDecision.")):
+        if name in params:
+            key_values[name] = f"{prefix}{params[name]}"
     await send_notification(
         conn, member_id=member_id, kind=template, template_id=template,
         title=translate(f"notifications.{template}.title", member_lang),
         body=translate(f"notifications.{template}.body", member_lang, contact=GRIEVANCE_CONTACT, **translated),
         link=link, params={k: str(v) for k, v in params.items()}, idempotency_key=idem,
+        i18n={"title": f"notifications.{template}.title", "body": f"notifications.{template}.body",
+              "values": {"contact": GRIEVANCE_CONTACT}, "key_values": key_values},
     )
 
 

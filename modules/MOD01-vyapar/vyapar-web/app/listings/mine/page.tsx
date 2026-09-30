@@ -1,67 +1,23 @@
 "use client";
 
-// [TR001] "My listings" — the owner-scoped list every FR01/FR04 create flow
-// needs to land somewhere afterwards. Reuses <LivingCard> so this screen
-// already looks like the future Businesses & Professionals discovery
-// surface (FR15) will, rather than a bespoke admin-looking table.
-// [Product-owner i18n rule] Converted to useTranslation().
-// Traces to: FR01, FR03, FR04 (list + state visibility)
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { api } from "@/lib/api";
-import LivingCard from "@/app/components/LivingCard";
+// [Owner, 2026-09-30: "each user will get one profile"] There is no list of
+// profiles any more: the member's one profile (and its optional business
+// section) lives on /profile. Old links to "My profiles" (Businesses,
+// promotions, apply) land there.
+// Traces to: FR01, FR03, FR04
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Screen from "@/app/components/Screen";
-
-interface Listing {
-  id: string;
-  kind: string;
-  name: string;
-  locality: string;
-  state: string;
-  verification_state: string;
-  contact_verified: boolean;
-}
-
-const STATE_KEY: Record<string, string> = {
-  draft: "stateDraft",
-  submitted: "stateSubmitted",
-  active_unverified: "stateActiveUnverified",
-  active_verified: "stateActiveVerified",
-  suspended: "stateSuspended",
-  archived: "stateArchived",
-};
+import { SkeletonGrid } from "@/app/components/States";
 
 export default function MyListingsPage() {
-  const { t } = useTranslation(["listings", "common"]);
-  const [listings, setListings] = useState<Listing[] | null>(null);
-
+  const router = useRouter();
   useEffect(() => {
-    api.get<Listing[]>("/v1/listings/mine").then(setListings);
-  }, []);
-
+    router.replace("/profile");
+  }, [router]);
   return (
-    <Screen width="wide">
-      <h1>{t("listings:mine.title")}</h1>
-      {listings === null && <p>{t("common:state.loading")}</p>}
-      {listings?.length === 0 && (
-        <p className="vy-muted">{t("listings:mine.empty")}</p>
-      )}
-      {/* [IMP33] F4 "2-column result lists" at ≥600px. */}
-      <div className="vy-grid vy-grid-3">
-        {listings?.map((l, i) => (
-          <LivingCard
-            index={i}
-            key={l.id}
-            href={`/listings/${l.id}`}
-            title={l.name}
-            subtitle={`${l.kind === "business" ? t("listings:mine.kindBusiness") : t("listings:mine.kindProfessional")} · ${l.locality}`}
-            verified={l.verification_state === "verified"}
-            verificationLabel={t("listings:mine.verifiedLabel")}
-            memberProvided={l.verification_state !== "verified"}
-            meta={`${t(`listings:mine.${STATE_KEY[l.state] ?? "stateDraft"}` as "mine.stateDraft")}${l.contact_verified ? " · " + t("listings:mine.contactVerified") : " · " + t("listings:mine.contactNotVerified")}`}
-          />
-        ))}
-      </div>
+    <Screen>
+      <SkeletonGrid count={2} grid={false} />
     </Screen>
   );
 }

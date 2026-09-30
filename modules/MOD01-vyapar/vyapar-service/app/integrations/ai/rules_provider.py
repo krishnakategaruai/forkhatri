@@ -46,7 +46,8 @@ _TYPE_HINTS: dict[str, list[tuple[re.Pattern[str], int]]] = {
     "employment": [
         (_kw("hiring", "job", "jobs", "vacancy", "vacancies", "opening", "openings", "full time", "full-time", "part time", "part-time",
              "salary", "ctc", "recruit", "recruitment", "staff", "employee", "walk-in", "walk in", "naukri", "nokri", "bharti",
-             "boys", "girls", "workers", "helpers", "बॉय", "बॉयज़", "लड़के", "कर्मचारी", "బాయ్స్", "బాయ్", "సిబ్బంది",
+             "boys", "girls", "workers", "helpers", "helper", "बॉय", "बॉयज़", "लड़के", "कर्मचारी", "हेल्पर", "सहायक",
+             "पास", "चलेगा", "బాయ్స్", "బాయ్", "సిబ్బంది", "హెల్పర్", "తరగతి",
              "नौकरी", "भर्ती", "वेतन", "सैलरी", "स्टाफ", "ఉద్యోగం", "ఉద్యోగాలు", "జీతం", "నియామకం", "స్టాఫ్"), 3),
         (_kw("per month", "monthly", "pm", "shift", "interview", "qualification", "fresher", "freshers", "experience",
              "महीना", "इंटरव्यू", "నెల", "నెలకు", "ఇంటర్వ్యూ"), 1),
@@ -233,12 +234,70 @@ _TIMINGS = re.compile(
     rf"((?:{_CLOCK}|\d{{1,2}}:\d{{2}}|\d{{1,2}})\s*(?:-|–|to|se|से|నుండి)\s*(?:{_CLOCK}|\d{{1,2}}:\d{{2}}(?:\s*(?:am|pm))?)(?:\s*వరకు)?)",
     re.I,
 )
-_TIMINGS_LABEL = re.compile(r"(?:timings?|hours|shift timing|समय|టైమింగ్స్|సమయం)\s*[:\-–]?\s*([^\n.]{3,60})", re.I)
-_INTERVIEW = re.compile(r"(?:interview|walk-?in|इंटरव्यू|ఇంటర్వ్యూ)[^\n.]{0,120}", re.I)
-_OPENINGS = re.compile(
-    r"(\d{1,3})\s*(?:\+\s*)?(?:openings?|vacanc(?:y|ies)|posts?|positions?|people|persons?|staff|workers?|candidates?|nos\.?|लोग|पद|పోస్టులు|మంది|ఖాళీలు)",
+# "सुबह 6 से दोपहर 2 बजे तक", "ఉదయం 6 నుండి సాయంత్రం 7 వరకు", "morning 9 to evening 6":
+# a time of day on either side makes a bare number a clock time (N7 critique).
+_DAYPART = (r"(?:सुबह|सवेरे|दोपहर|शाम|रात|subah|subha|dopahar|dopehar|shaam|sham|raat|morning|afternoon|evening|night|"
+            r"ఉదయం|మధ్యాహ్నం|సాయంత్రం|రాత్రి|udayam|madhyahnam|sayantram|ratri)")
+_CLOCK_NUM = r"\d{1,2}(?:[:.]\d{2})?\s*(?:बजे|గంటల(?:కు)?|గంటలు|am|pm|a\.m\.|p\.m\.)?"
+_TIMINGS_DAYPART = re.compile(
+    rf"((?:{_DAYPART}\s*{_CLOCK_NUM}\s*(?:-|–|to|se|से|nundi|nunchi|నుండి|నుంచి)\s*(?:{_DAYPART}\s*)?{_CLOCK_NUM}"
+    rf"|{_CLOCK_NUM}\s*(?:-|–|to|se|से|nundi|nunchi|నుండి|నుంచి)\s*{_DAYPART}\s*{_CLOCK_NUM})"
+    rf"(?:\s*(?:तक|tak|వరకు|varaku))?)",
     re.I,
 )
+_TIMINGS_LABEL = re.compile(r"(?:timings?|hours|shift timing|समय|టైమింగ్స్|సమయం)\s*[:\-–]?\s*([^\n.]{3,60})", re.I)
+_INTERVIEW = re.compile(r"(?:interview|walk-?in|इंटरव्यू|ఇంటర్వ్యూ)[^\n.]{0,120}", re.I)
+_HEADCOUNT_NOUN = (r"(?:openings?|vacanc(?:y|ies)|posts?|positions?|people|persons?|staff|workers?|helpers?|boys|girls|candidates?|nos\.?|"
+                   r"लोग|पद|स्टाफ|हेल्पर(?:्स)?|सहायक|कर्मचारी|लड़के|लड़कियाँ|बॉय(?:ज़)?|వ్యక్తులు|పోస్టులు|మంది|ఖాళీలు|హెల్పర్లు|హెల్పర్|సిబ్బంది|బాయ్స్)")
+# "2 हेल्पर", "3 सेल्स स्टाफ", "5 delivery boys": a number, at most one word, then who is wanted.
+_OPENINGS = re.compile(rf"(\d{{1,3}})\s*(?:\+\s*)?(?:[^\s\d,.।]+\s+)?{_HEADCOUNT_NOUN}(?![a-z])", re.I)
+_NUMBER_WORDS = {
+    "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+    "एक": 1, "दो": 2, "तीन": 3, "चार": 4, "पांच": 5, "पाँच": 5, "छह": 6, "सात": 7, "आठ": 8, "नौ": 9, "दस": 10,
+    "ఒక": 1, "ఒకరు": 1, "ఇద్దరు": 2, "ముగ్గురు": 3, "నలుగురు": 4, "ఐదుగురు": 5, "ఆరుగురు": 6, "పదిమంది": 10,
+}
+_OPENINGS_WORD = re.compile(
+    rf"(?<![\w])({'|'.join(sorted(map(re.escape, _NUMBER_WORDS), key=len, reverse=True))})\s+(?:[^\s\d,.।]+\s+)?{_HEADCOUNT_NOUN}"
+    rf"|(?<![\w])(ఒకరు|ఇద్దరు|ముగ్గురు|నలుగురు|ఐదుగురు|ఆరుగురు|పదిమంది)(?![\w])",
+    re.I,
+)
+
+
+def find_openings(text: str) -> int | None:
+    m = _OPENINGS.search(text) or _OPENINGS_LEAD.search(text)
+    if m:
+        return int(m.group(1))
+    w = _OPENINGS_WORD.search(text)
+    if w:
+        return _NUMBER_WORDS.get((w.group(1) or w.group(2)).lower())
+    return None
+
+
+# "8वीं पास", "10th pass", "class 8 pass", "8వ తరగతి", "కక్ష 8" → the level it
+# stands for (8th → below_10th). Needs a pass/class word, so "9th floor" is not a qualification.
+_QUAL_NUMBER = re.compile(
+    r"(\d{1,2})\s*(?:वीं|वी|th|st|nd|rd|వ|వది)?\s*(?:कक्षा\s*|class\s*|std\.?\s*)?(?:पास|pass(?:ed)?|class|std|standard|తరగతి|పాస్|ఉత్తీర్ణత)"
+    r"|(?:class|std\.?|standard|कक्षा|తరగతి)\s*(\d{1,2})\s*(?:पास|pass(?:ed)?|పాస్)?",
+    re.I,
+)
+
+
+def find_qualification(text: str) -> str | None:
+    m = _QUAL_NUMBER.search(text)
+    if m:
+        n = int(m.group(1) or m.group(2))
+        if 1 <= n <= 9:
+            return "below_10th"
+        if n in (10, 11):
+            return "10th"
+        if n == 12:
+            return "12th"
+    return _first(_QUALIFICATION, text.lower())
+
+
+def find_timings(text: str) -> str | None:
+    m = _TIMINGS_DAYPART.search(text) or _TIMINGS.search(text) or _TIMINGS_LABEL.search(text)
+    return m.group(1).strip(" ,.;।") if m else None
 _OPENINGS_LEAD = re.compile(r"(?:need|hiring|require|looking for|want|चाहिए|కావాలి)\s*(\d{1,3})\b", re.I)
 
 _DURATION = (
@@ -300,6 +359,10 @@ def _all(pairs: tuple[tuple[str, re.Pattern[str]], ...], text: str) -> list[str]
     return [value for value, pattern in pairs if pattern.search(text)]
 
 
+# Hindi/Telugu grammar words: a "place" containing one is a phrase, not a name.
+_PARTICLES = frozenset({"की", "का", "के", "को", "से", "पर", "और", "है", "हैं", "एक", "यह", "वह", "ని", "కి", "కు", "మరియు", "ఒక"})
+
+
 def find_location(text: str) -> str | None:
     for pattern in _LOCATION:
         for m in pattern.finditer(text):
@@ -308,6 +371,8 @@ def find_location(text: str) -> str | None:
                 continue
             if candidate.split()[0].lower() in _LOCATION_STOP:
                 continue
+            if any(w in _PARTICLES for w in candidate.split()):
+                continue  # "की बेकरी में" is "in the bakery", not a place
             return candidate[:80]
     return None
 
@@ -482,9 +547,11 @@ def strip_contacts(text: str) -> str:
     return cleaned.strip(" ,;\n")
 
 
-def draft_from_text(text: str, terms: list[dict[str, Any]]) -> dict[str, Any]:
+def draft_from_text(text: str, terms: list[dict[str, Any]], force_type: str | None = None) -> dict[str, Any]:
+    """`force_type` reads the text as that type (posting tips read a posted
+    job's description as a job, whatever its words suggest)."""
     text = text.strip()
-    type_, type_conf = detect_type(text)
+    type_, type_conf = (force_type, 1.0) if force_type else detect_type(text)
     title = find_title(text)
     location = find_location(text)
     work_mode = _first(_WORK_MODE, text.lower())
@@ -514,8 +581,9 @@ def draft_from_text(text: str, terms: list[dict[str, Any]]) -> dict[str, Any]:
     low = text.lower()
     if type_ == "employment":
         xmin, xmax = find_experience_months(text)
-        openings = _OPENINGS.search(text) or _OPENINGS_LEAD.search(text)
-        timings = _TIMINGS.search(text) or _TIMINGS_LABEL.search(text)
+        openings = find_openings(text)
+        timings = find_timings(text)
+        qualification = find_qualification(text)
         interview = _INTERVIEW.search(text)
         monthly_lo, monthly_hi = (lo, hi) if period in (None, "monthly") else (
             (lo * 26 if lo else None, hi * 26 if hi else None) if period == "daily" else (None, None)
@@ -524,11 +592,11 @@ def draft_from_text(text: str, terms: list[dict[str, Any]]) -> dict[str, Any]:
             "salary_min_rupees": monthly_lo,
             "salary_max_rupees": monthly_hi,
             "incentive_type": _first(_INCENTIVE, low) or ("none" if (monthly_lo or monthly_hi) else None),
-            "openings": int(openings.group(1)) if openings else None,
+            "openings": openings,
             "shift": _first(_SHIFT, low),
-            "job_timings": timings.group(1).strip() if timings else None,
+            "job_timings": timings,
             "interview_details": interview.group(0).strip() if interview else None,
-            "min_qualification": _first(_QUALIFICATION, low),
+            "min_qualification": qualification,
             "english_level": _first(_ENGLISH, low),
             "experience_min_months": xmin,
             "experience_max_months": xmax,
@@ -574,9 +642,9 @@ def draft_from_text(text: str, terms: list[dict[str, Any]]) -> dict[str, Any]:
         if hi or lo:
             confidence["budget"] = 0.55
     else:
-        timings = _TIMINGS.search(text) or _TIMINGS_LABEL.search(text)
+        timings = find_timings(text)
         if timings:
-            draft["timing"] = timings.group(1).strip()
+            draft["timing"] = timings
             confidence["timing"] = 0.5
     draft["confidence"] = confidence
     draft["missing"] = []

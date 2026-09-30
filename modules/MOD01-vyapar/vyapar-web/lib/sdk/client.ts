@@ -95,7 +95,14 @@ export class VyaparClient {
       ...init,
       method,
       headers,
-      signal: options.signal,
+      // [2026-09-30, owner's phone over the tunnel: cards stayed on
+      // skeletons] A read that stalls must fail, so the screen can show its
+      // error state with Try again instead of loading forever. Writes are
+      // not cut off (they may legitimately take longer and must not be
+      // half-sent twice).
+      signal:
+        options.signal ??
+        (method === "GET" && typeof AbortSignal !== "undefined" && "timeout" in AbortSignal ? AbortSignal.timeout(20_000) : undefined),
       keepalive: options.keepalive,
       body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
     });

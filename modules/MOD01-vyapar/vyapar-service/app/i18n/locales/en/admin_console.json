@@ -2,7 +2,7 @@
   "view": {
     "moderation": "Reported content",
     "verification": "Business verification",
-    "opportunities": "Opportunity review",
+    "opportunities": "Post review",
     "appeals": "Appeals",
     "disputes": "Disputes",
     "commercial": "Orders & refunds"
@@ -17,12 +17,12 @@
   "itemType": {
     "moderation_case": "Reported content",
     "verification_record": "Verification request",
-    "opportunity_review": "Opportunity awaiting review",
-    "stale_opportunity": "Opportunity with no recent update",
+    "opportunity_review": "Post awaiting review",
+    "stale_opportunity": "Post with no recent update",
     "appeal": "Appeal",
     "contract_dispute": "Contract dispute",
     "review_dispute": "Review dispute",
-    "promotion_order": "Boost order",
+    "promotion_order": "Promotion order",
     "plan_order": "Business Workspace plan",
     "campaign_order": "Campaign order"
   },
@@ -39,7 +39,7 @@
     "expired": "Expired",
     "revoked": "Revoked",
     "pending_review": "Waiting for review",
-    "draft": "Returned to the poster",
+    "draft": "Returned to the person who posted",
     "active": "Live",
     "paused": "Paused",
     "stale": "No recent update",
@@ -49,7 +49,7 @@
     "upheld": "Decision kept",
     "overturned": "Decision overturned",
     "resolved_client": "Resolved for the client",
-    "resolved_provider": "Resolved for the provider",
+    "resolved_provider": "Resolved for the professional",
     "awaiting_payment": "Waiting for payment",
     "scheduled": "Scheduled",
     "completed": "Completed",
@@ -60,9 +60,9 @@
     "cancelling": "Ends at the end of this period"
   },
   "objectKind": {
-    "listing": "Business listing",
-    "opportunity": "Opportunity",
-    "enquiry": "Enquiry conversation",
+    "listing": "Business profile",
+    "opportunity": "Post",
+    "enquiry": "Request conversation",
     "partnership": "Partnership request",
     "review": "Review"
   },
@@ -89,7 +89,7 @@
   },
   "flag": {
     "source_unreachable": "the source link could not be reached",
-    "unconfirmed_fields": "some details were not confirmed by the poster"
+    "unconfirmed_fields": "some details were not confirmed by the person who posted"
   },
   "document": {
     "gst": "a GST certificate",
@@ -115,7 +115,7 @@
     "manipulation": "Review manipulation",
     "not_the_interaction": "Not about this interaction",
     "abusive": "Abusive review",
-    "asked_for_money": "Asked a job seeker for money"
+    "asked_for_money": "Asked an applicant for money"
   },
   "reasonCode": {
     "scam_confirmed": "Confirmed scam or advance-payment request",
@@ -158,11 +158,11 @@
     },
     "opportunity": {
       "approve": "Approve and publish",
-      "return": "Return to the poster for changes",
+      "return": "Return to the person who posted for changes",
       "remove": "Remove"
     },
     "stale": {
-      "remind": "Remind the poster",
+      "remind": "Remind the person who posted",
       "expire": "Mark as expired"
     },
     "appeal": {
@@ -170,8 +170,8 @@
       "overturned": "Overturn and restore"
     },
     "contract": {
-      "resolved_client": "Resolve for the client (refund held payments)",
-      "resolved_provider": "Resolve for the provider (release held payments)",
+      "resolved_client": "Resolve for the client (refund advance payments)",
+      "resolved_provider": "Resolve for the professional (release advance payments)",
       "closed": "Close without a change"
     },
     "review": {
@@ -180,7 +180,7 @@
       "remove": "Remove the review"
     },
     "commercial": {
-      "reject": "Stop and reject this boost (refund if paid)",
+      "reject": "Stop and reject this promotion (refund if paid)",
       "refund": "Refund the remaining amount"
     }
   },
@@ -215,14 +215,14 @@
     "none": "None"
   },
   "product": {
-    "boost_3d": "Boost · 3 days",
-    "boost_7d": "Boost · 7 days",
-    "boost_14d": "Boost · 14 days",
+    "boost_3d": "Promotion · 3 days",
+    "boost_7d": "Promotion · 7 days",
+    "boost_14d": "Promotion · 14 days",
     "campaign_s": "Campaign · Starter",
     "campaign_m": "Campaign · Season",
     "workspace_monthly": "Business Workspace · monthly",
     "workspace_annual": "Business Workspace · annual",
-    "custom_boost": "Boost · custom length"
+    "custom_boost": "Promotion · custom length"
   },
   "payment": {
     "pending": "Payment pending",
@@ -235,10 +235,10 @@
   "member": {
     "fact": {
       "memberSince": "Member since",
-      "listings": "Business listings",
+      "listings": "Business profiles",
       "verification": "Verification",
-      "openOpportunities": "Open opportunities",
-      "activeBoosts": "Running boosts",
+      "openOpportunities": "Open posts",
+      "activeBoosts": "Running promotions",
       "campaigns": "Running campaigns",
       "contracts": "Active contracts",
       "openReports": "Open reports about this member",
@@ -246,7 +246,7 @@
     },
     "value": {
       "verification": "{verified} verified, {pending} waiting",
-      "noListing": "No business listing"
+      "noListing": "No business profile"
     },
     "flag": {
       "open_reports": "Has open reports",

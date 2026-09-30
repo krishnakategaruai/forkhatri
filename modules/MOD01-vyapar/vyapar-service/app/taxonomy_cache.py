@@ -33,6 +33,7 @@ class TaxonomyTerm:
     parent_slug: str | None
     names: dict[str, str] = field(default_factory=dict)  # lang -> name (English always present)
     descriptions: dict[str, str] = field(default_factory=dict)  # lang -> description (may be empty)
+    aliases: list[str] = field(default_factory=list)  # [IMP-B] words people type for it (trade matcher)
 
     def name(self, lang: str) -> str:
         return self.names.get(lang) or self.names[DEFAULT_LANGUAGE]
@@ -51,7 +52,7 @@ async def refresh_taxonomy_cache(pool: asyncpg.Pool) -> None:
     async with pool.acquire() as conn:
         rows = await conn.fetch(
             """SELECT t.id, t.kind, t.slug, t.status, t.icon, t.name_en, t.name_hi, t.name_te,
-                      t.description_en, t.description_hi, t.description_te, p.slug AS parent_slug
+                      t.description_en, t.description_hi, t.description_te, t.aliases, p.slug AS parent_slug
                  FROM vyapar_listings.taxonomy_terms t
                  LEFT JOIN vyapar_listings.taxonomy_terms p ON p.id = t.parent_id
                 WHERE t.status != 'merged'
@@ -65,7 +66,7 @@ async def refresh_taxonomy_cache(pool: asyncpg.Pool) -> None:
         descriptions = {k: v for k, v in (("en", r["description_en"]), ("hi", r["description_hi"]), ("te", r["description_te"])) if v}
         term = TaxonomyTerm(
             id=r["id"], kind=r["kind"], slug=r["slug"], status=r["status"], icon=r["icon"],
-            parent_slug=r["parent_slug"], names=names, descriptions=descriptions,
+            parent_slug=r["parent_slug"], names=names, descriptions=descriptions, aliases=list(r["aliases"] or []),
         )
         terms[(r["kind"], r["slug"])] = term
         # Label lookup is by slug alone (a category and a capability may share a

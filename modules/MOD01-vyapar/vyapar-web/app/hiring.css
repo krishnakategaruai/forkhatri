@@ -86,6 +86,89 @@
   color: var(--text-tertiary);
 }
 
+/* [FE1 — 2026-09-29] A quiet marker for the few required fields, replacing
+   a repeated "· optional" on every other field. Small and muted on
+   purpose — it is a hint, not a validation error. */
+.vy-required-dot {
+  color: var(--text-tertiary);
+  font-size: 0.6em;
+}
+
+/* [FE1 — 2026-09-29, owner: "that is too worst"] A consistent 48px tap
+   height across every composer field control (scoped to the composer's own
+   fields, not the app-wide .vy-input, which the design-tokens pass owns). */
+.vy-field .vy-input,
+.vy-field .vy-select,
+.vy-field .vy-field-select-trigger {
+  min-height: 48px;
+  border-color: var(--border-control);
+}
+
+/* ---- Collapsible field groups (composer, owner: "that is too worst" on a
+   one-scroll, 14-field form) --------------------------------------------- */
+.vy-field-group {
+  padding: 4px 18px;
+  transition: background-color var(--dur-exit) var(--ease-out);
+}
+
+.vy-field-group-header {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 0;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font: inherit;
+  font-family: var(--font-display);
+  font-size: var(--type-body);
+  font-weight: var(--weight-heading);
+  letter-spacing: var(--tracking-heading);
+  line-height: var(--leading-ui);
+  text-align: left;
+  cursor: pointer;
+}
+
+.vy-field-group-header:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.vy-field-group-title {
+  flex-shrink: 0;
+}
+
+.vy-field-group-summary {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-tertiary);
+  font-family: var(--font-body);
+  font-weight: var(--weight-body);
+  font-size: var(--type-sm);
+  letter-spacing: var(--tracking-ui);
+  text-align: right;
+}
+
+.vy-field-group-chevron {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  transition: transform var(--dur-exit) var(--ease-out);
+}
+
+.vy-field-group-chevron[data-open] {
+  transform: rotate(180deg);
+}
+
+.vy-field-group-body {
+  padding-bottom: 18px;
+}
+
 /* "Please check": an AI-read value the poster has not looked at yet. A
    quiet dashed tag and a hairline on the field's left edge — noticeable,
    never alarming, and never the accent (the accent is the Publish button). */

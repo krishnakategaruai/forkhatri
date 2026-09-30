@@ -9,7 +9,19 @@ A client (the side that pays) and a provider (the side that does the work) can n
 - **Disputes** give either party a simple in-product mediation stage. A moderation operator records the outcome; there is no arbitration.
 - **Completion:** when the contract completes, the source enquiry becomes `resolved` and both parties receive review invites through the existing reviews service.
 
-**Who is the client.** For an `apply` enquiry (a hired applicant), the client is the opportunity poster, which is `enquiries.provider_id`. For every other enquiry, the client is the sender. The enquiry must be `in_progress`, meaning the provider accepted it.
+**Who is the client (who pays).** One function, `contract_parties()` in `services/contracts.py`, decides it, and the web app and the MCP server read the answer from `getContractRoles`, never working it out themselves.
+- **A response to a post** (a proposal, quote, application or registration: the enquiry has an `opportunity_id`): **the poster pays.** For these enquiries `enquiries.provider_id` is the poster, set when the enquiry was created.
+- **A request to a profile** (a listing enquiry, a price request or a package request: no `opportunity_id`): **the sender pays.**
+- The enquiry must be `in_progress`, meaning its receiving side accepted it.
+
+*Re-applied 2026-09-30.* At 2026-09-29 17:46, a file restore outside this workstream reset every workstream D file to its state before the fix (commit `0f1825d`), and 8011 was then restarted on that code. Lost with it: the payer rule, `getContractRoles`, the MCP tool and these doc lines. The payment notice and the commit-before-response change survived. The fix itself had never been committed.
+- **What that cost:** two contracts were created on the live API with the payer backwards: Suresh's price request on Meena's evening-delivery post (post 110, enquiry `ad08774f…`).
+  - `4ffd3bbe…` is already cancelled.
+  - **`e0aaaf62…` is still `proposed` with Suresh as the client.**
+- **Current state:** the code is fixed and 8011 has been restarted, so `getContractRoles` now names Meena as the client. It reports `duplicate_contract` until that wrong contract is cancelled; Suresh or Meena can cancel it with `cancelContract`, after which Meena can create the correct one. It was left as it is because it is another agent's live test data.
+- **To stop this happening again:** commit these files so another restore cannot reset them.
+
+*Fixed 2026-09-29 (CRITIQUE-2026-09-28, N1, blocker):* the first rule only treated `apply` as poster-pays, so after Shreya accepted Priya's proposal, Priya (the freelancer) was offered "Start a contract" as the payer and Shreya got nothing. On 2026-09-29 no contract had been saved with the payer backwards (but see the 2026-09-30 note above). The web app's own copy of the rule (`ContractEntry.tsx`, `isClientOf`) belongs to the frontend workstream and should switch to `getContractRoles`.
 
 **Money is a ledger, not escrow (BLOCKER-01, `09-implementation.md`).** Funding creates a `payment_orders` row of the new kind `contract_milestone` through `services/payments.create_payment_order()`, which is the same path boosts use (dev sandbox today). On payment success, `contract_ledger` records `held`. On approval it records `released`, and a provider notification goes out. A cancellation or a dispute resolved for the client records `refunded` and calls the gateway refund.
 - No money reaches a provider from this code. Without a merchant account there is no payout rail.
@@ -49,7 +61,16 @@ Payloads carry ids, states and amounts only, plus `audience = [client, provider]
 ### Verification
 - `python -c "import app.main"` passes. All 21 operations are in `openapi.json` with operation ids.
 - **Test run:** migration 021 applied with `psql -f` as `vyapar_owner`, per the README. The check ran on a private uvicorn on port 8017, which was checked free first and killed afterwards by its own PID.
-- **Command:** `.venv/Scripts/python scripts/check_contracts.py --api http://127.0.0.1:8017`. Result: **68/68 checks pass** (two consecutive runs, 2026-09-29), with no tracebacks in the server log.
+- **Command:** `.venv/Scripts/python scripts/check_contracts.py --api http://127.0.0.1:8017`. Result: **92/92 checks pass** (two consecutive runs, 2026-09-30), with no tracebacks in the server log.
+- **Who pays (added for N1):**
+  - Shreya publishes a freelance project through the API (draft, confirm, budget, publish), and Kavita proposes on it. Priya was used until her privacy and terms acceptances disappeared from the development database, which happened outside this workstream.
+  - Before acceptance, `getContractRoles` says Shreya is the client (`poster_pays`) and blocks creation with `enquiry_not_accepted`.
+  - After Shreya accepts: Shreya gets `my_role: client` and `can_create: true`; the freelancer gets `my_role: provider` and `blocked_reason: not_client`; a third member gets 404.
+  - The freelancer creating the contract gets **403 `not_client`**. Shreya creates it and is the client; the roles then point at the live contract (`duplicate_contract`).
+  - Price request on a local-service post (the live 2026-09-30 case): Meena publishes an evening-delivery post, and Suresh sends a price request (`request_quote`), which she accepts. The roles say Meena is the client (`poster_pays`); Suresh creating the contract gets 403 `not_client`; Meena creates it and pays.
+  - Package request: Rahul publishes a package on his profile, and Vikram requests it. Vikram is the client (`requester_pays`); Rahul creating the contract gets 403 `not_client`.
+  - Cleanup also removes the package, the post (with its saves, views and outbox rows) and both senders' rate-limit hits.
+- **Commit before response:** all contract routes now use `Depends(get_conn, scope="function")`, the convention every other router already follows. The request transaction commits before the response is sent, so a client that reads right after a write sees it. Before this, the review-invite check could read 0 on the slowest call (dispute resolve).
 - **Fixed-price run** (m_vikram is the client, m_rahul's tutoring listing is the provider). It checks:
   - milestones that don't add up to the total are refused (422);
   - the provider cannot create the contract (403);
@@ -89,7 +110,8 @@ Payloads carry ids, states and amounts only, plus `audience = [client, provider]
    - `fundMilestone` returns a checkout URL that a person must open, like boosts do.
 3. **Real payouts and refunds:** BLOCKER-01 (above). A refund the gateway cannot perform (the order is unreadable, or the gateway is down) stays as a `succeeded` order for the existing refund queue, while the ledger already says `refunded`.
 4. **Web UI:** not built. This is backend only; `vyapar-web` is not touched.
-5. **Live API on 8011** picks up the routes on its next restart. It is the owner's process and was not restarted.
+5. **Live API on 8011** was restarted on 2026-09-29, with the coordinator's permission, after `import app.main` passed. It serves every route above, including `getContractRoles`.
+6. **Data oddity seen while testing (not workstream D's to fix):** seeded freelance posts 103 and 111 are still `active` although their last dates (24 and 28 September) have passed, so they refuse proposals with `opportunity_expired` while still showing as active. The expiry pass should move them to `expired`.
 6. **Configuration (optional, all have defaults):** `CONTRACT_PLATFORM_FEE_BPS=0`, `CONTRACT_AUTO_RELEASE_DAYS=14`, `CONTRACT_CHECKOUT_REUSE_HOURS=24`. They can be added to `vyapar-service/.env` when needed.
 
 ---
@@ -127,7 +149,8 @@ timesheet:  submitted --approve(client: opens checkout)--> approved --payment su
 
 | Method and path | operationId | Who | Body | Returns |
 |---|---|---|---|---|
-| `POST /v1/contracts` | `createContract` | client | `ContractCreateIn` | 201 `ContractOut` |
+| `GET /v1/contracts/roles?enquiry_id=` | `getContractRoles` | either side of the enquiry | none | `ContractRolesOut` |
+| `POST /v1/contracts` | `createContract` | client (see `getContractRoles`) | `ContractCreateIn` | 201 `ContractOut` |
 | `GET /v1/contracts?role=client\|provider\|all&state=&limit=&cursor=` | `listMyContracts` | member | none | `Page[ContractSummaryOut]` (keyset on created_at, id) |
 | `GET /v1/contracts/{id}` | `getContract` | parties, moderation operator | none | `ContractOut` |
 | `POST /v1/contracts/{id}/propose` | `proposeContract` | client | none | `ContractOut` |
@@ -152,6 +175,25 @@ timesheet:  submitted --approve(client: opens checkout)--> approved --payment su
 **Paying for a milestone.** To pay, open `checkout_url`. The milestone becomes `funded` only when the gateway confirms the payment, through the webhook, a status poll or `POST /v1/payments/orders/{payment_order_id}/simulate` in the dev sandbox. The web app then re-reads the contract with `getContract`. Calling `fundMilestone` again while the order is pending and less than 24 h old returns the same checkout. A `notice` of `"gatewayUnavailable"` means no checkout could be created; the milestone stays `pending` and the call can be retried.
 
 ### Examples
+
+**getContractRoles** asks who pays and who works, and whether the caller can start the contract now. Call it before showing "Start a contract", and show the action only when `can_create` is true.
+```json
+GET /v1/contracts/roles?enquiry_id=5c1e…          (as m_shreya, the poster)
+{"enquiry_id": "5c1e…", "client_member_id": "m_shreya", "provider_member_id": "m_priya",
+ "basis": "poster_pays", "my_role": "client", "can_create": true, "blocked_reason": null, "live_contract_id": null}
+
+GET /v1/contracts/roles?enquiry_id=5c1e…          (as m_priya, the freelancer)
+{"enquiry_id": "5c1e…", "client_member_id": "m_shreya", "provider_member_id": "m_priya",
+ "basis": "poster_pays", "my_role": "provider", "can_create": false, "blocked_reason": "not_client", "live_contract_id": null}
+```
+- `basis`: `poster_pays` (a response to a post) or `requester_pays` (a request to a profile).
+- `blocked_reason` uses the same codes `createContract` would return:
+  - `enquiry_not_accepted`: checked first;
+  - `not_client`;
+  - `duplicate_contract`: `live_contract_id` then names the contract to open.
+- A member who is not on the enquiry gets 404 `enquiry_not_found`.
+
+**MCP:** `get_contract_roles(enquiry_id)` is a new read tool. The `create_contract` description now states the rule and tells agents to call `get_contract_roles` first, and to proceed only when `can_create` is true.
 
 **createContract**, fixed price:
 ```json

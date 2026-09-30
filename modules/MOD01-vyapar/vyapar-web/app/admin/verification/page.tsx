@@ -2,22 +2,29 @@
 
 // [TR047] Verification queue — operator view (FR47). Oldest first, rows
 // waiting longer than 3 days flagged. One-tap decisions straight from the
-// card (Verify / Reject / Needs clearer copy) — no separate detail screen,
-// per the "no unnecessary intermediate screens" standing preference.
-// Evidence stays masked (last 4 only); the API never returns the encrypted
-// identifier at all. Non-operators get a plain explanation, not a crash.
+// record (Verify / Reject / Needs clearer copy); Reject and Needs-clearer-
+// copy need a reason code (FR08/FR09), and the public GST / Udyam lookup is
+// one click away. Evidence stays masked (last 4 only). Non-operators get a
+// plain explanation, not a crash.
+// [Design language 2026-09-29, operator console] ≥1024px: a dense list on
+// the left and the record on the right; below that, the records stacked.
 // Traces to: FR47, FR08, FR09, TR047, SP047
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { BadgeCheck, Building2, ExternalLink, FileCheck2, ShieldAlert, UserRound } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { DOC_KEY } from "@/app/components/Verification";
 import Screen from "@/app/components/Screen";
 import { Reveal } from "@/app/components/Motion";
-import { SkeletonGrid, EmptyState } from "@/app/components/States";
+import { SkeletonGrid } from "@/app/components/States";
+import DealsEmpty from "@/app/components/deals/Empty";
+import DisabledReason from "@/app/components/DisabledReason";
+import "@/app/styles/deals-2026.css";
 
 interface QueueItem {
   id: string;
   listing_id: string;
+  kind?: string;
   document_type: string;
   identifier_masked: string | null;
   credential_name: string | null;
@@ -25,21 +32,9 @@ interface QueueItem {
   days_pending: number;
 }
 
-// [Critique agent finding, fixed here] `decide()` posted `{}` for every
-// action, including Reject and Needs-clearer-copy — FR08/FR09's own
-// acceptance criteria name "Operator Verify/Reject WITH REASON", and the
-// listing's own rejected-state template reads that reason back. Reusing
-// the exact gating pattern already correct in admin/moderation/page.tsx
-// (a REASON_CODES select that must hold a value before Apply is enabled)
-// rather than inventing a second pattern. Verify needs no reason — only
-// Reject and Needs-clearer-copy do, per FR08/FR09's own wording.
 const REASON_CODES = ["document_illegible", "document_expired", "name_mismatch", "document_type_mismatch", "suspected_fraud", "other"];
 
-// [Critique agent finding, fixed here] FR47's own requirement text: "...
-// provide a link to the public GST/Udyam lookup where applicable...". No
-// such link existed anywhere on this screen — FR08 DEC-001 committed to
-// manual operator lookup against the real public registries (not a paid
-// verification API), so the operator needs a real place to click through to.
+// FR08 DEC-001: manual operator lookup against the real public registries.
 const PUBLIC_LOOKUP_URL: Record<string, string> = {
   gst: "https://services.gst.gov.in/services/searchtp",
   udyam: "https://udyamregistration.gov.in/Udyam_Verify.aspx",
@@ -52,7 +47,6 @@ export default function VerificationQueuePage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<{ id: string; action: "reject" | "needs-clearer-copy" } | null>(null);
   const [reasonCode, setReasonCode] = useState("");
-  // [IMP33] Which queue item the ≥1024px console pane is showing.
   const [selected, setSelected] = useState<string | null>(null);
 
   async function load() {
@@ -65,6 +59,8 @@ export default function VerificationQueuePage() {
   }
 
   useEffect(() => {
+    // The initial load runs once per id (the pattern this module's data hooks use).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, []);
 
@@ -82,129 +78,122 @@ export default function VerificationQueuePage() {
 
   if (forbidden) {
     return (
-      <Screen>
-        <h1>{t("verification:queueTitle")}</h1>
-        <EmptyState mark="⚠" title={t("verification:notOperator")} />
+      <Screen width="console">
+        <div className="vy-dl-page">
+          <div className="vy-dl-head">
+            <h1>{t("verification:queueTitle")}</h1>
+          </div>
+          <DealsEmpty tone="neutral" icon={<ShieldAlert size={24} strokeWidth={1.75} aria-hidden="true" />} title={t("verification:notOperator")} />
+        </div>
       </Screen>
     );
   }
 
-  // [IMP33] The full record + decision controls for one queue item.
-  // Extracted as a function so the SAME markup serves the phone's stacked
-  // queue and the ≥1024px console's right-hand detail pane — one decision
-  // surface, not two that can drift (this queue applies FR47's operator
-  // actions with mandatory reason codes; two copies would be a real risk).
+  const docLabel = (item: QueueItem) => t(`verification:${DOC_KEY[item.document_type]}` as "typeGst");
+  const evidence = (item: QueueItem) => (item.document_type === "credential" ? [item.credential_name, item.issuer].filter(Boolean).join(" · ") : (item.identifier_masked ?? ""));
+  const waiting = (item: QueueItem) => (item.days_pending > 3 ? t("verification:overdue") : t("verification:daysPending", { days: item.days_pending }));
+
+  // One decision surface, used by the phone's stacked queue and the console's pane.
   function record(item: QueueItem) {
+    const pending = pendingAction?.id === item.id ? pendingAction : null;
     return (
-          <div key={item.id} className="vy-card vy-stack">
-            <div className="vy-row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
-              <strong>{t(`verification:${DOC_KEY[item.document_type]}` as "typeGst")}</strong>
-              <span className={item.days_pending > 3 ? "vy-badge vy-badge-sponsored" : "vy-muted"}>
-                {item.days_pending > 3 ? t("verification:overdue") : t("verification:daysPending", { days: item.days_pending })}
-              </span>
-            </div>
-            <p className="vy-muted">
-              {item.document_type === "credential" ? `${item.credential_name ?? ""} · ${item.issuer ?? ""}` : item.identifier_masked}
-            </p>
-            <a className="vy-muted" href={`/listings/${item.listing_id}`}>
-              {t("common:action.back")} →
+      <div className="vy-dl-sec" key={item.id}>
+        <div className="vy-dl-sec-head vy-dl-sec-head-3">
+          <span className={`vy-dl-tile ${item.kind === "professional" ? "vy-dl-tile-teal" : "vy-dl-tile-brand"}`} aria-hidden="true">
+            {item.kind === "professional" ? <UserRound size={20} strokeWidth={1.75} /> : <Building2 size={20} strokeWidth={1.75} />}
+          </span>
+          <h2 className="vy-card-title">{docLabel(item)}</h2>
+          <span className="vy-dl-sec-hint">{evidence(item)}</span>
+          <span className="vy-dl-sec-head-end">
+            <span className="vy-dl-state" data-tone={item.days_pending > 3 ? "warn" : undefined}>{waiting(item)}</span>
+          </span>
+        </div>
+        <div className="vy-dl-actions">
+          <a className="vy-btn vy-btn-ghost vy-dl-btn-sm" href={`/listings/${item.listing_id}`}>
+            {t("verification:openProfile")} <ExternalLink size={14} strokeWidth={2} aria-hidden="true" />
+          </a>
+          {PUBLIC_LOOKUP_URL[item.document_type] && (
+            <a className="vy-btn vy-btn-ghost vy-dl-btn-sm" href={PUBLIC_LOOKUP_URL[item.document_type]} target="_blank" rel="noopener noreferrer">
+              {t("verification:publicLookup", { doc: docLabel(item) })} <ExternalLink size={14} strokeWidth={2} aria-hidden="true" />
             </a>
-            {PUBLIC_LOOKUP_URL[item.document_type] && (
-              <a className="vy-muted" href={PUBLIC_LOOKUP_URL[item.document_type]} target="_blank" rel="noopener noreferrer">
-                {t("verification:publicLookup", { doc: t(`verification:${DOC_KEY[item.document_type]}` as "typeGst") })} ↗
-              </a>
-            )}
-            <div className="vy-row" style={{ flexWrap: "wrap" }}>
-              <button className="vy-btn vy-btn-primary" disabled={busy === item.id} onClick={() => decide(item.id, "verify")}>
-                {t("verification:verify")}
+          )}
+        </div>
+        <div className="vy-dl-actions">
+          <button className="vy-btn vy-btn-primary" disabled={busy === item.id} onClick={() => decide(item.id, "verify")}>
+            <BadgeCheck size={16} strokeWidth={2} aria-hidden="true" /> {t("verification:verify")}
+          </button>
+          <button className="vy-btn vy-btn-secondary" disabled={busy === item.id} aria-expanded={pending?.action === "reject"} onClick={() => setPendingAction(pending?.action === "reject" ? null : { id: item.id, action: "reject" })}>
+            {t("verification:reject")}
+          </button>
+          <button className="vy-btn vy-btn-ghost" disabled={busy === item.id} aria-expanded={pending?.action === "needs-clearer-copy"} onClick={() => setPendingAction(pending?.action === "needs-clearer-copy" ? null : { id: item.id, action: "needs-clearer-copy" })}>
+            {t("verification:needsClearerCopy")}
+          </button>
+        </div>
+        {pending && (
+          <div className="vy-dl-panel">
+            <label className="vy-field">
+              <span className="vy-label">{t("verification:reasonLabel")}</span>
+              <select className="vy-select" value={reasonCode} onChange={(e) => setReasonCode(e.target.value)}>
+                <option value="">{t("verification:chooseReason")}</option>
+                {REASON_CODES.map((code) => (
+                  <option key={code} value={code}>
+                    {t(`verification:reasonCode.${code}` as "reasonCode.document_illegible")}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="vy-dl-actions">
+              <button className="vy-btn vy-btn-secondary" aria-describedby={!reasonCode ? `vq-why-${item.id}` : undefined} disabled={!reasonCode || busy === item.id} onClick={() => decide(item.id, pending.action, reasonCode)}>
+                {t(pending.action === "reject" ? "verification:reject" : "verification:needsClearerCopy")}
               </button>
-              <button
-                className="vy-btn vy-btn-secondary"
-                disabled={busy === item.id}
-                onClick={() => setPendingAction(pendingAction?.id === item.id && pendingAction.action === "reject" ? null : { id: item.id, action: "reject" })}
-              >
-                {t("verification:reject")}
-              </button>
-              <button
-                className="vy-btn vy-btn-ghost"
-                disabled={busy === item.id}
-                onClick={() => setPendingAction(pendingAction?.id === item.id && pendingAction.action === "needs-clearer-copy" ? null : { id: item.id, action: "needs-clearer-copy" })}
-              >
-                {t("verification:needsClearerCopy")}
-              </button>
+              <button className="vy-btn vy-btn-ghost" onClick={() => setPendingAction(null)}>{t("common:action.cancel")}</button>
             </div>
-            {pendingAction?.id === item.id && (
-              <div className="vy-stack">
-                <select className="vy-select" value={reasonCode} onChange={(e) => setReasonCode(e.target.value)}>
-                  <option value="">{t("verification:chooseReason")}</option>
-                  {REASON_CODES.map((code) => (
-                    <option key={code} value={code}>
-                      {t(`verification:reasonCode.${code}` as "reasonCode.document_illegible")}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  className="vy-btn vy-btn-primary"
-                  disabled={!reasonCode || busy === item.id}
-                  onClick={() => decide(item.id, pendingAction.action, reasonCode)}
-                >
-                  {t(pendingAction.action === "reject" ? "verification:reject" : "verification:needsClearerCopy")}
-                </button>
-              </div>
-            )}
+            <DisabledReason id={`vq-why-${item.id}`} show={!reasonCode}>{t("verification:chooseReason")}</DisabledReason>
           </div>
+        )}
+      </div>
     );
   }
 
   const selectedItem = items?.find((i) => i.id === selected) ?? items?.[0] ?? null;
 
   return (
-    // ==================================================================
-    // [IMP33 — Admin console layout, 04-ui.md F4 `--fk-bp-console`]
-    // The sealed spec says ≥1024px Admin screens are "list + right detail
-    // pane"; UI19's own mobile-first section spells out the proportions
-    // ("Desktop ≥ 1024 px: list left (40 %) + record/case right"). None of
-    // it was built — the console rendered as the same 480px phone column,
-    // which for an operator working a queue all day is the worst place in
-    // the app for it.
-    // Below 1024px the queue stays exactly as it was: full records
-    // stacked, each with its own decision controls.
-    // Traces to: FR47, 04-ui.md F4 + UI19, product-owner direction.
-    // ==================================================================
     <Screen width="console">
-      <h1>{t("verification:queueTitle")}</h1>
-      {items === null && <SkeletonGrid count={3} grid={false} />}
-      {items?.length === 0 && <EmptyState mark="✓" title={t("verification:queueEmpty")} />}
-
-      {items && items.length > 0 && (
-        <div className="vy-pane">
-          <div className="vy-pane-list vy-stack">
-            {items.map((item, i) => (
-              <Reveal key={item.id} index={i}>
-                {/* Phone/tablet: the whole record, inline. */}
-                <div className="vy-pane-row-mobile">{record(item)}</div>
-                {/* Console: a compact, scannable row that selects. */}
-                <button
-                  type="button"
-                  className={`vy-card vy-pane-row-console vy-card-interactive ${selectedItem?.id === item.id ? "vy-card-selected" : ""}`}
-                  aria-current={selectedItem?.id === item.id ? "true" : undefined}
-                  style={{ gap: 4, width: "100%", textAlign: "left", cursor: "pointer", font: "inherit", color: "inherit", padding: "var(--space-4)" }}
-                  onClick={() => setSelected(item.id)}
-                >
-                  <strong>{t(`verification:${DOC_KEY[item.document_type]}` as "typeGst")}</strong>
-                  <span className={item.days_pending > 3 ? "vy-badge vy-badge-sponsored" : "vy-muted"} style={{ alignSelf: "flex-start" }}>
-                    {item.days_pending > 3 ? t("verification:overdue") : t("verification:daysPending", { days: item.days_pending })}
-                  </span>
-                  <span className="vy-muted">
-                    {item.document_type === "credential" ? `${item.credential_name ?? ""} · ${item.issuer ?? ""}` : item.identifier_masked}
-                  </span>
-                </button>
-              </Reveal>
-            ))}
-          </div>
-          <div className="vy-pane-detail vy-console-only">{selectedItem && record(selectedItem)}</div>
+      <div className="vy-dl-page">
+        <div className="vy-dl-head">
+          <h1>{t("verification:queueTitle")}</h1>
+          <p>{t("verification:queueSubtitle")}</p>
         </div>
-      )}
+        {items === null && <SkeletonGrid count={3} grid={false} />}
+        {items?.length === 0 && <DealsEmpty tone="green" icon={<FileCheck2 size={24} strokeWidth={1.75} aria-hidden="true" />} title={t("verification:queueEmpty")} />}
+
+        {items && items.length > 0 && (
+          <div className="vy-pane">
+            <div className="vy-pane-list vy-dl-list">
+              {items.map((item, i) => (
+                <Reveal key={item.id} index={i}>
+                  {/* Phone/tablet: the whole record, inline. */}
+                  <div className="vy-pane-row-mobile">{record(item)}</div>
+                  {/* Console: a compact, scannable row that selects. */}
+                  <button type="button" className="vy-dl-row vy-pane-row-console" aria-current={selectedItem?.id === item.id ? "true" : undefined} onClick={() => setSelected(item.id)}>
+                    <span className={`vy-dl-tile ${item.kind === "professional" ? "vy-dl-tile-teal" : "vy-dl-tile-brand"}`} aria-hidden="true">
+                      {item.kind === "professional" ? <UserRound size={18} strokeWidth={1.75} /> : <Building2 size={18} strokeWidth={1.75} />}
+                    </span>
+                    <span className="vy-dl-row-body">
+                      <span className="vy-dl-row-title">{docLabel(item)}</span>
+                      <span className="vy-dl-row-meta"><span>{evidence(item)}</span></span>
+                    </span>
+                    <span className="vy-dl-row-aside">
+                      <span className="vy-dl-state" data-tone={item.days_pending > 3 ? "warn" : undefined}>{waiting(item)}</span>
+                    </span>
+                  </button>
+                </Reveal>
+              ))}
+            </div>
+            <div className="vy-pane-detail vy-console-only">{selectedItem && record(selectedItem)}</div>
+          </div>
+        )}
+      </div>
     </Screen>
   );
 }

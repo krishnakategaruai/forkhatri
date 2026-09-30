@@ -21,17 +21,15 @@
 //             drawer on desktop, FE2's sections inside.
 //   States    card-shaped skeletons, an empty state that offers to widen,
 //             and an error state with Try again.
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, SearchX, Sparkles, UserPlus, WifiOff } from "lucide-react";
 import type { FeedFacets, FeedFilterValues, FeedRow, OpportunityCard } from "@/lib/sdk";
 import DiscoverHero from "./DiscoverHero";
 import TradeRail from "./TradeRail";
-import QuickChips from "./QuickChips";
+import DiscoverFilterBar from "./DiscoverFilterBar";
 import FeedRows from "./FeedRows";
 import DiscoverCard from "./DiscoverCard";
 import ResultsHeader from "./ResultsHeader";
-import MobileFilterSheet from "./MobileFilterSheet";
 
 export interface DiscoverViewProps {
   displayName: string | null;
@@ -58,6 +56,10 @@ export interface DiscoverViewProps {
   /** The current list failed to load and has nothing to show. */
   failed?: boolean;
   onRetry?: () => void;
+  /** [Critique N2] rows API: rows built from the viewer's skills exist (undefined: infer from the rows). */
+  hasPersonalRows?: boolean;
+  /** [Critique N2] rows API: the viewer's own work categories, strongest first. */
+  viewerCategories?: string[];
 }
 
 function SkeletonCards({ count, strip }: { count: number; strip?: boolean }) {
@@ -107,21 +109,25 @@ function StateBlock({ icon, title, body, action }: { icon: React.ReactNode; titl
 
 /** [imp-backend-b L13 — few rows on a sparse home] never a blank gap: say
  *  how to see more (add skills), and offer the other side (post a need).
- *  The trade tiles above stay as the way to browse. */
+ *  [2026-09-30, owner: "this too"] one calm card: the icon tile beside the
+ *  title, one line under it, both actions inside the card on one row;
+ *  nothing can overflow (the actions wrap on a phone). */
 function SparseNudge({ skills, onSkills, onPost }: { skills: boolean; onSkills: () => void; onPost: () => void }) {
   const { t } = useTranslation(["discover", "explore"]);
   return (
     <div className="vy-nudge">
-      <span className="vy-trade-tile vy-trade-indigo" aria-hidden="true">
-        <Sparkles size={22} strokeWidth={1.9} />
-      </span>
-      <div className="vy-nudge-text">
-        <h2 className="vy-card-title">{t("explore:sparse.title")}</h2>
-        <p>{t("explore:sparse.body")}</p>
+      <div className="vy-nudge-head">
+        <span className="vy-trade-tile vy-trade-indigo" aria-hidden="true">
+          <Sparkles size={22} strokeWidth={1.9} />
+        </span>
+        <div className="vy-nudge-text">
+          <h2 className="vy-card-title">{t("explore:sparse.title")}</h2>
+          <p>{t("explore:sparse.body")}</p>
+        </div>
       </div>
       <div className="vy-nudge-actions">
         {skills && (
-          <button type="button" className="vy-btn vy-btn-secondary" onClick={onSkills}>
+          <button type="button" className="vy-btn vy-btn-soft" onClick={onSkills}>
             <UserPlus size={18} aria-hidden="true" />
             {t("discover:home.addCapabilities")}
           </button>
@@ -137,7 +143,6 @@ function SparseNudge({ skills, onSkills, onPost }: { skills: boolean; onSkills: 
 
 export default function DiscoverView(p: DiscoverViewProps) {
   const { t } = useTranslation(["discover", "explore"]);
-  const [sheetOpen, setSheetOpen] = useState(false);
   const f = p.filters;
 
   const failed = p.failed ? (
@@ -156,6 +161,7 @@ export default function DiscoverView(p: DiscoverViewProps) {
   return (
     <div className="vy-discover2">
       <DiscoverHero
+        personal={p.hasPersonalRows ?? !!p.rows?.some((r) => r.key === "for_you" || r.key.startsWith("category:"))}
         firstName={p.displayName !== null ? p.displayName.split(" ")[0] : null}
         query={f.q ?? ""}
         onQuery={(q) => p.onFiltersChange({ ...f, q: q || null })}
@@ -165,15 +171,9 @@ export default function DiscoverView(p: DiscoverViewProps) {
         onRadius={(km) => p.onFiltersChange({ ...f, radius_km: km })}
       />
 
-      <TradeRail skills={f.skills ?? []} onSkills={(skills) => p.onFiltersChange({ ...f, skills })} />
+      <TradeRail skills={f.skills ?? []} viewerCategories={p.viewerCategories} onSkills={(skills) => p.onFiltersChange({ ...f, skills })} />
 
-      <QuickChips
-        filters={f}
-        onChange={p.onFiltersChange}
-        onOpenFilters={() => setSheetOpen(true)}
-        place={p.place}
-        defaultRadiusKm={p.defaultRadiusKm}
-      />
+      <DiscoverFilterBar filters={f} onChange={p.onFiltersChange} place={p.place} defaultRadiusKm={p.defaultRadiusKm} />
 
 
       {p.curated ? (
@@ -202,12 +202,19 @@ export default function DiscoverView(p: DiscoverViewProps) {
               title={t("explore:filters.noResults")}
               body={t("explore:filters.noResultsBody")}
               action={
+                // [2026-09-30] Zero results offer ways OUT (wider, every
+                // trade, fewer filters) — never "Save this search".
                 <div className="vy-row" style={{ flexWrap: "wrap", justifyContent: "center", gap: 8 }}>
-                  {f.radius_km ? (
-                    <button className="vy-btn vy-btn-secondary" onClick={() => p.onFiltersChange({ ...f, radius_km: Math.min(50, (f.radius_km ?? 5) * 2) })}>
-                      {t("explore:results.widen", { km: Math.min(50, (f.radius_km ?? 5) * 2) })}
+                  {f.radius_km && f.radius_km < 50 ? (
+                    <button className="vy-btn vy-btn-secondary" onClick={() => p.onFiltersChange({ ...f, radius_km: Math.min(50, Math.max(25, f.radius_km! * 2)) })}>
+                      {t("explore:fbar.widen", { km: Math.min(50, Math.max(25, f.radius_km * 2)) })}
                     </button>
                   ) : null}
+                  {(f.skills?.length ?? 0) > 0 && (
+                    <button className="vy-btn vy-btn-secondary" onClick={() => p.onFiltersChange({ ...f, skills: [] })}>
+                      {t("explore:fbar.seeAllTrades")}
+                    </button>
+                  )}
                   {p.lastFilterRemoved && (
                     <button className="vy-btn vy-btn-ghost" onClick={() => p.onFiltersChange(p.lastFilterRemoved!)}>
                       {t("explore:results.dropLast")}
@@ -224,18 +231,6 @@ export default function DiscoverView(p: DiscoverViewProps) {
             </div>
           )}
         </section>
-      )}
-
-      {sheetOpen && (
-        <MobileFilterSheet
-          value={f}
-          preview={p.preview}
-          onClose={() => setSheetOpen(false)}
-          onApply={(next) => {
-            p.onFiltersChange(next);
-            setSheetOpen(false);
-          }}
-        />
       )}
     </div>
   );

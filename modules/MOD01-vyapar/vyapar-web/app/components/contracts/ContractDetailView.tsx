@@ -3,14 +3,15 @@
 // [FE2 — imp-backend-d, research §8] Contract detail, presentational.
 //
 // Reading order: what the contract is and where it stands (title, the other
-// person, state), then the one thing the viewer can do next, then the
-// milestones as a vertical timeline — Not funded → Held → Submitted → Paid,
-// with Changes requested and In dispute — each row carrying at most ONE
-// action for the person whose turn it is (Fund · Submit work · Approve and
-// pay / Request changes). Money sits in a sticky right column on desktop
-// (Held · Paid · Not yet funded); on a phone the current action is pinned
-// in a footer. Vocabulary follows the research: "Held", not escrow;
-// "Submitted", not in review; "Paid", not released.
+// person, state), then the one thing the viewer can do next as a "your turn"
+// banner, then the stages as a vertical timeline — Not paid in yet → Paid in
+// advance → Work sent → Paid, with Changes requested and In dispute — each
+// row carrying at most ONE action for the person whose turn it is (Pay in
+// advance · Send work · Approve and pay / Request changes). Money sits in a
+// sticky right column on desktop; on a phone the current action is pinned in
+// a footer that replaces the hub. Vocabulary follows GLOSSARY.md: "stage"
+// not milestone, "paid in advance" not held/funded/escrow, "Paid" not
+// released.
 //
 // Props in, callbacks out; the only state here is which inline note box is
 // open and its text. Payments are a ledger (BLOCKER-01): the page says so,
@@ -18,19 +19,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
+import { AlertTriangle, Check, CheckCircle2, Clock, Flag, History, IndianRupee, ListChecks, Lock, MessageSquare, Send, Wallet } from "lucide-react";
 import type { Contract, ContractEvent, Milestone, Timesheet, TimesheetInput } from "@/lib/sdk";
 import { daysUntil, formatDate, formatDateTime, formatRupees } from "@/lib/format";
-import Icon from "@/app/components/Icon";
-import {
-  contractNeedsMe,
-  counterpartOf,
-  milestoneAction,
-  milestoneTone,
-  notFundedPaise,
-  recentMondays,
-  stateTone,
-  timesheetNeedsMe,
-} from "./model";
+import { contractNeedsMe, counterpartOf, milestoneAction, milestoneTone, notFundedPaise, recentMondays, stateTone, timesheetNeedsMe, type Tone } from "./model";
 
 export interface ContractDetailActions {
   onPropose: () => void;
@@ -53,11 +45,34 @@ export interface ContractDetailViewProps extends ContractDetailActions {
   error: string | null;
   /** true once the Payment Bridge said it is the development sandbox; null = not known yet. */
   sandbox: boolean | null;
-  /** Rendered inside a split pane: no page-level back link and no sticky phone footer. */
+  /** Rendered inside a split pane: no page-level title and no sticky phone footer. */
   embedded?: boolean;
 }
 
 type Open = { kind: "submit" | "reject" | "tsReject" | "dispute" | "end"; id?: string } | null;
+
+function chipTone(tone: Tone): "action" | "done" | "warn" | "wait" | undefined {
+  switch (tone) {
+    case "action":
+      return "action";
+    case "done":
+      return "done";
+    case "warn":
+      return "warn";
+    case "held":
+      return "wait";
+    default:
+      return undefined;
+  }
+}
+
+function DotIcon({ tone }: { tone: Tone }) {
+  if (tone === "done") return <Check size={13} strokeWidth={2.5} aria-hidden="true" />;
+  if (tone === "warn") return <AlertTriangle size={12} strokeWidth={2.25} aria-hidden="true" />;
+  if (tone === "held") return <Lock size={11} strokeWidth={2.25} aria-hidden="true" />;
+  if (tone === "action") return <IndianRupee size={12} strokeWidth={2.5} aria-hidden="true" />;
+  return null;
+}
 
 export default function ContractDetailView(props: ContractDetailViewProps) {
   const { contract: c, busy, error, sandbox, embedded } = props;
@@ -99,7 +114,7 @@ export default function ContractDetailView(props: ContractDetailViewProps) {
   }
 
   function milestoneStatusLine(m: Milestone): string | null {
-    // before acceptance nobody is waiting on anybody for a milestone yet
+    // before acceptance nobody is waiting on anybody for a stage yet
     if (c.state !== "active" && !["released", "approved"].includes(m.state)) return null;
     switch (m.state) {
       case "pending":
@@ -110,9 +125,7 @@ export default function ContractDetailView(props: ContractDetailViewProps) {
         if (!m.auto_release_at) return null;
         const count = daysUntil(m.auto_release_at);
         const date = formatDate(m.auto_release_at, lang);
-        return isClient
-          ? t("contracts:action.autoInClient", { count, date })
-          : t("contracts:action.autoIn", { count, date, name: clientName });
+        return isClient ? t("contracts:action.autoInClient", { count, date }) : t("contracts:action.autoIn", { count, date, name: clientName });
       }
       case "released":
       case "approved":
@@ -122,10 +135,22 @@ export default function ContractDetailView(props: ContractDetailViewProps) {
     }
   }
 
+  const noteBox = (label: string, onSend: () => void, sendLabel: string, requireText = true, primary = true) => (
+    <div className="vy-dl-panel">
+      <textarea className="vy-textarea" rows={2} maxLength={1000} value={text} onChange={(e) => setText(e.target.value)} aria-label={label} placeholder={label} />
+      <div className="vy-dl-actions">
+        <button className={`vy-btn ${primary ? "vy-btn-primary" : "vy-btn-secondary"}`} disabled={busy || (requireText && !text.trim())} onClick={onSend}>
+          {sendLabel}
+        </button>
+        <button className="vy-btn vy-btn-ghost" onClick={() => toggle(null)}>{t("contracts:detail.cancel")}</button>
+      </div>
+    </div>
+  );
+
   function milestoneActions(m: Milestone) {
     const action = milestoneAction(c, m);
-    // One primary per screen: the current step gets the accent; later
-    // milestones that could also be funded early get a quiet button.
+    // One primary per screen: the current step gets the brand fill; later
+    // stages that could also be paid early get a quiet button.
     const primary = m.id === firstMs?.id ? "vy-btn vy-btn-primary" : "vy-btn vy-btn-secondary";
     if (action === "fund") {
       const resume = !!(m.funded_order_id && m.checkout_url);
@@ -138,41 +163,26 @@ export default function ContractDetailView(props: ContractDetailViewProps) {
     if (action === "submit") {
       const isOpen = open?.kind === "submit" && open.id === m.id;
       return isOpen ? (
-        <div className="vy-stack" style={{ gap: 8 }}>
-          <textarea className="vy-textarea" rows={2} maxLength={1000} value={text} onChange={(e) => setText(e.target.value)} aria-label={t("contracts:action.submitNote")} placeholder={t("contracts:action.submitNote")} />
-          <div className="vy-row">
-            <button className="vy-btn vy-btn-primary" disabled={busy} onClick={() => props.onSubmit(m.id, text.trim() || undefined)}>
-              {t("contracts:action.submitSend")}
-            </button>
-            <button className="vy-btn vy-btn-ghost" onClick={() => toggle(null)}>{t("contracts:detail.cancel")}</button>
-          </div>
-        </div>
+        noteBox(t("contracts:action.submitNote"), () => props.onSubmit(m.id, text.trim() || undefined), t("contracts:action.submitSend"), false)
       ) : (
         <button className={primary} style={{ alignSelf: "flex-start" }} disabled={busy} onClick={() => toggle({ kind: "submit", id: m.id })}>
-          {m.state === "rejected" ? t("contracts:action.submitAgain") : t("contracts:action.submit")}
+          <Send size={16} strokeWidth={2} aria-hidden="true" /> {m.state === "rejected" ? t("contracts:action.submitAgain") : t("contracts:action.submit")}
         </button>
       );
     }
     if (action === "review") {
       const isOpen = open?.kind === "reject" && open.id === m.id;
       return (
-        <div className="vy-stack" style={{ gap: 8 }}>
-          <div className="vy-row" style={{ flexWrap: "wrap" }}>
+        <div className="vy-dl-page" style={{ gap: "var(--space-2)" }}>
+          <div className="vy-dl-actions">
             <button className={primary} disabled={busy} onClick={() => props.onApprove(m.id)}>
-              {t("contracts:action.approve")}
+              <Check size={16} strokeWidth={2.25} aria-hidden="true" /> {t("contracts:action.approve")}
             </button>
             <button className="vy-btn vy-btn-ghost" disabled={busy} aria-expanded={isOpen} onClick={() => toggle({ kind: "reject", id: m.id })}>
               {t("contracts:action.requestChanges")}
             </button>
           </div>
-          {isOpen && (
-            <div className="vy-stack" style={{ gap: 8 }}>
-              <textarea className="vy-textarea" rows={2} maxLength={1000} value={text} onChange={(e) => setText(e.target.value)} aria-label={t("contracts:action.changesNote")} placeholder={t("contracts:action.changesNote")} />
-              <button className="vy-btn vy-btn-secondary" style={{ alignSelf: "flex-start" }} disabled={busy || !text.trim()} onClick={() => props.onReject(m.id, text.trim())}>
-                {t("contracts:action.changesSend")}
-              </button>
-            </div>
-          )}
+          {isOpen && noteBox(t("contracts:action.changesNote"), () => props.onReject(m.id, text.trim()), t("contracts:action.changesSend"), true, false)}
         </div>
       );
     }
@@ -182,37 +192,33 @@ export default function ContractDetailView(props: ContractDetailViewProps) {
   function timesheetRow(ts: Timesheet) {
     const needs = timesheetNeedsMe(c, ts);
     const isOpen = open?.kind === "tsReject" && open.id === ts.id;
-    const tone = ts.state === "paid" ? "done" : needs ? "action" : ts.state === "rejected" ? "warn" : "held";
+    const tone: Tone = ts.state === "paid" ? "done" : needs ? "action" : ts.state === "rejected" ? "warn" : "held";
     return (
-      <li key={ts.id} id={`ts-${ts.id}`} className="vy-timeline-item">
-        <span className="vy-dot" data-tone={tone} aria-hidden="true" />
-        <div className="vy-timeline-body">
-          <div className="vy-timeline-head">
-            <strong>{t("contracts:hours.row", { date: formatDate(ts.week_start, lang), hours: ts.hours, amount: money(ts.amount_paise) })}</strong>
-            <span className="vy-state-chip" data-tone={tone === "action" ? "action" : tone === "done" ? "done" : undefined}>
-              {t(`contracts:ts.${ts.state}`)}
-            </span>
+      <li key={ts.id} id={`ts-${ts.id}`} className="vy-dl-stage">
+        <span className="vy-dl-stage-dot" data-tone={tone} aria-hidden="true">
+          <DotIcon tone={tone} />
+        </span>
+        <div className="vy-dl-stage-body">
+          <div className="vy-dl-stage-head">
+            <strong className="vy-dl-stage-title">{t("contracts:hours.rowTitle", { date: formatDate(ts.week_start, lang), hours: ts.hours })}</strong>
+            <strong className="vy-dl-stage-amt vy-num">{money(ts.amount_paise)}</strong>
           </div>
-          {ts.note && <p style={{ fontSize: 14 }}>{ts.note}</p>}
-          {ts.reject_note && <p className="vy-muted">{t("contracts:action.changesAsked", { note: ts.reject_note })}</p>}
+          <div className="vy-dl-tags">
+            <span className="vy-dl-state" data-tone={chipTone(tone)}>{t(`contracts:ts.${ts.state}`)}</span>
+          </div>
+          {ts.note && <p className="vy-dl-stage-line">{ts.note}</p>}
+          {ts.reject_note && <p className="vy-dl-stage-note">{t("contracts:action.changesAsked", { note: ts.reject_note })}</p>}
           {needs && (
-            <div className="vy-stack" style={{ gap: 8 }}>
-              <div className="vy-row" style={{ flexWrap: "wrap" }}>
+            <div className="vy-dl-page" style={{ gap: "var(--space-2)" }}>
+              <div className="vy-dl-actions">
                 <button className="vy-btn vy-btn-primary" disabled={busy} onClick={() => props.onApproveTimesheet(ts.id)}>
-                  {t("contracts:hours.approve")}
+                  <Check size={16} strokeWidth={2.25} aria-hidden="true" /> {t("contracts:hours.approve")}
                 </button>
                 <button className="vy-btn vy-btn-ghost" disabled={busy} aria-expanded={isOpen} onClick={() => toggle({ kind: "tsReject", id: ts.id })}>
                   {t("contracts:hours.reject")}
                 </button>
               </div>
-              {isOpen && (
-                <div className="vy-stack" style={{ gap: 8 }}>
-                  <textarea className="vy-textarea" rows={2} value={text} onChange={(e) => setText(e.target.value)} aria-label={t("contracts:hours.rejectNote")} placeholder={t("contracts:hours.rejectNote")} />
-                  <button className="vy-btn vy-btn-secondary" style={{ alignSelf: "flex-start" }} disabled={busy || !text.trim()} onClick={() => props.onRejectTimesheet(ts.id, text.trim())}>
-                    {t("contracts:hours.reject")}
-                  </button>
-                </div>
-              )}
+              {isOpen && noteBox(t("contracts:hours.rejectNote"), () => props.onRejectTimesheet(ts.id, text.trim()), t("contracts:hours.reject"), true, false)}
             </div>
           )}
         </div>
@@ -220,55 +226,80 @@ export default function ContractDetailView(props: ContractDetailViewProps) {
     );
   }
 
-  // ---- contract-level banner -------------------------------------------------
+  // ---- contract-level banner: whose turn, or what happened ----------------
   let banner: React.ReactNode = null;
   if (c.state === "draft" && isClient) {
     banner = (
-      <div className="vy-card vy-stack" style={{ gap: 12 }}>
-        <p>{t("contracts:detail.draftClient", { name: other })}</p>
-        <div className="vy-row" style={{ flexWrap: "wrap" }}>
+      <div className="vy-dl-turn" role="status">
+        <span className="vy-dl-tile vy-dl-tile-brand" aria-hidden="true"><Send size={20} strokeWidth={1.75} /></span>
+        <div className="vy-dl-row-body">
+          <strong>{t("contracts:detail.draftTitle")}</strong>
+          <span className="vy-dl-hint">{t("contracts:detail.draftClient", { name: other })}</span>
+        </div>
+        <div className="vy-dl-turn-actions">
           <button className="vy-btn vy-btn-primary" disabled={busy} onClick={props.onPropose}>{t("contracts:detail.send", { name: other })}</button>
           <button className="vy-btn vy-btn-ghost" disabled={busy} onClick={() => props.onCancel()}>{t("contracts:detail.discard")}</button>
         </div>
       </div>
     );
   } else if (c.state === "proposed") {
+    // Calm offer card: one line, the facts, ONE full-width action (owner, 2026-09-30).
     banner = (
-      <div className="vy-card vy-stack" style={{ gap: 12 }}>
-        <p>{isClient ? t("contracts:detail.proposedClient", { name: other }) : t("contracts:detail.proposedProvider", { name: other })}</p>
-        <div className="vy-row" style={{ flexWrap: "wrap" }}>
-          {!isClient && (
-            <button className="vy-btn vy-btn-primary" disabled={busy} onClick={props.onAccept}>{t("contracts:detail.accept")}</button>
+      <div className="vy-cl-offer" role="status">
+        <strong>{isClient ? t("contracts:detail.proposedTitleClient") : t("contracts:detail.proposedTitleProvider", { name: other })}</strong>
+        <dl className="vy-cl-offer-facts">
+          <div>
+            <dt>{t("contracts:detail.total")}</dt>
+            <dd className="vy-num">{money(c.total_paise)}</dd>
+          </div>
+          {c.kind === "fixed" && (
+            <div>
+              <dt>{t("contracts:detail.milestones")}</dt>
+              <dd className="vy-num">{c.milestones.length}</dd>
+            </div>
           )}
-          <button className="vy-btn vy-btn-ghost" disabled={busy} onClick={() => props.onCancel()}>
-            {isClient ? t("contracts:detail.withdraw") : t("contracts:detail.decline")}
-          </button>
-        </div>
+        </dl>
+        <span className="vy-dl-hint">{isClient ? t("contracts:detail.proposedClient", { name: other }) : t("contracts:detail.proposedProvider", { name: other })}</span>
+        {!isClient && (
+          <button className="vy-btn vy-btn-primary" disabled={busy} onClick={props.onAccept}>{t("contracts:detail.accept")}</button>
+        )}
+        <button type="button" className="vy-cl-textbtn" disabled={busy} onClick={() => props.onCancel()}>
+          {isClient ? t("contracts:detail.withdraw") : t("contracts:detail.decline")}
+        </button>
       </div>
     );
   } else if (c.state === "disputed") {
-    banner = <p className="vy-sandbox-note" role="status"><Icon name="alert" size={16} /> <span>{t("contracts:detail.disputedBanner")}</span></p>;
+    banner = (
+      <p className="vy-dl-notice" data-tone="warn" role="status">
+        <AlertTriangle size={18} strokeWidth={1.75} aria-hidden="true" />
+        <span>{t("contracts:detail.disputedBanner")}</span>
+      </p>
+    );
   } else if (c.state === "completed" && c.completed_at) {
     banner = (
-      <div className="vy-card vy-card-nested vy-stack" style={{ gap: 6 }}>
-        <p>{t("contracts:detail.completedOn", { date: formatDate(c.completed_at, lang) })}</p>
-        <Link className="vy-link-btn" href={`/enquiries/${c.enquiry_id}`}>{t("contracts:detail.reviewLink")}</Link>
-      </div>
+      <p className="vy-dl-notice" data-tone="good">
+        <CheckCircle2 size={18} strokeWidth={1.75} aria-hidden="true" />
+        <span>
+          {t("contracts:detail.completedOn", { date: formatDate(c.completed_at, lang) })}{" "}
+          <Link className="vy-dl-link" href={`/enquiries/${c.enquiry_id}`}>{t("contracts:detail.reviewLink")}</Link>
+        </span>
+      </p>
     );
   } else if (c.state === "cancelled" && c.cancelled_at) {
     banner = (
-      <p className="vy-muted">
-        {t("contracts:detail.cancelledOn", { date: formatDate(c.cancelled_at, lang) })}
-        {c.cancel_reason ? ` ${c.cancel_reason}` : ""}
+      <p className="vy-dl-notice">
+        <Clock size={18} strokeWidth={1.75} aria-hidden="true" />
+        <span>
+          {t("contracts:detail.cancelledOn", { date: formatDate(c.cancelled_at, lang) })}
+          {c.cancel_reason ? ` ${c.cancel_reason}` : ""}
+        </span>
       </p>
     );
   }
 
   // One line per action: a payment that went through (or failed) replaces
   // its own "payment started" line; only a still-pending one shows it.
-  const settled = new Set(
-    c.events.filter((e) => e.type === "milestone.funded" || e.type === "milestone.payment_failed").map((e) => e.milestone_id),
-  );
+  const settled = new Set(c.events.filter((e) => e.type === "milestone.funded" || e.type === "milestone.payment_failed").map((e) => e.milestone_id));
   const visibleEvents = c.events.filter((e) => !(e.type === "milestone.funding_started" && settled.has(e.milestone_id)));
 
   const usedWeeks = new Set(c.timesheets.filter((x) => x.state !== "rejected").map((x) => x.week_start));
@@ -277,56 +308,68 @@ export default function ContractDetailView(props: ContractDetailViewProps) {
   const canComplete = isClient && c.state === "active" && c.ledger.held_paise === 0 && c.ledger.released_paise > 0 && c.kind === "hourly";
   const canEnd = c.state === "active" && (isClient || c.ledger.held_paise === 0) && !c.milestones.some((m) => m.state === "submitted");
   const openDispute = c.disputes.find((d) => d.state === "open");
+  const headTone = contractNeedsMe(c) ? "wait" : chipTone(stateTone(c.state));
+  const paidStages = c.milestones.filter((m) => ["released", "approved"].includes(m.state)).length;
 
   return (
-    <div className="vy-stack" style={{ gap: "var(--space-5)" }}>
-      <div className="vy-stack" style={{ gap: 8 }}>
-        <div className="vy-row" style={{ flexWrap: "wrap", gap: 8 }}>
-          <span className="vy-state-chip" data-tone={contractNeedsMe(c) ? "action" : stateTone(c.state) === "done" ? "done" : stateTone(c.state) === "warn" ? "warn" : undefined}>
-            {t(`contracts:state.${c.state}`)}
-          </span>
-          <span className="vy-muted">{t(`contracts:kind.${c.kind}`)} · {t(`contracts:role.${c.my_role}`)}</span>
+    <div className="vy-dl-page">
+      <div className="vy-dl-head">
+        <div className="vy-dl-tags">
+          <span className="vy-dl-state" data-tone={headTone}>{contractNeedsMe(c) ? t("contracts:list.needsYou") : t(`contracts:state.${c.state}`)}</span>
         </div>
-        {embedded ? <h2>{c.title}</h2> : <h1>{c.title}</h1>}
-        <p>
-          {t("contracts:detail.with", { name: other })} ·{" "}
-          <Link href={`/enquiries/${c.enquiry_id}`} className="vy-link-btn">{t("contracts:detail.openThread")}</Link>
+        {embedded ? <h2 className="vy-dl-thread-name">{c.title}</h2> : <h1>{c.title}</h1>}
+        <p className="vy-dl-hint">{t(`contracts:kind.${c.kind}`)} · {t(`contracts:role.${c.my_role}`)}</p>
+        <p className="vy-dl-thread-about">
+          <span>{t("contracts:detail.with", { name: other })}</span>
+          <span aria-hidden="true">·</span>
+          <Link href={`/enquiries/${c.enquiry_id}`} className="vy-dl-inline-icon">
+            <MessageSquare size={14} strokeWidth={2} aria-hidden="true" /> {t("contracts:detail.openThread")}
+          </Link>
         </p>
-        {c.description && <p style={{ fontSize: 14 }}>{c.description}</p>}
+        {c.description && <p className="vy-dl-hint">{c.description}</p>}
       </div>
 
       {banner}
-      {error && <p className="vy-error" role="alert">{error}</p>}
+      {error && (
+        <p className="vy-dl-notice" data-tone="bad" role="alert">
+          <AlertTriangle size={18} strokeWidth={1.75} aria-hidden="true" />
+          <span>{error}</span>
+        </p>
+      )}
 
       <div className="vy-detail">
         <div className="vy-detail-main">
           {c.kind === "fixed" ? (
-            <section className="vy-card vy-stack" style={{ gap: 16 }} aria-labelledby="ms-title">
-              <h2 id="ms-title" className="vy-card-title">{t("contracts:detail.milestones")}</h2>
-              <ol className="vy-timeline">
+            <section className="vy-dl-sec" aria-labelledby="ms-title">
+              <div className="vy-dl-sec-head">
+                <span className="vy-dl-tile vy-dl-tile-teal" aria-hidden="true"><ListChecks size={20} strokeWidth={1.75} /></span>
+                <h2 id="ms-title" className="vy-card-title">{t("contracts:detail.milestones")}</h2>
+                <span className="vy-dl-sec-hint">{t("contracts:detail.stagesHint", { paid: paidStages, total: c.milestones.length })}</span>
+              </div>
+              <ol className="vy-dl-stages">
                 {c.milestones.map((m) => {
                   const raw = milestoneTone(c, m);
-                  const tone = raw === "action" && m.id !== firstMs?.id ? "open" : raw;
+                  const tone: Tone = raw === "action" && m.id !== firstMs?.id ? "open" : raw;
                   const status = milestoneStatusLine(m);
                   return (
-                    <li key={m.id} id={`ms-${m.id}`} className="vy-timeline-item">
-                      <span className="vy-dot" data-tone={tone} aria-hidden="true" />
-                      <div className="vy-timeline-body">
-                        <div className="vy-timeline-head">
-                          <strong>{m.title}</strong>
-                          <span className="vy-timeline-amount">{money(m.amount_paise)}</span>
+                    <li key={m.id} id={`ms-${m.id}`} className="vy-dl-stage">
+                      <span className="vy-dl-stage-dot" data-tone={tone} aria-hidden="true">
+                        <DotIcon tone={tone} />
+                      </span>
+                      <div className="vy-dl-stage-body">
+                        <div className="vy-dl-stage-head">
+                          <strong className="vy-dl-stage-title">{m.title}</strong>
+                          <strong className="vy-dl-stage-amt vy-num">{money(m.amount_paise)}</strong>
                         </div>
-                        <div className="vy-row" style={{ flexWrap: "wrap", gap: 8 }}>
-                          <span className="vy-state-chip" data-tone={tone === "action" ? "action" : tone === "done" ? "done" : tone === "warn" ? "warn" : undefined}>
-                            {t(`contracts:ms.${m.state}`)}
-                          </span>
+                        <div className="vy-dl-tags">
+                          <span className="vy-dl-state" data-tone={chipTone(tone)}>{t(`contracts:ms.${m.state}`)}</span>
                           {m.due_date && !["released", "approved", "refunded"].includes(m.state) && (
-                            <span className="vy-muted">{t("contracts:action.due", { date: formatDate(m.due_date, lang) })}</span>
+                            <span className="vy-dl-fine">{t("contracts:action.due", { date: formatDate(m.due_date, lang) })}</span>
                           )}
                         </div>
-                        {m.submission_note && m.state === "submitted" && <p style={{ fontSize: 14 }}>{t("contracts:action.delivered", { note: m.submission_note })}</p>}
-                        {m.reject_note && m.state === "rejected" && <p style={{ fontSize: 14 }}>{t("contracts:action.changesAsked", { note: m.reject_note })}</p>}
-                        {status && <p className="vy-muted">{status}</p>}
+                        {m.submission_note && m.state === "submitted" && <p className="vy-dl-stage-note">{t("contracts:action.delivered", { note: m.submission_note })}</p>}
+                        {m.reject_note && m.state === "rejected" && <p className="vy-dl-stage-note">{t("contracts:action.changesAsked", { note: m.reject_note })}</p>}
+                        {status && <p className="vy-dl-stage-line">{status}</p>}
                         {milestoneActions(m)}
                       </div>
                     </li>
@@ -335,23 +378,22 @@ export default function ContractDetailView(props: ContractDetailViewProps) {
               </ol>
             </section>
           ) : (
-            <section className="vy-card vy-stack" style={{ gap: 16 }} aria-labelledby="ts-title">
-              <div className="vy-stack" style={{ gap: 4 }}>
+            <section className="vy-dl-sec" aria-labelledby="ts-title">
+              <div className="vy-dl-sec-head">
+                <span className="vy-dl-tile vy-dl-tile-teal" aria-hidden="true"><Clock size={20} strokeWidth={1.75} /></span>
                 <h2 id="ts-title" className="vy-card-title">{t("contracts:detail.timesheets")}</h2>
                 {c.hourly_rate_paise != null && (
-                  <p className="vy-muted">{t("contracts:detail.rate", { amount: money(c.hourly_rate_paise), hours: c.weekly_hours_cap ?? "—" })}</p>
+                  <span className="vy-dl-sec-hint">{t("contracts:detail.rate", { amount: money(c.hourly_rate_paise), hours: c.weekly_hours_cap ?? "—" })}</span>
                 )}
               </div>
               {c.timesheets.length === 0 ? (
-                <p className="vy-muted">{t("contracts:hours.none")}</p>
+                <p className="vy-dl-hint">{t("contracts:hours.none")}</p>
               ) : (
-                <ol className="vy-timeline">
-                  {[...c.timesheets].sort((a, b) => b.week_start.localeCompare(a.week_start)).map((ts) => timesheetRow(ts))}
-                </ol>
+                <ol className="vy-dl-stages">{[...c.timesheets].sort((a, b) => b.week_start.localeCompare(a.week_start)).map((ts) => timesheetRow(ts))}</ol>
               )}
               {!isClient && c.state === "active" && weeks.length > 0 && (
-                <div className="vy-card vy-card-nested vy-stack" style={{ gap: 12 }}>
-                  <strong>{t("contracts:hours.log")}</strong>
+                <div className="vy-dl-panel">
+                  <span className="vy-label">{t("contracts:hours.log")}</span>
                   <div className="vy-field-pair">
                     <label className="vy-field">
                       <span className="vy-label">{t("contracts:hours.week")}</span>
@@ -366,7 +408,7 @@ export default function ContractDetailView(props: ContractDetailViewProps) {
                       <input className="vy-input" type="number" inputMode="decimal" min={0.5} step={0.5} max={c.weekly_hours_cap ?? 168} value={hours} onChange={(e) => setHours(e.target.value)} />
                     </label>
                   </div>
-                  {c.weekly_hours_cap != null && <span className="vy-muted">{t("contracts:hours.capHint", { hours: c.weekly_hours_cap })}</span>}
+                  {c.weekly_hours_cap != null && <span className="vy-dl-fine">{t("contracts:hours.capHint", { hours: c.weekly_hours_cap })}</span>}
                   <textarea className="vy-textarea" rows={2} value={tsNote} onChange={(e) => setTsNote(e.target.value)} aria-label={t("contracts:hours.note")} placeholder={t("contracts:hours.note")} />
                   <button
                     className="vy-btn vy-btn-primary"
@@ -385,13 +427,16 @@ export default function ContractDetailView(props: ContractDetailViewProps) {
               )}
             </section>
           )}
-
         </div>
 
         <aside className="vy-detail-aside">
-          <section className="vy-card vy-stack" style={{ gap: 12 }} aria-labelledby="money-title">
-            <h2 id="money-title" className="vy-card-title">{t("contracts:detail.money")}</h2>
-            <dl className="vy-ledger">
+          <section className="vy-dl-sec" aria-labelledby="money-title">
+            <div className="vy-dl-sec-head">
+              <span className="vy-dl-tile vy-dl-tile-green" aria-hidden="true"><Wallet size={20} strokeWidth={1.75} /></span>
+              <h2 id="money-title" className="vy-card-title">{t("contracts:detail.money")}</h2>
+              <span className="vy-dl-sec-hint">{t("contracts:detail.moneyHint")}</span>
+            </div>
+            <dl className="vy-dl-receipt vy-num">
               <dt>{t("contracts:detail.held")}</dt>
               <dd>{money(c.ledger.held_paise)}</dd>
               <dt>{t("contracts:detail.paid")}</dt>
@@ -410,59 +455,59 @@ export default function ContractDetailView(props: ContractDetailViewProps) {
               )}
               <dt>{c.kind === "hourly" ? t("contracts:detail.budgetLeft") : t("contracts:detail.notFunded")}</dt>
               <dd>{money(notFundedPaise(c))}</dd>
-              <dt className="vy-ledger-total">{t("contracts:detail.total")}</dt>
-              <dd className="vy-ledger-total">{money(c.total_paise)}</dd>
+              <dt className="vy-dl-receipt-total">{t("contracts:detail.total")}</dt>
+              <dd className="vy-dl-receipt-total"><strong>{money(c.total_paise)}</strong></dd>
             </dl>
+            <p className="vy-dl-safety">
+              <Lock size={13} strokeWidth={2} aria-hidden="true" />
+              <span>
+                {sandbox ? (
+                  <>
+                    <strong>{t("contracts:sandbox.title")}.</strong> {t("contracts:sandbox.body")}
+                  </>
+                ) : (
+                  t("contracts:sandbox.recorded")
+                )}
+              </span>
+            </p>
           </section>
-          <p className="vy-sandbox-note">
-            <Icon name="lock" size={15} style={{ marginTop: 2 }} />
-            <span>
-              {sandbox ? (
-                <>
-                  <strong>{t("contracts:sandbox.title")}.</strong> {t("contracts:sandbox.body")}
-                </>
-              ) : (
-                t("contracts:sandbox.recorded")
-              )}
-            </span>
-          </p>
           {canComplete && (
-            <div className="vy-stack" style={{ gap: 6 }}>
+            <div className="vy-dl-page" style={{ gap: 6 }}>
               <button className="vy-btn vy-btn-secondary" disabled={busy} onClick={props.onComplete}>{t("contracts:detail.complete")}</button>
-              <span className="vy-muted">{t("contracts:detail.completeHint")}</span>
+              <span className="vy-dl-fine">{t("contracts:detail.completeHint")}</span>
             </div>
           )}
           {canEnd &&
             (open?.kind === "end" ? (
-              <div className="vy-stack" style={{ gap: 8 }}>
-                <textarea className="vy-textarea" rows={2} value={text} onChange={(e) => setText(e.target.value)} aria-label={t("contracts:detail.endReason")} placeholder={t("contracts:detail.endReason")} />
-                <div className="vy-row">
-                  <button className="vy-btn vy-btn-secondary" disabled={busy} onClick={() => props.onCancel(text.trim() || undefined)}>{t("contracts:detail.endConfirm")}</button>
-                  <button className="vy-btn vy-btn-ghost" onClick={() => toggle(null)}>{t("contracts:detail.cancel")}</button>
-                </div>
-              </div>
+              noteBox(t("contracts:detail.endReason"), () => props.onCancel(text.trim() || undefined), t("contracts:detail.endConfirm"), false, false)
             ) : (
-              <button className="vy-btn vy-btn-ghost" style={{ fontSize: 13 }} onClick={() => toggle({ kind: "end" })}>{t("contracts:detail.end")}</button>
+              <button className="vy-btn vy-btn-ghost" style={{ alignSelf: "flex-start" }} onClick={() => toggle({ kind: "end" })}>{t("contracts:detail.end")}</button>
             ))}
         </aside>
 
-        {/* after the money on a phone; under the milestones on desktop */}
+        {/* after the money on a phone; under the stages on desktop */}
         <div className="vy-detail-main">
-          {/* Disputes: the open one is stated plainly; either side can report while active. */}
           {c.disputes.length > 0 && (
-            <section className="vy-stack" style={{ gap: 6 }}>
+            <section className="vy-dl-page" style={{ gap: 6 }}>
               {c.disputes.map((d) => (
-                <p key={d.id} className="vy-muted">
-                  {t("contracts:dispute.opened", { date: formatDate(d.created_at, lang), reason: d.reason })} · {t(`contracts:dispute.state.${d.state}`, { defaultValue: d.state })}
+                <p key={d.id} className="vy-dl-notice" data-tone={d.state === "open" ? "warn" : undefined}>
+                  <Flag size={18} strokeWidth={1.75} aria-hidden="true" />
+                  <span>
+                    {t("contracts:dispute.opened", { date: formatDate(d.created_at, lang), reason: d.reason })} · {t(`contracts:dispute.state.${d.state}`, { defaultValue: d.state })}
+                  </span>
                 </p>
               ))}
             </section>
           )}
-          {c.state === "active" && !openDispute && (
-            open?.kind === "dispute" ? (
-              <section className="vy-card vy-stack" style={{ gap: 12 }} aria-labelledby="dispute-title">
-                <h2 id="dispute-title" className="vy-card-title">{t("contracts:dispute.title")}</h2>
-                <p className="vy-muted">{t("contracts:dispute.help")}</p>
+          {c.state === "active" &&
+            !openDispute &&
+            (open?.kind === "dispute" ? (
+              <section className="vy-dl-sec" aria-labelledby="dispute-title">
+                <div className="vy-dl-sec-head">
+                  <span className="vy-dl-tile vy-dl-tile-amber" aria-hidden="true"><Flag size={20} strokeWidth={1.75} /></span>
+                  <h2 id="dispute-title" className="vy-card-title">{t("contracts:dispute.title")}</h2>
+                  <span className="vy-dl-sec-hint">{t("contracts:dispute.help")}</span>
+                </div>
                 <label className="vy-field">
                   <span className="vy-label">{t("contracts:dispute.reason")}</span>
                   <textarea className="vy-textarea" rows={3} maxLength={2000} value={text} onChange={(e) => setText(e.target.value)} placeholder={t("contracts:dispute.reasonPlaceholder")} />
@@ -478,7 +523,7 @@ export default function ContractDetailView(props: ContractDetailViewProps) {
                     </select>
                   </label>
                 )}
-                <div className="vy-row">
+                <div className="vy-dl-actions">
                   <button className="vy-btn vy-btn-primary" disabled={busy || text.trim().length < 10} onClick={() => props.onOpenDispute(text.trim(), disputeMs || null)}>
                     {t("contracts:dispute.send")}
                   </button>
@@ -486,16 +531,19 @@ export default function ContractDetailView(props: ContractDetailViewProps) {
                 </div>
               </section>
             ) : (
-              <button className="vy-btn vy-btn-ghost" style={{ alignSelf: "flex-start", fontSize: 13 }} onClick={() => toggle({ kind: "dispute" })}>
-                ⚑ {t("contracts:dispute.open")}
+              <button className="vy-btn vy-btn-ghost" style={{ alignSelf: "flex-start" }} onClick={() => toggle({ kind: "dispute" })}>
+                <Flag size={16} strokeWidth={2} aria-hidden="true" /> {t("contracts:dispute.open")}
               </button>
-            )
-          )}
+            ))}
 
           {c.events.length > 0 && (
-            <section className="vy-stack" style={{ gap: 10 }} aria-labelledby="history-title">
-              <h2 id="history-title" className="vy-section-title">{t("contracts:detail.activity")}</h2>
-              <ol className="vy-events">
+            <section className="vy-dl-sec" aria-labelledby="history-title">
+              <div className="vy-dl-sec-head">
+                <span className="vy-dl-tile" aria-hidden="true"><History size={20} strokeWidth={1.75} /></span>
+                <h2 id="history-title" className="vy-card-title">{t("contracts:detail.activity")}</h2>
+                <span className="vy-dl-sec-hint">{t("contracts:detail.activityHint")}</span>
+              </div>
+              <ol className="vy-dl-history">
                 {visibleEvents.map((e) => (
                   <li key={e.id}>
                     <span>{eventText(e)}</span>
@@ -508,36 +556,24 @@ export default function ContractDetailView(props: ContractDetailViewProps) {
         </div>
       </div>
 
-      {/* Phone: the current step's action stays in reach while scrolling. */}
-      {/* hidden while a note box is open, so it never sits over the form's own buttons */}
+      {/* Phone: the current step's action stays in reach while scrolling; it
+          replaces the hub (vy-actionbar-in) and hides while a note box is open. */}
       {!embedded && !open && (firstMs || firstTs) && (
-        <div className="vy-contract-footer">
+        <div className="vy-dl-footer vy-actionbar-in">
           {firstMs && milestoneAction(c, firstMs) === "fund" && (
             <button className="vy-btn vy-btn-primary" disabled={busy} onClick={() => props.onFund(firstMs.id)}>
               {firstMs.funded_order_id && firstMs.checkout_url ? t("contracts:action.continuePay") : t("contracts:action.fund", { amount: money(firstMs.amount_paise) })}
             </button>
           )}
           {/* Approving releases money, so the footer never approves in one
-              tap: it takes the person to the submitted work to read first. */}
+              tap: it takes the person to the sent work to read first. */}
           {firstMs && milestoneAction(c, firstMs) !== "fund" && (
-            <button
-              className="vy-btn vy-btn-primary"
-              disabled={busy}
-              onClick={() => document.getElementById(`ms-${firstMs.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" })}
-            >
-              {milestoneAction(c, firstMs) === "review"
-                ? t("contracts:action.reviewWork")
-                : firstMs.state === "rejected"
-                  ? t("contracts:action.submitAgain")
-                  : t("contracts:action.submit")}
+            <button className="vy-btn vy-btn-primary" disabled={busy} onClick={() => document.getElementById(`ms-${firstMs.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" })}>
+              {milestoneAction(c, firstMs) === "review" ? t("contracts:action.reviewWork") : firstMs.state === "rejected" ? t("contracts:action.submitAgain") : t("contracts:action.submit")}
             </button>
           )}
           {!firstMs && firstTs && (
-            <button
-              className="vy-btn vy-btn-primary"
-              disabled={busy}
-              onClick={() => document.getElementById(`ts-${firstTs.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" })}
-            >
+            <button className="vy-btn vy-btn-primary" disabled={busy} onClick={() => document.getElementById(`ts-${firstTs.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" })}>
               {t("contracts:hours.review")}
             </button>
           )}
