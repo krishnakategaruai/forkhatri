@@ -28,6 +28,11 @@ import { BadgeList } from "@/app/components/trust/Badges";
 import { useRoutes } from "@/app/host/HostProvider";
 import { KindTile } from "@/app/components/account/AccountProfileCard";
 import SwitchRow from "@/app/components/account/SwitchRow";
+// [Trust pack] profession rules, council registrations, paid on time, restrictions
+import { NoPromotionNote, ProfessionInfo, ProfessionOwnerNote, pricesBlocked, promotionBlocked, restrictedProfession, reviewsBlocked } from "@/app/components/trust/Profession";
+import { CouncilBadges } from "@/app/components/trust/Council";
+import { PaidOnTimeLine } from "@/app/components/trust/PaidOnTime";
+import RestrictionCard from "@/app/components/trust/RestrictionCard";
 import "@/app/styles/account-2026.css";
 
 export const LISTING_STATE_KEY: Record<string, string> = {
@@ -86,6 +91,8 @@ export interface ListingDetailViewProps extends ListingDetailActions {
   packagesSlot?: React.ReactNode;
   /** [FE2] owner only: this listing's calling hours (override of the account settings) */
   contactPrefsSlot?: React.ReactNode;
+  /** [Trust pack §5] owner only, work profile: council registrations */
+  credentialsSlot?: React.ReactNode;
 }
 
 export default function ListingDetailView(props: ListingDetailViewProps) {
@@ -98,7 +105,18 @@ export default function ListingDetailView(props: ListingDetailViewProps) {
   // [Critique agent finding, fixed here — UX07 Trust context sheet]
   const [showTrustSheet, setShowTrustSheet] = useState(false);
   const business = listing.kind === "business";
-  const skills = listing.category_labels.concat(listing.capability_labels);
+  // A category and a skill can share a label ("Legal advice"): show it once.
+  const skills = [...new Set(listing.category_labels.concat(listing.capability_labels))];
+  // [Trust pack §4] A council that forbids advertising (advocates, architects):
+  // no reviews, badges, prices, packages, promotion or "Sponsored" — and a
+  // neutral "Contact". The API already strips these for other readers; the
+  // screen simply never draws them, for the owner too (promote → a note).
+  const profession = restrictedProfession(listing.profession);
+  const noReviews = reviewsBlocked(listing.profession);
+  const noPrices = pricesBlocked(listing.profession);
+  const noPromotion = promotionBlocked(listing.profession);
+  const councilChecked = listing.verification_document === "credential" && (listing.council_badges ?? []).some((b) => b.status === "verified");
+  const badges = noReviews ? (listing.badges ?? []).filter((b) => b.key === "verified_business") : listing.badges;
 
   function humanizeReason(reason: string): string {
     return REASON_KEY[reason] ? t(`listings:detail.${REASON_KEY[reason]}` as "detail.reasonProhibitedContent") : reason;
@@ -116,8 +134,9 @@ export default function ListingDetailView(props: ListingDetailViewProps) {
         <div className="vy-acct-detail-badges">
           <span className="vy-badge vy-badge-member-provided">{t(`listings:mine.${LISTING_STATE_KEY[listing.state] ?? "stateDraft"}` as "mine.stateDraft")}</span>
           {/* [FR10] One shared badge for all eight states. */}
-          <VerificationBadge listing={listing} onOpenTrustSheet={() => setShowTrustSheet(true)} />
-          {listing.sponsored && <SponsoredBadge />}
+          {/* [Trust pack §5] a checked council entry says it better: don't repeat it as a second badge */}
+          {!councilChecked && <VerificationBadge listing={listing} onOpenTrustSheet={() => setShowTrustSheet(true)} />}
+          {listing.sponsored && !profession && <SponsoredBadge />}
           {listing.contact_verified && (
             <span className="vy-badge vy-badge-verified">
               <BadgeCheck size={14} strokeWidth={2.25} aria-hidden="true" /> {t("listings:mine.contactVerified")}
@@ -125,12 +144,18 @@ export default function ListingDetailView(props: ListingDetailViewProps) {
           )}
         </div>
       </header>
-      <div>
+      {/* [Trust pack §3] the owner sees why the profile is restricted, and can appeal */}
+      {listing.is_owner && listing.restriction && <RestrictionCard item={listing.restriction} compact />}
+      <div className="vy-stack" style={{ gap: 6 }}>
         {listing.headline && <p style={{ color: "var(--text-secondary)" }}>{listing.headline}</p>}
+        {/* [Trust pack §5] council register entries under the name */}
+        <CouncilBadges badges={listing.council_badges} />
         {/* [FR28] reputation line — counts only, kept apart from the verification badge */}
-        <ReputationLine rep={listing.reputation} />
+        {!noReviews && <ReputationLine rep={listing.reputation} />}
+        {/* [Trust pack §2] "Paid on time: 2 of 3", only once three people answered */}
+        <PaidOnTimeLine value={listing.paid_on_time} />
         {/* [FE2] earned, count-based badges — never a score */}
-        <BadgeList badges={listing.badges} />
+        <BadgeList badges={badges} />
         {listing.state_reason && <p className="vy-acct-hint" style={{ marginTop: 6 }}>{t("listings:detail.reason", { reason: humanizeReason(listing.state_reason) })}</p>}
       </div>
 
@@ -172,8 +197,9 @@ export default function ListingDetailView(props: ListingDetailViewProps) {
             </button>
           )}
 
+          {profession && (listing.is_owner ? <ProfessionOwnerNote profession={profession} /> : <ProfessionInfo profession={profession} />)}
           {notice && <p className="vy-error" role="status">{notice}</p>}
-          {props.packagesSlot}
+          {!noPrices && props.packagesSlot}
         </div>
 
         {/* [IMP33] The sticky action column (desktop ≥900px). On phones this
@@ -183,7 +209,7 @@ export default function ListingDetailView(props: ListingDetailViewProps) {
           {!listing.is_owner && (
             <div className="vy-card vy-stack vy-card-actions">
               <a className="vy-btn vy-btn-primary" href={routes.enquireListing(id)} style={{ textDecoration: "none" }}>
-                {business ? t("listings:detail.enquireNow") : t("listings:detail.contactProfessional")}
+                {profession?.contact_label ?? (business ? t("listings:detail.enquireNow") : t("listings:detail.contactProfessional"))}
               </a>
               <button className="vy-btn vy-btn-secondary" disabled={busy} onClick={props.onToggleSave}>
                 {listing.saved ? `★ ${t("common:action.saved")}` : `☆ ${t("common:action.save")}`}
@@ -207,11 +233,12 @@ export default function ListingDetailView(props: ListingDetailViewProps) {
                   {t("listings:detail.submit")}
                 </button>
               )}
-              {listing.state.startsWith("active") && (
+              {listing.state.startsWith("active") && !noPromotion && (
                 <a className="vy-btn vy-btn-secondary" href={routes.boost("listing", id)} style={{ textDecoration: "none" }}>
                   {t("commercial:action.boost")}
                 </a>
               )}
+              {noPromotion && listing.profession && <NoPromotionNote profession={listing.profession} />}
               <a className="vy-btn vy-btn-ghost" href={routes.workspace(id)} style={{ textDecoration: "none" }}>
                 {t("workspace:open")}
               </a>
@@ -226,7 +253,7 @@ export default function ListingDetailView(props: ListingDetailViewProps) {
 
         <div className="vy-detail-main">
           {/* [FR28/FR29] reviews from real interactions; the subject can dispute in place */}
-          {props.reviewsSlot}
+          {!noReviews && props.reviewsSlot}
           {/* A person comparing providers keeps going instead of dead-ending. */}
           {!listing.is_owner && props.similarSlot}
           {/* [FR39] Report in place. */}
@@ -238,6 +265,9 @@ export default function ListingDetailView(props: ListingDetailViewProps) {
 
               {/* FR08/FR09/FR10 — request or reconfirm verification */}
               {props.verificationSlot}
+
+              {/* [Trust pack §5] council registrations (work profile) */}
+              {listing.kind === "professional" && props.credentialsSlot}
 
               {/* FR07 — listing-contact OTP verification, required before submit */}
               {!listing.contact_verified && (

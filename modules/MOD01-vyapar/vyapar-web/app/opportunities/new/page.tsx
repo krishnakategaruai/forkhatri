@@ -43,11 +43,14 @@ import StartPanel from "@/app/components/composer/StartPanel";
 import LegacyComposer from "@/app/components/composer/LegacyComposer";
 import AcceptancePrompt, { acceptanceKind, type LegalKind } from "@/app/components/respond/AcceptancePrompt";
 import { fieldAnchor } from "@/app/components/composer/fields";
+// [Trust pack §1] scam shield as the poster types, and on a 422 refusal
+import { scamFromError, useScamShieldFields, type ScamFinding } from "@/app/components/trust/ScamShield";
 import {
   draftFromAi,
   retypeAiDraft,
   emptyDraft,
   isPostKind,
+  MAIN_KINDS,
   mergeFixes,
   MUST_CHECK,
   toWrite,
@@ -69,6 +72,8 @@ const ERROR_FIELD: Record<string, FieldCode> = {
   budget_fields_mismatch: "budget",
   experience_range_invalid: "experience",
   too_many_screening_questions: "screening_questions",
+  // [Trust pack §2] a local service must say what it pays
+  pay_basis_required: "budget",
 };
 
 function Composer() {
@@ -129,6 +134,8 @@ function Composer() {
   const [fromAi, setFromAi] = useState<"ai" | "rules" | null>(null);
   const [errors, setErrors] = useState<Partial<Record<FieldCode, string>>>({});
   const [formError, setFormError] = useState<string | null>(null);
+  // [Trust pack §1] a refusal the server sent (422 seeker_charge_not_allowed), on its field until edited
+  const [serverShield, setServerShield] = useState<{ field: FieldCode; finding: ScamFinding } | null>(null);
 
   const [saved, setSaved] = useState<Opportunity | null>(null);
   const [saving, setSaving] = useState(false);
@@ -158,9 +165,11 @@ function Composer() {
       budgetType: ["budget"], budgetMin: ["budget"], budgetMax: ["budget"], localBudget: ["budget"], duration: ["duration"],
       experienceLevel: ["experience_level"], questions: ["screening_questions"], urgency: ["urgency"], preferredDate: ["preferred_date"],
       type: ["type"], workMode: ["work_mode"], deadline: ["deadline"], allowPrecall: [], precallChannel: [], segment: ["type"], sourceName: ["type"], timing: ["timing"],
+      compensation: ["budget"],
     };
     for (const k of touched) for (const c of map[k] ?? []) codes.add(c);
     if (codes.size) {
+      setServerShield((x) => (x && codes.has(x.field) ? null : x));
       setFlagged((f) => new Set([...f].filter((c) => !codes.has(c))));
       setErrors((e) => Object.fromEntries(Object.entries(e).filter(([c]) => !codes.has(c as FieldCode))));
     }
@@ -189,6 +198,25 @@ function Composer() {
     const legal = acceptanceKind(e);
     if (legal) {
       setNeedsAccept(legal);
+      return;
+    }
+    const scam = scamFromError(e);
+    if (scam && scam.field !== "candidate_pays") {
+      const m = String(scam.matched ?? "").toLowerCase();
+      const inField = (v: string) => !!m && v.toLowerCase().includes(m);
+      const field: FieldCode = inField(draft.title)
+        ? "title"
+        : inField(draft.interview)
+          ? "interview_details"
+          : inField(draft.jobTimings)
+            ? "job_timings"
+            : inField(draft.questions.join(" "))
+              ? "screening_questions"
+              : draft.type === "local_service" && inField(draft.compensation)
+                ? "budget"
+                : "description";
+      setServerShield({ field, finding: scam });
+      goToField(field);
       return;
     }
     const msg = errorText(e);
@@ -291,6 +319,10 @@ function Composer() {
 
   async function toReview() {
     setFormError(null);
+    if (firstShielded) {
+      goToField(firstShielded);
+      return;
+    }
     const problems = validate(draft);
     const localized = Object.fromEntries(Object.entries(problems).map(([c, k]) => [c, t(`hiring:composer.error.${k}`)])) as Partial<Record<FieldCode, string>>;
     if (Object.keys(localized).length) {
@@ -330,6 +362,10 @@ function Composer() {
 
   async function publish() {
     if (!saved) return;
+    if (firstShielded) {
+      goToField(firstShielded);
+      return;
+    }
     setPublishing(true);
     setFormError(null);
     try {
@@ -350,6 +386,28 @@ function Composer() {
   const mustCheck = [...flagged].filter((c) => MUST_CHECK.includes(c));
   const fixes = useMemo(() => mergeFixes(suggestions, tips, draft), [suggestions, tips, draft]);
   const { renderControl } = useComposerControls({ draft, onChange: change, tree: tree.data, errors, aliases });
+
+  // [Trust pack §1] Every text the poster writes is checked as they type
+  // (debounced); a finding shows as a calm note under that field, before
+  // Continue or Publish. Local services put "how it's paid" under Pay.
+  const liveShield = useScamShieldFields(
+    {
+      title: draft.title,
+      description: draft.description,
+      job_timings: draft.type === "employment" ? draft.jobTimings : "",
+      interview_details: draft.type === "employment" ? draft.interview : "",
+      screening_questions: draft.type === "freelance" ? draft.questions.join(" · ") : "",
+      budget: draft.type === "local_service" ? draft.compensation : "",
+      compensation: MAIN_KINDS.includes(draft.type) ? "" : draft.compensation,
+      timing: MAIN_KINDS.includes(draft.type) ? "" : draft.timing,
+    },
+    "opportunity",
+    draft.type,
+    stage !== "start",
+  );
+  const shield: Partial<Record<FieldCode | "compensation", ScamFinding>> = { ...liveShield };
+  if (serverShield && !shield[serverShield.field]) shield[serverShield.field] = serverShield.finding;
+  const firstShielded = (Object.keys(shield) as FieldCode[])[0] ?? null;
   const openQuestions = questions.filter((q) => {
     const val: Record<string, boolean> = {
       salary: !!draft.salaryMin && !!draft.salaryMax,
@@ -497,6 +555,7 @@ function Composer() {
                 flagged={flagged}
                 onLooksRight={(code) => setFlagged((f) => new Set([...f].filter((c) => c !== code)))}
                 errors={errors}
+                shield={shield}
               />
 
               <details className="vy-mobile-only vy-card vy-card-nested" style={{ padding: "14px 18px" }}>

@@ -541,7 +541,7 @@ async def section_new_advocate_and_credentials(r: Run) -> None:
     await r.db.execute("SELECT vyapar_identity.ensure_member($1, $2, $3, $4)", r.test_member, "Farhan Qureshi", "+919800054321", "en")
     r.members.add(r.test_member)
     st, me = r.api.call("PATCH", "/v1/me/profile", r.test_member, {
-        "locality": "Himayatnagar", "categories": ["legal"], "capabilities": ["property_law"], "languages": ["en", "hi", "te"],
+        "locality": "Abids", "categories": ["legal"], "capabilities": ["property_law"], "languages": ["en", "hi", "te"],
         "headline": "Best property lawyer in Hyderabad, lowest fees guaranteed", "description": "Call now for a free consultation!"})
     check(st == 200 and me["profile"]["profession"]["profession"] == "advocate", f"a new advocate's profile is recognised from its category ({st})")
     lid = me["profile"]["id"]
@@ -554,6 +554,18 @@ async def section_new_advocate_and_credentials(r: Run) -> None:
     check(st == 200 and sub["state"] == "active_unverified", f"published through the normal submit ({st} {sub.get('state')})")
     st, pub = r.api.call("GET", f"/v1/listings/{lid}", RAVI)
     check(pub["headline"] is None and pub["description"] is None, "the 'lowest fees guaranteed' pitch never reaches others")
+    # Neutral order in "profiles that match your post": two advocates in Abids
+    # with the same skill; the verified one gets no boost, so name decides.
+    st, opp = r.post(SUNITA, {"type": "freelance", "title": "Lease deed and title check for our new Abids outlet",
+                              "description": "Kapoor Caterers is leasing a shop in Abids and needs the lease deed drafted and the title checked.",
+                              "location": "Abids", "required_capabilities": ["property_law"],
+                              "structured": {"budget_type": "fixed", "budget_min_paise": 1500000, "budget_max_paise": 2500000}})
+    st, cards = r.api.call("GET", f"/v1/opportunities/{opp.get('id')}/matching-profiles", SUNITA)
+    order = [c["id"] for c in cards] if st == 200 else []
+    kav = await r.db.fetchval("SELECT id::text FROM vyapar_listings.listings WHERE owner_id = $1 AND state = 'active_verified'", KAVITA)
+    check(lid in order and kav in order and order.index(lid) < order.index(kav)
+          and all(not c["reputation"] and not c["badges"] for c in cards if c["id"] in (lid, kav)),
+          f"matching profiles: advocates in neutral name order, no verified-first boost, no counts ({[c['name'] for c in cards]})")
 
     # council register claims
     st, types = r.api.call("GET", "/v1/credentials/types", r.test_member)

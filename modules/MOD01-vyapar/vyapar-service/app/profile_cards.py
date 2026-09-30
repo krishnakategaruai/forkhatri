@@ -28,6 +28,7 @@ from app.reputation import badges_for_members, reputation_for_listings
 from app.taxonomy_cache import labels_for
 
 CARD_LIMIT = 4
+CARD_POOL = 40  # candidates re-ordered in Python before the top CARD_LIMIT are shown
 
 
 class ProfileCard(BaseModel):
@@ -63,7 +64,8 @@ async def recommend_profiles(
                   CASE WHEN l.capability_visible
                        THEN cardinality(ARRAY(SELECT unnest(l.capabilities) INTERSECT SELECT unnest($1::text[])))
                        ELSE 0 END AS skill_overlap,
-                  cardinality(ARRAY(SELECT unnest(l.categories) INTERSECT SELECT unnest($2::text[]))) AS category_overlap
+                  cardinality(ARRAY(SELECT unnest(l.categories) INTERSECT SELECT unnest($2::text[]))) AS category_overlap,
+                  ($5::text IS NOT NULL AND l.locality ILIKE '%' || $5 || '%') AS near_viewer
              FROM vyapar_listings.listings l
             WHERE l.state IN ('active_unverified', 'active_verified')
               AND l.discoverable
@@ -79,8 +81,24 @@ async def recommend_profiles(
                      l.updated_at DESC
             LIMIT $7""",
         skills, categories, exclude_owner_ids, exclude_listing_id, viewer_locality,
-        require_opportunity_participation, CARD_LIMIT,
+        require_opportunity_participation, CARD_POOL,
     )
+    # [Trust pack] A profile whose council forbids advertising (advocates,
+    # architects) gets no verified-first or "available now" boost: among
+    # equal skill matches it is ordered by nearness to the viewer, then name,
+    # exactly as in search. Others keep the SQL order above.
+    from app.services.profession_rules import verdict_for_row
+
+    def _key(item):
+        index, r = item
+        neutral = not verdict_for_row(r).allow_ranking_boost
+        return (-r["skill_overlap"], -r["category_overlap"],
+                0 if neutral else -int(r["state"] == "active_verified"),
+                -int(bool(r["near_viewer"])),
+                0 if neutral else -int(r["availability"] == "now"),
+                (r["name"] or "").lower() if neutral else "", index)
+
+    rows = [r for _, r in sorted(enumerate(rows), key=_key)][:CARD_LIMIT]
     reputation = await reputation_for_listings(conn, rows)
     owner_badges = await badges_for_members(conn, [r["owner_id"] for r in rows], lang)
     wanted = set(skills)

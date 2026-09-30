@@ -126,5 +126,24 @@
     "purpose": "Every decision on your content, with its reason and how to appeal.",
     "emptyBody": "Nothing has been limited or removed. If that changes, it will be listed here with the reason.",
     "grievanceTitle": "Help & grievance"
+  },
+  "paidOnTime": {
+    "title": "Paid on time?",
+    "thanks": "Thank you",
+    "answered": "You've answered this",
+    "thanksBody": "Your answer is private. The person who paid never sees it; others see only the total, once three people have answered.",
+    "paidBy": "Paid by {{name}}",
+    "yes": "Yes, on time",
+    "no": "No",
+    "private": "Only you see your answer. Others see just the total, once three people have answered.",
+    "notAvailable": "This question isn't available."
+  },
+  "restrictions": {
+    "title": "Restrictions",
+    "purpose": "What Vyapar has limited on your posts or profile, why, and how to appeal.",
+    "none": "Nothing of yours is restricted.",
+    "reason": "Why: {{reason}}",
+    "appealSent": "Your appeal is with our team. We'll tell you the outcome here.",
+    "hubHint": "What's limited, why, and how to appeal"
   }
 }

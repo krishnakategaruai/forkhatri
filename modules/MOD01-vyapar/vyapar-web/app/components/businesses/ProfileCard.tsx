@@ -25,6 +25,9 @@ import type { SearchResult } from "@/lib/sdk";
 import { useRoutes } from "@/app/host/HostProvider";
 import { Morph } from "@/app/components/Screen";
 import { cardVisual, categoryVisual } from "@/app/components/discover/trades";
+// [Trust pack] profession rules, council registrations, paid on time
+import { restrictedProfession } from "@/app/components/trust/Profession";
+import { PaidOnTimeLine } from "@/app/components/trust/PaidOnTime";
 
 const TRUST_ORDER = ["verified_business", "verified_professional", "verified", "id_verified", "top_rated", "rising"];
 
@@ -43,14 +46,22 @@ export default function ProfileCard({ result, sponsored = false }: { result: Sea
     .filter(Boolean)
     .join(" · ");
   const own = !!l.is_owner;
+  // [Trust pack §4] advocates and architects: no reviews, badges, prices or
+  // Sponsored; the action is the neutral "Contact". [§5] a council entry
+  // that has really been checked is the card's trust line.
+  const profession = restrictedProfession(l.profession);
+  const council = (l.council_badges ?? []).find((b) => b.status === "verified") ?? null;
   const badge = [...(l.badges ?? [])].sort((a, b) => ((TRUST_ORDER.indexOf(a.key) + 99) % 99) - ((TRUST_ORDER.indexOf(b.key) + 99) % 99))[0];
-  const trust =
-    l.kind === "business" && (l.verification_state === "verified" || badge?.key === "verified_business")
+  const trust = council
+    ? council.label
+    : l.kind === "business" && (l.verification_state === "verified" || badge?.key === "verified_business")
       ? t("discover:businesses.verifiedLabel")
-      : (badge?.label ?? null);
+      : profession
+        ? null
+        : (badge?.label ?? null);
   const canAsk = !own && l.enquiry_pref === "enabled";
   const canCall = !own && !!l.primary_phone;
-  const rep = l.reputation;
+  const rep = profession ? null : l.reputation;
   const reputation = !rep
     ? null
     : rep.new_on_vyapar || rep.interactions === 0
@@ -64,7 +75,7 @@ export default function ProfileCard({ result, sponsored = false }: { result: Sea
           <Icon size={22} strokeWidth={1.9} />
         </span>
         <span className="vy-ocard-tags">
-          {sponsored && <span className="vy-badge vy-badge-sponsored">{t("explore:card.sponsored")}</span>}
+          {sponsored && !profession && <span className="vy-badge vy-badge-sponsored">{t("explore:card.sponsored")}</span>}
           {own && <span className="vy-badge vy-badge-own">{t("explore:biz.yourProfile")}</span>}
           <span className="vy-ocard-action" aria-hidden="true">
             <span>{t("explore:biz.viewProfile")}</span>
@@ -95,6 +106,12 @@ export default function ProfileCard({ result, sponsored = false }: { result: Sea
         </p>
       )}
 
+      {l.paid_on_time?.shown && (
+        <p className="vy-ocard-line">
+          <PaidOnTimeLine value={l.paid_on_time} />
+        </p>
+      )}
+
       {/* The footer only exists when there is a trust signal to show. */}
       {trust && (
         <div className="vy-ocard-foot">
@@ -110,7 +127,7 @@ export default function ProfileCard({ result, sponsored = false }: { result: Sea
           {canAsk && (
             <Link href={routes.enquireListing(l.id)} className="vy-btn vy-btn-secondary">
               <MessageSquareText size={18} strokeWidth={2} aria-hidden="true" />
-              {t("explore:biz.askPrice")}
+              {profession?.contact_label ?? t("explore:biz.askPrice")}
             </Link>
           )}
           {canCall && (

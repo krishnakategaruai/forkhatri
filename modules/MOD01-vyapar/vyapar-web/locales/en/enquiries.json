@@ -99,7 +99,10 @@
     "startedLabel": "Started",
     "lastActivityLabel": "Last activity",
     "youSent": "You sent this request",
-    "youReceived": "You received this request"
+    "youReceived": "You received this request",
+    "statePostClosed": "Post closed",
+    "postClosedLine": "This post has closed, so your application won't go further this time. It isn't a judgement of you.",
+    "postClosedSimilar": "See similar posts"
   },
   "channel": {
     "phone": "Phone",

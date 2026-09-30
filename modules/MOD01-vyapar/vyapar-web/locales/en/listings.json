@@ -123,5 +123,24 @@
     "aboutTitle": "About",
     "manageTitle": "Manage this profile",
     "contactVisibilityHelp": "Who can find this profile, and when each contact channel is shown."
+  },
+  "profession": {
+    "ownerTitle": "Others see only what {{council}} allows",
+    "ownerHidden": "Not shown to others: {{fields}}.",
+    "field": {
+      "headline": "your headline",
+      "description": "your description",
+      "rates": "your rates",
+      "evidence": "work links",
+      "intent": "whether you're looking for work",
+      "availability": "availability",
+      "reviews": "reviews and badges",
+      "prices": "prices and packages"
+    },
+    "noPromotion": {
+      "advocate": "Promotion isn't available for advocates under Bar Council rules.",
+      "architect": "Promotion isn't available for architects under Council of Architecture rules.",
+      "other": "Promotion isn't available for your profession under its council's rules."
+    }
   }
 }

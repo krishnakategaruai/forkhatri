@@ -14,7 +14,7 @@
 //      (locality, lat/lng, skills, work mode captured at first run).
 // Presentational screens take the normalised value; nothing here renders.
 import { useCallback, useEffect, useState } from "react";
-import type { Me, ProfileBrief } from "@/lib/sdk";
+import type { Me, ProfessionVerdict, ProfileBrief } from "@/lib/sdk";
 import { useSdk } from "@/lib/sdk/react";
 import { api } from "@/lib/api";
 
@@ -41,6 +41,8 @@ export interface MyProfile {
   /** The optional business section. */
   business: MyBrief | null;
   operatorPermissions: string[];
+  /** [Trust pack §4] The council rule that applies to the profile (advocate, architect…), or null. */
+  profession: ProfessionVerdict | null;
   /** The one profile exists (GET /v1/me/profile `exists`). */
   exists: boolean;
   /** What the API says it still needs to create the profile (e.g. ["locality"]). */
@@ -138,6 +140,7 @@ export function useMyProfile() {
         work,
         business,
         operatorPermissions: me?.operator_permissions ?? [],
+        profession: (p?.profession as ProfessionVerdict | null | undefined) ?? null,
         exists: one ? !!one.exists : !!(work || business),
         missing: Array.isArray(one?.missing) ? (one?.missing as string[]) : [],
         source: one ? "me-profile" : "legacy",

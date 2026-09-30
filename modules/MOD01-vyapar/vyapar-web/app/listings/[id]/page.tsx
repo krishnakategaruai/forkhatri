@@ -37,6 +37,7 @@ import ListingDetailView from "@/app/components/listing/ListingDetailView";
 import { useListingDetailController } from "@/app/components/listing/useListingDetailController";
 import ListingPackages from "@/app/components/packages/ListingPackages";
 import ListingContactOverride from "@/app/components/contact/ListingContactOverride";
+import { CouncilCredentialsPanel } from "@/app/components/trust/Council";
 
 // ==================================================================
 // [IMP33 — desktop layout for Listing detail]
@@ -108,6 +109,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
         performanceSlot={<PerformanceReport targetKind="listing" targetId={id} />}
         packagesSlot={<ListingPackages listingId={id} isOwner={listing.is_owner} providerName={listing.name} initial={listing.packages} />}
         contactPrefsSlot={<ListingContactOverride listingId={id} />}
+        credentialsSlot={listing.is_owner ? <CouncilCredentialsPanel onChanged={() => void refresh()} /> : undefined}
       />
     </Screen>
   );

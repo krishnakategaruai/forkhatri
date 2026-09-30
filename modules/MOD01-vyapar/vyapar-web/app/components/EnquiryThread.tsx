@@ -40,6 +40,9 @@ import TranslateLink from "@/app/components/respond/TranslateLink";
 import ProposalSummary, { hasProposalTerms } from "@/app/components/applicants/ProposalSummary";
 import { enquiryTone, ENQUIRY_STATE_KEY } from "@/app/components/enquiries/EnquiriesView";
 import { formatDate, formatDateTime } from "@/lib/format";
+// [Trust pack] the poster's replies pass the scam shield; the paid person is asked "paid on time?"
+import { ScamShieldNote, scamFromError, useScamShield, type ScamFinding } from "@/app/components/trust/ScamShield";
+import { PaidOnTimeForLink } from "@/app/components/trust/PaidOnTime";
 
 interface Message {
   id: string;
@@ -66,6 +69,7 @@ interface Enquiry {
   last_activity_at: string;
   action_type: string;
   state: string;
+  state_reason?: string | null;
   delivered: boolean;
   safety_notice_seen: boolean;
   messages: Message[];
@@ -110,13 +114,24 @@ export default function EnquiryThread({
   const [questions, setQuestions] = useState<Record<string, string>>({});
   const oppId = enquiry?.opportunity_id ?? null;
   const hasAnswers = (enquiry?.screening_answers?.length ?? 0) > 0;
+  // [Trust pack §1] The person who posted is replying to an applicant on
+  // their own post: the reply is checked as they type, by the post's type.
+  const posterReply = !!enquiry && !enquiry.is_sender && !!oppId;
+  const [oppType, setOppType] = useState<string | null>(null);
+  const [sendShield, setSendShield] = useState<ScamFinding | null>(null);
+  const [sendError, setSendError] = useState<string | null>(null);
   useEffect(() => {
-    if (!oppId || !hasAnswers) return;
+    if (!oppId || (!hasAnswers && !posterReply)) return;
     api
-      .get<{ structured?: { screening_questions?: { id?: string; text: string }[] } | null }>(`/v1/opportunities/${oppId}`)
-      .then((o) => setQuestions(Object.fromEntries((o.structured?.screening_questions ?? []).filter((q) => q.id).map((q) => [q.id as string, q.text]))))
+      .get<{ type?: string; structured?: { screening_questions?: { id?: string; text: string }[] } | null }>(`/v1/opportunities/${oppId}`)
+      .then((o) => {
+        setOppType(o.type ?? null);
+        setQuestions(Object.fromEntries((o.structured?.screening_questions ?? []).filter((q) => q.id).map((q) => [q.id as string, q.text])));
+      })
       .catch(() => undefined);
-  }, [oppId, hasAnswers]);
+  }, [oppId, hasAnswers, posterReply]);
+  const liveShield = useScamShield(reply, "enquiry_reply", oppType, posterReply);
+  const replyShield = liveShield ?? sendShield;
 
   async function refresh() {
     try {
@@ -179,12 +194,16 @@ export default function EnquiryThread({
   const otherParty = enquiry.is_sender ? enquiry.provider_id : enquiry.sender_id;
   const viewerId = enquiry.is_sender ? enquiry.sender_id : enquiry.provider_id;
   const lang = i18n.language;
-  const stateLabel = t(`enquiries:detail.${STATE_KEY[enquiry.state] ?? "stateOpen"}` as "detail.stateOpen");
+  const stateLabel =
+    enquiry.is_sender && enquiry.state === "closed" && enquiry.state_reason === "post_closed"
+      ? t("enquiries:detail.statePostClosed")
+      : t(`enquiries:detail.${STATE_KEY[enquiry.state] ?? "stateOpen"}` as "detail.stateOpen");
   const tone = enquiryTone(enquiry.state, enquiry.is_sender);
   const kindLabel = t(`enquiries:actionType.${enquiry.action_type}` as "actionType.enquire", { defaultValue: enquiry.action_type });
   const counterpart = names?.counterpart ?? t("enquiries:detail.them");
   const targetHref = enquiry.listing_id ? `/listings/${enquiry.listing_id}` : enquiry.opportunity_id ? `/opportunities/${enquiry.opportunity_id}` : null;
   const live = !["closed", "withdrawn"].includes(enquiry.state);
+  const postClosed = enquiry.is_sender && enquiry.state === "closed" && enquiry.state_reason === "post_closed";
   const canAccept = !enquiry.is_sender && ["open", "awaiting_response"].includes(enquiry.state);
   const canResolve = !enquiry.is_sender && enquiry.state === "in_progress";
   const canClose = ["resolved", "in_progress"].includes(enquiry.state);
@@ -293,6 +312,9 @@ export default function EnquiryThread({
             </div>
           )}
 
+          {/* [Trust pack §2] the hired person is asked, once, whether they were paid on time */}
+          <PaidOnTimeForLink link={`/enquiries/${id}`} />
+
           {/* phone: the way into the contract sits with the head, before the messages */}
           {showContract && (
             <div className="vy-ctx-narrow-only vy-dl-actions">
@@ -364,27 +386,56 @@ export default function EnquiryThread({
               className="vy-dl-composer vy-actionbar-in"
               onSubmit={(e) => {
                 e.preventDefault();
-                if (!reply.trim() || busy || enquiry.state === "restricted") return;
+                if (!reply.trim() || busy || enquiry.state === "restricted" || replyShield) return;
+                setSendError(null);
                 void act(async () => {
-                  await api.post(`/v1/enquiries/${id}/messages`, { body: reply.trim() });
-                  setReply("");
+                  try {
+                    await api.post(`/v1/enquiries/${id}/messages`, { body: reply.trim() });
+                    setReply("");
+                  } catch (err) {
+                    // [Trust pack §1] 422 seeker_charge_not_allowed lands under the reply, calmly
+                    const scam = scamFromError(err);
+                    if (scam) setSendShield(scam);
+                    else setSendError(err instanceof ApiError ? String(err.detail) : t("common:state.actionFailed"));
+                  }
                 });
               }}
             >
+              {(replyShield || sendError) && (
+                <div className="vy-dl-composer-note">
+                  <ScamShieldNote finding={replyShield} id={`shield-${id}`} />
+                  {sendError && !replyShield && (
+                    <p className="vy-error" role="alert">
+                      {sendError}
+                    </p>
+                  )}
+                </div>
+              )}
               {/* [FR43/TR043] a placeholder alone is never a valid accessible name */}
               <input
                 className="vy-input"
                 value={reply}
-                onChange={(e) => setReply(e.target.value)}
+                onChange={(e) => {
+                  setReply(e.target.value);
+                  setSendShield(null);
+                  setSendError(null);
+                }}
+                aria-describedby={replyShield ? `shield-${id}` : undefined}
                 placeholder={enquiry.state === "restricted" ? t("enquiries:detail.restrictedLine") : t("enquiries:detail.replyPlaceholder")}
                 aria-label={t("enquiries:detail.replyPlaceholder")}
                 disabled={enquiry.state === "restricted"}
                 maxLength={1000}
               />
-              <button type="submit" className="vy-btn vy-btn-primary vy-dl-composer-send" disabled={!reply.trim() || busy || enquiry.state === "restricted"} aria-label={t("enquiries:detail.reply")} title={t("enquiries:detail.reply")}>
+              <button type="submit" className="vy-btn vy-btn-primary vy-dl-composer-send" disabled={!reply.trim() || busy || enquiry.state === "restricted" || !!replyShield} aria-label={t("enquiries:detail.reply")} title={t("enquiries:detail.reply")}>
                 <Send size={18} strokeWidth={2} aria-hidden="true" />
               </button>
             </form>
+          ) : postClosed ? (
+            // [Trust pack §3] the post closed before an answer: said kindly, never "rejected"
+            <div className="vy-dl-thread-closed vy-postclosed">
+              <p>{t("enquiries:detail.postClosedLine")}</p>
+              <Link href="/" transitionTypes={["vy-forward"]}>{t("enquiries:detail.postClosedSimilar")}</Link>
+            </div>
           ) : (
             <p className="vy-dl-thread-closed">{t("enquiries:detail.closedLine")}</p>
           )}

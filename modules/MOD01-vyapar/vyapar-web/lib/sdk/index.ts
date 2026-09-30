@@ -33,6 +33,8 @@ import { badgesApi, seekerProtectionApi } from "./domains/trust";
 import { contractsApi } from "./domains/contracts";
 import { taxonomyApi } from "./domains/taxonomy";
 import { aiApi, applicantsApi, postingApi, responsesApi } from "./domains/hiring";
+// [Trust pack 2026-09-30] scam shield, paid on time, close the loop, restrictions, council registrations
+import { trustPackApi } from "./domains/trustPack";
 
 export function createVyaparSdk(config: VyaparClientConfig | VyaparClient) {
   const client = config instanceof VyaparClient ? config : new VyaparClient(config);
@@ -73,6 +75,8 @@ export function createVyaparSdk(config: VyaparClientConfig | VyaparClient) {
     applicants: applicantsApi(client),
     /** [FE1] AI assistance: drafts, photo reading, shortlist, posting tips, proposal help */
     ai: aiApi(client),
+    /** [Trust pack] references/imp-trust-pack.md */
+    trustPack: trustPackApi(client),
     dev: devApi(client),
   };
 }
@@ -100,4 +104,5 @@ export type * from "./domains/savedSearches";
 export type * from "./domains/trust";
 export type * from "./domains/contracts";
 export type * from "./domains/taxonomy";
+export type * from "./domains/trustPack";
 export * from "./hiring-types";

@@ -47,6 +47,8 @@ export function ProfileRecommendationsView({ cards, title, help }: { cards: Prof
       </div>
       <div className="vy-grid">
         {cards.map((c, i) => {
+          // [Trust pack §4] a council that forbids advertising: no reputation or badges on the card
+          const quiet = !!c.profession?.restricted;
           const chips = [...c.matched_labels.map((l) => ({ l, match: true })), ...c.other_labels.map((l) => ({ l, match: false }))].slice(0, MAX_CHIPS);
           const facts = [
             t(`discover:profiles.kind.${c.kind}` as "profiles.kind.business"),
@@ -64,7 +66,7 @@ export function ProfileRecommendationsView({ cards, title, help }: { cards: Prof
               subtitle={c.headline ?? facts.join(" · ")}
               verified={c.verified}
               verificationLabel={t("discover:businesses.verifiedLabel")}
-              meta={[c.headline ? facts.join(" · ") : null, reputationText(c.reputation) || null].filter(Boolean).join(" · ")}
+              meta={[c.headline ? facts.join(" · ") : null, quiet ? null : reputationText(c.reputation) || null].filter(Boolean).join(" · ")}
             >
               {chips.length > 0 && (
                 <div className="vy-row" style={{ flexWrap: "wrap", gap: 6 }}>
@@ -79,7 +81,7 @@ export function ProfileRecommendationsView({ cards, title, help }: { cards: Prof
                   )}
                 </div>
               )}
-              <BadgeList badges={c.badges} compact max={3} />
+              {!quiet && <BadgeList badges={c.badges} compact max={3} />}
             </LivingCard>
           );
         })}

@@ -57,7 +57,8 @@
     "getVerified": "Get verified",
     "notActive": "Only open items can be promoted.",
     "notOwner": "Only the owner can promote this.",
-    "notFound": "This item isn't available."
+    "notFound": "This item isn't available.",
+    "notPermittedForProfession": "Your profession's council does not allow advertising, so this profile can't be promoted. People still find you in search."
   },
   "state": {
     "draft": "Draft",

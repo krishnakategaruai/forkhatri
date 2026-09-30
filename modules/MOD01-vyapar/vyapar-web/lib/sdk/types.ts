@@ -16,6 +16,7 @@ import type { StructuredFields } from "./hiring-types";
 // domains; the wire types below reference them.
 import type { Badge, SeekerProtection } from "./domains/trust";
 import type { ServicePackage } from "./domains/packages";
+import type { ApplicantsWaiting, CouncilBadge, PaidOnTime, ProfessionVerdict, Restriction } from "./domains/trustPack";
 
 export interface Reputation {
   interactions: number;
@@ -145,6 +146,11 @@ export interface Opportunity {
   seeker_protection?: SeekerProtection | null;
   poster_badges?: Badge[];
   distance_km?: number | null;
+  // [Trust pack] "Paid on time: 2 of 3" (null until three people answered),
+  // the poster's own waiting applicants and any restriction on the post.
+  poster_paid_on_time?: PaidOnTime | null;
+  applicants_waiting?: ApplicantsWaiting | null;
+  restriction?: Restriction | null;
 }
 
 export interface WhyResponse {
@@ -316,6 +322,8 @@ export interface ProfileCardData {
   other_labels: string[];
   reputation: Reputation | null;
   badges?: Badge[];
+  profession?: ProfessionVerdict | null;
+  council_badges?: CouncilBadge[];
 }
 
 export interface ListingContact {
@@ -361,6 +369,11 @@ export interface Listing {
   // [FE2 — imp-backend-b §3-4]
   badges?: Badge[];
   packages?: ServicePackage[];
+  // [Trust pack] profession rules, council registrations, paid on time, restriction
+  profession?: ProfessionVerdict | null;
+  council_badges?: CouncilBadge[];
+  paid_on_time?: PaidOnTime | null;
+  restriction?: Restriction | null;
 }
 
 export interface SearchListing {
@@ -387,6 +400,10 @@ export interface SearchListing {
   primary_phone?: string | null;
   availability?: string | null;
   service_mode?: string | null;
+  // [Trust pack] every listing read carries these
+  profession?: ProfessionVerdict | null;
+  council_badges?: CouncilBadge[];
+  paid_on_time?: PaidOnTime | null;
 }
 
 export interface SearchResult {
@@ -437,6 +454,8 @@ export interface EnquirySummary {
   id: string;
   action_type: string;
   state: string;
+  /** [Trust pack] "post_closed" when the post closed, expired or filled before an answer. */
+  state_reason?: string | null;
   is_sender: boolean;
   last_activity_at: string;
   target_name: string | null;

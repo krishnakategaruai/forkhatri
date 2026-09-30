@@ -47,6 +47,7 @@ import {
 import { FieldBlock, FieldGroup, MoneyInput, MoneyRange, OptionChips, Segmented, readbackRange } from "./fields";
 import { experienceLabel } from "./labels";
 import { rupeesToPaise } from "@/lib/money";
+import { ScamShieldNote, type ScamFinding } from "@/app/components/trust/ScamShield";
 
 const SALARY_PRESETS: [number, number][] = [
   [10000, 15000],
@@ -67,6 +68,8 @@ export interface ComposerFormProps {
   errors: Partial<Record<FieldCode, string>>;
   /** slug → English name for the skill search (see useTaxonomyAliases). */
   aliases?: ReadonlyMap<string, string>;
+  /** [Trust pack §1] scam-shield findings per field, shown as a calm note under it. */
+  shield?: Partial<Record<FieldCode | "compensation", ScamFinding>>;
 }
 
 // [FE1 — 2026-09-30, owner: "never ask what we know"] Shown only while the
@@ -312,7 +315,22 @@ export function useComposerControls({ draft, onChange, tree, errors, aliases }: 
         );
       case "budget":
         if (d.type === "local_service") {
-          return <MoneyInput value={d.localBudget} onChange={(v) => set({ localBudget: v })} placeholder={t("hiring:placeholders.localBudget")} ariaLabel={t("hiring:fields.budget")} />;
+          // [Trust pack §2] a local service says what it pays: a budget, or how
+          // it is paid ("₹300 a visit") — either one is enough to publish.
+          return (
+            <div className="vy-stack" style={{ gap: 8 }}>
+              <MoneyInput value={d.localBudget} onChange={(v) => set({ localBudget: v })} placeholder={t("hiring:placeholders.localBudget")} ariaLabel={t("hiring:fields.budget")} />
+              <input
+                className="vy-input"
+                value={d.compensation}
+                maxLength={120}
+                onChange={(e) => set({ compensation: e.target.value })}
+                placeholder={t("hiring:placeholders.payBasis")}
+                aria-label={t("hiring:fields.payBasis")}
+                aria-invalid={!!errors.budget || undefined}
+              />
+            </div>
+          );
         }
         return (
           <div className="vy-stack" style={{ gap: 8 }}>
@@ -529,7 +547,7 @@ export const LAYOUT: Record<"employment" | "freelance" | "local_service" | "othe
     { code: "location", hintKey: "hiring:hints.where" },
     { code: "urgency", optional: true },
     { code: "preferred_date", optional: true },
-    { code: "budget", optional: true },
+    { code: "budget", hintKey: "hiring:hints.payBasis" },
     { code: "description", optional: true },
   ],
   other: [
@@ -573,7 +591,7 @@ function isRequired(code: FieldCode, type: PostKind): boolean {
   if (code === "title") return true;
   if (code === "location") return type === "employment" || type === "local_service";
   if (code === "salary") return type === "employment";
-  if (code === "budget") return type === "freelance";
+  if (code === "budget") return type === "freelance" || type === "local_service";
   return false;
 }
 
@@ -674,7 +692,8 @@ function summarizeGroup(g: ComposerGroup, d: ComposerDraft, t: (k: string, opts?
 }
 
 export default function ComposerForm(props: ComposerFormProps) {
-  const { draft, onChange, flagged, onLooksRight, errors } = props;
+  const { draft, onChange, flagged, onLooksRight, errors, shield } = props;
+  const note = (code: FieldCode) => (shield?.[code] ? <ScamShieldNote finding={shield[code]} /> : undefined);
   const { t, i18n } = useTranslation(["hiring", "opportunities"]);
   const { renderControl } = useComposerControls(props);
   const layoutKey = draft.type === "employment" || draft.type === "freelance" || draft.type === "local_service" ? draft.type : "other";
@@ -756,6 +775,7 @@ export default function ComposerForm(props: ComposerFormProps) {
           onLooksRight={() => onLooksRight(code)}
           error={errors[code] ?? null}
           hint={hintKey ? t(hintKey) : undefined}
+          notice={note(code)}
         >
           {renderControl(code)}
         </FieldBlock>
@@ -781,6 +801,7 @@ export default function ComposerForm(props: ComposerFormProps) {
                 onLooksRight={() => onLooksRight(code)}
                 error={errors[code] ?? null}
                 hint={hintKey ? t(hintKey) : undefined}
+                notice={note(code)}
               >
                 {renderControl(code)}
               </FieldBlock>
@@ -793,7 +814,7 @@ export default function ComposerForm(props: ComposerFormProps) {
       {draft.type === "local_service" && renderPrecall()}
 
       {layoutKey === "other" && (
-        <FieldBlock code="compensation" label={t("hiring:fields.pay")}>
+        <FieldBlock code="compensation" label={t("hiring:fields.pay")} notice={shield?.compensation ? <ScamShieldNote finding={shield.compensation} /> : undefined}>
           <input className="vy-input" value={draft.compensation} onChange={(e) => onChange({ compensation: e.target.value })} placeholder={t("opportunities:new.compensationPlaceholder")} />
         </FieldBlock>
       )}

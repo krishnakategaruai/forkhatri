@@ -210,6 +210,7 @@ Seeded profiles covered: **Kavita Dhawan** (advocate) and **Deepak Bhalla** (arc
   - it gets no trust, reputation or freshness score and is never "verified first";
   - it never gets a Sponsored slot;
   - among equal matches, order is distance, then name.
+- **Profile recommendations** ("Similar profiles" on a profile, `listMatchingProfiles` on a post): the same neutral order. Among equal skill matches such a profile gets no verified-first or "available now" boost and is ordered by nearness to the viewer, then name. Its cards carry no counts or reputation badges.
 - **Promotion:** `createPromotion` and `confirmPromotionPurchase` → **403 `promotion_not_permitted_for_profession`**, "Your profession's council does not allow advertising, so this profile can't be promoted. People still find you in search." `listPromotionOptions` → `eligible: false`, `reason: "notPermittedForProfession"`, `products: []`. Campaign items go through the same check.
 - **Packages:** `upsertListingPackages` → **403 `packages_not_permitted_for_profession`**. `requestListingPackage` → 404 for others.
 - **Reviews:** `createReview` about such a profile → **403 `reviews_not_permitted_for_profession`**. `getReviewInviteStatus` → `can_review: false`, `blocked_reason: "profession_rules"`.
@@ -317,7 +318,7 @@ New settings (defaults in `app/config.py`, all overridable in `.env`):
 
 ## Checks
 
-`scripts/check_trust_pack.py` passed **97/97** on private port 8093, including:
+`scripts/check_trust_pack.py` passed **98/98** on private port 8093, including:
 - the corpus (16 scam phrasings caught, 12 honest ones allowed);
 - every surface;
 - paid on time, with a real contract stage released through the dev sandbox;
@@ -326,6 +327,7 @@ New settings (defaults in `app/config.py`, all overridable in `.env`):
 - a review-queue removal, now appealable;
 - Kavita Dhawan and Deepak Bhalla's profiles;
 - a legacy promotion cancelled by the pass;
+- two advocates in Abids listed in name order in a post's matching profiles, with no verified-first boost;
 - a new advocate with a Bar Council claim checked by an operator, then suspended, appealed and restored.
 
 It deletes everything it created, restores the rate limits and "recently viewed" rows it touched, and its sweep finds no leftover rows.

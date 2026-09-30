@@ -3092,7 +3092,7 @@ VISION-2040 items 1–5 ("next 3 builds" #1), backend and API. The full contract
 
   | Script | Result |
   |---|---|
-  | `check_trust_pack.py` (new) | 97/97 |
+  | `check_trust_pack.py` (new) | 98/98 (after the follow-up below) |
   | `check_structured_hiring.py` | 130/130 |
   | `check_profile.py` | 33/33 |
   | `check_contracts.py` | 92/92 |
@@ -3101,3 +3101,12 @@ VISION-2040 items 1–5 ("next 3 builds" #1), backend and API. The full contract
   | `check_ai.py` | 68/68 |
 
   Every script cleaned up after itself; the trust-pack sweep found no leftover rows.
+
+**Follow-up (same day):** "Similar profiles" and a post's "matching profiles" (`app/profile_cards.py`) now rank advocates and architects neutrally, as search does. There is no verified-first or "available now" boost; among equal skill matches the order is nearness to the viewer, then name. The query takes 40 candidates and orders them in Python before showing 4. Checked:
+
+| Script | Result |
+|---|---|
+| `check_trust_pack.py` | 98/98, including a new neutral-order check |
+| `check_structured_hiring.py` | 130/130 |
+| `check_profile.py` | 33/33 |
+| `check_backend_b.py` | 168/168 |

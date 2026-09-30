@@ -33,6 +33,8 @@ import "./styles/filters-2026.css";
 // Screen stylesheets load globally so a component rendered on any page (or portalled into body) is never unstyled.
 import "./styles/deals-2026.css";
 import "./styles/account-2026.css";
+// [Trust pack 2026-09-30] scam shield, paid on time, close the loop, restrictions, council registrations
+import "./styles/trust-2026.css";
 import CommandHub from "./components/CommandHub";
 import AppTopBar from "./components/nav/AppTopBar";
 import { I18nProvider } from "@/lib/i18n/provider";

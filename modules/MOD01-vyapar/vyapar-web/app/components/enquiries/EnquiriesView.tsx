@@ -164,7 +164,13 @@ export default function EnquiriesView({ role, onRoleChange, items, counts, state
                       <span>{[kind, who].filter(Boolean).join(" · ")}</span>
                     </span>
                     <span className="vy-dl-tags" style={{ marginTop: 4 }}>
-                      <span className="vy-dl-state" data-tone={tone}>{tone === "wait" ? t("enquiries:mine.needsYou") : stateLabel(e.state)}</span>
+                      <span className="vy-dl-state" data-tone={tone}>
+                        {tone === "wait"
+                          ? t("enquiries:mine.needsYou")
+                          : e.is_sender && e.state === "closed" && e.state_reason === "post_closed"
+                            ? t("enquiries:detail.statePostClosed") /* [Trust pack §3] quietly, never "rejected" */
+                            : stateLabel(e.state)}
+                      </span>
                     </span>
                   </span>
                   <span className="vy-dl-row-aside">

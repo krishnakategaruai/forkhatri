@@ -16,6 +16,7 @@
 // Props in, callbacks out; the only state here is which inline note box is
 // open and its text. Payments are a ledger (BLOCKER-01): the page says so,
 // and says "test payments" whenever the Payment Bridge reported sandbox.
+import { PaidOnTimeForLink } from "@/app/components/trust/PaidOnTime";
 import { useState } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
@@ -331,6 +332,8 @@ export default function ContractDetailView(props: ContractDetailViewProps) {
       </div>
 
       {banner}
+      {/* [Trust pack §2] the professional is asked, once per paid stage, whether they were paid on time */}
+      <PaidOnTimeForLink link={`/contracts/${c.id}`} />
       {error && (
         <p className="vy-dl-notice" data-tone="bad" role="alert">
           <AlertTriangle size={18} strokeWidth={1.75} aria-hidden="true" />

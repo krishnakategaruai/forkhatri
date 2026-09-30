@@ -94,7 +94,8 @@
     "timing": "Timing",
     "segment": "Is this your own post?",
     "pay": "Pay",
-    "amountUnreadable": "Type one amount, like 15000, 15k or 1.5 lakh."
+    "amountUnreadable": "Type one amount, like 15000, 15k or 1.5 lakh.",
+    "payBasis": "How it's paid"
   },
   "placeholders": {
     "title": {
@@ -114,7 +115,8 @@
       "freelance": "What you need done, what you already have, what “done” looks like.",
       "local_service": "What happened, the size of the job, anything to bring.",
       "other": "Tell people what this is and who it suits."
-    }
+    },
+    "payBasis": "Or how it's paid, e.g. ₹300 a visit"
   },
   "hints": {
     "role": "Pick the role so the right people see it first.",
@@ -123,7 +125,8 @@
     "qualification": "Asking for more than the work needs cuts responses.",
     "skills": "Pick up to 5 — fewer, sharper skills get better proposals.",
     "questions": "Up to 3. Freelancers answer them in their proposal.",
-    "where": "The area where the work is."
+    "where": "The area where the work is.",
+    "payBasis": "Say what this pays: a budget, or how it's paid."
   },
   "options": {
     "shift": {
@@ -312,7 +315,8 @@
       "salaryRange": "The minimum salary is more than the maximum.",
       "budgetRequired": "Add a budget or an hourly rate.",
       "budgetRange": "The minimum is more than the maximum.",
-      "sourceRequired": "Say where you found it."
+      "sourceRequired": "Say where you found it.",
+      "payBasisRequired": "Say what this job pays: add a budget, or how it is paid (for example ₹300 a visit)."
     },
     "ask": {
       "salary": "What is the salary range? Give both the minimum and the maximum.",
@@ -378,7 +382,8 @@
     "applicant_not_found": "That applicant is no longer on this post.",
     "compare_count": "Pick 2 to 4 people to compare.",
     "poster_only": "Only the person who posted this can see that.",
-    "opportunity_not_found": "This post is no longer available."
+    "opportunity_not_found": "This post is no longer available.",
+    "pay_basis_required": "Say what this job pays: add a budget, or how it is paid (for example ₹300 a visit)."
   },
   "precall": {
     "label": "Calls before you accept",

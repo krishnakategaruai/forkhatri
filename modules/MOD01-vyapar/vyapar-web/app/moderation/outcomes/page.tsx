@@ -14,11 +14,10 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LifeBuoy, ShieldCheck, ShieldAlert, ShieldOff, Scale } from "lucide-react";
-import { api, ApiError } from "@/lib/api";
-import FileUpload from "@/app/components/FileUpload";
+import { api } from "@/lib/api";
+import AppealForm from "@/app/components/trust/AppealForm";
 import Screen from "@/app/components/Screen";
 import { SkeletonGrid } from "@/app/components/States";
-import DisabledReason from "@/app/components/DisabledReason";
 import PageHeader from "@/app/components/account/PageHeader";
 import { formatDate } from "@/lib/format"; // [FE2] Indian date order
 import "@/app/styles/account-2026.css";
@@ -55,28 +54,9 @@ function actionVisual(action: string) {
 function OutcomeCard({ item, onDone }: { item: Outcome; onDone: () => void }) {
   const { t, i18n } = useTranslation(["trustSafety", "common"]);
   const [open, setOpen] = useState(false);
-  const [text, setText] = useState("");
-  // [Critique agent finding, fixed here] FR41 names evidence as an
-  // explicitly optional part of an appeal. Reuses the one shared FileUpload.
-  const [evidenceUrl, setEvidenceUrl] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const fmt = (d: string) => formatDate(d, i18n.language);
   const v = actionVisual(item.action);
   const Icon = v.icon;
-
-  async function appeal() {
-    setBusy(true);
-    setError(null);
-    try {
-      await api.post("/v1/appeals", { case_id: item.case_id, text, evidence_urls: evidenceUrl ? [evidenceUrl] : [] });
-      onDone();
-    } catch (e) {
-      setError(e instanceof ApiError ? String(e.detail) : t("common:state.somethingWentWrong"));
-    } finally {
-      setBusy(false);
-    }
-  }
 
   return (
     <article className="vy-card vy-acct-outcome">
@@ -101,25 +81,8 @@ function OutcomeCard({ item, onDone }: { item: Outcome; onDone: () => void }) {
           {t("trustSafety:outcomes.appeal")} · {t("trustSafety:outcomes.appealBy", { date: fmt(item.appeal_deadline) })}
         </button>
       )}
-      {item.can_appeal && open && (
-        <div className="vy-acct-form" style={{ gap: 12 }}>
-          <textarea className="vy-textarea" rows={4} maxLength={1000} value={text} onChange={(e) => setText(e.target.value)} placeholder={t("trustSafety:outcomes.appealPlaceholder")} aria-label={t("trustSafety:outcomes.appeal")} />
-          <div className="vy-acct-field">
-            <span className="vy-label">{t("trustSafety:outcomes.evidenceLabel")}</span>
-            <FileUpload value={evidenceUrl} onChange={setEvidenceUrl} />
-          </div>
-          {error && <p className="vy-error" role="alert">{error}</p>}
-          <div className="vy-row">
-            <button className="vy-btn vy-btn-primary" aria-describedby={!text ? "why-appeal" : undefined} disabled={!text || busy} onClick={appeal}>
-              {t("trustSafety:outcomes.appeal")}
-            </button>
-            <button className="vy-btn vy-btn-ghost" disabled={busy} onClick={() => setOpen(false)}>
-              {t("common:action.cancel")}
-            </button>
-          </div>
-          <DisabledReason id="why-appeal" show={!text}>{t("common:disabled.appeal")}</DisabledReason>
-        </div>
-      )}
+      {/* [Trust pack] the one appeal form, shared with the Restrictions screen */}
+      {item.can_appeal && open && <AppealForm caseId={item.case_id} onDone={onDone} onCancel={() => setOpen(false)} />}
     </article>
   );
 }

@@ -7,6 +7,8 @@
 // upserts by tier (PUT); "Stop offering" removes one tier. Three columns on
 // a wide screen, stacked on a phone.
 import { useState } from "react";
+// [Trust pack §1] packages are checked as the owner types (fees on applicants, "send ₹… to 98…")
+import { ScamShieldNote, scamFromError, useScamShieldFields } from "@/app/components/trust/ScamShield";
 import { useTranslation } from "react-i18next";
 import type { PackageTier, ServicePackage, ServicePackageInput } from "@/lib/sdk";
 import { paiseToInput, rupeesToPaise } from "@/lib/format";
@@ -52,6 +54,11 @@ export default function PackagesEditor({
   }));
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const tierText = (d: TierDraft) => [d.name, d.description, ...d.includes].map((x) => x.trim()).filter(Boolean).join(" · ");
+  const shield = useScamShieldFields(
+    { basic: tierText(drafts.basic), standard: tierText(drafts.standard), premium: tierText(drafts.premium) },
+    "package",
+  );
 
   const set = (tier: PackageTier, patch: Partial<TierDraft>) => {
     setDrafts((d) => ({ ...d, [tier]: { ...d[tier], ...patch } }));
@@ -89,7 +96,8 @@ export default function PackagesEditor({
       await onSave(input);
       setMessage({ ok: true, text: t("packages:editor.saved") });
     } catch (e) {
-      setMessage({ ok: false, text: e instanceof Error && e.message ? e.message : t("common:state.actionFailed") });
+      const scam = scamFromError(e);
+      setMessage({ ok: false, text: scam?.message ?? (e instanceof Error && e.message ? e.message : t("common:state.actionFailed")) });
     } finally {
       setBusy(false);
     }
@@ -164,6 +172,7 @@ export default function PackagesEditor({
                 <span className="vy-label">{t("packages:editor.description")}</span>
                 <textarea className="vy-textarea" rows={2} maxLength={500} value={d.description} onChange={(e) => set(tier, { description: e.target.value })} />
               </label>
+              <ScamShieldNote finding={shield[tier]} />
               {(d.id || d.name || d.price) && (
                 <button type="button" className="vy-btn vy-btn-ghost" style={{ alignSelf: "flex-start", fontSize: 13 }} onClick={() => remove(tier)}>
                   {t("packages:editor.remove")}

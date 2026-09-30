@@ -24,13 +24,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
-import { Bookmark, FileText, Globe, Inbox, LayoutGrid, LifeBuoy, Lock, MapPin, Megaphone, Phone, ShieldCheck, Undo2, Wrench } from "lucide-react";
+import { Bookmark, FileText, Globe, Inbox, LayoutGrid, LifeBuoy, Lock, MapPin, Megaphone, Phone, ShieldAlert, ShieldCheck, Undo2, Wrench } from "lucide-react";
 import type { EnquirySummary, Listing, WorkspaceInvite as Invite, WorkspaceRow } from "@/lib/sdk";
 import { useSdk } from "@/lib/sdk/react";
 import Screen from "@/app/components/Screen";
 import ShortcutList, { type Shortcut, type ShortcutGroup } from "@/app/components/account/ShortcutList";
 import AccountProfileCard, { AddProfileCard } from "@/app/components/account/AccountProfileCard";
 import { useMyProfile } from "@/app/components/account/useMyProfile";
+import { NoPromotionNote } from "@/app/components/trust/Profession";
 // [IMP38 — Refactor C] The way back to the host platform ("Back to
 // ForKhatri" and its URL) comes from the host adapter; standalone has none.
 import { useHost, useRoutes } from "@/app/host/HostProvider";
@@ -48,13 +49,15 @@ interface HubStats {
 }
 
 export default function ProfilePage() {
-  const { t, i18n } = useTranslation(["profile", "workspace", "adminCommercial", "privacy", "adminOps", "common", "contracts", "contact"]);
+  const { t, i18n } = useTranslation(["profile", "workspace", "adminCommercial", "privacy", "adminOps", "common", "contracts", "contact", "trustSafety", "listings"]);
   const profile = useMyProfile();
   const me = profile.data;
   const [invites, setInvites] = useState<Invite[]>([]);
   const [workspaces, setWorkspaces] = useState<WorkspaceRow[]>([]);
   const [stats, setStats] = useState<HubStats | null>(null);
   const [recommends, setRecommends] = useState<number | null>(null);
+  // [Trust pack §3] Settings shows "Restrictions" only while something is restricted.
+  const [restricted, setRestricted] = useState(0);
   const [busy, setBusy] = useState(false);
   const sdk = useSdk();
   const routes = useRoutes();
@@ -80,6 +83,10 @@ export default function ProfilePage() {
         setStats({ openEnquiries: open(sent) + open(received), saved: activity.saved.length, recommends: null });
       })
       .catch(() => setStats(null));
+    sdk.trustPack
+      .myRestrictions()
+      .then((rows) => setRestricted(rows.length))
+      .catch(() => setRestricted(0));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sdk]);
 
@@ -103,6 +110,7 @@ export default function ProfilePage() {
   }
 
   const name = me?.name || t("profile:title");
+  const noPromotion = !!me?.profession?.restricted && !me.profession.allow_promotion;
   const langCode = (me?.language ?? i18n.language ?? "en").slice(0, 2);
   const languageName = t(`common:language.${langCode}` as "common:language.en", { defaultValue: langCode });
 
@@ -110,7 +118,8 @@ export default function ProfilePage() {
     { href: "/enquiries/mine", label: t("profile:enquiries"), hint: t("profile:hub.desc.enquiries"), icon: Inbox, tint: "brand", count: stats?.openEnquiries },
     { href: "/contracts", label: t("contracts:nav.title"), hint: t("contracts:nav.desc"), icon: FileText, tint: "indigo" },
     { href: "/activity", label: t("profile:hub.saved"), hint: t("profile:hub.desc.saved"), icon: Bookmark, tint: "teal", count: stats?.saved },
-    { href: "/promotions", label: t("profile:myBoosts"), hint: t("profile:hub.desc.myBoosts"), icon: Megaphone, tint: "amber" },
+    // [Trust pack §4] No promotions for a profession whose council forbids advertising.
+    ...(noPromotion ? [] : [{ href: "/promotions", label: t("profile:myBoosts"), hint: t("profile:hub.desc.myBoosts"), icon: Megaphone, tint: "amber" as const }]),
     ...workspaces.map(
       (w): Shortcut => ({
         href: routes.workspace(w.listing_id),
@@ -124,6 +133,9 @@ export default function ProfilePage() {
   const settings: Shortcut[] = [
     { href: "/profile/contact", label: t("contact:tile.label"), hint: t("contact:tile.desc"), icon: Phone, tint: "green" },
     { href: "/privacy", label: t("privacy:title"), hint: t("profile:hub.desc.privacy"), icon: Lock, tint: "sky" },
+    ...(restricted > 0
+      ? [{ href: "/profile/restrictions", label: t("trustSafety:restrictions.title"), hint: t("trustSafety:restrictions.hubHint"), icon: ShieldAlert, tint: "warning" as const, count: restricted }]
+      : []),
     { href: "/moderation/outcomes", label: t("profile:moderationOutcomes"), hint: t("profile:hub.desc.moderationOutcomes"), icon: ShieldCheck },
   ];
   const perms = me?.operatorPermissions ?? [];
@@ -223,7 +235,10 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 {me.work ? (
-                  <AccountProfileCard profile={me.work} href={`/listings/${me.work.id}`} />
+                  <>
+                    <AccountProfileCard profile={me.work} href={`/listings/${me.work.id}`} />
+                    {noPromotion && me.profession && <NoPromotionNote profession={me.profession} />}
+                  </>
                 ) : (
                   <AddProfileCard kind="professional" href={routes.newListing} />
                 )}

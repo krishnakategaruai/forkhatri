@@ -30,6 +30,10 @@ import { structuredFacts, type T as LabelT } from "@/app/components/composer/lab
 import { formatDayMonth, formatMonthYear } from "@/lib/format";
 import { payLines } from "@/app/components/discover/DiscoverCard";
 import { Star } from "lucide-react";
+// [Trust pack] paid on time, close the loop, restrictions
+import { PaidOnTimeLine } from "@/app/components/trust/PaidOnTime";
+import { ApplicantsWaitingNudge, CloseConfirmSheet } from "@/app/components/trust/CloseLoop";
+import RestrictionCard from "@/app/components/trust/RestrictionCard";
 
 /** [Design language 2026-09-29, glossary] A yearly "₹9–14 LPA" reads as
  *  "₹75,000–₹1,17,000 a month" with "₹9–14 lakh a year" under it — the same
@@ -96,6 +100,8 @@ export default function OpportunityDetailView(props: OpportunityDetailViewProps)
   const routes = useRoutes();
   const [showWhy, setShowWhy] = useState(false);
   const [showReasons, setShowReasons] = useState(false);
+  // [Trust pack §3] Close asks first: who is still waiting, and that they will be told politely.
+  const [closing, setClosing] = useState(false);
   // Phone only: once the in-page action card scrolls away, a slim bar with
   // the primary action slides up so a person who has just finished reading
   // never has to scroll back to act. Both reference apps pin their action
@@ -178,6 +184,9 @@ export default function OpportunityDetailView(props: OpportunityDetailViewProps)
         <h1>{opp.title}</h1>
       </Morph>
 
+      {/* [Trust pack §3] the poster sees why their post is restricted, and can appeal */}
+      {opp.is_poster && opp.restriction && <RestrictionCard item={opp.restriction} compact />}
+
       {!opp.is_poster && (
         <div className="vy-byline">
           {opp.submitter_name && (
@@ -192,6 +201,12 @@ export default function OpportunityDetailView(props: OpportunityDetailViewProps)
               <span className="vy-byline-sep" aria-hidden="true">·</span>
               <span>{t("opportunities:detail.fromCommunity")}</span>
             </>
+          )}
+          {/* [Trust pack §2] "Paid on time: 2 of 3" under the name, only once three people answered */}
+          {opp.poster_paid_on_time?.shown && (
+            <span style={{ flexBasis: "100%" }}>
+              <PaidOnTimeLine value={opp.poster_paid_on_time} />
+            </span>
           )}
           {opp.posted_days_ago !== null && (
             <>
@@ -233,6 +248,7 @@ export default function OpportunityDetailView(props: OpportunityDetailViewProps)
             phone it sits right under the facts, so the primary action is on
             the first screen without scrolling. */}
         <div className="vy-detail-aside vy-detail-aside-full">
+          {opp.is_poster && opp.state !== "draft" && <ApplicantsWaitingNudge waiting={opp.applicants_waiting} />}
           {opp.is_poster && opp.state !== "draft" && props.applicantsSlot}
 
           {opp.is_poster && opp.state !== "draft" && (
@@ -253,7 +269,7 @@ export default function OpportunityDetailView(props: OpportunityDetailViewProps)
                 </button>
               )}
               {["active", "paused", "stale"].includes(opp.state) && (
-                <button className="vy-btn vy-btn-ghost" disabled={busy} onClick={props.onClose}>
+                <button className="vy-btn vy-btn-ghost" disabled={busy} onClick={() => setClosing(true)}>
                   {t("opportunities:detail.close")}
                 </button>
               )}
@@ -447,6 +463,7 @@ export default function OpportunityDetailView(props: OpportunityDetailViewProps)
             <section className="vy-card vy-stack" style={{ gap: 8 }}>
               <h2 className="vy-card-title">{t("opportunities:detail.aboutPoster")}</h2>
               <p style={{ fontWeight: 600 }}>{opp.poster.name ?? opp.submitter_name}</p>
+              <PaidOnTimeLine value={opp.poster_paid_on_time} />
               <BadgeList badges={opp.poster_badges} />
               {opp.poster.verified_listing_id && opp.poster.verified_listing_name && (
                 <p>
@@ -504,6 +521,17 @@ export default function OpportunityDetailView(props: OpportunityDetailViewProps)
             {props.precallSlot && <div className="vy-actionbar-precall">{props.precallSlot}</div>}
           </div>
         </div>
+      )}
+      {closing && (
+        <CloseConfirmSheet
+          opportunityId={id}
+          busy={busy}
+          onCancel={() => setClosing(false)}
+          onConfirm={() => {
+            setClosing(false);
+            props.onClose();
+          }}
+        />
       )}
     </>
   );

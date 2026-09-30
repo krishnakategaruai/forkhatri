@@ -99,7 +99,10 @@
     "startedLabel": "शुरू",
     "lastActivityLabel": "आख़िरी गतिविधि",
     "youSent": "यह रिक्वेस्ट आपने भेजी",
-    "youReceived": "यह रिक्वेस्ट आपको मिली"
+    "youReceived": "यह रिक्वेस्ट आपको मिली",
+    "statePostClosed": "पोस्ट बंद हुई",
+    "postClosedLine": "यह पोस्ट बंद हो गई है, इसलिए इस बार आपका आवेदन आगे नहीं जाएगा। यह आपके बारे में कोई राय नहीं है।",
+    "postClosedSimilar": "मिलती-जुलती पोस्ट देखें"
   },
   "channel": {
     "phone": "फ़ोन",

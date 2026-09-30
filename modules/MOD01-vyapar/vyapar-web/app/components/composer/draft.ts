@@ -340,7 +340,8 @@ export function toWrite(d: ComposerDraft): OpportunityWrite {
     required_capabilities: d.skills,
     response_method: "in_app",
     // Jobs and projects: the server derives the money line from `structured`.
-    compensation: typed ? undefined : d.compensation.trim() || undefined,
+    // [Trust pack §2] a local service may state how it is paid ("₹300 a visit") instead of a budget.
+    compensation: typed && d.type !== "local_service" ? undefined : d.compensation.trim() || undefined,
     structured: structuredOf(d),
     // Only jobs and local services take calls before acceptance (the server
     // refuses the flag elsewhere with precall_not_for_type).
@@ -391,6 +392,8 @@ export function validate(d: ComposerDraft): Partial<Record<FieldCode, string>> {
     if (lo === null && hi === null) e.budget = "budgetRequired";
     else if (lo !== null && hi !== null && lo > hi) e.budget = "budgetRange";
   }
+  // [Trust pack §2] mirrors 422 pay_basis_required: a budget, or how it is paid.
+  if (d.type === "local_service" && rupeesToPaise(d.localBudget) === null && !d.compensation.trim()) e.budget = "payBasisRequired";
   if (d.segment === "public" && !d.sourceName.trim()) e.type = "sourceRequired";
   return e;
 }

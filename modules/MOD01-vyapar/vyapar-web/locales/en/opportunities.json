@@ -156,5 +156,19 @@
     "matchesYourSkill": "Matches your skill: {{skills}}",
     "lookingForYours": "What you're looking for",
     "goneBody": "It may have been closed or removed by the person who posted it."
+  },
+  "closeLoop": {
+    "oldest_one": "Longest wait: {{count}} day",
+    "oldest_other": "Longest wait: {{count}} days",
+    "title": "Close this post?",
+    "newCount_one": "{{count}} new",
+    "newCount_other": "{{count}} new",
+    "shortlistedCount_one": "{{count}} shortlisted",
+    "shortlistedCount_other": "{{count}} shortlisted",
+    "fallback": "Closing stops new applications. Anyone still waiting will be told politely that it has closed.",
+    "reviewFirst": "Review applicants first",
+    "confirm": "Close post",
+    "closeMessage_one": "If you close this post now, the person still waiting will be told politely that it has closed.",
+    "closeMessage_other": "If you close this post now, the {{count}} people still waiting will be told politely that it has closed."
   }
 }

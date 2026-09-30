@@ -24,6 +24,7 @@ export function FieldBlock({
   hint,
   children,
   htmlFor,
+  notice,
 }: {
   code: string;
   label: string;
@@ -42,6 +43,8 @@ export function FieldBlock({
   hint?: string;
   children: ReactNode;
   htmlFor?: string;
+  /** [Trust pack §1] a calm note under the field (the scam shield). */
+  notice?: ReactNode;
 }) {
   const { t } = useTranslation("hiring");
   return (
@@ -69,12 +72,13 @@ export function FieldBlock({
         )}
       </div>
       {children}
-      {hint && !error && <span className="vy-field-hint">{hint}</span>}
+      {hint && !error && !notice && <span className="vy-field-hint">{hint}</span>}
       {error && (
         <span className="vy-error" role="alert">
           {error}
         </span>
       )}
+      {notice}
     </div>
   );
 }

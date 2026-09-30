@@ -1,0 +1,509 @@
+/* ======================================================================
+   [Trust pack, 2026-09-30] Scam shield notes, "paid on time", close the
+   loop, restrictions, profession notes and council registrations.
+   Imported from app/layout.tsx (never from a page), tokens only, Anek type
+   tokens, numbers tabular. Calm by design: warning tints, never alarm red,
+   one line of meaning per block. (references/imp-trust-pack.md,
+   references/design-language-2026-09-29.md)
+   ====================================================================== */
+
+/* ---- Scam shield: the calm note under a field ------------------------- */
+.vy-shield-note {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--warning-soft);
+  color: var(--text-primary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-body);
+  animation: vy-shield-in var(--dur-enter, 200ms) var(--ease-out);
+}
+
+.vy-shield-note > svg {
+  margin-top: 3px;
+  color: var(--warning-text);
+}
+
+.vy-shield-note-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.vy-shield-note-text strong {
+  font-weight: var(--weight-heading);
+  color: var(--text-primary);
+}
+
+.vy-shield-note-text span {
+  color: var(--text-secondary);
+}
+
+.vy-shield-note-matched mark {
+  background: transparent;
+  color: var(--text-primary);
+  font-weight: var(--weight-ui);
+  text-decoration: underline;
+  text-decoration-color: var(--warning-text);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+@keyframes vy-shield-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The thread composer: the note sits inside the sticky bar, above the input. */
+.vy-dl-composer:has(.vy-dl-composer-note) {
+  flex-wrap: wrap;
+}
+
+.vy-dl-composer-note {
+  flex: 1 1 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ---- Paid on time ------------------------------------------------------ */
+.vy-pot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--card-pad);
+}
+
+.vy-pot-head {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.vy-pot-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.vy-pot-title {
+  font-family: var(--font-display);
+  font-size: var(--type-heading);
+  font-weight: var(--weight-heading);
+  line-height: var(--leading-heading);
+  letter-spacing: var(--tracking-heading);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.vy-pot-text p {
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-body);
+}
+
+.vy-pot-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.vy-pot-actions .vy-btn {
+  min-height: 48px;
+}
+
+.vy-pot-private {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: var(--type-xs);
+  color: var(--text-tertiary);
+  line-height: 1.5;
+}
+
+.vy-pot-private > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* "Paid on time: 2 of 3" — a quiet fact, never stars */
+.vy-pot-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--type-sm);
+  font-weight: var(--weight-body);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.vy-pot-line > svg {
+  color: var(--verified-text);
+  flex-shrink: 0;
+}
+
+.vy-pot-context {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-nested);
+  color: var(--text-primary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-ui);
+  text-decoration: none;
+}
+
+.vy-pot-context > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* ---- Close the loop ------------------------------------------------------ */
+.vy-waiting {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--surface-nested);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-primary);
+  font-size: var(--type-sm);
+  line-height: 1.45;
+}
+
+.vy-waiting-nudge {
+  grid-template-columns: 18px minmax(0, 1fr);
+}
+
+.vy-waiting > svg {
+  color: var(--warning-text);
+  align-self: start;
+  margin-top: 2px;
+}
+
+.vy-waiting-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.vy-waiting-text strong {
+  font-weight: var(--weight-ui);
+}
+
+.vy-waiting-text span {
+  color: var(--text-tertiary);
+  font-size: var(--type-xs);
+}
+
+.vy-closecheck {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.vy-closecheck .vy-waiting {
+  grid-template-columns: 18px minmax(0, 1fr);
+}
+
+.vy-closecheck-body {
+  font-size: var(--type-body);
+  color: var(--text-secondary);
+  line-height: var(--leading-body);
+}
+
+.vy-closecheck-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.vy-closecheck-actions .vy-btn {
+  width: 100%;
+  text-decoration: none;
+  justify-content: center;
+}
+
+@media (min-width: 600px) {
+  .vy-closecheck-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .vy-closecheck-actions .vy-btn {
+    width: auto;
+  }
+}
+
+/* The applicant's thread after the post closed: kind, with a way on */
+.vy-postclosed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.vy-postclosed p {
+  color: var(--text-secondary);
+  max-width: 44ch;
+  line-height: var(--leading-body);
+}
+
+.vy-postclosed a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--brand-text);
+  font-weight: var(--weight-ui);
+  text-decoration: none;
+}
+
+/* ---- Restrictions ----------------------------------------------------------- */
+.vy-restrict {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--card-pad);
+}
+
+.vy-restrict-compact {
+  box-shadow: none;
+  background: var(--surface-nested);
+  border-color: transparent;
+}
+
+.vy-restrict-head {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.vy-restrict-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.vy-restrict-label {
+  font-size: var(--type-xs);
+  font-weight: var(--weight-ui);
+  letter-spacing: var(--tracking-label);
+  color: var(--warning-text);
+}
+
+.vy-restrict-title {
+  font-size: var(--type-heading);
+  font-weight: var(--weight-heading);
+  line-height: var(--leading-heading);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.vy-restrict-title a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.vy-restrict-reason {
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+}
+
+.vy-restrict-message {
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-body);
+}
+
+.vy-restrict-appeal {
+  align-self: flex-start;
+}
+
+/* ---- Profession notes ------------------------------------------------------- */
+.vy-profession-note {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--surface-nested);
+  color: var(--text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-body);
+}
+
+.vy-profession-note > svg {
+  margin-top: 3px;
+  color: var(--text-tertiary);
+}
+
+.vy-profession-note > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.vy-profession-note strong {
+  color: var(--text-primary);
+  font-weight: var(--weight-ui);
+}
+
+.vy-profession-quiet {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: var(--type-sm);
+  color: var(--text-tertiary);
+  line-height: 1.5;
+}
+
+.vy-profession-quiet > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ---- Council registrations ------------------------------------------------ */
+.vy-council {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vy-council-item {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: var(--type-sm);
+  font-weight: var(--weight-ui);
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.vy-council-item > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.vy-council-item[data-tone="verified"] > svg {
+  color: var(--verified-text);
+}
+
+.vy-council-item[data-tone="pending"] > svg {
+  color: var(--text-tertiary);
+}
+
+.vy-council-item[data-tone="warn"] > svg {
+  color: var(--warning-text);
+}
+
+.vy-council-date {
+  font-weight: var(--weight-body);
+  color: var(--text-tertiary);
+}
+
+.vy-council-number {
+  display: block;
+  font-weight: var(--weight-body);
+  font-size: var(--type-xs);
+  color: var(--text-tertiary);
+}
+
+.vy-council-compact .vy-council-item {
+  font-size: var(--type-xs);
+}
+
+.vy-council-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.vy-council-row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border-hairline);
+}
+
+.vy-council-row:first-child {
+  border-top: none;
+}
+
+.vy-council-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.vy-council-row-text strong {
+  color: var(--text-primary);
+  font-weight: var(--weight-ui);
+}
+
+.vy-council-row-text > .vy-num {
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.vy-council-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.vy-council-form {
+  gap: var(--space-4);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-hairline);
+}
+
+.vy-council-fixed {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-nested);
+  color: var(--text-primary);
+  font-size: var(--type-body);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vy-shield-note {
+    animation: none;
+  }
+}

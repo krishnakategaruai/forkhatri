@@ -64,5 +64,30 @@
     "other": "Other"
   },
   "queueSubtitle": "Documents waiting for a decision, oldest first. Anything over 3 days is flagged.",
-  "openProfile": "Open the profile"
+  "openProfile": "Open the profile",
+  "council": {
+    "form": {
+      "type": "Council or register",
+      "typePlaceholder": "Choose a council or register",
+      "council": "Council",
+      "councilPlaceholder": "Choose your council",
+      "otherCouncil": "Another council",
+      "councilTyped": "Council name, e.g. Bar Council of Gujarat",
+      "number": "Registration number",
+      "documentUri": "DigiLocker document link",
+      "registeredOn": "Registered on (optional)",
+      "save": "Add registration",
+      "whyType": "Choose the council or register first.",
+      "whyCouncil": "Choose or type your council.",
+      "whyNumber": "Add your registration number."
+    },
+    "panel": {
+      "title": "Council registration",
+      "purpose": "For CAs, doctors, health professionals, advocates and architects. Checked against the council's register.",
+      "recheck": "Check again",
+      "remove": "Remove {{name}}",
+      "add": "Add a registration",
+      "howChecked": "Until a person from our team checks the council's public register, it shows as “Pending check”, without a tick."
+    }
+  }
 }
