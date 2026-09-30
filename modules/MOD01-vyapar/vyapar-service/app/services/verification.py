@@ -207,6 +207,13 @@ async def _decide(conn: asyncpg.Connection, ctx: AuthzContext, record_id: str, n
         record_id, new_state, body.reason_code, ctx.member_id, image_delete_after,
     )
 
+    # [Trust pack] a council register claim sent to this queue follows the
+    # operator's decision (verified: badge "checked on <today>"; rejected: failed).
+    if record["document_type"] == "credential":
+        from app.services.credentials import on_verification_decided
+
+        await on_verification_decided(conn, record["id"], new_state, ctx.member_id, body.reason_code)
+
     # [TR010] Verified -> Listing becomes Active-Verified with the claim scope.
     if new_state == "verified":
         # [FR09] a credential's claim is the credential's own name.

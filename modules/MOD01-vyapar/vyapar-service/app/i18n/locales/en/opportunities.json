@@ -34,7 +34,8 @@
     "budgetRequired": "Add a budget or an hourly rate before publishing this project.",
     "precallNotForType": "Calling before you accept is available only for jobs and local services.",
     "deadlineInPast": "Choose a last date in the future.",
-    "devOnly": "Available in development only."
+    "devOnly": "Available in development only.",
+    "payBasisRequired": "Say what this job pays: add a budget, or how it is paid (for example ₹300 a visit)."
   },
   "compensation": {
     "monthly": "{amount} a month",
@@ -88,6 +89,16 @@
     "disclosure": {
       "whatsapp_only": "Anyone who messages you on WhatsApp from this post will see your phone number. They can't ring you from Vyapar.",
       "call_and_whatsapp": "Anyone who calls or messages you from this post will see your phone number, and can reach you on it later."
+    }
+  },
+  "closeLoop": {
+    "waiting": {
+      "one": "1 applicant is still waiting for an answer.",
+      "many": "{count} applicants are still waiting for an answer."
+    },
+    "closeMessage": {
+      "some": "If you close this post now, the {count} people still waiting will be told politely that it has closed.",
+      "none": "Nobody is waiting for an answer. Closing stops new applications."
     }
   }
 }

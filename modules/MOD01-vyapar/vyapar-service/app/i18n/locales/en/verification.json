@@ -8,5 +8,49 @@
       "pan": "That doesn't look like a valid 10-character PAN.",
       "udyam": "That doesn't look like a valid Udyam registration number."
     }
+  },
+  "council": {
+    "type": {
+      "icai_membership": "ICAI membership number",
+      "medical_council_registration": "Medical council registration",
+      "allied_health_registration": "Allied health register (NCAHP)",
+      "bar_council_enrolment": "Bar Council enrolment",
+      "coa_registration": "Council of Architecture registration",
+      "digilocker_document": "DigiLocker document"
+    },
+    "numberHint": {
+      "icai_membership": "6 digits, e.g. 212345",
+      "medical_council_registration": "As printed on your registration certificate",
+      "allied_health_registration": "As shown on the NCAHP register",
+      "bar_council_enrolment": "State/number/year, e.g. TS/1234/2015",
+      "coa_registration": "CA/year/number, e.g. CA/2010/12345",
+      "digilocker_document": "The document number, plus its DigiLocker link"
+    },
+    "badge": {
+      "verified": "Registered with {council}",
+      "claimed": "{council}: pending check",
+      "expired": "{council}: check again",
+      "failed": "{council}: could not be confirmed"
+    },
+    "checkedOn": "Checked on {date}",
+    "pendingCheck": "Pending check",
+    "error": {
+      "numberFormat": {
+        "icai_membership": "An ICAI membership number has 6 digits.",
+        "medical_council_registration": "Enter the registration number as printed on your certificate.",
+        "allied_health_registration": "Enter the registration number as shown on the NCAHP register.",
+        "bar_council_enrolment": "Write the enrolment number as State/number/year, e.g. TS/1234/2015.",
+        "coa_registration": "Write the registration number as CA/year/number, e.g. CA/2010/12345.",
+        "digilocker_document": "Enter the document number as shown in DigiLocker."
+      },
+      "councilRequired": {
+        "bar_council_enrolment": "Choose your State Bar Council, e.g. Bar Council of Telangana.",
+        "medical_council_registration": "Choose the National Medical Commission or your state medical council.",
+        "digilocker_document": "Name who issued the document, e.g. Osmania University."
+      },
+      "documentUri": "Add the document's DigiLocker link (it starts with in.gov.).",
+      "exists": "This register is already on your profile. Remove it first to change the number.",
+      "notFound": "That register entry isn't on your profile."
+    }
   }
 }

@@ -37,6 +37,7 @@ from app.geo import resolve_place
 from app.reputation import badges_for_member, reputation_for_listings
 from app.profile_cards import ProfileCard, recommend_profiles
 from app.services.pagination import DEFAULT_LIMIT, MAX_LIMIT, Page, paginate
+from app.services import profession_rules
 
 
 # [SP001 Decision] standing-count cap — not named by any FR/TR, added at
@@ -215,6 +216,14 @@ class ListingOut(BaseModel):
     profile_status: str = ""  # draft | submitted | active | suspended | archived (no verification in it)
     business_verified: bool = False
     credential_verified: bool = False
+    # [Trust pack] The council's rules for this profile's profession (null when
+    # none applies), register entries as badges, the payee-confirmed "paid on
+    # time" count, and — for the owner — any platform restriction with its
+    # appeal path. See references/imp-trust-pack.md.
+    profession: dict | None = None
+    council_badges: list[dict] = []
+    paid_on_time: dict | None = None
+    restriction: dict | None = None
 
 
 async def require_profile(conn: asyncpg.Connection, member_id: str, lang: str) -> None:
@@ -275,7 +284,7 @@ def _row_to_out(
     if isinstance(credential_ref, str):
         import json as _json
         credential_ref = _json.loads(credential_ref)
-    return ListingOut(
+    out = ListingOut(
         saved=saved,
         credential_ref=credential_ref,
         verification_document=row["verification_document"],
@@ -328,12 +337,16 @@ def _row_to_out(
         profile_status="active" if row["state"] in ("active_unverified", "active_verified") else row["state"],
         business_verified=bool(_opt(row, "business_name")) and row["verification_state"] in ("verified", "expiring")
         and row["verification_document"] in BUSINESS_DOCUMENTS,
+        # [Trust pack] a reference from the dev stand-in is not a real check
         credential_verified=(row["verification_state"] in ("verified", "expiring") and row["verification_document"] == "credential")
-        or bool(row["credential_ref"]),
+        or bool(credential_ref and credential_ref.get("source") != "dev_stub"),
         contacts=[dict(c) for c in contacts] if is_owner else [
             dict(c) for c in contacts if c["disclosure"] == "public"
         ],
     )
+    # [Trust pack] council rules: what a non-owner may see of this profile
+    profession_rules.apply_public_view(out, profession_rules.verdict_for_row(row), is_owner=is_owner, lang=lang)
+    return out
 
 
 async def create_listing(
@@ -451,9 +464,26 @@ async def get_listing(
     from app.services.packages import list_listing_packages  # local import: packages imports enquiries, which imports this module
 
     out.packages = [p.model_dump() for p in await list_listing_packages(conn, ctx, lang, str(row["id"]))]
+    await enrich_trust(conn, ctx, lang, out, row)
     if not out.is_owner:  # [FR32] an owner viewing their own listing isn't a detail view
         await log_events(conn, "listing", [row["id"]], "view", "listing_detail", {str(row["id"])} if out.sponsored else set())
     return out
+
+
+async def enrich_trust(conn: asyncpg.Connection, ctx: AuthzContext, lang: str, out: ListingOut, row: asyncpg.Record) -> None:
+    """[Trust pack] Detail-read extras, one place for the detail and my-profile
+    reads: council badges, the "paid on time" count, the owner's restriction
+    and appeal path, and the council rules applied again now that reputation,
+    packages and Sponsored are set."""
+    from app.services import credentials, paid_on_time, restrictions
+
+    out.council_badges = [b.model_dump() for b in (await credentials.badges_for_listings(conn, lang, [row["id"]])).get(str(row["id"]), [])]
+    if any(b["status"] == "verified" for b in out.council_badges):
+        out.credential_verified = True
+    out.paid_on_time = await paid_on_time.summary_for_member(conn, row["owner_id"], lang)
+    if out.is_owner:
+        out.restriction = await restrictions.restriction_for_object(conn, ctx, lang, "listing", row)
+    profession_rules.apply_public_view(out, profession_rules.verdict_for_row(row), is_owner=out.is_owner, lang=lang)
 
 
 async def list_similar_profiles(
@@ -812,6 +842,12 @@ async def suspend_listing(
         "UPDATE vyapar_listings.listings SET state='suspended', state_reason=$2, updated_at=now() WHERE id=$1 RETURNING *",
         listing_id, reason,
     )
+    # [Trust pack] recorded as a decided case and told to the owner with the
+    # appeal path (before, this suspension could not be appealed at all)
+    from app.services.trust_safety import record_operator_action
+
+    await record_operator_action(conn, ctx, kind="listing", object_id=row["id"], subject=row["owner_id"],
+                                 action="remove", reason_code=reason or "policy_other")
     contacts = await conn.fetch(
         "SELECT channel, value, disclosure FROM vyapar_listings.listing_contacts WHERE listing_id = $1", listing_id
     )

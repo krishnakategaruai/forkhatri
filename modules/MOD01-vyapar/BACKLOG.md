@@ -13,7 +13,7 @@ This file lists what is still open after the Upwork + WorkIndia competitive buil
 | B3 | **Better Hindi/Telugu voice** | Voice input uses the browser's speech recognition in en-IN, hi-IN and te-IN, and every field is confirmed before it is saved. Published accuracy is weak for Telugu. | A Bhashini API key (free government service; apply now). |
 | B4 | **Masked phone numbers** for calls before acceptance | Calling hours, daily cap, matching-only callers, "WhatsApp only" as the default, and honest disclosure text. | An Exotel- or Knowlarity-type virtual number vendor (logged in `09a-external-dependencies.md`). |
 | B5 | **Push, SMS and WhatsApp notifications** | The in-app inbox, and outbound webhooks for host platforms. | The host platform's delivery channels, and a VAPID/SMS/WhatsApp Business setup. |
-| B6 | **Real credential checks for professionals** | Credential references are checked against a development stand-in. | The platform Identity & Trust service's credential check (council registers such as ICAI, NMC, Bar Council, Council of Architecture, and DigiLocker). |
+| B6 | **Real credential checks for professionals** | Trust pack (30 Sep): members claim ICAI, NMC/state medical council, NCAHP, State Bar Council, CoA or DigiLocker entries; the badge reads "Pending check" until an operator checks the register in the existing verification queue, then "Registered with {council} · Checked on {date}", re-checked yearly. `CredentialRegistry` adapter with a dev stub that never claims a check. | A register lookup per council, or DigiLocker requester access through API Setu (logged in `09a-external-dependencies.md`). Then set `CREDENTIAL_REGISTRY`. |
 | B7 | **Cross-border client payments, advances on approved work, ONDC business matching** | Not started (from the Vision). | A licensed cross-border payment partner, a lending partner through MOD07, and ONDC network registration. |
 
 ## Needs a decision or review
@@ -28,13 +28,10 @@ This file lists what is still open after the Upwork + WorkIndia competitive buil
 
 ## Next builds (recommended order, from `VISION-2040.md`)
 
-1. **Trust pack.** Needs no outside vendor.
-   - A scam shield across every text a poster writes.
-   - Honest terms, and a "paid on time" count confirmed by the person paid.
-   - Close the loop: every applicant gets a status and a polite closure.
-   - Human appeal for any restriction.
-   - Council-verified professional badges.
-   - **Profession-aware profiles:** lawyers (Bar Council Rule 36) and architects (Council of Architecture) get no promotion, no reviews and no ranking. This is a compliance risk today: advocates are listed with reviews and can be promoted.
+1. **Trust pack.** Backend and API done 30 Sep 2026 (`references/imp-trust-pack.md`); the web screens are next.
+   - Done: the scam shield on every text a poster writes; pay on every post; a "paid on time" count confirmed by the person paid; every applicant gets a final status and a polite closure; a human appeal for every restriction.
+   - Done: profession-aware profiles (advocates and architects get no promotion, no reviews and no ranking boost) and council badges (manual check; the register lookups are B6).
+   - Open: a lawyer's one-time review of the advocate and architect templates (VISION item 5 names it as a precondition). `profession_rules.rules_checked_on` records the date.
 2. **Voice first with Bhashini** (needs B3), plus voice answers to a poster's questions.
 3. **A personal work agent** for workers, professionals and posters: plain-language standing instructions, with limits, a log and undo (needs B2).
 
@@ -48,5 +45,7 @@ This file lists what is still open after the Upwork + WorkIndia competitive buil
   - `check_ai.py`
   - `check_contracts.py`
   - `check_admin_console.py`
+  - `check_profile.py`
+  - `check_trust_pack.py`
   - web `scripts/check-i18n-keys.py`
   - web `scripts/check-contrast.mjs`

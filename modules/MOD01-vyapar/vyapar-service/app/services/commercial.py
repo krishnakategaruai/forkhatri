@@ -47,6 +47,7 @@ from typing import Literal
 import asyncpg
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.services.profession_rules import verdict_for_listing
 from app.config import get_settings
 from app.errors import ApiError
 from app.i18n import translate
@@ -205,6 +206,14 @@ class PromotionRejectOut(BaseModel):
     refund_requested: bool
 
 
+def _raise_ineligible(reason: str, lang: str) -> None:
+    """400 with the reason's own message, except a council's advertising ban,
+    which is a 403 with a stable code the web and agents can recognise."""
+    if reason == "notPermittedForProfession":
+        raise ApiError(403, "commercial.error.notPermittedForProfession", lang, error_code="promotion_not_permitted_for_profession")
+    raise ApiError(400, f"commercial.error.{reason}", lang)
+
+
 def _tax(price_paise: int, tax_rate_bp: int) -> int:
     return (price_paise * tax_rate_bp + 5000) // 10000
 
@@ -223,6 +232,11 @@ async def _eligible_target(conn: asyncpg.Connection, kind: str, target_id: str, 
         target = {"id": str(row["id"]), "title": row["name"], "locality": row["locality"], "categories": list(row["categories"])}
         if row["owner_id"] != member_id:
             return target, "notOwner"
+        # [Trust pack] a profession whose council forbids advertising (Bar
+        # Council Rule 36, Council of Architecture) may not buy reach at all —
+        # checked before "verify first", so the member is told the real reason.
+        if not (await verdict_for_listing(conn, row["id"])).allow_promotion:
+            return target, "notPermittedForProfession"
         active = await is_active(conn, target_id)
         if active is None:
             return target, "notActive"
@@ -407,7 +421,7 @@ async def create_promotion(
     if target is None:
         raise ApiError(404, "commercial.error.notFound", lang)
     if reason:
-        raise ApiError(400, f"commercial.error.{reason}", lang)
+        _raise_ineligible(reason, lang)
     custom_days: int | None = None
     if body.custom_days is not None:
         quoted = await custom_boost_quote(conn, body.custom_days)
@@ -466,7 +480,7 @@ async def confirm_promotion_purchase(
         raise ApiError(400, "commercial.error.invalidTransition", lang)
     _, reason = await _eligible_target(conn, promo["target_kind"], str(promo["target_id"]), ctx.member_id)
     if reason:  # eligibility is re-checked at purchase time, not only at draft
-        raise ApiError(400, f"commercial.error.{reason}", lang)
+        _raise_ineligible(reason, lang)
 
     total = promo["price_paise"] + promo["tax_paise"]
     if promo["state"] == "draft":

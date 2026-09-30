@@ -23,6 +23,7 @@ from app.errors import ApiError
 from app.i18n import translate
 from app.identity import AuthzContext
 from app.services import enquiries as enquiries_svc
+from app.services import profession_rules
 
 Tier = Literal["basic", "standard", "premium"]
 TIER_ORDER = {"basic": 0, "standard": 1, "premium": 2}
@@ -117,7 +118,19 @@ async def list_listing_packages(conn: asyncpg.Connection, ctx: AuthzContext, lan
     except asyncpg.DataError:
         raise ApiError(404, "common.error.listingNotFound", lang)
     rows = sorted(rows, key=lambda r: (r["sort"], TIER_ORDER[r["tier"]]))
+    if rows and not await _prices_public(conn, ctx, listing_id):
+        return []  # [Trust pack] a council that forbids advertised fees (advocates, architects)
     return [_row_to_out(r, lang) for r in rows]
+
+
+async def _prices_public(conn: asyncpg.Connection, ctx: AuthzContext, listing_id: str) -> bool:
+    """False when this viewer may not see prices on this profile: the owner
+    always may; others not when the profile's profession rule forbids public
+    prices and discounts."""
+    row = await conn.fetchrow("SELECT owner_id, categories, capabilities FROM vyapar_listings.listings WHERE id = $1", listing_id)
+    if row is None or row["owner_id"] == ctx.member_id:
+        return True
+    return profession_rules.verdict_for_row(row).allow_public_prices
 
 
 async def _owned_listing(conn: asyncpg.Connection, ctx: AuthzContext, lang: str, listing_id: str) -> asyncpg.Record:
@@ -133,7 +146,20 @@ async def _owned_listing(conn: asyncpg.Connection, ctx: AuthzContext, lang: str,
 async def upsert_listing_packages(conn: asyncpg.Connection, ctx: AuthzContext, lang: str, listing_id: str, body: PackagesUpsertIn) -> list[PackageOut]:
     """Insert-or-update by tier. Tiers not in the body are left as they are
     (delete one explicitly with deleteListingPackage)."""
-    await _owned_listing(conn, ctx, lang, listing_id)
+    owned = await _owned_listing(conn, ctx, lang, listing_id)
+    if not (await profession_rules.verdict_for_listing(conn, owned["id"])).allow_public_prices:
+        raise ApiError(403, "listings.error.packagesNotPermittedForProfession", lang, error_code="packages_not_permitted_for_profession")
+    # [Trust pack — scam shield, "offer" tier] a priced service is fine; a
+    # charge for getting a JOB ("placement fee", "pay and get a job") is not.
+    from app.services import scam_shield
+
+    await scam_shield.guard(
+        ctx.member_id,
+        {f"packages[{i}].{name}": value for i, p in enumerate(body.packages)
+         for name, value in (("name", p.name), ("description", p.description), ("description_hi", p.description_hi),
+                             ("description_te", p.description_te), ("includes", " ".join(p.includes)))},
+        lang, tier="offer", surface="package", object_kind="listing", object_id=listing_id,
+    )
     tiers = [p.tier for p in body.packages]
     if len(set(tiers)) != len(tiers):
         raise ApiError(422, "listings.error.duplicatePackageTier", lang)
@@ -183,7 +209,7 @@ async def request_listing_package(
         )
     except asyncpg.DataError:
         pkg = None
-    if pkg is None:
+    if pkg is None or not await _prices_public(conn, ctx, listing_id):
         raise ApiError(404, "listings.error.packageNotFound", lang)
     package = _row_to_out(pkg, lang)
     enquiry = await enquiries_svc.create_enquiry(

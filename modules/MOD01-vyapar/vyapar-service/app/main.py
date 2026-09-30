@@ -28,6 +28,8 @@ from app.routers.listings import sync_credential_refs
 from app.routers.notifications import notification_loop
 from app.routers.verification import run_verification_expiry_pass, run_verification_image_cleanup
 from app.services.contracts import run_contract_auto_release_pass
+from app.services.profession_rules import refresh_profession_rules  # [Trust pack]
+from app.services.trust_jobs import run_trust_pass  # [Trust pack]
 # [IMP37 — Refactor B] integration edges: token/webhook API, middleware, webhook dispatch loop
 from app.routers import integrations as integrations_router
 # [IMP-B] contact control, service packages, saved searches, badges
@@ -67,6 +69,7 @@ async def verification_cleanup_loop() -> None:
             await run_contract_auto_release_pass(get_pool())  # 14-day auto-release of submitted milestones
             await run_opportunity_expiry_pass(get_pool())  # [Backend A] active -> expired when the last date passes
             await refresh_taxonomy_cache(get_pool())  # keep the label cache current
+            await run_trust_pass(get_pool())  # [Trust pack] paid on time, applicants waiting, council rules, credential expiry
         except Exception:
             import logging
 
@@ -77,6 +80,7 @@ async def verification_cleanup_loop() -> None:
 async def lifespan(app: FastAPI):
     await init_pool()
     await refresh_taxonomy_cache(get_pool())  # [Coordinator bug #2 fix] warm the taxonomy label cache before serving
+    await refresh_profession_rules(get_pool())  # [Trust pack] council rules per taxonomy term
     # [TR021/TR006/TR008] Genuinely scheduled, not only dev-triggerable
     # endpoints — see each router's own header comment for why.
     notify_task = asyncio.create_task(notification_loop())
@@ -164,6 +168,8 @@ from app.routers import ai as ai_router  # noqa: E402  [IMP42 — Workstream C] 
 app.include_router(ai_router.router)
 from app.routers import admin_console as admin_console_router  # noqa: E402  [IMP-ADMIN] ADR-012 Admin & Governance Console views
 app.include_router(admin_console_router.router)
+from app.routers import trust_pack as trust_pack_router  # noqa: E402  [Trust pack] VISION-2040 items 1-5
+app.include_router(trust_pack_router.router)
 
 
 @app.get("/health")

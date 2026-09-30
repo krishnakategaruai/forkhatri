@@ -9,7 +9,7 @@
     "alreadyAppealed": "You've already appealed this decision.",
     "permissionRequired": "Operator 'moderation' permission required.",
     "appealNotFound": "Appeal not found.",
-    "seekerChargeNotAllowed": "No fee, deposit or kit charge may be asked from applicants. Remove it to publish this post."
+    "seekerChargeNotAllowed": "Vyapar does not allow asking people who apply for any fee, deposit or charge. Remove it and try again."
   },
   "action": {
     "limit": "distribution limited",
@@ -31,7 +31,17 @@
     "policy_other": "another policy breach",
     "no_violation": "no violation found",
     "appeal_evidence_accepted": "appeal evidence accepted",
-    "asked_for_money": "asked applicants for money"
+    "asked_for_money": "asked applicants for money",
+    "removed_by_operator": "removed after review by our team",
+    "seeker_charge": "asked applicants for money",
+    "seeker_charge_reports": "reported by people who were asked for money",
+    "prohibited_content": "content not allowed on Vyapar",
+    "spam_pattern": "looks like spam",
+    "duplicate": "a duplicate of another post",
+    "source_unreachable": "the original source can no longer be reached",
+    "other": "another policy reason",
+    "account_suspended": "the account is suspended",
+    "returned_for_more_info": "more information is needed"
   },
   "appealDecision": {
     "upheld": "not accepted — the decision stands",
@@ -41,5 +51,30 @@
     "title": "Nobody may charge people who apply",
     "body": "No fee, deposit or kit charge may be asked from people who apply. Report if asked.",
     "reportLabel": "Report: asked me for money"
+  },
+  "scamShield": {
+    "rule": {
+      "fee_phrase": "It names a charge on the applicant (registration fee, security deposit, kit or uniform charge, training fee and the like). Real employers never charge the people they hire.",
+      "applicant_pays": "It asks the applicant to pay or deposit money. On Vyapar, the person who posted pays; the person who works is never asked to pay.",
+      "pay_before": "It asks for money before joining or before the interview. That is the most common job scam.",
+      "phone_payment": "It asks people to send money to a phone number or through a payment app (UPI, GPay, PhonePe, Paytm).",
+      "job_fee": "It charges for getting a job (a placement fee, or \"pay and get a job\"). A service may have a price; a job may not."
+    }
+  },
+  "restriction": {
+    "kind": {
+      "removed": "Removed",
+      "paused": "Paused by Vyapar",
+      "suspended": "Suspended",
+      "limited": "Shown to fewer people",
+      "held": "Waiting for a check",
+      "hidden": "Hidden"
+    },
+    "message": {
+      "underReview": "A person from our team will look at this. You can add your side now; you don't have to wait for the decision.",
+      "canAppeal": "If you think this is wrong, appeal within 15 days and a different person from our team will review it.",
+      "appealOpen": "Your appeal is with our team. We'll tell you the outcome here.",
+      "contact": "To talk to a person about this, write to {contact}."
+    }
   }
 }

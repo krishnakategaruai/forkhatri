@@ -158,7 +158,9 @@ async def _create_from_identity(conn: asyncpg.Connection, ctx: AuthzContext, lan
 
 async def _out(conn: asyncpg.Connection, ctx: AuthzContext, lang: str, row: asyncpg.Record) -> ListingOut:
     contacts = await conn.fetch("SELECT channel, value, disclosure FROM vyapar_listings.listing_contacts WHERE listing_id = $1", row["id"])
-    return listings_svc._row_to_out(row, contacts, ctx.member_id, lang=lang)
+    out = listings_svc._row_to_out(row, contacts, ctx.member_id, lang=lang)
+    await listings_svc.enrich_trust(conn, ctx, lang, out, row)  # [Trust pack] badges, paid on time, restriction
+    return out
 
 
 async def get_my_profile(conn: asyncpg.Connection, ctx: AuthzContext, lang: str) -> MyProfileOut:

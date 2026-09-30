@@ -74,6 +74,9 @@ SEEKER_CHARGE_PATTERNS: tuple[str, ...] = ADVANCE_PAYMENT_PATTERNS + (
     "కిట్ ఫీజు", "యూనిఫాం ఫీజు", "శిక్షణ ఫీజు", "ట్రైనింగ్ ఫీజు", "జాయినింగ్ ఫీజు", "అభ్యర్థి చెల్లించాలి",
 )
 SEEKER_PROTECTED_TYPES = ("employment",)
+# [Trust pack] Post types where the person who responds is the one paid, so
+# any charge on them is refused (scam_shield "hiring" tier).
+HIRING_TYPES = ("employment", "freelance", "local_service")
 
 
 class SeekerProtectionOut(BaseModel):
@@ -119,11 +122,17 @@ def check_seeker_charge(text: str, structured: dict | None, lang: str = "en") ->
     if _truthy(structured.get("candidate_pays")) or (amount not in (None, 0, "0", "")):
         raise ApiError(422, "trust_safety.error.seekerChargeNotAllowed", lang, error_code="seeker_charge_not_allowed",
                        extra={"field": "candidate_pays", "type": opp_type})
-    blob = (text or "").lower()
-    hit = next((p for p in SEEKER_CHARGE_PATTERNS if p in blob), None)
-    if hit is not None:
-        raise ApiError(422, "trust_safety.error.seekerChargeNotAllowed", lang, error_code="seeker_charge_not_allowed",
-                       extra={"field": "text", "matched": hit, "type": opp_type})
+    # [Trust pack] Named rules in en/hi/te/Hinglish (app/services/scam_shield.py)
+    # replace the phrase list, which also refused an honest "We pay ₹18,000".
+    # Paid work (jobs, projects, local services) gets every rule; training,
+    # community and partnership posts only the job-fee and phone-payment
+    # rules, because a course fee or a government form fee is legitimate there.
+    from app.services import scam_shield
+
+    tier = "hiring" if opp_type in HIRING_TYPES else "offer"
+    match = scam_shield.detect(text, tier)
+    if match is not None:
+        raise scam_shield.refuse(match, lang, field="text", opportunity_type=opp_type, surface="opportunity")
 
 
 @hooks.register_opportunity_enricher
@@ -183,6 +192,20 @@ async def _apply_seeker_charge_reports(conn: asyncpg.Connection, opportunity_id:
 class ReportReceivedOut(BaseModel):
     received: bool
     block_member_id: str | None
+
+
+async def record_operator_action(conn: asyncpg.Connection, ctx: AuthzContext, *, kind: str, object_id, subject: str | None,
+                                 action: str, reason_code: str) -> str | None:
+    """[Trust pack] An operator restriction taken outside the moderation queue
+    (listing suspend, review-queue removal) becomes a decided case, and the
+    member is told with the appeal path — so every restriction can be appealed."""
+    if not subject:
+        return None
+    case_id = await conn.fetchval(
+        "SELECT vyapar_trust_safety.record_operator_action($1, $2, $3, $4, $5)", kind, object_id, subject, action, reason_code)
+    await _notify(conn, subject, "moderationOutcome", f"moderation_outcome:{case_id}:{action}", "/moderation/outcomes",
+                  action=action, reason=reason_code, case_id=str(case_id))
+    return str(case_id)
 
 
 class ModerationOutcomeOut(BaseModel):
@@ -482,6 +505,13 @@ async def _apply_action(conn: asyncpg.Connection, case: asyncpg.Record, action: 
         await _set_limited(conn, kind, object_id, False)
         await _lift_suspension(conn, case_id)
         if kind == "listing":
+            # [Trust pack] an appeal upheld against an automated hold on a new
+            # profile publishes it, as the submit would have.
+            await conn.execute(
+                """UPDATE vyapar_listings.listings SET state = 'active_unverified', published_at = coalesce(published_at, now()),
+                     updated_at = now() WHERE id = $1 AND state = 'submitted' AND state_reason IS NOT NULL""",
+                object_id,
+            )
             await conn.execute(
                 """UPDATE vyapar_listings.listings SET
                      state = CASE WHEN state = 'suspended'
@@ -495,8 +525,11 @@ async def _apply_action(conn: asyncpg.Connection, case: asyncpg.Record, action: 
                 object_id,
             )
         elif kind == "opportunity":
+            # [Trust pack] also the seeker-charge report pause (the poster's own
+            # pause has no state_reason and is never touched)
             await conn.execute(
-                "UPDATE vyapar_opportunities.opportunities SET state = 'active', state_reason = NULL, updated_at = now() WHERE id = $1 AND state = 'removed'",
+                """UPDATE vyapar_opportunities.opportunities SET state = 'active', state_reason = NULL, updated_at = now()
+                    WHERE id = $1 AND (state = 'removed' OR (state = 'paused' AND state_reason = 'seeker_charge_reports'))""",
                 object_id,
             )
         else:
@@ -663,9 +696,11 @@ async def decide_appeal(
     if body.decision == "overturned":
         case = await conn.fetchrow("SELECT * FROM vyapar_trust_safety.moderation_cases WHERE id = $1", appeal["case_id"])
         await _apply_action(conn, case, "restore", body.reason_code)
+        # [Trust pack] an appeal against an interim hold also closes the case
         await conn.execute(
             """UPDATE vyapar_trust_safety.moderation_cases SET action = 'restore', reason_code = $2, operator_id = $3,
-                 decided_at = now(), distribution_limited = false, updated_at = now() WHERE id = $1""",
+                 decided_at = now(), distribution_limited = false, updated_at = now(),
+                 state = CASE WHEN state IN ('open','in_review','escalated') THEN 'actioned' ELSE state END WHERE id = $1""",
             appeal["case_id"], body.reason_code, ctx.member_id,
         )
     await conn.execute(

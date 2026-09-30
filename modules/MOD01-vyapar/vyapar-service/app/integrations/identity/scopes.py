@@ -59,10 +59,14 @@ TOKEN_FORBIDDEN_PREFIXES: tuple[str, ...] = (
     "/v1/members/me",
     "/v1/integrations",
 )
-TOKEN_ALLOWED_EXCEPTIONS: frozenset[tuple[str, str]] = frozenset({("GET", "/v1/integrations/me")})
+TOKEN_ALLOWED_EXCEPTIONS: frozenset[tuple[str, str]] = frozenset({
+    ("GET", "/v1/integrations/me"),
+    ("GET", "/v1/credentials/types"),  # [Trust pack] the list of registers is public reference data
+})
 
 # Listing verification documents and phone OTP stay with the member in person.
-TOKEN_FORBIDDEN_SEGMENTS: tuple[str, ...] = ("/verification", "/otp/", "/credential-ref/")
+# [Trust pack] council register claims too: a person claims their own enrolment number.
+TOKEN_FORBIDDEN_SEGMENTS: tuple[str, ...] = ("/verification", "/otp/", "/credential-ref/", "/credentials")
 
 # Write path prefix -> scope. Order matters only for readability; prefixes do not overlap.
 WRITE_SCOPE_BY_PREFIX: tuple[tuple[str, tuple[str, ...]], ...] = (
@@ -82,6 +86,10 @@ WRITE_SCOPE_BY_PREFIX: tuple[tuple[str, tuple[str, ...]], ...] = (
     # Client-observed analytics events (impressions, scroll depth) carry no
     # state change and follow the member's own analytics consent.
     ("/v1/events", ("read",)),
+    # [Trust pack] "Were you paid on time?" is a reputation answer, like a review.
+    ("/v1/paid-on-time", ("reviews:write",)),
+    # The scam-shield pre-check stores nothing.
+    ("/v1/trust/scam-check", ("read",)),
 )
 
 # [IMP-B/L1] Writes whose area is decided by the path's last segment, checked

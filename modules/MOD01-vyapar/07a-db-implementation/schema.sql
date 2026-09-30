@@ -2386,3 +2386,74 @@ ALTER TABLE vyapar_listings.listings
 CREATE UNIQUE INDEX IF NOT EXISTS listings_one_profile_per_owner
   ON vyapar_listings.listings (owner_id)
   WHERE state IN ('draft','submitted','active_unverified','active_verified');
+
+-- =============================================================================
+-- [028] Trust pack (see migrations/028-trust-pack.sql for the functions:
+-- listing_promotion_forbidden, paid_on_time_due/_counts, record_operator_action,
+-- file_appeal v2, object_is_held, my_restriction_cases, badge_inputs fix,
+-- cancel_profession_restricted_promotions, the RLS policies and the seed rules).
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS vyapar_listings.profession_rules (
+  id                       serial PRIMARY KEY,
+  term_kind                text NOT NULL CHECK (term_kind IN ('category','capability')),
+  term_slug                text NOT NULL,
+  profession               text NOT NULL,
+  regulator                text NOT NULL,
+  rule_reference           text NOT NULL,
+  allow_promotion          boolean NOT NULL DEFAULT true,
+  allow_public_reviews     boolean NOT NULL DEFAULT true,
+  allow_ranking_boost      boolean NOT NULL DEFAULT true,
+  allow_public_prices      boolean NOT NULL DEFAULT true,
+  permitted_profile_fields text[],
+  note_key                 text,
+  rules_checked_on         date NOT NULL,
+  source_url               text,
+  active                   boolean NOT NULL DEFAULT true,
+  created_at               timestamptz NOT NULL DEFAULT now(),
+  updated_at               timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (term_kind, term_slug)
+);
+CREATE TABLE IF NOT EXISTS vyapar_reviews.paid_on_time_asks (
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  source_kind    text NOT NULL CHECK (source_kind IN ('milestone','hire')),
+  source_id      uuid NOT NULL,
+  payer_id       text NOT NULL,
+  payee_id       text NOT NULL,
+  title          text,
+  opportunity_id uuid,
+  contract_id    uuid,
+  asked_at       timestamptz NOT NULL DEFAULT now(),
+  answer         boolean,
+  answered_at    timestamptz,
+  CHECK (payer_id <> payee_id),
+  CHECK ((answer IS NULL) = (answered_at IS NULL)),
+  UNIQUE (source_kind, source_id)
+);
+CREATE TABLE IF NOT EXISTS vyapar_listings.council_credentials (
+  id                     uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  listing_id             uuid NOT NULL REFERENCES vyapar_listings.listings(id) ON DELETE CASCADE,
+  member_id              text NOT NULL,
+  credential_type        text NOT NULL CHECK (credential_type IN (
+                           'icai_membership','medical_council_registration','allied_health_registration',
+                           'bar_council_enrolment','coa_registration','digilocker_document')),
+  council                text NOT NULL,
+  registration_number    text NOT NULL,
+  registered_on          date,
+  document_uri           text,
+  status                 text NOT NULL DEFAULT 'claimed' CHECK (status IN ('claimed','verified','expired','failed')),
+  check_source           text CHECK (check_source IN ('dev_stub','registry','operator')),
+  last_attempt_at        timestamptz,
+  last_checked_at        timestamptz,
+  verified_at            timestamptz,
+  expires_at             timestamptz,
+  checked_by             text,
+  check_note             text CHECK (check_note IS NULL OR char_length(check_note) <= 300),
+  verification_record_id uuid REFERENCES vyapar_listings.verification_records(id) ON DELETE SET NULL,
+  created_at             timestamptz NOT NULL DEFAULT now(),
+  updated_at             timestamptz NOT NULL DEFAULT now(),
+  CHECK (char_length(registration_number) BETWEEN 3 AND 60),
+  UNIQUE (listing_id, credential_type)
+);
+ALTER TABLE vyapar_trust_safety.moderation_cases DROP CONSTRAINT IF EXISTS moderation_cases_source_check;
+ALTER TABLE vyapar_trust_safety.moderation_cases ADD CONSTRAINT moderation_cases_source_check
+  CHECK (source = ANY (ARRAY['report'::text, 'auto_flag'::text, 'review_dispute'::text, 'operator'::text]));

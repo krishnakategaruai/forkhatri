@@ -52,4 +52,7 @@ def credential_ref_payload(cred: dict) -> dict:
     room for a MOD04 Counsel ExpertProfile field, per TR006's own
     structural-absence rule."""
     now = datetime.now(timezone.utc).isoformat()
-    return {"id": cred["id"], "claim": cred["claim"], "issuer": cred["issuer"], "verified_at": now, "last_checked": now}
+    # [Trust pack] marked as the dev stand-in, so no screen or rule treats it
+    # as a real council check (listings.credential_verified ignores it).
+    return {"id": cred["id"], "claim": cred["claim"], "issuer": cred["issuer"], "verified_at": now, "last_checked": now,
+            "source": "dev_stub"}

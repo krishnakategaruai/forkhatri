@@ -41,6 +41,7 @@ from app.identity import AuthzContext
 from app.notifications import notify_interaction_party
 from app.services.listings import _content_flags
 from app.services.pagination import DEFAULT_LIMIT, MAX_LIMIT, Page, paginate
+from app.services.profession_rules import verdict_for_listing
 
 
 InteractionKind = Literal["enquiry", "partnership"]
@@ -53,6 +54,7 @@ class ReviewInviteStatusOut(BaseModel):
     expires_at: str | None
     already_reviewed: bool
     review_state: str | None
+    blocked_reason: str | None = None  # [Trust pack] "profession_rules": the council forbids public reviews
     tags_positive: list[str]
     tags_negative: list[str]
 
@@ -104,16 +106,21 @@ async def get_review_invite_status(
     interaction_id: str,
 ) -> ReviewInviteStatusOut:
     invite = await conn.fetchrow(
-        "SELECT expires_at, used_at FROM vyapar_reviews.review_invites WHERE interaction_kind = $1 AND interaction_id = $2 AND member_id = $3",
+        "SELECT expires_at, used_at, subject_listing_id FROM vyapar_reviews.review_invites WHERE interaction_kind = $1 AND interaction_id = $2 AND member_id = $3",
         interaction_kind, interaction_id, ctx.member_id,
     )
+    # [Trust pack] an advocate or architect is never reviewed publicly
+    blocked = (invite is not None and invite["subject_listing_id"] is not None
+               and not (await verdict_for_listing(conn, invite["subject_listing_id"])).allow_public_reviews)
     review = await conn.fetchrow(
         "SELECT state FROM vyapar_reviews.reviews WHERE interaction_kind = $1 AND interaction_id = $2 AND author_id = $3",
         interaction_kind, interaction_id, ctx.member_id,
     )
     settings = get_settings()
     return ReviewInviteStatusOut(
-        can_review=invite is not None and invite["used_at"] is None and invite["expires_at"] > datetime.now(timezone.utc) and review is None,
+        can_review=invite is not None and invite["used_at"] is None and invite["expires_at"] > datetime.now(timezone.utc) and review is None
+        and not blocked,
+        blocked_reason="profession_rules" if blocked else None,
         expires_at=invite["expires_at"].isoformat() if invite else None,
         already_reviewed=review is not None,
         review_state=review["state"] if review else None,
@@ -165,6 +172,8 @@ async def create_review(
         raise ApiError(409, "reviews.error.alreadyReviewed", lang)
     if invite is None or invite["used_at"] is not None or invite["expires_at"] <= datetime.now(timezone.utc):
         raise ApiError(403, "reviews.error.noQualifyingInteraction", lang)
+    if invite["subject_listing_id"] is not None and not (await verdict_for_listing(conn, invite["subject_listing_id"])).allow_public_reviews:
+        raise ApiError(403, "reviews.error.notPermittedForProfession", lang, error_code="reviews_not_permitted_for_profession")
 
     flag = _content_flags(comment or "", None, None) if comment else None
     state = "hidden" if flag else "published"
@@ -204,6 +213,10 @@ async def list_listing_reviews(
         rows = await conn.fetch("SELECT * FROM vyapar_reviews.reviews_for_listing($1)", listing_id)
     except asyncpg.DataError:
         return []
+    # [Trust pack] no public reviews on a profile whose council forbids them;
+    # the two people in the review still see it.
+    if rows and not (await verdict_for_listing(conn, listing_id)).allow_public_reviews:
+        rows = [r for r in rows if r["is_subject"] or r["is_author"]]
     return [
         ListingReviewOut(
             id=str(r["id"]), recommend=r["recommend"], tags=list(r["tags"]), comment=r["comment"],

@@ -3053,3 +3053,51 @@ Six points, applied across the shell and the screens they touch:
 6. **Rough edges.** Boost end date is written out ("12 October 2026"); plain content links share one accent, no-underline-until-hover style; the stray "·" before the locality on the profile card is gone.
 
 Verified at 1440px and 390px (screenshots 93–95), no console errors.
+
+## IMP-TRUST — Trust pack: scam shield, honest terms and "paid on time", close the loop, profession-aware profiles, council badges (2026-09-30)
+
+VISION-2040 items 1–5 ("next 3 builds" #1), backend and API. The full contract, with JSON examples, is in `references/imp-trust-pack.md`.
+
+- **Migration `028-trust-pack.sql`** (idempotent; applied repeatedly to the dev DB). It adds:
+  - `profession_rules` (data, per taxonomy term) and `council_credentials`;
+  - `paid_on_time_asks`, readable and answerable by the payee only;
+  - operator-source moderation cases, and appeals on interim holds;
+  - `my_restriction_cases()`;
+  - a narrow function that cancels promotions on restricted profiles;
+  - a fix to the "Verified business owner" badge rule, which an advocate verified by her Bar Council credential was wrongly carrying.
+- **Scam shield** (`services/scam_shield.py`):
+  - five named rules in en/hi/te/Hinglish, applied to post text (including a pasted share text), interview details, screening questions, the poster's replies in application threads, and package text;
+  - refusal is 422 `seeker_charge_not_allowed` with a localized explanation and the rule;
+  - each refusal writes an out-of-band trust event (`trust.seeker_charge_blocked`);
+  - it fixes the old list's false positive on "We pay ₹18,000".
+- **Honest terms:** a local-service post now needs a budget or a fee basis to publish (422 `pay_basis_required`).
+- **Paid on time:** the paid person answers after a released contract stage, or 30 days after a hire. The count shows on profiles and posts after 3 answers ("Paid on time: 2 of 3").
+- **Close the loop:**
+  - closing, expiry and filling (hires reach `openings`) give every waiting applicant `declined` / `post_closed` and one polite notification;
+  - a renewed post takes them back;
+  - `getOpportunityCloseCheck`, `applicants_waiting` on the poster's detail read, and a weekly nudge;
+  - listing suspension and review-queue removal now create appealable cases, interim holds can be appealed, and `listMyRestrictions` lists every restriction.
+- **Profession rules:**
+  - advocates (Bar Council Rule 36) and architects (CoA) get no promotion (403 `promotion_not_permitted_for_profession`), no public reviews or badges, no ranking boost or Sponsored slot, no public packages or rates, and only permitted fields for others;
+  - the CA rule adds a wording note only;
+  - applied to Kavita Dhawan and Deepak Bhalla, who had no promotions to archive.
+- **Council badges:**
+  - six register types with format checks;
+  - a `CredentialRegistry` adapter with a dev stub that never verifies;
+  - the badge reads "Pending check" until an operator checks the register in the existing verification queue, then "Registered with {council} · Checked on {date}";
+  - yearly expiry;
+  - the real registers are logged as a vendor blocker in `09a-external-dependencies.md`.
+- **MCP:** 7 new tools (71 in total). **OpenAPI:** regenerated, 259 operations, ids unique.
+- **Checks, on private ports 8093/8094:**
+
+  | Script | Result |
+  |---|---|
+  | `check_trust_pack.py` (new) | 97/97 |
+  | `check_structured_hiring.py` | 130/130 |
+  | `check_profile.py` | 33/33 |
+  | `check_contracts.py` | 92/92 |
+  | `check_admin_console.py` | 77/77 |
+  | `check_backend_b.py` | 168/168 |
+  | `check_ai.py` | 68/68 |
+
+  Every script cleaned up after itself; the trust-pack sweep found no leftover rows.

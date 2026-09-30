@@ -8,5 +8,49 @@
       "pan": "यह मान्य 10-अक्षर वाला PAN नहीं लगता।",
       "udyam": "यह मान्य Udyam पंजीकरण नंबर नहीं लगता।"
     }
+  },
+  "council": {
+    "type": {
+      "icai_membership": "ICAI सदस्यता नंबर",
+      "medical_council_registration": "मेडिकल काउंसिल रजिस्ट्रेशन",
+      "allied_health_registration": "अलाइड हेल्थ रजिस्टर (NCAHP)",
+      "bar_council_enrolment": "बार काउंसिल एनरोलमेंट",
+      "coa_registration": "काउंसिल ऑफ़ आर्किटेक्चर रजिस्ट्रेशन",
+      "digilocker_document": "DigiLocker दस्तावेज़"
+    },
+    "numberHint": {
+      "icai_membership": "6 अंक, जैसे 212345",
+      "medical_council_registration": "जैसा आपके रजिस्ट्रेशन सर्टिफ़िकेट पर छपा है",
+      "allied_health_registration": "जैसा NCAHP रजिस्टर में दिखता है",
+      "bar_council_enrolment": "राज्य/नंबर/साल, जैसे TS/1234/2015",
+      "coa_registration": "CA/साल/नंबर, जैसे CA/2010/12345",
+      "digilocker_document": "दस्तावेज़ नंबर, और उसका DigiLocker लिंक"
+    },
+    "badge": {
+      "verified": "{council} में रजिस्टर्ड",
+      "claimed": "{council}: जाँच बाकी",
+      "expired": "{council}: फिर से जाँच ज़रूरी",
+      "failed": "{council}: पुष्टि नहीं हो सकी"
+    },
+    "checkedOn": "{date} को जाँचा गया",
+    "pendingCheck": "जाँच बाकी",
+    "error": {
+      "numberFormat": {
+        "icai_membership": "ICAI सदस्यता नंबर में 6 अंक होते हैं।",
+        "medical_council_registration": "सर्टिफ़िकेट पर छपा रजिस्ट्रेशन नंबर डालें।",
+        "allied_health_registration": "NCAHP रजिस्टर में दिखने वाला रजिस्ट्रेशन नंबर डालें।",
+        "bar_council_enrolment": "एनरोलमेंट नंबर राज्य/नंबर/साल की तरह लिखें, जैसे TS/1234/2015।",
+        "coa_registration": "रजिस्ट्रेशन नंबर CA/साल/नंबर की तरह लिखें, जैसे CA/2010/12345।",
+        "digilocker_document": "DigiLocker में दिखने वाला दस्तावेज़ नंबर डालें।"
+      },
+      "councilRequired": {
+        "bar_council_enrolment": "अपनी स्टेट बार काउंसिल चुनें, जैसे Bar Council of Telangana।",
+        "medical_council_registration": "नेशनल मेडिकल कमीशन या अपनी राज्य मेडिकल काउंसिल चुनें।",
+        "digilocker_document": "दस्तावेज़ किसने जारी किया, उसका नाम लिखें, जैसे Osmania University।"
+      },
+      "documentUri": "दस्तावेज़ का DigiLocker लिंक जोड़ें (यह in.gov. से शुरू होता है)।",
+      "exists": "यह रजिस्टर पहले से आपकी प्रोफ़ाइल पर है। नंबर बदलने के लिए पहले इसे हटाएँ।",
+      "notFound": "यह रजिस्टर एंट्री आपकी प्रोफ़ाइल पर नहीं है।"
+    }
   }
 }

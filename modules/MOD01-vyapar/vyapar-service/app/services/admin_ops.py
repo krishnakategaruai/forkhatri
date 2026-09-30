@@ -286,6 +286,11 @@ async def decide_opportunity_review(
             opportunity_id, body.reason or "removed_by_operator",
         )
         new_state = "removed"
+        # [Trust pack] a decided case + notice with the appeal path
+        from app.services.trust_safety import record_operator_action
+
+        await record_operator_action(conn, ctx, kind="opportunity", object_id=current["id"], subject=current["poster_id"],
+                                     action="remove", reason_code=body.reason or "removed_by_operator")
     await publish_with_outbox(conn, schema="opportunity", event_type="opportunity.queue_decided", payload={"id": opportunity_id, "action": body.action})
     await audit(conn, actor_id=ctx.member_id, action=f"opportunity_queue_{body.action}", object_kind="opportunity", object_id=opportunity_id, reason_code=body.reason)
     return QueueDecisionOut(state=new_state)

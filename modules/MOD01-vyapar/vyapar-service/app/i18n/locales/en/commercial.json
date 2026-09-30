@@ -14,6 +14,7 @@
     "productKindMismatch": "A product id always keeps its original kind.",
     "notRefundable": "This order can't be refunded.",
     "refundExceedsOrder": "A refund can't exceed the remaining order value ({remaining}).",
-    "invalidDuration": "A promotion can run from 1 to 30 days."
+    "invalidDuration": "A promotion can run from 1 to 30 days.",
+    "notPermittedForProfession": "Your profession's council does not allow advertising, so this profile can't be promoted. People still find you in search."
   }
 }

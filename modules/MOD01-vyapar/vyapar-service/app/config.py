@@ -122,6 +122,19 @@ class Settings(BaseSettings):
     # [IMP-B/L1] Pre-accept calling: taps one caller may make per post per day.
     precall_caller_taps_per_day: int = 3
 
+    # [Trust pack] Council / DigiLocker lookups (app/integrations/credentials/).
+    # "dev_stub" never checks anything; a verified badge then needs an operator.
+    credential_registry: str = "dev_stub"
+    # A council-verified badge is re-checked this often (the register can lapse).
+    credential_recheck_days: int = 365
+    # "Paid on time" is asked this many days after a hire (contract stages: on release).
+    paid_on_time_ask_after_hire_days: int = 30
+    # The count shows on the payer's profile once this many people answered.
+    paid_on_time_min_answers: int = 3
+    # "N applicants still waiting": nudge the poster when an application has
+    # had no answer for this many days (at most once a week per post).
+    applicants_waiting_nudge_days: int = 7
+
     @property
     def identity_provider_names(self) -> list[str]:
         names = [n.strip().lower() for n in self.identity_providers.split(",") if n.strip()]

@@ -41,6 +41,7 @@ from app.text_fold import contains_phrase, fold, prefix_hits, words
 from app.trade_match import trade_matcher
 from app.place_label import distance_label
 from app.services.listings import ListingOut, _row_to_out
+from app.services.profession_rules import verdict_for_row as profession_verdict
 
 
 RADIUS_STEPS = [5, 10, 25]
@@ -270,26 +271,44 @@ async def search_listings(
 
     reps = await reputation_for_listings(conn, [r for _, r, _ in matched])
     scored = []
+    # [Trust pack] A profile whose council forbids advertising (advocates,
+    # architects) gets no ranking boost: no trust, reputation or freshness
+    # score, never "verified first", and among equal matches a neutral
+    # distance-then-name order. Text relevance and filters still apply (the
+    # person searched for them), so they are found, never promoted.
+    neutral = {str(r["id"]) for _, r, _ in matched if not profession_verdict(r).allow_ranking_boost}
     for rel, r, d in matched:
+        if str(r["id"]) in neutral:
+            scored.append((rel, 0.0, "matchesFilters", r, d))
+            continue
         signals = _listing_signals(r, q, distance_km=d, rep=reps.get(str(r["id"])))
         keys = top_signal_keys(signals, limit=1)
         scored.append((rel, score(signals), keys[0] if keys else "matchesFilters", r, d))
+
+    def _name(t) -> str:
+        return (t[3]["name"] or "").lower()
+
     if sort_by == "distance":
-        scored.sort(key=lambda t: (t[4] is None, t[4] or 0, -t[0]))
+        scored.sort(key=lambda t: (t[4] is None, t[4] or 0, -t[0], _name(t)))
     elif sort_by == "freshness":
         scored.sort(key=lambda t: t[3]["published_at"] or t[3]["created_at"], reverse=True)
     elif sort_by == "verified_first":
-        scored.sort(key=lambda t: (t[3]["verification_state"] != "verified", -t[0], t[4] if t[4] is not None else 1e9))
+        scored.sort(key=lambda t: (t[3]["verification_state"] != "verified" or str(t[3]["id"]) in neutral, -t[0],
+                                   t[4] if t[4] is not None else 1e9, _name(t)))
     else:
-        scored.sort(key=lambda t: (-t[0], t[4] is None, t[4] or 0, -t[1]))
+        scored.sort(key=lambda t: (-t[0], t[4] is None, t[4] or 0, -t[1], _name(t)))
 
     results = []
     page_rows = scored[:limit]
     owner_badges = await badges_for_members(conn, [row["owner_id"] for _, _, _, row, _ in page_rows], lang)
+    from app.services.credentials import badges_for_listings
+
+    council = await badges_for_listings(conn, lang, [row["id"] for _, _, _, row, _ in page_rows])
     for _, _, reason, row, d in page_rows:
         card = _row_to_out(row, [], ctx.member_id, lang=lang)
         card.reputation = reps.get(str(row["id"]))
         card.badges = [b.model_dump() for b in owner_badges.get(row["owner_id"], [])]
+        card.council_badges = [b.model_dump() for b in council.get(str(row["id"]), [])]
         results.append(SearchResult(listing=card, relevance_reason=reason, distance_km=round(d, 1) if d is not None else None,
                                     distance_label=distance_label(d, lang)))
 
@@ -309,6 +328,8 @@ async def search_listings(
                 if audience.get("category") and audience["category"] != category:
                     continue
                 row = row_by_id[str(boost["target_id"])]
+                if str(row["id"]) in neutral:  # [Trust pack] never a Sponsored slot for a profession that may not advertise
+                    continue
                 card = _row_to_out(row, [], ctx.member_id, lang=lang)
                 card.reputation = reps.get(str(row["id"]))
                 card.sponsored = True

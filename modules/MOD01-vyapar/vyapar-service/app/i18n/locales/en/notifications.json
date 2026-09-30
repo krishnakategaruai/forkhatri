@@ -179,5 +179,29 @@
   "opportunityExpired": {
     "title": "Your post expired: {title}",
     "body": "Its last date has passed, so it no longer shows in Discover or takes applications. Renew it to bring it back."
+  },
+  "applicantPostClosed": {
+    "title": "Update on {title}",
+    "body": "This post has closed, so your application won't go further this time. It isn't a judgement of you. There are similar posts on Vyapar."
+  },
+  "applicantPostFilled": {
+    "title": "Update on {title}",
+    "body": "All the openings for this post have been filled, so your application won't go further this time. It isn't a judgement of you. There are similar posts on Vyapar."
+  },
+  "applicantsWaiting": {
+    "title": "People are waiting for your answer: {title}",
+    "body": "Waiting more than a week without an answer: {count}. Shortlist, hire or decline; declining takes one tap and they're told politely."
+  },
+  "paidOnTimeAsk": {
+    "title": "Were you paid on time? {title}",
+    "body": "One question, Yes or No. The person who paid never sees your answer; others see only the total once three people have answered."
+  },
+  "councilCredentialExpired": {
+    "title": "Your {council} registration needs a fresh check",
+    "body": "It was checked more than a year ago, so your profile no longer says \"Registered\". Ask for a new check from your profile."
+  },
+  "promotionCancelledProfession": {
+    "title": "Your promotion was stopped",
+    "body": "Your profession's council does not allow advertising, so profiles like yours can't be promoted on Vyapar. Our team will refund any amount paid."
   }
 }

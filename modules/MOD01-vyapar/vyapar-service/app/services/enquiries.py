@@ -389,8 +389,11 @@ async def create_enquiry(
     if body.opportunity_id:
         # A declined application is final: the poster has already answered it.
         declined = await conn.fetchval(
+            # [Trust pack] declined only because the post closed is not a
+            # decision about them: a renewed post takes their application again.
             """SELECT EXISTS (SELECT 1 FROM vyapar_enquiries.enquiries
-                WHERE sender_id = $1 AND opportunity_id = $2 AND stage = 'declined')""",
+                WHERE sender_id = $1 AND opportunity_id = $2 AND stage = 'declined'
+                  AND coalesce(state_reason, '') <> 'post_closed')""",
             ctx.member_id, body.opportunity_id,
         )
         if declined:
@@ -597,6 +600,20 @@ async def reply_to_enquiry(
     row = await _get_enquiry_or_404(conn, enquiry_id, ctx.member_id, lang)
     if row["state"] == "restricted":
         raise ApiError(400, "enquiries.error.restricted", lang)
+    # [Trust pack — scam shield] the person who POSTED a job, project or local
+    # service writing to someone who responded: the same "nobody charges the
+    # people who apply" rules as the post itself. A business answering a
+    # customer's price request (listing thread) is not checked — quoting a
+    # price is the point there.
+    if row["opportunity_id"] is not None and ctx.member_id == row["provider_id"]:
+        from app.services import scam_shield
+        from app.services.trust_safety import HIRING_TYPES
+
+        opp_type = await conn.fetchval("SELECT type FROM vyapar_opportunities.opportunities WHERE id = $1", row["opportunity_id"])
+        await scam_shield.guard(
+            ctx.member_id, {"message": body.body}, lang, tier="hiring" if opp_type in HIRING_TYPES else "offer",
+            surface="enquiry_reply", object_kind="enquiry", object_id=str(row["id"]), opportunity_type=opp_type,
+        )
     # [TR042] content_language recorded on every authored message, same as
     # the create-enquiry path — reply text is content too.
     msg = await conn.fetchrow(

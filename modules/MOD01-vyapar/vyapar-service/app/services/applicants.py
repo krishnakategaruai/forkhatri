@@ -424,6 +424,12 @@ async def set_applicant_stage(
             template=template, link=f"/enquiries/{row['id']}", idempotency_key=f"applicant_{target}:{row['id']}",
             params={"title": opp["title"]},
         )
+    if target == "hired":
+        # [Trust pack — close the loop] the last opening filled: the post closes
+        # as filled and everyone still waiting is told politely.
+        from app.services.close_loop import maybe_close_filled
+
+        await maybe_close_filled(conn, opp["id"])
     fresh = await conn.fetchrow(_APPLICANT_ROWS + " AND e.id = $3::uuid", opp["id"], ctx.member_id, enquiry_id)
     return await _with_contacts(conn, ctx, lang, opp, fresh)
 

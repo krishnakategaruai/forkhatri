@@ -30,7 +30,7 @@ curl -X POST http://localhost:8011/v1/integrations/tokens \
 | `listings:write` | `save_profile`, `unsave_profile`, `update_contact_preferences`, `upsert_listing_packages`, `request_listing_package` |
 | `enquiries:write` | `create_enquiry`, `reply_to_enquiry`, `accept_enquiry`, `close_enquiry`, `withdraw_enquiry`, `record_contact_attempt`, `record_opportunity_contact_attempt` |
 | `partnerships:write` | `create_partnership_request`, `respond_partnership` |
-| `reviews:write` | `submit_review` |
+| `reviews:write` | `submit_review`, `answer_paid_on_time` |
 | `notifications:write` | `mark_notification_read` |
 | `contracts:write` | `create_contract`, `fund_milestone`, `approve_milestone` |
 
@@ -154,6 +154,12 @@ You can also put it in a project's `.mcp.json`:
 | `list_applicants` / `set_applicant_stage` | Applicant pipeline on the member's opportunity | `GET /v1/opportunities/{id}/applicants`, `POST .../applicants/{enquiry_id}/stage` |
 | `draft_opportunity` / `get_ai_shortlist` | AI draft from a plain brief; AI-ranked applicants | `POST /v1/ai/draft-opportunity`, `GET /v1/opportunities/{id}/ai-shortlist` |
 | `create_contract` / `fund_milestone` / `approve_milestone` | Milestone contracts | `POST /v1/contracts`, `.../milestones/{mid}/fund`, `.../approve` |
+| `check_scam_shield` | Pre-check a post, a reply to an applicant or a package for any charge on applicants (en/hi/te/Hinglish) | `POST /v1/trust/scam-check` |
+| `list_paid_on_time_questions` / `answer_paid_on_time` | "Were you paid on time?" for the person who was paid | `GET /v1/paid-on-time/asks`, `POST .../{id}/answer` |
+| `get_paid_on_time` | A payer's "Paid on time: 12 of 13" (after 3 answers) | `GET /v1/members/{id}/paid-on-time` |
+| `list_my_restrictions` | What is restricted, why, and the appeal path | `GET /v1/me/restrictions` |
+| `get_close_check` | Applicants still waiting before a post is closed | `GET /v1/opportunities/{id}/close-check` |
+| `list_profession_rules` | Council rules on advertising (advocates, architects, CAs) | `GET /v1/profession-rules` |
 
 Every write sends an `Idempotency-Key`, so an agent that retries after a timeout cannot post twice. Read tools are marked read-only, so clients can auto-approve them. Tools that contact another person tell the agent to confirm with the member first. Those tools are `create_enquiry`, `reply_to_enquiry`, `post_opportunity`, `create_partnership_request`, `respond_partnership`, `submit_review`, `request_listing_package` and `create_contract`.
 

@@ -799,6 +799,71 @@ async def approve_milestone(
     return await _call(client().post(f"/v1/contracts/{contract_id}/milestones/{milestone_id}/approve"))
 
 
+# ---------------------------------------------------------------------------
+# Trust pack (2026-09-30): scam shield, paid on time, restrictions and
+# appeals, the close check, profession rules. Council register entries are
+# NOT exposed here: a person claims their own enrolment number in person
+# (the API refuses tokens on /credentials).
+# ---------------------------------------------------------------------------
+@mcp.tool(annotations=READ)
+async def check_scam_shield(
+    text: Annotated[str, Field(description="What the member is about to send: a post, a reply to an applicant, or a package.")],
+    surface: Annotated[Literal["opportunity", "enquiry_reply", "package"], Field(description="Where the text goes.")] = "opportunity",
+    opportunity_type: Annotated[str | None, Field(description="employment | freelance | local_service | training | community | partnership")] = None,
+) -> dict:
+    """Check text before sending it for any charge on the people who apply (registration fee, deposit, kit
+    charge, 'send money on GPay'...), in English, Hindi, Telugu or Hinglish. Stores nothing. When allowed is
+    false, rewrite the text without the charge; never try to get around the rule."""
+    return await _call(client().post("/v1/trust/scam-check", {"text": text, "surface": surface, "opportunity_type": opportunity_type}))
+
+
+@mcp.tool(annotations=READ)
+async def list_paid_on_time_questions(
+    state: Annotated[Literal["open", "all"], Field(description="open: not answered yet.")] = "open",
+) -> Any:
+    """'Were you paid on time?' questions for work the member was paid for (after a contract stage is
+    released, or 30 days after being hired)."""
+    return await _call(client().get("/v1/paid-on-time/asks", state=state))
+
+
+@mcp.tool(annotations=WRITE)
+async def answer_paid_on_time(
+    ask_id: Annotated[str, Field(description="Question id from list_paid_on_time_questions.")],
+    paid_on_time: Annotated[bool, Field(description="The member's own answer. Ask them; never guess.")],
+) -> dict:
+    """Answer 'Were you paid on time?' once, with the member's own Yes or No. The payer never sees who answered.
+    Needs reviews:write."""
+    return await _call(client().post(f"/v1/paid-on-time/asks/{ask_id}/answer", {"paid_on_time": paid_on_time}))
+
+
+@mcp.tool(annotations=READ)
+async def get_paid_on_time(member_id: Annotated[str, Field(description="The poster's or client's member id.")]) -> dict:
+    """A payer's 'Paid on time: 12 of 13', confirmed by the people they paid; hidden until 3 answered."""
+    return await _call(client().get(f"/v1/members/{member_id}/paid-on-time"))
+
+
+@mcp.tool(annotations=READ)
+async def list_my_restrictions() -> Any:
+    """What of the member's is restricted by Vyapar (a removed or paused post, a suspended or held profile,
+    a hidden review), why, and whether a person can be asked to review it (appeal). Appeals themselves stay
+    with the member in person."""
+    return await _call(client().get("/v1/me/restrictions"))
+
+
+@mcp.tool(annotations=READ)
+async def get_close_check(opportunity_id: OpportunityId) -> dict:
+    """Before closing one of the member's posts: how many applicants are still waiting, and what closing
+    will tell them. Show this to the member before calling close."""
+    return await _call(client().get(f"/v1/opportunities/{opportunity_id}/close-check"))
+
+
+@mcp.tool(annotations=READ)
+async def list_profession_rules() -> Any:
+    """Which professions' councils limit advertising on Vyapar (advocates, architects) and what that means:
+    no promotion, no public reviews, no ranking boost, no public prices."""
+    return await _call(client().get("/v1/profession-rules"))
+
+
 def main() -> None:
     import logging
 

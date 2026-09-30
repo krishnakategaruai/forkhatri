@@ -7,7 +7,8 @@
     "notSubject": "Only the member a review is about can dispute it.",
     "notDisputable": "This review can't be disputed right now.",
     "alreadyDisputed": "This review has already been disputed.",
-    "reviewNotFound": "Review not found."
+    "reviewNotFound": "Review not found.",
+    "notPermittedForProfession": "This professional's council does not allow public reviews, so this one can't be posted."
   },
   "outcome": {
     "published": "kept published",

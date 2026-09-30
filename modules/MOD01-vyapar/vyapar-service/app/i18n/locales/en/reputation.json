@@ -24,5 +24,13 @@
       "label": "Repeat hires",
       "description": "At least 3 people came back to work with them again"
     }
+  },
+  "paidOnTime": {
+    "label": "Paid on time: {yes} of {total}",
+    "question": "Were you paid on time for {title}?",
+    "error": {
+      "notFound": "This question isn't available.",
+      "alreadyAnswered": "You've already answered this."
+    }
   }
 }

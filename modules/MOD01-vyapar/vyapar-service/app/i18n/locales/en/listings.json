@@ -35,7 +35,8 @@
     "profileExists": "You already have a Vyapar profile. Add your business to it instead of creating another.",
     "profileFieldsMissing": "To set up your profile we still need: {fields}.",
     "profileSuspended": "Your profile is suspended while it is reviewed, so it can't be changed right now.",
-    "businessVerifiedCannotRemove": "Your business is verified, so it can't be removed from your profile. Contact support if it has closed."
+    "businessVerifiedCannotRemove": "Your business is verified, so it can't be removed from your profile. Contact support if it has closed.",
+    "packagesNotPermittedForProfession": "Your profession's council does not allow advertised fees or discounts, so this profile can't have price packages."
   },
   "success": {
     "otpSent": "OTP sent",
@@ -46,5 +47,19 @@
     "standard": "Standard",
     "premium": "Premium"
   },
-  "packageRequestNote": "Requested the {tier} package: {name} ({price})"
+  "packageRequestNote": "Requested the {tier} package: {name} ({price})",
+  "profession": {
+    "name": {
+      "advocate": "Advocate",
+      "architect": "Architect",
+      "chartered_accountant": "Chartered accountant"
+    },
+    "contact": "Contact",
+    "contactDefault": "Ask for a price",
+    "note": {
+      "advocate": "Information only. Under the Bar Council of India's rules, advocates may not advertise or seek work, so this profile shows only the details the Bar Council allows, with no reviews, ratings, prices or promotion.",
+      "architect": "Information only. The Council of Architecture does not allow architects to advertise or offer discounts, so this profile shows only factual details, with no reviews, prices or promotion.",
+      "charteredAccountant": "If you are a chartered accountant (ICAI member), describe only non-assurance services here, such as tax, GST and accounting. ICAI does not allow advertising audit or attestation work."
+    }
+  }
 }

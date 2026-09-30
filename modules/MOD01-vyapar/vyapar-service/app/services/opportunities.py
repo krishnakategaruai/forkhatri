@@ -483,6 +483,21 @@ def _seeker_charge_check(
     hooks.run_seeker_charge_checks(text=text, structured=structured, lang=lang)
 
 
+async def _seeker_charge_guard(ctx: AuthzContext, opportunity_id: str | None, **kwargs: Any) -> None:
+    """[Trust pack] `_seeker_charge_check` plus the trust event: a refusal is
+    written to the audit log on its own connection (the refusal rolls this
+    request back), with the rule and matched words, never the text."""
+    try:
+        _seeker_charge_check(**kwargs)
+    except ApiError as exc:
+        if exc.code == "seeker_charge_not_allowed":
+            from app.services import scam_shield
+
+            await scam_shield.log_block(ctx.member_id, surface="opportunity", object_kind="opportunity",
+                                        object_id=opportunity_id, exc=exc)
+        raise
+
+
 # [IMP-B/L1] Pre-accept calling makes sense where a person rings about a job
 # or a local job (Apna's "Call HR", WorkIndia's "Click to call HR"); a
 # freelance proposal or a partnership is a written conversation.
@@ -636,6 +651,13 @@ class OpportunityOut(BaseModel):
     # [{key, label, description, earned_at}]. See references/imp-backend-b.md.
     seeker_protection: dict[str, Any] | None = None
     poster_badges: list[dict[str, Any]] = []
+    # [Trust pack] detail read only: the payee-confirmed "Paid on time: 12 of
+    # 13" for the poster (null until 3 answers); for the POSTER, the platform
+    # restriction on this post with its appeal path, and how many applicants
+    # still wait for an answer. See references/imp-trust-pack.md.
+    poster_paid_on_time: dict[str, Any] | None = None
+    restriction: dict[str, Any] | None = None
+    applicants_waiting: dict[str, Any] | None = None
     # [IMP-B/L1] pre-accept calling: the poster's switch, and (detail read,
     # non-poster viewers) the call/WhatsApp actions — the same shape as
     # GET /v1/opportunities/{id}/contact-actions.
@@ -760,8 +782,11 @@ async def create_opportunity(
     # set, else the free text the caller sent.
     columns = _normalize_structured(body.structured or OpportunityStructured(), type_, lang)
     compensation = compensation_label(OpportunityStructured(**columns), type_, lang) or body.compensation
-    _seeker_charge_check(
-        lang=lang, type_=type_, title=title, description=body.description, requirements=body.requirements,
+    await _seeker_charge_guard(
+        ctx, None,
+        lang=lang, type_=type_, title=title, description=body.description,
+        # [Trust pack] a pasted WhatsApp forward (share mode) is poster text too
+        requirements=" ".join(filter(None, [body.requirements, body.raw_input])) or None,
         compensation=body.compensation or compensation, columns=columns, candidate_pays=body.candidate_pays,
     )
     _check_precall(body.allow_precall, type_, lang)
@@ -872,6 +897,9 @@ async def get_opportunity(
     out.seeker_protection = extra.get("seeker_protection")
     out.poster_badges = extra.get("poster_badges") or []
     out.precall_actions = extra.get("precall_actions")
+    out.poster_paid_on_time = extra.get("poster_paid_on_time")
+    out.restriction = extra.get("restriction")
+    out.applicants_waiting = extra.get("applicants_waiting")
     return out
 
 
@@ -995,7 +1023,8 @@ async def update_opportunity(
     columns = _normalize_structured(merged, new_type, lang)
     derived = compensation_label(OpportunityStructured(**columns), new_type, current["content_language"] or lang)
     compensation = derived or body.compensation  # the derived line wins; else the caller's free text, else unchanged
-    _seeker_charge_check(
+    await _seeker_charge_guard(
+        ctx, str(current["id"]),
         lang=lang, type_=new_type,
         title=body.title if body.title is not None else current["title"],
         description=body.description if body.description is not None else current["description"],
@@ -1086,7 +1115,8 @@ async def publish_opportunity(
     # few and poor responses (WorkIndia and Upwork both require them), so
     # publish needs them — the same one gate every publish path goes through.
     structured = structured_from_row(current)
-    _seeker_charge_check(
+    await _seeker_charge_guard(
+        ctx, str(current["id"]),
         lang=lang, type_=current["type"], title=current["title"], description=current["description"],
         requirements=current["requirements"], compensation=current["compensation"], columns=structured.model_dump(),
     )
@@ -1094,6 +1124,12 @@ async def publish_opportunity(
         raise ApiError(422, "opportunities.error.salaryRequired", lang)
     if current["type"] == "freelance" and not has_budget(structured):
         raise ApiError(422, "opportunities.error.budgetRequired", lang)
+    # [Trust pack — honest terms] a local-service post must say what the job
+    # pays: a budget, or a stated fee basis ("₹300 a visit", "Pay per visit").
+    # Jobs (salary) and projects (budget) were already gated above.
+    if current["type"] == "local_service" and structured.budget_paise is None and not (current["compensation"] or "").strip():
+        raise ApiError(422, "opportunities.error.payBasisRequired", lang, error_code="pay_basis_required",
+                       extra={"field": "structured.budget_paise"})
     row = await conn.fetchrow(
         """UPDATE vyapar_opportunities.opportunities SET state='active', published_at=now(), last_confirmed_at=now(), updated_at=now()
            WHERE id=$1 RETURNING *""",
@@ -1142,7 +1178,12 @@ async def close_opportunity(
     lang: str,
     opportunity_id: str,
 ) -> OpportunityOut:
-    return await _lifecycle_action(conn, ctx, opportunity_id, lang, from_states={"active", "paused", "stale"}, to_state="closed")
+    out = await _lifecycle_action(conn, ctx, opportunity_id, lang, from_states={"active", "paused", "stale"}, to_state="closed")
+    # [Trust pack — close the loop] everyone still waiting gets a polite final answer
+    from app.services.close_loop import close_waiting_applicants
+
+    await close_waiting_applicants(conn, {"id": out.id, "poster_id": ctx.member_id, "title": out.title}, "closed")
+    return out
 
 
 class RenewIn(BaseModel):
@@ -1234,6 +1275,10 @@ async def run_opportunity_expiry_pass(pool: asyncpg.Pool) -> dict:
                     if row is None:
                         continue
                     counts["expired"] += 1
+                    # [Trust pack — close the loop] applicants still waiting are told, as the poster
+                    from app.services.close_loop import close_waiting_applicants
+
+                    await close_waiting_applicants(conn, row, "expired")
                     if await notify_member(
                         conn, member_id=row["poster_id"], template="opportunityExpired", link=f"/opportunities/{row['id']}",
                         idempotency_key=f"opportunity_expired:{row['id']}:{row['deadline'].date().isoformat()}",

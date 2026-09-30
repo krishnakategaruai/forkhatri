@@ -69,7 +69,9 @@ def register_enquiry_enricher(fn: Enricher) -> Enricher:
     return fn
 
 
-_REGISTRANTS = ("app.services.trust_safety", "app.services.contact", "app.reputation")
+_REGISTRANTS = ("app.services.trust_safety", "app.services.contact", "app.reputation",
+                # [Trust pack] paid on time, restriction + appeal path, applicants still waiting
+                "app.services.paid_on_time", "app.services.restrictions", "app.services.close_loop")
 
 
 def _ensure_registered() -> None:

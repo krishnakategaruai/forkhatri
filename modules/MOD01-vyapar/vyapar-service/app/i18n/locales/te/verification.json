@@ -8,5 +8,49 @@
       "pan": "ఇది సరైన 10-అక్షరాల PAN లా అనిపించడం లేదు.",
       "udyam": "ఇది సరైన Udyam రిజిస్ట్రేషన్ నంబర్‌లా అనిపించడం లేదు."
     }
+  },
+  "council": {
+    "type": {
+      "icai_membership": "ICAI సభ్యత్వ నంబర్",
+      "medical_council_registration": "మెడికల్ కౌన్సిల్ రిజిస్ట్రేషన్",
+      "allied_health_registration": "అలైడ్ హెల్త్ రిజిస్టర్ (NCAHP)",
+      "bar_council_enrolment": "బార్ కౌన్సిల్ ఎన్‌రోల్‌మెంట్",
+      "coa_registration": "కౌన్సిల్ ఆఫ్ ఆర్కిటెక్చర్ రిజిస్ట్రేషన్",
+      "digilocker_document": "DigiLocker పత్రం"
+    },
+    "numberHint": {
+      "icai_membership": "6 అంకెలు, ఉదా. 212345",
+      "medical_council_registration": "మీ రిజిస్ట్రేషన్ సర్టిఫికెట్‌పై ఉన్నట్లు",
+      "allied_health_registration": "NCAHP రిజిస్టర్‌లో ఉన్నట్లు",
+      "bar_council_enrolment": "రాష్ట్రం/నంబర్/సంవత్సరం, ఉదా. TS/1234/2015",
+      "coa_registration": "CA/సంవత్సరం/నంబర్, ఉదా. CA/2010/12345",
+      "digilocker_document": "పత్రం నంబర్, దాని DigiLocker లింక్"
+    },
+    "badge": {
+      "verified": "{council}లో రిజిస్టర్డ్",
+      "claimed": "{council}: తనిఖీ పెండింగ్",
+      "expired": "{council}: మళ్ళీ తనిఖీ చేయాలి",
+      "failed": "{council}: నిర్ధారించలేకపోయాం"
+    },
+    "checkedOn": "{date}న తనిఖీ చేశారు",
+    "pendingCheck": "తనిఖీ పెండింగ్",
+    "error": {
+      "numberFormat": {
+        "icai_membership": "ICAI సభ్యత్వ నంబర్‌లో 6 అంకెలు ఉంటాయి.",
+        "medical_council_registration": "సర్టిఫికెట్‌పై ఉన్న రిజిస్ట్రేషన్ నంబర్ నమోదు చేయండి.",
+        "allied_health_registration": "NCAHP రిజిస్టర్‌లో ఉన్న రిజిస్ట్రేషన్ నంబర్ నమోదు చేయండి.",
+        "bar_council_enrolment": "ఎన్‌రోల్‌మెంట్ నంబర్‌ను రాష్ట్రం/నంబర్/సంవత్సరంలా రాయండి, ఉదా. TS/1234/2015.",
+        "coa_registration": "రిజిస్ట్రేషన్ నంబర్‌ను CA/సంవత్సరం/నంబర్‌లా రాయండి, ఉదా. CA/2010/12345.",
+        "digilocker_document": "DigiLockerలో ఉన్న పత్రం నంబర్ నమోదు చేయండి."
+      },
+      "councilRequired": {
+        "bar_council_enrolment": "మీ స్టేట్ బార్ కౌన్సిల్ ఎంచుకోండి, ఉదా. Bar Council of Telangana.",
+        "medical_council_registration": "నేషనల్ మెడికల్ కమిషన్ లేదా మీ రాష్ట్ర మెడికల్ కౌన్సిల్ ఎంచుకోండి.",
+        "digilocker_document": "పత్రం ఎవరు జారీ చేశారో రాయండి, ఉదా. Osmania University."
+      },
+      "documentUri": "పత్రం DigiLocker లింక్ జోడించండి (ఇది in.gov.తో మొదలవుతుంది).",
+      "exists": "ఈ రిజిస్టర్ ఇప్పటికే మీ ప్రొఫైల్‌లో ఉంది. నంబర్ మార్చడానికి ముందు దాన్ని తీసేయండి.",
+      "notFound": "ఆ రిజిస్టర్ ఎంట్రీ మీ ప్రొఫైల్‌లో లేదు."
+    }
   }
 }

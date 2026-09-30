@@ -22,6 +22,13 @@ async def reputation_for_listings(conn: asyncpg.Connection, listing_rows: Sequen
     """Keyed by listing id (str). Each row must carry `id` and `owner_id`."""
     if not listing_rows:
         return {}
+    # [Trust pack] a profile whose council forbids public reviews (advocates,
+    # architects) has no public counts at all, and so no reputation boost.
+    from app.services.profession_rules import verdict_for_row
+
+    listing_rows = [r for r in listing_rows if _has_terms(r) is False or verdict_for_row(r).allow_public_reviews]
+    if not listing_rows:
+        return {}
     ids = [r["id"] for r in listing_rows]
     owners = list({r["owner_id"] for r in listing_rows})
     rep_rows = await conn.fetch("SELECT * FROM vyapar_reviews.reputation_for_listings($1::uuid[])", ids)
@@ -41,6 +48,14 @@ async def reputation_for_listings(conn: asyncpg.Connection, listing_rows: Sequen
             "new_on_vyapar": interactions < NEW_MEMBER_THRESHOLD,
         }
     return out
+
+
+def _has_terms(row) -> bool:
+    try:
+        row["categories"], row["capabilities"]
+        return True
+    except (KeyError, IndexError, TypeError):
+        return False
 
 
 def trust_from_reputation(rep: dict | None) -> float:
@@ -154,7 +169,17 @@ async def badges_for_members(conn: asyncpg.Connection, member_ids: Sequence[str]
             fresh_items = [{"key": k, "earned_at": previous.get(k) or now.isoformat()} for k in keys]
             await conn.execute("SELECT vyapar_identity.store_badges($1, $2::jsonb)", r["member_id"], json.dumps(fresh_items))
             out[r["member_id"]] = [badge_out(b["key"], b["earned_at"], lang) for b in fresh_items]
+    # [Trust pack] no "Reliable", "Top recommended" … on an advocate or architect
+    from app.services.profession_rules import restricted_members
+
+    for member in await restricted_members(conn, list(out)):
+        out[member] = [b for b in out[member] if b.key in FACT_BADGES]
     return out
+
+
+# [Trust pack] Badges that are a fact, not a verdict from other people: kept
+# on a profile whose council forbids reviews and ranking badges.
+FACT_BADGES = frozenset({"verified_business"})
 
 
 async def badges_for_member(conn: asyncpg.Connection, member_id: str, lang: str = "en") -> list[BadgeOut]:
