@@ -19,12 +19,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
-import { BadgeCheck, ChevronRight, Info, MapPin, Clock } from "lucide-react";
+import { BadgeCheck, ChevronRight, MapPin, Clock } from "lucide-react";
 import type { OpportunityCard } from "@/lib/sdk";
 import { formatRupees } from "@/lib/format";
 import { useRoutes } from "@/app/host/HostProvider";
 import { freshnessLabel, signalLabel } from "@/app/components/opportunity/labels";
 import { cardVisual } from "./trades";
+import CardMenu from "@/app/components/reco/CardMenu";
+import { useHiddenPosts } from "@/app/components/reco/feedbackStore";
 
 /** "CHAT CHEF NEEDED" → "Chat chef needed"; any mixed-case title is left as written. */
 export function displayTitle(title: string): string {
@@ -70,6 +72,7 @@ export default function DiscoverCard({ item }: { item: OpportunityCard }) {
   const { t, i18n } = useTranslation(["discover", "opportunities", "ranking", "explore"]);
   const routes = useRoutes();
   const [why, setWhy] = useState(false);
+  const hidden = useHiddenPosts();
   const visual = cardVisual(item.required_capabilities, item.type);
   const TradeIcon = visual.icon;
   const rawPay = item.compensation_label || item.compensation;
@@ -99,6 +102,9 @@ export default function DiscoverCard({ item }: { item: OpportunityCard }) {
     item.relevance_reason ? signalLabel(t, item.relevance_reason, "") : "",
     item.source_segment === "community" ? t("explore:card.fromCommunity") : t("explore:card.publicSource"),
   ].filter(Boolean);
+
+  // [Recommendations] a post the member said "Not interested" to leaves every list at once.
+  if (hidden.has(item.id)) return null;
 
   return (
     <Link href={routes.opportunity(item.id)} transitionTypes={["vy-forward"]} className="vy-card vy-ocard">
@@ -147,22 +153,7 @@ export default function DiscoverCard({ item }: { item: OpportunityCard }) {
               {posted}
             </>
           )}
-          {reasons.length > 0 && (
-            <button
-              type="button"
-              className="vy-ocard-why"
-              aria-expanded={why}
-              aria-label={t("explore:card.whyShort")}
-              title={t("explore:card.whyShort")}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setWhy((v) => !v);
-              }}
-            >
-              <Info size={16} strokeWidth={2} aria-hidden="true" />
-            </button>
-          )}
+          <CardMenu postId={item.id} title={displayTitle(item.title)} whyOpen={why} onWhy={reasons.length > 0 ? () => setWhy((v) => !v) : undefined} />
         </span>
       </div>
       {why && <p className="vy-ocard-reason">{reasons.join(" · ")}</p>}

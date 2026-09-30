@@ -1,0 +1,371 @@
+/* [Recommendations 2026-09-30] Card "…" menu, the five-reason sheet, the
+   undo toast, the post page's feedback row, and "What Vyapar learned about
+   you". Tokens only (globals.css / language-2026.css); Anek type tokens;
+   44px minimum targets, 56px reason rows. Imported from app/layout.tsx. */
+
+/* ---- Card "…" menu -------------------------------------------------------- */
+.vy-reco-anchor {
+  display: inline-flex;
+}
+
+.vy-reco-menu {
+  position: fixed;
+  z-index: 85;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--surface-floating);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-float);
+  animation: vy-reco-pop var(--dur-hover) var(--ease-out);
+}
+
+@keyframes vy-reco-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.vy-reco-menu-item {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-ui);
+  letter-spacing: var(--tracking-ui);
+  line-height: var(--leading-ui);
+  text-align: start;
+  min-height: 48px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.vy-reco-menu-item > svg {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.vy-reco-menu-item:hover,
+.vy-reco-menu-item:focus-visible {
+  background: var(--selected-bg);
+}
+
+.vy-reco-menu-item:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+/* ---- Not interested: five large rows ------------------------------------- */
+.vy-reco-sheet-lead {
+  margin: calc(-1 * var(--space-2)) 0 0;
+  font-size: var(--type-sm);
+  line-height: var(--leading-body);
+  color: var(--text-secondary);
+}
+
+.vy-reco-reasons {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vy-reco-reason {
+  appearance: none;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 14px 8px 8px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: start;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--type-body);
+  font-weight: var(--weight-heading);
+  letter-spacing: var(--tracking-heading);
+  line-height: var(--leading-heading);
+  cursor: pointer;
+  transition:
+    background var(--dur-hover) var(--ease-out),
+    border-color var(--dur-hover) var(--ease-out),
+    transform var(--dur-press) var(--ease-spring);
+}
+
+.vy-reco-reason:hover {
+  background: var(--selected-bg);
+  border-color: var(--border-default);
+}
+
+.vy-reco-reason:active {
+  transform: scale(0.985);
+}
+
+.vy-reco-reason:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.vy-reco-reason-icon {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-tile);
+  display: grid;
+  place-items: center;
+  background: var(--surface-nested);
+  color: var(--text-secondary);
+}
+
+/* ---- Undo toast (the shared .vy-toast look, plus a close) ----------------- */
+.vy-reco-toast-slot:empty {
+  display: none;
+}
+
+.vy-reco-toast {
+  box-shadow: var(--shadow-float);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-ui);
+  line-height: var(--leading-ui);
+  bottom: calc(var(--hub-clear, 96px) + env(safe-area-inset-bottom));
+  animation: vy-reco-toast-in var(--dur-sheet) var(--ease-out);
+}
+
+.vy-reco-toast > span {
+  min-width: 0;
+}
+
+.vy-reco-toast .vy-btn {
+  min-height: 40px;
+  flex-shrink: 0;
+}
+
+.vy-reco-toast-close {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.vy-reco-toast-close:hover {
+  background: var(--selected-bg);
+  color: var(--text-primary);
+}
+
+@keyframes vy-reco-toast-in {
+  from {
+    opacity: 0;
+    translate: 0 12px;
+  }
+}
+
+@media (min-width: 900px) {
+  .vy-reco-toast {
+    bottom: var(--space-6);
+    left: 50%;
+  }
+}
+
+/* ---- Post page: Why this? · More like this · Not interested -------------- */
+.vy-reco-detail-actions {
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+.vy-reco-detail-actions > .vy-btn {
+  gap: 6px;
+}
+
+/* ---- What Vyapar learned about you --------------------------------------- */
+.vy-learned-off {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: var(--card-pad);
+  border-radius: var(--radius-card);
+  background: var(--info-soft);
+  color: var(--text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-body);
+}
+
+.vy-learned-off strong {
+  color: var(--text-primary);
+  font-weight: var(--weight-heading);
+}
+
+.vy-learned-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.vy-learned-heading {
+  font-family: var(--font-display);
+  font-size: var(--type-heading);
+  font-weight: var(--weight-heading);
+  letter-spacing: var(--tracking-heading);
+  line-height: var(--leading-heading);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.vy-learned-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.vy-learned-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border-hairline);
+}
+
+.vy-learned-row:first-child {
+  border-top: none;
+}
+
+.vy-learned-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.vy-learned-label {
+  font-size: var(--type-body);
+  font-weight: var(--weight-heading);
+  line-height: var(--leading-heading);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.vy-learned-detail {
+  font-size: var(--type-sm);
+  line-height: var(--leading-body);
+  color: var(--text-tertiary);
+}
+
+.vy-learned-remove {
+  appearance: none;
+  border: 1px solid var(--border-hairline);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background var(--dur-hover) var(--ease-out), color var(--dur-hover) var(--ease-out);
+}
+
+.vy-learned-remove:hover {
+  background: var(--danger-soft);
+  color: var(--danger-text);
+  border-color: transparent;
+}
+
+.vy-learned-remove:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.vy-learned-remove:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.vy-learned-reset {
+  color: var(--danger-text);
+  gap: 8px;
+}
+
+.vy-learned-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: var(--space-2) 0 0;
+  font-size: var(--type-sm);
+  line-height: var(--leading-body);
+  color: var(--text-secondary);
+}
+
+.vy-learned-note > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--verified-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vy-reco-menu,
+  .vy-reco-toast {
+    animation: none;
+  }
+
+  .vy-reco-reason {
+    transition: background var(--dur-hover) linear;
+  }
+
+  .vy-reco-reason:active {
+    transform: none;
+  }
+}
+
+.vy-learned-group + .vy-learned-group {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.vy-learned-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* "Why this?" reasons read as a sentence ("Like jobs you applied to · …"). */
+.vy-ocard-reason::first-letter {
+  text-transform: uppercase;
+}
+
+/* Learned trade words arrive lower-case ("electrician"): show them as names. */
+.vy-learned-label::first-letter {
+  text-transform: uppercase;
+}
+
+/* Privacy → the learned screen: a row flush with the switches around it,
+   its hint wrapping instead of being cut. */
+.vy-acct-row.vy-learned-link {
+  padding-inline: 0;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.vy-learned-link .vy-acct-row-hint {
+  white-space: normal;
+}

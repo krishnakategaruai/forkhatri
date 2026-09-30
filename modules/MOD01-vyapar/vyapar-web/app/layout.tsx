@@ -37,7 +37,10 @@ import "./styles/account-2026.css";
 import "./styles/trust-2026.css";
 // [Voice interview 2026-09-30] the guided voice conversation and its entry card
 import "./styles/voice-2026.css";
+// [Recommendations 2026-09-30] card "…" menu, Not interested sheet, undo toast, "What Vyapar learned about you"
+import "./styles/reco-2026.css";
 import CommandHub from "./components/CommandHub";
+import RecoToast from "./components/reco/RecoToast";
 import AppTopBar from "./components/nav/AppTopBar";
 import { I18nProvider } from "@/lib/i18n/provider";
 import { DEFAULT_LANGUAGE, LANGUAGE_COOKIE, isSupported } from "@/lib/i18n/languages";
@@ -83,6 +86,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <AppTopBar />
           {children}
           <CommandHub />
+          {/* [Recommendations] the one Undo toast for card feedback, on every screen */}
+          <RecoToast />
         </I18nProvider>
         </HostProvider>
       </body>

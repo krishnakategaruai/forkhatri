@@ -13,6 +13,7 @@ import { ApiError, type NotInterestedReason } from "@/lib/sdk";
 import { useSdk } from "@/lib/sdk/react";
 import { useOpportunity, useOpportunityWhy, useSimilarOpportunities } from "@/app/hooks/opportunities";
 import type { OpportunityDetailActions } from "./OpportunityDetailView";
+import { usePostFeedback } from "@/app/components/reco/usePostFeedback";
 
 export function useOpportunityDetailController(id: string) {
   const { t } = useTranslation(["opportunities", "common"]);
@@ -23,6 +24,7 @@ export function useOpportunityDetailController(id: string) {
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const feedback = usePostFeedback();
 
   const opp = opportunity.data;
   const error = opportunity.error
@@ -72,11 +74,16 @@ export function useOpportunityDetailController(id: string) {
     onClose: () => act(() => sdk.opportunities.close(id)),
     onConfirmField: (field) => act(() => sdk.opportunities.confirm(id, [field])),
     onPublish: () => act(() => sdk.opportunities.publish(id)),
-    onNotInterested: (reason: NotInterestedReason) =>
-      act(async () => {
-        await sdk.opportunities.notInterested(id, reason);
-        setHidden(true);
-      }),
+    // [Recommendations 2026-09-30] the same path as the card: hidden at
+    // once, the toast offers Undo, and Undo brings this page back.
+    onNotInterested: async (reason: NotInterestedReason) => {
+      setBusy(true);
+      setNotice(null);
+      const ok = await feedback.notInterested(id, reason, () => setHidden(false));
+      if (ok) setHidden(true);
+      setBusy(false);
+    },
+    onMoreLikeThis: () => void feedback.moreLikeThis(id),
     onRequestWhy: loadWhy,
   };
 

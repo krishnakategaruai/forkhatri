@@ -12,6 +12,12 @@ export const RANKING_SIGNAL_KEYS = [
   "experience_fit",
   "freshness_fit",
   "trust_fit",
+  // [Recommendations that learn] taste_fit is refined by the API into which
+  // phrase fits; "explore" marks something new near the member's skills.
+  "taste_fit",
+  "taste_fit_applied",
+  "taste_fit_saved",
+  "explore",
 ];
 
 /** The `t` from useTranslation(), narrowed to what these helpers call. */

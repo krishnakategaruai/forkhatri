@@ -17,7 +17,9 @@
     "behavioralAnalytics": "Usage analytics",
     "behavioralAnalyticsHelp": "Lets Vyapar record how you use the app, without your name, to improve it. Nothing is recorded while this is off.",
     "digestEnabled": "Daily digest",
-    "digestEnabledHelp": "One message a day about new posts that match you."
+    "digestEnabledHelp": "One message a day about new posts that match you.",
+    "personalised": "Posts picked for you",
+    "personalisedHelp": "Vyapar learns from what you save, apply to and hide to show better posts first. Off: nothing is learned, and what was learned is cleared."
   },
   "contactOption": {
     "public": "Always visible",
@@ -70,5 +72,28 @@
   },
   "purpose": "Who sees what, your data and your choices.",
   "controlsHelp": "What others can see about you.",
-  "analyticsHelp": "What Vyapar records to improve itself."
+  "analyticsHelp": "What Vyapar records to improve itself.",
+  "learned": {
+    "title": "What Vyapar learned about you",
+    "purpose": "These decide which posts you see first. Remove anything that isn't right.",
+    "hubHint": "Learned from what you save and apply to. Remove any of it.",
+    "removeOne": "Remove “{{label}}”",
+    "removed": "Removed “{{label}}”.",
+    "reset": "Reset everything",
+    "resetConfirm": "Forget everything Vyapar learned about you? Your saved posts and applications stay as they are.",
+    "resetYes": "Yes, reset everything",
+    "resetDone": "Done. Vyapar will start learning afresh.",
+    "note": "This only uses what you did on Vyapar: posts you saved, applied to or hid. It never uses who posted them.",
+    "emptyTitle": "Nothing learned yet",
+    "emptyBody": "Vyapar learns from what you save and apply to.",
+    "offTitle": "Posts picked for you are off",
+    "offBody": "Vyapar learns only while both “Posts picked for you” and “Usage analytics” are on in Privacy. Right now nothing is being learned or used.",
+    "turnOn": "Turn it on in Privacy",
+    "privacyLink": "See what Vyapar learned about you",
+    "likesTitle": "What you like",
+    "avoidsTitle": "What you'd rather skip",
+    "fromApplied": "From posts you applied to",
+    "fromSaved": "From posts you saved or wanted more of",
+    "fromHidden": "From posts you marked not interested"
+  }
 }

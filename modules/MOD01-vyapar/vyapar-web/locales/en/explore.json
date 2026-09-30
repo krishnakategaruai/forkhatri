@@ -221,7 +221,9 @@
     "seeAll": "See all {{count}}",
     "prev": "Previous",
     "next": "Next",
-    "projectsBudget": "Projects with a budget over {{amount}}"
+    "projectsBudget": "Projects with a budget over {{amount}}",
+    "becauseApplied": "Because you applied to {{trade}}",
+    "moreLikeSaved": "More like what you saved"
   },
   "results": {
     "loading": "Finding posts…",
@@ -358,5 +360,23 @@
     "viewProfile": "View profile",
     "yourProfile": "Your profile",
     "placeholderShort": "Search plumber, CA, tailor…"
+  },
+  "reco": {
+    "menuLabel": "More options for {{title}}",
+    "moreLikeThis": "More like this",
+    "hideWhy": "Hide why",
+    "moreDone": "Got it. You'll see more posts like this.",
+    "hiddenDone": "Hidden. You'll see fewer posts like this.",
+    "undone": "The post is back.",
+    "undo": "Undo",
+    "sheetTitle": "Not interested",
+    "sheetLead": "Pick one reason. We'll show you better posts.",
+    "reason": {
+      "wrongTrade": "Wrong trade",
+      "tooFar": "Too far",
+      "payTooLow": "Pay too low",
+      "notMyKind": "Not my kind of work",
+      "alreadyFilled": "Already filled"
+    }
   }
 }

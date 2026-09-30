@@ -24,6 +24,7 @@ import { filtersFromQuery, filtersToQuery, isCurated, seeAllQuery, toFeedParams,
 import { useFirstRunState } from "@/app/hooks/opportunities";
 import { useResource } from "@/app/hooks/useResource";
 import { useRoutes } from "@/app/host/HostProvider";
+import { FEED_CHANGED_EVENT } from "@/app/components/reco/feedbackStore";
 
 /** The filter the empty state offers to drop: the narrowest-looking one still set. */
 function withoutLastFilter(f: FeedFilterValues): FeedFilterValues | null {
@@ -55,6 +56,16 @@ export default function HomePage({ searchParams }: { searchParams: Promise<FeedQ
   const ready = !!state?.done;
   const rows = useResource<RowsResponse>(() => sdk.feed.rows(), [sdk], { enabled: ready && curated });
   const results = useResource<ResultsResponse>(() => sdk.feed.results(toFeedParams(filters)), [queryKey, sdk], { enabled: ready });
+
+  // [Recommendations 2026-09-30] "Not interested" / "More like this" / Undo:
+  // re-read the list so similar posts drop and a learned row can appear.
+  const refreshRows = rows.refresh;
+  const refreshResults = results.refresh;
+  useEffect(() => {
+    const onChanged = () => void (curated ? refreshRows() : refreshResults());
+    window.addEventListener(FEED_CHANGED_EVENT, onChanged);
+    return () => window.removeEventListener(FEED_CHANGED_EVENT, onChanged);
+  }, [curated, refreshRows, refreshResults]);
 
   // [TR044] A member who has not finished first run goes there first.
   useEffect(() => {

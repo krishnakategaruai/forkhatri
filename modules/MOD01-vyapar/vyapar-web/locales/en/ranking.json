@@ -7,7 +7,11 @@
     "value_fit": "good value",
     "experience_fit": "matches your experience",
     "freshness_fit": "recently posted",
-    "trust_fit": "posted by someone verified"
+    "trust_fit": "posted by someone verified",
+    "taste_fit": "matches what you usually look for",
+    "taste_fit_applied": "like jobs you applied to",
+    "taste_fit_saved": "similar to posts you saved",
+    "explore": "something new near your skills"
   },
   "fallback": {
     "matchedSearch": "matched your search",

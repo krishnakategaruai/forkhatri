@@ -13,11 +13,12 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion } from "motion/react";
 import {
-  ChevronLeft, ChevronRight, Sparkles, Navigation, Clock, Zap, IndianRupee, BadgeCheck, Users, BriefcaseBusiness, House, type LucideIcon,
+  Bookmark, ChevronLeft, ChevronRight, History, Sparkles, Navigation, Clock, Zap, IndianRupee, BadgeCheck, Users, BriefcaseBusiness, House, type LucideIcon,
 } from "lucide-react";
 import type { FeedRow } from "@/lib/sdk";
 import DiscoverCard from "./DiscoverCard";
 import { categoryVisual } from "./trades";
+import { useHiddenPosts } from "@/app/components/reco/feedbackStore";
 
 const ROW_ICON: Record<string, LucideIcon> = {
   for_you: Sparkles,
@@ -30,6 +31,8 @@ const ROW_ICON: Record<string, LucideIcon> = {
   community: Users,
   projects: BriefcaseBusiness,
   remote: House,
+  // [Recommendations 2026-09-30] rows learned from what the member did
+  taste_saved: Bookmark,
 };
 
 function rowVisual(key: string): { icon: LucideIcon; family: string } {
@@ -37,6 +40,7 @@ function rowVisual(key: string): { icon: LucideIcon; family: string } {
     const v = categoryVisual(key.slice(9));
     return { icon: v.icon, family: v.family };
   }
+  if (key.startsWith("taste_applied:")) return { icon: History, family: "neutral" };
   return { icon: ROW_ICON[key] ?? Sparkles, family: "neutral" };
 }
 
@@ -110,9 +114,15 @@ function Row({ row, onSeeAll, index }: { row: FeedRow; onSeeAll: (row: FeedRow) 
 }
 
 export default function FeedRows({ rows, onSeeAll }: { rows: FeedRow[]; onSeeAll: (row: FeedRow) => void }) {
+  // [Recommendations] a post hidden with "Not interested" leaves its row at
+  // once (no empty slot in the strip); a row left with nothing goes too.
+  const hidden = useHiddenPosts();
+  const visible = rows
+    .map((r) => (r.items.some((x) => hidden.has(x.id)) ? { ...r, items: r.items.filter((x) => !hidden.has(x.id)) } : r))
+    .filter((r) => r.items.length > 0);
   return (
     <div className="vy-rows2">
-      {rows.map((r, i) => (
+      {visible.map((r, i) => (
         <Row key={r.key} row={r} onSeeAll={onSeeAll} index={i} />
       ))}
     </div>

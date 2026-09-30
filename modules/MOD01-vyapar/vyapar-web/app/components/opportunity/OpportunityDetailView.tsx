@@ -25,11 +25,12 @@ import SeekerProtectionNotice from "@/app/components/trust/SeekerProtectionNotic
 import { Morph } from "@/app/components/Screen";
 import { useRoutes } from "@/app/host/HostProvider";
 import OpportunityCard from "./OpportunityCard";
-import { hostOf, NOT_INTERESTED_REASON_KEYS, signalLabel } from "./labels";
+import { hostOf, signalLabel } from "./labels";
+import NotInterestedSheet from "@/app/components/reco/NotInterestedSheet";
 import { structuredFacts, type T as LabelT } from "@/app/components/composer/labels";
 import { formatDayMonth, formatMonthYear } from "@/lib/format";
 import { payLines } from "@/app/components/discover/DiscoverCard";
-import { Star } from "lucide-react";
+import { Info, Star, ThumbsDown, ThumbsUp } from "lucide-react";
 // [Trust pack] paid on time, close the loop, restrictions
 import { PaidOnTimeLine } from "@/app/components/trust/PaidOnTime";
 import { ApplicantsWaitingNudge, CloseConfirmSheet } from "@/app/components/trust/CloseLoop";
@@ -61,6 +62,8 @@ export interface OpportunityDetailActions {
   onConfirmField: (field: string) => void;
   onPublish: () => void;
   onNotInterested: (reason: NotInterestedReason) => void;
+  /** [Recommendations] "More like this" */
+  onMoreLikeThis: () => void;
   /** Asked the first time "Why this?" opens; the container loads `why`. */
   onRequestWhy: () => void;
 }
@@ -96,7 +99,7 @@ export interface OpportunityDetailViewProps extends OpportunityDetailActions {
 export default function OpportunityDetailView(props: OpportunityDetailViewProps) {
   const { opportunity: opp, similar, why, busy, notice } = props;
   const id = opp.id;
-  const { t, i18n } = useTranslation(["opportunities", "common", "ranking", "commercial", "discover", "hiring"]);
+  const { t, i18n } = useTranslation(["opportunities", "common", "ranking", "commercial", "discover", "hiring", "explore"]);
   const routes = useRoutes();
   const [showWhy, setShowWhy] = useState(false);
   const [showReasons, setShowReasons] = useState(false);
@@ -321,7 +324,10 @@ export default function OpportunityDetailView(props: OpportunityDetailViewProps)
                 </p>
               )}
 
-              <div className="vy-row" style={{ gap: 8, justifyContent: "space-between" }}>
+              {/* [Recommendations 2026-09-30] Why this? · More like this · Not
+                  interested — quiet text buttons; Not interested opens the
+                  same five-reason sheet as the card's "…" menu. */}
+              <div className="vy-row vy-reco-detail-actions">
                 <button
                   className="vy-btn vy-btn-ghost"
                   onClick={() => {
@@ -330,9 +336,15 @@ export default function OpportunityDetailView(props: OpportunityDetailViewProps)
                   }}
                   aria-expanded={showWhy}
                 >
+                  <Info size={16} strokeWidth={2} aria-hidden="true" />
                   {t("opportunities:detail.whyThis")}
                 </button>
-                <button className="vy-btn vy-btn-ghost" onClick={() => setShowReasons((v) => !v)} aria-expanded={showReasons}>
+                <button className="vy-btn vy-btn-ghost" disabled={busy} onClick={props.onMoreLikeThis}>
+                  <ThumbsUp size={16} strokeWidth={2} aria-hidden="true" />
+                  {t("explore:reco.moreLikeThis")}
+                </button>
+                <button className="vy-btn vy-btn-ghost" onClick={() => setShowReasons(true)} aria-haspopup="dialog">
+                  <ThumbsDown size={16} strokeWidth={2} aria-hidden="true" />
                   {t("common:action.notInterested")}
                 </button>
               </div>
@@ -352,22 +364,13 @@ export default function OpportunityDetailView(props: OpportunityDetailViewProps)
               )}
 
               {showReasons && (
-                <div className="vy-stack" style={{ gap: 8 }}>
-                  <p className="vy-muted" style={{ fontSize: 13 }}>{t("opportunities:detail.notInterestedPrompt")}</p>
-                  <div className="vy-row" style={{ flexWrap: "wrap", gap: 6 }}>
-                    {Object.entries(NOT_INTERESTED_REASON_KEYS).map(([reason, key]) => (
-                      <button
-                        key={reason}
-                        className="vy-chip"
-                        style={{ cursor: "pointer" }}
-                        disabled={busy}
-                        onClick={() => props.onNotInterested(reason as NotInterestedReason)}
-                      >
-                        {t(`opportunities:detail.${key}` as "detail.notInterestedTooFar")}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <NotInterestedSheet
+                  onClose={() => setShowReasons(false)}
+                  onPick={(reason) => {
+                    setShowReasons(false);
+                    props.onNotInterested(reason);
+                  }}
+                />
               )}
             </div>
           )}

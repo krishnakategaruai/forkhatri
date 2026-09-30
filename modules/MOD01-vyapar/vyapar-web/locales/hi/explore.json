@@ -221,7 +221,9 @@
     "seeAll": "सभी {{count}} देखें",
     "prev": "पिछले",
     "next": "अगले",
-    "projectsBudget": "{{amount}} से ज़्यादा बजट वाले प्रोजेक्ट"
+    "projectsBudget": "{{amount}} से ज़्यादा बजट वाले प्रोजेक्ट",
+    "becauseApplied": "क्योंकि आपने {{trade}} में आवेदन किया",
+    "moreLikeSaved": "आपकी सेव की गई पोस्ट जैसी और"
   },
   "results": {
     "loading": "पोस्ट खोजी जा रही हैं…",
@@ -358,5 +360,23 @@
     "viewProfile": "प्रोफ़ाइल देखें",
     "yourProfile": "आपकी प्रोफ़ाइल",
     "placeholderShort": "प्लंबर, सीए, दर्ज़ी खोजें…"
+  },
+  "reco": {
+    "menuLabel": "{{title}} के और विकल्प",
+    "moreLikeThis": "ऐसी और पोस्ट",
+    "hideWhy": "कारण छिपाएँ",
+    "moreDone": "ठीक है। आपको ऐसी और पोस्ट दिखेंगी।",
+    "hiddenDone": "पोस्ट छिपा दी गई। ऐसी पोस्ट कम दिखेंगी।",
+    "undone": "पोस्ट वापस आ गई।",
+    "undo": "वापस लें",
+    "sheetTitle": "रुचि नहीं",
+    "sheetLead": "एक कारण चुनें। हम आपको बेहतर पोस्ट दिखाएँगे।",
+    "reason": {
+      "wrongTrade": "यह मेरा ट्रेड नहीं",
+      "tooFar": "बहुत दूर है",
+      "payTooLow": "सैलरी बहुत कम है",
+      "notMyKind": "मुझे ऐसा काम नहीं चाहिए",
+      "alreadyFilled": "जगह पहले ही भर गई"
+    }
   }
 }

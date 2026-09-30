@@ -15,7 +15,8 @@
 // Traces to: FR36, FR37, FR38, TR036, TR037, TR038
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { BarChart3, Download, Eye, Sparkles, Trash } from "lucide-react";
+import { BarChart3, ChevronRight, Download, Eye, Sparkles, Trash } from "lucide-react";
+import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import Screen from "@/app/components/Screen";
 import { SkeletonGrid } from "@/app/components/States";
@@ -32,6 +33,8 @@ interface PrivacySettings {
   notifications_enabled: boolean;
   commercial_comms: boolean;
   behavioral_analytics: boolean;
+  /** [Recommendations 2026-09-30] learn from what I do to pick posts for me */
+  personalised_recommendations?: boolean;
   digest_enabled: boolean;
   digest_hour: number;
 }
@@ -221,6 +224,20 @@ export default function PrivacyPage() {
             </div>
             <div className="vy-acct-card-body" style={{ gap: 0 }}>
               {toggle("behavioralAnalytics", "behavioralAnalyticsHelp", "behavioral_analytics", settings.behavioral_analytics)}
+              {toggle("personalised", "personalisedHelp", "personalised_recommendations", settings.personalised_recommendations ?? true)}
+              {/* [Recommendations 2026-09-30] what Vyapar learned from what the member did */}
+              <Link href="/profile/learned" transitionTypes={["vy-forward"]} className="vy-acct-row vy-learned-link">
+                <span className="vy-acct-tile" data-tint="amber" aria-hidden="true">
+                  <Sparkles size={20} strokeWidth={1.9} />
+                </span>
+                <span className="vy-acct-row-text">
+                  <span className="vy-acct-row-label">{t("privacy:learned.privacyLink")}</span>
+                  <span className="vy-acct-row-hint">{t("privacy:learned.hubHint")}</span>
+                </span>
+                <span className="vy-acct-row-end">
+                  <ChevronRight size={18} strokeWidth={2} aria-hidden="true" />
+                </span>
+              </Link>
               {toggle("digestEnabled", "digestEnabledHelp", "digest_enabled", settings.digest_enabled)}
             </div>
           </section>

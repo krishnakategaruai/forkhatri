@@ -24,7 +24,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
-import { Bookmark, FileText, Globe, Inbox, LayoutGrid, LifeBuoy, Lock, MapPin, Megaphone, Phone, ShieldAlert, ShieldCheck, Undo2, Wrench } from "lucide-react";
+import { Bookmark, FileText, Globe, Inbox, LayoutGrid, LifeBuoy, Lock, MapPin, Megaphone, Phone, ShieldAlert, ShieldCheck, Sparkles, Undo2, Wrench } from "lucide-react";
 import type { EnquirySummary, Listing, WorkspaceInvite as Invite, WorkspaceRow } from "@/lib/sdk";
 import { useSdk } from "@/lib/sdk/react";
 import Screen from "@/app/components/Screen";
@@ -133,6 +133,8 @@ export default function ProfilePage() {
   const settings: Shortcut[] = [
     { href: "/profile/contact", label: t("contact:tile.label"), hint: t("contact:tile.desc"), icon: Phone, tint: "green" },
     { href: "/privacy", label: t("privacy:title"), hint: t("profile:hub.desc.privacy"), icon: Lock, tint: "sky" },
+    // [Recommendations 2026-09-30] what Vyapar learned from what the member did
+    { href: "/profile/learned", label: t("privacy:learned.title"), hint: t("privacy:learned.hubHint"), icon: Sparkles, tint: "amber" },
     ...(restricted > 0
       ? [{ href: "/profile/restrictions", label: t("trustSafety:restrictions.title"), hint: t("trustSafety:restrictions.hubHint"), icon: ShieldAlert, tint: "warning" as const, count: restricted }]
       : []),

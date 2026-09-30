@@ -603,3 +603,32 @@ export interface WebhookEventType {
   operator_only: boolean;
   description: string;
 }
+
+// [Recommendations 2026-09-30] references/imp-recommendations.md
+/** One thing Vyapar learned from what the member saved, applied to or hid. */
+export interface TasteItem {
+  /** Stable id: "skill:electrical", "type:employment", "distance_limit", "pay_floor"… */
+  id: string;
+  kind: string;
+  /** Server-localized, e.g. "Electrician" or "Posts within 8 km". */
+  label: string;
+  direction: "like" | "avoid";
+  /** The kind of action it was mostly learned from (likes only). */
+  source?: "applied" | "saved" | "other" | null;
+  strength: number;
+}
+
+export interface TasteResponse {
+  /** false when personalised posts (or usage analytics) are switched off in Privacy. */
+  enabled: boolean;
+  confidence: number;
+  actions_counted: number;
+  /** Server-localized lines ("Like jobs you applied to: Electrician"). */
+  summary: string[];
+  summary_text: string;
+  likes: TasteItem[];
+  avoids: TasteItem[];
+  distance_limit_km?: number | null;
+  pay_floor_paise?: number | null;
+  updated_at?: string | null;
+}

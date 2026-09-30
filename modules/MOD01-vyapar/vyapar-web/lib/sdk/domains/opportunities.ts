@@ -13,6 +13,7 @@ import type {
   ProfileCardData,
   ResultsResponse,
   RowsResponse,
+  TasteResponse,
   WhyResponse,
 } from "../types";
 
@@ -41,6 +42,8 @@ export function opportunitiesApi(c: VyaparClient) {
     unsave: (id: string) => c.delete<unknown>(`${base(id)}/save`),
     /** markOpportunityNotInterested */
     notInterested: (id: string, reason: NotInterestedReason) => c.post<unknown>(`${base(id)}/not-interested`, { reason }),
+    /** [Recommendations] moreLikeThis — show more posts like this one */
+    moreLikeThis: (id: string) => c.post<TasteResponse>(`${base(id)}/more-like-this`),
     /** recordOpportunityExternalOpen — the member followed the link to the public source */
     externalOpen: (id: string) => c.post<unknown>(`${base(id)}/external-open`),
     /** Poster lifecycle */

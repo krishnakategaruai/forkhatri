@@ -37,6 +37,8 @@ import { aiApi, applicantsApi, postingApi, responsesApi } from "./domains/hiring
 import { trustPackApi } from "./domains/trustPack";
 // [Voice interview 2026-09-30] guided voice conversation (references/imp-voice-interview.md)
 import { voiceApi } from "./domains/voice";
+// [Recommendations 2026-09-30] learned preferences (references/imp-recommendations.md)
+import { tasteApi } from "./domains/taste";
 
 export function createVyaparSdk(config: VyaparClientConfig | VyaparClient) {
   const client = config instanceof VyaparClient ? config : new VyaparClient(config);
@@ -81,6 +83,8 @@ export function createVyaparSdk(config: VyaparClientConfig | VyaparClient) {
     trustPack: trustPackApi(client),
     /** [Voice interview] one question at a time: next + interpret */
     voice: voiceApi(client),
+    /** [Recommendations] what Vyapar learned about the member */
+    taste: tasteApi(client),
     dev: devApi(client),
   };
 }
