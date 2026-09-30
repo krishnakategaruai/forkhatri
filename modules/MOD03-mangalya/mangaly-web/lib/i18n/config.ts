@@ -66,6 +66,12 @@ import teAgents from "@/locales/te/agents.json";
 import enHelp from "@/locales/en/help.json";
 import hiHelp from "@/locales/hi/help.json";
 import teHelp from "@/locales/te/help.json";
+import enWedding from "@/locales/en/wedding.json";
+import hiWedding from "@/locales/hi/wedding.json";
+import teWedding from "@/locales/te/wedding.json";
+import enGuides from "@/locales/en/guides.json";
+import hiGuides from "@/locales/hi/guides.json";
+import teGuides from "@/locales/te/guides.json";
 
 export const SUPPORTED_LANGUAGES = ["en", "hi", "te"] as const;
 export type Language = (typeof SUPPORTED_LANGUAGES)[number];
@@ -88,6 +94,8 @@ export const NAMESPACES = [
   "billing",
   "agents",
   "help",
+  "wedding",
+  "guides",
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 
@@ -107,6 +115,8 @@ const resources = {
     billing: enBilling,
     agents: enAgents,
     help: enHelp,
+    wedding: enWedding,
+    guides: enGuides,
   },
   hi: {
     common: hiCommon,
@@ -123,6 +133,8 @@ const resources = {
     billing: hiBilling,
     agents: hiAgents,
     help: hiHelp,
+    wedding: hiWedding,
+    guides: hiGuides,
   },
   te: {
     common: teCommon,
@@ -139,6 +151,8 @@ const resources = {
     billing: teBilling,
     agents: teAgents,
     help: teHelp,
+    wedding: teWedding,
+    guides: teGuides,
   },
 } as const;
 

@@ -1,0 +1,616 @@
+[
+  {
+    "slug": "how-mangalya-works",
+    "category": "start",
+    "minutes": 3,
+    "action_href": "/help",
+    "content": {
+      "en": {
+        "title": "How Mangalya works, step by step",
+        "summary": "From your profile to the first chat, in the order it happens.",
+        "sections": [
+          {"p": "Mangalya is made for families. A candidate can search on their own, and parents, brothers, sisters or a guardian can help from their own phones."},
+          {"h": "The steps", "points": [
+            "Make the profile: a few details, one clear photo, and who you are looking for.",
+            "See matches on Discover. Both sides' wishes are respected: you only see people whose own wishes include you.",
+            "Send a request to someone who feels right. Their family sees it and decides.",
+            "When they accept, the two of you can talk in a private chat that keeps nothing, and the families can talk in a family chat.",
+            "Meet when both families are ready. Wedding arrangements then helps with the next steps."
+          ]},
+          {"p": "You are never shown to people outside your wishes, and screenshots are blocked everywhere in Mangalya."}
+        ]
+      },
+      "hi": {
+        "title": "Mangalya कैसे काम करता है, एक-एक कदम",
+        "summary": "प्रोफ़ाइल बनाने से पहली बातचीत तक, उसी क्रम में जैसे होता है।",
+        "sections": [
+          {"p": "Mangalya परिवारों के लिए बना है। उम्मीदवार खुद भी खोज सकते हैं, और माता-पिता, भाई-बहन या अभिभावक अपने फ़ोन से मदद कर सकते हैं।"},
+          {"h": "कदम", "points": [
+            "प्रोफ़ाइल बनाइए: कुछ जानकारी, एक साफ़ फ़ोटो, और आप किसे ढूँढ रहे हैं।",
+            "‘खोजें’ में रिश्ते देखिए। दोनों ओर की पसंद का ध्यान रखा जाता है: आपको वही लोग दिखते हैं जिनकी पसंद में आप भी आते हैं।",
+            "जो सही लगे, उन्हें अनुरोध भेजिए। उनका परिवार उसे देखकर निर्णय लेता है।",
+            "स्वीकार होने पर आप दोनों एक निजी बातचीत में बात कर सकते हैं, जिसमें कुछ भी सहेजा नहीं जाता, और दोनों परिवार परिवार-बातचीत में बात कर सकते हैं।",
+            "जब दोनों परिवार तैयार हों, तब मिलिए। उसके बाद ‘शादी की तैयारी’ आगे के कामों में मदद करती है।"
+          ]},
+          {"p": "आपकी पसंद से बाहर के लोगों को आप कभी नहीं दिखाए जाते, और Mangalya में कहीं भी स्क्रीनशॉट नहीं लिया जा सकता।"}
+        ]
+      },
+      "te": {
+        "title": "Mangalya ఎలా పనిచేస్తుంది, ఒక్కో అడుగుగా",
+        "summary": "ప్రొఫైల్ నుండి మొదటి సంభాషణ వరకు, జరిగే క్రమంలోనే.",
+        "sections": [
+          {"p": "Mangalya కుటుంబాల కోసం తయారైంది. అభ్యర్థి స్వయంగా వెతకవచ్చు, తల్లిదండ్రులు, అన్నదమ్ములు, అక్కచెల్లెళ్లు లేదా సంరక్షకులు తమ ఫోన్ నుండే సహాయం చేయవచ్చు."},
+          {"h": "అడుగులు", "points": [
+            "ప్రొఫైల్ తయారు చేయండి: కొన్ని వివరాలు, ఒక స్పష్టమైన ఫోటో, మీరు ఎవరి కోసం చూస్తున్నారో.",
+            "‘అన్వేషించు’లో సంబంధాలు చూడండి. ఇరువైపుల ఇష్టాలూ గౌరవించబడతాయి: మిమ్మల్ని కోరుకునే వారే మీకు కనిపిస్తారు.",
+            "సరైనవారు అనిపిస్తే అభ్యర్థన పంపండి. వారి కుటుంబం చూసి నిర్ణయిస్తుంది.",
+            "వారు అంగీకరించాక మీరిద్దరూ ఏదీ భద్రపరచని ప్రైవేట్ సంభాషణలో మాట్లాడుకోవచ్చు, కుటుంబాలు కుటుంబ సంభాషణలో మాట్లాడుకోవచ్చు.",
+            "రెండు కుటుంబాలు సిద్ధమైనప్పుడు కలవండి. ఆ తర్వాతి పనులకు ‘పెళ్లి ఏర్పాట్లు’ సహాయం చేస్తుంది."
+          ]},
+          {"p": "మీ ఇష్టాలకు బయటి వారికి మీరు ఎప్పుడూ కనిపించరు, Mangalyaలో ఎక్కడా స్క్రీన్‌షాట్ తీయలేరు."}
+        ]
+      }
+    }
+  },
+  {
+    "slug": "bring-your-family",
+    "category": "start",
+    "minutes": 2,
+    "action_href": "/circle",
+    "content": {
+      "en": {
+        "title": "Bring your family into the search",
+        "summary": "Your Home Circle lets parents and family help, each from their own phone.",
+        "sections": [
+          {"p": "Your Home Circle is the small group of family who help with your search: a parent, a brother or sister, an elder, or a guardian."},
+          {"h": "How to add someone", "points": [
+            "Open Circle from the menu.",
+            "Find them by name or mobile number, and choose how they are related to you.",
+            "They join with their own number, in the language they read best."
+          ]},
+          {"h": "What they can do", "points": [
+            "See your matches and save the ones they like.",
+            "Send requests for you, and accept or decline requests that come in.",
+            "Talk to the other family in the family chat."
+          ]},
+          {"p": "Your private chat with a match stays yours alone. Family never reads it."}
+        ]
+      },
+      "hi": {
+        "title": "अपने परिवार को खोज में शामिल कीजिए",
+        "summary": "Home Circle से माता-पिता और परिवार अपने-अपने फ़ोन से मदद कर सकते हैं।",
+        "sections": [
+          {"p": "Home Circle परिवार का वह छोटा समूह है जो आपकी खोज में मदद करता है: माता या पिता, भाई या बहन, कोई बड़े, या अभिभावक।"},
+          {"h": "किसी को कैसे जोड़ें", "points": [
+            "मेनू से ‘सर्कल’ खोलिए।",
+            "नाम या मोबाइल नंबर से उन्हें ढूँढिए और चुनिए कि वे आपके क्या लगते हैं।",
+            "वे अपने नंबर से, अपनी पढ़ी जाने वाली भाषा में जुड़ते हैं।"
+          ]},
+          {"h": "वे क्या कर सकते हैं", "points": [
+            "आपके रिश्ते देखना और पसंद आए रिश्ते सहेजना।",
+            "आपकी ओर से अनुरोध भेजना, और आए अनुरोध स्वीकार या अस्वीकार करना।",
+            "परिवार-बातचीत में दूसरे परिवार से बात करना।"
+          ]},
+          {"p": "रिश्ते के साथ आपकी निजी बातचीत सिर्फ़ आपकी रहती है। परिवार उसे कभी नहीं पढ़ता।"}
+        ]
+      },
+      "te": {
+        "title": "మీ కుటుంబాన్ని వెతుకులాటలో భాగం చేయండి",
+        "summary": "Home Circle ద్వారా తల్లిదండ్రులు, కుటుంబసభ్యులు తమ ఫోన్ నుండే సహాయం చేయవచ్చు.",
+        "sections": [
+          {"p": "మీ వెతుకులాటలో సహాయం చేసే చిన్న కుటుంబ బృందమే Home Circle: అమ్మ లేదా నాన్న, అన్న, తమ్ముడు, అక్క, చెల్లి, పెద్దవారు లేదా సంరక్షకులు."},
+          {"h": "ఎవరినైనా ఎలా చేర్చాలి", "points": [
+            "మెనూ నుండి ‘సర్కిల్’ తెరవండి.",
+            "పేరు లేదా మొబైల్ నంబర్‌తో వారిని వెతికి, వారు మీకు ఏమవుతారో ఎంచుకోండి.",
+            "వారు తమ సొంత నంబర్‌తో, తాము బాగా చదవగలిగే భాషలో చేరుతారు."
+          ]},
+          {"h": "వారు ఏమి చేయగలరు", "points": [
+            "మీ సంబంధాలు చూసి, నచ్చినవి దాచుకోవడం.",
+            "మీ తరఫున అభ్యర్థనలు పంపడం, వచ్చిన అభ్యర్థనలను అంగీకరించడం లేదా వద్దనడం.",
+            "కుటుంబ సంభాషణలో అవతలి కుటుంబంతో మాట్లాడటం."
+          ]},
+          {"p": "సంబంధంతో మీ ప్రైవేట్ సంభాషణ మీది మాత్రమే. కుటుంబం దాన్ని ఎప్పుడూ చదవదు."}
+        ]
+      }
+    }
+  },
+  {
+    "slug": "a-profile-families-trust",
+    "category": "profile",
+    "minutes": 3,
+    "action_href": "/me/edit",
+    "content": {
+      "en": {
+        "title": "A profile families trust",
+        "summary": "What makes another family stop, read, and send a request.",
+        "sections": [
+          {"p": "Families read a profile the way they would listen to a relative describing someone. Plain, true details matter more than long praise."},
+          {"h": "Do", "points": [
+            "Fill in education, work, family and what you are looking for. Empty parts make families wonder why.",
+            "Answer two or three questions in your own words: how you spend a Sunday, what home means to you.",
+            "Be honest about marital history, diet and willingness to move. It saves both families time.",
+            "Verify your face. A verified badge is the first thing most families look for."
+          ]},
+          {"h": "Avoid", "points": [
+            "Lists of demands (\"must be fair, must earn above…\"). They put good families off.",
+            "Copying lines from other profiles. Families notice."
+          ]}
+        ]
+      },
+      "hi": {
+        "title": "ऐसी प्रोफ़ाइल जिस पर परिवार भरोसा करें",
+        "summary": "किस बात से दूसरा परिवार रुकता है, पढ़ता है और अनुरोध भेजता है।",
+        "sections": [
+          {"p": "परिवार प्रोफ़ाइल वैसे ही पढ़ते हैं जैसे कोई रिश्तेदार किसी के बारे में बता रहा हो। लंबी तारीफ़ से ज़्यादा सीधी और सच्ची बातें मायने रखती हैं।"},
+          {"h": "ऐसा कीजिए", "points": [
+            "शिक्षा, काम, परिवार और आप क्या ढूँढ रहे हैं, यह भरिए। खाली हिस्से देखकर परिवार सोच में पड़ जाते हैं।",
+            "दो-तीन सवालों के जवाब अपने शब्दों में दीजिए: आप रविवार कैसे बिताते हैं, घर का आपके लिए क्या अर्थ है।",
+            "वैवाहिक स्थिति, खान-पान और स्थान बदलने की इच्छा के बारे में सच बताइए। इससे दोनों परिवारों का समय बचता है।",
+            "अपना चेहरा सत्यापित कीजिए। ज़्यादातर परिवार सबसे पहले सत्यापन का चिह्न देखते हैं।"
+          ]},
+          {"h": "इनसे बचिए", "points": [
+            "माँगों की सूची (\"गोरी हो, इतनी कमाई हो…\")। इससे अच्छे परिवार दूर हो जाते हैं।",
+            "दूसरी प्रोफ़ाइलों की पंक्तियाँ नकल करना। परिवार पहचान लेते हैं।"
+          ]}
+        ]
+      },
+      "te": {
+        "title": "కుటుంబాలు నమ్మే ప్రొఫైల్",
+        "summary": "అవతలి కుటుంబం ఆగి, చదివి, అభ్యర్థన పంపేలా చేసేది ఏమిటి.",
+        "sections": [
+          {"p": "బంధువు ఎవరి గురించైనా చెబుతుంటే విన్నట్టే కుటుంబాలు ప్రొఫైల్ చదువుతాయి. పొడవైన పొగడ్తల కంటే సూటిగా ఉన్న నిజమైన వివరాలే ముఖ్యం."},
+          {"h": "ఇలా చేయండి", "points": [
+            "చదువు, ఉద్యోగం, కుటుంబం, మీరు ఎవరి కోసం చూస్తున్నారో నింపండి. ఖాళీ భాగాలు చూస్తే కుటుంబాలకు సందేహం కలుగుతుంది.",
+            "రెండు మూడు ప్రశ్నలకు మీ మాటల్లో జవాబివ్వండి: ఆదివారం ఎలా గడుపుతారు, ఇల్లు అంటే మీకు ఏమిటి.",
+            "వైవాహిక స్థితి, ఆహారపు అలవాట్లు, ఊరు మారడానికి సిద్ధమా అనేవి నిజాయితీగా చెప్పండి. రెండు కుటుంబాల సమయం ఆదా అవుతుంది.",
+            "మీ ముఖాన్ని ధృవీకరించండి. చాలా కుటుంబాలు ముందుగా చూసేది ధృవీకరణ గుర్తునే."
+          ]},
+          {"h": "ఇవి వద్దు", "points": [
+            "కోరికల జాబితాలు (\"తెల్లగా ఉండాలి, ఇంత సంపాదించాలి…\"). మంచి కుటుంబాలు దూరమవుతాయి.",
+            "ఇతర ప్రొఫైల్‌ల వాక్యాలను కాపీ చేయడం. కుటుంబాలు గుర్తుపడతాయి."
+          ]}
+        ]
+      }
+    }
+  },
+  {
+    "slug": "good-photos-at-home",
+    "category": "photos",
+    "minutes": 3,
+    "action_href": "/me/edit",
+    "content": {
+      "en": {
+        "title": "Good photos, taken at home",
+        "summary": "A phone and a window are enough. No studio needed.",
+        "sections": [
+          {"p": "Your first photo decides whether a family opens your profile. It should show your face clearly and look like you today."},
+          {"h": "Five simple rules", "points": [
+            "Stand facing a window in daylight. Never with the window behind you.",
+            "Ask someone to hold the phone at your eye level, about two arm-lengths away.",
+            "Face and shoulders fill most of the photo. Smile naturally.",
+            "A plain wall or a tidy room behind you. No crowds, no other people cut out.",
+            "No filters, sunglasses or heavy editing. Families want to see the real person."
+          ]},
+          {"h": "Add a few more", "points": [
+            "One full-length photo in the clothes you would wear to a family function.",
+            "One doing something you enjoy: cooking, music, a trek.",
+            "Keep all photos from the last year."
+          ]}
+        ]
+      },
+      "hi": {
+        "title": "घर पर खींची अच्छी फ़ोटो",
+        "summary": "एक फ़ोन और एक खिड़की काफ़ी है। स्टूडियो की ज़रूरत नहीं।",
+        "sections": [
+          {"p": "आपकी पहली फ़ोटो तय करती है कि परिवार आपकी प्रोफ़ाइल खोलेगा या नहीं। उसमें चेहरा साफ़ दिखे और आप आज जैसे दिखते हैं, वैसे ही दिखें।"},
+          {"h": "पाँच आसान नियम", "points": [
+            "दिन के उजाले में खिड़की की ओर मुँह करके खड़े होइए। खिड़की कभी पीछे न हो।",
+            "किसी से फ़ोन आँखों की ऊँचाई पर, लगभग दो हाथ की दूरी पर पकड़वाइए।",
+            "फ़ोटो में ज़्यादातर चेहरा और कंधे हों। स्वाभाविक मुस्कान रखिए।",
+            "पीछे सादी दीवार या साफ़-सुथरा कमरा हो। भीड़ नहीं, किसी और को काटकर हटाई गई फ़ोटो नहीं।",
+            "फ़िल्टर, धूप का चश्मा या ज़्यादा एडिटिंग नहीं। परिवार असली व्यक्ति को देखना चाहते हैं।"
+          ]},
+          {"h": "कुछ और जोड़िए", "points": [
+            "एक पूरी लंबाई की फ़ोटो, उन कपड़ों में जो आप किसी पारिवारिक समारोह में पहनेंगे।",
+            "एक फ़ोटो कुछ ऐसा करते हुए जो आपको पसंद है: खाना बनाना, संगीत, ट्रेकिंग।",
+            "सभी फ़ोटो पिछले एक साल की हों।"
+          ]}
+        ]
+      },
+      "te": {
+        "title": "ఇంట్లోనే తీసుకునే మంచి ఫోటోలు",
+        "summary": "ఒక ఫోన్, ఒక కిటికీ చాలు. స్టూడియో అవసరం లేదు.",
+        "sections": [
+          {"p": "కుటుంబం మీ ప్రొఫైల్ తెరుస్తుందా లేదా అన్నది మీ మొదటి ఫోటోనే నిర్ణయిస్తుంది. అందులో ముఖం స్పష్టంగా కనిపించాలి, ఈరోజు మీరు ఎలా ఉన్నారో అలాగే ఉండాలి."},
+          {"h": "ఐదు సులభమైన నియమాలు", "points": [
+            "పగటి వెలుగులో కిటికీ వైపు తిరిగి నిలబడండి. కిటికీ ఎప్పుడూ వెనుక ఉండకూడదు.",
+            "ఎవరినైనా ఫోన్‌ను మీ కంటి ఎత్తులో, దాదాపు రెండు చేతుల దూరంలో పట్టుకోమనండి.",
+            "ఫోటోలో ఎక్కువ భాగం ముఖం, భుజాలు ఉండాలి. సహజంగా నవ్వండి.",
+            "వెనుక సాదా గోడ లేదా శుభ్రమైన గది. గుంపులు వద్దు, ఇంకెవరినో కత్తిరించిన ఫోటోలు వద్దు.",
+            "ఫిల్టర్లు, కూలింగ్ గ్లాసులు, ఎక్కువ ఎడిటింగ్ వద్దు. కుటుంబాలు నిజమైన మనిషిని చూడాలనుకుంటాయి."
+          ]},
+          {"h": "ఇంకొన్ని చేర్చండి", "points": [
+            "కుటుంబ వేడుకకు వేసుకునే దుస్తుల్లో ఒక పూర్తి నిడివి ఫోటో.",
+            "మీకు ఇష్టమైన పని చేస్తూ ఒకటి: వంట, సంగీతం, ట్రెక్కింగ్.",
+            "అన్ని ఫోటోలు గత ఏడాదిలోపువే ఉండాలి."
+          ]}
+        ]
+      }
+    }
+  },
+  {
+    "slug": "what-to-wear",
+    "category": "photos",
+    "minutes": 2,
+    "content": {
+      "en": {
+        "title": "What to wear in your photos",
+        "summary": "Simple style choices that look good on any phone screen.",
+        "sections": [
+          {"h": "For the first photo", "points": [
+            "Solid colours look better than busy prints: maroon, deep green, navy, mustard, cream.",
+            "For women: a saree, a salwar suit or a simple kurti; light jewellery and neat hair.",
+            "For men: a plain shirt or kurta, ironed; a fresh shave or a neatly trimmed beard."
+          ]},
+          {"h": "For the traditional photo", "points": [
+            "What you would wear to a cousin's engagement: a silk saree or lehenga, a kurta or sherwani.",
+            "Keep it one photo. Families also want to see how you look every day."
+          ]},
+          {"p": "Wear what is comfortable and yours. A borrowed look shows in the photo."}
+        ]
+      },
+      "hi": {
+        "title": "फ़ोटो में क्या पहनें",
+        "summary": "पहनावे के आसान सुझाव जो किसी भी फ़ोन पर अच्छे दिखते हैं।",
+        "sections": [
+          {"h": "पहली फ़ोटो के लिए", "points": [
+            "भीड़-भाड़ वाले प्रिंट से अच्छे एक रंग के कपड़े दिखते हैं: मरून, गहरा हरा, नेवी, सरसों पीला, क्रीम।",
+            "महिलाओं के लिए: साड़ी, सलवार सूट या सादी कुर्ती; हल्के गहने और सँवरे बाल।",
+            "पुरुषों के लिए: इस्त्री की हुई सादी शर्ट या कुर्ता; ताज़ा शेव या सलीके से कटी दाढ़ी।"
+          ]},
+          {"h": "पारंपरिक फ़ोटो के लिए", "points": [
+            "जो आप किसी भाई-बहन की सगाई में पहनेंगे: रेशमी साड़ी या लहंगा, कुर्ता या शेरवानी।",
+            "ऐसी एक ही फ़ोटो रखिए। परिवार यह भी देखना चाहते हैं कि आप रोज़ कैसे दिखते हैं।"
+          ]},
+          {"p": "वही पहनिए जो आरामदायक हो और आपका अपना हो। उधार का रूप फ़ोटो में झलक जाता है।"}
+        ]
+      },
+      "te": {
+        "title": "ఫోటోల్లో ఏమి వేసుకోవాలి",
+        "summary": "ఏ ఫోన్ తెరపై అయినా బాగా కనిపించే సులభమైన సూచనలు.",
+        "sections": [
+          {"h": "మొదటి ఫోటో కోసం", "points": [
+            "ఎక్కువ డిజైన్ల కంటే ఒకే రంగు దుస్తులు బాగుంటాయి: మెరూన్, ముదురు ఆకుపచ్చ, నేవీ, ఆవ పసుపు, క్రీమ్.",
+            "అమ్మాయిలకు: చీర, సల్వార్ సూట్ లేదా సాదా కుర్తీ; తేలికపాటి నగలు, చక్కగా దువ్విన జుట్టు.",
+            "అబ్బాయిలకు: ఇస్త్రీ చేసిన సాదా చొక్కా లేదా కుర్తా; తాజా షేవ్ లేదా చక్కగా కత్తిరించిన గడ్డం."
+          ]},
+          {"h": "సంప్రదాయ ఫోటో కోసం", "points": [
+            "బంధువుల నిశ్చితార్థానికి వేసుకునేవి: పట్టు చీర లేదా లంగా ఓణీ, కుర్తా లేదా షేర్వాణీ.",
+            "అలాంటిది ఒక్క ఫోటో చాలు. రోజూ మీరు ఎలా ఉంటారో కూడా కుటుంబాలు చూడాలనుకుంటాయి."
+          ]},
+          {"p": "మీకు సౌకర్యంగా ఉన్న, మీ సొంతమైనదే వేసుకోండి. అరువు తెచ్చుకున్న రూపం ఫోటోలో తెలిసిపోతుంది."}
+        ]
+      }
+    }
+  },
+  {
+    "slug": "report-or-block",
+    "category": "safety",
+    "minutes": 2,
+    "content": {
+      "en": {
+        "title": "How to report or block someone",
+        "summary": "If anything feels wrong, you can act in two taps. They are never told it was you.",
+        "sections": [
+          {"h": "From a profile", "points": [
+            "Open the profile and scroll to the very end.",
+            "Tap \"Report or block this profile\".",
+            "Choose Report and pick a reason, or choose Block."
+          ]},
+          {"h": "From a chat", "points": [
+            "Open the chat and tap the ⋯ menu at the top.",
+            "Choose Report. The chat, as it is at that moment, goes with your report so our safety team can see what happened.",
+            "Or choose Block. The chat closes and they cannot reach you again."
+          ]},
+          {"h": "Report straight away if someone", "points": [
+            "asks for money, gifts or bank details, for any reason;",
+            "pushes to move to another app or to meet alone quickly;",
+            "is already married, under age, or not who their photos show."
+          ]},
+          {"p": "Blocking works both ways: neither of you will see the other anywhere in Mangalya."}
+        ]
+      },
+      "hi": {
+        "title": "किसी की शिकायत या उसे ब्लॉक कैसे करें",
+        "summary": "कुछ भी ग़लत लगे, तो दो टैप में कदम उठा सकते हैं। उन्हें कभी नहीं बताया जाता कि यह आपने किया।",
+        "sections": [
+          {"h": "प्रोफ़ाइल से", "points": [
+            "प्रोफ़ाइल खोलिए और बिल्कुल नीचे तक जाइए।",
+            "\"इस प्रोफ़ाइल की शिकायत करें या ब्लॉक करें\" पर टैप कीजिए।",
+            "शिकायत चुनकर कारण चुनिए, या ब्लॉक चुनिए।"
+          ]},
+          {"h": "बातचीत से", "points": [
+            "बातचीत खोलकर ऊपर ⋯ मेनू पर टैप कीजिए।",
+            "शिकायत चुनिए। उस समय की बातचीत आपकी शिकायत के साथ जाती है, ताकि हमारी सुरक्षा टीम देख सके कि क्या हुआ।",
+            "या ब्लॉक चुनिए। बातचीत बंद हो जाती है और वे आपसे फिर संपर्क नहीं कर सकते।"
+          ]},
+          {"h": "तुरंत शिकायत कीजिए, अगर कोई", "points": [
+            "किसी भी कारण से पैसे, उपहार या बैंक की जानकारी माँगे;",
+            "दूसरे ऐप पर जाने या जल्दी अकेले मिलने का दबाव डाले;",
+            "पहले से विवाहित हो, कम उम्र का हो, या फ़ोटो वाला व्यक्ति न हो।"
+          ]},
+          {"p": "ब्लॉक दोनों ओर से लागू होता है: Mangalya में आप एक-दूसरे को कहीं नहीं देखेंगे।"}
+        ]
+      },
+      "te": {
+        "title": "ఎవరిపైనైనా ఫిర్యాదు లేదా బ్లాక్ ఎలా చేయాలి",
+        "summary": "ఏదైనా సరిగా లేదనిపిస్తే రెండు ట్యాప్‌లలో చర్య తీసుకోవచ్చు. మీరే చేశారని వారికి ఎప్పుడూ తెలియజేయము.",
+        "sections": [
+          {"h": "ప్రొఫైల్ నుండి", "points": [
+            "ప్రొఫైల్ తెరిచి చివరి వరకు కిందికి జరపండి.",
+            "\"ఈ ప్రొఫైల్‌పై ఫిర్యాదు చేయండి లేదా బ్లాక్ చేయండి\" నొక్కండి.",
+            "ఫిర్యాదు ఎంచుకుని కారణం ఎంచుకోండి, లేదా బ్లాక్ ఎంచుకోండి."
+          ]},
+          {"h": "సంభాషణ నుండి", "points": [
+            "సంభాషణ తెరిచి పైన ఉన్న ⋯ మెనూ నొక్కండి.",
+            "ఫిర్యాదు ఎంచుకోండి. ఆ క్షణంలో ఉన్న సంభాషణ మీ ఫిర్యాదుతో వెళ్తుంది, ఏం జరిగిందో మా భద్రతా బృందం చూడగలుగుతుంది.",
+            "లేదా బ్లాక్ ఎంచుకోండి. సంభాషణ మూసుకుపోతుంది, వారు మిమ్మల్ని మళ్లీ సంప్రదించలేరు."
+          ]},
+          {"h": "ఎవరైనా ఇలా చేస్తే వెంటనే ఫిర్యాదు చేయండి", "points": [
+            "ఏ కారణంతోనైనా డబ్బు, బహుమతులు లేదా బ్యాంకు వివరాలు అడిగితే;",
+            "వేరే యాప్‌కు మారమని లేదా త్వరగా ఒంటరిగా కలవమని ఒత్తిడి చేస్తే;",
+            "ఇప్పటికే పెళ్లైనవారైతే, వయసు తక్కువైతే, లేదా ఫోటోల్లో ఉన్న మనిషి కాకపోతే."
+          ]},
+          {"p": "బ్లాక్ రెండువైపులా పనిచేస్తుంది: Mangalyaలో మీరు ఒకరికొకరు ఎక్కడా కనిపించరు."}
+        ]
+      }
+    }
+  },
+  {
+    "slug": "safe-first-meeting",
+    "category": "safety",
+    "minutes": 2,
+    "content": {
+      "en": {
+        "title": "Staying safe before you meet",
+        "summary": "Good families take their time. So can you.",
+        "sections": [
+          {"points": [
+            "Talk in Mangalya first. Share your phone number only when you are comfortable; you choose what each match can see.",
+            "Let the families speak to each other before the two of you meet.",
+            "Meet the first time in a busy, public place in daylight, with family nearby or told where you are.",
+            "Never send money, however real the story sounds. No genuine family asks for it.",
+            "Trust the feeling that something is off. You can step back at any time without explaining."
+          ]}
+        ]
+      },
+      "hi": {
+        "title": "मिलने से पहले सुरक्षित रहिए",
+        "summary": "अच्छे परिवार समय लेते हैं। आप भी ले सकते हैं।",
+        "sections": [
+          {"points": [
+            "पहले Mangalya में बात कीजिए। फ़ोन नंबर तभी दीजिए जब आप सहज हों; हर रिश्ते को क्या दिखे, यह आप तय करते हैं।",
+            "आप दोनों के मिलने से पहले परिवारों को आपस में बात करने दीजिए।",
+            "पहली बार दिन के उजाले में, भीड़ वाली सार्वजनिक जगह पर मिलिए, परिवार पास हो या उन्हें पता हो कि आप कहाँ हैं।",
+            "कहानी कितनी भी सच्ची लगे, कभी पैसे मत भेजिए। कोई सच्चा परिवार पैसे नहीं माँगता।",
+            "अगर कुछ ठीक न लगे तो उस एहसास पर भरोसा कीजिए। आप कभी भी बिना कारण बताए पीछे हट सकते हैं।"
+          ]}
+        ]
+      },
+      "te": {
+        "title": "కలవడానికి ముందు జాగ్రత్తగా ఉండండి",
+        "summary": "మంచి కుటుంబాలు సమయం తీసుకుంటాయి. మీరూ తీసుకోవచ్చు.",
+        "sections": [
+          {"points": [
+            "ముందుగా Mangalyaలోనే మాట్లాడండి. మీకు సౌకర్యంగా అనిపించినప్పుడే ఫోన్ నంబర్ ఇవ్వండి; ఏ సంబంధానికి ఏమి కనిపించాలో మీరే నిర్ణయిస్తారు.",
+            "మీరిద్దరూ కలిసే ముందు కుటుంబాలను ఒకరితో ఒకరు మాట్లాడుకోనివ్వండి.",
+            "మొదటిసారి పగటిపూట, జనం ఉండే బహిరంగ ప్రదేశంలో కలవండి; కుటుంబం దగ్గరలో ఉండాలి లేదా మీరు ఎక్కడున్నారో వారికి తెలియాలి.",
+            "కథ ఎంత నిజంగా అనిపించినా ఎప్పుడూ డబ్బు పంపకండి. నిజమైన కుటుంబం డబ్బు అడగదు.",
+            "ఏదో సరిగా లేదనిపిస్తే ఆ అనుభూతిని నమ్మండి. ఎప్పుడైనా కారణం చెప్పకుండానే వెనక్కి తగ్గవచ్చు."
+          ]}
+        ]
+      }
+    }
+  },
+  {
+    "slug": "parents-searching",
+    "category": "family",
+    "minutes": 3,
+    "action_href": "/circle",
+    "content": {
+      "en": {
+        "title": "For parents searching for their son or daughter",
+        "summary": "How to help without taking the choice away from them.",
+        "sections": [
+          {"p": "Most matches today begin with parents. The ones that last are the ones the son or daughter also chose."},
+          {"points": [
+            "Join your child's Home Circle, or make the profile for them and invite them in.",
+            "Save the matches you like. Your child sees your saves and can talk them over with you.",
+            "Send requests together where you can. A request your child already likes gets a warmer reply.",
+            "Speak to the other parents in the family chat. The two candidates' own chat stays private.",
+            "If you cannot read English, open Me, tap the settings button (the gear), and choose Telugu or Hindi under Language. Everything, including this guide, changes with it."
+          ]}
+        ]
+      },
+      "hi": {
+        "title": "बेटे या बेटी के लिए रिश्ता ढूँढ रहे माता-पिता के लिए",
+        "summary": "उनसे चुनाव छीने बिना कैसे मदद करें।",
+        "sections": [
+          {"p": "आज ज़्यादातर रिश्ते माता-पिता से शुरू होते हैं। टिकते वही हैं जिन्हें बेटे या बेटी ने भी चुना हो।"},
+          {"points": [
+            "अपने बच्चे के Home Circle में जुड़िए, या उनके लिए प्रोफ़ाइल बनाकर उन्हें आमंत्रित कीजिए।",
+            "पसंद आए रिश्ते सहेजिए। आपका बच्चा आपके सहेजे रिश्ते देखता है और आपसे उन पर बात कर सकता है।",
+            "जहाँ हो सके, अनुरोध साथ मिलकर भेजिए। जो रिश्ता बच्चे को पहले से पसंद हो, उसका जवाब ज़्यादा अच्छा आता है।",
+            "परिवार-बातचीत में दूसरे माता-पिता से बात कीजिए। दोनों उम्मीदवारों की अपनी बातचीत निजी रहती है।",
+            "अगर आप अंग्रेज़ी नहीं पढ़ते, तो ‘मैं’ खोलकर सेटिंग्स (गियर का निशान) पर टैप कीजिए और भाषा में हिंदी या तेलुगु चुनिए। यह जानकारी भी उसी भाषा में दिखेगी।"
+          ]}
+        ]
+      },
+      "te": {
+        "title": "కొడుకు లేదా కూతురి కోసం సంబంధం చూస్తున్న తల్లిదండ్రులకు",
+        "summary": "వారి ఎంపికను తీసుకోకుండా ఎలా సహాయం చేయాలి.",
+        "sections": [
+          {"p": "ఈరోజుల్లో చాలా సంబంధాలు తల్లిదండ్రుల నుండే మొదలవుతాయి. నిలిచేవి మాత్రం కొడుకు లేదా కూతురు కూడా ఎంచుకున్నవే."},
+          {"points": [
+            "మీ పిల్లల Home Circleలో చేరండి, లేదా వారి కోసం ప్రొఫైల్ తయారు చేసి వారిని ఆహ్వానించండి.",
+            "నచ్చిన సంబంధాలను దాచుకోండి. మీరు దాచినవి మీ పిల్లలు చూసి మీతో మాట్లాడగలరు.",
+            "వీలైనప్పుడు అభ్యర్థనలు కలిసి పంపండి. పిల్లలకు ముందే నచ్చిన సంబంధానికి ఆదరంగా జవాబు వస్తుంది.",
+            "కుటుంబ సంభాషణలో అవతలి తల్లిదండ్రులతో మాట్లాడండి. ఇద్దరు అభ్యర్థుల సొంత సంభాషణ ప్రైవేట్‌గానే ఉంటుంది.",
+            "మీరు ఇంగ్లీష్ చదవలేకపోతే, ‘నేను’ తెరిచి సెట్టింగ్‌ల బటన్ (చక్రం గుర్తు) నొక్కి, భాషలో తెలుగు లేదా హిందీ ఎంచుకోండి. ఈ సూచనలతో సహా అన్నీ ఆ భాషలోనే కనిపిస్తాయి."
+          ]}
+        ]
+      }
+    }
+  },
+  {
+    "slug": "looking-again",
+    "category": "family",
+    "minutes": 2,
+    "content": {
+      "en": {
+        "title": "Looking again after divorce or loss",
+        "summary": "A second marriage deserves the same respect as the first.",
+        "sections": [
+          {"points": [
+            "Say it plainly in your profile: divorced, awaiting divorce, or widowed. Families who reply will already be at peace with it.",
+            "If you have children, say so, and whether they live with you. The right family will ask about them warmly.",
+            "Choose who you are looking for with the same care. Many people in the same situation are searching too.",
+            "Take the time you need. Nothing is shown to anyone outside your wishes."
+          ]}
+        ]
+      },
+      "hi": {
+        "title": "तलाक़ या जीवनसाथी खोने के बाद फिर से रिश्ता",
+        "summary": "दूसरा विवाह भी पहले जितने ही सम्मान का हक़दार है।",
+        "sections": [
+          {"points": [
+            "प्रोफ़ाइल में साफ़ लिखिए: तलाक़शुदा, तलाक़ की प्रक्रिया में, या विधवा/विधुर। जो परिवार जवाब देंगे, वे यह जानकर ही देंगे।",
+            "अगर बच्चे हैं, तो बताइए, और यह भी कि वे आपके साथ रहते हैं या नहीं। सही परिवार उनके बारे में स्नेह से पूछेगा।",
+            "आप किसे ढूँढ रहे हैं, यह भी उतनी ही सावधानी से चुनिए। ऐसी ही स्थिति वाले कई लोग भी ढूँढ रहे हैं।",
+            "जितना समय चाहिए, लीजिए। आपकी पसंद से बाहर किसी को कुछ नहीं दिखाया जाता।"
+          ]}
+        ]
+      },
+      "te": {
+        "title": "విడాకులు లేదా జీవిత భాగస్వామిని కోల్పోయిన తర్వాత మళ్లీ సంబంధం",
+        "summary": "రెండో వివాహానికీ మొదటిదానంత గౌరవం ఉండాలి.",
+        "sections": [
+          {"points": [
+            "ప్రొఫైల్‌లో స్పష్టంగా చెప్పండి: విడాకులు అయ్యాయి, విడాకుల ప్రక్రియలో ఉన్నారు, లేదా జీవిత భాగస్వామిని కోల్పోయారు. జవాబిచ్చే కుటుంబాలు అది తెలిసే ఇస్తాయి.",
+            "పిల్లలు ఉంటే చెప్పండి, వారు మీతో ఉంటారో లేదో కూడా. సరైన కుటుంబం వారి గురించి ఆప్యాయంగా అడుగుతుంది.",
+            "మీరు ఎవరి కోసం చూస్తున్నారో కూడా అంతే జాగ్రత్తగా ఎంచుకోండి. ఇదే పరిస్థితిలో ఉన్న చాలామంది కూడా వెతుకుతున్నారు.",
+            "మీకు కావలసినంత సమయం తీసుకోండి. మీ ఇష్టాలకు బయటి వారికి ఏదీ చూపించబడదు."
+          ]}
+        ]
+      }
+    }
+  },
+  {
+    "slug": "families-far-apart",
+    "category": "family",
+    "minutes": 2,
+    "content": {
+      "en": {
+        "title": "When the candidate lives far from family",
+        "summary": "Working abroad or in another city, with parents at home.",
+        "sections": [
+          {"points": [
+            "Add your parents to your Home Circle. They can meet families locally while you talk from where you are.",
+            "Say where you live now, and whether you would move back or want your partner to join you. It is the first thing families ask.",
+            "Use the private chat for the two of you and the family chat for everyone, so no one feels left out across time zones.",
+            "For the first meeting, a video call with both families present is a good start before anyone travels."
+          ]}
+        ]
+      },
+      "hi": {
+        "title": "जब उम्मीदवार परिवार से दूर रहता हो",
+        "summary": "विदेश या दूसरे शहर में काम, और माता-पिता घर पर।",
+        "sections": [
+          {"points": [
+            "अपने माता-पिता को Home Circle में जोड़िए। वे वहीं परिवारों से मिल सकते हैं, और आप जहाँ हैं वहीं से बात कर सकते हैं।",
+            "बताइए कि आप अभी कहाँ रहते हैं, और आप वापस आएँगे या चाहेंगे कि जीवनसाथी आपके पास आए। परिवार सबसे पहले यही पूछते हैं।",
+            "आप दोनों के लिए निजी बातचीत और सबके लिए परिवार-बातचीत रखिए, ताकि अलग-अलग समय क्षेत्रों में भी कोई छूटा हुआ न लगे।",
+            "पहली मुलाक़ात के लिए, किसी के यात्रा करने से पहले दोनों परिवारों के साथ एक वीडियो कॉल अच्छी शुरुआत है।"
+          ]}
+        ]
+      },
+      "te": {
+        "title": "అభ్యర్థి కుటుంబానికి దూరంగా ఉన్నప్పుడు",
+        "summary": "విదేశంలో లేదా వేరే ఊరిలో ఉద్యోగం, తల్లిదండ్రులు ఇంటి దగ్గర.",
+        "sections": [
+          {"points": [
+            "మీ తల్లిదండ్రులను Home Circleలో చేర్చండి. వారు అక్కడే కుటుంబాలను కలవగలరు, మీరు ఉన్నచోటు నుండే మాట్లాడవచ్చు.",
+            "ఇప్పుడు ఎక్కడ ఉంటున్నారో, తిరిగి వస్తారా లేదా జీవిత భాగస్వామి మీ దగ్గరకు రావాలనుకుంటారా చెప్పండి. కుటుంబాలు ముందుగా అడిగేది ఇదే.",
+            "మీ ఇద్దరికీ ప్రైవేట్ సంభాషణ, అందరికీ కుటుంబ సంభాషణ వాడండి; వేర్వేరు సమయ మండలాల్లో ఉన్నా ఎవరూ దూరమైనట్టు అనిపించదు.",
+            "మొదటి కలయికకు, ఎవరైనా ప్రయాణం చేసే ముందు రెండు కుటుంబాలతో ఒక వీడియో కాల్ మంచి ప్రారంభం."
+          ]}
+        ]
+      }
+    }
+  },
+  {
+    "slug": "the-first-meeting",
+    "category": "next",
+    "minutes": 3,
+    "action_href": "/wedding",
+    "content": {
+      "en": {
+        "title": "The first meeting between families",
+        "summary": "Pelli choopulu, made easy for both sides.",
+        "sections": [
+          {"h": "Before", "points": [
+            "Agree the day, time and who will come in the family chat. Two or three from each side is enough.",
+            "Choose a calm place: the bride's home, a temple, or a quiet family restaurant. Wedding arrangements suggests places near both families.",
+            "Share any questions that matter to your family beforehand, so the meeting itself can be relaxed."
+          ]},
+          {"h": "On the day", "points": [
+            "Give the two of them some time to talk on their own, within sight of the families.",
+            "Keep talk of money, dowry and demands out of it. Dowry is against the law and against the spirit of Mangalya."
+          ]},
+          {"h": "After", "points": [
+            "Each side takes a day or two, then says yes or no kindly in the family chat.",
+            "If both say yes, move the stage to \"Families agreed\" in Wedding arrangements to see what comes next."
+          ]}
+        ]
+      },
+      "hi": {
+        "title": "परिवारों की पहली मुलाक़ात",
+        "summary": "रिश्ता देखने की रस्म, दोनों ओर के लिए आसान।",
+        "sections": [
+          {"h": "पहले", "points": [
+            "परिवार-बातचीत में दिन, समय और कौन-कौन आएगा, तय कीजिए। हर ओर से दो-तीन लोग काफ़ी हैं।",
+            "शांत जगह चुनिए: लड़की का घर, मंदिर, या कोई शांत पारिवारिक रेस्तराँ। ‘शादी की तैयारी’ दोनों परिवारों के पास की जगहें सुझाती है।",
+            "जो सवाल आपके परिवार के लिए ज़रूरी हों, पहले ही पूछ लीजिए, ताकि मुलाक़ात सहज रहे।"
+          ]},
+          {"h": "उस दिन", "points": [
+            "दोनों को परिवारों की नज़र के सामने, कुछ देर अकेले बात करने दीजिए।",
+            "पैसे, दहेज और माँगों की बात न कीजिए। दहेज क़ानूनन अपराध है और Mangalya की भावना के भी विरुद्ध है।"
+          ]},
+          {"h": "बाद में", "points": [
+            "हर पक्ष एक-दो दिन सोचता है, फिर परिवार-बातचीत में विनम्रता से हाँ या ना कहता है।",
+            "अगर दोनों हाँ कहें, तो ‘शादी की तैयारी’ में चरण बदलकर ‘रिश्ता पक्का’ कीजिए और देखिए आगे क्या करना है।"
+          ]}
+        ]
+      },
+      "te": {
+        "title": "కుటుంబాల మొదటి కలయిక",
+        "summary": "పెళ్లిచూపులు, ఇరువైపులకూ సులభంగా.",
+        "sections": [
+          {"h": "ముందు", "points": [
+            "రోజు, సమయం, ఎవరెవరు వస్తారో కుటుంబ సంభాషణలో నిర్ణయించుకోండి. ఒక్కో వైపు నుండి ఇద్దరు ముగ్గురు చాలు.",
+            "ప్రశాంతమైన చోటు ఎంచుకోండి: అమ్మాయి ఇల్లు, గుడి, లేదా ప్రశాంతమైన కుటుంబ రెస్టారెంట్. రెండు కుటుంబాలకు దగ్గరలోని చోట్లను ‘పెళ్లి ఏర్పాట్లు’ సూచిస్తుంది.",
+            "మీ కుటుంబానికి ముఖ్యమైన ప్రశ్నలు ముందే అడిగేయండి, కలయిక ప్రశాంతంగా సాగుతుంది."
+          ]},
+          {"h": "ఆ రోజు", "points": [
+            "కుటుంబాలకు కనిపించేంత దూరంలో, ఇద్దరినీ కాసేపు విడిగా మాట్లాడుకోనివ్వండి.",
+            "డబ్బు, కట్నం, కోరికల మాటలు వద్దు. కట్నం చట్టరీత్యా నేరం, Mangalya ఆశయానికీ విరుద్ధం."
+          ]},
+          {"h": "తర్వాత", "points": [
+            "ఒక్కో వైపు ఒకటి రెండు రోజులు ఆలోచించి, కుటుంబ సంభాషణలో మర్యాదగా అవును లేదా కాదు అని చెప్పాలి.",
+            "ఇద్దరూ అవును అంటే, ‘పెళ్లి ఏర్పాట్లు’లో దశను ‘నిశ్చితార్థం’కి మార్చి తర్వాత ఏమిటో చూడండి."
+          ]}
+        ]
+      }
+    }
+  }
+]

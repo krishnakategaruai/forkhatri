@@ -1,0 +1,25 @@
+{
+  "title": "Guides",
+  "intro": "Short guides for families: a better profile, good photos, staying safe, and the situations many families meet.",
+  "category": {
+    "start": "Getting started",
+    "profile": "A better profile",
+    "photos": "Photos and style",
+    "safety": "Safety",
+    "family": "Family situations",
+    "next": "After a match"
+  },
+  "minutes": "{{n}} min read",
+  "video": "Video",
+  "englishOnly": "This guide is not in your language yet, so it is shown in English.",
+  "notFound": "This guide is not available.",
+  "error": "We couldn't load the guides. Please try again.",
+  "action": {
+    "help": "How Mangalya works",
+    "circle": "Open Circle",
+    "edit": "Edit my profile",
+    "wedding": "Wedding arrangements",
+    "default": "Open in Mangalya"
+  },
+  "more": "More guides"
+}

@@ -43,6 +43,8 @@ from app.api.routes import (
     safety,
     shortlist,
     verification,
+    wedding,
+    guides,
 )
 from app.config.settings import get_settings
 from app.db.engine import (
@@ -169,6 +171,9 @@ def create_app() -> FastAPI:
     # built but never registered, so every /agents call answered 404 and the
     # agent screens could not load for anyone.
     app.include_router(agents.router)
+    # [Owner, 2026-10-01] Wedding arrangements after a match, and the Guides tab.
+    app.include_router(wedding.router)
+    app.include_router(guides.router)
     # [2026-09-27] Facts for the platform's Members dashboard (server to server only).
     app.include_router(insights.router)
 

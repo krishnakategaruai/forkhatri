@@ -15,6 +15,13 @@ import {
   Handshake,
   ArrowsLeftRight,
   BookmarkSimple,
+  BookOpenText,
+  FlowerLotus,
+  Globe,
+  MapPin,
+  Phone,
+  PlayCircle,
+  Tag,
   Camera,
   CaretRight,
   ChatCircle,
@@ -65,6 +72,13 @@ const SET = {
   invite: UserPlus,
   family: UsersThree,
   close: X,
+  wedding: FlowerLotus,
+  guides: BookOpenText,
+  pin: MapPin,
+  phone: Phone,
+  web: Globe,
+  play: PlayCircle,
+  offer: Tag,
 } as const;
 
 export type IconName = keyof typeof SET;

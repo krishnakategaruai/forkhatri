@@ -75,6 +75,19 @@ const AGENT_WORKSPACE: Dest = {
   labelKey: "common:nav.agentWorkspace",
   icon: (active) => <Icon name="briefcase" filled={active} />,
 };
+/* [Owner, 2026-10-01] After a match: help with the first meeting and the
+ * wedding (halls, photography, cars, cooks), and Guides on using Mangalya
+ * well. Both sit after Messages, where a match's next steps begin. */
+const WEDDING: Dest = {
+  href: "/wedding",
+  labelKey: "common:nav.wedding",
+  icon: (active) => <Icon name="wedding" filled={active} />,
+};
+const GUIDES: Dest = {
+  href: "/guides",
+  labelKey: "common:nav.guides",
+  icon: (active) => <Icon name="guides" filled={active} />,
+};
 const FIND_AGENTS: Dest = {
   href: "/agents",
   labelKey: "common:nav.agents",
@@ -101,8 +114,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       .catch(() => undefined);
   }, []);
   const destinations = isAgent
-    ? [AGENT_WORKSPACE, ...DESTINATIONS]
-    : [...DESTINATIONS.slice(0, 4), FIND_AGENTS, DESTINATIONS[4]];
+    ? [AGENT_WORKSPACE, ...DESTINATIONS.slice(0, 4), WEDDING, GUIDES, DESTINATIONS[4]]
+    : [...DESTINATIONS.slice(0, 4), WEDDING, FIND_AGENTS, GUIDES, DESTINATIONS[4]];
   /* [DEC-V1-030, owner 2026-09-24] Below desktop width the navigation is a
      left drawer opened from a menu button, not a bottom bar — the page keeps
      its full width for photos. Detail screens (a profile, an open chat)
@@ -123,7 +136,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, [drawerOpen]);
   const isDetail =
     pathname.startsWith("/profile/") ||
-    /^\/messages\/[^/]+/.test(pathname);
+    /^\/(messages|wedding|guides)\/[^/]+/.test(pathname);
 
   useEffect(() => {
     let active = true;

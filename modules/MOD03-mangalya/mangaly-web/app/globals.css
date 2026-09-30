@@ -6473,3 +6473,15 @@ img {
 .topbar--wrap h1 { white-space: normal; overflow: visible; text-overflow: clip; font-size: clamp(1.35rem, 6.5vw, 2rem); line-height: 1.15; }
 .topbar--wrap h1 { flex: 1 1 auto !important; min-width: 0; text-align: center; }
 
+
+/* Report or block, at the foot of a profile (components/ProfileSafety). */
+.psafety { margin: 28px 0 8px; display: grid; gap: 10px; }
+.psafety__link {
+  justify-self: start; min-height: 44px; padding: 8px 0;
+  background: none; border: 0; cursor: pointer;
+  color: var(--ink-3); font: inherit; font-size: 0.875rem;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+/* Choice chips inside a report/block panel sit on the panel's own colour;
+   an outline keeps them readable as buttons (profile and chat alike). */
+.chat-panel .quick-pick__chip { border-color: var(--line-2, var(--line)); min-height: 40px; }

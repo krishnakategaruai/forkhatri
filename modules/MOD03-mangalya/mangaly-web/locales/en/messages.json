@@ -26,7 +26,7 @@
     "cancel": "Cancel",
     "reportTitle": "Report {{name}}",
     "reportWho": "Who are you reporting?",
-    "reportNote": "This chat, as it is right now, goes to Mangaly’s safety team with your report. {{name}} is not told who reported.",
+    "reportNote": "This chat, as it is right now, goes to Mangalya’s safety team with your report. {{name}} is not told who reported.",
     "reportDetails": "Anything we should know (optional)",
     "reportSend": "Send report",
     "reportSent": "Thank you. Our safety team will look at this.",

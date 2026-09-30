@@ -1,0 +1,64 @@
+{
+  "title": "Wedding arrangements",
+  "intro": "After a family accepts, plan the next steps together: where to meet first, then halls, photography, cars and more, near both families.",
+  "empty": {
+    "title": "This opens after a match",
+    "body": "When a family accepts your request, or you accept theirs, you can plan the first meeting and the wedding here, together with them.",
+    "cta": "Go to Discover"
+  },
+  "with": "With {{name}}",
+  "open": "Plan",
+  "stageTitle": "Where things stand",
+  "stageShared": "Both families see the same stage. Either family can change it.",
+  "stage": {
+    "first_meeting": "First meeting",
+    "families_agreed": "Families agreed",
+    "wedding_fixed": "Wedding date fixed"
+  },
+  "stageHint": {
+    "first_meeting": "Pelli choopulu: the families meet for the first time. Choose a calm place near both of you.",
+    "families_agreed": "Both sides said yes. Book the hall early: good dates go three to six months ahead.",
+    "wedding_fixed": "The muhurtham is set. Now the decoration, cooks, make-up and cars."
+  },
+  "category": {
+    "cafe": "Cafés",
+    "restaurant": "Family restaurants",
+    "hall": "Function halls",
+    "jewellery": "Jewellers",
+    "clothes": "Sarees and wedding wear",
+    "photographer": "Photographers",
+    "caterer": "Caterers and cooks",
+    "decoration": "Flowers and decoration",
+    "beauty": "Bridal make-up and mehendi",
+    "car_rental": "Cars for the wedding"
+  },
+  "near": {
+    "between": "Near both families",
+    "mine": "Near you",
+    "theirs": "Near them"
+  },
+  "partners": {
+    "title": "Mangalya partner offers",
+    "badge": "Partner offer",
+    "off": "{{n}}% off",
+    "until": "Until {{date}}",
+    "verified": "Checked by Mangalya",
+    "none": "Mangalya is arranging special prices with trusted places in {{city}}. They will appear here, clearly marked as partner offers."
+  },
+  "places": {
+    "title": "Places near {{city}}",
+    "veg": "Vegetarian",
+    "km": "{{km}} km",
+    "map": "Map",
+    "call": "Call",
+    "site": "Website",
+    "none": "We don't have places of this kind near {{city}} yet.",
+    "noTown": "Add your town to your profile to see places near you.",
+    "ordered": "How this list is ordered: nearest first, with places that are vegetarian or list their phone, website and hours moved a little higher. For a first meeting, street stalls and fast food are left out. Nobody pays to appear here. Partner offers are shown separately and always marked.",
+    "credit": "Places © OpenStreetMap contributors",
+    "updated": "List updated {{date}}"
+  },
+  "guide": "Read: the first meeting between families",
+  "error": "We couldn't load this. Please try again.",
+  "notAvailable": "This match is not available any more."
+}

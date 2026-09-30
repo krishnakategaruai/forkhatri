@@ -1,0 +1,76 @@
+/* Wedding arrangements — /wedding and /wedding/[connectionId]. */
+.wedding { display: grid; gap: var(--space-3); padding-bottom: 48px; }
+.wedding__intro { margin: 0; }
+.wedding__label {
+  margin: 0 0 var(--space-2);
+  font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+:root:lang(te) .wedding__label, :root:lang(hi) .wedding__label { text-transform: none; letter-spacing: 0; font-size: 0.8125rem; }
+
+.wedding__empty { display: grid; justify-items: center; gap: var(--space-2); text-align: center; padding: 48px 8px; color: var(--ink-2); }
+.wedding__empty .h3 { margin: 0; color: var(--ink); }
+.wedding__empty .caption { max-width: 34ch; margin: 0 0 var(--space-2); }
+
+.wedding__matches { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.wmatch {
+  display: flex; align-items: center; gap: 14px; padding: 12px 14px;
+  border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--line);
+  color: var(--ink); text-decoration: none; min-height: 72px;
+}
+.wmatch__text { flex: 1; display: grid; gap: 2px; min-width: 0; }
+.wmatch__name { font-family: var(--font-serif); font-size: 1.25rem; line-height: 1.2; }
+.wmatch__stage { font-size: 0.875rem; color: var(--gold-ink, var(--ink-2)); }
+
+/* The stage both families share: three steps, the current one filled. */
+.wstage { padding: 14px; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--line); }
+.wstage__steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.wstage__step {
+  width: 100%; min-height: 64px; display: grid; justify-items: center; align-content: start; gap: 6px;
+  padding: 6px 2px; border: 0; background: none; cursor: pointer;
+  color: var(--ink-3); font: inherit; font-size: 0.8125rem; line-height: 1.25; text-align: center;
+}
+.wstage__dot {
+  width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+  border: 1.5px solid var(--line-2, var(--line)); font-size: 0.8125rem; font-weight: 600;
+}
+.wstage__step.is-done { color: var(--ink-2); }
+.wstage__step.is-done .wstage__dot { border-color: var(--gold); color: var(--gold-ink, var(--ink)); }
+.wstage__step.is-current { color: var(--ink); font-weight: 600; }
+.wstage__step.is-current .wstage__dot { background: var(--gold); border-color: var(--gold); color: var(--on-gold, #1a0708); }
+.wstage__hint { margin: 12px 0 4px; line-height: 1.5; color: var(--ink); }
+.wstage__shared { margin: 0; }
+.wedding__guide { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 0.875rem; color: var(--gold-ink, var(--ink)); }
+
+.wcats { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 calc(var(--gutter, 16px) * -1); padding: 2px var(--gutter, 16px); }
+.wcats::-webkit-scrollbar { display: none; }
+.wcats .quick-pick__chip { flex: none; }
+
+.wnear { display: flex; flex-wrap: wrap; gap: 8px; }
+.wnear__opt {
+  min-height: 36px; padding: 6px 12px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line); background: none; color: var(--ink-2); font: inherit; font-size: 0.8125rem;
+}
+.wnear__opt.is-on { border-color: var(--gold); color: var(--ink); background: var(--gold-tint, transparent); }
+
+.wplaces { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.wplace {
+  display: grid; gap: 4px; padding: 12px 14px;
+  border-radius: var(--radius-md); background: var(--surface); border: 1px solid var(--line);
+}
+.wplace--partner { border-color: var(--gold); }
+.wplace__badge {
+  justify-self: start; display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.75rem; font-weight: 600; color: var(--gold-ink, var(--ink));
+}
+.wplace__name { font-weight: 600; font-size: 1rem; color: var(--ink); overflow-wrap: anywhere; }
+.wplace__offer { font-size: 0.9375rem; color: var(--ink); }
+.wplace__meta { font-size: 0.8125rem; color: var(--ink-3); overflow-wrap: anywhere; }
+.wplace__actions { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 4px; }
+.wplace__act {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 36px;
+  font-size: 0.875rem; color: var(--gold-ink, var(--ink)); text-decoration: none;
+}
+.wedding__ordered { margin: 12px 0 0; }
+.wedding__credit { margin: 4px 0 0; }
+.wedding__credit a { color: inherit; }

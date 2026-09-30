@@ -871,5 +871,11 @@
     "education": {
       "highest_education_level": "Education"
     }
+  },
+  "safety": {
+    "link": "Report or block this profile",
+    "reportTitle": "Why are you reporting this profile?",
+    "reportNote": "Your report goes to Mangalya’s safety team. This person is not told who reported.",
+    "blockConfirm": "Block this person? You will not see each other anywhere in Mangalya, and neither of you can send a request or message."
   }
 }

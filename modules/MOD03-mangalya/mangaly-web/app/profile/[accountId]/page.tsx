@@ -6,6 +6,8 @@ import { useLoaderHold } from "@/lib/useLoaderHold";
 import Link from "next/link";
 import SacredLoader from "@/components/SacredLoader";
 import { useParams, useRouter } from "next/navigation";
+
+import ProfileSafety from "@/components/ProfileSafety";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -841,6 +843,7 @@ export default function MemberProfilePage() {
               {linkActions()}
             </div>
           </div>
+            <ProfileSafety profileId={accountId} />
             {similar}
         </main>
       </>
@@ -1443,6 +1446,7 @@ export default function MemberProfilePage() {
             )}
           </section>
         )}
+            <ProfileSafety profileId={accountId} />
             {similar}
       </main>
     </>
