@@ -144,8 +144,27 @@
     margin-left: calc(6px - var(--gutter));
     margin-right: calc(6px - var(--gutter));
   }
+  /* Each card fills the screen below the header, and a swipe up settles on
+   * the next person instead of free-scrolling past several. The top of the
+   * page stays a stop too, so the describe card and lenses are reachable. */
   .dwall .dtile__photo {
-    aspect-ratio: 5 / 7;
+    aspect-ratio: auto;
+    height: calc(100svh - 76px);
+    min-height: 420px;
+  }
+  html:has(.dwall) {
+    scroll-snap-type: y mandatory;
+    scroll-padding-top: 64px;
+    /* The old bottom-bar padding would shrink the snap window below a card. */
+    scroll-padding-bottom: 0;
+  }
+  .dscreen > :first-child {
+    scroll-snap-align: start;
+  }
+  .dwall .dtile {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    scroll-margin-top: 0;
   }
 }
 @media (min-width: 640px) {
