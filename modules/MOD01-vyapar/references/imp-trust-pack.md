@@ -127,6 +127,12 @@ When a post **closes** (`closeOpportunity`), **expires** (hourly pass) or **fill
 - gets one notification in their language (`applicantPostClosed`, or `applicantPostFilled`), link `/enquiries/{id}`: "Update on {title}" / "This post has closed, so your application won't go further this time. It isn't a judgement of you. There are similar posts on Vyapar." Never "rejected" or "not selected".
 - The usual `applicant.declined` event fires.
 
+**The applicant still sees which post it was.** Once a post is closed, expired or removed, RLS hides it from the applicant, so their Requests row and thread used to read "Untitled". The thread now reads it through a participant-only function (`vyapar_enquiries.enquiry_targets`, migration 028 §8), which returns only the title and state, for old rows too:
+- `listMyEnquiries` and `getEnquiry` carry `target_name` (the post title, or the profile name) and the new `target_state` (the post's `closed | expired | removed | active | …`, or the listing's state);
+- `getEnquiry` now also carries `counterpart_name`.
+
+Show the title as usual with a "Closed" / "Expired" chip from `target_state`, and don't link to a post the reader can no longer open.
+
 A thread the poster already accepted (`in_progress`) is left alone. If the post is renewed, these applicants can apply again (`already_declined` now ignores `state_reason: post_closed`).
 
 ### "N applicants still waiting" before closing
@@ -136,6 +142,10 @@ A thread the poster already accepted (`in_progress`) is left alone. If the post 
 {"waiting": 2, "new": 1, "shortlisted": 1, "oldest_waiting_days": 3,
  "message": "2 applicants are still waiting for an answer.",
  "close_message": "If you close this post now, the 2 people still waiting will be told politely that it has closed."}
+// one waiting (plural forms per language: server keys `…waiting.one/.other`, `…closeMessage.some.one/.other`)
+{"waiting": 1, "new": 1, "shortlisted": 0, "oldest_waiting_days": 0,
+ "message": "1 applicant is still waiting for an answer.",
+ "close_message": "If you close this post now, the 1 person still waiting will be told politely that it has closed."}
 // nobody waiting
 {"waiting": 0, "new": 0, "shortlisted": 0, "oldest_waiting_days": null, "message": null,
  "close_message": "Nobody is waiting for an answer. Closing stops new applications."}
@@ -210,6 +220,7 @@ Seeded profiles covered: **Kavita Dhawan** (advocate) and **Deepak Bhalla** (arc
   - it gets no trust, reputation or freshness score and is never "verified first";
   - it never gets a Sponsored slot;
   - among equal matches, order is distance, then name.
+- **Profile recommendation cards** (`ProfileCard`, from "Similar profiles" `listSimilarProfiles` and `listMatchingProfiles`) carry the same `profession` object. When it is restricted, the card's `headline` and `availability` are `null`, `reputation` is `null` and `badges` keeps only `verified_business`, exactly as on the listing detail. A card has no prices.
 - **Profile recommendations** ("Similar profiles" on a profile, `listMatchingProfiles` on a post): the same neutral order. Among equal skill matches such a profile gets no verified-first or "available now" boost and is ordered by nearness to the viewer, then name. Its cards carry no counts or reputation badges.
 - **Promotion:** `createPromotion` and `confirmPromotionPurchase` → **403 `promotion_not_permitted_for_profession`**, "Your profession's council does not allow advertising, so this profile can't be promoted. People still find you in search." `listPromotionOptions` → `eligible: false`, `reason: "notPermittedForProfession"`, `products: []`. Campaign items go through the same check.
 - **Packages:** `upsertListingPackages` → **403 `packages_not_permitted_for_profession`**. `requestListingPackage` → 404 for others.
@@ -318,7 +329,7 @@ New settings (defaults in `app/config.py`, all overridable in `.env`):
 
 ## Checks
 
-`scripts/check_trust_pack.py` passed **98/98** on private port 8093, including:
+`scripts/check_trust_pack.py` passed **103/103** on private port 8093, including:
 - the corpus (16 scam phrasings caught, 12 honest ones allowed);
 - every surface;
 - paid on time, with a real contract stage released through the dev sandbox;
@@ -327,7 +338,9 @@ New settings (defaults in `app/config.py`, all overridable in `.env`):
 - a review-queue removal, now appealable;
 - Kavita Dhawan and Deepak Bhalla's profiles;
 - a legacy promotion cancelled by the pass;
-- two advocates in Abids listed in name order in a post's matching profiles, with no verified-first boost;
+- two advocates in Abids listed in name order in a post's matching profiles, with no verified-first boost, and cards carrying `profession` with no headline or counts;
+- a closed post still named in the applicant's thread and Requests row;
+- singular and plural close-check messages in en/hi/te;
 - a new advocate with a Bar Council claim checked by an operator, then suspended, appealed and restored.
 
 It deletes everything it created, restores the rate limits and "recently viewed" rows it touched, and its sweep finds no leftover rows.

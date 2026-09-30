@@ -3110,3 +3110,23 @@ VISION-2040 items 1–5 ("next 3 builds" #1), backend and API. The full contract
 | `check_structured_hiring.py` | 130/130 |
 | `check_profile.py` | 33/33 |
 | `check_backend_b.py` | 168/168 |
+
+**Follow-up 2 (same day, from the web pass):**
+
+1. **Profile recommendation cards** (`ProfileCard`) now carry `profession`. A restricted card has no headline, availability, reputation or reputation badges, the same as the listing detail.
+2. **Plurals.** `close_message` and the waiting message use server-side plural keys (`.one` / `.other`, CLDR rule per language: Hindi counts 0 and 1 as "one"), through the new `app.i18n.translate_count`. It read "the 1 people" before.
+3. **Closed posts in Requests.** A closed, expired or removed post no longer shows as "Untitled" in the applicant's Requests row and thread. Migration 028 §8 adds `vyapar_enquiries.enquiry_targets()`, a participant-only function that returns only the title and state. `listMyEnquiries` and `getEnquiry` now return `target_name` and `target_state`, and `getEnquiry` also returns `counterpart_name`. This fixes old rows too.
+
+Checks:
+
+| Script | Result |
+|---|---|
+| `check_trust_pack.py` | 103/103 |
+| `check_structured_hiring.py` | 130/130 |
+| `check_profile.py` | 33/33 |
+| `check_contracts.py` | 92/92 |
+| `check_admin_console.py` | 77/77 |
+| `check_backend_b.py` | 168/168 |
+| `check_ai.py` | 68/68 |
+
+`openapi.json` was regenerated.

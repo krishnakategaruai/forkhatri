@@ -428,3 +428,30 @@ BEGIN
 END;
 $function$;
 GRANT EXECUTE ON FUNCTION vyapar_commercial.cancel_profession_restricted_promotions() TO vyapar_app;
+
+-- ---------------------------------------------------------------------------
+-- 8. The post or profile a thread is about, for its two parties, whatever
+-- state the post is in now. Found in the trust-pack web pass: once a post
+-- closed, expired or was removed, the opportunities RLS hid it from the
+-- applicant, so their Requests row and thread read "Untitled". This returns
+-- only the title/name and state, and only for threads the caller is a party
+-- to, so no other field of a closed post leaks. Works for old rows too (no
+-- snapshot needed).
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION vyapar_enquiries.enquiry_targets(p_ids uuid[])
+ RETURNS TABLE(enquiry_id uuid, target_kind text, target_title text, target_state text)
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'vyapar_enquiries', 'pg_temp'
+AS $function$
+  SELECT e.id,
+         CASE WHEN e.opportunity_id IS NOT NULL THEN 'opportunity' ELSE 'listing' END,
+         coalesce(o.title, l.name),
+         coalesce(o.state, l.state)
+    FROM vyapar_enquiries.enquiries e
+    LEFT JOIN vyapar_opportunities.opportunities o ON o.id = e.opportunity_id
+    LEFT JOIN vyapar_listings.listings l ON l.id = e.listing_id
+   WHERE e.id = ANY (p_ids)
+     AND current_setting('vyapar.authz_context', true) IN (e.sender_id, e.provider_id);
+$function$;
+GRANT EXECUTE ON FUNCTION vyapar_enquiries.enquiry_targets(uuid[]) TO vyapar_app;

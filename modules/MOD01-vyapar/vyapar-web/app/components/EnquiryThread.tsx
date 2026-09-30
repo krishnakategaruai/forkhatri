@@ -38,7 +38,7 @@ import ContactActionsBlock from "@/app/components/contact/ContactActionsBlock";
 import ContractEntry from "@/app/components/contracts/ContractEntry";
 import TranslateLink from "@/app/components/respond/TranslateLink";
 import ProposalSummary, { hasProposalTerms } from "@/app/components/applicants/ProposalSummary";
-import { enquiryTone, ENQUIRY_STATE_KEY } from "@/app/components/enquiries/EnquiriesView";
+import { endedTargetLabel, enquiryTone, ENQUIRY_STATE_KEY } from "@/app/components/enquiries/EnquiriesView";
 import { formatDate, formatDateTime } from "@/lib/format";
 // [Trust pack] the poster's replies pass the scam shield; the paid person is asked "paid on time?"
 import { ScamShieldNote, scamFromError, useScamShield, type ScamFinding } from "@/app/components/trust/ScamShield";
@@ -70,6 +70,10 @@ interface Enquiry {
   action_type: string;
   state: string;
   state_reason?: string | null;
+  // [Backend] the post's or profile's own state, and the names, on the thread read itself
+  target_state?: string | null;
+  target_name?: string | null;
+  counterpart_name?: string | null;
   delivered: boolean;
   safety_notice_seen: boolean;
   messages: Message[];
@@ -200,7 +204,13 @@ export default function EnquiryThread({
       : t(`enquiries:detail.${STATE_KEY[enquiry.state] ?? "stateOpen"}` as "detail.stateOpen");
   const tone = enquiryTone(enquiry.state, enquiry.is_sender);
   const kindLabel = t(`enquiries:actionType.${enquiry.action_type}` as "actionType.enquire", { defaultValue: enquiry.action_type });
-  const counterpart = names?.counterpart ?? t("enquiries:detail.them");
+  const targetName = enquiry.target_name ?? names?.target ?? null;
+  const counterpart = enquiry.counterpart_name ?? names?.counterpart ?? t("enquiries:detail.them");
+  const endedLabel = endedTargetLabel(
+    t as (k: string) => string,
+    enquiry.target_state,
+    enquiry.is_sender && enquiry.state === "closed" && enquiry.state_reason === "post_closed",
+  );
   const targetHref = enquiry.listing_id ? `/listings/${enquiry.listing_id}` : enquiry.opportunity_id ? `/opportunities/${enquiry.opportunity_id}` : null;
   const live = !["closed", "withdrawn"].includes(enquiry.state);
   const postClosed = enquiry.is_sender && enquiry.state === "closed" && enquiry.state_reason === "post_closed";
@@ -273,19 +283,24 @@ export default function EnquiryThread({
         <div className="vy-ctx-main">
           {/* 1. who and what */}
           <div className="vy-dl-sec-head vy-dl-sec-head-3" style={{ alignItems: "center" }}>
-            <span className="vy-dl-avatar vy-dl-avatar-lg" aria-hidden="true">{initial(names?.counterpart)}</span>
+            <span className="vy-dl-avatar vy-dl-avatar-lg" aria-hidden="true">{initial(enquiry.counterpart_name ?? names?.counterpart)}</span>
             <div className="vy-dl-row-body">
               {embedded ? <h2 className="vy-dl-thread-name">{counterpart}</h2> : <h1 className="vy-dl-thread-name">{counterpart}</h1>}
               <div className="vy-dl-thread-about">
                 <span className="vy-dl-state" data-tone={tone}>{stateLabel}</span>
+                {endedLabel && (
+                  <span className="vy-dl-state" data-tone="muted">
+                    {endedLabel}
+                  </span>
+                )}
                 <span>{kindLabel}</span>
-                {names?.target && (
+                {targetName && (
                   <>
                     <span aria-hidden="true">·</span>
                     {targetHref ? (
-                      <Link href={targetHref} transitionTypes={["vy-forward"]}>{names.target}</Link>
+                      <Link href={targetHref} transitionTypes={["vy-forward"]}>{targetName}</Link>
                     ) : (
-                      <span>{names.target}</span>
+                      <span>{targetName}</span>
                     )}
                   </>
                 )}
@@ -452,16 +467,16 @@ export default function EnquiryThread({
                 <dt>{t("enquiries:detail.withLabel")}</dt>
                 <dd>{counterpart}</dd>
               </div>
-              {names?.target && (
+              {targetName && (
                 <div>
                   <dt>{t("enquiries:detail.aboutLabel")}</dt>
                   <dd>
                     {targetHref ? (
                       <Link href={targetHref} transitionTypes={["vy-forward"]} className="vy-dl-inline-icon">
-                        {names.target} <ChevronRight size={14} strokeWidth={2} aria-hidden="true" />
+                        {targetName} <ChevronRight size={14} strokeWidth={2} aria-hidden="true" />
                       </Link>
                     ) : (
-                      names.target
+                      targetName
                     )}
                   </dd>
                 </div>

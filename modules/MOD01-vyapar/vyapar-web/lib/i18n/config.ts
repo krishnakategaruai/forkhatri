@@ -218,7 +218,18 @@ let instance: I18nInstance | null = null;
 // first render with the language the server rendered.
 export function getI18n(initialLanguage: Language = DEFAULT_LANGUAGE): I18nInstance {
   if (instance && typeof window !== 'undefined') return instance;
+  return createI18n(initialLanguage);
+}
 
+/**
+ * A fresh instance in `language` (and, in the browser, the one getI18n
+ * returns from now on). The provider swaps to one of these to change the
+ * language right after hydration: the instance the server-matching HTML
+ * was hydrated with is never mutated, so a Suspense boundary that is still
+ * hydrating reads the language the server rendered (see provider.tsx).
+ */
+export function createI18n(language: Language): I18nInstance {
+  const initialLanguage = language;
   const i18n = i18next.createInstance();
   void i18n.use(initReactI18next).init({
     resources,

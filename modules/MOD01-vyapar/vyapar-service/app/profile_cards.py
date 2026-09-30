@@ -25,6 +25,7 @@ import asyncpg
 from pydantic import BaseModel
 
 from app.reputation import badges_for_members, reputation_for_listings
+from app.services.profession_rules import verdict_for_row
 from app.taxonomy_cache import labels_for
 
 CARD_LIMIT = 4
@@ -44,6 +45,10 @@ class ProfileCard(BaseModel):
     other_labels: list[str]  # the profile's remaining skills, for context
     reputation: dict | None = None
     badges: list[dict] = []  # [IMP-B/FR28] owner's count-based badges, localized
+    # [Trust pack] the same profession object as ListingOut.profession (null
+    # when no council rule applies); when restricted, the card carries no
+    # counts, no reputation badges and none of the hidden fields.
+    profession: dict | None = None
 
 
 async def recommend_profiles(
@@ -87,8 +92,6 @@ async def recommend_profiles(
     # architects) gets no verified-first or "available now" boost: among
     # equal skill matches it is ordered by nearness to the viewer, then name,
     # exactly as in search. Others keep the SQL order above.
-    from app.services.profession_rules import verdict_for_row
-
     def _key(item):
         index, r = item
         neutral = not verdict_for_row(r).allow_ranking_boost
@@ -123,4 +126,23 @@ async def recommend_profiles(
                 badges=[b.model_dump() for b in owner_badges.get(r["owner_id"], [])],
             )
         )
+        _apply_profession(cards[-1], verdict_for_row(r), lang)
     return cards
+
+
+def _apply_profession(card: ProfileCard, verdict, lang: str) -> None:
+    """[Trust pack] Council rules on a recommendation card, exactly as on the
+    listing detail for a non-owner (profession_rules.apply_public_view)."""
+    from app.reputation import FACT_BADGES
+    from app.services.profession_rules import hidden_fields_for, profession_out
+
+    if not verdict.rules:
+        return
+    hidden = hidden_fields_for(verdict)
+    card.profession = profession_out(verdict, lang, hidden=hidden).model_dump()
+    for name in ("headline", "availability"):
+        if name in hidden:
+            setattr(card, name, None)
+    if not verdict.allow_public_reviews:
+        card.reputation = None
+        card.badges = [b for b in card.badges if b.get("key") in FACT_BADGES]

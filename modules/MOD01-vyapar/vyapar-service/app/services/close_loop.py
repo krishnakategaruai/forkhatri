@@ -34,7 +34,7 @@ from pydantic import BaseModel, Field
 
 from app.config import get_settings
 from app.errors import ApiError
-from app.i18n import translate
+from app.i18n import translate, translate_count
 from app.identity import AuthzContext
 
 logger = logging.getLogger(__name__)
@@ -69,7 +69,7 @@ def _waiting_out(rows: list[asyncpg.Record], lang: str) -> WaitingOut:
     oldest = max(((now - r["created_at"]).days for r in rows), default=None)
     message = None
     if n:
-        message = translate("opportunities.closeLoop.waiting.one" if n == 1 else "opportunities.closeLoop.waiting.many", lang, count=n)
+        message = translate_count("opportunities.closeLoop.waiting", lang, n)
     return WaitingOut(waiting=n, new=sum(1 for r in rows if r["stage"] == "new"),
                       shortlisted=sum(1 for r in rows if r["stage"] == "shortlisted"),
                       oldest_waiting_days=oldest, message=message)
@@ -83,8 +83,9 @@ async def get_close_check(conn: asyncpg.Connection, ctx: AuthzContext, lang: str
     if opp is None or opp["poster_id"] != ctx.member_id:
         raise ApiError(404, "common.error.opportunityNotFound", lang)
     base = _waiting_out(await _waiting_rows(conn, opp["id"], ctx.member_id), lang)
-    close_key = "opportunities.closeLoop.closeMessage.some" if base.waiting else "opportunities.closeLoop.closeMessage.none"
-    return CloseCheckOut(**base.model_dump(), close_message=translate(close_key, lang, count=base.waiting))
+    close_message = (translate_count("opportunities.closeLoop.closeMessage.some", lang, base.waiting) if base.waiting
+                     else translate("opportunities.closeLoop.closeMessage.none", lang))
+    return CloseCheckOut(**base.model_dump(), close_message=close_message)
 
 
 async def close_waiting_applicants(conn: asyncpg.Connection, opp, cause: Cause) -> int:

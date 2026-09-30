@@ -102,7 +102,12 @@
     "youReceived": "You received this request",
     "statePostClosed": "Post closed",
     "postClosedLine": "This post has closed, so your application won't go further this time. It isn't a judgement of you.",
-    "postClosedSimilar": "See similar posts"
+    "postClosedSimilar": "See similar posts",
+    "targetEnded": {
+      "closed": "Post closed",
+      "expired": "Post expired",
+      "removed": "Post removed"
+    }
   },
   "channel": {
     "phone": "Phone",

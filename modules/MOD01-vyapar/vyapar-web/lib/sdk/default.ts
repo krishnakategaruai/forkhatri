@@ -20,6 +20,10 @@ export const LANGUAGE_STORAGE_KEY = "vyapar.language";
 export function storedLanguage(): string {
   if (typeof window === "undefined") return "en";
   try {
+    // The cookie is the language the page was rendered in (and the provider
+    // keeps it in step), so API labels match the screen from the first call.
+    const cookie = document.cookie.match(/(?:^|; )vyapar_lang=([^;]*)/)?.[1];
+    if (cookie === "en" || cookie === "hi" || cookie === "te") return cookie;
     return window.localStorage.getItem(LANGUAGE_STORAGE_KEY) ?? "en";
   } catch {
     return "en";

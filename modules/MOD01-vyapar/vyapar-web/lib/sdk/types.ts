@@ -456,6 +456,8 @@ export interface EnquirySummary {
   state: string;
   /** [Trust pack] "post_closed" when the post closed, expired or filled before an answer. */
   state_reason?: string | null;
+  /** The post's or profile's own state (closed / expired / removed when it has ended). */
+  target_state?: string | null;
   is_sender: boolean;
   last_activity_at: string;
   target_name: string | null;

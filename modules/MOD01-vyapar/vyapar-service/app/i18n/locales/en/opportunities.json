@@ -93,11 +93,14 @@
   },
   "closeLoop": {
     "waiting": {
-      "one": "1 applicant is still waiting for an answer.",
-      "many": "{count} applicants are still waiting for an answer."
+      "one": "{count} applicant is still waiting for an answer.",
+      "other": "{count} applicants are still waiting for an answer."
     },
     "closeMessage": {
-      "some": "If you close this post now, the {count} people still waiting will be told politely that it has closed.",
+      "some": {
+        "one": "If you close this post now, the {count} person still waiting will be told politely that it has closed.",
+        "other": "If you close this post now, the {count} people still waiting will be told politely that it has closed."
+      },
       "none": "Nobody is waiting for an answer. Closing stops new applications."
     }
   }

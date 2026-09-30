@@ -106,8 +106,15 @@
 
 /* ---- Collapsible field groups (composer, owner: "that is too worst" on a
    one-scroll, 14-field form) --------------------------------------------- */
+/* Two classes, so the shared .vy-card padding (language-2026.css, loaded
+   later) can't turn a collapsed row into a tall empty box: 52px header +
+   2px each side = one 56px row, like every other collapsed group. */
+.vy-card.vy-field-group {
+  padding: 2px 16px;
+}
+
 .vy-field-group {
-  padding: 4px 18px;
+  padding: 2px 16px;
   transition: background-color var(--dur-exit) var(--ease-out);
 }
 
@@ -1356,6 +1363,13 @@
 
 .vy-actionbar-precall .vy-contact-reason {
   display: none;
+}
+
+/* "Calls before you accept" as a settings row: text left, switch right. */
+.vy-precall-row {
+  border-top: none;
+  padding: 0;
+  cursor: default;
 }
 
 /* On/off switch (pre-accept calling). Neutral when off, the accent only

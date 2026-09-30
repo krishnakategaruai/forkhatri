@@ -157,6 +157,9 @@ class EnquiryOut(BaseModel):
     # every other caller of `_row_to_enquiry` is unaffected.
     target_name: str | None = None
     counterpart_name: str | None = None
+    # [Trust pack] the post's (or profile's) state now, so a thread about a
+    # closed / expired / removed post still names it and can say so.
+    target_state: str | None = None
     # [Backend A] structured proposal/application and the poster's pipeline
     stage: str = "new"  # new | shortlisted | hired | declined (separate from the thread `state`)
     stage_changed_at: str | None = None
@@ -500,18 +503,9 @@ async def list_my_enquiries(
     out = [_row_to_enquiry(r, ctx.member_id) for r in rows]
     if not out:
         return out
-    listing_ids = {r.listing_id for r in out if r.listing_id}
-    opportunity_ids = {r.opportunity_id for r in out if r.opportunity_id}
     counterpart_ids = {(r.provider_id if r.is_sender else r.sender_id) for r in out}
-    listing_names: dict[str, str] = {}
-    opp_names: dict[str, str] = {}
     member_names: dict[str, str] = {}
-    if listing_ids:
-        for r in await conn.fetch("SELECT id, name FROM vyapar_listings.listings WHERE id = ANY($1::uuid[])", list(listing_ids)):
-            listing_names[str(r["id"])] = r["name"]
-    if opportunity_ids:
-        for r in await conn.fetch("SELECT id, title FROM vyapar_opportunities.opportunities WHERE id = ANY($1::uuid[])", list(opportunity_ids)):
-            opp_names[str(r["id"])] = r["title"]
+    targets = await _targets(conn, [r.id for r in out])
     if counterpart_ids:
         # [Real bug found live, fixed here] a plain SELECT against
         # vyapar_identity.members is blocked by members_self_or_operator RLS
@@ -521,9 +515,20 @@ async def list_my_enquiries(
         for r in await conn.fetch("SELECT id, display_name FROM vyapar_identity.public_names($1::text[])", list(counterpart_ids)):
             member_names[r["id"]] = r["display_name"]
     for item in out:
-        item.target_name = listing_names.get(item.listing_id) or opp_names.get(item.opportunity_id)
+        item.target_name, item.target_state = targets.get(item.id, (None, None))
         item.counterpart_name = member_names.get(item.provider_id if item.is_sender else item.sender_id)
     return out
+
+
+async def _targets(conn: asyncpg.Connection, enquiry_ids: list[str]) -> dict[str, tuple[str | None, str | None]]:
+    """[Trust pack] Title and state of each thread's post or profile, read
+    through migration 028's participant-only function: RLS hides a closed,
+    expired or removed post from the applicant, which made the thread read
+    "Untitled" once the post closed."""
+    if not enquiry_ids:
+        return {}
+    rows = await conn.fetch("SELECT * FROM vyapar_enquiries.enquiry_targets($1::uuid[])", enquiry_ids)
+    return {str(r["enquiry_id"]): (r["target_title"], r["target_state"]) for r in rows}
 
 
 async def _get_enquiry_or_404(conn: asyncpg.Connection, enquiry_id: str, member_id: str, lang: str) -> asyncpg.Record:
@@ -543,6 +548,10 @@ async def get_enquiry(
     messages = await conn.fetch("SELECT * FROM vyapar_enquiries.enquiry_messages WHERE enquiry_id = $1 ORDER BY created_at", enquiry_id)
     out = _row_to_enquiry(row, ctx.member_id)
     out.messages = [_message_out(m, lang) for m in messages]
+    out.target_name, out.target_state = (await _targets(conn, [out.id])).get(out.id, (None, None))
+    names = await conn.fetch("SELECT id, display_name FROM vyapar_identity.public_names($1::text[])",
+                             [row["provider_id"] if out.is_sender else row["sender_id"]])
+    out.counterpart_name = names[0]["display_name"] if names else None
     # [FR24/TR024] Contact disclosure ONLY after In Progress, ONLY for
     # listing-linked enquiries, ONLY via the one shared read function
     # (contacts_for_viewer) — never a second, independently-coded check.

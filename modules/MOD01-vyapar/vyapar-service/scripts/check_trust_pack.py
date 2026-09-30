@@ -318,10 +318,25 @@ async def section_close_loop(r: Run) -> None:
         "SELECT event_type FROM vyapar_enquiries.outbox_event WHERE payload->>'id' = ANY($1::text[])", [e_meena, e_suresh])]
     check(events.count("applicant.declined") == 2, f"applicant.declined domain events for both ({events})")
 
+    # The applicant still sees which post it was, now that RLS hides the closed post from them.
+    st, th = r.api.call("GET", f"/v1/enquiries/{e_meena}", MEENA)
+    st2, mine = r.api.call("GET", "/v1/enquiries/mine", MEENA)
+    row_m = next((x for x in mine if x["id"] == e_meena), {}) if st2 == 200 else {}
+    st3, _ = r.api.call("GET", f"/v1/opportunities/{jid}", MEENA)
+    check(st3 == 404 and th.get("target_name") == job["title"] and th.get("target_state") == "closed"
+          and row_m.get("target_name") == job["title"] and row_m.get("target_state") == "closed" and th.get("counterpart_name") == "Sunita Kapoor",
+          f"after closing, the applicant's thread and Requests row still name the post, marked closed ({th.get('target_name')!r}, {row_m.get('target_state')})")
     st, renewed = r.api.call("POST", f"/v1/opportunities/{jid}/renew", SUNITA)
     check(st == 200 and renewed["state"] == "active", "the post is renewed")
     again = r.apply(MEENA, jid, "Applying again now that the counter job is open again.")
     check(again is not None, "closed-for-everyone is not a decision about her: she can apply to the renewed post")
+    st, cc1 = r.api.call("GET", f"/v1/opportunities/{jid}/close-check", SUNITA)
+    check(cc1.get("message") == "1 applicant is still waiting for an answer." and "the 1 person still waiting" in (cc1.get("close_message") or ""),
+          f"one waiting: singular in English ({cc1.get('close_message')})")
+    st, cc1_te = r.api.call("GET", f"/v1/opportunities/{jid}/close-check", SUNITA, lang="te")
+    st, cc2_hi = r.api.call("GET", f"/v1/opportunities/{jid}/close-check", SUNITA, lang="hi")
+    check("వ్యక్తికి" in (cc1_te.get("close_message") or "") and "व्यक्ति को" in (cc2_hi.get("close_message") or ""),
+          "and in Telugu and Hindi (plural forms chosen per language)")
 
     # expiry: the hourly pass, acting as the poster
     st, job2 = r.post(SUNITA, {"type": "employment", "title": "Packing staff for Diwali sweet boxes",
@@ -566,6 +581,14 @@ async def section_new_advocate_and_credentials(r: Run) -> None:
     check(lid in order and kav in order and order.index(lid) < order.index(kav)
           and all(not c["reputation"] and not c["badges"] for c in cards if c["id"] in (lid, kav)),
           f"matching profiles: advocates in neutral name order, no verified-first boost, no counts ({[c['name'] for c in cards]})")
+    kc = next((c for c in cards if c["id"] == kav), {})
+    check((kc.get("profession") or {}).get("restricted") is True and kc.get("headline") is None and kc.get("reputation") is None
+          and all(b["key"] == "verified_business" for b in kc.get("badges", [])),
+          "the card carries the profession flags and no headline, counts or reputation badges")
+    st, sim = r.api.call("GET", f"/v1/listings/{kav}/similar", RAVI)
+    fc = next((c for c in sim if c["id"] == lid), {}) if st == 200 else {}
+    check((fc.get("profession") or {}).get("profession") == "advocate" and fc.get("headline") is None,
+          f"'Similar profiles' cards too ({[c['name'] for c in sim] if st == 200 else st})")
 
     # council register claims
     st, types = r.api.call("GET", "/v1/credentials/types", r.test_member)

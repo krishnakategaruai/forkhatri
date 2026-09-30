@@ -20,6 +20,22 @@ import { SkeletonGrid } from "@/app/components/States";
 import DealsEmpty from "@/app/components/deals/Empty";
 import { useRoutes } from "@/app/host/HostProvider";
 
+/** A post that has ended, as the quiet chip beside the request's own state. */
+export const ENDED_TARGET_STATES = ["closed", "expired", "removed"] as const;
+
+/** "Closed" / "Expired" / "Removed" for the post a request is about, or null while it is live. */
+export function endedTargetLabel(
+  t: (key: string) => string,
+  targetState: string | null | undefined,
+  postClosedShown: boolean,
+): string | null {
+  if (!targetState || !(ENDED_TARGET_STATES as readonly string[]).includes(targetState)) return null;
+  // "Post closed" on the request already says it.
+  if (postClosedShown) return null;
+  // "Post expired", not a bare "Expired" beside the request's own "Closed".
+  return t(`enquiries:detail.targetEnded.${targetState}`);
+}
+
 export const ENQUIRY_STATE_KEY: Record<string, string> = {
   open: "stateOpen",
   awaiting_response: "stateAwaitingResponse",
@@ -154,6 +170,8 @@ export default function EnquiriesView({ role, onRoleChange, items, counts, state
               const kind = t(`enquiries:actionType.${e.action_type}` as "actionType.enquire", { defaultValue: e.action_type });
               const who = e.counterpart_name ? t("enquiries:mine.withCounterpart", { name: e.counterpart_name }) : null;
               const tone = enquiryTone(e.state, e.is_sender);
+              const postClosed = e.is_sender && e.state === "closed" && e.state_reason === "post_closed";
+              const ended = endedTargetLabel(t as (k: string) => string, e.target_state, postClosed);
               const body = (
                 <>
                   <span className="vy-dl-avatar" aria-hidden="true">{initial(e.counterpart_name)}</span>
@@ -167,10 +185,15 @@ export default function EnquiriesView({ role, onRoleChange, items, counts, state
                       <span className="vy-dl-state" data-tone={tone}>
                         {tone === "wait"
                           ? t("enquiries:mine.needsYou")
-                          : e.is_sender && e.state === "closed" && e.state_reason === "post_closed"
+                          : postClosed
                             ? t("enquiries:detail.statePostClosed") /* [Trust pack §3] quietly, never "rejected" */
                             : stateLabel(e.state)}
                       </span>
+                      {ended && (
+                        <span className="vy-dl-state" data-tone="muted">
+                          {ended}
+                        </span>
+                      )}
                     </span>
                   </span>
                   <span className="vy-dl-row-aside">

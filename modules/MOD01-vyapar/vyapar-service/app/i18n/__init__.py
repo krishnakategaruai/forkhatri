@@ -102,3 +102,21 @@ def translate(key: str, lang: str | None = None, **params: object) -> str:
     for name, value in params.items():
         text = text.replace(f"{{{name}}}", str(value))
     return text
+
+
+# [Trust pack] Plurals, i18next style: `<key>.one` / `<key>.other`, chosen by
+# the CLDR rule of the language (Hindi counts 0 and 1 as "one"; English and
+# Telugu only 1). `{count}` is filled in. A key without the two forms is
+# translated as is.
+def _plural_form(lang: str, count: int) -> str:
+    if lang == "hi":
+        return "one" if count in (0, 1) else "other"
+    return "one" if count == 1 else "other"
+
+
+def translate_count(key: str, lang: str | None, count: int, **params: object) -> str:
+    lang = lang if is_supported(lang) else DEFAULT_LANGUAGE
+    text = translate(f"{key}.{_plural_form(lang, count)}", lang, count=count, **params)
+    if text.endswith((".one", ".other")) and text.startswith(key):
+        return translate(key, lang, count=count, **params)
+    return text

@@ -10,7 +10,7 @@
 // browser's localStorage.
 import { useEffect, useState } from "react";
 import { I18nextProvider } from "react-i18next";
-import { DEFAULT_LANGUAGE, LANGUAGE_COOKIE, type Language, getI18n, isSupported } from "./config";
+import { DEFAULT_LANGUAGE, LANGUAGE_COOKIE, type Language, createI18n, getI18n, isSupported } from "./config";
 
 const STORAGE_KEY = "vyapar.language";
 
@@ -33,30 +33,71 @@ function writeLanguageCookie(lang: Language) {
   document.cookie = `${LANGUAGE_COOKIE}=${lang}; path=/; max-age=31536000; samesite=lax`;
 }
 
-// [Critique N10] `initialLanguage` comes from the language cookie, read by
-// the server layout, so server and first client render agree; the effect
-// below only corrects a first visit (no cookie yet) and keeps the cookie
-// in step with localStorage and the host account.
+function readLanguageCookie(): Language | null {
+  const m = document.cookie.match(new RegExp(`(?:^|; )${LANGUAGE_COOKIE}=([^;]*)`));
+  const v = m ? decodeURIComponent(m[1]) : null;
+  return isSupported(v) ? v : null;
+}
+
+/** The language the server rendered this page in (<html lang>, set from the cookie by the root layout). */
+function serverLanguage(fallback: Language): Language {
+  if (typeof document === "undefined") return fallback;
+  const lang = document.documentElement.lang;
+  return isSupported(lang) ? lang : fallback;
+}
+
+// [Critique N10 → 2026-09-30, coordinator: "make the mismatch impossible"]
+// The first client render ALWAYS uses the language the server rendered
+// (<html lang>, which the layout set from the `vyapar_lang` cookie), never
+// localStorage, so hydration can't disagree with the HTML. Only after
+// hydration does the effect reconcile:
+//   - a cookie exists: it is the truth (the server used it); localStorage is
+//     brought in step, nothing on screen changes;
+//   - no cookie (a first visit, or a member who chose Hindi or Telugu before
+//     the cookie existed): the saved choice, else the device language, is
+//     written to the cookie and switched to — an ordinary state change after
+//     hydration, not a mismatch. The next load is server-rendered in that
+//     language, so it happens once.
+// The switch is a NEW i18n instance given to the provider (React state),
+// never `changeLanguage` on the instance the page hydrated with: an effect
+// can run while a lower Suspense boundary (the composer, for one) is still
+// hydrating, and mutating the shared instance made that boundary render the
+// new language against the server's HTML. A context change instead makes
+// React finish hydrating the boundary with the old value first (selective
+// hydration), then re-render it in the new language.
 export function I18nProvider({ children, initialLanguage = DEFAULT_LANGUAGE }: { children: React.ReactNode; initialLanguage?: Language }) {
-  const [i18n] = useState(() => getI18n(initialLanguage));
+  const [i18n, setI18n] = useState(() => getI18n(serverLanguage(initialLanguage)));
 
   useEffect(() => {
-    let next: Language = DEFAULT_LANGUAGE;
+    const rendered = serverLanguage(initialLanguage);
+    let saved: Language | null = null;
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (isSupported(saved)) {
-        next = saved;
-      } else {
-        const device = navigator.language?.split("-")[0];
-        if (isSupported(device)) next = device;
-      }
+      const v = localStorage.getItem(STORAGE_KEY);
+      saved = isSupported(v) ? v : null;
     } catch {
-      // Private mode or blocked storage: fall through to English rather
-      // than failing to render.
+      // Private mode or blocked storage: the server's language stands.
     }
-    if (i18n.language !== next) void i18n.changeLanguage(next);
-    document.documentElement.lang = next;
-    writeLanguageCookie(next);
+    const cookie = readLanguageCookie();
+    let next: Language = rendered;
+    if (cookie) {
+      next = cookie;
+    } else {
+      const device = navigator.language?.split("-")[0];
+      next = saved ?? (isSupported(device) ? device : rendered);
+      writeLanguageCookie(next);
+    }
+    try {
+      if (saved !== next) localStorage.setItem(STORAGE_KEY, next);
+    } catch {
+      // Non-fatal.
+    }
+    if (next !== i18n.language) {
+      // After hydration only, and as a new instance (see above).
+      document.documentElement.lang = next;
+      // Deliberately a state change after hydration (never during render).
+      queueMicrotask(() => setI18n(createI18n(next)));
+      return;
+    }
 
     // [Owner, 2026-09-27] Hosted in ForKhatri, the language chosen there is
     // the person's language here too. Vyapar stays host-independent: this runs
@@ -85,6 +126,8 @@ export function I18nProvider({ children, initialLanguage = DEFAULT_LANGUAGE }: {
       alive = false;
       document.removeEventListener("visibilitychange", onVisible);
     };
+    // Runs once, after hydration; the language it reconciles is read inside.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [i18n]);
 
   return <I18nextProvider i18n={i18n}>{children}</I18nextProvider>;

@@ -44,7 +44,7 @@ import {
   type FieldCode,
   type PostKind,
 } from "./draft";
-import { FieldBlock, FieldGroup, MoneyInput, MoneyRange, OptionChips, Segmented, readbackRange } from "./fields";
+import { FieldBlock, FieldGroup, fieldAnchor, MoneyInput, MoneyRange, OptionChips, Segmented, readbackRange } from "./fields";
 import { experienceLabel } from "./labels";
 import { rupeesToPaise } from "@/lib/money";
 import { ScamShieldNote, type ScamFinding } from "@/app/components/trust/ScamShield";
@@ -718,13 +718,29 @@ export default function ComposerForm(props: ComposerFormProps) {
     // call HR", off by default; the poster's call hours and daily limit
     // (contact preferences) apply to every caller.
     return (
-      <FieldBlock code="allow_precall" label={t("hiring:precall.label")}>
-        <button type="button" role="switch" aria-checked={draft.allowPrecall} className="vy-switch" onClick={() => onChange({ allowPrecall: !draft.allowPrecall })}>
-          <span className="vy-switch-track" aria-hidden="true">
-            <span className="vy-switch-thumb" />
+      // [2026-09-30, coordinator] The shared SwitchRow layout: label and its
+      // one-line state on the left, the switch on the right, the hint below.
+      <div id={fieldAnchor("allow_precall")} className="vy-field vy-precall">
+        <div className="vy-acct-switch vy-precall-row">
+          <span className="vy-acct-switch-text">
+            <span id="vy-precall-label" className="vy-acct-switch-label">
+              {t("hiring:precall.label")}
+            </span>
+            <span className="vy-acct-switch-hint">{draft.allowPrecall ? t("hiring:precall.on") : t("hiring:precall.off")}</span>
           </span>
-          <span>{draft.allowPrecall ? t("hiring:precall.on") : t("hiring:precall.off")}</span>
-        </button>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={draft.allowPrecall}
+            aria-labelledby="vy-precall-label"
+            className="vy-switch"
+            onClick={() => onChange({ allowPrecall: !draft.allowPrecall })}
+          >
+            <span className="vy-switch-track" aria-hidden="true">
+              <span className="vy-switch-thumb" />
+            </span>
+          </button>
+        </div>
         {draft.allowPrecall && (
           <OptionChips
             options={["whatsapp_only", "call_and_whatsapp"] as const}
@@ -738,7 +754,7 @@ export default function ComposerForm(props: ComposerFormProps) {
         <span className="vy-field-hint">
           {t("hiring:precall.explain")} <a href="/profile/contact">{t("hiring:precall.setHours")}</a>
         </span>
-      </FieldBlock>
+      </div>
     );
   }
 
