@@ -18,6 +18,7 @@ import { api, ApiError } from "@/lib/api";
 import FileUpload from "@/app/components/FileUpload";
 import Screen from "@/app/components/Screen";
 import { SkeletonGrid } from "@/app/components/States";
+import DisabledReason from "@/app/components/DisabledReason";
 import PageHeader from "@/app/components/account/PageHeader";
 import { formatDate } from "@/lib/format"; // [FE2] Indian date order
 import "@/app/styles/account-2026.css";
@@ -109,13 +110,14 @@ function OutcomeCard({ item, onDone }: { item: Outcome; onDone: () => void }) {
           </div>
           {error && <p className="vy-error" role="alert">{error}</p>}
           <div className="vy-row">
-            <button className="vy-btn vy-btn-primary" disabled={!text || busy} onClick={appeal}>
+            <button className="vy-btn vy-btn-primary" aria-describedby={!text ? "why-appeal" : undefined} disabled={!text || busy} onClick={appeal}>
               {t("trustSafety:outcomes.appeal")}
             </button>
             <button className="vy-btn vy-btn-ghost" disabled={busy} onClick={() => setOpen(false)}>
               {t("common:action.cancel")}
             </button>
           </div>
+          <DisabledReason id="why-appeal" show={!text}>{t("common:disabled.appeal")}</DisabledReason>
         </div>
       )}
     </article>
@@ -131,7 +133,8 @@ export default function OutcomesPage() {
   }
 
   useEffect(() => {
-    load().catch(() => setItems([]));
+    // started after the effect body (no synchronous setState in an effect)
+    queueMicrotask(() => void load().catch(() => setItems([])));
   }, []);
 
   return (

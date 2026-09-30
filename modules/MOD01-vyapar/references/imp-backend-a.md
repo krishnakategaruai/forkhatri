@@ -710,6 +710,38 @@ For a new member with no locality yet, `exists` is false, `profile` is null, `mi
 - `/v1/members/me` still reports `profiles {business, professional}` by kind. For Meena, `business` is now the one profile and `professional` is null. Build the hub on `getMyProfile` instead.
 - The hub's profile count should read one profile.
 
+### 11b. Workspaces and verification after consolidation (2026-09-30, second pass)
+
+**The bug.** Meena's "Business Workspace" listed three workspaces, one named "ravi". `listMyWorkspaces` returned every listing she owned, archived merged ones included.
+
+**Workspaces** (`services/workspace.py`, plus migration 026 section 8, idempotent):
+- **`listMyWorkspaces`** (`GET /v1/workspace/mine`) returns at most one owned workspace: the one on the member's profile. That is the live listing, or a suspended one only when no live one exists. It is named after the business when there is one ("Meena's Oven"). Workspaces the member was invited to are still listed (Priya: her own, plus Nanda Labs as operator). Archived listings, including merged ones, are never a workspace.
+- **`getWorkspace`** (`GET /v1/workspace/{id}`) on a merged listing answers 404 `workspace_not_found` with `details.merged_into = <profile id>`, so the web can redirect to the profile's workspace. The workspace name is the business name when there is one.
+- **Entitlements** (`listMyEntitlements`) are labelled with the business name.
+- **Migration 026** already re-points entitlements, workspace members and campaigns from merged listings to the survivor. Section 8 then retires any duplicates that creates:
+  - one open plan per workspace: the active one, or else the one that renews last, stays; the others become `cancelled`;
+  - one seat per person per workspace: the active admin seat, or else the strongest, stays; the others become `expired`.
+  - Rows are never deleted, so payments stay attached to their entitlement. On the dev database nothing needed retiring: the only plan is Shreya's, on Nanda Labs.
+
+**Verification per section** (`ListingOut`, so profile, detail and search all carry it):
+- `profile_status`: `draft` | `submitted` | `active` | `suspended` | `archived`. The person's card reads "Active", never "Active · Verified".
+- `business_verified`: the business section is verified by a business document (GST, Udyam, PAN or shop licence). The "My business" section shows "Business verified" (GLOSSARY).
+- `credential_verified`: the person is verified by a credential (degree, licence), from a `credential` document or a credential reference.
+- Meena: `active`, `business_verified: true`, `credential_verified: false`. Priya: `active`, `credential_verified: true`, `business_verified: false`.
+- `state` and `verification_state` are unchanged for existing clients.
+
+**Checked:** `check_profile.py` **33/33** on private port 8018, adding:
+- Meena has one workspace named "Meena's Oven";
+- a merged listing's workspace answers 404 pointing at the profile;
+- Vikram's suspended listing is not a second workspace;
+- Priya keeps her invited workspace;
+- at most one open plan per workspace;
+- the verification flags for Meena and Priya.
+
+`check_structured_hiring.py` **130/130** against the restored 29 Sep code. One check was adjusted: another workstream now renders the notification inbox in the reader's request language, so the check reads Ravi's inbox in Hindi.
+
+**Deployed:** 8011 was healthy on the restore agent's restart (10:45). It was restarted after `import app.main` passed, to pick up this pass.
+
 ## Notes for the frontend
 
 - The composer should send `structured` and stop writing free-text `compensation` for employment and freelance; the server derives it. Render `compensation_label`.
@@ -727,3 +759,17 @@ For a new member with no locality yet, `exists` is false, `profile` is null, `mi
   - the missing chip is `skills_match.missing_text`;
   - a shortlisted row has `contact_actions` (Call / WhatsApp buttons); log each tap with `recordApplicantContactAttempt`.
 - Contact card: `counterpart_can_contact` and `can_contact_counterpart` from `getEnquiry`.
+- Discover home:
+  - show "picked for you" only when `has_personal_rows` is true;
+  - order the trade rail by `viewer_categories`;
+  - show Expired when `deadline_passed` is true, and handle 400 `opportunity_expired` on Apply;
+  - offer "Translate" when a message's `message_language` differs from the viewer's.
+- My posts: an `expired` post (`state_reason: deadline_passed`) shows Expired with a Renew button. `renewOpportunity` may send `{deadline}`.
+- Pay: render `compensation_label` as sent; it is already in the viewer's language. When `pay_period` is `year`, lead with `pay_monthly_min_paise`.
+- Profile (section 11):
+  - build the hub on `getMyProfile`, and ask only for the fields in `missing`;
+  - "use my location" calls `locateMyProfile`;
+  - the card title is `card_title`;
+  - the person's status comes from `profile_status`;
+  - "Business verified" shows in the business section from `business_verified`, and a personal credential from `credential_verified`;
+  - the workspace list is `listMyWorkspaces` (one owned workspace); a 404 carrying `merged_into` redirects to the profile's workspace.

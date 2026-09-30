@@ -235,10 +235,11 @@ function AppealCard({ item, onDone }: { item: AppealItem; onDone: () => void }) 
         <button className="vy-btn vy-btn-secondary" disabled={!reasonCode || busy} onClick={() => decide("upheld")}>
           {t("trustSafety:queue.uphold")}
         </button>
-        <button className="vy-btn vy-btn-primary" disabled={!reasonCode || busy} onClick={() => decide("overturned")}>
+        <button className="vy-btn vy-btn-primary" aria-describedby={!reasonCode ? `why-overturn-${item.id}` : undefined} disabled={!reasonCode || busy} onClick={() => decide("overturned")}>
           {t("trustSafety:queue.overturn")}
         </button>
       </div>
+      <DisabledReason id={`why-overturn-${item.id}`} show={!reasonCode}>{t("trustSafety:queue.chooseReason")}</DisabledReason>
     </div>
   );
 }

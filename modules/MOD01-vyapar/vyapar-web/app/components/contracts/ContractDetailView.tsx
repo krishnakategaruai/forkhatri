@@ -22,6 +22,7 @@ import { useTranslation } from "react-i18next";
 import { AlertTriangle, Check, CheckCircle2, Clock, Flag, History, IndianRupee, ListChecks, Lock, MessageSquare, Send, Wallet } from "lucide-react";
 import type { Contract, ContractEvent, Milestone, Timesheet, TimesheetInput } from "@/lib/sdk";
 import { daysUntil, formatDate, formatDateTime, formatRupees } from "@/lib/format";
+import DisabledReason from "@/app/components/DisabledReason";
 import { contractNeedsMe, counterpartOf, milestoneAction, milestoneTone, notFundedPaise, recentMondays, stateTone, timesheetNeedsMe, type Tone } from "./model";
 
 export interface ContractDetailActions {
@@ -413,6 +414,7 @@ export default function ContractDetailView(props: ContractDetailViewProps) {
                   <button
                     className="vy-btn vy-btn-primary"
                     style={{ alignSelf: "flex-start" }}
+                    aria-describedby={!weekValue || !(Number(hours) > 0) ? "why-timesheet" : undefined}
                     disabled={busy || !weekValue || !(Number(hours) > 0)}
                     onClick={() => {
                       props.onSubmitTimesheet({ week_start: weekValue, hours: Number(hours), note: tsNote.trim() || null });
@@ -423,6 +425,7 @@ export default function ContractDetailView(props: ContractDetailViewProps) {
                   >
                     {t("contracts:hours.submit")}
                   </button>
+                  <DisabledReason id="why-timesheet" show={!weekValue || !(Number(hours) > 0)}>{t("common:disabled.timesheet")}</DisabledReason>
                 </div>
               )}
             </section>
@@ -524,11 +527,12 @@ export default function ContractDetailView(props: ContractDetailViewProps) {
                   </label>
                 )}
                 <div className="vy-dl-actions">
-                  <button className="vy-btn vy-btn-primary" disabled={busy || text.trim().length < 10} onClick={() => props.onOpenDispute(text.trim(), disputeMs || null)}>
+                  <button className="vy-btn vy-btn-primary" aria-describedby={text.trim().length < 10 ? "why-dispute" : undefined} disabled={busy || text.trim().length < 10} onClick={() => props.onOpenDispute(text.trim(), disputeMs || null)}>
                     {t("contracts:dispute.send")}
                   </button>
                   <button className="vy-btn vy-btn-ghost" onClick={() => toggle(null)}>{t("contracts:detail.cancel")}</button>
                 </div>
+                <DisabledReason id="why-dispute" show={text.trim().length < 10}>{t("common:disabled.min10")}</DisabledReason>
               </section>
             ) : (
               <button className="vy-btn vy-btn-ghost" style={{ alignSelf: "flex-start" }} onClick={() => toggle({ kind: "dispute" })}>

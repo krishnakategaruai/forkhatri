@@ -21,6 +21,7 @@
 // Traces to: FR33, FR34, FR35, FR54, TR033, TR034, UX21
 import { useCallback, useEffect, useState, use as useParamsPromise } from "react";
 import { useTranslation } from "react-i18next";
+import { useRouter } from "next/navigation";
 import { AlertTriangle, BadgeCheck, Check, ChevronRight, Layers, Plus, ShieldCheck, Users } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { formatPaise } from "@/lib/money";
@@ -93,6 +94,7 @@ interface CampaignOptions {
 export default function WorkspacePage({ params }: { params: Promise<{ listingId: string }> }) {
   const { listingId } = useParamsPromise(params);
   const { t, i18n } = useTranslation(["workspace", "commercial", "common"]);
+  const router = useRouter();
   const [ws, setWs] = useState<Workspace | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -117,6 +119,13 @@ export default function WorkspacePage({ params }: { params: Promise<{ listingId:
         api.get<CampaignOptions>(`/v1/campaigns/options?listing_id=${listingId}`).then(setOptions).catch(() => setOptions(null));
       }
     } catch (e) {
+      // One profile per member: an old link to a merged listing's workspace
+      // answers 404 with the surviving profile id — go there instead.
+      const mergedInto = e instanceof ApiError && e.code === "workspace_not_found" ? e.details?.merged_into : null;
+      if (typeof mergedInto === "string" && mergedInto !== listingId) {
+        router.replace(`/workspace/${mergedInto}`);
+        return;
+      }
       setError(e instanceof ApiError ? String(e.detail) : t("workspace:error.notFound"));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

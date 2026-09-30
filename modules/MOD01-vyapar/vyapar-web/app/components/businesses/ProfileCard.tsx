@@ -36,7 +36,10 @@ export default function ProfileCard({ result, sponsored = false }: { result: Sea
   const visual = l.capabilities.length ? fromSkills : categoryVisual(l.categories[0]);
   const Icon = visual.icon;
   const what = (l.capability_labels.length ? l.capability_labels : l.category_labels).join(", ");
-  const place = [l.locality, result.distance_km != null ? t("discover:businesses.distanceAway", { km: result.distance_km }) : null]
+  const place = [
+    l.locality,
+    result.distance_label ?? (result.distance_km != null ? t("discover:businesses.distanceAway", { km: result.distance_km }) : null),
+  ]
     .filter(Boolean)
     .join(" · ");
   const own = !!l.is_owner;

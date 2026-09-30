@@ -11,7 +11,7 @@
 // The menu adds Text size (Normal / Large / Larger — the whole UI scales,
 // all type is rem) and High contrast, for older readers and bright
 // sunlight; both also follow the OS settings.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePopoverDismiss } from "@/lib/usePopoverDismiss";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
@@ -28,7 +28,14 @@ export default function LanguageSwitcher() {
   const [open, setOpen] = useState(false);
   const [size, setSize] = useState<TextSize>("m");
   const [more, setMore] = useState(false);
-  const ref = usePopoverDismiss(open, () => setOpen(false));
+  // [Critique N12] Closing from inside the menu (Escape) puts focus back on its button.
+  const button = useRef<HTMLButtonElement>(null);
+  const ref = usePopoverDismiss(open, () => {
+    const anchor = button.current?.parentElement;
+    const inside = !!anchor?.contains(document.activeElement) && document.activeElement !== button.current;
+    setOpen(false);
+    if (inside) button.current?.focus();
+  });
 
   useEffect(() => {
     // localStorage is read after mount (never during SSR).
@@ -46,6 +53,7 @@ export default function LanguageSwitcher() {
   return (
     <div ref={ref} className="vy-menu-anchor">
       <button
+        ref={button}
         type="button"
         className="vy-iconbtn vy-iconbtn-text"
         onClick={() => setOpen((v) => !v)}

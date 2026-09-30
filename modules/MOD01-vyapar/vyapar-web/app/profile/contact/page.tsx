@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { Check } from "lucide-react";
 import Screen from "@/app/components/Screen";
 import { SkeletonGrid } from "@/app/components/States";
+import DisabledReason from "@/app/components/DisabledReason";
 import PageHeader from "@/app/components/account/PageHeader";
 import ContactPreferencesForm, { ContactPreview, toValue, type ContactPrefsValue } from "@/app/components/contact/ContactPreferencesForm";
 import { errorText, useContactPreferences } from "@/app/hooks/trade";
@@ -65,7 +66,7 @@ export default function ContactPreferencesPage() {
             </div>
             {error && <p className="vy-error" role="alert">{error}</p>}
             <div className="vy-row" style={{ gap: 12, flexWrap: "wrap" }}>
-              <button className="vy-btn vy-btn-primary" disabled={!dirty || saving} onClick={save}>
+              <button className="vy-btn vy-btn-primary" aria-describedby={!dirty && !saved ? "why-contact" : undefined} disabled={!dirty || saving} onClick={save}>
                 {saving ? t("contact:prefs.saving") : t("contact:prefs.save")}
               </button>
               {saved && !dirty && (
@@ -75,6 +76,7 @@ export default function ContactPreferencesPage() {
                 </span>
               )}
             </div>
+            <DisabledReason id="why-contact" show={!dirty && !saved}>{t("common:disabled.noChanges")}</DisabledReason>
           </div>
           <aside className="vy-prefs-aside vy-desktop-only">
             <ContactPreview value={value} />

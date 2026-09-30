@@ -284,7 +284,7 @@ async def main(api_base: str, forkhatri_base: str | None) -> int:
         item_id = f"moderation_case:{case_id}"
         st, queue = api.call("GET", "/vyapar/admin/moderation", OPERATOR)
         item = find(queue if st == 200 else [], item_id)
-        check(item is not None and item["priority"] == "urgent" and item["due_at"] and item["reason"] == "Asked a job seeker for money"
+        check(item is not None and item["priority"] == "urgent" and item["due_at"] and item["reason"] == "Asked an applicant for money"
               and "Counter helper" in item["summary_text"] and no_raw_ids(item),
               f"urgent item with a due time, in words ({item and item['summary_text']})")
         check(st == 200 and all(no_raw_ids(i) for i in queue) and all(i["item_id"].split(":")[0] == "moderation_case" for i in queue),
@@ -429,10 +429,10 @@ async def main(api_base: str, forkhatri_base: str | None) -> int:
         print("\n== Member summary ==")
         st, summ = api.call("GET", f"/vyapar/admin/members/{POSTER}/summary", OPERATOR)
         labels = {f["label"]: f["value"] for f in summ.get("facts", [])}
-        check(st == 200 and set(summ) >= {"plan", "facts", "flags", "deep_link"} and "Business listings" in labels and "Paid to Vyapar so far" in labels,
+        check(st == 200 and set(summ) >= {"plan", "facts", "flags", "deep_link"} and "Business profiles" in labels and "Paid to Vyapar so far" in labels,
               f"operator: summary with facts ({labels})")
         st, summ_te = api.call("GET", f"/vyapar/admin/members/{POSTER}/summary", OPERATOR, lang="te")
-        check(st == 200 and any(f["label"] == "వ్యాపార లిస్టింగ్‌లు" for f in summ_te.get("facts", [])), "labels localized (Telugu)")
+        check(st == 200 and any(f["label"] == "వ్యాపార ప్రొఫైల్‌లు" for f in summ_te.get("facts", [])), "labels localized (Telugu)")
         st, summ_v = api.call("GET", f"/vyapar/admin/members/{POSTER}/summary", OUTSIDER, scopes="vyapar.verify")
         check(st == 200 and not any(f["label"] == "Paid to Vyapar so far" for f in summ_v.get("facts", [])), "a verify-only operator doesn't see money facts")
         st, body = api.call("GET", "/vyapar/admin/members/m_nobody_has_this_id/summary", OPERATOR)

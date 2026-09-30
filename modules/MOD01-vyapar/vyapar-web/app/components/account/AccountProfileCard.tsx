@@ -26,7 +26,20 @@ export interface ProfileCardData {
   capability_labels?: string[];
   category_labels?: string[];
   contact_verified?: boolean;
+  /** §11b: draft | submitted | active | suspended | archived. Preferred over `state`. */
+  profile_status?: string;
+  /** §11b: this section's own verification. Preferred over `verification_state`. */
+  verified?: boolean;
 }
+
+/** profile_status (§11b) → the status label key. */
+const STATUS_KEY: Record<string, string> = {
+  draft: "stateDraft",
+  submitted: "stateSubmitted",
+  active: "stateActive",
+  suspended: "stateSuspended",
+  archived: "stateArchived",
+};
 
 export const LISTING_STATE_KEY: Record<string, string> = {
   draft: "stateDraft",
@@ -52,13 +65,14 @@ export { KindTile };
 export default function AccountProfileCard({ profile, href }: { profile: ProfileCardData; href: string }) {
   const { t } = useTranslation(["profile", "listings", "verification"]);
   const business = profile.kind === "business";
-  const verified = profile.verification_state === "verified" || profile.verification_state === "expiring";
+  const verified = profile.verified ?? (profile.verification_state === "verified" || profile.verification_state === "expiring");
   const skills = profile.capability_labels ?? [];
   const what = profile.headline || (skills.length === 0 ? (profile.category_labels ?? []).join(", ") : "");
-  const stateKey = LISTING_STATE_KEY[profile.state] ?? "stateDraft";
-  const tone = profile.state === "suspended" ? "danger" : profile.state === "submitted" ? "warning" : undefined;
+  const status = profile.profile_status;
+  const stateKey = (status ? STATUS_KEY[status] : LISTING_STATE_KEY[profile.state]) ?? "stateDraft";
+  const tone = (status ?? profile.state) === "suspended" ? "danger" : (status ?? profile.state) === "submitted" ? "warning" : undefined;
   // One line in the footer: the trust signal when earned, otherwise the state.
-  const showState = !(verified && profile.state === "active_verified");
+  const showState = status ? true : !(verified && profile.state === "active_verified");
 
   return (
     <Link href={href} transitionTypes={["vy-forward"]} className="vy-card vy-acct-pcard" aria-label={profile.name}>

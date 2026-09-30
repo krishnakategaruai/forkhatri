@@ -613,3 +613,26 @@ The personas used are Rahul, Meena, Deepak, Anita and Suresh. Everything they cr
 **Notes.**
 - **Migration numbering:** two migrations are numbered 026: mine (`026-trade-words-and-seed-marker.sql`, created 10:31) and Backend A's `026-one-profile-per-member.sql` (10:33). Both are idempotent and independent, and init.sh runs them in name order. I left both names as they are.
 - **Not done here:** `openapi.json` is not regenerated and 8011 is not restarted, as the coordinator asked.
+
+
+### 5. Card place and distance wording ("Madhapur, Hyderabad · 0.0 km away")
+- **Causes:**
+  - Seeded posts sat exactly on their locality's centroid, so a viewer in the same locality measured 0.0 km.
+  - The city name was stored in the location text.
+- **New fields in `app/place_label.py`** (additive, server-localized):
+  - `FeedCard.distance_label`: "In your area" under 0.5 km, otherwise "1.8 km away" (one decimal under 10 km, whole kilometres above), in en/hi/te (`discover.distance.{inYourArea, away}`).
+  - `FeedCard.location_label`: the locality without a trailing city or state ("Madhapur"; "Road 12, Banjara Hills").
+  - `SearchResult.distance_label`: the same wording on Businesses results.
+- **FE: swap to the new fields.** Print `location_label · distance_label`. The web currently builds "X km away" from `distance_km` and prints `location` raw.
+- **Seed data:**
+  - `seed_marketplace.py` stores the locality alone.
+  - A deterministic per-row jitter puts every seeded post and profile 0.3–1.5 km from its locality centre, in a fixed direction per id.
+  - `--normalize` applies that to rows already seeded. It has been run: 132 rows, no "Hyderabad" left in seeded locations, and all 110 posts have distinct pins (Madhapur's at 0.68–1.19 km from the centre).
+  - Real members' posts keep honest centroid coordinates, and the label keeps them from reading "0.0 km".
+- **Checks, as Priya (Madhapur):**
+  - every card with a distance has a label and never "0.0";
+  - under 0.5 km reads "In your area";
+  - locations have no city;
+  - the Telugu label is localized.
+
+`check_backend_b.py` passes 166/167; the only failure is still FE2's money check.

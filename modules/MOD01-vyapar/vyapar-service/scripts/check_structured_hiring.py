@@ -332,7 +332,7 @@ async def main(api_base: str) -> int:
         revealed = await db.fetchval(
             "SELECT count(*) FROM vyapar_integration.audit_events WHERE object_id = $1 AND action = 'applicant_contact_revealed'", ravi_app["id"])
         check(revealed == 2 and hidden == 2, f"every reveal and every hide is audited ({revealed} revealed, {hidden} hidden)")
-        st, notes = api.call("GET", "/v1/notifications", HELPER)
+        st, notes = api.call("GET", "/v1/notifications", HELPER, lang="hi")  # inbox renders in the reader's language
         mine = [n for n in notes if n["kind"] == "applicantDeclined" and ravi_app["id"] in (n.get("link") or "")] if st == 200 else []
         check(len(mine) == 1 and "आवेदन" in mine[0]["title"], "the declined applicant is notified in their own language (Hindi)")
         st, notes = api.call("GET", "/v1/notifications", BAKER)

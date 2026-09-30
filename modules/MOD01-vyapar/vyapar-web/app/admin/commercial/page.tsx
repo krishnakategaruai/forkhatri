@@ -20,6 +20,7 @@ import { formatPaise } from "@/lib/money";
 import Screen from "@/app/components/Screen";
 import { SkeletonGrid } from "@/app/components/States";
 import DealsEmpty from "@/app/components/deals/Empty";
+import DisabledReason from "@/app/components/DisabledReason";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { promotionTone } from "@/app/promotions/tone";
 import "@/app/styles/deals-2026.css";
@@ -351,9 +352,10 @@ export default function AdminCommercialPage() {
                 </label>
               </div>
               <div className="vy-dl-actions">
-                <button className="vy-btn vy-btn-primary" disabled={busy || !refundAmount} onClick={submitRefund}>{t("adminCommercial:refund.submit")}</button>
+                <button className="vy-btn vy-btn-primary" aria-describedby={!refundAmount ? "why-refund" : undefined} disabled={busy || !refundAmount} onClick={submitRefund}>{t("adminCommercial:refund.submit")}</button>
                 <button className="vy-btn vy-btn-ghost" onClick={() => setRefundFor(null)}>{t("common:action.cancel")}</button>
               </div>
+              <DisabledReason id="why-refund" show={!refundAmount}>{t("common:disabled.refundAmount")}</DisabledReason>
             </div>
           )}
         </section>

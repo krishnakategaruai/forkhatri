@@ -74,7 +74,11 @@ export default function DiscoverCard({ item }: { item: OpportunityCard }) {
   const TradeIcon = visual.icon;
   const rawPay = item.compensation_label || item.compensation;
   const pay = rawPay ? payLines(rawPay, i18n.language) : null;
-  const place = [item.location, item.distance_km != null ? t("discover:businesses.distanceAway", { km: km(item.distance_km) }) : null]
+  // Server labels first ("Madhapur · In your area"), else the older fields.
+  const place = [
+    item.location_label ?? item.location,
+    item.distance_label ?? (item.distance_km != null ? t("discover:businesses.distanceAway", { km: km(item.distance_km) }) : null),
+  ]
     .filter(Boolean)
     .join(" · ");
   const postedFull = freshnessLabel(t, item.posted_days_ago);

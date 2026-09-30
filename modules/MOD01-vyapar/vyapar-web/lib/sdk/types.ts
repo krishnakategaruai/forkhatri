@@ -177,6 +177,10 @@ export interface OpportunityCard {
   relevance_reason: string | null;
   // [FE2 — imp-backend-b §5] FeedCard additions (all optional, additive)
   distance_km?: number | null;
+  /** Server-localized: "In your area" under 0.5 km, else "1.8 km away" (imp-backend-b §5). */
+  distance_label?: string | null;
+  /** Locality only, e.g. "Madhapur" (imp-backend-b §5). */
+  location_label?: string | null;
   poster_badges?: Badge[];
   seeker_protection?: SeekerProtection | null;
   compensation_label?: string | null;
@@ -389,6 +393,8 @@ export interface SearchResult {
   listing: SearchListing;
   relevance_reason: string;
   distance_km?: number | null;
+  /** Server-localized: "In your area" under 0.5 km, else "1.8 km away" (imp-backend-b §5). */
+  distance_label?: string | null;
 }
 
 export interface BroadeningOption {

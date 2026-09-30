@@ -80,7 +80,8 @@
     "contactNotVerified": "Phone not verified",
     "purpose": "Your business profile and work profile, with their state.",
     "emptyBody": "Add a business profile or a work profile so people can find you.",
-    "add": "Add a profile"
+    "add": "Add a profile",
+    "stateActive": "Active"
   },
   "detail": {
     "reason": "Reason: {{reason}}",

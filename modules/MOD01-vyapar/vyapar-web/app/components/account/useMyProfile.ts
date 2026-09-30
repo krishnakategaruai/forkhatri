@@ -18,6 +18,14 @@ import type { Me, ProfileBrief } from "@/lib/sdk";
 import { useSdk } from "@/lib/sdk/react";
 import { api } from "@/lib/api";
 
+/** A profile section with the per-section flags (imp-backend-a §11b). */
+export type MyBrief = ProfileBrief & {
+  /** draft | submitted | active | suspended | archived */
+  profile_status?: string;
+  /** This section's own verification: a credential for the person, a business document for the business. */
+  verified?: boolean;
+};
+
 export interface MyProfile {
   name: string;
   language: string;
@@ -29,9 +37,9 @@ export interface MyProfile {
   skills: string[];
   workMode: "on_site" | "remote" | "both" | null;
   /** The member's own work profile (the ONE profile), when it has been set up. */
-  work: ProfileBrief | null;
+  work: MyBrief | null;
   /** The optional business section. */
-  business: ProfileBrief | null;
+  business: MyBrief | null;
   operatorPermissions: string[];
   /** The one profile exists (GET /v1/me/profile `exists`). */
   exists: boolean;
@@ -91,13 +99,17 @@ export function useMyProfile() {
       const one = mine && typeof mine === "object" && "exists" in mine ? mine : null;
       const p = (one?.profile ?? null) as Record<string, unknown> | null;
       const pre = (one?.prefill ?? {}) as Record<string, unknown>;
-      let work: ProfileBrief | null;
-      let business: ProfileBrief | null;
+      let work: MyBrief | null;
+      let business: MyBrief | null;
       if (one) {
         const base = asBrief(p);
-        const credential = p?.verification_document === "credential";
-        // The person's card never borrows the shop's document check.
-        work = base ? { ...base, kind: "professional", verification_state: credential ? base.verification_state : "not_started" } : null;
+        // §11b: each section carries its own verification; the person's card
+        // never borrows the shop's document check ("Active", not "Active · Verified").
+        const status = typeof p?.profile_status === "string" ? (p.profile_status as string) : undefined;
+        const credentialVerified =
+          typeof p?.credential_verified === "boolean" ? (p.credential_verified as boolean) : p?.verification_document === "credential" && base?.verification_state === "verified";
+        const businessVerified = typeof p?.business_verified === "boolean" ? (p.business_verified as boolean) : undefined;
+        work = base ? { ...base, kind: "professional", profile_status: status, verified: !!credentialVerified } : null;
         business =
           base && p?.has_business
             ? {
@@ -106,6 +118,8 @@ export function useMyProfile() {
                 name: (p.business_name as string) || base.name,
                 headline: (p.business_headline as string | null) ?? null,
                 capability_labels: [],
+                profile_status: status,
+                verified: businessVerified,
               }
             : null;
       } else {

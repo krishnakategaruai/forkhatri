@@ -22,6 +22,7 @@ import type { Listing, ListingContact } from "@/lib/sdk";
 import { VerificationBadge, TrustContextSheet } from "@/app/components/Verification";
 import { ReputationLine } from "@/app/components/Reputation";
 import SponsoredBadge from "@/app/components/SponsoredBadge";
+import DisabledReason from "@/app/components/DisabledReason";
 import { Morph } from "@/app/components/Screen";
 import { BadgeList } from "@/app/components/trust/Badges";
 import { useRoutes } from "@/app/host/HostProvider";
@@ -251,16 +252,18 @@ export default function ListingDetailView(props: ListingDetailViewProps) {
                         <span aria-hidden="true">+91</span>
                         <input type="tel" inputMode="numeric" aria-label={t("listings:new.phoneLabel")} placeholder={t("listings:new.phonePlaceholder")} value={phone} onChange={(e) => setPhone(e.target.value.replace(/[^\d ]/g, ""))} />
                       </div>
-                      <button className="vy-btn vy-btn-primary" style={{ alignSelf: "flex-start" }} disabled={!phone || busy} onClick={() => props.onRequestOtp(`+91${phone.replace(/\D/g, "")}`)}>
+                      <button className="vy-btn vy-btn-primary" style={{ alignSelf: "flex-start" }} aria-describedby={!phone ? "why-phone" : undefined} disabled={!phone || busy} onClick={() => props.onRequestOtp(`+91${phone.replace(/\D/g, "")}`)}>
                         {t("listings:detail.sendCode")}
                       </button>
+                      <DisabledReason id="why-phone" show={!phone}>{t("common:disabled.phone")}</DisabledReason>
                     </div>
                   ) : (
                     <div className="vy-acct-form" style={{ gap: 10 }}>
                       <input className="vy-input" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder={t("listings:detail.codePlaceholder")} aria-label={t("listings:detail.codePlaceholder")} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />
-                      <button className="vy-btn vy-btn-primary" style={{ alignSelf: "flex-start" }} disabled={code.length !== 6 || busy} onClick={() => props.onVerifyOtp(code)}>
+                      <button className="vy-btn vy-btn-primary" style={{ alignSelf: "flex-start" }} aria-describedby={code.length !== 6 ? "why-code" : undefined} disabled={code.length !== 6 || busy} onClick={() => props.onVerifyOtp(code)}>
                         {t("listings:detail.verify")}
                       </button>
+                      <DisabledReason id="why-code" show={code.length !== 6}>{t("common:disabled.code")}</DisabledReason>
                     </div>
                   )}
                   {devCode && <p className="vy-acct-hint">{t("listings:detail.devCodeNotice", { code: devCode })}</p>}

@@ -368,7 +368,18 @@ async def main() -> int:
         f"ai:{LIMIT_MEMBER}",
     )
     events_before = {r["id"] for r in await owner.fetch("SELECT id FROM vyapar_integration.ai_events WHERE member_id = ANY($1)", MEMBERS)}
+    # [Restore 2026-09-30] The hourly lifecycle pass expires seeded posts whose
+    # last date has passed (imp-backend-a §10), and an expired post is 404 to
+    # everyone but its poster. The poster renews it through the API (the real
+    # flow) for the run; its lifecycle columns are put back afterwards.
+    opp_before = await owner.fetchrow(
+        "SELECT state, state_reason, deadline, last_confirmed_at, updated_at FROM vyapar_opportunities.opportunities WHERE id = $1",
+        OPP_WITH_APPLICANT,
+    )
     try:
+        if opp_before and (opp_before["state"] != "active" or (opp_before["deadline"] and opp_before["deadline"] < started)):
+            s, _ = call("POST", f"/v1/opportunities/{OPP_WITH_APPLICANT}/renew", POSTER, {})
+            print(f"setup: renewed the seeded post for this run ({s})")
         print(f"Checking {API}\n")
         check_openapi()
         check_drafts()
@@ -394,6 +405,12 @@ async def main() -> int:
         check("audit: no column holds the input text", not ({"text", "input", "prompt", "body"} & text_cols), text_cols)
     finally:
         # Leave the shared development database exactly as it was.
+        if opp_before:
+            await owner.execute(
+                """UPDATE vyapar_opportunities.opportunities SET state = $2, state_reason = $3, deadline = $4,
+                     last_confirmed_at = $5, updated_at = $6 WHERE id = $1""",
+                OPP_WITH_APPLICANT, *opp_before.values(),
+            )
         deleted = await owner.execute(
             "DELETE FROM vyapar_integration.ai_events WHERE member_id = ANY($1) AND created_at >= $2 AND NOT (id = ANY($3::uuid[]))",
             MEMBERS, started, list(events_before),

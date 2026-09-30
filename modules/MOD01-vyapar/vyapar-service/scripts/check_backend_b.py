@@ -591,7 +591,10 @@ def run_discover_checks(api: "Api", created: dict, owner_loop_query) -> None:
 
     check("money: bare '15000' on a job reads as a monthly rupee amount",
           legacy_compensation_label("15000", "employment", "en") == "₹15,000 a month", legacy_compensation_label("15000", "employment", "en") or "")
-    check("money: free text is kept as written", legacy_compensation_label("Negotiable", "freelance", "en") == "Negotiable", "")
+    check("money: free text is kept as written", legacy_compensation_label("Depends on the work", "freelance", "en") == "Depends on the work", "")
+    # [imp-backend-a §8] "Negotiable" is a known pay word, shown in the reader's language.
+    check("money: 'Negotiable' reads as the glossary pay word", legacy_compensation_label("Negotiable", "freelance", "en") == "Pay negotiable",
+          legacy_compensation_label("Negotiable", "freelance", "en") or "")
 
     r = api.call(SUNITA, "GET", "/v1/opportunities/feed/results")
     body = r.json() if r.status_code == 200 else {}

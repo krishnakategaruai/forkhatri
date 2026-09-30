@@ -210,13 +210,16 @@ export default function FirstRunPage() {
             />
             {capabilitiesOther && <p className="vy-acct-hint">{t("firstRun:step2cap.otherAdded", { text: capabilitiesOther })}</p>}
             <div className="vy-row" style={{ flexWrap: "wrap", gap: 10 }}>
-              <button className="vy-btn vy-btn-primary" disabled={saving || (capabilities.length === 0 && !capabilitiesOther)} onClick={() => next(3, { capabilities, capabilities_other: capabilitiesOther || null })}>
+              <button className="vy-btn vy-btn-primary" aria-describedby="fr-reason-skills" disabled={saving || (capabilities.length === 0 && !capabilitiesOther)} onClick={() => next(3, { capabilities, capabilities_other: capabilitiesOther || null })}>
                 {t("common:action.continue")}
               </button>
               <button className="vy-btn vy-btn-ghost" disabled={saving} onClick={() => next(3, {})}>
                 {t("firstRun:step2cap.skip")}
               </button>
             </div>
+            <DisabledReason id="fr-reason-skills" show={capabilities.length === 0 && !capabilitiesOther && !saving}>
+              {t("common:disabled.skills")}
+            </DisabledReason>
           </motion.div>
         )}
 
