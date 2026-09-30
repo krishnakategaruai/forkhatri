@@ -97,7 +97,11 @@
       "bride": "दुल्हन",
       "groom": "दूल्हे"
     },
-    "change": "बदलें"
+    "change": "बदलें",
+    "whatShort": {
+      "bride": "दुल्हन",
+      "groom": "दूल्हा"
+    }
   },
   "account": {
     "menu": "खाता: {{name}}",

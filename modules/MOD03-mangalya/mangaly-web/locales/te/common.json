@@ -97,7 +97,11 @@
       "bride": "వధువు",
       "groom": "వరుడి"
     },
-    "change": "మార్చండి"
+    "change": "మార్చండి",
+    "whatShort": {
+      "bride": "వధువు",
+      "groom": "వరుడు"
+    }
   },
   "account": {
     "menu": "ఖాతా: {{name}}",

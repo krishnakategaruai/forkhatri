@@ -365,7 +365,7 @@ async def provision_member(
 ) -> tuple[UUID, str]:
     """Create a member for someone who has not joined yet, at a module's request.
 
-    Mangaly's case (DEC-V1-019): a parent creates a matrimony profile for their
+    Mangalya's case (DEC-V1-019): a parent creates a matrimony profile for their
     son or daughter, the way Shaadi.com's "profile for: son / daughter" works.
     The member is created with the child's mobile number and identity level 0
     (the number is not proven); no credential, no session. When the child signs

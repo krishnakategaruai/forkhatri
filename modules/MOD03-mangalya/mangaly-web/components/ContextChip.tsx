@@ -86,7 +86,7 @@ export default function ContextChip({ contexts, active, onChoose }: Props) {
         {lookingFor && (
           <span className="context-chip__short" aria-hidden="true">
             {family && name ? `${name} · ` : ""}
-            {t(`common:context.what.${lookingFor}`)}
+            {t(`common:context.whatShort.${lookingFor}`)}
           </span>
         )}
         {switchable && <span className="context-chip__change">{t("common:context.change")}</span>}

@@ -3,7 +3,7 @@
  * entrance origin or the origin of a registry `entry_url`. Anything else is
  * ignored (open-redirect prevention).
  */
-import type { ModuleEntry } from "./api";
+import { identity, type ModuleEntry } from "./api";
 
 const BOUNCE_KEY = "fk.returnTo.bounce";
 const BOUNCE_WINDOW_MS = 20_000;
@@ -77,4 +77,26 @@ export function markBounce(target: URL) {
   } catch {
     // Storage blocked: the guard just does not apply.
   }
+}
+
+/** Query parameter a module reads to redeem a sign-in handoff code. */
+export const HANDOFF_PARAM = "fk_handoff";
+
+/**
+ * Sends a signed-in member to a module. When the module is on another origin
+ * (e.g. its own tunnel hostname) the hub's cookie cannot follow, so a
+ * single-use handoff code rides along and the module turns it into a session
+ * on its own origin. Same-origin targets (production zones) go as they are.
+ */
+export async function goSignedIn(href: string) {
+  const target = new URL(href, window.location.origin);
+  if (target.origin !== window.location.origin) {
+    try {
+      const { code } = await identity.handoff();
+      target.searchParams.set(HANDOFF_PARAM, code);
+    } catch {
+      // No code: the module falls back to its normal sign-in redirect.
+    }
+  }
+  window.location.assign(target.href);
 }

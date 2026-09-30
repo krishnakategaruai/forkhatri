@@ -55,6 +55,13 @@ const SERVICES = [
   { key: "vyaparWeb", dir: "modules/MOD01-vyapar/vyapar-web", port: 3011, kind: "web", describe: "MOD01 Vyapar" },
 ];
 
+// Loopback-only services: started with everything else but never tunnelled.
+// Mangalya's API calls the horoscope service on localhost; without it every
+// horoscope match returns 503 and Mangalya's Home shows "can't be reached".
+const INTERNAL_SERVICES = [
+  { key: "horoscope", dir: "modules/MOD03-mangalya/horoscope-service", port: 8013, kind: "web", describe: "MOD03 Mangalya horoscope (internal)" },
+];
+
 const LOCAL_URLS = Object.fromEntries(SERVICES.map((s) => [s.key, `http://localhost:${s.port}`]));
 
 // ---------------------------------------------------------------------------
@@ -79,23 +86,23 @@ const MANAGED_FILES = [
         LOCAL_URLS.mangalyaWeb, LOCAL_URLS.milavnWeb, LOCAL_URLS.vyaparWeb,
         u.entrance, u.mangalyaWeb, u.milavnWeb, u.vyaparWeb,
       ]))}`,
-      `MODULE_ENTRY_URLS=${JSON.stringify({ mangalya: u.mangalyaWeb, milavn: u.milavnWeb, vyapar: u.vyaparWeb })}`,
-      `MODULE_API_URLS=${JSON.stringify({ mangalya: u.mangalyaApi, milavn: u.milavnApi })}`,
+      `MODULE_ENTRY_URLS=${JSON.stringify({ mangaly: u.mangalyaWeb, milavn: u.milavnWeb, vyapar: u.vyaparWeb })}`,
+      `MODULE_API_URLS=${JSON.stringify({ mangaly: u.mangalyaApi, milavn: u.milavnApi })}`,
       `ADMIN_MODULE_API_URLS=${JSON.stringify({ vyapar: u.vyaparApi })}`,
     ],
   },
   {
     path: "platform/forkhatri-web/.env.local",
     keys: ["NEXT_PUBLIC_IDENTITY_API"],
-    build: (u) => [`NEXT_PUBLIC_IDENTITY_API=${u.identity}`],
+    build: (u, tunneling) => [`NEXT_PUBLIC_IDENTITY_API=${tunneling ? "/tunnel-proxy/identity" : u.identity}`],
   },
   {
     path: "modules/MOD03-mangalya/mangaly-web/.env.local",
     keys: ["NEXT_PUBLIC_API_BASE", "NEXT_PUBLIC_FORKHATRI_ENTRANCE_URL", "NEXT_PUBLIC_IDENTITY_API"],
-    build: (u) => [
-      `NEXT_PUBLIC_API_BASE=${u.mangalyaApi}`,
+    build: (u, tunneling) => [
+      `NEXT_PUBLIC_API_BASE=${tunneling ? "/tunnel-proxy/api" : u.mangalyaApi}`,
       `NEXT_PUBLIC_FORKHATRI_ENTRANCE_URL=${u.entrance}`,
-      `NEXT_PUBLIC_IDENTITY_API=${u.identity}`,
+      `NEXT_PUBLIC_IDENTITY_API=${tunneling ? "/tunnel-proxy/identity" : u.identity}`,
     ],
   },
   {
@@ -109,9 +116,9 @@ const MANAGED_FILES = [
   {
     path: "modules/MOD02-milavn/milavn-web/.env.local",
     keys: ["NEXT_PUBLIC_API_BASE", "NEXT_PUBLIC_IDENTITY_API", "NEXT_PUBLIC_FORKHATRI_ENTRANCE_URL"],
-    build: (u) => [
-      `NEXT_PUBLIC_API_BASE=${u.milavnApi}`,
-      `NEXT_PUBLIC_IDENTITY_API=${u.identity}`,
+    build: (u, tunneling) => [
+      `NEXT_PUBLIC_API_BASE=${tunneling ? "/tunnel-proxy/api" : u.milavnApi}`,
+      `NEXT_PUBLIC_IDENTITY_API=${tunneling ? "/tunnel-proxy/identity" : u.identity}`,
       `NEXT_PUBLIC_FORKHATRI_ENTRANCE_URL=${u.entrance}`,
     ],
   },
@@ -126,10 +133,10 @@ const MANAGED_FILES = [
   {
     path: "modules/MOD01-vyapar/vyapar-web/.env.local",
     keys: ["NEXT_PUBLIC_API_URL", "NEXT_PUBLIC_PLATFORM_URL", "NEXT_PUBLIC_HOST_IDENTITY_API"],
-    build: (u) => [
-      `NEXT_PUBLIC_API_URL=${u.vyaparApi}`,
+    build: (u, tunneling) => [
+      `NEXT_PUBLIC_API_URL=${tunneling ? "/tunnel-proxy/api" : u.vyaparApi}`,
       `NEXT_PUBLIC_PLATFORM_URL=${u.entrance}`,
-      `NEXT_PUBLIC_HOST_IDENTITY_API=${u.identity}`,
+      `NEXT_PUBLIC_HOST_IDENTITY_API=${tunneling ? "/tunnel-proxy/identity" : u.identity}`,
     ],
   },
   {
@@ -164,10 +171,10 @@ function upsertManagedBlock(relPath, keys, lines) {
   writeFileSync(full, out.join("\n"));
 }
 
-function applyEnvState(urls, label) {
+function applyEnvState(urls, label, tunneling) {
   headline(`Writing ${label} values into ${MANAGED_FILES.length} env files...`);
   for (const file of MANAGED_FILES) {
-    upsertManagedBlock(file.path, file.keys, file.build(urls));
+    upsertManagedBlock(file.path, file.keys, file.build(urls, tunneling));
     note(`  ${paint(32, "ok")}   ${file.path}`);
   }
 }
@@ -264,11 +271,11 @@ function startTunnel(svc) {
 
 const LABEL_WIDTH = Math.max(...SERVICES.map((s) => s.key.length), "cloudflared".length) + 2;
 
-function spawnService(svc) {
+function spawnService(svc, extraEnv = {}) {
   const { command, args } = commandFor(svc);
   const child = spawn(command, args, {
     cwd: path.join(ROOT, svc.dir),
-    env: { ...process.env, FORCE_COLOR: "1", PYTHONUNBUFFERED: "1" },
+    env: { ...process.env, FORCE_COLOR: "1", PYTHONUNBUFFERED: "1", ...extraEnv },
     stdio: ["ignore", "pipe", "pipe"],
     windowsHide: true,
   });
@@ -309,7 +316,7 @@ async function teardown() {
   headline("Shutting down...");
   for (const c of serviceChildren) killTree(c);
   for (const c of tunnelChildren) killTree(c);
-  applyEnvState(LOCAL_URLS, "localhost");
+  applyEnvState(LOCAL_URLS, "localhost", false);
   note(dim("Reverted every managed env block to localhost. `npm run dev` is safe to use normally now."));
   setTimeout(() => process.exit(0), 1500);
 }
@@ -350,10 +357,22 @@ async function main() {
   for (const t of tunnels) tunnelChildren.push(t.child);
   const tunnelUrls = Object.fromEntries(tunnels.map((t) => [t.svc.key, t.url]));
 
-  applyEnvState(tunnelUrls, "tunnel");
+  applyEnvState(tunnelUrls, "tunnel", true);
 
   headline(`Starting ${SERVICES.length} dev servers with tunnel-aware env...`);
   for (const svc of SERVICES) {
+    // Next.js dev servers reject requests whose Host header isn't localhost
+    // unless the origin is explicitly allow-listed (allowedDevOrigins in each
+    // app's next.config.ts) — TUNNEL_DEV_ORIGIN carries this run's actual
+    // tunnel hostname to that config, since it's random every run.
+    const extraEnv =
+      svc.kind === "web"
+        ? { TUNNEL_DEV_ORIGIN: new URL(tunnelUrls[svc.key]).host, FORKHATRI_IDENTITY_INTERNAL_URL: LOCAL_URLS.identity }
+        : {};
+    serviceChildren.push(spawnService(svc, extraEnv));
+    note(`${paint(32, "start")}  ${svc.key.padEnd(LABEL_WIDTH)} :${svc.port}  ${dim(svc.describe)}`);
+  }
+  for (const svc of INTERNAL_SERVICES) {
     serviceChildren.push(spawnService(svc));
     note(`${paint(32, "start")}  ${svc.key.padEnd(LABEL_WIDTH)} :${svc.port}  ${dim(svc.describe)}`);
   }

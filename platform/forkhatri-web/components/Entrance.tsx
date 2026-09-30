@@ -15,7 +15,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError, identity, NetworkError, orderModules, type Lang, type Member, type ModuleEntry } from "@/lib/api";
 import { errorText, langFromNavigator, LANGUAGES, translator, type Translate } from "@/lib/i18n";
-import { clearReturnTo, isBounceLoop, markBounce, moduleForTarget, readReturnTo, safeReturnTo } from "@/lib/return-to";
+import { clearReturnTo, goSignedIn, isBounceLoop, markBounce, moduleForTarget, readReturnTo, safeReturnTo } from "@/lib/return-to";
 import { loadCachedRegistry, loadStoredLang, saveCachedRegistry, saveStoredLang } from "@/lib/storage";
 import { useThemeSync } from "@/lib/theme";
 import { withViewTransition } from "@/lib/view-transition";
@@ -101,7 +101,7 @@ export default function Entrance({ initialSheet }: { initialSheet?: SheetKind })
       if (session && target && !isBounceLoop(target)) {
         markBounce(target);
         setPhase({ kind: "redirecting" });
-        window.location.assign(target.href);
+        void goSignedIn(target.href);
         return;
       }
       if (session || (rawReturn && !target)) clearReturnTo();
@@ -206,7 +206,7 @@ export default function Entrance({ initialSheet }: { initialSheet?: SheetKind })
       if (target) {
         markBounce(target);
         setPhase({ kind: "redirecting" });
-        window.location.assign(target.href);
+        void goSignedIn(target.href);
         return;
       }
       clearReturnTo();
@@ -292,7 +292,7 @@ export default function Entrance({ initialSheet }: { initialSheet?: SheetKind })
       withViewTransition(() => setEntering(module));
       try {
         const { entry_url } = await identity.enter(module.key);
-        window.location.assign(entry_url);
+        await goSignedIn(entry_url);
       } catch (error) {
         setEntering(null);
         if (error instanceof ApiError && error.code === "not_signed_in") {

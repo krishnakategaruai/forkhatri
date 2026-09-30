@@ -8,7 +8,7 @@
 -- =============================================================================
 
 INSERT INTO registry.module (key, name, tagline_en, tagline_hi, tagline_te, availability, accent, sort_order) VALUES
-  ('mangaly', 'Mangaly',
+  ('mangaly', 'Mangalya',
    'A trusted matrimonial journey, with your family beside you.',
    'परिवार के साथ, भरोसेमंद वैवाहिक यात्रा।',
    'మీ కుటుంబంతో కలిసి, నమ్మకమైన వివాహ ప్రయాణం.',

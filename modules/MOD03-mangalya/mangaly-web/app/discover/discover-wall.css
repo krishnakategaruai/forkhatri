@@ -133,6 +133,18 @@
     border-radius: 22px;
   }
 }
+/* Phones: one large picture per row — the owner wants each face seen
+ * clearly, not as a thumbnail. Tablets and desktop keep the grid. */
+@media (max-width: 480px) {
+  .dwall,
+  .dwall--lens {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .dwall .dtile__photo {
+    aspect-ratio: 4 / 5;
+  }
+}
 @media (min-width: 640px) {
   .dwall {
     grid-template-columns: repeat(3, minmax(0, 1fr));

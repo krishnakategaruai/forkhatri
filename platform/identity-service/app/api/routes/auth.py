@@ -6,15 +6,19 @@ can make its next request with the new cookie.
 
 from __future__ import annotations
 
+import secrets
+import time
+from datetime import datetime, timezone
 from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Request, Response, status
 from pydantic import BaseModel, Field, StringConstraints
 
-from app.api.deps import AppSettings, DbSession, OptionalSession, SessionFactory, client_ip
+from app.api.deps import AppSettings, DbSession, OptionalSession, RequiredSession, SessionFactory, client_ip
 from app.components.identity import interface as identity
 from app.config.settings import Settings
+from app.errors import DomainError
 
 router = APIRouter(prefix="/v1/auth", tags=["auth"])
 
@@ -51,6 +55,10 @@ class PasswordRequest(BaseModel):
 
 class SignOutRequest(BaseModel):
     everywhere: bool = False
+
+
+class HandoffRedeemRequest(BaseModel):
+    code: str = Field(min_length=16, max_length=128)
 
 
 def _cookie_host_kwargs(settings: Settings) -> dict[str, Any]:
@@ -183,3 +191,51 @@ async def sign_out(
         await identity.sign_out(db, session.token, everywhere=bool(body and body.everywhere))
         await db.commit()
     _clear_session_cookie(response, settings)
+
+
+# ---------------------------------------------------------------------------
+# Sign-in handoff between origins. When the hub and a module live on unrelated
+# hosts (e.g. two Cloudflare Quick Tunnel hostnames), the hub's host-only cookie
+# never reaches the module. The hub asks for a single-use code for its current
+# session, sends the member to the module with it, and the module redeems it
+# through its own same-origin identity proxy, which sets the same session cookie
+# on the module's host. Codes live in memory for HANDOFF_TTL_SECONDS and are
+# consumed on first use; the session token itself never appears in a URL.
+# ---------------------------------------------------------------------------
+
+HANDOFF_TTL_SECONDS = 60
+_handoffs: dict[str, tuple[str, float]] = {}
+
+
+def _prune_handoffs(now: float) -> None:
+    for code in [c for c, (_, exp) in _handoffs.items() if exp <= now]:
+        _handoffs.pop(code, None)
+
+
+@router.post("/handoff")
+async def create_handoff(session: RequiredSession) -> dict[str, Any]:
+    now = time.monotonic()
+    _prune_handoffs(now)
+    code = secrets.token_urlsafe(32)
+    _handoffs[code] = (session.token, now + HANDOFF_TTL_SECONDS)
+    return {"code": code, "expires_in": HANDOFF_TTL_SECONDS}
+
+
+@router.post("/handoff/redeem")
+async def redeem_handoff(body: HandoffRedeemRequest, response: Response, db: DbSession, settings: AppSettings) -> dict[str, Any]:
+    now = time.monotonic()
+    _prune_handoffs(now)
+    entry = _handoffs.pop(body.code, None)
+    resolved = await identity.resolve_session(db, entry[0]) if entry else None
+    if entry is None or resolved is None:
+        raise DomainError("handoff_invalid", "This sign-in link has expired. Please try again.", 401)
+    member, expires_at = resolved
+    remaining = int((expires_at - datetime.now(timezone.utc)).total_seconds())
+    response.set_cookie(
+        settings.session_cookie_name,
+        entry[0],
+        max_age=max(remaining, 0),
+        httponly=True,
+        **_cookie_host_kwargs(settings),
+    )
+    return {"outcome": "signed_in", "member": member.public()}

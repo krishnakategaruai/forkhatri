@@ -223,3 +223,65 @@ body {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
   }
 }
+
+/* Type pass (owner, 2026-09-30): on a phone, titles fit one line, Hindi and
+   Telugu get room for their taller glyphs, and small text stays readable for
+   elders. Desktop sizes are untouched. */
+:root .caption { font-size: 0.875rem; }
+:root .label { font-size: 0.75rem; letter-spacing: 0.05em; }
+@media (max-width: 480px) {
+  :root :is(.topbar h1), :root .page__title, :root .h1, :root .inbox__title { font-size: clamp(1.25rem, 6vw, 1.5rem); line-height: 1.15; }
+  :root .home-head__title { font-size: clamp(1.75rem, 8.5vw, 2.125rem); line-height: 1.1; }
+  :root .hcard__name, :root .hintro__name, :root .home--family .hintro__name { font-size: 1.75rem; }
+  :root .pview__name { font-size: 1.875rem; }
+  :root .wizard-step__head .h2, :root .display { font-size: 1.5rem; line-height: 1.2; }
+  :root .hsearch__n { font-size: 1.5rem; }
+  :root .pview__prompt--lead .pview__prompt-a { font-size: 1.5rem; }
+  :root .pview__prompt-a { font-size: 1.25rem; }
+  :root:lang(te) :is(.topbar h1), :root:lang(hi) :is(.topbar h1),
+  :root:lang(te) .page__title, :root:lang(hi) .page__title,
+  :root:lang(te) .h1, :root:lang(hi) .h1,
+  :root:lang(te) .inbox__title, :root:lang(hi) .inbox__title { font-size: clamp(1.15rem, 5.4vw, 1.375rem); line-height: 1.3; }
+  :root:lang(te) .home-head__title, :root:lang(hi) .home-head__title { font-size: clamp(1.5rem, 7.4vw, 1.875rem); line-height: 1.2; }
+  :root:lang(te) .wizard-step__head .h2, :root:lang(hi) .wizard-step__head .h2 { font-size: 1.35rem; line-height: 1.3; }
+  :root:lang(te) .h2, :root:lang(hi) .h2 { line-height: 1.35; }
+}
+/* Hindi and Telugu have no capitals: the uppercase, letter-spaced eyebrow
+   treatment only distorts them (and shouts any Latin name inside). Plain,
+   slightly larger, in the same soft ink. */
+:root:lang(te) .label, :root:lang(hi) .label,
+:root:lang(te) .home-head__date, :root:lang(hi) .home-head__date,
+:root:lang(te) .duo__label, :root:lang(hi) .duo__label,
+:root:lang(te) .hintro__eyebrow, :root:lang(hi) .hintro__eyebrow,
+:root:lang(te) .hintro__overlay-eyebrow, :root:lang(hi) .hintro__overlay-eyebrow,
+:root:lang(te) .hintro__fact dt, :root:lang(hi) .hintro__fact dt,
+:root:lang(te) .hturn__title, :root:lang(hi) .hturn__title,
+:root:lang(te) .keyfact__label, :root:lang(hi) .keyfact__label,
+:root:lang(te) .prompt-card__q, :root:lang(hi) .prompt-card__q,
+:root:lang(te) .prompt-group__title, :root:lang(hi) .prompt-group__title,
+:root:lang(te) .vital__label, :root:lang(hi) .vital__label,
+:root:lang(te) .pview__prompt-q, :root:lang(hi) .pview__prompt-q,
+:root:lang(te) .factgroup__title, :root:lang(hi) .factgroup__title,
+:root:lang(te) .insight__title, :root:lang(hi) .insight__title,
+:root:lang(te) .pview__mine-label, :root:lang(hi) .pview__mine-label,
+:root:lang(te) .sealed__eyebrow, :root:lang(hi) .sealed__eyebrow,
+:root:lang(te) .part-head__eyebrow, :root:lang(hi) .part-head__eyebrow,
+:root:lang(te) .account__label, :root:lang(hi) .account__label,
+:root:lang(te) .member-group__title, :root:lang(hi) .member-group__title,
+:root:lang(te) .relpick__group-title, :root:lang(hi) .relpick__group-title,
+:root:lang(te) .facts__row dt, :root:lang(hi) .facts__row dt,
+:root:lang(te) .reqpop__eyebrow, :root:lang(hi) .reqpop__eyebrow,
+:root:lang(te) .fgroup__label, :root:lang(hi) .fgroup__label,
+:root:lang(te) .picker__title, :root:lang(hi) .picker__title,
+:root:lang(te) .hmatch__table thead th, :root:lang(hi) .hmatch__table thead th,
+:root:lang(te) .hmatch__mangal-who, :root:lang(hi) .hmatch__mangal-who,
+:root:lang(te) .pview__openname, :root:lang(hi) .pview__openname {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: max(0.8125rem, 1em);
+  font-weight: 600;
+}
+@media (max-width: 480px) {
+  :root .royal-title { font-size: clamp(1.5rem, 7vw, 1.75rem); line-height: 1.15; }
+  :root:lang(te) .royal-title, :root:lang(hi) .royal-title { font-size: clamp(1.3rem, 6vw, 1.5rem); line-height: 1.3; }
+}

@@ -6472,3 +6472,4 @@ img {
 }
 .topbar--wrap h1 { white-space: normal; overflow: visible; text-overflow: clip; font-size: clamp(1.35rem, 6.5vw, 2rem); line-height: 1.15; }
 .topbar--wrap h1 { flex: 1 1 auto !important; min-width: 0; text-align: center; }
+

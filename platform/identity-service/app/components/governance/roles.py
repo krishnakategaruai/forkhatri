@@ -3,7 +3,7 @@
 A role is held over an area (scope) for a term:
   platform  national office bearers and platform staff, over the whole of ForKhatri
   chapter   a state or city chapter of the samaj (and the chapters under it)
-  module    one module (Mangaly, Milavn, Vyapar, ...)
+  module    one module (Mangalya, Milavn, Vyapar, ...)
 
 Nobody has any administrative power by default. Roles are code, not rows, so the
 permission each role carries is reviewed like any other change. Researched against

@@ -192,6 +192,7 @@ export const identity = {
 
   enter: (key: string) =>
     request<{ entry_url: string }>(`/v1/modules/${encodeURIComponent(key)}/enter`, { method: "POST" }),
+  handoff: () => request<{ code: string; expires_in: number }>("/v1/auth/handoff", { method: "POST" }),
 };
 
 /** Recently entered first (newest first), then registry order (TR18). */

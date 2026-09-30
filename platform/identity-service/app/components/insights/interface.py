@@ -6,13 +6,13 @@ together from three places, each owner answering for its own data:
   * the platform itself — members, when they joined, when they were last seen,
     phone or email, app language, which modules they have entered, and the
     country of their phone number;
-  * Mangaly — gender, date of birth and city of candidates, and the city of
+  * Mangalya — gender, date of birth and city of candidates, and the city of
     parents and relatives who have their own "My profile";
   * Milavn — city.
 
 Module facts are fetched per request, server to server, and are never stored
-here. A person is counted once: a member's location is their Mangaly candidate
-city, else their Mangaly "My profile" city, else their Milavn city, else (for the
+here. A person is counted once: a member's location is their Mangalya candidate
+city, else their Mangalya "My profile" city, else their Milavn city, else (for the
 country only) their phone number's country. Everything returned is a count.
 """
 
@@ -44,7 +44,7 @@ _CALLING_CODES = {
 }
 
 AGE_BANDS = ((18, 24), (25, 29), (30, 34), (35, 39), (40, 49), (50, 59), (60, 200))
-MODULE_NAMES = {"mangaly": "Mangaly", "milavn": "Milavn", "vyapar": "Vyapar"}
+MODULE_NAMES = {"mangaly": "Mangalya", "milavn": "Milavn", "vyapar": "Vyapar"}
 
 
 def country_of_phone(phone_e164: str | None) -> str | None:
@@ -164,7 +164,7 @@ async def build(db: AsyncSession, settings: Settings) -> dict[str, Any]:
         for k, v in sorted(module_people.items(), key=lambda kv: -len(kv[1]))
     ]
 
-    # --- demographics (Mangaly candidates: the only place gender and age exist) ---
+    # --- demographics (Mangalya candidates: the only place gender and age exist) ---
     candidates = [p for p in by_module.get("mangaly", []) if p.get("kind") == "candidate"]
     gender = Counter((p.get("gender") or "unknown") for p in candidates)
     age_matrix: dict[str, Counter[str]] = defaultdict(Counter)

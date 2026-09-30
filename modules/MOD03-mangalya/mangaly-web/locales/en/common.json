@@ -97,7 +97,11 @@
       "bride": "bride",
       "groom": "groom"
     },
-    "change": "Change"
+    "change": "Change",
+    "whatShort": {
+      "bride": "Bride",
+      "groom": "Groom"
+    }
   },
   "account": {
     "menu": "Account: {{name}}",
