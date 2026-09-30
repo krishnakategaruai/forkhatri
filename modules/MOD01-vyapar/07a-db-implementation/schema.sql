@@ -2135,6 +2135,8 @@ SELECT pg_temp.add_aliases('accounting', ARRAY['bookkeeping','tally','अका�
 SELECT pg_temp.add_aliases('accountant', ARRAY['accounts assistant','accounts executive','अकाउंटेंट','అకౌంటెంట్']);
 SELECT pg_temp.add_aliases('gst_filing', ARRAY['gst','gst return','जीएसटी','జీఎస్టీ']);
 SELECT pg_temp.add_aliases('tax', ARRAY['income tax','itr','tax filing','टैक्स','ట్యాక్స్']);
+SELECT pg_temp.add_aliases('accountant', ARRAY['ca','chartered accountant','auditor','सीए','సీఏ']);
+SELECT pg_temp.add_aliases('accounting', ARRAY['ca','chartered accountant']);
 SELECT pg_temp.add_aliases('mechanic', ARRAY['bike mechanic','motor mechanic','मैकेनिक','మెకానిక్']);
 SELECT pg_temp.add_aliases('car_repair', ARRAY['car mechanic','garage','car service']);
 SELECT pg_temp.add_aliases('telecaller', ARRAY['telecalling','calling executive','टेलीकॉलर','టెలికాలర్']);

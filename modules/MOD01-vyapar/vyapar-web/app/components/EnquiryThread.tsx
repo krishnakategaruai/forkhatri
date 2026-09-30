@@ -35,7 +35,8 @@ import ReviewComposer from "@/app/components/ReviewComposer";
 import { SkeletonGrid } from "@/app/components/States";
 import DealsEmpty from "@/app/components/deals/Empty";
 import ContactActionsBlock from "@/app/components/contact/ContactActionsBlock";
-import ContractEntry, { isClientOf } from "@/app/components/contracts/ContractEntry";
+import ContractEntry from "@/app/components/contracts/ContractEntry";
+import TranslateLink from "@/app/components/respond/TranslateLink";
 import ProposalSummary, { hasProposalTerms } from "@/app/components/applicants/ProposalSummary";
 import { enquiryTone, ENQUIRY_STATE_KEY } from "@/app/components/enquiries/EnquiriesView";
 import { formatDate, formatDateTime } from "@/lib/format";
@@ -73,6 +74,9 @@ interface Enquiry {
   bid_type?: string | null;
   timeline_days?: number | null;
   milestones?: { title: string; amount_paise: number; due_days?: number | null }[] | null;
+  // [FE1 — N5/N6] the proposal's screening answers and backend A's note language
+  screening_answers?: { question_id: string; answer: string }[] | null;
+  message_language?: string | null;
 }
 
 export const STATE_KEY = ENQUIRY_STATE_KEY;
@@ -101,6 +105,18 @@ export default function EnquiryThread({
   const [busy, setBusy] = useState(false);
   const [more, setMore] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
+  // [FE1 — N6] the post's screening questions, so the proposal card shows
+  // each answer under the question the poster wrote.
+  const [questions, setQuestions] = useState<Record<string, string>>({});
+  const oppId = enquiry?.opportunity_id ?? null;
+  const hasAnswers = (enquiry?.screening_answers?.length ?? 0) > 0;
+  useEffect(() => {
+    if (!oppId || !hasAnswers) return;
+    api
+      .get<{ structured?: { screening_questions?: { id?: string; text: string }[] } | null }>(`/v1/opportunities/${oppId}`)
+      .then((o) => setQuestions(Object.fromEntries((o.structured?.screening_questions ?? []).filter((q) => q.id).map((q) => [q.id as string, q.text]))))
+      .catch(() => undefined);
+  }, [oppId, hasAnswers]);
 
   async function refresh() {
     try {
@@ -175,7 +191,9 @@ export default function EnquiryThread({
   const canWithdraw = enquiry.is_sender && live;
   const canRestrict = enquiry.state !== "restricted";
   const showContract = ["in_progress", "resolved", "closed"].includes(enquiry.state);
-  const terms = hasProposalTerms(enquiry) ? enquiry : null;
+  const terms = hasProposalTerms(enquiry)
+    ? { ...enquiry, screening_answers: (enquiry.screening_answers ?? []).map((s) => ({ ...s, question: questions[s.question_id] ?? null })) }
+    : null;
 
   // The secondary actions, as one quiet menu. Rendered in the header row on
   // a phone and in the aside on desktop (one JSX value, two placements).
@@ -278,7 +296,7 @@ export default function EnquiryThread({
           {/* phone: the way into the contract sits with the head, before the messages */}
           {showContract && (
             <div className="vy-ctx-narrow-only vy-dl-actions">
-              <ContractEntry enquiryId={id} enquiryState={enquiry.state} isClient={isClientOf(enquiry)} opportunityId={enquiry.opportunity_id} />
+              <ContractEntry enquiryId={id} enquiryState={enquiry.state} opportunityId={enquiry.opportunity_id} />
             </div>
           )}
 
@@ -323,6 +341,8 @@ export default function EnquiryThread({
               return (
                 <div key={m.id} className={`vy-dl-msg${mine ? " vy-dl-msg-mine" : ""}`}>
                   <p>{m.body}</p>
+                  {/* [FE1 — N5] only what the other person typed, only when the server knows its language */}
+                  {!mine && <TranslateLink text={m.body} language={enquiry.message_language} />}
                   {m.attachment_url && (
                     <a href={resolveAttachmentUrl(m.attachment_url)} target="_blank" rel="noopener noreferrer" className="vy-dl-attach">
                       <Paperclip size={14} strokeWidth={2} aria-hidden="true" />
@@ -410,7 +430,7 @@ export default function EnquiryThread({
           {/* desktop: the primary things to do (the quiet menu sits in the card above) */}
           {(showContract || canResolve) && (
             <div className="vy-ctx-wide-only vy-dl-actions">
-              {showContract && <ContractEntry enquiryId={id} enquiryState={enquiry.state} isClient={isClientOf(enquiry)} opportunityId={enquiry.opportunity_id} />}
+              {showContract && <ContractEntry enquiryId={id} enquiryState={enquiry.state} opportunityId={enquiry.opportunity_id} />}
               {canResolve && (
                 <button className="vy-btn vy-btn-secondary" disabled={busy} onClick={() => act(() => api.post(`/v1/enquiries/${id}/resolve`))}>
                   {t("enquiries:detail.resolve")}

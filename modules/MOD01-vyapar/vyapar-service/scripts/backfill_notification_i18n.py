@@ -83,13 +83,53 @@ async def spec_for(conn, row) -> dict | None:
                 values[k] = v
         values.setdefault("contact", GRIEVANCE)
     if not placeholders(key) <= set(values) | set(key_values):
-        return None
+        # Last resort: read the values back out of the text the recipient was
+        # shown, by matching it against the template in each language. These
+        # are exactly the values that were displayed, so re-rendering is truthful.
+        parsed = reverse_parse(key, row["title"], row["body"])
+        if parsed is None:
+            return None
+        values, key_values = parsed, {}
     return {"title": f"notifications.{key}.title", "body": f"notifications.{key}.body", "values": values, "key_values": key_values}
+
+
+def _template_regex(text: str) -> re.Pattern:
+    parts = re.split(r"(\{\w+\})", text)
+    out, seen = [], set()
+    for part in parts:
+        m = re.fullmatch(r"\{(\w+)\}", part)
+        if m and m.group(1) not in seen:
+            seen.add(m.group(1))
+            out.append(f"(?P<{m.group(1)}>.+?)")
+        elif m:
+            out.append(f"(?P={m.group(1)})")
+        else:
+            out.append(re.escape(part))
+    return re.compile("^" + "".join(out) + "$", re.S)
+
+
+def reverse_parse(key: str, title: str | None, body: str | None) -> dict | None:
+    for lang in ("en", "hi", "te"):
+        node = _catalog(lang, "notifications").get(key) or {}
+        values: dict = {}
+        ok = True
+        for part, stored in (("title", title), ("body", body)):
+            template = node.get(part)
+            if not template:
+                continue
+            m = _template_regex(template).match(stored or "")
+            if m is None:
+                ok = False
+                break
+            values.update(m.groupdict())
+        if ok and placeholders(key) <= set(values):
+            return values
+    return None
 
 
 async def main(dry_run: bool) -> None:
     conn = await asyncpg.connect(OWNER_DSN)
-    rows = await conn.fetch("SELECT id, template_id, title, params FROM vyapar_integration.notifications")
+    rows = await conn.fetch("SELECT id, template_id, title, body, params FROM vyapar_integration.notifications")
     done = skipped = 0
     for r in rows:
         spec = await spec_for(conn, r)

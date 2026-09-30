@@ -1293,9 +1293,8 @@ html[data-contrast="more"] .vy-acct-switch-hint {
   font-weight: var(--weight-ui);
 }
 
-/* Stats row: three columns on a phone, always one line per label. */
+/* Stats row: labels may wrap to two lines (Hindi, Telugu, 360px). */
 .vy-acct-stat span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }

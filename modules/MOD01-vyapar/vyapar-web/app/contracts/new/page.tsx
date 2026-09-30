@@ -2,7 +2,7 @@
 
 // [FE2 — imp-backend-d] /contracts/new?enquiry=<id> — start a contract from
 // an accepted request. Reads the request first: only the paying side (the
-// client, per getContractRoles / isClientOf — critique N1) sees the form;
+// client, per getContractRoles — critique N1) sees the form;
 // the other side is told who starts it, and a request that is not accepted
 // yet says so instead of offering a form the server would refuse. The draft
 // is pre-filled from the conversation (the proposal's price and stages).
@@ -20,7 +20,7 @@ import DealsEmpty from "@/app/components/deals/Empty";
 import { useResource } from "@/app/hooks/useResource";
 import { errorText } from "@/app/hooks/trade";
 import ContractCreateForm, { emptyMilestone, type ContractDraft } from "@/app/components/contracts/ContractCreateForm";
-import { isClientOf, useContractEligible } from "@/app/components/contracts/ContractEntry";
+import { useContractEligible, useContractRoles } from "@/app/components/contracts/ContractEntry";
 import "@/app/styles/deals-2026.css";
 
 function addDays(days: number): string {
@@ -74,6 +74,9 @@ export default function NewContractPage({ searchParams }: { searchParams: Promis
   const prefill = useMemo(() => (e ? draftFrom(e) : null), [e]);
   // [Critique L5] salaried jobs are not paid through contracts
   const eligible = useContractEligible(e ? (e.opportunity_id ?? null) : undefined);
+  // [FE1 — critique N1] the server says who pays; each side gets its own copy.
+  const roles = useContractRoles(enquiryId);
+  const r = roles.data;
 
   async function create(body: Omit<ContractCreateInput, "enquiry_id">) {
     setBusy(true);
@@ -98,10 +101,27 @@ export default function NewContractPage({ searchParams }: { searchParams: Promis
         </Link>
         {!enquiryId || enquiry.error ? (
           <DealsEmpty tone="neutral" icon={infoIcon} title={t("common:state.notFound")} />
-        ) : !e || !prefill || eligible === null ? (
+        ) : !e || !prefill || eligible === null || (!r && !roles.error) ? (
           <SkeletonGrid count={2} grid={false} />
-        ) : !isClientOf(e) ? (
-          <DealsEmpty tone="neutral" icon={infoIcon} title={t("contracts:new.notClientTitle", { name })} body={t("contracts:new.notClientBody")} />
+        ) : r?.live_contract_id ? (
+          <DealsEmpty
+            tone="neutral"
+            icon={infoIcon}
+            title={t("contracts:new.title")}
+            body={t("contracts:new.alreadyLive")}
+            action={
+              <Link className="vy-btn vy-btn-primary" href={`/contracts/${r.live_contract_id}`} style={{ textDecoration: "none" }}>
+                {t("contracts:entry.open")}
+              </Link>
+            }
+          />
+        ) : !r || r.my_role !== "client" ? (
+          <DealsEmpty
+            tone="neutral"
+            icon={infoIcon}
+            title={t("contracts:new.notClientTitle", { name })}
+            body={t(r?.basis === "requester_pays" ? "contracts:new.notClientBodyRequester" : "contracts:new.notClientBodyPoster", { name })}
+          />
         ) : eligible === false ? (
           <DealsEmpty tone="neutral" icon={infoIcon} title={t("contracts:new.title")} body={t("contracts:new.notForJobs")} />
         ) : e.state !== "in_progress" ? (

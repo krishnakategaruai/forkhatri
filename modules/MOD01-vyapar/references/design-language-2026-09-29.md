@@ -89,6 +89,19 @@ Text size (A / A+ / A++, `html[data-text]`) and High contrast keep working: ever
 
 ---
 
+## Filters, popovers and cards (2026-09-30)
+
+Owner: "i really hate filters section… throwing all the tags which is hard job for user to scroll", "Businesses page is boring and weak", "all the screen is filled with unnecessary things". Rules for every screen:
+
+- **Filters are a row of dropdown buttons**, never a sheet of tag lists: `FilterDropdown` (`app/components/filters/FilterDropdown.tsx`) shows the chosen value in the button ("Plumbers", "10 km"); tapping opens only that filter's control with Clear / Apply, a popover on desktop and a bottom sheet under 600px (portalled to `<body>`). Applied values show only in the buttons (no second chip row). Long lists get a search box (`TradePicker`). Discover: Trade · Distance · Pay · Posted · More. Businesses: Trade · Distance · Available · Verified · More. Styles: `app/styles/filters-2026.css` (imported from `layout.tsx`, never from a page).
+- **Popovers close** on outside tap, Escape, route change and when another opens: use `usePopoverDismiss` (`lib/usePopoverDismiss.ts`) for any new menu.
+- **Cards:** the trust badge is never truncated (the time wraps under it; the footer says "23 days ago"); an amount is never cut (it steps down, then wraps); monthly pay always reads "₹12,000 a month"; converted monthly figures round to ₹1,000; "LPA" never shows ("₹9–14 lakh a year"). Desktop rows fit whole cards (3 up, 4 up from 1560px).
+- **Zero results** offer ways out (Widen to 25 km, See all trades, drop the last filter), never "Save this search".
+- **Way home:** the host name beside the wordmark links to the platform (from 400px wide) and is the first item of the avatar menu; the URL comes only from `NEXT_PUBLIC_PLATFORM_URL`.
+- Reads stall-proof: SDK GETs time out after 20s so a screen shows its error state with Try again instead of skeletons forever.
+
+---
+
 ## 1. Research: what makes a 2026 product feel current
 
 | Reference | What we looked at | What we take | What we leave |

@@ -30,7 +30,10 @@ export default function DiscoverHero({
   radiusKm,
   defaultRadiusKm,
   onRadius,
+  personal = true,
 }: {
+  /** [Critique N2] "picked for you" only when the home really has rows built from the viewer's skills. */
+  personal?: boolean;
   firstName: string | null;
   query: string;
   onQuery: (q: string) => void;
@@ -63,16 +66,28 @@ export default function DiscoverHero({
   }
 
   useEffect(() => {
-    const el = pill.current;
     const html = document.documentElement;
-    if (!el || typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver(([e]) => {
-      html.dataset.heroSearch = e.isIntersecting ? "visible" : "hidden";
-    }, { rootMargin: "-64px 0px 0px 0px" });
-    io.observe(el);
+    // A plain scroll check (not IntersectionObserver): deterministic under
+    // React's development double-mount, and cheap (one rect read per frame).
+    let frame = 0;
+    const check = () => {
+      frame = 0;
+      const el = pill.current;
+      if (!el) return;
+      const topbar = parseFloat(getComputedStyle(html).getPropertyValue("--topbar-h")) || 56;
+      html.dataset.heroSearch = el.getBoundingClientRect().bottom > topbar ? "visible" : "hidden";
+    };
+    const on = () => {
+      if (!frame) frame = requestAnimationFrame(check);
+    };
+    check();
+    window.addEventListener("scroll", on, { passive: true });
+    window.addEventListener("resize", on);
     if (window.location.hash === "#search") document.getElementById("vy-hero-search")?.focus();
     return () => {
-      io.disconnect();
+      window.removeEventListener("scroll", on);
+      window.removeEventListener("resize", on);
+      if (frame) cancelAnimationFrame(frame);
       delete html.dataset.heroSearch;
     };
   }, []);
@@ -87,7 +102,15 @@ export default function DiscoverHero({
         ) : (
           <div className="vy-skeleton" style={{ height: 36, width: 240, maxWidth: "70%" }} aria-hidden="true" />
         )}
-        <p className="vy-hero-sub">{place ? t("explore:hero.subtitleNear", { place }) : t("explore:hero.subtitle")}</p>
+        <p className="vy-hero-sub">
+          {personal
+            ? place
+              ? t("explore:hero.subtitleNear", { place })
+              : t("explore:hero.subtitle")
+            : place
+              ? t("explore:hero.subtitleNearPlain", { place })
+              : t("explore:hero.subtitlePlain")}
+        </p>
       </div>
 
       <div className="vy-hero-tabs" role="tablist" aria-label={t("explore:top.switchLabel")}>

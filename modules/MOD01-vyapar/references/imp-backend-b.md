@@ -487,3 +487,129 @@ Rules for every row:
 - **W2:** a new switch defaults to WhatsApp only, the disclosure copy is right, a call on a WhatsApp-only post is refused, and switching to calls updates the copy. The existing call checks then run on `call_and_whatsapp`.
 
 The coordinator's `Depends(get_conn, scope="function")` change is in place, and the checks pass with it. The polling stays in as a harmless guard.
+
+
+---
+
+## Owner, 2026-09-30: "all the real functionality is actually created as dummy"
+
+Each fix below was traced to its cause in the code and proven through the API as the real personas. Proof ran on a private port against the shared dev DB; 8011 serves it once the restore agent restarts it.
+
+### 1. Trade filter returned nothing ("Plumbers" → 0 opportunities)
+**Causes:**
+- **Expired data:** the only plumbing post had expired on 20 September.
+- **Exact slugs only:** the filter compared skill slugs exactly, so a category tile, a free-text skill ("plumber") or a title naming the trade never matched.
+- **Radius on explicit searches:** `feed/results` also applied the member's home radius to on-site posts, so a city-wide trade search dropped everything beyond about 10 km of home.
+
+**Fixes:**
+- **`app/trade_match.py`** is the one matcher, used by `feed/results`, the sectioned feed, sections and saved searches.
+  - A category slug expands to every skill under it (`home_repair` → plumbing, electrical, carpenter…).
+  - A skill matches its slug, a free-text skill, or a title containing any of its names (en/hi/te) or aliases. ASCII words match at a word start; Hindi and Telugu match as substrings.
+- **Migration `026-trade-words-and-seed-marker.sql`** adds the words people type: plumber, electrician, नलसाज, ప్లంబర్, CA, … It also adds a nullable `seed_batch` marker to members, listings and opportunities.
+- **Skill facet count:** the chosen skill's facet is counted the way the filter matches.
+- **Radius scope:** `feed/results` applies a radius only when the person picks one (`radius_km`). The home feed, sections and rows keep the member's home radius as a hard constraint.
+- **Coordinates for posts:** a post whose location names a known Hyderabad locality now gets coordinates, on create and when its location is edited (`app/geo.py`, a gazetteer of about 35 localities). `OpportunityCreate` and `OpportunityPatch` also accept explicit `lat` and `lng`. Profiles are geocoded from their locality in the same way.
+
+**Proof (Rahul, Kukatpally):**
+- Plumbers tile: 4 posts, nearest first.
+- Electricians: 6 posts.
+- Home repair category: 21 posts.
+- A picked 3 km radius still cuts the list.
+
+### 2. Businesses search found nothing real
+**Causes:**
+- **Match was too narrow:** full-text search on the listing row only. The owner's name was never searched, spelling variants failed, and a typed place was matched as text.
+- **Nowhere to go from zero:** an empty result had no automatic next step.
+
+`GET /v1/listings/search` (`searchListings`) has the same parameters as before. What changed:
+- **Matching:**
+  - Every query word must prefix-match a word in the listing name, `business_name`, the owner's name, the skills (names in three languages plus aliases, and categories), the headline or the description.
+  - Matching is spelling-tolerant: `app/text_fold.py` folds case, accents, doubled letters, ee/oo, aspirates and a final "a", so "krishna", "Krishnaa", "aneeta" (Anita) and "Kukatpalli" all match.
+  - Words of one or two letters ("CA", "AC") must match a whole word.
+- **Weights:** the field hit sets the weight: name 3, skills 2, headline 1.5, description 1.
+- **Place:** a place in `q` or in `locality` becomes a distance filter around it (5 km), taken out of the text words.
+- **Ranking:** relevance, then distance, then the FR19 score. `sort_by` still overrides the order.
+- **Zero results broaden automatically, in this order:**
+  1. widen the radius around the place (15, then 30 km);
+  2. drop the place;
+  3. accept any of the words.
+
+  The response says which step ran.
+- **Response additions:** `place {name, lat, lng}`, `radius_km`, `broadened: [widenedRadius | droppedPlace | anyWord]`, `notice_text` (server-localized), and `notice` = the same key. New keys `discover.notice.{widenedRadius, droppedPlace, anyWord}` exist in en/hi/te. **FE:** show `notice_text` (or add these keys to the web catalog).
+
+**Proof (Rahul):**
+
+| Query | Result |
+|---|---|
+| "krishna" / "krishnaa" | Krishna Rao Plumbing Works |
+| "ameerpet" | 7 profiles within 5 km of Ameerpet |
+| "plumber ameerpet" | Krishna Rao, then Ravi Mehra |
+| "electrician kukatpally" | Ramesh Naidu |
+| "tailor charminar" | Salma Khatoon |
+| "ca" | only chartered accountants |
+| "बिजली मिस्त्री" | electricians |
+| "plumber" near Kompally | broadens, and says so |
+
+### 3. Notifications
+**(a) Language: read in the reader's language.**
+- **Template on write:** `send_notification(..., i18n=spec)` stores `params._i18n = {title, body, values, key_values}`. `notify_member`, `notify_interaction_party`, trust and safety, verification, pre-accept calling, the seeker pause and the match, alert and digest passes all pass it.
+- **SQL writers:** migration `027-notification-texts.sql` makes the five SQL functions that receive pre-rendered texts keep them all, under `params._texts`: `notify_interaction_party`, `notify_workspace_member`, contracts `notify_party`, `apply_seeker_charge_reports` and `notify_precall`. It was generated from their live definitions, changing only the params value.
+- **Read path:** `GET /v1/notifications` and `/page` render with `render_notification(row, lang)`. The order is the spec, then the reader's-language texts, then the stored text. A missing key or unfilled placeholder falls back rather than showing `{name}`.
+- **Backfill:** `scripts/backfill_notification_i18n.py` (idempotent, owner role) has been run.
+  - 90 existing rows are now templated.
+  - Values are rebuilt from the post or listing, or read back from the displayed text by matching each language's template (exactly what the reader saw).
+  - A handful of legacy rows stay as stored. Their templates have no catalog key (`enquiry_new`, `daily_digest`, `opp_strong_match`, `review_invite`), or the catalog wording has changed since they were sent (3 contract rows).
+
+**(b) Wording (GLOSSARY).** "This post matches your skills.", "{count} new posts for you", "Your post was paused", "The person who posted…", in en/hi/te.
+
+**(c) Duplicates:**
+- **Matches:** a match is keyed `match:{member}:{post}` permanently (it was per day, and returned after 7 days). Every pass skips posts already announced to the member by any kind (match, saved-search alert or digest), the member's own posts, and expired or closed posts (`deadline > now()`).
+- **Saved-search alerts:** they exclude already-announced posts, and their key is the set of posts.
+- **Digest:**
+  - It counts only posts not already announced, and lists them in params.
+  - It runs at the member's hour in IST (it compared against the UTC hour before).
+  - It is never sent twice within 20 hours, and is skipped when there is nothing new.
+- **Matching skills:** matching now uses the member's profile skills too (L14).
+- **Cleanup:** 16 duplicate "New match" rows already in inboxes were removed, keeping the earliest.
+
+**(d) Links:**
+- A match opens the post.
+- A saved-search alert opens the post (one) or Discover with the saved filters (several).
+- A digest opens Discover on "New today" (`/?posted_within=today&sort=freshness`), and 32 old digest rows were re-linked.
+
+**Proof.** Suresh's inbox reads "New match / नया मिलान / కొత్త మ్యాచ్: …" in en, hi and te. A partnership request to Anita reads in three languages. The real match and digest passes, run twice in a rolled-back transaction:
+- zero duplicate (member, post) pairs;
+- zero expired or closed posts;
+- a second digest sends 0;
+- every link points at its subject.
+
+### 4. A living marketplace: `scripts/seed_marketplace.py`
+- **What it creates,** through the public API as each member:
+  - 22 new members, created through the real member path: first request, first run, privacy and terms, their one profile via `/v1/me/profile` (business section where they have a shop), contact OTP and submit;
+  - 111 posts across all 22 trade categories and 32 Hyderabad localities, from those members and the existing dev personas. The spread is employment 77, local work 22 and projects 11. Pay is real per trade: delivery ₹15–22k a month, plumbing ₹500–1,500 a visit, projects ₹8–85k. Deadlines are 7–30 days out, titles are Hinglish or Telugu-English, and about a third allow pre-accept WhatsApp;
+  - 23 priced packages;
+  - 6 two-way reviews through the real enquiry → accept → reply → resolve → review flow.
+- **Written directly as the owner role** (no API does these): the `seed_batch` marker, and a staggered `published_at` of 0–9 days, so "New today" is about a third of the feed rather than all of it.
+- **Guards:**
+  - The owner's account (`m_krishna`) is asserted never to be used.
+  - The script is idempotent: a second run created 0 posts.
+  - `--clean` removes all marked rows and what hangs off them. This was verified inside a rolled-back transaction: 110 posts, 22 profiles, 22 members and 6 enquiries.
+- **It has been run.** The dev DB now has 121 live posts and 35 active profiles.
+
+### Checks
+`scripts/check_backend_b.py` passes 162/163 on private port 8091. The one failure is FE2's own `money: free text is kept as written` check (their `legacy_compensation_label("Negotiable", "freelance")`); it is not in this workstream. New checks:
+- **Trade:**
+  - the slug post and the free-text "nal wala / plumber" post both come back from the Plumbers tile and from the Home repair tile;
+  - the chip count is right;
+  - the sectioned feed applies the same filter;
+  - Electricians excludes plumbing;
+  - a picked radius cuts;
+  - posts get coordinates.
+- **Search:** owner name; spelling ("aneeta" → Anita); business name; place as distance; trade word plus place; auto-broaden with notice; "CA" whole-word; a Hindi trade word.
+- **Notifications:** hi, te and en rendering of one real notification; the paged inbox; glossary wording; the rolled-back two-pass dedupe, expiry, digest and link checks.
+
+The personas used are Rahul, Meena, Deepak, Anita and Suresh. Everything they create is removed afterwards.
+
+**Notes.**
+- **Migration numbering:** two migrations are numbered 026: mine (`026-trade-words-and-seed-marker.sql`, created 10:31) and Backend A's `026-one-profile-per-member.sql` (10:33). Both are idempotent and independent, and init.sh runs them in name order. I left both names as they are.
+- **Not done here:** `openapi.json` is not regenerated and 8011 is not restarted, as the coordinator asked.

@@ -38,5 +38,9 @@
     "projectsBudget": "Projects with a budget over {amount}",
     "projects": "Projects for professionals",
     "remote": "Work from home"
+  },
+  "distance": {
+    "inYourArea": "In your area",
+    "away": "{km} km away"
   }
 }

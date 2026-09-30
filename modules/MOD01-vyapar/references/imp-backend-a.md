@@ -478,7 +478,129 @@ How `state` maps to the text:
 - For the missing chip, the UI should show `missing_text` or build its own "Missing: …" line from `missing_skills[].label`, never "No <skill>".
 - `missing_capability_labels` stays for existing clients.
 
-> **Note (2026-09-30).** Sections 8–10 of this file (pay labels in the viewer's language; critique Pass 5 N2/N3/N5/N11/N12; the active → expired lifecycle), and the code behind them, are **not in the working tree**. They were swept into `git stash@{0}` ("WIP on main: 0f1825d", 29 Sep 17:46), which was never popped; three commits followed. The dev database still has their schema (migration 018 message templates) and data (expired posts). They come back when that stash is restored.
+## 8. Pay labels in the viewer's language, and paid work only in Discover's skill rows (2026-09-29)
+
+**Pay labels.**
+- `compensation_label` is rendered in the viewer's language everywhere an opportunity is returned. `listMyOpportunities` and the lifecycle routes (publish, pause, resume, close, renew, save, unsave, confirm) used to default to English; they now take the caller's language too.
+- The terminology agent's yearly rule is kept. "₹9–14 LPA" and "6 lakh per annum" become "₹9–14 lakh a year (₹75,000–₹1,17,000 a month)" (`opportunities.compensation.yearlyLakh`); "LPA" is never output.
+- Legacy free text with pay units now uses the `GLOSSARY.md` "Pay" wording in en/hi/te. The stored `compensation` is never rewritten.
+
+| Stored text | en | hi | te |
+|---|---|---|---|
+| `₹250 per visit` | ₹250 a visit | ₹250 प्रति विज़िट | ఒక్కో విజిట్‌కు ₹250 |
+| `from ₹300 per visit` | From ₹300 a visit | ₹300 प्रति विज़िट से शुरू | ఒక్కో విజిట్‌కు ₹300 నుండి |
+| `₹700/day`, `700 per day` | ₹700 a day | ₹700 रोज़ | రోజుకు ₹700 |
+| `₹800 per hour`, `₹15,000 per month`, `₹2k a week` | an hour / a month / a week, as above | प्रति घंटा / प्रति माह / प्रति सप्ताह | గంటకు / నెలకు / వారానికి |
+| `Pay per visit` (also per day, per hour, per month) | Paid per visit | प्रति विज़िट भुगतान | ఒక్కో విజిట్‌కు చెల్లింపు |
+| `Negotiable` | Pay negotiable | भुगतान पर बात हो सकती है | చెల్లింపు చర్చించుకోవచ్చు |
+| Anything else (e.g. `Best in industry`) | stays as written | stays as written | stays as written |
+
+The helpers are in `services/opportunities.py`: `legacy_compensation_label` and `_unit_pay_label`. The new keys are `opportunities.compensation.{daily, perVisit, weekly, startingFrom, negotiable, unitOnly.*}`.
+
+**New fields on `OpportunityOut`** (every place it is returned, including feed cards), so a card can lead with the monthly figure:
+
+```json
+"pay_period": "year",               // month | year | week | day | visit | hour | fixed | budget | null
+"pay_monthly_min_paise": 7500000,   // ₹75,000
+"pay_monthly_max_paise": 11700000   // ₹1,17,000
+```
+
+- **Structured salary:** `pay_period` is `month`, and the monthly min/max are the stated salary, exact.
+- **Yearly lakh text:** `year`, with the monthly min/max converted and rounded to ₹1,000, the same figures as the label.
+- **Monthly unit or bare amount on a job:** `month` with that amount.
+- **Other units:** `pay_period` is set (`hour`, `fixed`, `budget`, `day`, `visit`, `week`) and the monthly fields are `null`, because they are not salaries.
+- **Unparseable text:** everything is `null`.
+
+**Discover rows** (`listOpportunityRows`, in `services/feed.py`'s rows builder only).
+- **The cause:** Priya's "Software & IT" row held the T-Hub startup grant and the Startup India seed fund. Both are `community` posts requiring `startup`, a skill I had placed under Software & IT in migration 018.
+- **Fix, category rows:** a skill-category row now holds only paid work (`employment`, `freelance`, `local_service`) whose required skills overlap the category.
+- **Fix, related work:** the same grants then surfaced in Near you as "related work" (a skill in the same trade). That tier now also counts only paid work, as the builder's own docstring intended ("a grant … never opens … Near you"). Grants still reach a member whose own skill they name (For you), and still appear in the generic rows.
+- **Checked live:** for Priya, no community, programme or grant post appears in any category row or in Near you.
+
+**Deployed:** the shared API on 127.0.0.1:8011 was restarted after `import app.main` passed. It serves the seeded "Pay per visit" post as "ఒక్కో విజిట్‌కు చెల్లింపు" in Telugu.
+
+## 9. Critique Pass 5 fixes (CRITIQUE-2026-09-28.md; N2, N3, N5, N11, N12; 2026-09-29)
+
+**N2: personal rows on sparse data** (`listOpportunityRows`)
+- **The bug:** every persona got exactly one row, "Starting this week", because the 3-card minimum hid every personal row.
+- **Personal rows show with a single card.** These are For you, the member's own skill-category rows and Near you. The 3-card minimum now applies only to the generic rows (pay band, New today, Starting this week, Projects, Work from home).
+- **New fields on `RowsResponse`:**
+  - `has_personal_rows: bool` is true only when at least one personal row is present. Show "picked for you" only then.
+  - `viewer_categories: string[]` holds the member's own trade categories, most relevant first (skill overlap plus the categories on their listings). The trade rail can put them first.
+- **Checked live:** Priya gets For you, `has_personal_rows: true` and `viewer_categories: ["software_it"]`. A member with no skills and no place gets `has_personal_rows: false`.
+
+**N3: expired posts**
+- A post whose `deadline` has passed is treated as Expired (GLOSSARY "Post past its date": Expired / समय-सीमा ख़त्म / గడువు ముగిసింది).
+- **Never in the feed.** The one feed candidate query (`feed._candidates`) now requires `deadline IS NULL OR deadline >= now()`, which covers every row, section, result and saved-search match. Similar opportunities apply the same rule. "Starting this week" also requires `now <= deadline`.
+- **Marked on reads.** `OpportunityOut.deadline_passed: bool` is true once the last date has passed, so the detail can show Expired.
+- **Apply refused.** `createEnquiry` on an expired post returns **400 `opportunity_expired`**: "This post has expired. Its last date has passed, so it no longer takes applications." (en/hi/te).
+- **Checked:** 8 past-deadline active posts in the dev data; none leaks into rows or results.
+
+**N5: one-tap messages in the reader's language**
+- **The bug:** a one-tap application message is generated by Vyapar, not written by the applicant. It was stored as text in the applicant's language, so Meena read Suresh's Telugu.
+- **The fix:** migration 018 (re-applied, idempotent) adds `enquiry_messages.template_key` and `template_params`. A one-tap message is stored as `oneTap` plus `{headline, experience_years, locality}` from the snapshot. `body` keeps the sender-language rendering as a fallback.
+- **Rendered per reader:** in the thread (`getEnquiry`, and the reply result), on the board (`message_preview`) and in compare. Existing one-tap messages were backfilled (1 row in dev).
+- **Free text** is shown exactly as written.
+- **New output fields:**
+  - on each message: `message_language` (the language of `body` as served) and `templated` (true when Vyapar generated it);
+  - on `ApplicantOut`: `message_language` and `message_templated`.
+
+  The web can offer "Translate" when `message_language` differs from the viewer's.
+- **Not changed:** no notification carries the message text. The AI shortlist still reads the stored `body` as cover text.
+
+**N11: experience only in the matching trade**
+- **The bug:** an electrician applying to a bakery job showed both "None of the required skills" and "Has the experience you asked for".
+- **The fix mirrors the AI shortlist rule:** when none of the required skills match, `experience_fit` is 0.1 (0.3 if no experience is listed), so no experience reason appears. The applicant's `match_score` is also capped at 30.
+- **Checked:** Ravi, a plumber, on the bakery job gets only "Can start soon", with a score of 28.
+
+**N12: the glossary term "applicant"**
+- **Seeker-protection notice:**
+  - en: "Nobody may charge people who apply" / "No fee, deposit or kit charge may be asked from people who apply. Report if asked."
+  - hi: "आवेदन करने वालों से …"
+  - te: "అప్లై చేసినవారి నుండి …", replacing ఉద్యోగార్థులు / అభ్యర్థులు.
+- **The same term** replaces "job seeker" and అభ్యర్థులు in: the Telugu `asked_for_money` report reason (trust_safety and admin console); the English admin label ("Asked an applicant for money"); the Telugu admin `seeker_charge` label; the Telugu `opportunityPausedSeekerCharge` notification; and my Telugu `relax_english` tip.
+- **"Business existence verified (GST Certificate / GSTIN)" is not emitted by the server.**
+  - The phrase is in the web catalog, `vyapar-web/locales/*/verification.json` → `status.verified`.
+  - The server sends only the operator's `claim_scope` text.
+  - The badge the server does emit (`verified_business`) already reads "Verified business owner".
+  - **For the web workstream:** change `status.verified` to the glossary's "Business verified" (बिज़नेस वेरिफ़ाइड / బిజినెస్ వెరిఫైడ్).
+
+**Deployed:** 8011 was restarted after `import app.main` passed.
+
+## 10. Lifecycle: active → expired when the last date passes; renew brings it back (2026-09-29)
+
+**The gap.** Section 9 hid past-deadline posts from the feed and refused applications, but their `state` stayed `active`. Seeded freelance posts 103 and 111 (deadlines 24 and 28 Sep) are examples.
+
+**The pass.** `run_opportunity_expiry_pass` (in `services/opportunities.py`) moves every `active`, `paused` or `stale` post whose `deadline` has passed to **`expired`**, with `state_reason = 'deadline_passed'`.
+- **When it runs:** from the hourly loop in `main.py`, beside the other lifecycle passes. For development there is also a trigger, **`runOpportunityExpiry`** `POST /v1/opportunities/jobs/expire`. It returns `{expired, notified}`, and outside `DEV_MODE` it answers 404 `dev_only`.
+- **How it runs:** each post is expired in its own transaction, as its poster. That is the same RLS rule every poster update follows; no operator id is hardcoded. So the existing trigger writes the `opportunity.expired` domain event, and webhooks see it.
+- **The poster is notified** in their language: `opportunityExpired`.
+  - en: "Your post expired: {title}" / "Its last date has passed, so it no longer shows in Discover or takes applications. Renew it to bring it back."
+  - hi: "आपकी पोस्ट की समय-सीमा ख़त्म हो गई: {title}" / "…इसे वापस लाने के लिए रिन्यू करें।"
+  - te: "మీ పోస్ట్ గడువు ముగిసింది: {title}" / "…మళ్ళీ చూపించడానికి రిన్యూ చేయండి."
+  - The link goes to the post.
+- **Idempotent:** an expired post is never picked again, and the notification key includes the deadline date.
+- **Effect on reads:** an expired post is readable only by its poster, under the existing visibility rule. Everyone else gets 404, as for any closed post.
+
+**Renew** (`renewOpportunity` `POST /v1/opportunities/{id}/renew`). It now takes an optional body, `{"deadline": "<ISO date-time>"}`.
+- **With a deadline:** it must be in the future, else 422 `deadline_in_past` ("Choose a last date in the future.").
+- **Without a body, and the old deadline has passed:** the post gets its original posting window again, from publish to deadline, clamped to 7–30 days (14 when unknown).
+- **Otherwise:** the deadline is left alone.
+- Either way the post returns to `active`, `state_reason` is cleared, and applying works again. Without this, a renewed post would have stayed hidden and kept refusing applications.
+- The existing 90-day rule (`too_old_to_renew`) is unchanged.
+
+**Checked:**
+- a post whose last date passed becomes `expired` / `deadline_passed`, with one notification and one `opportunity.expired` event;
+- a second pass changes nothing;
+- no active, paused or stale post is left past its date;
+- renewing with a past date is refused;
+- renewing without a body gives a date 14 days out, and an application then succeeds.
+
+**On the dev DB:** the first run expired 8 seeded posts (103, 104, 105, 106, 111, 117, 118 and 122), and each poster got one notification. That is the same thing the hourly loop does on its own.
+
+**Deployed:** 8011 was restarted after `import app.main` passed.
+
+> *Sections 8–10 restored from the 29 Sep stash on 2026-09-30 (see restore-2026-09-30.md).*
 
 ## 11. One Vyapar profile per member (owner decision, 2026-09-30)
 

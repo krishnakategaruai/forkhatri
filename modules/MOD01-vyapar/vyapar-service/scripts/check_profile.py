@@ -148,6 +148,32 @@ async def main(api_base: str) -> int:
         st, detail = api.call("GET", f"/v1/listings/{meena_id}", OTHER)
         check(st == 200 and detail["has_business"] and detail["business_name"] == "Meena's Oven", "listing detail keeps working with the same id")
 
+        # ------------------------------------------------------------ workspaces + verification per section
+        print("\n== Workspaces and verification after consolidation ==")
+        st, ws = api.call("GET", "/v1/workspace/mine", MEENA)
+        check(st == 200 and [(w["listing_id"], w["listing_name"]) for w in ws] == [(meena_id, "Meena's Oven")],
+              f"Meena has one workspace, named after her business ({[w['listing_name'] for w in ws]})")
+        merged_id = await db.fetchval("SELECT id::text FROM vyapar_listings.listings WHERE owner_id = $1 AND name = 'Meena Sahni — Baking classes'", MEENA)
+        st, res = api.call("GET", f"/v1/workspace/{merged_id}", MEENA)
+        check(st == 404 and res["error"]["details"].get("merged_into") == meena_id, "a merged listing has no workspace; the answer points at the profile")
+        st, ws = api.call("GET", "/v1/workspace/mine", "m_vikram")
+        check(st == 200 and [w["listing_name"] for w in ws] == ["Sethi Textiles"], f"a suspended listing is not a second workspace ({[w['listing_name'] for w in ws]})")
+        st, ws = api.call("GET", "/v1/workspace/mine", "m_priya")
+        check(st == 200 and len(ws) == 2 and {w["role"] for w in ws} == {"owner", "operator"} and "Nanda Labs" in [w["listing_name"] for w in ws],
+              f"a member keeps the workspaces they were invited to ({[(w['listing_name'], w['role']) for w in ws]})")
+        dupes = await db.fetchval(
+            """SELECT count(*) FROM (SELECT listing_id FROM vyapar_commercial.entitlements WHERE state IN ('awaiting_payment','active','paused')
+                GROUP BY listing_id HAVING count(*) > 1) x""")
+        check(dupes == 0, "at most one open plan per workspace")
+        st, me = api.call("GET", "/v1/me/profile", MEENA)
+        p = me["profile"]
+        check(p["profile_status"] == "active" and p["business_verified"] and not p["credential_verified"],
+              "Meena: the person reads 'Active'; the shop licence verifies the business section")
+        st, pr = api.call("GET", "/v1/me/profile", "m_priya")
+        q = pr["profile"]
+        check(q["profile_status"] == "active" and q["credential_verified"] and not q["business_verified"],
+              "Priya: a degree verifies the person, not a business")
+
         # ------------------------------------------------------------ identity prefill
         print("\n== A new member from ForKhatri: nothing asked twice ==")
         # the identity sync the ForKhatri session provider performs on sign-in

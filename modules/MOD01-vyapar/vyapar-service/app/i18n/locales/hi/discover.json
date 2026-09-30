@@ -38,5 +38,9 @@
     "projectsBudget": "{amount} से अधिक बजट वाले प्रोजेक्ट",
     "projects": "प्रोफ़ेशनलों के लिए प्रोजेक्ट",
     "remote": "घर से काम"
+  },
+  "distance": {
+    "inYourArea": "आपके इलाके में",
+    "away": "{km} कि.मी. दूर"
   }
 }

@@ -270,6 +270,10 @@ export interface FeedRow {
 
 export interface RowsResponse {
   rows: FeedRow[];
+  /** [imp-backend-a N2] true when a row is built from the viewer's own skills (For you, their categories). */
+  has_personal_rows?: boolean;
+  /** [imp-backend-a N2] the viewer's own work categories, strongest first. */
+  viewer_categories?: string[];
   enrichment_prompt: string | null;
   distance_available: boolean;
 }
@@ -456,6 +460,8 @@ export interface EnquiryDetail {
   // Present in OpenAPI EnquiryOut (read by FE2's contract and contact screens).
   listing_id?: string | null;
   opportunity_id?: string | null;
+  /** [FE1, critique N5] backend A: language of the free-text message, when known. */
+  message_language?: string | null;
   created_at?: string;
   last_activity_at?: string;
   target_name?: string | null;

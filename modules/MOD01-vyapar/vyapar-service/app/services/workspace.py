@@ -210,13 +210,21 @@ async def list_my_workspaces(
     ctx: AuthzContext,
 ) -> list[WorkspaceSummaryOut]:
     """Listings the member can open a workspace for: their own, plus any where
-    they hold an active role."""
+    they hold an active role.
+    [Backend A, 2026-09-30 — one profile per member] A member owns at most one
+    workspace: the one on their profile (the live listing; a suspended one
+    only when no live one exists). Archived listings, including listings
+    merged into the profile, are never a workspace, and a workspace is named
+    after the business when the profile has one."""
     rows = await conn.fetch(
-        """SELECT l.id, l.name, 'owner' AS role FROM vyapar_listings.listings l WHERE l.owner_id = $1
+        """(SELECT l.id, COALESCE(l.business_name, l.name) AS name, 'owner' AS role FROM vyapar_listings.listings l
+             WHERE l.owner_id = $1 AND l.state <> 'archived'
+             ORDER BY (l.state IN ('draft','submitted','active_unverified','active_verified')) DESC, l.updated_at DESC
+             LIMIT 1)
            UNION
-           SELECT l.id, l.name, wm.role FROM vyapar_commercial.workspace_members wm
+           SELECT l.id, COALESCE(l.business_name, l.name), wm.role FROM vyapar_commercial.workspace_members wm
              JOIN vyapar_listings.listings l ON l.id = wm.listing_id::uuid
-            WHERE wm.member_id = $1 AND wm.state = 'active'""",
+            WHERE wm.member_id = $1 AND wm.state = 'active' AND l.state <> 'archived' AND l.owner_id <> $1""",
         ctx.member_id,
     )
     return [WorkspaceSummaryOut(listing_id=str(r["id"]), listing_name=r["name"], role=r["role"]) for r in rows]
@@ -237,6 +245,16 @@ async def get_workspace(
     wctx = await authz.workspace_context(conn, listing_id)
     if wctx is None or wctx.role == "none":
         raise ApiError(404, "workspace.error.notFound", lang)
+    # [Backend A, 2026-09-30] a listing merged into a profile has no workspace
+    # of its own any more; point the caller at the profile's instead.
+    listing = await conn.fetchrow(
+        "SELECT state, state_reason, COALESCE(business_name, name) AS label FROM vyapar_listings.listings WHERE id = $1::uuid", listing_id)
+    if listing is not None and listing["state"] == "archived":
+        reason = listing["state_reason"] or ""
+        raise ApiError(404, "workspace.error.notFound", lang,
+                       extra={"merged_into": reason.split(":", 1)[1] if reason.startswith("merged_into:") else None})
+    if listing is not None:
+        wctx.listing_name = listing["label"]
     members: list[dict] = []
     if wctx.can("team"):
         rows = await conn.fetch("SELECT * FROM vyapar_commercial.workspace_members_for($1)", listing_id)
@@ -382,7 +400,7 @@ async def list_my_entitlements(
     ctx: AuthzContext,
 ) -> list[EntitlementOut]:
     rows = await conn.fetch(
-        """SELECT e.*, l.name AS listing_name FROM vyapar_commercial.entitlements e
+        """SELECT e.*, COALESCE(l.business_name, l.name) AS listing_name FROM vyapar_commercial.entitlements e
            LEFT JOIN vyapar_listings.listings l ON l.id = e.listing_id::uuid
            WHERE e.owner_id = $1 ORDER BY e.created_at DESC""",
         ctx.member_id,

@@ -45,19 +45,23 @@ function km(d: number): string {
  * translation key: the recruiter shorthand "LPA" never reaches the screen
  * (owner, 2026-09-30), and the wording follows the reader's language.
  */
-export function payLines(label: string, language: string): { main: string; monthly: boolean; yearlyLakh: string | null } {
+export function payLines(
+  label: string,
+  language: string,
+): { main: string; monthly: boolean; yearlyLakh: string | null; /** same as yearlyLakh (restored callers) */ lakhRange: string | null } {
   // [2026-09-30, glossary] one wording for a monthly figure everywhere:
   // "₹12,000 a month". A poster's "₹12,000 / month", "per month", "/mo",
   // "pm" all become the bare amount, worded by the caller's key.
   const perMonth = label.match(/^(.*?₹.*?)\s*(?:\/\s*(?:month|mo)|per\s+month|a\s+month|p\.?m\.?)\s*$/i);
-  if (perMonth) return { main: perMonth[1].trim(), monthly: true, yearlyLakh: null };
+  if (perMonth) return { main: perMonth[1].trim(), monthly: true, yearlyLakh: null, lakhRange: null };
   const m = label.match(/₹\s?([\d.]+)\s?(?:[–-]\s?₹?\s?([\d.]+))?\s?(?:LPA|lpa|lakh(?:s)? (?:per|a) (?:annum|year))/);
-  if (!m) return { main: label, monthly: false, yearlyLakh: null };
+  if (!m) return { main: label, monthly: false, yearlyLakh: null, lakhRange: null };
   // A converted figure is an estimate: round it to ₹1,000 ("₹1,17,000", not "₹1,16,700").
   const month = (lakh: string) => Math.round((parseFloat(lakh) * 100000) / 12 / 1000) * 1000 * 100; // paise
   const lo = formatRupees(month(m[1]), language);
   const main = m[2] ? `${lo}–${formatRupees(month(m[2]), language)}` : lo;
-  return { main, monthly: true, yearlyLakh: m[2] ? `₹${m[1]}–${m[2]}` : `₹${m[1]}` };
+  const range = m[2] ? `₹${m[1]}–${m[2]}` : `₹${m[1]}`;
+  return { main, monthly: true, yearlyLakh: range, lakhRange: range };
 }
 
 const TRUST_ORDER = ["verified_business", "verified_professional", "verified", "id_verified", "top_rated", "rising"];

@@ -52,9 +52,11 @@ def fold(text: str | None) -> str:
 
 
 def prefix_hits(query_words: list[str], text: str | None) -> int:
-    """How many query words start a word in `text` (folded both sides)."""
+    """How many query words start a word in `text` (folded both sides). A
+    word of one or two letters ("CA", "AC") must match a whole word, or it
+    would hit every "Caterers" and "CallPoint"."""
     hay = words(text)
-    return sum(1 for q in query_words if any(h.startswith(q) for h in hay))
+    return sum(1 for q in query_words if any((h == q) if len(q) <= 2 else h.startswith(q) for h in hay))
 
 
 def contains_phrase(query: str, text: str | None) -> bool:

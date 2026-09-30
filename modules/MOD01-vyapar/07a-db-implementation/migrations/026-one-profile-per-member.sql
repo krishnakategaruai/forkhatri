@@ -265,3 +265,27 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = vyapar_listings, pg_temp 
 $$;
 REVOKE ALL ON FUNCTION vyapar_listings.nearest_locality(double precision, double precision) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION vyapar_listings.nearest_locality(double precision, double precision) TO vyapar_app;
+
+-- ---------------------------------------------------------------------------
+-- 8. [2026-09-30, second pass] Workspaces after consolidation: one member,
+--    at most one workspace, on the surviving profile. Section 4 already
+--    re-points entitlements, workspace members and campaigns from merged
+--    listings to the survivor; here any duplicates that creates are retired
+--    (never deleted: payments stay attached to their entitlement rows).
+--    Idempotent.
+-- ---------------------------------------------------------------------------
+-- One open plan per profile: the one that runs longest stays, others close.
+UPDATE vyapar_commercial.entitlements e SET state = 'cancelled', updated_at = now()
+ WHERE e.state IN ('awaiting_payment','active','paused')
+   AND EXISTS (SELECT 1 FROM vyapar_commercial.entitlements k
+                WHERE k.listing_id = e.listing_id AND k.id <> e.id AND k.state IN ('awaiting_payment','active','paused')
+                  AND (CASE k.state WHEN 'active' THEN 0 WHEN 'paused' THEN 1 ELSE 2 END,
+                       -extract(epoch FROM coalesce(k.renews_at, k.created_at)), k.id::text)
+                    < (CASE e.state WHEN 'active' THEN 0 WHEN 'paused' THEN 1 ELSE 2 END,
+                       -extract(epoch FROM coalesce(e.renews_at, e.created_at)), e.id::text));
+-- One seat per person per workspace: the strongest role stays, others expire.
+UPDATE vyapar_commercial.workspace_members w SET state = 'expired'
+ WHERE w.state IN ('pending','active') AND w.member_id IS NOT NULL
+   AND EXISTS (SELECT 1 FROM vyapar_commercial.workspace_members k
+                WHERE k.listing_id = w.listing_id AND k.member_id = w.member_id AND k.id <> w.id AND k.state IN ('pending','active')
+                  AND ((k.state = 'active')::int, (k.role = 'admin')::int, k.id::text) > ((w.state = 'active')::int, (w.role = 'admin')::int, w.id::text));

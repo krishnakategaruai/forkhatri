@@ -81,6 +81,7 @@ from app.reputation import BadgeOut, badges_for_members
 from app.services.opportunities import OpportunityOut, _row_to_opp, format_inr
 from app.taxonomy_cache import categories as taxonomy_categories, children_of, label_for
 from app.viewer_profile import viewer_skills
+from app.place_label import distance_label, location_label
 from app.trade_match import trade_matcher as _trade_matcher_uncached
 from app.i18n import translate
 from app.services.pagination import DEFAULT_LIMIT, MAX_LIMIT, Page, paginate
@@ -153,6 +154,9 @@ class FeedCard(OpportunityOut):
     the feed knows about it for THIS member."""
 
     distance_km: float | None = Field(default=None, description="Haversine km from the member; null when either side has no coordinates")
+    # [IMP-B] what to print: "In your area" under 0.5 km, else "1.8 km away" (localized); and the locality without the city
+    distance_label: str | None = None
+    location_label: str | None = None
     poster_badges: list[BadgeOut] = []
     seeker_protection: SeekerProtectionOut | None = None
 
@@ -246,6 +250,8 @@ def _row_to_feed_card(row: asyncpg.Record, caller_id: str, submitter_name: str, 
     card.relevance_reason = reason_key
     d = row["distance_km"] if "distance_km" in row.keys() else None
     card.distance_km = round(float(d), 1) if d is not None else None
+    card.distance_label = distance_label(card.distance_km, lang)
+    card.location_label = location_label(row["location"])
     notice = seeker_protection_notice(lang, row["type"])
     card.seeker_protection = notice if notice.applies else None
     return card

@@ -39,6 +39,7 @@ from app.geo import place_words, resolve_place
 from app.i18n import translate
 from app.text_fold import contains_phrase, fold, prefix_hits, words
 from app.trade_match import trade_matcher
+from app.place_label import distance_label
 from app.services.listings import ListingOut, _row_to_out
 
 
@@ -50,6 +51,7 @@ class SearchResult(BaseModel):
     listing: ListingOut
     relevance_reason: str  # i18n key under ranking.signal.* (or a literal fallback key below)
     distance_km: float | None = None  # [FR15] real, only when both caller and listing have coordinates
+    distance_label: str | None = None  # [IMP-B] "In your area" / "1.8 km away", localized
 
 
 class BroadeningOption(BaseModel):
@@ -288,7 +290,8 @@ async def search_listings(
         card = _row_to_out(row, [], ctx.member_id, lang=lang)
         card.reputation = reps.get(str(row["id"]))
         card.badges = [b.model_dump() for b in owner_badges.get(row["owner_id"], [])]
-        results.append(SearchResult(listing=card, relevance_reason=reason, distance_km=round(d, 1) if d is not None else None))
+        results.append(SearchResult(listing=card, relevance_reason=reason, distance_km=round(d, 1) if d is not None else None,
+                                    distance_label=distance_label(d, lang)))
 
     sponsored: list[SearchResult] = []
     eligible = [r for _, _, _, r, _ in scored]

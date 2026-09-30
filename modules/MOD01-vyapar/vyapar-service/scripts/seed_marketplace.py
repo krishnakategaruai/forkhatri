@@ -380,7 +380,7 @@ async def seed(api: Api, owner) -> None:
                 structured = {"budget_paise": hi * 100, "urgency": "today" if timing.lower().startswith("today") else "this_week"}
             deadline = (now + timedelta(days=rnd.randint(7, 30))).isoformat()
             body = {"entry_mode": "create", "type": type_, "source_segment": "community", "title": title, "description": desc,
-                    "location": f"{loc}, Hyderabad", "work_mode": mode, "timing": timing, "required_capabilities": skills,
+                    "location": loc, "work_mode": mode, "timing": timing, "required_capabilities": skills,
                     "deadline": deadline, "structured": structured,
                     "allow_precall": type_ in (J, L) and rnd.random() < 0.35}
             r = ok(api(poster, "POST", "/v1/opportunities", json=body), f"post {title}")
@@ -424,12 +424,54 @@ async def seed(api: Api, owner) -> None:
                                                      "comment": "Clear about the work and paid on the same day. Happy to work again."}), f"review by {provider}")
         print(f"  review {sender} <-> {provider}")
 
+    await normalize(owner)
     n = await owner.fetchrow(
         """SELECT (SELECT count(*) FROM vyapar_opportunities.opportunities WHERE state = 'active' AND (deadline IS NULL OR deadline > now())) AS live,
                   (SELECT count(*) FROM vyapar_opportunities.opportunities WHERE seed_batch = $1) AS seeded_posts,
                   (SELECT count(*) FROM vyapar_listings.listings WHERE state LIKE 'active%') AS profiles,
                   (SELECT count(DISTINCT split_part(location, ',', 1)) FROM vyapar_opportunities.opportunities WHERE state = 'active') AS places""", SEED)
     print(f"done: {n['live']} live posts ({n['seeded_posts']} seeded), {n['profiles']} active profiles, {n['places']} localities")
+
+
+def jitter(lat: float, lng: float, key: str) -> tuple[float, float]:
+    """A point 0.3-1.5 km from the locality centre in a direction fixed by the
+    row id: real-looking distances (no "0.0 km" between neighbours), and the
+    same point on every run."""
+    import hashlib
+    import math
+
+    h = hashlib.sha256(key.encode()).digest()
+    bearing = int.from_bytes(h[:4], "big") / 2**32 * 2 * math.pi
+    km = 0.3 + int.from_bytes(h[4:8], "big") / 2**32 * 1.2
+    dlat = km * math.cos(bearing) / 111.32
+    dlng = km * math.sin(bearing) / (111.32 * math.cos(math.radians(lat)))
+    return round(lat + dlat, 6), round(lng + dlng, 6)
+
+
+async def normalize(owner) -> None:
+    """Seeded rows only: the location is the locality alone ("Madhapur", not
+    "Madhapur, Hyderabad") and the pin sits inside the locality, not on its
+    centroid. Idempotent: always recomputed from the locality centre."""
+    from app.geo import resolve_place
+    from app.place_label import location_label
+
+    fixed = 0
+    for r in await owner.fetch("SELECT id, location FROM vyapar_opportunities.opportunities WHERE seed_batch = $1", SEED):
+        loc = location_label(r["location"])
+        place = resolve_place(loc)
+        if place is None:
+            continue
+        lat, lng = jitter(place.lat, place.lng, str(r["id"]))
+        await owner.execute("UPDATE vyapar_opportunities.opportunities SET location = $2, lat = $3, lng = $4 WHERE id = $1", r["id"], loc, lat, lng)
+        fixed += 1
+    for r in await owner.fetch("SELECT id, locality FROM vyapar_listings.listings WHERE seed_batch = $1", SEED):
+        place = resolve_place(r["locality"])
+        if place is None:
+            continue
+        lat, lng = jitter(place.lat, place.lng, str(r["id"]))
+        await owner.execute("UPDATE vyapar_listings.listings SET lat = $2, lng = $3 WHERE id = $1", r["id"], lat, lng)
+        fixed += 1
+    print(f"normalized {fixed} seeded posts and profiles (locality-only location, pins 0.3-1.5 km inside the locality)")
 
 
 async def clean(owner) -> None:
@@ -466,11 +508,14 @@ async def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--api", default=os.environ.get("VYAPAR_API_URL", "http://127.0.0.1:8011"))
     ap.add_argument("--clean", action="store_true")
+    ap.add_argument("--normalize", action="store_true", help="only fix locations/pins of already-seeded rows")
     args = ap.parse_args()
     owner = await asyncpg.connect(OWNER_DSN)
     try:
         if args.clean:
             await clean(owner)
+        elif args.normalize:
+            await normalize(owner)
         else:
             await seed(Api(args.api), owner)
     finally:

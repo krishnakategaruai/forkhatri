@@ -845,6 +845,22 @@ def run_owner_checks(api: "Api", created: dict, owner_loop_query) -> None:
         check("trade: a post in a known locality gets coordinates (distance works)", r.status_code == 200 and
               owner_loop_query("SELECT lat IS NOT NULL AS ok FROM vyapar_opportunities.opportunities WHERE id = $1", a)["ok"], "")
 
+    # ---- Card place + distance wording (Priya, Madhapur) ----------------------
+    r = api.call("m_priya", "GET", "/v1/opportunities/feed/results", params={"limit": 100})
+    cards = r.json().get("items", [])
+    with_d = [c for c in cards if c.get("distance_km") is not None]
+    check("cards: a distance label on every card with a distance, never '0.0 km'",
+          r.status_code == 200 and with_d and all(c.get("distance_label") and "0.0" not in c["distance_label"] for c in with_d),
+          str([(c["distance_km"], c.get("distance_label")) for c in with_d[:5]]))
+    check("cards: under 0.5 km reads 'In your area'",
+          all(c["distance_label"] == "In your area" for c in with_d if c["distance_km"] < 0.5), "")
+    check("cards: location shows the locality, not the city",
+          all(c.get("location_label") and "hyderabad" not in c["location_label"].lower() for c in cards if c.get("location")),
+          str([c.get("location_label") for c in cards[:5]]))
+    r = api.call("m_priya", "GET", "/v1/opportunities/feed/results", params={"limit": 20}, lang="te")
+    check("cards: the distance label is localized (te)",
+          any(c.get("distance_label") and ("కి.మీ." in c["distance_label"] or "ప్రాంతంలో" in c["distance_label"]) for c in r.json().get("items", [])), "")
+
     # ---- 2. Businesses search -----------------------------------------------
     def search(member, **params):
         r = api.call(member, "GET", "/v1/listings/search", params=params)
@@ -869,6 +885,12 @@ def run_owner_checks(api: "Api", created: dict, owner_loop_query) -> None:
     check("search: nothing close -> broadens automatically and says so",
           status == 200 and body.get("results") and body.get("broadened") and body.get("notice_text"),
           json.dumps({"broadened": body.get("broadened"), "notice": body.get("notice_text"), "n": len(body.get("results", []))}, ensure_ascii=False))
+    status, body = search(RAHUL, q="ca")
+    acct = {"accounting", "accountant", "gst_filing", "tax"}
+    check("search: 'CA' finds chartered accountants only (short words match whole words)",
+          status == 200 and body.get("results") and all(set(x["listing"]["capabilities"]) & acct for x in body["results"])
+          and any(x["listing"]["owner_id"] == ANITA for x in body["results"]),
+          str([(x["listing"]["name"], x["listing"]["capabilities"]) for x in body.get("results", [])][:5]))
     status, body = search(RAHUL, q="बिजली मिस्त्री")
     check("search: Hindi trade word finds electricians", status == 200 and any("electrical" in x["listing"]["capabilities"] for x in body.get("results", [])),
           str([x["listing"]["name"] for x in body.get("results", [])][:5]))

@@ -207,6 +207,14 @@ class ListingOut(BaseModel):
     business_headline: str | None = None
     business_description: str | None = None
     card_title: str = ""  # "Meena Sahni · Meena's Oven", or just the name
+    # [Backend A, 2026-09-30] Verification belongs to what was checked: a
+    # shop licence / GST / Udyam / PAN verifies the BUSINESS section; a
+    # degree or licence credential verifies the PERSON. `state`
+    # (active_verified) mixes both, so a person's card reads `profile_status`
+    # ("active") and each section reads its own flag.
+    profile_status: str = ""  # draft | submitted | active | suspended | archived (no verification in it)
+    business_verified: bool = False
+    credential_verified: bool = False
 
 
 async def require_profile(conn: asyncpg.Connection, member_id: str, lang: str) -> None:
@@ -245,6 +253,10 @@ async def has_verified_listing(conn: asyncpg.Connection, member_id: str) -> bool
     return await conn.fetchval(
         "SELECT EXISTS (SELECT 1 FROM vyapar_listings.listings WHERE owner_id = $1 AND state = 'active_verified')", member_id
     )
+
+
+# Documents that verify a business (verification.py's document types other than `credential`).
+BUSINESS_DOCUMENTS = frozenset({"gst", "udyam", "pan", "shops_est"})
 
 
 def _opt(row: asyncpg.Record, key: str):
@@ -313,6 +325,11 @@ def _row_to_out(
         business_headline=_opt(row, "business_headline"),
         business_description=_opt(row, "business_description"),
         card_title=f"{row['name']} · {_opt(row, 'business_name')}" if _opt(row, "business_name") and _opt(row, "business_name") != row["name"] else row["name"],
+        profile_status="active" if row["state"] in ("active_unverified", "active_verified") else row["state"],
+        business_verified=bool(_opt(row, "business_name")) and row["verification_state"] in ("verified", "expiring")
+        and row["verification_document"] in BUSINESS_DOCUMENTS,
+        credential_verified=(row["verification_state"] in ("verified", "expiring") and row["verification_document"] == "credential")
+        or bool(row["credential_ref"]),
         contacts=[dict(c) for c in contacts] if is_owner else [
             dict(c) for c in contacts if c["disclosure"] == "public"
         ],

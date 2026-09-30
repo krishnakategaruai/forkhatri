@@ -18,6 +18,7 @@
 // Traces to: FR42 (i18n typography), FR44/FR50 (no auth screens), Design
 // direction, product-owner i18n rule (2026-09-15, not a numbered FR)
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Anek_Latin, Anek_Devanagari, Anek_Telugu } from "next/font/google";
 import "./globals.css";
 // [FE2] contact, packages, filters, contracts, badges, Hire/Find work menu
@@ -29,9 +30,13 @@ import "./styles/language-2026.css";
 import "./styles/discover-2026.css";
 // [2026-09-30] filter dropdown bar + panels (portalled to <body>), cards, Businesses, top-bar host link
 import "./styles/filters-2026.css";
+// Screen stylesheets load globally so a component rendered on any page (or portalled into body) is never unstyled.
+import "./styles/deals-2026.css";
+import "./styles/account-2026.css";
 import CommandHub from "./components/CommandHub";
 import AppTopBar from "./components/nav/AppTopBar";
 import { I18nProvider } from "@/lib/i18n/provider";
+import { DEFAULT_LANGUAGE, LANGUAGE_COOKIE, isSupported } from "@/lib/i18n/languages";
 // [IMP38 — Refactor C] The host adapter owns the platform-specific shell
 // pieces (account control, bell source, brand, platform link); the layout
 // only decides WHERE they go. NEXT_PUBLIC_VYAPAR_HOST selects the host.
@@ -51,16 +56,20 @@ export const metadata: Metadata = {
   description: hostMetadata.description,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // [Critique N10] Render the first paint in the person's language: the
+  // provider keeps this cookie in step with their choice.
+  const saved = (await cookies()).get(LANGUAGE_COOKIE)?.value;
+  const language = isSupported(saved) ? saved : DEFAULT_LANGUAGE;
   return (
-    <html lang="en" className={`${anekLatin.variable} ${anekDevanagari.variable} ${anekTelugu.variable}`} suppressHydrationWarning>
+    <html lang={language} className={`${anekLatin.variable} ${anekDevanagari.variable} ${anekTelugu.variable}`} suppressHydrationWarning>
       <head>
         {/* Text size and high contrast before first paint (lib/display.ts). */}
         <script dangerouslySetInnerHTML={{ __html: DISPLAY_BOOT_SCRIPT }} />
       </head>
       <body>
         <HostProvider>
-        <I18nProvider>
+        <I18nProvider initialLanguage={language}>
           {/* [Design language 2026-09-29] One real header replaces the
               floating language / Hire / alerts / account pills and the
               scrim behind them: wordmark, Hire / Find work, the search
