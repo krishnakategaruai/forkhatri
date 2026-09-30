@@ -93,6 +93,10 @@ import teContact from '@/locales/te/contact.json';
 import teContracts from '@/locales/te/contracts.json';
 import tePackages from '@/locales/te/packages.json';
 import teExplore from '@/locales/te/explore.json';
+// [Voice interview 2026-09-30] the guided voice conversation
+import enVoice from '@/locales/en/voice.json';
+import hiVoice from '@/locales/hi/voice.json';
+import teVoice from '@/locales/te/voice.json';
 
 import { DEFAULT_LANGUAGE, LANGUAGE_COOKIE, SUPPORTED_LANGUAGES, isSupported, type Language } from './languages';
 export { DEFAULT_LANGUAGE, LANGUAGE_COOKIE, SUPPORTED_LANGUAGES, isSupported, type Language };
@@ -125,6 +129,8 @@ export const NAMESPACES = [
   'contracts',
   'packages',
   'explore',
+  // [Voice interview 2026-09-30]
+  'voice',
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 
@@ -154,6 +160,7 @@ const resources = {
     contracts: enContracts,
     packages: enPackages,
     explore: enExplore,
+    voice: enVoice,
   },
   hi: {
     common: hiCommon,
@@ -180,6 +187,7 @@ const resources = {
     contracts: hiContracts,
     packages: hiPackages,
     explore: hiExplore,
+    voice: hiVoice,
   },
   te: {
     common: teCommon,
@@ -206,6 +214,7 @@ const resources = {
     contracts: teContracts,
     packages: tePackages,
     explore: teExplore,
+    voice: teVoice,
   },
 } as const;
 

@@ -23,42 +23,13 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { recognitionCtor, SPEECH_LOCALE, type Recognition, type SpeechLang } from "./voice/speech";
 
-type VoiceLang = "en" | "hi" | "te";
-const LOCALE: Record<VoiceLang, string> = { en: "en-IN", hi: "hi-IN", te: "te-IN" };
+// [Voice interview 2026-09-30] Recognition typings and the constructor now
+// live in ./voice/speech, shared with the guided VoiceInterview.
+type VoiceLang = SpeechLang;
+const LOCALE = SPEECH_LOCALE;
 const ORDER: VoiceLang[] = ["en", "hi", "te"];
-
-// Minimal typings: SpeechRecognition is not in every TS DOM lib, and
-// Chrome/Safari still expose it prefixed.
-interface RecognitionAlternative {
-  transcript: string;
-}
-interface RecognitionResult {
-  isFinal: boolean;
-  0: RecognitionAlternative;
-}
-interface RecognitionEvent {
-  resultIndex: number;
-  results: ArrayLike<RecognitionResult>;
-}
-interface Recognition {
-  lang: string;
-  continuous: boolean;
-  interimResults: boolean;
-  onresult: ((e: RecognitionEvent) => void) | null;
-  onerror: ((e: { error: string }) => void) | null;
-  onend: (() => void) | null;
-  start: () => void;
-  stop: () => void;
-  abort: () => void;
-}
-type RecognitionCtor = new () => Recognition;
-
-function recognitionCtor(): RecognitionCtor | null {
-  if (typeof window === "undefined") return null;
-  const w = window as unknown as { SpeechRecognition?: RecognitionCtor; webkitSpeechRecognition?: RecognitionCtor };
-  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
-}
 
 const noopSubscribe = () => () => {};
 

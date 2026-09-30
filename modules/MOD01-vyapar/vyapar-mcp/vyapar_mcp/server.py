@@ -345,12 +345,14 @@ async def update_my_profile(
     experience_years: Annotated[int | None, Field(ge=0, le=70, description="Years of experience.")] = None,
     business_name: Annotated[str | None, Field(description="Adds or renames the business section, e.g. \"Meena's Oven\".")] = None,
     business_headline: Annotated[str | None, Field(description="One line about the business.")] = None,
+    own_assets: Annotated[list[Literal["two_wheeler", "four_wheeler", "driving_licence", "smartphone", "laptop", "own_tools"]] | None,
+                          Field(description="What the member brings to work (bike, car, licence, smartphone, laptop, own tools).")] = None,
 ) -> dict:
     """Update the member's own profile, including its business section. Only the fields given
     change. Needs the listings:write scope. Confirm with the member first: the profile is public."""
     body: dict[str, Any] = {k: v for k, v in {
         "headline": headline, "description": description, "capabilities": capabilities, "locality": locality,
-        "availability": availability, "experience_years": experience_years,
+        "availability": availability, "experience_years": experience_years, "own_assets": own_assets,
     }.items() if v is not None}
     if business_name is not None:
         body["business"] = {"name": business_name, "headline": business_headline}
@@ -736,6 +738,45 @@ async def draft_opportunity(
     to review; nothing is posted."""
     body = {"text": text, "language": language}
     return await _call(client().post("/v1/ai/draft-opportunity", {k: v for k, v in body.items() if v is not None}))
+
+
+InterviewFlow = Annotated[Literal["post_job", "post_local", "post_project", "profile"], Field(
+    description="post_job (a salaried job), post_local (a local service such as a repair), post_project (a paid project), "
+                "profile (the member's own work profile).")]
+
+
+@mcp.tool(annotations=READ)
+async def next_interview_question(
+    flow: InterviewFlow,
+    answers: Annotated[dict[str, Any], Field(description="Confirmed answers so far, keyed by field, exactly as interpret_interview_answer returned them.")] = {},  # noqa: B006
+    skipped: Annotated[list[str], Field(description="Fields the member chose to skip.")] = [],  # noqa: B006
+    language: Annotated[Literal["en", "hi", "te"] | None, Field(description="Language to ask in.")] = None,
+) -> dict:
+    """Voice interview: the next question to ask the member (one at a time, in their own words), or, when
+    nothing is missing, done=true with a summary and a draft. Things Vyapar already knows are never asked.
+    Nothing is posted or saved: post the draft with post_opportunity, or save a profile draft with update_my_profile,
+    only after the member confirms."""
+    body: dict[str, Any] = {"flow": flow, "answers": answers, "skipped": skipped}
+    if language:
+        body["language"] = language
+    return await _call(client().post("/v1/voice/interview/next", body))
+
+
+@mcp.tool(annotations=READ)
+async def interpret_interview_answer(
+    flow: InterviewFlow,
+    field: Annotated[str, Field(description="The field the question asked for (from next_interview_question).")],
+    text: Annotated[str, Field(description="What the member said or typed, as is.")],
+    answers: Annotated[dict[str, Any], Field(description="Confirmed answers so far.")] = {},  # noqa: B006
+    language: Annotated[Literal["en", "hi", "te"] | None, Field(description="Language of the conversation.")] = None,
+) -> dict:
+    """Voice interview: read one answer. Returns understood, the typed value, a read-back sentence to confirm
+    with the member, and intent (answer, skip, yes, no, repeat, unclear). When not understood, `reprompt` is
+    what to ask next. A scam-shield match (asking applicants to pay) comes back as not understood."""
+    body: dict[str, Any] = {"flow": flow, "field": field, "text": text, "answers": answers}
+    if language:
+        body["language"] = language
+    return await _call(client().post("/v1/voice/interview/interpret", body))
 
 
 @mcp.tool(annotations=READ)

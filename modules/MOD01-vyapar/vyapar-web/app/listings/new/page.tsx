@@ -42,6 +42,10 @@ import LocalityField from "@/app/components/account/LocalityField";
 import { useMyProfile } from "@/app/components/account/useMyProfile";
 import { useTaxonomyAliases, useTaxonomyTree } from "@/app/hooks/hiring";
 import "@/app/styles/account-2026.css";
+// [Voice interview 2026-09-30] "Set up by talking"
+import VoiceEntry from "@/app/components/voice/VoiceEntry";
+import VoiceInterview from "@/app/components/voice/VoiceInterview";
+import { toProfile } from "@/app/components/voice/drafts";
 
 type Kind = "business" | "professional";
 type ServiceMode = "on_site" | "remote" | "both";
@@ -55,7 +59,7 @@ interface TaxonomyOption {
 const CATEGORIES_FOLDED = 8;
 
 function NewListingInner() {
-  const { t, i18n } = useTranslation(["listings", "common", "discover"]);
+  const { t, i18n } = useTranslation(["listings", "common", "discover", "voice"]);
   const router = useRouter();
   const params = useSearchParams();
   const kind: Kind = params.get("kind") === "business" ? "business" : "professional";
@@ -80,6 +84,10 @@ function NewListingInner() {
   const [error, setError] = useState<string | null>(null);
   const [existingId, setExistingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // [Voice interview] ?voice=1 (first run's "Set up by talking") opens it straight away.
+  const [talking, setTalking] = useState(params.get("voice") === "1");
+  // Learnt by voice with no field on this form; saved with the profile.
+  const [voiceExtra, setVoiceExtra] = useState<{ experience_years?: number; own_assets?: string[] }>({});
 
   const tree = useTaxonomyTree();
   const aliases = useTaxonomyAliases();
@@ -172,6 +180,7 @@ function NewListingInner() {
               lng: coords?.lng ?? me.lng ?? undefined,
               service_mode: serviceMode,
               ...(tel ? { primary_phone: tel } : {}),
+              ...voiceExtra,
             };
         const r = await api.patch<{ profile?: { id?: string } | null }>("/v1/me/profile", body);
         router.push(r?.profile?.id ? `/listings/${r.profile.id}` : "/profile");
@@ -234,8 +243,39 @@ function NewListingInner() {
     else router.push("/profile");
   }
 
+  // [Voice interview] What the app already knows is passed in, so it is never asked again.
+  const known: Record<string, unknown> = {};
+  if (me.name.trim()) known.name = me.name.trim();
+  if ((me.locality ?? "").trim()) known.locality = (me.locality ?? "").trim();
+
   return (
     <Screen width="wide">
+      {talking && !business && (
+        <VoiceInterview
+          flow="profile"
+          initialAnswers={known}
+          title={t("voice:flowTitle.profile")}
+          doneLabel={t("voice:doneLabel.profile")}
+          onClose={() => setTalking(false)}
+          onDone={({ draft }) => {
+            setTalking(false);
+            const v = toProfile(draft);
+            if (v.name) setName(v.name);
+            if (v.locality) setLocality(v.locality);
+            if (v.headline) setHeadline(v.headline);
+            if (v.capabilities.length) setCapabilities(Array.from(new Set([...capabilities, ...v.capabilities])).slice(0, 15));
+            if (v.capabilitiesOther) setCapabilitiesOther((prev) => (prev ? `${prev}, ${v.capabilitiesOther}` : (v.capabilitiesOther ?? "")));
+            if (v.serviceMode) setServiceMode(v.serviceMode);
+            if (v.phone) setPhone(v.phone.replace(/^\+91/, ""));
+            setVoiceExtra({
+              ...(v.experienceYears !== null ? { experience_years: v.experienceYears } : {}),
+              ...(v.ownAssets !== null ? { own_assets: v.ownAssets } : {}),
+            });
+            // Land on the normal review of the profile, prefilled; saving stays the member's tap.
+            setStepIndex(Math.max(0, steps.indexOf("what")));
+          }}
+        />
+      )}
       <PageHeader
         title={business ? t("listings:new.titleBusiness") : t("listings:new.titleProfessional")}
         backLabel={stepIndex > 0 ? t("common:action.back") : t("common:nav.profile")}
@@ -245,6 +285,8 @@ function NewListingInner() {
       <div className="vy-compose">
         <div className="vy-compose-main">
           <div className="vy-acct-form">
+            {!business && stepIndex === 0 && <VoiceEntry variant="profile" onStart={() => setTalking(true)} compact />}
+
             <Steps
               step={stepIndex + 1}
               total={steps.length}

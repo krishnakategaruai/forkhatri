@@ -28,6 +28,10 @@ import Steps from "@/app/components/account/Steps";
 import LocalityField from "@/app/components/account/LocalityField";
 import { useTaxonomyAliases, useTaxonomyTree } from "@/app/hooks/hiring";
 import "@/app/styles/account-2026.css";
+// [Voice interview 2026-09-30] first run can be answered by talking
+import VoiceEntry from "@/app/components/voice/VoiceEntry";
+import VoiceInterview from "@/app/components/voice/VoiceInterview";
+import { toProfile } from "@/app/components/voice/drafts";
 
 const HELP_OPTIONS: { id: string; key: string; icon: LucideIcon }[] = [
   { id: "find_customers", key: "findCustomers", icon: Users },
@@ -41,7 +45,7 @@ const WORK_MODES = ["on_site", "remote", "both"] as const;
 const TOTAL_VISIBLE_STEPS = 5;
 
 export default function FirstRunPage() {
-  const { t, i18n } = useTranslation(["firstRun", "common", "discover", "listings"]);
+  const { t, i18n } = useTranslation(["firstRun", "common", "discover", "listings", "voice"]);
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [displayName, setDisplayName] = useState("");
@@ -59,6 +63,7 @@ export default function FirstRunPage() {
   const [help, setHelp] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [talking, setTalking] = useState(false);
 
   useEffect(() => {
     api.get<{
@@ -108,6 +113,28 @@ export default function FirstRunPage() {
     // [IMP39 — desktop layout] `vy-firstrun` widens the focused column on
     // desktop and turns the help options into a two-column grid.
     <Screen className="vy-shell-center vy-firstrun">
+      {/* [Voice interview] The same questions, asked out loud in the chosen
+          language; the answers land on these steps for the member to check. */}
+      {talking && (
+        <VoiceInterview
+          flow="profile"
+          initialAnswers={displayName.trim() ? { name: displayName.trim() } : undefined}
+          title={t("voice:flowTitle.profile")}
+          doneLabel={t("voice:doneLabel.profile")}
+          onClose={() => setTalking(false)}
+          onDone={({ draft }) => {
+            setTalking(false);
+            const v = toProfile(draft);
+            const name = v.name ?? displayName;
+            if (v.name) setDisplayName(v.name);
+            if (v.locality) setLocality(v.locality);
+            if (v.serviceMode) setWorkMode(v.serviceMode);
+            if (v.capabilities.length) setCapabilities((c) => Array.from(new Set([...c, ...v.capabilities])));
+            if (v.capabilitiesOther) setCapabilitiesOther((prev) => (prev ? `${prev}, ${v.capabilitiesOther}` : (v.capabilitiesOther ?? "")));
+            if (name.trim()) void next(1, { display_name: name.trim(), language });
+          }}
+        />
+      )}
       <Steps step={step + 1} total={TOTAL_VISIBLE_STEPS} label={stepTitles[step] ?? ""} stepLabel={t("firstRun:progress.label", { step: step + 1, total: TOTAL_VISIBLE_STEPS })} />
       <AnimatePresence mode="wait">
         {step === 0 && (
@@ -129,6 +156,7 @@ export default function FirstRunPage() {
                 ))}
               </div>
             </div>
+            <VoiceEntry variant="profile" onStart={() => setTalking(true)} compact />
             <div className="vy-acct-form" style={{ gap: 8 }}>
               <button className="vy-btn vy-btn-primary" aria-describedby="fr-reason-name" disabled={!displayName || saving} onClick={() => next(1, { display_name: displayName, language })}>
                 {t("common:action.continue")}

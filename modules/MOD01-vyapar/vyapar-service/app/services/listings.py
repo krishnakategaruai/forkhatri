@@ -147,6 +147,9 @@ class ListingPatch(BaseModel):
     evidence_links: list[str] | None = None
     rates: str | None = None
     setup_step: int | None = None
+    # [Voice interview, 2026-09-30] "Do you have your own tools or vehicle?"
+    # The same vocabulary a job's requires_assets uses (migration 029).
+    own_assets: list[Literal["two_wheeler", "four_wheeler", "driving_licence", "smartphone", "laptop", "own_tools"]] | None = None
 
 
 class ListingOut(BaseModel):
@@ -177,6 +180,7 @@ class ListingOut(BaseModel):
     availability: str | None
     evidence_links: list[str]
     rates: str | None
+    own_assets: list[str] = []  # [Voice interview] migration 029
     intent_state: str | None
     intent_visible: bool
     capability_visible: bool
@@ -316,6 +320,7 @@ def _row_to_out(
         availability=row["availability"],
         evidence_links=list(row["evidence_links"]),
         rates=row["rates"],
+        own_assets=list(_opt(row, "own_assets") or []),
         # [FR05/TR005 — the module's own highest-severity read-boundary rule]
         # intent_state is returned ONLY when intent_visible=true OR the
         # caller is the owner — this function is the one call site every
@@ -615,6 +620,7 @@ async def update_listing(
              availability = COALESCE($18, availability), evidence_links = COALESCE($19, evidence_links),
              rates = COALESCE($20, rates),
              setup_step = GREATEST(setup_step, COALESCE($21, setup_step)),
+             own_assets = COALESCE($22, own_assets),
              updated_at = now()
            WHERE id = $1
            RETURNING *""",
@@ -623,7 +629,7 @@ async def update_listing(
         body.locality, body.lat, body.lng, body.service_mode, body.service_radius_km,
         body.primary_phone, body.enquiry_pref, body.opportunity_participation,
         body.experience_years, body.languages, body.availability, body.evidence_links, body.rates,
-        body.setup_step,
+        body.setup_step, body.own_assets,
     )
     # [TR002] enquiry_pref='disabled' with every contact hidden must warn —
     # enforced client-side per FR02's own text (confirmation dialog), server

@@ -1,0 +1,229 @@
+{
+  "q": {
+    "post_job": {
+      "work": "What work do you need someone to do?",
+      "location": "Which area is the work in?",
+      "location_confirm": "Is the work in {place}?",
+      "salary": "How much will you pay each month?",
+      "openings": "How many people do you need?",
+      "job_timings": "What hours will they work?",
+      "min_qualification": "Do they need to have studied up to some class, like 10th pass?",
+      "experience": "Do they need experience, or is someone new fine?",
+      "requires_assets": "Do they need anything, like a bike or a phone?"
+    },
+    "post_local": {
+      "work": "What do you need done?",
+      "location": "Where should they come?",
+      "location_confirm": "Should they come to {place}?",
+      "when": "When do you need it?",
+      "budget": "What's your budget, or how will you pay?"
+    },
+    "post_project": {
+      "work": "What should they build or make?",
+      "budget": "What's your budget?",
+      "deadline": "By when do you need it?",
+      "work_mode": "Can they do it from their own place, or should they come to you?",
+      "location": "Which area are you in?",
+      "location_confirm": "Are you in {place}?"
+    },
+    "profile": {
+      "name": "What's your name?",
+      "work": "What work do you do?",
+      "locality": "Which area do you live in?",
+      "experience_years": "How many years have you done this work?",
+      "own_assets": "Do you have your own tools or vehicle?"
+    }
+  },
+  "hint": {
+    "post_job": {
+      "work": "For example: a delivery boy, a shop helper, a cook"
+    },
+    "post_local": {
+      "work": "Like a leaking tap, painting a room, or food for 50 people"
+    },
+    "post_project": {
+      "work": "Like a website for my shop, a logo, or a video",
+      "budget": "Say a total, or a rate for each hour"
+    },
+    "profile": {
+      "work": "Like electrician, tailoring, or delivery"
+    },
+    "location": "Just the area name is enough, like Kukatpally",
+    "location_confirm": "Say yes, or tell me the area",
+    "locality": "Just the area name is enough, like Kukatpally",
+    "salary": "Say a number or a range, like fifteen to eighteen thousand",
+    "openings": "Just say the number, like two",
+    "job_timings": "Like nine in the morning to six in the evening",
+    "min_qualification": "Say the class, or say no if it doesn't matter",
+    "experience": "Say how many years, or say someone new is fine",
+    "requires_assets": "Say what they need, or say no",
+    "when": "Say today, tomorrow, or a day like next Monday",
+    "budget": "Like two thousand, or three hundred a visit",
+    "deadline": "Like in two weeks, or by the 15th",
+    "work_mode": "Say from their place, come to me, or either",
+    "name": "Your name as people know you",
+    "experience_years": "Just the number of years",
+    "own_assets": "Say what you have, like a bike or your own tools, or say no"
+  },
+  "label": {
+    "work": "Work",
+    "location": "Area",
+    "locality": "Area",
+    "salary": "Pay",
+    "openings": "People needed",
+    "job_timings": "Hours",
+    "min_qualification": "Studies",
+    "experience": "Experience",
+    "requires_assets": "They need",
+    "when": "When",
+    "budget": "Budget",
+    "deadline": "By when",
+    "work_mode": "Where they work",
+    "name": "Name",
+    "experience_years": "Experience",
+    "own_assets": "Your own tools or vehicle"
+  },
+  "option": {
+    "work_mode": {
+      "remote": "From their own place",
+      "on_site": "Come to me",
+      "both": "Either is fine"
+    }
+  },
+  "qualification": {
+    "any": "No particular studies needed",
+    "below_10th": "Below 10th",
+    "10th": "10th pass",
+    "12th": "12th pass",
+    "iti": "ITI",
+    "diploma": "Diploma",
+    "graduate": "Graduate",
+    "postgraduate": "Postgraduate"
+  },
+  "asset": {
+    "two_wheeler": "a bike",
+    "four_wheeler": "a car",
+    "driving_licence": "a driving licence",
+    "smartphone": "a smartphone",
+    "laptop": "a laptop",
+    "own_tools": "own tools",
+    "none": "Nothing extra"
+  },
+  "urgency": {
+    "today": "today",
+    "this_week": "this week",
+    "flexible": "any day that suits"
+  },
+  "experience": {
+    "none": "Someone new is fine",
+    "years": {
+      "one": "At least {count} year of experience",
+      "other": "At least {count} years of experience"
+    },
+    "months": {
+      "one": "At least {count} month of experience",
+      "other": "At least {count} months of experience"
+    }
+  },
+  "count": {
+    "people": {
+      "one": "{count} person",
+      "other": "{count} people"
+    },
+    "years": {
+      "one": "{count} year",
+      "other": "{count} years"
+    },
+    "new": "Just starting out"
+  },
+  "shift": {
+    "day": "Day shift",
+    "night": "Night shift",
+    "rotational": "Rotating shifts",
+    "flexible": "Flexible hours"
+  },
+  "hours": {
+    "range": "{start} to {end}",
+    "perDay": {
+      "one": "{count} hour a day",
+      "other": "{count} hours a day"
+    }
+  },
+  "time": {
+    "format": "{h}{mm} {ampm}",
+    "am": "am",
+    "pm": "pm"
+  },
+  "daypart": {
+    "morning": "morning",
+    "afternoon": "afternoon",
+    "evening": "evening",
+    "night": "night"
+  },
+  "date": {
+    "format": "{weekday}, {day} {month}",
+    "today": "today ({date})",
+    "tomorrow": "tomorrow ({date})",
+    "dayAfter": "day after tomorrow ({date})"
+  },
+  "weekday": {
+    "0": "Mon",
+    "1": "Tue",
+    "2": "Wed",
+    "3": "Thu",
+    "4": "Fri",
+    "5": "Sat",
+    "6": "Sun"
+  },
+  "month": {
+    "1": "Jan",
+    "2": "Feb",
+    "3": "Mar",
+    "4": "Apr",
+    "5": "May",
+    "6": "Jun",
+    "7": "Jul",
+    "8": "Aug",
+    "9": "Sep",
+    "10": "Oct",
+    "11": "Nov",
+    "12": "Dec"
+  },
+  "deadline": {
+    "by": "by {date}",
+    "ongoing": "Ongoing work, no end date",
+    "flexible": "No fixed date"
+  },
+  "readback": {
+    "heard": "I heard {what} — is that right?",
+    "in": "in {place}",
+    "approxMonthly": "{said}, about {monthly}",
+    "list": ", "
+  },
+  "reprompt": {
+    "sorry": {
+      "amount": "Sorry, I didn't catch the amount.",
+      "area": "Sorry, I didn't catch the area.",
+      "number": "Sorry, I didn't catch the number.",
+      "hours": "Sorry, I didn't catch the hours.",
+      "day": "Sorry, I didn't catch the day.",
+      "name": "Sorry, I didn't catch your name.",
+      "choice": "Sorry, I didn't catch that.",
+      "answer": "Sorry, I didn't catch that."
+    },
+    "again": "{sorry} {question}",
+    "needed": "We need this one. {question}",
+    "ok": "Okay. {question}",
+    "which": {
+      "requires_assets": "What do they need: a bike, a phone, a licence, or something else?",
+      "own_assets": "What do you have: a bike, a car, a licence, or your own tools?",
+      "experience": "How many years of experience do they need?",
+      "min_qualification": "Up to which class should they have studied?"
+    },
+    "monthly": "Please tell me the pay for a whole month. {question}",
+    "scam": "Please say it again without asking anyone to pay."
+  },
+  "error": {
+    "unknownField": "\"{field}\" is not one of the questions in this interview."
+  }
+}

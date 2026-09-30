@@ -10,6 +10,8 @@ import { useTranslation } from "react-i18next";
 import VoiceInput, { appendSpoken } from "@/app/components/VoiceInput";
 import { MAIN_KINDS, type PostKind } from "./draft";
 import DisabledReason from "@/app/components/DisabledReason";
+// [Voice interview 2026-09-30] "Talk instead": the guided voice conversation
+import VoiceEntry from "@/app/components/voice/VoiceEntry";
 
 export interface StartPanelProps {
   text: string;
@@ -29,6 +31,8 @@ export interface StartPanelProps {
   /** Did the current text come (at least partly) from the microphone? */
   spoken: boolean;
   onSpoken: () => void;
+  /** Start the guided voice conversation (one question at a time). */
+  onTalk: () => void;
 }
 
 export default function StartPanel(p: StartPanelProps) {
@@ -49,6 +53,10 @@ export default function StartPanel(p: StartPanelProps) {
           </button>
         ))}
       </div>
+
+      {/* [Voice interview] Talking is offered first and prominently; the box
+          below stays the normal way to type it all at once. */}
+      <VoiceEntry variant="post" onStart={p.onTalk} />
 
       <div className="vy-field">
         <label className="vy-label" htmlFor="vy-describe">{t("composer.describeLabel")}</label>

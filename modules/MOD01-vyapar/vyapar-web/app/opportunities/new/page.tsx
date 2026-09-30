@@ -43,6 +43,9 @@ import StartPanel from "@/app/components/composer/StartPanel";
 import LegacyComposer from "@/app/components/composer/LegacyComposer";
 import AcceptancePrompt, { acceptanceKind, type LegalKind } from "@/app/components/respond/AcceptancePrompt";
 import { fieldAnchor } from "@/app/components/composer/fields";
+// [Voice interview 2026-09-30] "Talk instead — answer a few questions"
+import VoiceInterview from "@/app/components/voice/VoiceInterview";
+import { FLOW_KIND, flowForKind, postExtras, toAiDraft } from "@/app/components/voice/drafts";
 // [Trust pack §1] scam shield as the poster types, and on a 422 refusal
 import { scamFromError, useScamShieldFields, type ScamFinding } from "@/app/components/trust/ScamShield";
 import {
@@ -77,7 +80,7 @@ const ERROR_FIELD: Record<string, FieldCode> = {
 };
 
 function Composer() {
-  const { t, i18n } = useTranslation(["hiring", "opportunities", "common"]);
+  const { t, i18n } = useTranslation(["hiring", "opportunities", "common", "voice"]);
   const sdk = useSdk();
   const router = useRouter();
   const params = useSearchParams();
@@ -126,6 +129,10 @@ function Composer() {
   // photo on this screen; the text box becomes its note and the photo is
   // kept with the post. No detour to another screen.
   const [attachedImage, setAttachedImage] = useState<string | null>(null);
+  // [Voice interview] The conversation runs over the start screen; its draft
+  // lands on the normal form (never published from voice directly).
+  const [talking, setTalking] = useState(false);
+  const [fromVoice, setFromVoice] = useState(false);
 
   const [draft, setDraft] = useState<ComposerDraft>(() => emptyDraft(initialKind ?? "employment", prefillSkills));
   const [flagged, setFlagged] = useState<Set<FieldCode>>(new Set());
@@ -250,6 +257,7 @@ function Composer() {
   }
 
   async function onDraft(entry: "text" | "voice") {
+    setFromVoice(false);
     setBusy("draft");
     setStartError(null);
     try {
@@ -270,6 +278,7 @@ function Composer() {
   }
 
   async function onPhoto(file: File) {
+    setFromVoice(false);
     setBusy("photo");
     setStartError(null);
     let url = "";
@@ -463,6 +472,29 @@ function Composer() {
   if (stage === "start") {
     return (
       <Screen width="wide">
+        {talking && (
+          <VoiceInterview
+            flow={flowForKind(kind)}
+            title={t("voice:flowTitle.post")}
+            doneLabel={t("voice:doneLabel.post")}
+            onFlow={(f) => {
+              if (f !== "profile") setKind(FLOW_KIND[f]);
+            }}
+            onClose={() => setTalking(false)}
+            onDone={({ flow, draft: voiceDraft }) => {
+              setTalking(false);
+              const k = flow === "profile" ? (kind ?? "employment") : FLOW_KIND[flow];
+              setKind(k);
+              applyAi(retypeAiDraft(toAiDraft(voiceDraft, flow, i18n.language), k));
+              const extra = postExtras(voiceDraft);
+              if (extra.deadline || extra.compensation)
+                setDraft((d) => ({ ...d, ...(extra.deadline ? { deadline: extra.deadline } : {}), ...(extra.compensation ? { compensation: extra.compensation } : {}) }));
+              // Every amount was read back and confirmed out loud: nothing left to "please check".
+              setFlagged(new Set());
+              setFromVoice(true);
+            }}
+          />
+        )}
         <div className="vy-compose">
           <div className="vy-compose-main">
             <StartPanel
@@ -490,6 +522,7 @@ function Composer() {
               attachedImage={attachedImage}
               attachedImageSrc={attachedImage ? sdk.uploads.resolveUrl(attachedImage) : null}
               onRemoveImage={() => setAttachedImage(null)}
+              onTalk={() => setTalking(true)}
             />
           </div>
           <aside className="vy-compose-aside" aria-label={t("hiring:composer.howTitle")}>
@@ -523,7 +556,7 @@ function Composer() {
               {fromAi && (
                 <div className="vy-card vy-card-nested vy-stack" style={{ gap: 10, padding: 16 }}>
                   <p style={{ color: "var(--text-primary)", fontSize: 14 }}>
-                    {flagged.size > 0 ? t("hiring:composer.draftedCheck", { count: flagged.size }) : t("hiring:composer.drafted")}
+                    {fromVoice ? t("voice:form.filled") : flagged.size > 0 ? t("hiring:composer.draftedCheck", { count: flagged.size }) : t("hiring:composer.drafted")}
                   </p>
                   {openQuestions.length > 0 && (
                     <div className="vy-questions">

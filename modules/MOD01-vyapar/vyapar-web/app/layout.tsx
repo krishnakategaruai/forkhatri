@@ -35,6 +35,8 @@ import "./styles/deals-2026.css";
 import "./styles/account-2026.css";
 // [Trust pack 2026-09-30] scam shield, paid on time, close the loop, restrictions, council registrations
 import "./styles/trust-2026.css";
+// [Voice interview 2026-09-30] the guided voice conversation and its entry card
+import "./styles/voice-2026.css";
 import CommandHub from "./components/CommandHub";
 import AppTopBar from "./components/nav/AppTopBar";
 import { I18nProvider } from "@/lib/i18n/provider";

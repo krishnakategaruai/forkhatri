@@ -1,0 +1,99 @@
+{
+  "langName": {
+    "en": "English",
+    "hi": "Hindi",
+    "te": "Telugu"
+  },
+  "entry": {
+    "postTitle": "Talk instead — answer a few questions",
+    "postBody": "I ask, you answer out loud. Hindi, Telugu or English.",
+    "profileTitle": "Set up by talking",
+    "profileBody": "Answer a few questions out loud. You check everything before it's saved."
+  },
+  "flowTitle": {
+    "post": "Post by talking",
+    "profile": "Set up by talking"
+  },
+  "doneLabel": {
+    "post": "Continue to check",
+    "profile": "Continue to check"
+  },
+  "intro": {
+    "title": "Answer a few questions",
+    "body": "I'll ask one question at a time, out loud, in {{language}}. Answer in your own words — I'll wait for you.",
+    "micNote": "Your browser will ask to use the microphone. Allow it so I can hear you.",
+    "start": "Start talking",
+    "startTyping": "Start",
+    "rather": "I'd rather type",
+    "nothingPosted": "Nothing is posted or saved until you check it.",
+    "waitingForMic": "Allow the microphone in the box your browser is showing — or answer by typing."
+  },
+  "kind": {
+    "question": "What do you need — someone for a job, a project done, or a local service?",
+    "hint": "Say job, project or local service",
+    "again": "Please say job, project or local service, or tap one below.",
+    "post_job": "A job",
+    "post_project": "A project",
+    "post_local": "A local service",
+    "words": {
+      "post_job": "job,staff,worker,employee,hire,naukri,salary",
+      "post_project": "project,freelance,freelancer,contract,one time",
+      "post_local": "local,service,repair,fix,home,plumber,electrician"
+    }
+  },
+  "mic": {
+    "idle": "Tap to speak",
+    "waiting": "Tap the mic when you're ready",
+    "speaking": "Speaking… tap to answer now",
+    "listening": "Listening…",
+    "thinking": "One moment…"
+  },
+  "talk": {
+    "close": "Close and go back",
+    "progress": "{{current}} of {{total}}",
+    "yourAnswers": "Your answers so far",
+    "changeAnswer": "Change your answer to “{{question}}”: {{answer}}",
+    "yes": "Yes",
+    "no": "No",
+    "change": "Change",
+    "skip": "Skip this one",
+    "typeInstead": "Type instead",
+    "speakInstead": "Speak instead",
+    "typePlaceholder": "Type your answer",
+    "send": "Send",
+    "thinking": "One moment…",
+    "hearIt": "Hear the question",
+    "answerByVoice": "Answer by voice",
+    "noVoice": "This device can't speak {{language}}, so the questions are shown here as text. You can still answer out loud.",
+    "listeningHint": "Say your answer — I'm listening.",
+    "takeYourTime": "Take your time.",
+    "tapWhenReady": "Tap the mic when you're ready.",
+    "summarySpoken": "That's everything. Please check your answers.",
+    "networkTrouble": "I couldn't check that answer just now. Tap the mic and say it again, or type it.",
+    "heardFallback": "I heard “{{value}}” — is that right?",
+    "okAgain": "Okay, let's try again.",
+    "sayYesOrNo": "Please say yes or no, or tap a button.",
+    "needed": "I need this one to post.",
+    "didntCatch": "Sorry, I didn't catch that. Please say it once more.",
+    "errorTitle": "Couldn't reach Vyapar",
+    "errorBody": "Check your internet connection and try again. Your answers so far are kept.",
+    "tryAgain": "Try again",
+    "listeningConfirm": "Say yes, or say the right answer."
+  },
+  "typingReason": {
+    "unsupported": "This browser can't listen, so you'll answer by typing — still one question at a time.",
+    "blocked": "The microphone is blocked, so you can answer by typing. To talk, allow the microphone in your browser settings.",
+    "nomic": "No microphone was found, so you can answer by typing.",
+    "network": "Voice needs an internet connection. You can answer by typing.",
+    "chosen": "You're answering by typing."
+  },
+  "summary": {
+    "title": "Here's what I have",
+    "change": "Change {{label}}: {{value}}",
+    "nothingPosted": "Nothing is posted yet. Next you'll see everything in full and can change any detail.",
+    "nothingSaved": "Nothing is saved yet. Next you'll see your profile in full and can change any detail."
+  },
+  "form": {
+    "filled": "Filled in from what you said. Check it and change anything that isn't right."
+  }
+}

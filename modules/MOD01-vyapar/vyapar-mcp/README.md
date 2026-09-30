@@ -148,6 +148,8 @@ You can also put it in a project's `.mcp.json`:
 | `create_partnership_request` / `respond_partnership` | Send, accept, decline, withdraw, restrict or close | `POST /v1/partnership-requests`, `/{id}/{action}` |
 | `list_review_invites` / `submit_review` | Review a completed interaction | `GET /v1/reviews/invite/{kind}/{id}`, `POST /v1/reviews` |
 | `get_member_badges` | Count-based badges, no star score | `GET /v1/members/{id}/badges` |
+| `next_interview_question` | Voice interview: the next question for what is still missing (one at a time, in the member's words), or the summary and draft when done. Writes nothing. | `POST /v1/voice/interview/next` |
+| `interpret_interview_answer` | Voice interview: read one answer into a typed value with a read-back to confirm; recognises skip / yes / no / repeat in English, Hindi and Telugu | `POST /v1/voice/interview/interpret` |
 | `list_boost_products` / `buy_boost` | Boost packs and preparing a boost order | `GET /v1/promotions/options`, `POST /v1/promotions`, `/confirm-purchase` |
 | `list_listing_packages` / `upsert_listing_packages` / `request_listing_package` | Basic / standard / premium service packages | `/v1/listings/{id}/packages...` |
 | `check_seeker_charge` | Pre-check a draft against "nobody charges job seekers" | `POST /v1/opportunities/seeker-charge-check` |

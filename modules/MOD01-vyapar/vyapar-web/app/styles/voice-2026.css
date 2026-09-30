@@ -1,0 +1,684 @@
+/* ======================================================================
+ * [Voice interview 2026-09-30] The guided voice conversation
+ * (app/components/voice/*). Owner: "we ask questions in their perspective
+ * and waits until we receive answer!"
+ *
+ * One calm full-screen column: phone first, centred on desktop. Tokens only,
+ * Anek type tokens (design-language-2026-09-29 "Typography"). The only brand
+ * fills are the mic while listening and the one primary action; everything
+ * else is ink on the canvas. Everything is rem, so Text size A+ / A++ grows
+ * it all; High contrast works through the tokens. Reduced motion stops every
+ * pulse and wave (state still reads from colour and label).
+ * ====================================================================== */
+
+/* ---- entry card (composer start, profile setup, first run) ---------------- */
+.vy-talk-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  width: 100%;
+  min-height: 4.5rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-card);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition:
+    transform var(--dur-press) var(--ease-spring),
+    box-shadow var(--dur-hover) var(--ease-out),
+    border-color var(--dur-hover) var(--ease-out);
+}
+.vy-talk-entry:active {
+  transform: scale(0.98);
+}
+@media (hover: hover) {
+  .vy-talk-entry:hover {
+    box-shadow: var(--shadow-raise);
+    border-color: var(--border-strong);
+  }
+}
+.vy-talk-entry:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.vy-talk-entry-icon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-pill);
+  background: var(--brand);
+  color: var(--on-brand);
+}
+.vy-talk-entry[data-compact] .vy-talk-entry-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+.vy-talk-entry-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+  flex: 1;
+}
+.vy-talk-entry-text strong {
+  font-size: var(--type-heading);
+  font-weight: var(--weight-heading);
+  letter-spacing: var(--tracking-heading);
+  line-height: var(--leading-heading);
+}
+.vy-talk-entry-text span {
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-body);
+}
+.vy-talk-entry-go {
+  flex: 0 0 auto;
+  color: var(--text-tertiary);
+}
+
+/* ---- the conversation ------------------------------------------------------- */
+body:has(.vy-talk) {
+  overflow: hidden;
+}
+.vy-talk {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.vy-talk-top,
+.vy-talk-bar {
+  width: calc(100% - 2rem);
+  max-width: 38rem;
+  box-sizing: border-box;
+  margin-inline: auto;
+}
+.vy-talk-top {
+  display: grid;
+  grid-template-columns: 2.75rem 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 3.5rem;
+  padding: 0.5rem 0 0.25rem;
+  padding-top: max(0.5rem, env(safe-area-inset-top));
+}
+.vy-talk-close {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.vy-talk-close:hover {
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+}
+.vy-talk-close:focus-visible {
+  outline: 2px solid var(--focus-ring);
+}
+.vy-talk-title {
+  font-size: var(--type-sm);
+  font-weight: var(--weight-ui);
+  color: var(--text-secondary);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vy-talk-count {
+  min-width: 2.75rem;
+  text-align: end;
+  font-size: var(--type-sm);
+  font-weight: var(--weight-ui);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.vy-talk-bar {
+  height: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+.vy-talk-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--text-primary);
+  border-radius: inherit;
+  transition: width var(--dur-move) var(--ease-out);
+}
+
+.vy-talk-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  width: 100%;
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-sizing: border-box;
+}
+@media (min-width: 900px) {
+  .vy-talk-body {
+    padding-top: 3rem;
+    gap: 1.5rem;
+  }
+}
+
+/* previous answers: small chips, tap to change */
+.vy-talk-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.vy-talk-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  max-width: 100%;
+  min-height: 2.25rem;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--type-sm);
+  font-weight: var(--weight-ui);
+  cursor: pointer;
+}
+.vy-talk-chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vy-talk-chip svg {
+  flex: 0 0 auto;
+  color: var(--success-text);
+}
+.vy-talk-chip[aria-current="step"] {
+  border-color: var(--selected-border);
+  color: var(--text-primary);
+  background: var(--selected-bg);
+}
+.vy-talk-chip:focus-visible,
+.vy-talk-option:focus-visible,
+.vy-talk-line:focus-visible,
+.vy-talk-quiet:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .vy-talk-chip {
+    min-height: 2.75rem;
+  }
+}
+
+.vy-talk-turn,
+.vy-talk-summary,
+.vy-talk-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.vy-talk-question,
+.vy-talk-readback {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--type-display);
+  font-weight: var(--weight-display);
+  letter-spacing: var(--tracking-display);
+  line-height: var(--leading-title);
+  color: var(--text-primary);
+  outline: none;
+  overflow-wrap: anywhere;
+}
+.vy-talk-readback {
+  font-size: var(--type-title);
+  letter-spacing: var(--tracking-title);
+}
+.vy-talk-context {
+  margin: 0;
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+}
+.vy-talk-hint,
+.vy-talk-lead {
+  margin: 0;
+  font-size: var(--type-body);
+  line-height: var(--leading-body);
+  color: var(--text-secondary);
+}
+.vy-talk-lead {
+  color: var(--text-primary);
+}
+.vy-talk-fine {
+  margin: 0;
+  font-size: var(--type-xs);
+  color: var(--text-tertiary);
+}
+.vy-talk-note {
+  margin: 0;
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  font-size: var(--type-sm);
+  line-height: var(--leading-body);
+  color: var(--text-primary);
+}
+.vy-talk-live {
+  margin: 0;
+  min-height: 1.6em;
+  font-size: var(--type-heading);
+  line-height: var(--leading-heading);
+  color: var(--text-primary);
+  font-style: italic;
+}
+.vy-talk-live-wait {
+  color: var(--text-tertiary);
+  font-style: normal;
+  font-size: var(--type-body);
+}
+
+/* choices: large tappable buttons */
+.vy-talk-options {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.625rem;
+}
+@media (min-width: 600px) {
+  .vy-talk-options {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.vy-talk-option {
+  min-height: 3.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--type-body);
+  font-weight: var(--weight-ui);
+  text-align: start;
+  cursor: pointer;
+  transition: transform var(--dur-press) var(--ease-spring);
+}
+.vy-talk-option:active {
+  transform: scale(0.97);
+}
+@media (hover: hover) {
+  .vy-talk-option:hover {
+    border-color: var(--selected-border);
+    background: var(--selected-bg);
+  }
+}
+.vy-talk-option:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* readback: big Yes / Change */
+.vy-talk-confirm {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+.vy-talk-confirm .vy-btn {
+  min-height: 3.5rem;
+  font-size: var(--type-body);
+  gap: 0.5rem;
+}
+
+/* quiet text actions: Type instead, Skip, Hear the question */
+.vy-talk-quiet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  align-self: center;
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--type-sm);
+  font-weight: var(--weight-ui);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.vy-talk-quiet:hover {
+  color: var(--text-primary);
+}
+.vy-talk-quiet:disabled {
+  opacity: 0.6;
+}
+.vy-talk-turn > .vy-talk-quiet {
+  align-self: flex-start;
+  padding-inline: 0;
+}
+.vy-talk-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+}
+.vy-talk-row .vy-talk-quiet {
+  padding-inline: 0;
+}
+.vy-talk-typing-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* one answer, typed */
+.vy-talk-type {
+  display: flex;
+  gap: 0.5rem;
+}
+.vy-talk-type .vy-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 3.25rem;
+  font-size: var(--type-body);
+}
+.vy-talk-type .vy-btn {
+  flex: 0 0 auto;
+  min-height: 3.25rem;
+}
+
+/* the mic dock */
+.vy-talk-dock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px solid var(--border-hairline);
+  background: var(--surface);
+}
+@media (min-width: 900px) {
+  .vy-talk-dock {
+    border-top: 0;
+    padding-bottom: 2.5rem;
+  }
+}
+.vy-talk-mic {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 5.5rem;
+  height: 5.5rem;
+  border: 2px solid var(--border-control);
+  border-radius: var(--radius-pill);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition:
+    background var(--dur-hover) var(--ease-out),
+    border-color var(--dur-hover) var(--ease-out),
+    transform var(--dur-press) var(--ease-spring);
+}
+.vy-talk-mic:active {
+  transform: scale(0.95);
+}
+.vy-talk-mic:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+.vy-talk-mic:disabled {
+  cursor: default;
+}
+.vy-talk-mic[data-state="listening"] {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--on-brand);
+}
+.vy-talk-mic[data-state="listening"]::after {
+  content: "";
+  position: absolute;
+  inset: -0.5rem;
+  border-radius: inherit;
+  border: 2px solid var(--brand);
+  animation: vy-talk-ring 1.6s var(--ease-out) infinite;
+}
+.vy-talk-mic[data-state="speaking"] {
+  border-color: var(--text-primary);
+}
+.vy-talk-mic[data-state="waiting"] {
+  border-color: var(--brand);
+  color: var(--brand-text);
+}
+.vy-talk-mic-label {
+  min-height: 1.4em;
+  font-size: var(--type-sm);
+  font-weight: var(--weight-ui);
+  color: var(--text-secondary);
+  text-align: center;
+}
+.vy-talk[data-activity="listening"] .vy-talk-mic-label {
+  color: var(--brand-text);
+}
+
+.vy-talk-wave {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  height: 2rem;
+}
+.vy-talk-wave i {
+  display: block;
+  width: 0.3rem;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: currentColor;
+  animation: vy-talk-wave 0.9s var(--ease-in-out) infinite;
+}
+.vy-talk-wave i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.vy-talk-wave i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.vy-talk-wave i:nth-child(4) {
+  animation-delay: 0.45s;
+}
+.vy-talk-dots {
+  display: flex;
+  gap: 0.375rem;
+}
+.vy-talk-dots i {
+  display: block;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: var(--radius-pill);
+  background: currentColor;
+  animation: vy-talk-dot 1.1s var(--ease-in-out) infinite;
+}
+.vy-talk-dots i:nth-child(2) {
+  animation-delay: 0.18s;
+}
+.vy-talk-dots i:nth-child(3) {
+  animation-delay: 0.36s;
+}
+@keyframes vy-talk-ring {
+  from {
+    transform: scale(0.94);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(1.18);
+    opacity: 0;
+  }
+}
+@keyframes vy-talk-wave {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+@keyframes vy-talk-dot {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* intro */
+.vy-talk-intro {
+  align-items: flex-start;
+  gap: 1rem;
+  padding-top: 1rem;
+}
+.vy-talk-intro-icon {
+  display: grid;
+  place-items: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: var(--radius-pill);
+  background: var(--brand);
+  color: var(--on-brand);
+}
+.vy-talk-intro-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+.vy-talk-start {
+  min-height: 3.5rem;
+  gap: 0.5rem;
+  font-size: var(--type-body);
+}
+@media (min-width: 600px) {
+  .vy-talk-intro-actions {
+    flex-direction: row;
+    align-items: center;
+  }
+  .vy-talk-start {
+    padding-inline: 2rem;
+  }
+}
+
+/* summary */
+.vy-talk-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.vy-talk-list li + li {
+  border-top: 1px solid var(--border-hairline);
+}
+.vy-talk-line {
+  display: grid;
+  grid-template-columns: minmax(6rem, 38%) 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 3.5rem;
+  padding: 0.75rem 1rem;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: start;
+  box-sizing: border-box;
+}
+button.vy-talk-line {
+  cursor: pointer;
+}
+button.vy-talk-line:hover {
+  background: var(--surface-sunken);
+}
+.vy-talk-line svg {
+  color: var(--text-tertiary);
+}
+.vy-talk-line-label {
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+}
+.vy-talk-line-value {
+  font-size: var(--type-body);
+  font-weight: var(--weight-heading);
+  overflow-wrap: anywhere;
+}
+.vy-talk-done {
+  min-height: 3.5rem;
+  font-size: var(--type-body);
+}
+@media (min-width: 600px) {
+  .vy-talk-done {
+    align-self: flex-start;
+    padding-inline: 2rem;
+  }
+}
+
+/* Hindi and Telugu: no negative tracking, taller lines (language-2026.css rule) */
+:lang(hi) .vy-talk-question,
+:lang(te) .vy-talk-question,
+:lang(hi) .vy-talk-readback,
+:lang(te) .vy-talk-readback {
+  letter-spacing: 0;
+  line-height: var(--leading-title);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vy-talk-entry,
+  .vy-talk-option,
+  .vy-talk-mic,
+  .vy-talk-bar > span {
+    transition: none;
+  }
+  .vy-talk-entry:active,
+  .vy-talk-option:active,
+  .vy-talk-mic:active {
+    transform: none;
+  }
+  .vy-talk-mic[data-state="listening"]::after,
+  .vy-talk-wave i,
+  .vy-talk-dots i {
+    animation: none;
+  }
+  .vy-talk-wave i {
+    transform: scaleY(0.6);
+  }
+}

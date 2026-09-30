@@ -2457,3 +2457,16 @@ CREATE TABLE IF NOT EXISTS vyapar_listings.council_credentials (
 ALTER TABLE vyapar_trust_safety.moderation_cases DROP CONSTRAINT IF EXISTS moderation_cases_source_check;
 ALTER TABLE vyapar_trust_safety.moderation_cases ADD CONSTRAINT moderation_cases_source_check
   CHECK (source = ANY (ARRAY['report'::text, 'auto_flag'::text, 'review_dispute'::text, 'operator'::text]));
+
+-- ============================================================================
+-- 029 Voice interview (2026-09-30): what a person brings to work, and the
+-- 'interview' AI audit kind. See migrations/029-voice-interview.sql.
+-- ============================================================================
+ALTER TABLE vyapar_listings.listings
+  ADD COLUMN IF NOT EXISTS own_assets text[] NOT NULL DEFAULT '{}';
+ALTER TABLE vyapar_listings.listings DROP CONSTRAINT IF EXISTS listings_own_assets_check;
+ALTER TABLE vyapar_listings.listings ADD CONSTRAINT listings_own_assets_check
+  CHECK (own_assets <@ ARRAY['two_wheeler', 'four_wheeler', 'driving_licence', 'smartphone', 'laptop', 'own_tools']::text[]);
+ALTER TABLE vyapar_integration.ai_events DROP CONSTRAINT IF EXISTS ai_events_kind_check;
+ALTER TABLE vyapar_integration.ai_events ADD CONSTRAINT ai_events_kind_check
+  CHECK (kind IN ('draft', 'read_image', 'shortlist', 'tips', 'proposal', 'interview'));

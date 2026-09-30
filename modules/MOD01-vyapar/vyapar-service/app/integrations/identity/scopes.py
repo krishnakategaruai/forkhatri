@@ -80,6 +80,8 @@ WRITE_SCOPE_BY_PREFIX: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("/v1/contracts", ("contracts:write",)),
     # AI routes only draft and suggest; nothing is written until the member confirms.
     ("/v1/ai", ("read",)),
+    # [Voice interview] asks and reads answers; returns a draft, writes nothing.
+    ("/v1/voice", ("read",)),
     # An attachment is uploaded on the way to posting an opportunity,
     # writing a listing or replying to an enquiry — any of those scopes will do.
     ("/v1/uploads", ("opportunities:write", "listings:write", "enquiries:write")),

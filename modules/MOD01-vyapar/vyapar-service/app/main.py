@@ -170,6 +170,8 @@ from app.routers import admin_console as admin_console_router  # noqa: E402  [IM
 app.include_router(admin_console_router.router)
 from app.routers import trust_pack as trust_pack_router  # noqa: E402  [Trust pack] VISION-2040 items 1-5
 app.include_router(trust_pack_router.router)
+from app.routers import voice as voice_router  # noqa: E402  [Voice interview] one question at a time, read back, draft
+app.include_router(voice_router.router)
 
 
 @app.get("/health")
