@@ -11,7 +11,8 @@
     "taste_fit": "matches what you usually look for",
     "taste_fit_applied": "like jobs you applied to",
     "taste_fit_saved": "similar to posts you saved",
-    "explore": "something new near your skills"
+    "explore": "something new near your skills",
+    "taste_fit_more_like_this": "like posts you asked for more of"
   },
   "fallback": {
     "matchedSearch": "matched your search",

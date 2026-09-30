@@ -17,6 +17,7 @@ export const RANKING_SIGNAL_KEYS = [
   "taste_fit",
   "taste_fit_applied",
   "taste_fit_saved",
+  "taste_fit_more_like_this",
   "explore",
 ];
 
