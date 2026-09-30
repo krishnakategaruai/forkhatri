@@ -49,7 +49,10 @@ export default function FirstRunPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [displayName, setDisplayName] = useState("");
-  const [language, setLanguage] = useState<Language>("en");
+  // [2026-09-30] The selected chip is the language on screen (i18n, kept in
+  // step with the vyapar_lang cookie by the provider), never a stale copy
+  // from the server's first-run row.
+  const language: Language = (LANGUAGE_IDS as string[]).includes(i18n.language) ? (i18n.language as Language) : "en";
   const [locality, setLocality] = useState("");
   const [radiusKm, setRadiusKm] = useState(10);
   const [workMode, setWorkMode] = useState<"on_site" | "remote" | "both">("both");
@@ -73,7 +76,6 @@ export default function FirstRunPage() {
     }>("/v1/first-run/state").then((s) => {
       setStep(Math.min(s.step, 4));
       setDisplayName(s.display_name);
-      setLanguage((s.language as Language) ?? "en");
       setLocality(s.locality ?? "");
       setRadiusKm(s.radius_km ?? 10);
       setWorkMode((s.work_mode as typeof workMode) ?? "both");
@@ -101,8 +103,8 @@ export default function FirstRunPage() {
     setHelp((h) => (h.includes(id) ? h.filter((x) => x !== id) : [...h, id]));
   }
 
+  // Same path as the top bar's Language and display menu (LanguageSwitcher).
   function chooseLanguage(lang: Language) {
-    setLanguage(lang);
     void i18n.changeLanguage(lang);
     setPreferredLanguage(lang);
   }
