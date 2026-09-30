@@ -37,7 +37,9 @@
     "pay20k": "Paying {amount}+ a month",
     "projectsBudget": "Projects with a budget over {amount}",
     "projects": "Projects for professionals",
-    "remote": "Work from home"
+    "remote": "Work from home",
+    "becauseApplied": "Because you applied to {trade}",
+    "moreLikeSaved": "More like what you saved"
   },
   "distance": {
     "inYourArea": "In your area",

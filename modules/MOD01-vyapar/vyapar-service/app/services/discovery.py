@@ -20,6 +20,14 @@
 # `broadening_options[].label` field now carry i18n KEYS, not pre-baked
 # English text — the frontend translates via `t('ranking:signal.'+key)` /
 # `t('discover:notice.'+key)` / `t('discover:broaden.'+key)`.
+# [Recommendations that learn, 2026-09-30] A light taste term: `taste_fit`
+# for a profile is the overlap between its skills, categories, kind and
+# distance band and the kinds of profile the member saved or contacted
+# (their own actions only, content only). It sits inside the FR19 score,
+# which orders results only after text relevance and distance, so it breaks
+# ties and never outranks what the person typed. Profiles whose council rules
+# forbid promotion (advocates, architects) stay neutral: they get no score at
+# all, taste included (profession rules win).
 # Traces to: FR15, FR16, FR17, FR19, FR20, TR015, TR016, TR017, TR019, TR020, SP015, SP016, SP017, SP019
 from __future__ import annotations
 
@@ -42,6 +50,8 @@ from app.trade_match import trade_matcher
 from app.place_label import distance_label
 from app.services.listings import ListingOut, _row_to_out
 from app.services.profession_rules import verdict_for_row as profession_verdict
+from app.services.taste import taste_or_empty
+from app.taste import Taste, listing_features
 
 
 RADIUS_STEPS = [5, 10, 25]
@@ -100,7 +110,8 @@ class SearchSuggestionsOut(BaseModel):
     localities: list[str]
 
 
-def _listing_signals(row: asyncpg.Record, q: str | None, distance_km: float | None, rep: dict | None = None) -> RankingSignals:
+def _listing_signals(row: asyncpg.Record, q: str | None, distance_km: float | None, rep: dict | None = None,
+                     taste: Taste | None = None) -> RankingSignals:
     """[TR019/FR15] Builds the ONE allow-listed signal struct for a listing
     search candidate — capability_fit from keyword/category match,
     location_fit from distance, trust_fit from verification state,
@@ -117,7 +128,9 @@ def _listing_signals(row: asyncpg.Record, q: str | None, distance_km: float | No
     trust_fit = (1.0 if row["verification_state"] == "verified" else 0.0) + (0.3 if row["contact_verified"] else 0.0)
     # [FR28/FR19] reputation counts join trust fit only above 3 interactions
     trust_fit += trust_from_reputation(rep)
-    return RankingSignals(capability_fit=capability_fit, location_fit=location_fit, trust_fit=trust_fit, freshness_fit=0.2)
+    taste_fit = taste.listing_signal(listing_features(row, distance_km)) if taste is not None else 0.0
+    return RankingSignals(capability_fit=capability_fit, location_fit=location_fit, trust_fit=trust_fit, freshness_fit=0.2,
+                          taste_fit=taste_fit)
 
 
 async def search_listings(
@@ -270,6 +283,7 @@ async def search_listings(
             broadened.append("anyWord")
 
     reps = await reputation_for_listings(conn, [r for _, r, _ in matched])
+    taste = await taste_or_empty(conn, ctx.member_id) if matched else None
     scored = []
     # [Trust pack] A profile whose council forbids advertising (advocates,
     # architects) gets no ranking boost: no trust, reputation or freshness
@@ -281,7 +295,7 @@ async def search_listings(
         if str(r["id"]) in neutral:
             scored.append((rel, 0.0, "matchesFilters", r, d))
             continue
-        signals = _listing_signals(r, q, distance_km=d, rep=reps.get(str(r["id"])))
+        signals = _listing_signals(r, q, distance_km=d, rep=reps.get(str(r["id"])), taste=taste)
         keys = top_signal_keys(signals, limit=1)
         scored.append((rel, score(signals), keys[0] if keys else "matchesFilters", r, d))
 

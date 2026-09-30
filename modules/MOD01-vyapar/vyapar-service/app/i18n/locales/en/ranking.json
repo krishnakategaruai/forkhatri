@@ -7,7 +7,11 @@
     "value_fit": "good value",
     "experience_fit": "matches your experience",
     "freshness_fit": "recently posted",
-    "trust_fit": "posted by someone verified"
+    "trust_fit": "posted by someone verified",
+    "taste_fit": "matches what you usually look for",
+    "taste_fit_applied": "like jobs you applied to",
+    "taste_fit_saved": "similar to posts you saved",
+    "explore": "something new near your skills"
   },
   "fallback": {
     "matchedSearch": "matched your search",
@@ -16,5 +20,70 @@
   },
   "gap": {
     "missingSkills": "requires {skills} — you haven't listed this"
+  },
+  "taste": {
+    "summary": {
+      "applied": "You often apply to: {items}",
+      "saved": "You often save: {items}",
+      "within": "Usually within {km} km",
+      "pay": "Usually {amount}+ a month",
+      "avoid": "Not interested in: {items}",
+      "off": "Personalised recommendations are off. Nothing is being learned.",
+      "nothingYet": "Nothing learned yet. Apply to or save posts and your recommendations get better."
+    },
+    "item": {
+      "distanceLimit": "Nothing farther than {km} km",
+      "payFloor": "Pay at least {amount} a month"
+    },
+    "type": {
+      "employment": "Jobs",
+      "freelance": "Projects",
+      "local_service": "Local services",
+      "partnership": "Business partnerships",
+      "training": "Training",
+      "community": "Community & government"
+    },
+    "mode": {
+      "on_site": "At the workplace",
+      "remote": "Work from home",
+      "both": "At the workplace or from home"
+    },
+    "shift": {
+      "day": "Day shift",
+      "night": "Night shift",
+      "rotational": "Rotational shift",
+      "flexible": "Flexible hours"
+    },
+    "pay": {
+      "m_lt10k": "Under ₹10,000 a month",
+      "m10_15k": "₹10,000–15,000 a month",
+      "m15_20k": "₹15,000–20,000 a month",
+      "m20_30k": "₹20,000–30,000 a month",
+      "m30k_plus": "₹30,000+ a month",
+      "p_lt5k": "Budget under ₹5,000",
+      "p5_20k": "Budget ₹5,000–20,000",
+      "p20k_1l": "Budget ₹20,000–1 lakh",
+      "p1l_plus": "Budget ₹1 lakh+"
+    },
+    "dist": {
+      "0_3": "Within 3 km",
+      "3_8": "3–8 km away",
+      "8_15": "8–15 km away",
+      "15_30": "15–30 km away",
+      "30p": "Over 30 km away"
+    },
+    "exp": {
+      "fresher": "Open to freshers",
+      "1_2y": "Up to 2 years' experience",
+      "3y_plus": "3+ years' experience"
+    },
+    "profileKind": {
+      "business": "Business profiles",
+      "professional": "Work profiles"
+    }
+  },
+  "error": {
+    "tasteItemNotFound": "That item isn't in what we learned about you.",
+    "ownPost": "This is your own post."
   }
 }

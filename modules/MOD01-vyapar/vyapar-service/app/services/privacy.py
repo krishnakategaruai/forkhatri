@@ -34,6 +34,12 @@
 #    exactly that version. `require_accepted()` is the ONE gate every gated
 #    action calls before proceeding — used by the listings/opportunities/
 #    enquiries services, never re-implemented per call site.
+#  - [Recommendations that learn, 2026-09-30] `personalised_recommendations`
+#    is the member's switch for the learned taste (default on). Turning it
+#    off — or turning off usage analytics, which promises nothing is
+#    recorded — empties the learned taste at once and nothing is learned
+#    while it is off. The export carries the learned taste; account deletion
+#    deletes it.
 # Traces to: FR36, FR37, FR38, FR53, TR036, TR037, TR038, TR053
 from __future__ import annotations
 
@@ -48,6 +54,7 @@ from app.errors import ApiError
 from app.events import emit_event
 from app.i18n import translate
 from app.identity import AuthzContext
+from app.services import taste as taste_svc
 
 SIX_CONTROLS = (
     "capability_visible", "seeking_visible", "contact_disclosure",
@@ -72,6 +79,7 @@ class PrivacySettingsOut(BaseModel):
     digest_hour: int | None
     muted_types: list[str]
     prompted: list[str]
+    personalised_recommendations: bool = True
 
 
 class PrivacyPatch(BaseModel):
@@ -82,6 +90,7 @@ class PrivacyPatch(BaseModel):
     notifications_enabled: bool | None = None
     commercial_comms: bool | None = None
     behavioral_analytics: bool | None = None
+    personalised_recommendations: bool | None = None
     digest_enabled: bool | None = None
     digest_hour: int | None = Field(default=None, ge=0, le=23)
     mark_prompted: str | None = None  # [TR036] one of SIX_CONTROLS — shown once
@@ -95,6 +104,7 @@ class ExportDocument(BaseModel):
     enquiries_sent: list[dict]
     reviews_written: list[dict]
     consents: list[dict]
+    taste: dict | None = None  # the learned recommendation taste: what is shown to the member, and the stored model
 
 
 class DataExportOut(BaseModel):
@@ -189,6 +199,7 @@ def _settings_out(row: asyncpg.Record) -> PrivacySettingsOut:
         notifications_enabled=row["notifications_enabled"], commercial_comms=row["commercial_comms"],
         behavioral_analytics=row["behavioral_analytics"], digest_enabled=row["digest_enabled"],
         digest_hour=row["digest_hour"], muted_types=list(row["muted_types"]), prompted=list(row["prompted"]),
+        personalised_recommendations=row["personalised_recommendations"],
     )
 
 
@@ -213,6 +224,8 @@ async def update_privacy_settings(conn: asyncpg.Connection, ctx: AuthzContext, l
             ctx.member_id, body.mark_prompted,
         )
     row = await conn.fetchrow("SELECT * FROM vyapar_privacy.privacy_settings WHERE member_id = $1", ctx.member_id)
+    if fields.get("personalised_recommendations") is False or fields.get("behavioral_analytics") is False:
+        await taste_svc.forget_on_switch_off(conn, ctx.member_id)
     # [FR45] a privacy change is a state change — operational, always logged, consent flags never gate this one
     await emit_event(conn, member_id=ctx.member_id, event="privacy_settings_changed", level="operational", props={"fields": list(fields.keys())})
     return _settings_out(row)
@@ -237,6 +250,7 @@ async def request_data_export(conn: asyncpg.Connection, ctx: AuthzContext) -> Da
         enquiries_sent=[dict(r) | {"id": str(r["id"]), "created_at": r["created_at"].isoformat()} for r in enquiries],
         reviews_written=[dict(r) | {"id": str(r["id"]), "created_at": r["created_at"].isoformat(), "tags": list(r["tags"])} for r in reviews],
         consents=[dict(r) | {"accepted_at": r["accepted_at"].isoformat()} for r in consents],
+        taste=await taste_svc.export_taste(conn, ctx.member_id, member["language"] or "en"),
     )
     row = await conn.fetchrow(
         """INSERT INTO vyapar_privacy.data_requests (member_id, kind, state, detail, due_at, completed_at)
@@ -252,6 +266,8 @@ async def withdraw_consent(conn: asyncpg.Connection, ctx: AuthzContext, field: s
         raise HTTPException(status_code=422, detail="unknown_consent_field")
     await _ensure_row(conn, ctx.member_id)
     await conn.execute(f"UPDATE vyapar_privacy.privacy_settings SET {field} = false, updated_at = now() WHERE member_id = $1", ctx.member_id)
+    if field == "behavioral_analytics":
+        await taste_svc.forget_on_switch_off(conn, ctx.member_id)
     await conn.execute(
         "INSERT INTO vyapar_privacy.data_requests (member_id, kind, state, detail, completed_at) VALUES ($1, 'withdraw', 'completed', $2, now())",
         ctx.member_id, field,
@@ -279,6 +295,7 @@ async def request_account_deletion(conn: asyncpg.Connection, ctx: AuthzContext, 
              phone = NULL, avatar_url = NULL, deleted_at = now(), updated_at = now() WHERE id = $1""",
         ctx.member_id,
     )
+    await taste_svc.delete_taste(conn, ctx.member_id)  # learned taste is the member's own derived data: gone, not anonymized
     row = await conn.fetchrow(
         """INSERT INTO vyapar_privacy.data_requests (member_id, kind, state, retained_categories, completed_at)
            VALUES ($1, 'delete', 'completed', $2, now()) RETURNING id""",

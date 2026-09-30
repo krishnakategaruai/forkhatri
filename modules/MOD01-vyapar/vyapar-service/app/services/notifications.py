@@ -20,6 +20,13 @@
 # app startup (`app/main.py`'s lifespan) — genuinely scheduled, not only a
 # dev-triggerable endpoint, though the dev-triggerable endpoints also exist
 # for on-demand testing without waiting for the interval.
+#
+# [Recommendations that learn, 2026-09-30] Alerts rank by the full score,
+# including the member's learned `taste_fit` (and the pay floor in value_fit):
+# the strong match picks the best-scoring post for the member, and the digest
+# lists its posts best first. A post the member hid, or one their hard
+# negatives demote ("not my skill", beyond their "Too far" limit), is never
+# announced. Caps are unchanged: at most 3 alerts a day, each post once.
 # Traces to: FR21, TR021, SP021
 from __future__ import annotations
 
@@ -40,6 +47,7 @@ from app.notifications import render_notification, send_notification
 from app.viewer_profile import viewer_skills
 from app.ranking import score
 from app.services.feed import _distance_km, _opportunity_signals
+from app.services.taste import taste_or_empty
 from app.services.pagination import DEFAULT_LIMIT, Page, keyset_after, keyset_cursor
 
 logger = logging.getLogger(__name__)
@@ -180,9 +188,22 @@ async def _notified_opportunity_ids(conn: asyncpg.Connection, member_id: str) ->
 
 
 async def _viewer(conn: asyncpg.Connection, member: asyncpg.Record) -> dict:
-    """The member row with skills from their profiles too (critique L14)."""
+    """The member row with skills from their profiles too (critique L14), and
+    their learned taste (read as the dispatcher, for this member only)."""
     caps, cats = await viewer_skills(conn, member["id"])
-    return {**dict(member), "capabilities": caps, "categories": cats}
+    return {**dict(member), "capabilities": caps, "categories": cats, "taste": await taste_or_empty(conn, member["id"])}
+
+
+async def _hidden_ids(conn: asyncpg.Connection, member_id: str) -> set[str]:
+    rows = await conn.fetch(
+        "SELECT opportunity_id::text AS id FROM vyapar_opportunities.member_opportunity WHERE member_id = $1 AND hidden_at IS NOT NULL",
+        member_id)
+    return {r["id"] for r in rows}
+
+
+def _unwanted(member: dict, opp, distance: float | None) -> bool:
+    taste = member.get("taste")
+    return bool(taste is not None and taste.active and taste.demoted(opp, distance))
 
 
 _LIVE_POST_SQL = """state = 'active' AND NOT distribution_limited AND type = ANY($1)
@@ -219,11 +240,14 @@ async def run_strong_match_pass(pool: asyncpg.Pool) -> int:
                 if "opportunity" in muted_by_member.get(member["id"], set()):
                     continue
                 notified = await _notified_opportunity_ids(conn, member["id"])
+                hidden = await _hidden_ids(conn, member["id"])
                 best_score, best_opp = 0.0, None
                 for opp in opps:
-                    if opp["poster_id"] == member["id"] or str(opp["id"]) in notified:
+                    if opp["poster_id"] == member["id"] or str(opp["id"]) in notified or str(opp["id"]) in hidden:
                         continue
                     distance = await _distance_km(conn, member, opp)
+                    if _unwanted(member, opp, distance):
+                        continue
                     s = score(_opportunity_signals(opp, member, distance))
                     if s > best_score:
                         best_score, best_opp = s, opp
@@ -331,9 +355,11 @@ async def run_digest_pass(pool: asyncpg.Pool) -> int:
             digest_ids = [r["member_id"] for r in privacy_rows]
             if not digest_ids:
                 return 0
-            members = await conn.fetch("SELECT id, language FROM vyapar_identity.members WHERE id = ANY($1)", digest_ids)
+            members = await conn.fetch(
+                """SELECT id, language, capabilities, help_with, locality, lat, lng, radius_km
+                     FROM vyapar_identity.members WHERE id = ANY($1)""", digest_ids)
             fresh = await conn.fetch(
-                f"""SELECT id, poster_id FROM vyapar_opportunities.opportunities
+                f"""SELECT * FROM vyapar_opportunities.opportunities
                      WHERE {_LIVE_POST_SQL} AND published_at > now() - interval '1 day'""",
                 list(_NOTIFIABLE_TYPES),
             )
@@ -346,7 +372,19 @@ async def run_digest_pass(pool: asyncpg.Pool) -> int:
                 if recent:
                     continue
                 notified = await _notified_opportunity_ids(conn, member["id"])
-                items = sorted(str(r["id"]) for r in fresh if r["poster_id"] != member["id"] and str(r["id"]) not in notified)
+                hidden = await _hidden_ids(conn, member["id"])
+                viewer = await _viewer(conn, member)
+                ranked: list[tuple[float, str]] = []
+                for r in fresh:
+                    if r["poster_id"] == member["id"] or str(r["id"]) in notified or str(r["id"]) in hidden:
+                        continue
+                    distance = await _distance_km(conn, viewer, r)
+                    if _unwanted(viewer, r, distance):
+                        continue
+                    ranked.append((score(_opportunity_signals(r, viewer, distance)), str(r["id"])))
+                # best first by the full score (taste included); ties by id, so the order is stable
+                ranked.sort(key=lambda t: (-t[0], t[1]))
+                items = [i for _, i in ranked]
                 if not items:
                     continue
                 spec = {"title": "notifications.digest.title", "body": "notifications.digest.body", "values": {"count": len(items)}}

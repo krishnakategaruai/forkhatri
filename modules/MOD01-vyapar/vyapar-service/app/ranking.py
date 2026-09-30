@@ -27,6 +27,20 @@ from pydantic import BaseModel
 # account age, paid status, popularity, or report signal is a Critical-
 # severity defect at code review, not a style nit — SP019's own text says
 # so explicitly.
+#
+# [Recommendations that learn, 2026-09-30] `taste_fit` is allow-listed for a
+# stated reason, not as a precedent: it is computed ONLY from the member's
+# OWN actions (applied, hired, saved, shared, "More like this", "Not
+# interested" and its reason) over CONTENT attributes of the posts and
+# profiles they acted on (skills, category, kind of post, work mode, distance
+# band, pay band, shift, experience band, trade words). It reads nothing
+# about the poster (no id, name, community, gender, religion, badge) and
+# nothing about other members (no popularity, no "people like you") — see
+# app/taste.py, whose CONTENT_KEYS is the whole of what it can read. Its value
+# is overlap x confidence, so its effective weight ramps from 0 (no history:
+# ranking exactly as before) to DEFAULT_WEIGHTS["taste_fit"] after 10
+# meaningful actions. It is switched off entirely when the member turns off
+# personalised recommendations or usage analytics.
 class RankingSignals(BaseModel):
     capability_fit: float = 0.0
     intent_fit: float = 0.0
@@ -36,6 +50,7 @@ class RankingSignals(BaseModel):
     experience_fit: float = 0.0
     freshness_fit: float = 0.0
     trust_fit: float = 0.0
+    taste_fit: float = 0.0
 
 
 DEFAULT_WEIGHTS: dict[str, float] = {
@@ -47,6 +62,7 @@ DEFAULT_WEIGHTS: dict[str, float] = {
     "experience_fit": 1.0,
     "freshness_fit": 1.5,
     "trust_fit": 1.5,
+    "taste_fit": 2.0,
 }
 
 # [Product-owner i18n rule, 2026-09-15] This module used to hold a
@@ -66,12 +82,16 @@ def score(signals: RankingSignals, weights: dict[str, float] | None = None) -> f
     return sum(getattr(signals, field) * w.get(field, DEFAULT_WEIGHTS[field]) for field in RankingSignals.model_fields)
 
 
-def top_signal_keys(signals: RankingSignals, limit: int = 3) -> list[str]:
+def top_signal_keys(signals: RankingSignals, limit: int = 3, weights: dict[str, float] | None = None) -> list[str]:
     """[FR20] Top-N contributing signal KEYS by (weighted) magnitude — reads
-    the exact same signals `score()` used, never a separate explanation
-    model. Callers translate each key themselves (see module note above)."""
+    the exact same signals and weights `score()` used, never a separate
+    explanation model. Callers translate each key themselves (see module note
+    above); a `taste_fit` key is refined by the caller into which phrase fits
+    ("Like jobs you applied to", "Similar to posts you saved", "Matches what
+    you usually look for")."""
+    w = {**DEFAULT_WEIGHTS, **(weights or {})}
     weighted = [
-        (getattr(signals, f) * DEFAULT_WEIGHTS[f], f) for f in RankingSignals.model_fields if getattr(signals, f) > 0
+        (getattr(signals, f) * w[f], f) for f in RankingSignals.model_fields if getattr(signals, f) > 0
     ]
     weighted.sort(reverse=True)
     return [f for _, f in weighted[:limit]]
@@ -110,10 +130,11 @@ def diversify(items: list, provider_key, type_key, max_consecutive: int = 3) -> 
 # reachable from the admin surface) can write a weight — `vyapar_app` holds
 # SELECT-only rights on `vyapar_integration.config`.
 # Traces to: FR49, TR049, SP049, TR019
-def explain(signals: RankingSignals) -> dict:
+def explain(signals: RankingSignals, weights: dict[str, float] | None = None) -> dict:
+    w = {**DEFAULT_WEIGHTS, **(weights or {})}
     parts = []
-    for field, weight in DEFAULT_WEIGHTS.items():
+    for field, weight in w.items():
         value = getattr(signals, field)
         parts.append({"signal": field, "value": round(value, 4), "weight": weight, "contribution": round(value * weight, 4)})
     parts.sort(key=lambda p: p["contribution"], reverse=True)
-    return {"total": round(score(signals), 4), "signals": parts}
+    return {"total": round(score(signals, weights), 4), "signals": parts}

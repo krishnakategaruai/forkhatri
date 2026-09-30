@@ -30,6 +30,7 @@ from app.routers.verification import run_verification_expiry_pass, run_verificat
 from app.services.contracts import run_contract_auto_release_pass
 from app.services.profession_rules import refresh_profession_rules  # [Trust pack]
 from app.services.trust_jobs import run_trust_pass  # [Trust pack]
+from app.services.taste import run_taste_refresh_pass  # [Recommendations that learn]
 # [IMP37 — Refactor B] integration edges: token/webhook API, middleware, webhook dispatch loop
 from app.routers import integrations as integrations_router
 # [IMP-B] contact control, service packages, saved searches, badges
@@ -70,6 +71,7 @@ async def verification_cleanup_loop() -> None:
             await run_opportunity_expiry_pass(get_pool())  # [Backend A] active -> expired when the last date passes
             await refresh_taxonomy_cache(get_pool())  # keep the label cache current
             await run_trust_pass(get_pool())  # [Trust pack] paid on time, applicants waiting, council rules, credential expiry
+            await run_taste_refresh_pass(get_pool())  # [Recommendations that learn] decay + actions since the last read
         except Exception:
             import logging
 
@@ -172,6 +174,8 @@ from app.routers import trust_pack as trust_pack_router  # noqa: E402  [Trust pa
 app.include_router(trust_pack_router.router)
 from app.routers import voice as voice_router  # noqa: E402  [Voice interview] one question at a time, read back, draft
 app.include_router(voice_router.router)
+from app.routers import taste as taste_router  # noqa: E402  [Recommendations that learn] getMyTaste, resetMyTaste, moreLikeThis
+app.include_router(taste_router.router)
 
 
 @app.get("/health")

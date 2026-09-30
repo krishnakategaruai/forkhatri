@@ -983,6 +983,8 @@ async def list_matching_profiles(
         raise ApiError(404, "common.error.opportunityNotFound", lang)
     if row["poster_id"] != ctx.member_id:
         return []
+    from app.services.taste import taste_or_empty
+
     return await recommend_profiles(
         conn,
         skills=list(row["required_capabilities"]),
@@ -992,6 +994,7 @@ async def list_matching_profiles(
         viewer_locality=row["location"],
         require_opportunity_participation=True,
         lang=lang,
+        taste=await taste_or_empty(conn, ctx.member_id),
     )
 
 

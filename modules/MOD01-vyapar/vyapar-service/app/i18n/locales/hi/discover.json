@@ -37,7 +37,9 @@
     "pay20k": "{amount}+ महीना देने वाले",
     "projectsBudget": "{amount} से अधिक बजट वाले प्रोजेक्ट",
     "projects": "प्रोफ़ेशनलों के लिए प्रोजेक्ट",
-    "remote": "घर से काम"
+    "remote": "घर से काम",
+    "becauseApplied": "क्योंकि आपने {trade} में आवेदन किया",
+    "moreLikeSaved": "आपकी सेव की गई पोस्ट जैसी और"
   },
   "distance": {
     "inYourArea": "आपके इलाके में",

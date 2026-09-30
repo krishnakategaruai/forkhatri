@@ -509,6 +509,8 @@ async def list_similar_profiles(
     if row is None:
         raise ApiError(404, "common.error.listingNotFound", lang)
     locality = await conn.fetchval("SELECT locality FROM vyapar_identity.members WHERE id = $1", ctx.member_id)
+    from app.services.taste import taste_or_empty
+
     return await recommend_profiles(
         conn,
         skills=list(row["capabilities"]) if row["capability_visible"] else [],
@@ -518,6 +520,7 @@ async def list_similar_profiles(
         viewer_locality=locality,
         require_opportunity_participation=False,
         lang=lang,
+        taste=await taste_or_empty(conn, ctx.member_id),
     )
 
 

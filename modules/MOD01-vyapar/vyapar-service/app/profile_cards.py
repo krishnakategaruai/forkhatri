@@ -18,6 +18,11 @@
 # never matched on its skills and never shows them, because matching on
 # hidden skills would reveal them. RLS already limits the rows to public,
 # active listings; `discoverable = false` listings are excluded too.
+# [Recommendations that learn, 2026-09-30] A light taste term after the
+# skill and category overlap: among equally matching profiles, the kinds the
+# viewer saved or contacted before (skills, category, kind; their own actions
+# only) come first. Advocates and architects stay neutral (profession rules
+# win): they get no taste term.
 # Traces to: FR16, FR19, FR05, FR28, UX09
 from __future__ import annotations
 
@@ -26,6 +31,7 @@ from pydantic import BaseModel
 
 from app.reputation import badges_for_members, reputation_for_listings
 from app.services.profession_rules import verdict_for_row
+from app.taste import Taste, listing_features
 from app.taxonomy_cache import labels_for
 
 CARD_LIMIT = 4
@@ -61,6 +67,7 @@ async def recommend_profiles(
     viewer_locality: str | None,
     require_opportunity_participation: bool,
     lang: str,
+    taste: Taste | None = None,
 ) -> list[ProfileCard]:
     if not skills and not categories:
         return []
@@ -92,10 +99,15 @@ async def recommend_profiles(
     # architects) gets no verified-first or "available now" boost: among
     # equal skill matches it is ordered by nearness to the viewer, then name,
     # exactly as in search. Others keep the SQL order above.
+    def _taste_term(r, neutral: bool) -> float:
+        if neutral or taste is None:
+            return 0.0
+        return round(taste.listing_signal(listing_features(r, None)), 1)  # coarse: a tie-breaker, not a re-ranking
+
     def _key(item):
         index, r = item
         neutral = not verdict_for_row(r).allow_ranking_boost
-        return (-r["skill_overlap"], -r["category_overlap"],
+        return (-r["skill_overlap"], -r["category_overlap"], -_taste_term(r, neutral),
                 0 if neutral else -int(r["state"] == "active_verified"),
                 -int(bool(r["near_viewer"])),
                 0 if neutral else -int(r["availability"] == "now"),

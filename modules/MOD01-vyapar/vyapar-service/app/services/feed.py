@@ -63,10 +63,28 @@
 #     documented in `_AVAILABILITY_BUCKET_SQL`.
 # 11. Cards are `FeedCard` (OpportunityOut plus distance_km, poster_badges
 #     and, for employment, the seeker_protection notice) — additive.
+#
+# [Recommendations that learn, 2026-09-30] The viewer profile now carries the
+# member's learned taste (app/taste.py, app/services/taste.py):
+# 12. `_opportunity_signals` adds `taste_fit` (overlap x confidence) and, when
+#     the member said "Pay too low", `value_fit` against the raised floor.
+#     With no history both are 0, so every score is exactly what it was.
+# 13. Hard negatives are soft filters in the relevance order: a post whose
+#     skills are all ones the member called "not my skill", or an on-site post
+#     beyond the distance limit learned from "Too far", goes to the end —
+#     never removed, never outside what the hard filters allow.
+# 14. Exploration: in results and the For you row, 1 slot in 8 goes to a
+#     relevant-but-unexplored post (a neighbouring skill in the same trade
+#     family that the member has neither listed nor acted on), chosen
+#     deterministically per member per day; its reason is "explore".
+# 15. Rows: "Because you applied to <trade>" and "More like what you saved"
+#     when taste confidence is at least TASTE_ROW_CONFIDENCE — personal rows,
+#     after For you.
 # Traces to: FR18, FR19, FR20, FR21, FR28, FR40, FR55, TR018, TR019, TR020, TR021, TR040, TR055, SP018, SP019, SP020, SP040
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+import random
+from datetime import date, datetime, timedelta, timezone
 from typing import Literal
 
 import json
@@ -86,6 +104,8 @@ from app.trade_match import trade_matcher as _trade_matcher_uncached
 from app.i18n import translate
 from app.services.pagination import DEFAULT_LIMIT, MAX_LIMIT, Page, paginate
 from app.services.trust_safety import SeekerProtectionOut, seeker_protection_notice
+from app.services.taste import taste_or_empty
+from app.taste import Taste, post_features
 
 
 # [Fix #5] Keep the first screen short — a handful of cards per section,
@@ -207,7 +227,32 @@ async def _member_profile(conn: asyncpg.Connection, member_id: str) -> dict | No
     if row is None:
         return None
     caps, cats = await viewer_skills(conn, member_id)
-    return {**dict(row), "capabilities": caps, "categories": cats}
+    return {**dict(row), "id": member_id, "capabilities": caps, "categories": cats, "taste": await taste_or_empty(conn, member_id)}
+
+
+_NO_TASTE = Taste.empty()
+EXPLORE_EVERY = 8  # 1 slot in 8 goes to something new near the member's skills
+TASTE_ROW_CONFIDENCE = 0.5  # taste rows appear after about 5 meaningful actions
+
+
+def _taste(member) -> Taste:
+    t = member.get("taste") if isinstance(member, dict) else None
+    return t if isinstance(t, Taste) else _NO_TASTE
+
+
+def _reason(signals: RankingSignals, row, member, distance_km: float | None) -> str:
+    """The one card reason: the top signal key, with a taste match refined into
+    which "Why this?" phrase fits."""
+    keys = top_signal_keys(signals, limit=1)
+    key = keys[0] if keys else "matchesFilters"
+    if key == "taste_fit":
+        key = _taste(member).reason_key(post_features(row, distance_km))
+    return key
+
+
+def _scored(row, member, distance_km: float | None) -> tuple[float, str]:
+    signals = _opportunity_signals(row, member, distance_km)
+    return score(signals), _reason(signals, row, member, distance_km)
 
 
 def _opportunity_signals(row: asyncpg.Record, member: asyncpg.Record, distance_km: float | None) -> RankingSignals:
@@ -229,7 +274,16 @@ def _opportunity_signals(row: asyncpg.Record, member: asyncpg.Record, distance_k
     age_days = (datetime.now(timezone.utc) - row["published_at"]).days if row["published_at"] else 0
     freshness_fit = max(0.0, 1.0 - age_days / 21.0)
 
-    return RankingSignals(capability_fit=capability_fit, intent_fit=intent_fit, location_fit=location_fit, freshness_fit=freshness_fit)
+    # [Recommendations that learn] the member's own taste over content only;
+    # both are exactly 0 for a member with no history (cold start unchanged).
+    taste = _taste(member)
+    taste_fit = value_fit = 0.0
+    if taste.active:
+        taste_fit = taste.signal(post_features(row, distance_km))
+        value_fit = taste.value_fit(row)
+
+    return RankingSignals(capability_fit=capability_fit, intent_fit=intent_fit, location_fit=location_fit, freshness_fit=freshness_fit,
+                          value_fit=value_fit, taste_fit=taste_fit)
 
 
 async def _distance_km(conn: asyncpg.Connection, member: asyncpg.Record, row: asyncpg.Record) -> float | None:
@@ -418,10 +472,14 @@ async def _verified_posters(conn: asyncpg.Connection, poster_ids: set[str]) -> s
     return {r["owner_id"] for r in rows}
 
 
-async def _order(conn: asyncpg.Connection, scored: list[tuple[float, str, asyncpg.Record]], filters: FeedFilters) -> list[asyncpg.Record]:
+async def _order(conn: asyncpg.Connection, scored: list[tuple[float, str, asyncpg.Record]], filters: FeedFilters,
+                 member=None) -> list[asyncpg.Record]:
     """[Fix #9] Applies the requested order to an already-eligible, scored
     set. Relevance keeps FR19's diversification; the explicit sorts are
-    strict, because a person who asked for "nearest first" expects exactly that."""
+    strict, because a person who asked for "nearest first" expects exactly that.
+    [Recommendations that learn] under relevance, a post the member's hard
+    negatives demote (not my skill, beyond their "Too far" limit) goes after
+    every other post; with no history nothing is demoted."""
     if filters.sort == "distance":
         scored.sort(key=lambda t: (t[2]["distance_km"] is None, t[2]["distance_km"] or 0.0, -t[0]))
         return [r for _, _, r in scored]
@@ -435,8 +493,95 @@ async def _order(conn: asyncpg.Connection, scored: list[tuple[float, str, asyncp
         verified = await _verified_posters(conn, {r["poster_id"] for _, _, r in scored})
         scored.sort(key=lambda t: (t[2]["poster_id"] not in verified, -t[0]))
         return [r for _, _, r in scored]
-    scored.sort(key=lambda t: t[0], reverse=True)
+    return relevance_order(scored, member)
+
+
+def relevance_order(scored: list[tuple[float, str, asyncpg.Record]], member=None) -> list:
+    """The relevance order (pure; the offline evaluation uses it too): best
+    score first, diversified, with posts the member's hard negatives demote
+    after all the others."""
+    taste = _taste(member)
+    scored = sorted(scored, key=lambda t: t[0], reverse=True)
+    if taste.active:
+        kept = [r for _, _, r in scored if not taste.demoted(r, _col(r, "distance_km"))]
+        demoted = [r for _, _, r in scored if taste.demoted(r, _col(r, "distance_km"))]
+        return diversify(kept, lambda r: r["poster_id"], lambda r: r["type"]) + demoted
     return diversify([r for _, _, r in scored], lambda r: r["poster_id"], lambda r: r["type"])
+
+
+# ---------------------------------------------------------------------------
+# [Recommendations that learn] Exploration: 1 slot in 8 for something new
+# near the member's skills, so a learned taste never closes into a bubble.
+# ---------------------------------------------------------------------------
+def _related_skills(caps: set[str], categories: list[str] | None) -> set[str]:
+    """Skills in the same trade category as the given skills (a plumbing job
+    is related work for an electrician: both are Home repair)."""
+    related: set[str] = set()
+    for term in taxonomy_categories():
+        kids = set(children_of(term.slug))
+        if kids & caps or term.slug in (categories or []):
+            related |= kids
+    return related
+
+
+def _explore_context(member) -> tuple[set[str], set[str]] | None:
+    """(skills already known to the member, the trade family to explore in),
+    or None when there is no taste to explore away from."""
+    taste = _taste(member)
+    if not taste.active:
+        return None
+    caps = set(member["capabilities"] or [])
+    liked = set(taste.top("skill", limit=10))
+    touched = {k.split(":", 1)[1] for k in taste.weights if k.startswith("skill:")}
+    family = _related_skills(caps | liked, member["categories"])
+    return caps | touched, family
+
+
+def _is_explore(row, member, ctx: tuple[set[str], set[str]] | None) -> bool:
+    if ctx is None:
+        return False
+    known, family = ctx
+    req = set(row["required_capabilities"] or [])
+    return (bool(req) and row["type"] in CATEGORY_ROW_TYPES and not (req & known) and bool(req & family)
+            and not _taste(member).demoted(row, _col(row, "distance_km")))
+
+
+def explore_pool(rows: list, member, day: date | None = None) -> list:
+    """Eligible explore posts in a seeded order: the same member sees the same
+    picks all day, a different order tomorrow."""
+    ctx = _explore_context(member)
+    pool = sorted((r for r in rows if _is_explore(r, member, ctx)), key=lambda r: str(r["id"]))
+    random.Random(f"{member.get('id', '')}:{(day or date.today()).isoformat()}").shuffle(pool)
+    return pool
+
+
+def with_exploration(ordered: list, pool: list, every: int = EXPLORE_EVERY) -> tuple[list, set[str]]:
+    """Puts an explore post at every `every`-th slot (index every-1, 2*every-1,
+    ...), moving it up from further down the list; returns the new order and
+    the ids shown as explore. Only posts already in `ordered` (which passed
+    every hard filter) can be moved."""
+    if not pool:
+        return ordered, set()
+    out = list(ordered)
+    present = {str(r["id"]) for r in out}
+    pool_ids = [str(r["id"]) for r in pool if str(r["id"]) in present]
+    marked: set[str] = set()
+    pos = every - 1
+    while pos < len(out):
+        here = str(out[pos]["id"])
+        if here in pool_ids and here not in marked:
+            marked.add(here)
+        else:
+            placed = {str(r["id"]) for r in out[: pos + 1]}
+            pick = next((i for i in pool_ids if i not in placed and i not in marked), None)
+            if pick is None:
+                break
+            row = next(r for r in out if str(r["id"]) == pick)
+            out.remove(row)
+            out.insert(pos, row)
+            marked.add(pick)
+        pos += every
+    return out, marked
 
 
 async def _names_and_badges(conn: asyncpg.Connection, poster_ids: set[str], lang: str) -> tuple[dict[str, str], dict[str, list[BadgeOut]]]:
@@ -493,10 +638,8 @@ async def list_opportunity_feed(
         for r in rows:
             if not _passes_radius(r, member, filters) or not _passes_extra(r, filters, verified):
                 continue
-            signals = _opportunity_signals(r, member, r["distance_km"])
-            keys = top_signal_keys(signals, limit=1)
-            reason_key = keys[0] if keys else "matchesFilters"
-            out.append((score(signals), reason_key, r))
+            s, reason_key = _scored(r, member, r["distance_km"])
+            out.append((s, reason_key, r))
         return out
 
     used_ids: set[str] = set()
@@ -506,7 +649,7 @@ async def list_opportunity_feed(
         # [Fix #4] cross-section de-duplication — an item already placed in
         # a higher-priority section is skipped here entirely, not repeated.
         deduped = [(s, reason, r) for s, reason, r in scored if str(r["id"]) not in used_ids]
-        ordered = await _order(conn, deduped, filters)
+        ordered = await _order(conn, deduped, filters, member)
         reason_by_id = {str(r["id"]): reason for _, reason, r in deduped}
         total_available = len(ordered)
         page = ordered[:SECTION_CARD_LIMIT]
@@ -588,11 +731,9 @@ async def list_opportunity_feed_section(
     for r in rows:
         if not _passes_radius(r, member, filters) or not _passes_extra(r, filters, verified):
             continue
-        signals = _opportunity_signals(r, member, r["distance_km"])
-        keys = top_signal_keys(signals, limit=1)
-        scored.append((score(signals), keys[0] if keys else "matchesFilters", r))
+        scored.append((*_scored(r, member, r["distance_km"]), r))
     reason_by_id = {str(r["id"]): reason for _, reason, r in scored}
-    ordered = await _order(conn, scored, filters)
+    ordered = await _order(conn, scored, filters, member)
     names, badges = await _names_and_badges(conn, {r["poster_id"] for r in ordered}, lang)
     return _cards(ordered, ctx.member_id, names, badges, reason_by_id, lang)
 
@@ -617,6 +758,13 @@ async def get_opportunity_why(
     distance = await _distance_km(conn, member, row)
     signals = _opportunity_signals(row, member, distance)
     keys = top_signal_keys(signals, limit=3)
+    # [Recommendations that learn] a taste match says which kind ("Like jobs
+    # you applied to" ...); a post in the member's unexplored trade family says
+    # "Something new near your skills" first, as its card did.
+    keys = [_taste(member).reason_key(post_features(row, distance)) if k == "taste_fit" else k for k in keys]
+    probe = {**dict(row), "distance_km": distance}
+    if _is_explore(probe, member, _explore_context(member)):
+        keys = ["explore"] + keys[:2]
     if not keys:
         keys = ["matchedSearch"]
     gap = None
@@ -702,7 +850,7 @@ PERSONAL_ROW_MIN_ITEMS = 1
 
 
 def _is_personal_row(key: str) -> bool:
-    return key in ("for_you", "near_you") or key.startswith("category:")
+    return key in ("for_you", "near_you") or key.startswith("category:") or key.startswith("taste_")
 LOCAL_WORK_TYPES = ("employment", "local_service")
 PROJECT_TYPES = ("freelance", "local_service")
 CATEGORY_ROW_TYPES = ("employment", "freelance", "local_service")  # [Backend A] paid work only in skill-category rows
@@ -866,11 +1014,12 @@ async def list_opportunity_results(
     matched = [r for r in rows if passes_all_but(r, None)]
     scored = []
     for r in matched:
-        signals = _opportunity_signals(r, member, r["distance_km"])
-        keys = top_signal_keys(signals, limit=1)
-        scored.append((score(signals), keys[0] if keys else "matchesFilters", r))
+        scored.append((*_scored(r, member, r["distance_km"]), r))
     reason_by_id = {str(r["id"]): reason for _, reason, r in scored}
-    ordered = await _order(conn, scored, filters)
+    ordered = await _order(conn, scored, filters, member)
+    if filters.sort == "relevance":
+        ordered, explored = with_exploration(ordered, explore_pool(ordered, member))
+        reason_by_id.update({i: "explore" for i in explored})
     page = ordered[: max(1, min(limit, 100))]
     names, badges = await _names_and_badges(conn, {r["poster_id"] for r in page}, lang)
     items = _cards(page, ctx.member_id, names, badges, reason_by_id, lang)
@@ -932,24 +1081,24 @@ async def list_opportunity_rows(conn: asyncpg.Connection, ctx: AuthzContext, lan
     rows = await _candidates(conn, ctx.member_id, member, FeedFilters(), None, params, limit=RESULTS_CANDIDATE_LIMIT)
     rows = [r for r in rows if _passes_radius(r, member, FeedFilters())]
     caps = set(member["capabilities"] or [])
+    taste = _taste(member)
     score_by_id: dict[str, float] = {}
     reason_by_id: dict[str, str] = {}
     for r in rows:
-        signals = _opportunity_signals(r, member, r["distance_km"])
-        keys = top_signal_keys(signals, limit=1)
-        score_by_id[str(r["id"])] = score(signals)
-        reason_by_id[str(r["id"])] = keys[0] if keys else "matchesFilters"
+        score_by_id[str(r["id"])], reason_by_id[str(r["id"])] = _scored(r, member, r["distance_km"])
     radius = int(member["radius_km"] or 10)
+    # [Too far] the learned distance limit narrows Near you (never below 3 km)
+    if taste.active and taste.distance_limit_km:
+        radius = max(3, min(radius, int(taste.distance_limit_km)))
     now = datetime.now(timezone.utc)
     has_coords = member["lat"] is not None and member["lng"] is not None
 
     # Skills in the same trade category as the member's own (a plumbing job
     # is related work for an electrician: both are Home repair).
-    related: set[str] = set()
-    for term in taxonomy_categories():
-        kids = set(children_of(term.slug))
-        if kids & caps or term.slug in member["categories"]:
-            related |= kids
+    related = _related_skills(caps, member["categories"])
+
+    def demoted(r) -> bool:
+        return taste.active and taste.demoted(r, r["distance_km"])
 
     def skill_match(r) -> bool:
         return bool(set(r["required_capabilities"] or []) & caps)
@@ -975,7 +1124,7 @@ async def list_opportunity_rows(conn: asyncpg.Connection, ctx: AuthzContext, lan
         return tier(r) <= 2 if caps else r["type"] in LOCAL_WORK_TYPES
 
     def relevance_key(r):
-        return (tier(r) if caps else 0, -score_by_id[str(r["id"])])
+        return (demoted(r), tier(r) if caps else 0, -score_by_id[str(r["id"])])
 
     def pick(pred, tiebreak=None) -> list[asyncpg.Record]:
         chosen = [r for r in rows if pred(r)]
@@ -992,6 +1141,24 @@ async def list_opportunity_rows(conn: asyncpg.Connection, ctx: AuthzContext, lan
     viewer_categories = [slug for slug, _ in sorted(by_cat.items(), key=lambda kv: (-kv[1], kv[0]))]
     if caps:
         specs.append(("for_you", "forYou", {}, {"skills": ",".join(sorted(caps))}, pick(skill_match)))
+    # [Recommendations that learn] personal rows from the member's own
+    # actions, after For you and before the trade rows: the trade they applied
+    # to most (the first of their top three with a post left to show), and
+    # posts like the ones they saved.
+    if taste.active and taste.confidence >= TASTE_ROW_CONFIDENCE:
+        # trades beyond the member's own skills first: For you already covers those
+        applied = taste.top("skill", "applied", limit=5)
+        for slug in sorted(applied, key=lambda x: x in caps)[:3]:
+            matcher = trade_matcher([slug])
+            specs.append((f"taste_applied:{slug}", "becauseApplied", {"trade": label_for(slug, lang)}, {"skills": slug},
+                          pick(lambda r, m=matcher: r["type"] in CATEGORY_ROW_TYPES and not demoted(r)
+                               and m.matches(r["required_capabilities"], r["title"]))))
+        saved = taste.top("skill", "saved", limit=3)
+        if saved:
+            def saved_like(r) -> bool:
+                return bool(set(r["required_capabilities"] or []) & set(saved)) and r["type"] in CATEGORY_ROW_TYPES and not demoted(r)
+            specs.append(("taste_saved", "moreLikeSaved", {}, {"skills": ",".join(saved)}, pick(saved_like)))
+    if caps:
         for slug in viewer_categories[:2]:
             kids = set(children_of(slug))
             # [Backend A, 2026-09-29] A skill-category row is paid work in that
@@ -1029,12 +1196,22 @@ async def list_opportunity_rows(conn: asyncpg.Connection, ctx: AuthzContext, lan
 
     out: list[FeedRow] = []
     claimed: set[str] = set()
+    explore = explore_pool(rows, member)
     for key, title_key, title_params, see_all, chosen in specs:
         if len(out) >= ROWS_MAX:
             break
+        if key.startswith("taste_applied:") and any(o.key.startswith("taste_applied:") for o in out):
+            continue  # one "Because you applied to ..." row
         page = [r for r in chosen if str(r["id"]) not in claimed][:ROW_ITEM_LIMIT]
         if len(page) < (PERSONAL_ROW_MIN_ITEMS if _is_personal_row(key) else ROW_MIN_ITEMS):
             continue  # hidden, and it claims nothing
+        if key == "for_you" and explore and len(page) >= 3:
+            # 1 slot in 8: something new near the member's skills
+            pick_row = next((r for r in explore if str(r["id"]) not in claimed and r not in page), None)
+            if pick_row is not None:
+                page = page[:ROW_ITEM_LIMIT - 1]
+                page.insert(min(EXPLORE_EVERY - 1, len(page)), pick_row)
+                reason_by_id[str(pick_row["id"])] = "explore"
         claimed.update(str(r["id"]) for r in page)
         names, badges = await _names_and_badges(conn, {r["poster_id"] for r in page}, lang)
         out.append(FeedRow(
