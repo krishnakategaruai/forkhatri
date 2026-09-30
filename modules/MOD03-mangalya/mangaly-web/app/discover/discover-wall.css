@@ -139,10 +139,13 @@
   .dwall,
   .dwall--lens {
     grid-template-columns: minmax(0, 1fr);
-    gap: 16px;
+    gap: 14px;
+    /* Nearly edge to edge: 6px from the screen instead of the page gutter. */
+    margin-left: calc(6px - var(--gutter));
+    margin-right: calc(6px - var(--gutter));
   }
   .dwall .dtile__photo {
-    aspect-ratio: 4 / 5;
+    aspect-ratio: 5 / 7;
   }
 }
 @media (min-width: 640px) {
