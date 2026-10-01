@@ -62,6 +62,12 @@ PERSONAS: tuple[Persona, ...] = (
         for_automated_tests=True,
     ),
     Persona(
+        "mangalya-agent",
+        UUID("a0000000-0000-4000-8000-000000000021"),
+        "Suresh Naidu: a verified marriage broker (agent) in Mangalya, Sri Lakshmi Marriage Bureau.",
+        for_automated_tests=True,
+    ),
+    Persona(
         "samaj-president",
         UUID("a0000000-0000-4000-8000-000000000011"),
         "Ramesh Khatri: the samaj's national president in the admin console (/admin).",

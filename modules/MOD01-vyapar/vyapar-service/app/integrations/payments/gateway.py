@@ -178,5 +178,67 @@ class DevSandboxGateway:
         return raw, signature, f"evt_sandbox_{uuid.uuid4().hex[:16]}"
 
 
-def get_gateway() -> RazorpayGateway | DevSandboxGateway:
-    return RazorpayGateway() if get_settings().payment_gateway == "razorpay" else DevSandboxGateway()
+class SharedLibraryGateway:
+    """PAYMENT_GATEWAY=shared:<adapter> — Vyapar's gateway calls mapped onto ForKhatri's
+    shared payments library (shared/forkhatri-integrations), the seam every module
+    shares so one vendor adapter (or MOD06) serves all of them. Opt-in; the default
+    dev_sandbox / razorpay paths above are unchanged."""
+
+    def __init__(self, adapter: str) -> None:
+        from forkhatri_integrations import payments
+
+        s = get_settings()
+        self._p = payments
+        self.gw = payments.get_gateway(
+            adapter, allow_sandbox=s.dev_mode,
+            webhook_secret=s.payment_webhook_secret, base_url=s.payment_services_url,
+            service_name=s.identity_service_name, service_key=s.payment_services_key,
+        )
+        self.name = f"shared:{self.gw.name}"
+
+    async def create_checkout(self, *, order_id: str, amount_paise: int, description: str, callback_url: str) -> CheckoutSession:
+        try:
+            charge = await self.gw.create_charge(self._p.ChargeRequest(
+                idempotency_key=f"vyapar-order-{order_id}", payer_id="", amount_minor=amount_paise, purpose="vyapar.order",
+                description=description, return_url=callback_url, metadata={"order_id": order_id}))
+        except self._p.PaymentsError as exc:
+            raise GatewayUnavailable(str(exc) or type(exc).__name__) from exc
+        return CheckoutSession(gateway_order_ref=charge.reference,
+                               checkout_url=charge.checkout_url or f"{get_settings().web_origin}/payments/checkout/{order_id}")
+
+    def verify_webhook(self, raw_body: bytes, signature: str) -> bool:
+        try:
+            self.gw.parse_event(raw_body, {self._p.SIGNATURE_HEADER: signature})
+        except self._p.EventRejected:
+            return False
+        return True
+
+    def parse_webhook(self, payload: dict, event_id: str | None) -> GatewayEvent | None:
+        kind, ref = payload.get("type"), payload.get("reference")
+        eid = str(payload.get("event_id") or event_id or f"{kind}:{ref}")
+        if kind == "payment.succeeded":
+            return GatewayEvent(eid, kind, ref, ref, "succeeded")
+        if kind == "payment.failed":
+            return GatewayEvent(eid, kind, ref, None, "failed")
+        if kind == "refund.succeeded":
+            return GatewayEvent(eid, kind, None, payload.get("charge_reference"), "refunded")
+        return None
+
+    async def refund(self, payment_ref: str, amount_paise: int) -> str:
+        try:
+            r = await self.gw.refund(self._p.RefundRequest(charge_reference=payment_ref, amount_minor=amount_paise,
+                                                           idempotency_key=f"vyapar-refund-{payment_ref}-{uuid.uuid4().hex[:8]}"))
+        except self._p.PaymentsError as exc:
+            raise GatewayUnavailable(str(exc) or type(exc).__name__) from exc
+        return r.reference
+
+    async def fetch_outcome(self, gateway_order_ref: str) -> str | None:
+        status = await self.gw.get_charge_status(gateway_order_ref)
+        return {"succeeded": "succeeded", "failed": "failed", "cancelled": "failed"}.get(status or "")
+
+
+def get_gateway() -> RazorpayGateway | DevSandboxGateway | SharedLibraryGateway:
+    name = get_settings().payment_gateway
+    if name.startswith("shared:"):
+        return SharedLibraryGateway(name.removeprefix("shared:"))
+    return RazorpayGateway() if name == "razorpay" else DevSandboxGateway()

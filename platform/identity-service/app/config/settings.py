@@ -43,6 +43,8 @@ class Settings(BaseSettings):
         "http://localhost:3001",
         # Vyapar (MOD01), which follows the member's ForKhatri language.
         "http://localhost:3011",
+        # Counsel (MOD04)
+        "http://localhost:3014",
     ]
 
     session_cookie_name: str = "fk_session"
@@ -69,8 +71,14 @@ class Settings(BaseSettings):
     dev_expose_otp: bool = True
     # [TR19] console = log the code (development only); disabled = the channel is
     # not offered (`503 delivery_unavailable`); resend = Resend's HTTP email API.
-    sms_provider: Literal["console", "disabled"] = "console"
-    email_provider: Literal["console", "disabled", "resend"] = "console"
+    # shared = ForKhatri's shared messaging library (shared/forkhatri-integrations);
+    # SHARED_SMS_SENDER / SHARED_EMAIL_SENDER name its adapter (a vendor once registered there).
+    sms_provider: Literal["console", "disabled", "shared"] = "console"
+    email_provider: Literal["console", "disabled", "resend", "shared"] = "console"
+    shared_sms_sender: str = "disabled"
+    shared_email_sender: str = "disabled"
+    # India's DLT-registered template id for the sign-in SMS (needed by every Indian SMS vendor).
+    sms_dlt_template_id: str = ""
     resend_api_key: str = ""
     resend_api_url: str = "https://api.resend.com/emails"
     # "ForKhatri <no-reply@example.in>"; the domain must be verified in Resend.
@@ -103,6 +111,7 @@ class Settings(BaseSettings):
         "mangaly": "CHANGE_ME_dev_mangaly_service_key",
         "milavn": "CHANGE_ME_dev_milavn_service_key",
         "vyapar": "CHANGE_ME_dev_vyapar_service_key",
+        "counsel": "CHANGE_ME_dev_counsel_service_key",
     }
     services_receiving_identifiers: list[str] = ["mangaly"]
 
@@ -110,6 +119,7 @@ class Settings(BaseSettings):
         "mangaly": "http://localhost:3000",
         "milavn": "http://localhost:3001",
         "vyapar": "http://localhost:3011",
+        "counsel": "http://localhost:3014",
     }
 
     # Members dashboard (GET /v1/insights, open to every signed-in member).

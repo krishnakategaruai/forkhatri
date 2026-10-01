@@ -75,6 +75,11 @@ class Settings(BaseSettings):
     razorpay_key_id: str = "CHANGE_ME_razorpay_key_id"
     razorpay_key_secret: str = "CHANGE_ME_razorpay_key_secret"
     payment_webhook_secret: str = "CHANGE_ME_dev_payment_webhook_secret"
+    # "shared:<adapter>" in PAYMENT_GATEWAY routes payments through ForKhatri's shared
+    # integrations library (shared/forkhatri-integrations), e.g. shared:payment_services
+    # for the future MOD06. These two are only read by shared:payment_services.
+    payment_services_url: str = "http://localhost:8016"
+    payment_services_key: str = "CHANGE_ME"
 
     # System principal for scheduled jobs / verified webhooks that must write
     # notifications (the same operator context the existing jobs use).

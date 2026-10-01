@@ -175,8 +175,65 @@ class HttpPaymentServices:
         return Refund(str(data["reference"]), data.get("status") == "succeeded")
 
 
+class SharedLibraryPaymentServices:
+    """payments_provider = "shared:<adapter>": the same three calls through ForKhatri's shared
+    payments library (shared/forkhatri-integrations), which every module uses, so one vendor
+    adapter (or MOD06) serves all of them. Opt-in; the adapters above are unchanged."""
+
+    def __init__(self, s: Settings, adapter: str) -> None:
+        from forkhatri_integrations import payments as shared
+
+        self._p = shared
+        self.gw = shared.get_gateway(
+            adapter, allow_sandbox=s.payments_sandbox_allowed, webhook_secret=s.payment_services_webhook_key,
+            base_url=s.payment_services_url, service_name=s.platform_service_name, service_key=s.payment_services_key,
+        )
+        self.name = f"shared:{self.gw.name}"
+        self.configured = self.gw.configured
+
+    async def create_charge(
+        self, *, idempotency_key: str, payer_member_id: UUID, amount_paise: int, description: str, return_url: str, metadata: dict[str, str]
+    ) -> Charge:
+        try:
+            c = await self.gw.create_charge(self._p.ChargeRequest(
+                idempotency_key=idempotency_key, payer_id=str(payer_member_id), amount_minor=amount_paise, currency=CURRENCY,
+                purpose=PURPOSE, description=description[:140], return_url=return_url, metadata=metadata))
+        except self._p.PaymentsNotConfigured as exc:
+            raise PaymentsNotConfigured from exc
+        except self._p.PaymentsError as exc:
+            raise PaymentsUnavailable(str(exc)) from exc
+        return Charge(c.reference, c.checkout_url)
+
+    async def cancel_charge(self, *, reference: str) -> None:
+        try:
+            await self.gw.cancel_charge(reference)
+        except self._p.PaymentsNotConfigured as exc:
+            raise PaymentsNotConfigured from exc
+        except self._p.PaymentsError as exc:
+            raise PaymentsUnavailable(str(exc)) from exc
+
+    async def refund(self, *, charge_reference: str, amount_paise: int, reason: str, idempotency_key: str) -> Refund:
+        try:
+            r = await self.gw.refund(self._p.RefundRequest(charge_reference=charge_reference, amount_minor=amount_paise,
+                                                           idempotency_key=idempotency_key, reason=reason))
+        except self._p.PaymentsNotConfigured as exc:
+            raise PaymentsNotConfigured from exc
+        except self._p.PaymentsError as exc:
+            raise PaymentsUnavailable(str(exc)) from exc
+        return Refund(r.reference, r.settled)
+
+    def event_signature_ok(self, raw_body: bytes, signature: str | None) -> bool:
+        try:
+            self.gw.parse_event(raw_body, {self._p.SIGNATURE_HEADER: signature or ""})
+        except self._p.EventRejected:
+            return False
+        return True
+
+
 def get_payment_services(settings: Settings | None = None) -> PaymentServices:
     s = settings or get_settings()
+    if s.payments_provider.startswith("shared:"):
+        return SharedLibraryPaymentServices(s, s.payments_provider.removeprefix("shared:"))
     if s.payments_provider == "sandbox":
         if s.payments_sandbox_allowed:
             return SandboxPaymentServices(s.web_base_url)

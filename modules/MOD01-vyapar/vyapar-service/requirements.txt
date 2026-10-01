@@ -5,3 +5,5 @@ pydantic-settings>=2.15
 python-dotenv>=1.0
 cryptography>=50.0
 anthropic>=1.8
+# ForKhatri shared integrations (payments, messaging, delivery); used when PAYMENT_GATEWAY=shared:<adapter>
+-e ../../../shared/forkhatri-integrations

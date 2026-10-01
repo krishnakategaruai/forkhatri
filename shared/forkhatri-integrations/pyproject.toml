@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "forkhatri-integrations"
+version = "0.1.0"
+description = "ForKhatri shared integration seams: payments, messaging (SMS, WhatsApp, email, push) and outbox delivery. Standard library only."
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.setuptools.packages.find]
+include = ["forkhatri_integrations*"]

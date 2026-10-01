@@ -53,6 +53,8 @@ const SERVICES = [
   { key: "milavnWeb", dir: "modules/MOD02-milavn/milavn-web", port: 3001, kind: "web", describe: "MOD02 Milavn" },
   { key: "vyaparApi", dir: "modules/MOD01-vyapar/vyapar-service", port: 8011, kind: "api", describe: "MOD01 Vyapar API" },
   { key: "vyaparWeb", dir: "modules/MOD01-vyapar/vyapar-web", port: 3011, kind: "web", describe: "MOD01 Vyapar" },
+  { key: "counselApi", dir: "modules/MOD04-counsel/counsel-service", port: 8014, kind: "api", describe: "MOD04 Counsel API" },
+  { key: "counselWeb", dir: "modules/MOD04-counsel/counsel-web", port: 3014, kind: "web", describe: "MOD04 Counsel" },
 ];
 
 // Loopback-only services: started with everything else but never tunnelled.
@@ -83,10 +85,10 @@ const MANAGED_FILES = [
     build: (u) => [
       `CORS_ALLOWED_ORIGINS=${JSON.stringify(dedupe([
         LOCAL_URLS.entrance, "http://127.0.0.1:3100",
-        LOCAL_URLS.mangalyaWeb, LOCAL_URLS.milavnWeb, LOCAL_URLS.vyaparWeb,
-        u.entrance, u.mangalyaWeb, u.milavnWeb, u.vyaparWeb,
+        LOCAL_URLS.mangalyaWeb, LOCAL_URLS.milavnWeb, LOCAL_URLS.vyaparWeb, LOCAL_URLS.counselWeb,
+        u.entrance, u.mangalyaWeb, u.milavnWeb, u.vyaparWeb, u.counselWeb,
       ]))}`,
-      `MODULE_ENTRY_URLS=${JSON.stringify({ mangaly: u.mangalyaWeb, milavn: u.milavnWeb, vyapar: u.vyaparWeb })}`,
+      `MODULE_ENTRY_URLS=${JSON.stringify({ mangaly: u.mangalyaWeb, milavn: u.milavnWeb, vyapar: u.vyaparWeb, counsel: u.counselWeb })}`,
       `MODULE_API_URLS=${JSON.stringify({ mangaly: u.mangalyaApi, milavn: u.milavnApi })}`,
       `ADMIN_MODULE_API_URLS=${JSON.stringify({ vyapar: u.vyaparApi })}`,
     ],
@@ -143,6 +145,29 @@ const MANAGED_FILES = [
     path: "modules/MOD01-vyapar/vyapar-service/.env",
     keys: ["WEB_ORIGIN", "FORKHATRI_ENTRANCE_URL"],
     build: (u) => [`WEB_ORIGIN=${u.vyaparWeb}`, `FORKHATRI_ENTRANCE_URL=${u.entrance}`],
+  },
+  {
+    // Counsel (MOD04). REST goes through the web app's /tunnel-proxy/api (same
+    // origin, so the fk_session cookie is sent); the consultation-room
+    // WebSocket cannot be proxied by Next rewrites, so it connects straight
+    // to the API's own tunnel with a short-lived ticket instead of the cookie.
+    path: "modules/MOD04-counsel/counsel-web/.env.local",
+    keys: ["NEXT_PUBLIC_API_BASE", "NEXT_PUBLIC_WS_BASE", "NEXT_PUBLIC_IDENTITY_API", "NEXT_PUBLIC_FORKHATRI_ENTRANCE_URL"],
+    build: (u, tunneling) => [
+      `NEXT_PUBLIC_API_BASE=${tunneling ? "/tunnel-proxy/api" : u.counselApi}`,
+      `NEXT_PUBLIC_WS_BASE=${u.counselApi.replace(/^http/, "ws")}`,
+      `NEXT_PUBLIC_IDENTITY_API=${tunneling ? "/tunnel-proxy/identity" : u.identity}`,
+      `NEXT_PUBLIC_FORKHATRI_ENTRANCE_URL=${u.entrance}`,
+    ],
+  },
+  {
+    path: "modules/MOD04-counsel/counsel-service/.env",
+    keys: ["WEB_ORIGIN", "FORKHATRI_ENTRANCE_URL", "CORS_ALLOWED_ORIGINS"],
+    build: (u) => [
+      `WEB_ORIGIN=${u.counselWeb}`,
+      `FORKHATRI_ENTRANCE_URL=${u.entrance}`,
+      `CORS_ALLOWED_ORIGINS=${JSON.stringify(dedupe([LOCAL_URLS.counselWeb, "http://127.0.0.1:3014", u.counselWeb]))}`,
+    ],
   },
 ];
 
@@ -367,7 +392,7 @@ async function main() {
     // tunnel hostname to that config, since it's random every run.
     const extraEnv =
       svc.kind === "web"
-        ? { TUNNEL_DEV_ORIGIN: new URL(tunnelUrls[svc.key]).host, FORKHATRI_IDENTITY_INTERNAL_URL: LOCAL_URLS.identity }
+        ? { TUNNEL_DEV_ORIGIN: new URL(tunnelUrls[svc.key]).host, FORKHATRI_IDENTITY_INTERNAL_URL: LOCAL_URLS.identity, COUNSEL_API_INTERNAL_URL: LOCAL_URLS.counselApi }
         : {};
     serviceChildren.push(spawnService(svc, extraEnv));
     note(`${paint(32, "start")}  ${svc.key.padEnd(LABEL_WIDTH)} :${svc.port}  ${dim(svc.describe)}`);

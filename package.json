@@ -9,6 +9,7 @@
     "dev:mangalya": "node scripts/dev.mjs --only=platform,mangalya",
     "dev:milavn": "node scripts/dev.mjs --only=platform,milavn",
     "dev:vyapar": "node scripts/dev.mjs --only=platform,vyapar",
+    "dev:counsel": "node scripts/dev.mjs --only=platform,counsel",
     "dev:status": "node scripts/dev.mjs --status",
     "dev:tunnel": "node scripts/tunnel.mjs"
   },

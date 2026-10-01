@@ -27,7 +27,10 @@ router = APIRouter(prefix="/v1/payments", tags=["payments"], responses=ERROR_RES
 async def payment_webhook(request: Request) -> JSONResponse:
     raw_body = await request.body()  # raw bytes — the signature is over these, not re-serialised JSON
     status, result = await svc.process_webhook(
-        raw_body, request.headers.get("X-Razorpay-Signature"), request.headers.get("x-razorpay-event-id")
+        raw_body,
+        # X-ForKhatri-* is sent by the shared integrations library (PAYMENT_GATEWAY=shared:...).
+        request.headers.get("X-Razorpay-Signature") or request.headers.get("X-ForKhatri-Signature"),
+        request.headers.get("x-razorpay-event-id") or request.headers.get("X-ForKhatri-Event-Id"),
     )
     return JSONResponse(status_code=status, content=result)
 

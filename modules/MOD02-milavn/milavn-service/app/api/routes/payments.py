@@ -10,7 +10,7 @@ from datetime import UTC, datetime
 from typing import Annotated
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Header, HTTPException, status
+from fastapi import APIRouter, Header, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
@@ -159,13 +159,18 @@ async def tickets_mine(session: DbSession, member: CurrentMember) -> list[dict]:
 @router.post("/payments/events", status_code=200)
 async def payment_events(
     body: PaymentEvent,
+    request: Request,
     session: DbSession,
     settings: AppSettings,
     x_forkhatri_service: Annotated[str | None, Header()] = None,
     x_forkhatri_service_key: Annotated[str | None, Header()] = None,
+    x_forkhatri_signature: Annotated[str | None, Header()] = None,
 ) -> dict:
     """Service-to-service: Payment Services reports payment and refund outcomes (never called by a browser)."""
-    if not payments.verify_event_caller(settings, x_forkhatri_service, x_forkhatri_service_key):
+    provider = payments.get_payment_services(settings)
+    # With payments_provider = shared:<adapter>, events are signed by the shared library (HMAC of the raw body).
+    signed = isinstance(provider, payments.SharedLibraryPaymentServices) and provider.event_signature_ok(await request.body(), x_forkhatri_signature)
+    if not signed and not payments.verify_event_caller(settings, x_forkhatri_service, x_forkhatri_service_key):
         raise HTTPException(status_code=401, detail="unknown caller")
     if body.type not in ("payment.succeeded", "payment.failed", "refund.succeeded"):
         return {"result": "ignored"}

@@ -125,6 +125,24 @@ const PROCESSES = [
     kind: "web",
     describe: "MOD01 Vyapar (open directly — the hub still lists it as in development)",
   },
+  {
+    group: "counsel",
+    name: "counsel-api",
+    color: 32,
+    dir: "modules/MOD04-counsel/counsel-service",
+    port: 8014,
+    kind: "api",
+    describe: "MOD04 Counsel API",
+  },
+  {
+    group: "counsel",
+    name: "counsel-web",
+    color: 92,
+    dir: "modules/MOD04-counsel/counsel-web",
+    port: 3014,
+    kind: "web",
+    describe: "MOD04 Counsel",
+  },
 ];
 
 // ---------------------------------------------------------------------------

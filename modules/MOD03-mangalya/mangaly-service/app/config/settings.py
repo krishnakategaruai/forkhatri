@@ -192,6 +192,14 @@ class Settings(BaseSettings):
     razorpay_key_id: str = "CHANGE_ME"
     razorpay_key_secret: str = "CHANGE_ME"
     razorpay_webhook_secret: str = "CHANGE_ME"
+    # Opt-in: "shared:<adapter>" routes billing through ForKhatri's shared payments
+    # library (shared/forkhatri-integrations). Empty keeps the behaviour above.
+    payment_gateway: str = ""
+    payments_webhook_secret: str = "CHANGE_ME"
+    payment_services_url: str = "http://localhost:8016"
+    payment_services_key: str = "CHANGE_ME"
+    # shared:sandbox moves no money; it is refused unless this is explicitly true.
+    payments_allow_sandbox: bool = False
 
     api_debug: bool = Field(default=False)
 

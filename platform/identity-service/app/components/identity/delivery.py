@@ -10,6 +10,10 @@ Providers, chosen per channel in settings:
 - `resend` (email only): Resend's HTTP API, `POST https://api.resend.com/emails`
   with a bearer key. The challenge id is sent as `Idempotency-Key`, so a retried
   request can never deliver two different emails for one challenge.
+- `shared`: ForKhatri's shared messaging library (shared/forkhatri-integrations),
+  with the adapter named by `SHARED_SMS_SENDER` / `SHARED_EMAIL_SENDER`. This is
+  where a real SMS vendor (and any other email vendor) plugs in, once, for every
+  module. Its development-only `console` adapter is refused in production.
 
 The code and the full destination are never logged; only the masked hint is.
 """
@@ -34,11 +38,22 @@ def _provider(settings: Settings, identifier: Identifier) -> str:
     return settings.sms_provider if identifier.kind == "phone" else settings.email_provider
 
 
+def _shared_sender(settings: Settings, identifier: Identifier):
+    """The shared ForKhatri messaging sender for this identifier's channel (provider `shared`)."""
+    from forkhatri_integrations import messaging
+
+    channel = "sms" if identifier.kind == "phone" else "email"
+    name = settings.shared_sms_sender if channel == "sms" else settings.shared_email_sender
+    return messaging.get_sender(channel, name, allow_console=settings.environment != "production")
+
+
 def channel_available(settings: Settings, identifier: Identifier) -> bool:
     """False when this identifier's channel cannot deliver a code in this environment."""
     provider = _provider(settings, identifier)
     if provider == "console":
         return True
+    if provider == "shared":
+        return _shared_sender(settings, identifier).available
     if provider == "resend":
         return identifier.kind == "email" and bool(settings.resend_api_key) and bool(settings.email_from)
     return False
@@ -91,6 +106,26 @@ async def _send_resend(
     logger.info("email code sent to %s", identifier.hint())
 
 
+async def _send_shared(settings: Settings, identifier: Identifier, code: str, idempotency_key: str) -> None:
+    from forkhatri_integrations import messaging
+
+    minutes = max(1, settings.otp_ttl_seconds // 60)
+    if identifier.kind == "phone":
+        message = messaging.OutboundMessage(
+            channel="sms", to=identifier.value, idempotency_key=idempotency_key, sensitive=True,
+            body=f"{code} is your ForKhatri sign-in code. It expires in {minutes} minutes. Never share it.",
+            template_id=settings.sms_dlt_template_id, template_params=(code, str(minutes)))
+    else:
+        subject, text, html = _email_body(code, minutes)
+        message = messaging.OutboundMessage(channel="email", to=identifier.value, idempotency_key=idempotency_key,
+                                            sensitive=True, subject=subject, body=text, html=html)
+    result = await _shared_sender(settings, identifier).send(message)
+    if not result.ok:
+        logger.error("%s delivery to %s failed via %s: %s", message.channel, identifier.hint(), result.provider, result.error[:80])
+        raise DeliveryUnavailable(f"The {message.channel} provider could not deliver the code.")
+    logger.info("%s code sent to %s via %s", message.channel, identifier.hint(), result.provider)
+
+
 async def send_code(
     settings: Settings,
     identifier: Identifier,
@@ -105,5 +140,8 @@ async def send_code(
         return
     if provider == "resend" and channel_available(settings, identifier):
         await _send_resend(settings, identifier, code, idempotency_key, transport)
+        return
+    if provider == "shared" and channel_available(settings, identifier):
+        await _send_shared(settings, identifier, code, idempotency_key)
         return
     raise DeliveryUnavailable(f"No {identifier.kind} delivery provider is configured.")

@@ -27,7 +27,7 @@ INSERT INTO registry.module (key, name, tagline_en, tagline_hi, tagline_te, avai
    'Guidance from verified professionals when you need it.',
    'ज़रूरत पर सत्यापित विशेषज्ञों से मार्गदर्शन।',
    'అవసరమైనప్పుడు ధృవీకరించిన నిపుణుల మార్గదర్శనం.',
-   'planned', '#36c2a8', 40),
+   'available', '#36c2a8', 40),
   ('payments', 'Payment Services',
    'Everyday payments and member benefits in one place.',
    'रोज़मर्रा के भुगतान और सदस्य लाभ, एक ही जगह।',

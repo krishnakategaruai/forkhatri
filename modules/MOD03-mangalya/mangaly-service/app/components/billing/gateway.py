@@ -211,7 +211,53 @@ def razorpay_configured(settings: Settings) -> bool:
     )
 
 
+class SharedLibraryGateway:
+    """PAYMENT_GATEWAY=shared:<adapter>: billing through ForKhatri's shared payments
+    library (shared/forkhatri-integrations), which every module uses, so one vendor
+    adapter (or MOD06) serves all of them. Opt-in; the gateways above are unchanged."""
+
+    def __init__(self, settings: Settings, adapter: str) -> None:
+        from forkhatri_integrations import payments
+
+        self._p = payments
+        self.gw = payments.get_gateway(
+            adapter, allow_sandbox=settings.payments_allow_sandbox, webhook_secret=settings.payments_webhook_secret,
+            base_url=settings.payment_services_url, service_name="mangaly", service_key=settings.payment_services_key,
+        )
+        self.name = f"shared:{self.gw.name}"
+
+    async def create_order(
+        self, *, order_id: UUID, amount_paise: int, currency: str, notes: dict[str, str]
+    ) -> GatewayOrder:
+        charge = await self.gw.create_charge(self._p.ChargeRequest(
+            idempotency_key=f"mangaly-order-{order_id}", payer_id="", amount_minor=amount_paise, currency=currency,
+            purpose="mangaly.plan", metadata=notes))
+        key_id = charge.client_payload.get("key_id")
+        return GatewayOrder(gateway=self.name, gateway_order_id=charge.reference, amount_paise=amount_paise,
+                            currency=currency, key_id=str(key_id) if key_id else None)
+
+    def verify_payment_signature(
+        self, *, gateway_order_id: str, gateway_payment_id: str, signature: str
+    ) -> bool:
+        return self.gw.verify_return(gateway_order_id, {"result": "success", "payment_id": gateway_payment_id, "signature": signature})
+
+    def parse_webhook(self, *, raw_body: bytes, headers: dict[str, str]) -> WebhookEvent:
+        try:
+            ev = self.gw.parse_event(raw_body, headers)
+        except self._p.EventRejected as exc:
+            raise WebhookRejected(str(exc)) from exc
+        if ev is None:
+            return WebhookEvent(event_id=hashlib.sha256(raw_body).hexdigest(), event_type="ignored",
+                                gateway_order_id=None, gateway_payment_id=None, payload={})
+        # Mapped onto the event names billing already acts on.
+        kind = {"payment.succeeded": "payment.captured", "payment.failed": "payment.failed"}.get(ev.type, ev.type)
+        return WebhookEvent(event_id=ev.event_id, event_type=kind, gateway_order_id=ev.charge_reference or ev.reference,
+                            gateway_payment_id=ev.reference, payload=dict(ev.raw))
+
+
 def gateway_for(settings: Settings) -> PaymentGateway:
+    if settings.payment_gateway.startswith("shared:"):
+        return SharedLibraryGateway(settings, settings.payment_gateway.removeprefix("shared:"))
     if razorpay_configured(settings):
         return RazorpayGateway(
             key_id=settings.razorpay_key_id,
