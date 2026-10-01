@@ -74,3 +74,71 @@
 .wedding__ordered { margin: 12px 0 0; }
 .wedding__credit { margin: 4px 0 0; }
 .wedding__credit a { color: inherit; }
+
+/* Place cards: the photo beside the words (most photos show the kind of
+   place, not this one, so they stay modest), share in the card's corner. */
+.wcards { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+@media (min-width: 720px) { .wcards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.wcard {
+  position: relative; overflow: hidden; border-radius: var(--radius-lg);
+  background: var(--surface); border: 1px solid var(--line);
+  display: grid; grid-template-columns: 116px minmax(0, 1fr);
+}
+.wcard--partner { border-color: var(--gold); }
+.wcard__media { position: relative; min-height: 140px; background: var(--line); }
+.wcard__media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.wcard__media::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.55), transparent 45%);
+}
+.wcard__rep {
+  position: absolute; z-index: 1; left: 6px; right: 6px; bottom: 6px;
+  font-size: 0.625rem; line-height: 1.2; color: rgba(255, 255, 255, 0.9); text-decoration: none;
+}
+.wcard__badge {
+  position: absolute; z-index: 1; top: 8px; left: 8px;
+  display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px;
+  font-size: 0.6875rem; font-weight: 600; background: var(--gold); color: var(--on-gold, #1a0708);
+}
+.wcard__share {
+  position: absolute; z-index: 1; top: 6px; right: 6px;
+  width: 40px; height: 40px; border-radius: 50%; border: 0; cursor: pointer;
+  display: grid; place-items: center; background: none; color: var(--gold-ink, var(--ink));
+}
+.wcard__body { display: grid; align-content: start; gap: 4px; padding: 12px 44px 10px 14px; min-width: 0; }
+.wcard__name { font-family: var(--font-serif); font-size: 1.1875rem; line-height: 1.2; color: var(--ink); overflow-wrap: anywhere; }
+:root:lang(te) .wcard__name, :root:lang(hi) .wcard__name { font-size: 1.0625rem; }
+.wcard__offer { font-weight: 600; color: var(--gold-ink, var(--ink)); }
+.wcard__meta {
+  font-size: 0.8125rem; color: var(--ink-3); overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.wcard .wplace__actions { margin-top: 2px; gap: 2px 14px; }
+.wplace__act { background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
+
+.wcredits { margin-top: 8px; font-size: 0.75rem; color: var(--ink-3); }
+.wcredits summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; }
+.wcredits ul { margin: 4px 0 0; padding-left: 1.1em; display: grid; gap: 4px; }
+.wcredits a { color: inherit; }
+
+/* The share sheet. */
+.wshare__place { display: flex; align-items: center; gap: 6px; margin: -4px 0 0; }
+.wshare__list { list-style: none; margin: 0 0 4px; padding: 0; display: grid; gap: 6px; }
+.wshare__row {
+  width: 100%; min-height: 60px; display: flex; align-items: center; gap: 12px;
+  padding: 8px 10px; border-radius: var(--radius-md); cursor: pointer; text-align: left;
+  border: 1px solid var(--line); background: none; color: var(--ink); font: inherit;
+}
+.wshare__row:disabled { opacity: 0.6; }
+.wshare__icon {
+  width: 40px; height: 40px; flex: none; border-radius: 50%; display: grid; place-items: center;
+  border: 1px solid var(--line-2, var(--line)); color: var(--gold-ink, var(--ink));
+}
+.wshare__text { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.wshare__name { font-weight: 600; overflow-wrap: anywhere; }
+.wshare__sub { font-size: 0.8125rem; color: var(--ink-3); }
+.wshare__go { flex: none; font-size: 0.875rem; font-weight: 600; color: var(--gold-ink, var(--ink)); }
+.wshare__native { width: 100%; }
+.wshare__done { display: grid; gap: 10px; }
+.wshare__done p { margin: 0; font-size: 1rem; }
+.wshare__error { color: var(--danger); margin: 0; }

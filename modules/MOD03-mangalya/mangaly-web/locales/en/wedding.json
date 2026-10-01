@@ -56,9 +56,34 @@
     "noTown": "Add your town to your profile to see places near you.",
     "ordered": "How this list is ordered: nearest first, with places that are vegetarian or list their phone, website and hours moved a little higher. For a first meeting, street stalls and fast food are left out. Nobody pays to appear here. Partner offers are shown separately and always marked.",
     "credit": "Places © OpenStreetMap contributors",
-    "updated": "List updated {{date}}"
+    "updated": "List updated {{date}}",
+    "representative": "Representative photo",
+    "photoCredit": "Photo: Wikimedia Commons",
+    "photoCredits": "Photo credits"
   },
   "guide": "Read: the first meeting between families",
   "error": "We couldn't load this. Please try again.",
-  "notAvailable": "This match is not available any more."
+  "notAvailable": "This match is not available any more.",
+  "share": {
+    "button": "Share {{name}}",
+    "short": "Share",
+    "title": "Share this place",
+    "yourSide": "Your family",
+    "candidate": "the one getting married",
+    "noFamily": "No one from your family is on Mangalya yet. Add them in Circle.",
+    "together": "Together",
+    "bothFamilies": "Both families' chat",
+    "bothFamiliesSub": "Everyone from both Home Circles",
+    "matchSub": "Your private chat",
+    "send": "Send",
+    "sent": "Sent to {{name}}.",
+    "openChat": "Open the chat",
+    "more": "Send to someone else",
+    "otherApps": "Share with another app",
+    "failed": "We couldn't send it. Please try again."
+  },
+  "chat": {
+    "openMap": "Open map",
+    "sharedPlace": "Shared place"
+  }
 }

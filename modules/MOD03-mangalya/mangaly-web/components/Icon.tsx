@@ -38,6 +38,7 @@ import {
   PencilSimple,
   Plus,
   SealCheck,
+  ShareNetwork,
   SquaresFour,
   User,
   UserPlus,
@@ -79,6 +80,7 @@ const SET = {
   web: Globe,
   play: PlayCircle,
   offer: Tag,
+  share: ShareNetwork,
 } as const;
 
 export type IconName = keyof typeof SET;

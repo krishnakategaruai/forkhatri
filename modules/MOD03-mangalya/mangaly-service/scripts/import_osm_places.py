@@ -21,7 +21,9 @@ import asyncio
 import json
 import math
 import os
+import re
 import sys
+import urllib.parse
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -82,15 +84,15 @@ def _address(tags: dict[str, str]) -> str | None:
 
 _UPSERT = """INSERT INTO mangaly_wedding.osm_place
      (osm_ref, category, name, latitude, longitude, city, address, cuisine,
-      vegetarian, phone, website, opening_hours, names, imported_at)
-   VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb, now())
+      vegetarian, phone, website, opening_hours, names, photo, imported_at)
+   VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14, now())
    ON CONFLICT (osm_ref) DO UPDATE SET
      category = EXCLUDED.category, name = EXCLUDED.name,
      latitude = EXCLUDED.latitude, longitude = EXCLUDED.longitude,
      city = EXCLUDED.city, address = EXCLUDED.address, cuisine = EXCLUDED.cuisine,
      vegetarian = EXCLUDED.vegetarian, phone = EXCLUDED.phone,
      website = EXCLUDED.website, opening_hours = EXCLUDED.opening_hours,
-     names = EXCLUDED.names, imported_at = now()"""
+     names = EXCLUDED.names, photo = EXCLUDED.photo, imported_at = now()"""
 
 
 def _row(e: dict, city: str) -> tuple | None:
@@ -118,7 +120,18 @@ def _row(e: dict, city: str) -> tuple | None:
         # The same place's name in each app language, when mappers gave it.
         json.dumps({k: tags[f"name:{k}"] for k in ("en", "hi", "te") if tags.get(f"name:{k}")})
         or None,
+        _photo(tags),
     )
+
+
+def _photo(tags: dict[str, str]) -> str | None:
+    """A Commons photo of this place ("File:…"), when OSM links one. Other
+    image links are left alone: their licence is unknown."""
+    value = tags.get("wikimedia_commons", "")
+    if value.startswith("File:"):
+        return value
+    m = re.search(r"commons\.wikimedia\.org/wiki/(File:[^?#]+)", tags.get("image", ""))
+    return urllib.parse.unquote(m.group(1)).replace("_", " ") if m else None
 
 
 async def _member_cities(conn: asyncpg.Connection) -> list[str]:

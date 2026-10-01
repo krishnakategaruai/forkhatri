@@ -6,6 +6,8 @@
  * nearest first. */
 
 import { getJson, postJson, query, type Outcome } from './api';
+import { openDirect, openFamilyConversation, sendMessage, threadHref } from './messages';
+import photoCredits from '@/public/art/wedding/credits.json';
 
 export type Stage = 'first_meeting' | 'families_agreed' | 'wedding_fixed';
 export const STAGES: Stage[] = ['first_meeting', 'families_agreed', 'wedding_fixed'];
@@ -29,6 +31,8 @@ export type PartnerPlace = {
   address: string | null;
   phone: string | null;
   website: string | null;
+  /** The partner's own photo of their place. */
+  photo: string | null;
   verified: boolean;
   offer: string | null;
   terms: string | null;
@@ -48,6 +52,9 @@ export type OsmPlace = {
   phone: string | null;
   website: string | null;
   opening_hours: string | null;
+  /** A photo of this very place (Wikimedia Commons), when OSM links one. */
+  photo: string | null;
+  photo_source: string | null;
 };
 
 export type Suggestions = {
@@ -82,4 +89,61 @@ export async function getSuggestions(
 /** Opens the exact spot in the phone's maps app (the name is on our card). */
 export function mapLink(lat: number, lon: number): string {
   return `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+}
+
+/** Representative photos per kind of place (public/art/wedding, written by
+ * mangaly-service/scripts/fetch_wedding_photos.py with each one's credit). */
+export type PhotoCredit = { author: string; license: string; license_url?: string | null; source: string };
+export const PHOTO_CREDITS = photoCredits as Record<string, PhotoCredit[]>;
+
+/** The `index`-th photo of this kind of place, taking them in turn. */
+export function categoryPhoto(category: string, index = 0): string | null {
+  const count = PHOTO_CREDITS[category]?.length ?? 0;
+  return count ? `/art/wedding/${category}-${index % count}.jpg` : null;
+}
+
+/* ---- Sharing a place with family ----------------------------------------
+ * A shared place travels as an ordinary chat message, readable anywhere
+ * (notifications, any client):
+ *   📍 Meena Garden Function Hall
+ *   Function halls · 1.1 km · Hyderabad
+ *   https://www.google.com/maps/search/?api=1&query=17.38,78.47
+ * The chat recognises that shape and draws it as a place card. */
+
+const PIN = '📍 ';
+const MAP_URL = /^https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=-?[\d.]+,-?[\d.]+$/;
+
+export function placeMessage(name: string, detail: string, lat: number, lon: number): string {
+  return [`${PIN}${name}`, detail, mapLink(lat, lon)].join("\n");
+}
+
+export type SharedPlace = { name: string; detail: string; map: string };
+
+export function parsePlaceMessage(content: string): SharedPlace | null {
+  const lines = content.split("\n");
+  if (lines.length !== 3 || !lines[0].startsWith(PIN) || !MAP_URL.test(lines[2].trim())) return null;
+  return { name: lines[0].slice(PIN.length).trim(), detail: lines[1].trim(), map: lines[2].trim() };
+}
+
+export type ShareTarget =
+  | { kind: 'direct'; accountId: string }
+  | { kind: 'family'; connectionId: string }
+  | { kind: 'candidate'; connectionId: string };
+
+/** Send the place into the right chat; returns where that chat lives. */
+export async function sharePlace(target: ShareTarget, text: string): Promise<string | null> {
+  if (target.kind === 'direct') {
+    const opened = await openDirect(target.accountId);
+    if (!opened.ok || !opened.data) return null;
+    const sent = await sendMessage(opened.data.conversation_id, text, 'direct');
+    return sent.ok ? threadHref(opened.data.conversation_id, 'direct') : null;
+  }
+  if (target.kind === 'family') {
+    // Opening is idempotent: it returns the families' chat if it is already open.
+    await openFamilyConversation(target.connectionId);
+    const sent = await sendMessage(target.connectionId, text, 'family');
+    return sent.ok ? threadHref(target.connectionId, 'family') : null;
+  }
+  const sent = await sendMessage(target.connectionId, text, 'candidate');
+  return sent.ok ? threadHref(target.connectionId, 'candidate') : null;
 }

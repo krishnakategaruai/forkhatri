@@ -24,6 +24,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Final
+from urllib.parse import quote
 from uuid import UUID
 
 from sqlalchemy import text
@@ -58,6 +59,17 @@ _CASUAL: Final = re.compile(
     r"|juice|chaat|pan shop|tiffin|\bkiosk\b|tea ?point|chai ?point",
     re.IGNORECASE,
 )
+
+
+def _commons_photo(file: str | None) -> dict[str, str | None]:
+    """A place's own Commons photo at card size, and the page that credits it."""
+    if not file or not file.startswith("File:"):
+        return {"photo": None, "photo_source": None}
+    name = quote(file[5:].replace(" ", "_"))
+    return {
+        "photo": f"https://commons.wikimedia.org/wiki/Special:FilePath/{name}?width=640",
+        "photo_source": f"https://commons.wikimedia.org/wiki/File:{name}",
+    }
 
 
 def _place_name(name: str, names: Any, lang: str) -> str:
@@ -279,6 +291,7 @@ async def suggestions(
         await session.execute(
             text(
                 "SELECT p.id, p.name, p.latitude, p.longitude, p.address, p.phone, p.website,"
+                " p.photo_url,"
                 " p.verified_at, o.title, o.terms, o.discount_percent, o.valid_until"
                 " FROM mangaly_wedding.partner p"
                 " JOIN mangaly_wedding.partner_offer o ON o.partner_id = p.id AND o.active"
@@ -305,6 +318,7 @@ async def suggestions(
                 "address": r["address"],
                 "phone": r["phone"],
                 "website": r["website"],
+                "photo": r["photo_url"],
                 "verified": r["verified_at"] is not None,
                 "offer": _text(r["title"], lang),
                 "terms": _text(r["terms"], lang),
@@ -319,7 +333,7 @@ async def suggestions(
         await session.execute(
             text(
                 "SELECT osm_ref, name, names, latitude, longitude, address, cuisine,"
-                " vegetarian, phone,"
+                " vegetarian, phone, photo,"
                 " website, opening_hours, imported_at FROM mangaly_wedding.osm_place"
                 " WHERE category = :cat"
                 "  AND latitude BETWEEN :lat0 AND :lat1 AND longitude BETWEEN :lon0 AND :lon1"
@@ -347,6 +361,7 @@ async def suggestions(
                 "phone": r["phone"],
                 "website": r["website"],
                 "opening_hours": r["opening_hours"],
+                **_commons_photo(r["photo"]),
             }
         )
     found.sort(key=_rank)

@@ -26,6 +26,7 @@ import {
 } from "@/lib/messages";
 import { viewProfile } from "@/lib/profile";
 import { REPORT_REASONS, block } from "@/lib/safety";
+import MessageText from "@/components/MessageText";
 
 /* FR049/FR050 · UX21 · DEC-V1-018/021/024/026 — one thread screen, three kinds.
  *
@@ -527,7 +528,7 @@ export default function ThreadPage() {
                         },
                       )}
                     >
-                      {m.content}
+                      <MessageText content={m.content} />
                     </div>
                     {!joinsBelow && (
                       <span className="msg__time">{clockTime(m.sent_at, language)}</span>

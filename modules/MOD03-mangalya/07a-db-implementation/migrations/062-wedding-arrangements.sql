@@ -54,6 +54,8 @@ CREATE TABLE IF NOT EXISTS mangaly_wedding.osm_place (
   imported_at    timestamptz NOT NULL DEFAULT now()
 );
 ALTER TABLE mangaly_wedding.osm_place ADD COLUMN IF NOT EXISTS names jsonb;
+-- A Wikimedia Commons file of this very place, when OSM links one ("File:…").
+ALTER TABLE mangaly_wedding.osm_place ADD COLUMN IF NOT EXISTS photo text;
 CREATE INDEX IF NOT EXISTS idx_osm_place_category_city
   ON mangaly_wedding.osm_place (category, city);
 GRANT SELECT ON mangaly_wedding.osm_place TO mangaly_app;
@@ -72,6 +74,8 @@ CREATE TABLE IF NOT EXISTS mangaly_wedding.partner (
   active         boolean NOT NULL DEFAULT true,
   created_at     timestamptz NOT NULL DEFAULT now()
 );
+-- The partner's own photo of their place, uploaded when they join.
+ALTER TABLE mangaly_wedding.partner ADD COLUMN IF NOT EXISTS photo_url text;
 CREATE INDEX IF NOT EXISTS idx_partner_category_city
   ON mangaly_wedding.partner (category, city) WHERE active;
 
