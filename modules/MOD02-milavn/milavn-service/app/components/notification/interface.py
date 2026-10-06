@@ -396,11 +396,8 @@ async def _on_circle_announcement(event: DomainEvent) -> None:
         body = (
             await s.execute(text("SELECT milavn_circle.announcement_text(:p)"), {"p": str(post_id)})
         ).scalar_one_or_none() or ""
-        member_ids = (await s.execute(text("SELECT milavn_circle.active_member_ids(:c)"), {"c": str(circle_id)})).scalar_one()
-        for m in member_ids or []:
-            if str(m) == str(poster):
-                continue
-            lang = (await s.execute(text("SELECT milavn_profile.language_of(:m)"), {"m": str(m)})).scalar_one_or_none() or "en"
+        # [053] An announcement is a highlight: everyone but those who switched this circle off.
+        for m, lang in await _circle_recipients(s, circle_id, poster, highlight=True):
             await deliver(
                 s,
                 member_id=m,
@@ -532,7 +529,11 @@ async def _on_circle_suggestion(event: DomainEvent) -> None:
 
 
 async def _on_created(event: DomainEvent) -> None:
-    """[FR054] Opportunity-class: new activity for circle members (circle-scoped) — kept to circle members only."""
+    """[FR054] Opportunity-class: new activity for circle members (circle-scoped) — kept to circle members only.
+    [053] A new event is a highlight: members who switched the circle off are not told; each hears it in
+    their own language."""
+    from app.i18n import translate
+
     circle_id = event.payload.get("circle_id")
     if not circle_id:
         return
@@ -542,19 +543,180 @@ async def _on_created(event: DomainEvent) -> None:
         if brief is None:
             return
         title, slug, _members, creator = brief
-        ids = (await s.execute(text("SELECT milavn_circle.active_member_ids(:c)"), {"c": str(circle_id)})).scalar_one()
-        for m in list(ids or []):
-            if m == creator:
-                continue
+        name = (await s.execute(text("SELECT milavn_circle.circle_name(:c)"), {"c": str(circle_id)})).scalar_one_or_none() or ""
+        for m, lang in await _circle_recipients(s, circle_id, creator, highlight=True):
             await deliver(
                 s,
                 member_id=m,
                 notification_class="opportunity",
-                title=f"New in your circle: {title}",
-                body="Something new was planned in one of your circles.",
+                title=translate("notify.circleEvent.title", lang, title=title),
+                body=translate("notify.circleEvent.body", lang, circle=name),
                 deep_link=f"/a/{slug}",
                 occurrence_id=event.aggregate_id,
             )
+
+
+# --- [053] Circle activity: posts (grouped), questions, co-hosting -------------------------------
+
+
+async def _circle_recipients(s: AsyncSession, circle_id, actor, *, highlight: bool) -> list[tuple[UUID, str]]:  # noqa: ANN001
+    """Active members who should hear about something in this circle, with their language: never
+    the person who did it, never across a block, and only as far as each one's own setting allows."""
+    rows = (
+        await s.execute(
+            text("SELECT member_id, lang FROM milavn_circle.circle_notify_recipients(:c, :a, :h)"),
+            {"c": str(circle_id), "a": str(actor) if actor else None, "h": highlight},
+        )
+    ).all()
+    return [(r[0], r[1] or "en") for r in rows]
+
+
+def _snippet(body: str, limit: int = 140) -> str:
+    body = " ".join((body or "").split())
+    return body if len(body) <= limit else body[: limit - 1] + "…"
+
+
+async def _on_circle_post(event: DomainEvent) -> None:
+    """A new post reaches members whose setting is "all". Bursts are grouped: one unread
+    "N new posts in <circle>" entry per person, and at most one push an hour (deliver_grouped)."""
+    from app.i18n import translate
+
+    circle_id = event.payload.get("circle_id")
+    post_id = event.payload.get("post_id")
+    if not circle_id or not post_id:
+        return
+    factory = get_process_session_factory()
+    async with factory() as s, s.begin():
+        row = (await s.execute(text("SELECT member_id, body, photos, docs FROM milavn_circle.post_brief(:p)"), {"p": str(post_id)})).first()
+        name = (await s.execute(text("SELECT milavn_circle.circle_name(:c)"), {"c": str(circle_id)})).scalar_one_or_none()
+        if row is None or not name:
+            return
+        author, body, photos, docs = row
+        who = (await identity.display_names_for([author]))[author].display_name.split(" ")[0]
+        for m, lang in await _circle_recipients(s, circle_id, author, highlight=False):
+            if body:
+                text_body = f"{who}: {_snippet(body)}"
+            elif photos:
+                text_body = translate("notify.circlePost.photos", lang, who=who, n=photos)
+            else:
+                text_body = translate("notify.circlePost.files", lang, who=who, n=docs)
+            await s.execute(
+                text("SELECT milavn_notification.deliver_grouped(:m, 'social', :t1, :tn, :b, :d, :k)"),
+                {
+                    "m": str(m),
+                    "t1": translate("notify.circlePost.titleOne", lang, who=who, circle=name),
+                    # '{n}' stays in the text: deliver_grouped puts the running count there.
+                    "tn": translate("notify.circlePost.titleMany", lang, circle=name, n="{n}"),
+                    "b": text_body,
+                    "d": f"/circles/{circle_id}",
+                    "k": f"circle-posts:{circle_id}",
+                },
+            )
+
+
+async def _on_poll(event: DomainEvent) -> None:
+    """A new question, or a settled one (with what was decided): highlights."""
+    from app.i18n import translate
+
+    circle_id = event.payload.get("circle_id")
+    poll_id = event.payload.get("poll_id")
+    if not circle_id or not poll_id:
+        return
+    closed = event.event_type == "poll.closed"
+    factory = get_process_session_factory()
+    async with factory() as s, s.begin():
+        row = (await s.execute(text("SELECT created_by, question, top_label, top_votes FROM milavn_circle.poll_brief(:p)"), {"p": str(poll_id)})).first()
+        name = (await s.execute(text("SELECT milavn_circle.circle_name(:c)"), {"c": str(circle_id)})).scalar_one_or_none()
+        if row is None or not name:
+            return
+        asker, question, top, votes = row
+        for m, lang in await _circle_recipients(s, circle_id, asker, highlight=True):
+            if closed:
+                head = translate("notify.circlePoll.closedTitle", lang, circle=name)
+                body = translate("notify.circlePoll.closedBody", lang, question=_snippet(question, 100), answer=top) if top and votes else _snippet(question, 200)
+            else:
+                head = translate("notify.circlePoll.title", lang, circle=name)
+                body = _snippet(question, 200)
+            await deliver(s, member_id=m, notification_class="useful", title=head, body=body, deep_link=f"/circles/{circle_id}", occurrence_id=None)
+
+
+async def _on_cohost_invited(event: DomainEvent) -> None:
+    """The invited circle's organizer is asked, in their own language."""
+    from app.i18n import translate
+
+    circle_id = event.payload.get("circle_id")
+    actor = event.payload.get("member_id")
+    if not circle_id:
+        return
+    factory = get_process_session_factory()
+    async with factory() as s, s.begin():
+        ev = (await s.execute(text("SELECT title, slug FROM milavn_activity.cohost_event_brief(:o)"), {"o": str(event.aggregate_id)})).first()
+        name = (await s.execute(text("SELECT milavn_circle.circle_name(:c)"), {"c": str(circle_id)})).scalar_one_or_none()
+        if ev is None or not name:
+            return
+        who = (await identity.display_names_for([UUID(str(actor))]))[UUID(str(actor))].display_name if actor else ""
+        organizers = (await s.execute(text("SELECT milavn_circle.circle_organizer_ids(:c)"), {"c": str(circle_id)})).scalar_one() or []
+        for o in organizers:
+            if str(o) == str(actor):
+                continue
+            role = (await s.execute(text("SELECT milavn_circle.current_role_of(:c, :m)"), {"c": str(circle_id), "m": str(o)})).scalar_one_or_none()
+            if role != "organizer":
+                continue
+            lang = (await s.execute(text("SELECT milavn_profile.language_of(:m)"), {"m": str(o)})).scalar_one_or_none() or "en"
+            await deliver(
+                s,
+                member_id=o,
+                notification_class="important",
+                title=translate("notify.cohostInvite.title", lang, who=who, circle=name),
+                body=translate("notify.cohostInvite.body", lang, title=ev[0]),
+                deep_link=f"/circles/{circle_id}",
+                occurrence_id=event.aggregate_id,
+            )
+
+
+async def _on_cohost_accepted(event: DomainEvent) -> None:
+    """Co-hosting is on: the event's host is told; both circles' members hear about the event
+    (a highlight), the person who accepted excepted."""
+    from app.i18n import translate
+
+    circle_id = event.payload.get("circle_id")
+    actor = event.payload.get("member_id")
+    if not circle_id:
+        return
+    factory = get_process_session_factory()
+    async with factory() as s, s.begin():
+        ev = (await s.execute(text("SELECT title, slug, host_circle_id, creator FROM milavn_activity.cohost_event_brief(:o)"), {"o": str(event.aggregate_id)})).first()
+        name = (await s.execute(text("SELECT milavn_circle.circle_name(:c)"), {"c": str(circle_id)})).scalar_one_or_none()
+        if ev is None or not name:
+            return
+        title, slug, host_circle, creator = ev
+        host_name = (await s.execute(text("SELECT milavn_circle.circle_name(:c)"), {"c": str(host_circle)})).scalar_one_or_none() if host_circle else None
+        told: set[str] = {str(actor)} if actor else set()
+        if creator and str(creator) not in told:
+            lang = (await s.execute(text("SELECT milavn_profile.language_of(:m)"), {"m": str(creator)})).scalar_one_or_none() or "en"
+            await deliver(
+                s, member_id=creator, notification_class="useful",
+                title=translate("notify.cohostAccepted.title", lang, circle=name),
+                body=translate("notify.cohostAccepted.body", lang, title=title),
+                deep_link=f"/a/{slug}", occurrence_id=event.aggregate_id,
+            )
+            told.add(str(creator))
+        # The co-hosting circle's members hear about the event (new to them); the host circle's
+        # members already heard about it when it was planned, so they hear who joined in.
+        for target, is_host in ((circle_id, False), (host_circle, True)):
+            if not target:
+                continue
+            for m, lang in await _circle_recipients(s, target, actor, highlight=True):
+                if str(m) in told:
+                    continue
+                told.add(str(m))
+                if is_host:
+                    head = translate("notify.cohostJoined.title", lang, circle=name, title=title)
+                    body = translate("notify.cohostJoined.body", lang)
+                else:
+                    head = translate("notify.circleEvent.title", lang, title=title)
+                    body = translate("notify.cohostEvent.body", lang, circle=host_name) if host_name else translate("notify.circleEvent.body", lang, circle=name)
+                await deliver(s, member_id=m, notification_class="opportunity", title=head, body=body, deep_link=f"/a/{slug}", occurrence_id=event.aggregate_id)
 
 
 def _rupees(paise: int) -> str:
@@ -614,6 +776,12 @@ def register_subscribers() -> None:
     bus.subscribe("circle_group.update_posted", _on_group_update_posted)
     bus.subscribe("circle.announcement_posted", _on_circle_announcement)
     bus.subscribe("occurrence.created", _on_created)
+    # [053] Circle activity and co-hosting.
+    bus.subscribe("circle.post_created", _on_circle_post)
+    bus.subscribe("poll.created", _on_poll)
+    bus.subscribe("poll.closed", _on_poll)
+    bus.subscribe("cohost.invited", _on_cohost_invited)
+    bus.subscribe("cohost.accepted", _on_cohost_accepted)
 
 
 REMINDER_KINDS = ("three_days", "still_coming", "two_hours")

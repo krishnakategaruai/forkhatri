@@ -25,11 +25,12 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.components.authorization import interface as authz
+from app.components.places.interface import approximate_centre
 from app.components.trust import interface as trust
 from app.db.session import set_internal_service_context
 from app.events import bus
 
-INTENT_CATEGORIES = ("play", "meet", "eat", "learn", "work", "explore", "celebrate", "help")
+INTENT_CATEGORIES = ("play", "meet", "eat", "learn", "work", "explore", "celebrate", "help", "professional")
 VISIBILITY_SCOPES = ("public", "community", "circle", "organization", "personal")
 ACTIVE_STATUSES = ("interested", "going", "waitlisted", "checked_in", "attended")
 
@@ -97,6 +98,12 @@ class Occurrence:
     audience_tags: tuple[str, ...] = ()  # [FR110]
     food_tags: tuple[str, ...] = ()  # [FR110]
     max_guests_per_member: int = 0  # [FR114] how many extra people each person may bring (0 = none)
+    locality_state: str | None = None  # approximate place: the state, and the centre of the chosen area (never an address)
+    locality_lat: float | None = None
+    locality_lng: float | None = None
+    attendance_mode: str = "in_person"  # in_person | online | hybrid
+    event_format: str | None = None  # [054] workshop | webinar | tournament ... (separate from the category)
+    team_size_max: int | None = None  # [054] tournaments: most people in one team, captain included; None = no teams
 
 
 _OCC_COLS = """
@@ -104,7 +111,8 @@ _OCC_COLS = """
     o.time_start, o.time_end, o.locality_city, o.locality_zone, o.locality_locality, o.capacity,
     o.cover_image_media_id, o.high_risk, o.visibility_scope::text, o.circle_id, o.organization_scope_id,
     o.canonical_url_slug, o.status::text, o.cancelled_at, o.created_at, a.recurrence_rule,
-    o.price_paise, o.refund_cutoff_hours, o.audience_tags, o.food_tags, o.max_guests_per_member
+    o.price_paise, o.refund_cutoff_hours, o.audience_tags, o.food_tags, o.max_guests_per_member,
+    o.locality_state, o.locality_lat, o.locality_lng, o.attendance_mode, o.event_format, o.team_size_max
 """
 AUDIENCE_TAGS = ("family_friendly", "elder_friendly", "beginner_friendly")
 FOOD_TAGS = ("veg", "jain_options", "non_veg", "alcohol_free")
@@ -117,6 +125,47 @@ def invalid_tags(audience_tags: list[str] | None, food_tags: list[str] | None) -
         bad.append("audience_tags")
     if food_tags is not None and (any(t not in FOOD_TAGS for t in food_tags) or {"veg", "non_veg"} <= set(food_tags)):
         bad.append("food_tags")
+    return bad
+
+
+ATTENDANCE_MODES = ("in_person", "online", "hybrid")
+# [054] What kind of event it is. Separate from the category (what it is about): a "learn" event can be a workshop,
+# a talk or a bootcamp. Bootcamps, conferences, expos, festivals, tournaments and trips often run over several days.
+EVENT_FORMATS = (
+    "workshop", "webinar", "talk", "panel", "masterclass", "book_club", "skill_share", "office_hours", "bootcamp", "conference",
+    "expo", "cultural_night", "tournament", "festival", "satsang", "darshan_stream", "town_hall", "volunteering", "trip", "meetup",
+)
+MAX_EVENT_DAYS = 31  # a multi-day event (one booking covers every day) lasts at most this long
+TEAM_SIZE_RANGE = (2, 50)
+
+
+def invalid_format(event_format: str | None, team_size_max: int | None, time_start: datetime | None, time_end: datetime | None) -> list[str]:
+    """[054] Format from the list; team size only for a tournament; an end after the start and within a month."""
+    bad: list[str] = []
+    if event_format is not None and event_format not in EVENT_FORMATS:
+        bad.append("event_format")
+    if team_size_max is not None and (event_format != "tournament" or not TEAM_SIZE_RANGE[0] <= team_size_max <= TEAM_SIZE_RANGE[1]):
+        bad.append("team_size_max")
+    if time_start is not None and time_end is not None and not (time_start < time_end <= time_start + timedelta(days=MAX_EVENT_DAYS)):
+        bad.append("time_end")
+    return bad
+VENUE_FIELDS = ("venue_address", "venue_notes", "join_link")
+
+
+def invalid_venue(mode: str, address: str | None, notes: str | None, link: str | None) -> list[str]:
+    """The exact venue and the join link: sizes, https only, and a link only where people can join online."""
+    bad: list[str] = []
+    if mode not in ATTENDANCE_MODES:
+        bad.append("attendance_mode")
+    if address and len(address.strip()) > 400:
+        bad.append("venue_address")
+    if notes and len(notes.strip()) > 400:
+        bad.append("venue_notes")
+    if link and link.strip():
+        if len(link.strip()) > 500 or not link.strip().lower().startswith("https://") or " " in link.strip():
+            bad.append("join_link")
+        elif mode == "in_person":
+            bad.append("join_link")
     return bad
 
 
@@ -155,6 +204,12 @@ def _row_to_occurrence(r) -> Occurrence:  # noqa: ANN001
         audience_tags=tuple(r[24] or ()),
         food_tags=tuple(r[25] or ()),
         max_guests_per_member=int(r[26] or 0),
+        locality_state=r[27],
+        locality_lat=r[28],
+        locality_lng=r[29],
+        attendance_mode=r[30],
+        event_format=r[31],
+        team_size_max=r[32],
     )
 
 
@@ -377,6 +432,15 @@ async def create(
     audience_tags: list[str] | None = None,
     food_tags: list[str] | None = None,
     max_guests_per_member: int = 0,
+    locality_state: str | None = None,
+    locality_lat: float | None = None,
+    locality_lng: float | None = None,
+    attendance_mode: str = "in_person",
+    venue_address: str | None = None,
+    venue_notes: str | None = None,
+    join_link: str | None = None,
+    event_format: str | None = None,
+    team_size_max: int | None = None,
 ) -> Occurrence:
     missing = [
         f
@@ -396,6 +460,8 @@ async def create(
     if not 0 <= refund_cutoff_hours <= REFUND_CUTOFF_MAX_HOURS:
         missing.append("refund_cutoff_hours")
     missing += invalid_tags(audience_tags, food_tags)
+    missing += invalid_venue(attendance_mode, venue_address, venue_notes, join_link)
+    missing += invalid_format(event_format, team_size_max, time_start, time_end)
     # [FR114] Guests are for free activities: a paid spot is bought per person.
     if not 0 <= max_guests_per_member <= MAX_GUESTS or (max_guests_per_member and price_paise is not None):
         missing.append("max_guests_per_member")
@@ -422,6 +488,7 @@ async def create(
         )
 
     occurrence_id = uuid4()
+    lat, lng = approximate_centre(locality_lat, locality_lng)
     await session.execute(
         text(
             """
@@ -429,12 +496,12 @@ async def create(
               (id, activity_id, creator_member_id, title, description, intent_category, time_start, time_end,
                locality_city, locality_zone, locality_locality, capacity, cover_image_media_id, high_risk,
                visibility_scope, circle_id, organization_scope_id, canonical_url_slug, price_paise, refund_cutoff_hours, audience_tags, food_tags,
-               max_guests_per_member)
+               max_guests_per_member, locality_state, locality_lat, locality_lng, attendance_mode, event_format, team_size_max)
             VALUES
               (:id, :activity_id, :creator, :title, NULLIF(:description, ''), CAST(:cat AS milavn_activity.intent_category),
                :time_start, :time_end, :city, :zone, :locality, :capacity, :cover, :high_risk,
                CAST(:scope AS milavn_activity.visibility_scope), :circle_id, :org_id, :slug, :price, :cutoff, :audience, :food,
-               :max_guests)
+               :max_guests, :state, :lat, :lng, :mode, :event_format, :team_size_max)
             """
         ),
         {
@@ -461,8 +528,18 @@ async def create(
             "audience": sorted(set(audience_tags or [])),
             "food": sorted(set(food_tags or [])),
             "max_guests": max_guests_per_member,
+            "state": locality_state or None,
+            "lat": lat,
+            "lng": lng,
+            "mode": attendance_mode,
+            "event_format": event_format,
+            "team_size_max": team_size_max,
         },
     )
+    if venue_address or venue_notes or join_link:
+        await set_venue(session, occurrence_id=occurrence_id, actor_member_id=creator_member_id, venue_address=venue_address, venue_notes=venue_notes, join_link=join_link)
+        if venue_address and attendance_mode != "online":
+            await pin_venue(session, occurrence_id=occurrence_id, actor_member_id=creator_member_id, address=venue_address, near=(lat, lng))
     # [FR030] Every item resolves to exactly one trust level from the moment it exists.
     level = await trust.resolve_organizer_level(session, member_id=creator_member_id, identity_level=creator_identity_level)
     await trust.ensure_trust(session, subject_type="occurrence", subject_id=occurrence_id, level=level)
@@ -491,6 +568,10 @@ async def update(session: AsyncSession, *, occurrence_id: UUID, actor_member_id:
         "locality_city",
         "locality_zone",
         "locality_locality",
+        "locality_state",
+        "locality_lat",
+        "locality_lng",
+        "attendance_mode",
         "capacity",
         "high_risk",
         "visibility_scope",
@@ -501,7 +582,29 @@ async def update(session: AsyncSession, *, occurrence_id: UUID, actor_member_id:
         "audience_tags",
         "food_tags",
         "max_guests_per_member",
+        "event_format",
+        "team_size_max",
     }
+    # [054] Format and team size are judged together with what is already there; a format other than tournament
+    # has no teams, and the team size never drops below the biggest team already formed.
+    if {"event_format", "team_size_max", "time_end", "time_start"} & changes.keys():
+        fmt = changes.get("event_format", before.event_format)
+        if "event_format" in changes and fmt != "tournament":
+            changes["team_size_max"] = None
+        size = changes.get("team_size_max", before.team_size_max)
+        start = changes.get("time_start") or before.time_start
+        end = changes["time_end"] if "time_end" in changes else before.time_end
+        bad_fmt = invalid_format(fmt, size, start, end)
+        if not bad_fmt and before.team_size_max is not None and size != before.team_size_max:
+            biggest = (
+                await session.execute(
+                    text("SELECT coalesce(max(size), 0) FROM milavn_activity.teams_for(:o, :a)"), {"o": str(occurrence_id), "a": str(actor_member_id)}
+                )
+            ).scalar_one()
+            if biggest and (size is None or size < biggest):
+                bad_fmt.append("team_size_max")
+        if bad_fmt:
+            raise InvalidInput(bad_fmt)
     bad_tags = invalid_tags(changes.get("audience_tags"), changes.get("food_tags"))
     if bad_tags:
         raise InvalidInput(bad_tags)
@@ -511,6 +614,11 @@ async def update(session: AsyncSession, *, occurrence_id: UUID, actor_member_id:
     for key in ("audience_tags", "food_tags"):
         if changes.get(key) is not None:
             changes[key] = sorted(set(changes[key]))
+    mode = changes.get("attendance_mode")
+    if mode is not None and mode not in ATTENDANCE_MODES:
+        raise InvalidInput(["attendance_mode"])
+    if "locality_lat" in changes or "locality_lng" in changes:
+        changes["locality_lat"], changes["locality_lng"] = approximate_centre(changes.get("locality_lat"), changes.get("locality_lng"))
     price = changes.get("price_paise")
     if price is not None and not PRICE_MIN_PAISE <= price <= PRICE_MAX_PAISE:
         raise InvalidInput(["price_paise"])
@@ -520,6 +628,8 @@ async def update(session: AsyncSession, *, occurrence_id: UUID, actor_member_id:
     sets: list[str] = []
     params: dict = {"id": str(occurrence_id)}
     for key, value in changes.items():
+        if key in VENUE_FIELDS:
+            continue
         if key not in allowed or value is None and key in ("title", "time_start", "locality_city", "refund_cutoff_hours", "audience_tags", "food_tags"):
             continue
         enum_type = {"intent_category": "milavn_activity.intent_category", "visibility_scope": "milavn_activity.visibility_scope"}.get(key)
@@ -528,12 +638,30 @@ async def update(session: AsyncSession, *, occurrence_id: UUID, actor_member_id:
         # CAST(), never `:p::type` — SQLAlchemy does not parse a bind followed by `::`.
         sets.append(f"{key} = CAST(:{key} AS {enum_type})" if enum_type else f"{key} = :{key}")
         params[key] = value
-    if not sets:
+    if mode == "in_person":
+        changes.setdefault("join_link", "")  # an in-person event has no join link
+    venue_changes = {k: changes[k] for k in VENUE_FIELDS if k in changes}
+    venue_moved = False
+    if venue_changes:
+        cur = await get_venue(session, occurrence_id=occurrence_id, member_id=actor_member_id) or {}
+        merged = {k: venue_changes.get(k, cur.get(k)) for k in VENUE_FIELDS}  # (the pin is not a venue field)
+        new_mode = changes.get("attendance_mode") or before.attendance_mode
+        if invalid_venue(new_mode, merged["venue_address"], merged["venue_notes"], merged["join_link"]):
+            raise InvalidInput(invalid_venue(new_mode, merged["venue_address"], merged["venue_notes"], merged["join_link"]))
+        address_moved = (merged["venue_address"] or "").strip() != (cur.get("venue_address") or "").strip()
+        venue_moved = address_moved or (merged["join_link"] or "").strip() != (cur.get("join_link") or "").strip()
+        await set_venue(session, occurrence_id=occurrence_id, actor_member_id=actor_member_id, **merged)
+        if merged["venue_address"] and new_mode != "online" and (address_moved or cur.get("lat") is None):
+            near_lat = changes.get("locality_lat", before.locality_lat)
+            near_lng = changes.get("locality_lng", before.locality_lng)
+            await pin_venue(session, occurrence_id=occurrence_id, actor_member_id=actor_member_id, address=merged["venue_address"], near=(near_lat, near_lng))
+    if not sets and not venue_changes:
         return before, False
     sets.append("updated_at = now()")
-    await session.execute(text(f"UPDATE milavn_activity.occurrence SET {', '.join(sets)} WHERE id = :id"), params)
+    if len(sets) > 1:
+        await session.execute(text(f"UPDATE milavn_activity.occurrence SET {', '.join(sets)} WHERE id = :id"), params)
     after = await get(session, occurrence_id=occurrence_id)
-    material = before.time_start != after.time_start or before.locality_locality != after.locality_locality or before.locality_city != after.locality_city
+    material = before.time_start != after.time_start or venue_moved or before.locality_locality != after.locality_locality or before.locality_city != after.locality_city
     await bus.publish(
         session,
         schema="milavn_activity",
@@ -1131,3 +1259,92 @@ async def upcoming_in_series(session: AsyncSession, *, activity_id: UUID, exclud
         )
     ).all()
     return [_row_to_occurrence(r) for r in rows]
+
+
+async def set_venue(
+    session: AsyncSession, *, occurrence_id: UUID, actor_member_id: UUID, venue_address: str | None, venue_notes: str | None, join_link: str | None
+) -> None:
+    """Exact address, arrival notes and join link. The database function refuses anyone who is not the organizer or a co-organizer."""
+    res = (
+        await session.execute(
+            text("SELECT milavn_activity.set_event_venue(:occ, :actor, :addr, :notes, :link)"),
+            {"occ": str(occurrence_id), "actor": str(actor_member_id), "addr": venue_address, "notes": venue_notes, "link": join_link},
+        )
+    ).scalar_one()
+    if res == "not_found":
+        raise OccurrenceNotFound
+    if res != "ok":
+        raise authz.NotAuthorized
+
+
+async def get_venue(session: AsyncSession, *, occurrence_id: UUID, member_id: UUID) -> dict | None:
+    """The private venue, or None. Row-level security allows the organizer, co-organizers and confirmed attendees only
+    (going, checked in, attended); the explicit check below repeats the rule so a policy change cannot silently open it."""
+    row = (
+        await session.execute(
+            text(
+                "SELECT venue_address, venue_notes, join_link, venue_lat, venue_lng FROM milavn_activity.occurrence_venue "
+                "WHERE occurrence_id = :occ AND milavn_activity.can_see_venue(occurrence_id, :member)"
+            ),
+            {"occ": str(occurrence_id), "member": str(member_id)},
+        )
+    ).first()
+    if row is None:
+        return None
+    return {"venue_address": row[0], "venue_notes": row[1], "join_link": row[2], "lat": row[3], "lng": row[4]}
+
+
+async def pin_venue(session: AsyncSession, *, occurrence_id: UUID, actor_member_id: UUID, address: str, near: tuple[float | None, float | None]) -> None:
+    """[054] Look the exact venue address up on the map (shared places utility) and keep the point beside the address,
+    under the same protection. A miss leaves no pin; directions then open on the address text."""
+    from app.components.places.interface import geocode_venue
+
+    point = await geocode_venue(address, near[0], near[1])
+    if point is None:
+        return
+    await session.execute(
+        text("SELECT milavn_activity.set_venue_point(:o, :a, :addr, :lat, :lng)"),
+        {"o": str(occurrence_id), "a": str(actor_member_id), "addr": address, "lat": point[0], "lng": point[1]},
+    )
+
+
+async def set_contact(
+    session: AsyncSession, *, occurrence_id: UUID, actor_member_id: UUID, phone: str | None, email: str | None, visibility: str, offer_counsel: bool
+) -> None:
+    """Organizer phone / email and who may see them. Refused by the database for anyone who is not an organizer."""
+    if visibility not in ("confirmed", "public"):
+        raise InvalidInput(["visibility"])
+    res = (
+        await session.execute(
+            text("SELECT milavn_activity.set_event_contact(:occ, :actor, :phone, :email, :vis, :counsel)"),
+            {"occ": str(occurrence_id), "actor": str(actor_member_id), "phone": phone, "email": email, "vis": visibility, "counsel": offer_counsel},
+        )
+    ).scalar_one()
+    if res == "not_found":
+        raise OccurrenceNotFound
+    if res == "invalid":
+        raise InvalidInput([f for f, v in (("phone", phone), ("email", email)) if v])
+    if res != "ok":
+        raise authz.NotAuthorized
+
+
+async def get_contact(session: AsyncSession, *, occurrence_id: UUID, member_id: UUID) -> dict | None:
+    """The organizer's contact as this member may see it (row-level security applies the organizer's choice), or None."""
+    row = (
+        await session.execute(
+            text("SELECT phone, email, visibility FROM milavn_activity.occurrence_contact WHERE occurrence_id = :occ"),
+            {"occ": str(occurrence_id)},
+        )
+    ).first()
+    if row is None or not (row[0] or row[1]):
+        return None
+    return {"phone": row[0], "email": row[1], "visibility": row[2]}
+
+
+async def offers_counsel(session: AsyncSession, occurrence_id: UUID) -> bool:
+    return bool((await session.execute(text("SELECT milavn_activity.offers_counsel(:o)"), {"o": str(occurrence_id)})).scalar_one())
+
+
+async def contact_visibility(session: AsyncSession, occurrence_id: UUID) -> str | None:
+    """'confirmed' | 'public' when the organizer shared contact details, else None. Says nothing about the details themselves."""
+    return (await session.execute(text("SELECT milavn_activity.contact_visibility(:o)"), {"o": str(occurrence_id)})).scalar_one()

@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 
 import { api } from '@/lib/api';
 
-export type Understood = { category: string | null; when: string | null; distance: string | null; q: string | null; chips: string[] };
+export type Understood = { category: string | null; format?: string | null; when: string | null; distance: string | null; q: string | null; chips: string[] };
 
 type SpeechRecognitionLike = { lang: string; interimResults: boolean; maxAlternatives: number; onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null; onend: (() => void) | null; onerror: (() => void) | null; start: () => void; stop: () => void };
 const SPEECH_LANG: Record<string, string> = { en: 'en-IN', hi: 'hi-IN', te: 'te-IN' };

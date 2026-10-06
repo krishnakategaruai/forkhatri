@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import PlacePicker from '@/components/PlacePicker';
+import PlacePicker, { type PickedPlace } from '@/components/PlacePicker';
 import { api, ApiError, type Profile } from '@/lib/api';
 import { chooseLanguage } from '@/lib/i18n/provider';
 import { LANGUAGE_NATIVE, SUPPORTED_LANGUAGES, type Language } from '@/lib/i18n/config';
@@ -25,6 +25,7 @@ export default function OnboardingPage() {
   const [taxonomy, setTaxonomy] = useState<Taxonomy>([]);
   const [city, setCity] = useState('');
   const [locality, setLocality] = useState('');
+  const [place, setPlace] = useState<PickedPlace | null>(null);
   const [locating, setLocating] = useState(false);
   const [interests, setInterests] = useState<string[]>([]);
   const [lang, setLang] = useState<Language>('en');
@@ -37,16 +38,17 @@ export default function OnboardingPage() {
   }, []);
 
 
+  const pick = (p: PickedPlace) => { setPlace(p); setCity(p.locality_city); setLocality(p.locality_locality ?? ''); };
+
   const useLocation = () => {
     if (!navigator.geolocation) return;
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
-          const near = await api<{ city: string; zone: string; locality: string }>(`/profile/localities/nearest?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`);
-          setCity(near.city);
-          setLocality(near.locality);
-        } finally { setLocating(false); }
+          const near = await api<PickedPlace>(`/profile/places/nearest?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`);
+          pick(near);
+        } catch { /* no place found for this position: the manual picker below stays available */ } finally { setLocating(false); }
       },
       () => setLocating(false), // denial is a normal path: the manual picker is already visible
       { timeout: 8000 },
@@ -62,7 +64,7 @@ export default function OnboardingPage() {
   const finish = async () => {
     setBusy(true); setError(null);
     try {
-      const p = await api<Profile>('/profile', { body: { locality_city: city, locality_locality: locality || null, interests, language_preference: lang } });
+      const p = await api<Profile>('/profile', { body: { locality_city: city, locality_zone: place?.locality_zone ?? null, locality_locality: locality || null, locality_state: place?.locality_state ?? null, locality_lat: place?.lat ?? null, locality_lng: place?.lon ?? null, interests, language_preference: lang } });
       chooseLanguage(lang);
       setProfile(p);
       router.replace('/');
@@ -93,7 +95,7 @@ export default function OnboardingPage() {
           {locating ? (
             <div className="stack"><div className="sk" style={{ height: 48 }} /><div className="sk" style={{ height: 48 }} /></div>
           ) : (
-            <PlacePicker city={city} locality={locality} onChange={(c, l) => { setCity(c); setLocality(l); }} label={t('onboarding.whereTitle')} />
+            <PlacePicker city={city} locality={locality} state={place?.locality_state} onChange={pick} label={t('onboarding.whereTitle')} />
           )}
           <button className="btn btn--primary btn--block" disabled={!city} onClick={() => setStep(2)}>{t('onboarding.continue')}</button>
         </section>

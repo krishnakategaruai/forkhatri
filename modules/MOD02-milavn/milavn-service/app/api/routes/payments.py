@@ -33,14 +33,25 @@ class PaymentEvent(BaseModel):
     reference: str = Field(min_length=1, max_length=200)
 
 
+class JoinPaidRequest(BaseModel):
+    ticket_type_id: UUID | None = None  # required when the organizer set up ticket types
+    code: str | None = Field(default=None, max_length=40)  # discount code
+
+
 class SandboxOutcome(BaseModel):
     outcome: str  # paid | failed
 
 
-def _ticket(t: ticketing.Ticket | None) -> dict | None:
+def _ticket(t: ticketing.Ticket | None, type_name: str | None = None) -> dict | None:
     if t is None:
         return None
     return {
+        "ticket_type_id": str(t.ticket_type_id) if t.ticket_type_id else None,
+        "type_name": type_name,
+        "list_price_paise": t.list_price_paise,
+        "discount_paise": t.discount_paise,
+        # The entry code is shown only to the ticket's owner and only while the ticket is valid.
+        "qr_code": t.qr_code if t.status == "paid" else None,
         "id": str(t.id),
         "kind": t.kind,
         "status": t.status,
@@ -57,6 +68,12 @@ def _ticket(t: ticketing.Ticket | None) -> dict | None:
 def _unavailable(exc: payments.PaymentsError, lang: str) -> HTTPException:
     key = "payments.notConfigured" if isinstance(exc, payments.PaymentsNotConfigured) else "payments.unavailable"
     return HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=translate(key, lang))
+
+
+async def _type_name(session: DbSession, occurrence_id: UUID, t: ticketing.Ticket | None) -> str | None:
+    if t is None or t.ticket_type_id is None:
+        return None
+    return next((x.name for x in await ticketing.ticket_types(session, occurrence_id) if x.id == t.ticket_type_id), None)
 
 
 @router.get("/occurrences/{occurrence_id}/ticket")
@@ -78,12 +95,14 @@ async def my_ticket(occurrence_id: UUID, session: DbSession, member: CurrentMemb
         "refund_deadline": deadline.isoformat(),
         "refund_if_withdraw_now_paise": refund_now,
         "payments_available": payments.get_payment_services().configured,
-        "ticket": _ticket(t),
+        "ticket": _ticket(t, await _type_name(session, occurrence_id, t)),
     }
 
 
 @router.post("/occurrences/{occurrence_id}/ticket")
-async def join_paid(occurrence_id: UUID, session: DbSession, member: CurrentMember, lang: Locale, settings: AppSettings, idem: IdempotencyKeyHeader) -> JSONResponse:
+async def join_paid(
+    occurrence_id: UUID, session: DbSession, member: CurrentMember, lang: Locale, settings: AppSettings, idem: IdempotencyKeyHeader, body: JoinPaidRequest | None = None
+) -> JSONResponse:
     """[FR102] Join a paid activity: hold a spot and hand back the checkout, or take a free waitlist place when full."""
     await enforce(
         session,
@@ -93,17 +112,22 @@ async def join_paid(occurrence_id: UUID, session: DbSession, member: CurrentMemb
         window_seconds=settings.rate_limit_participation_window_seconds,
     )
     async with idempotent(
-        session, actor_member_id=member.member_id, idempotency_key=idem, endpoint=f"POST /occurrences/{occurrence_id}/ticket", request_payload={}
+        session, actor_member_id=member.member_id, idempotency_key=idem, endpoint=f"POST /occurrences/{occurrence_id}/ticket",
+        request_payload=body.model_dump(mode="json") if body else {},
     ) as outcome:
         if not outcome.replayed:
             try:
-                res = await ticketing.start_join(session, occurrence_id=occurrence_id, member_id=member.member_id)
+                res = await ticketing.start_join(
+                    session, occurrence_id=occurrence_id, member_id=member.member_id, ticket_type_id=body.ticket_type_id if body else None, code=body.code if body else None
+                )
             except activity.OccurrenceNotFound as exc:
                 raise HTTPException(status_code=404, detail=translate("occurrence.notFound", lang)) from exc
             except ticketing.NotPaidActivity as exc:
                 raise HTTPException(status_code=409, detail=translate("payments.notPaid", lang)) from exc
             except ticketing.ActivityClosed as exc:
                 raise HTTPException(status_code=409, detail=translate("payments.closed", lang)) from exc
+            except ticketing.TicketChoiceError as exc:
+                raise HTTPException(status_code=409 if exc.reason == "sold_out" else 422, detail=translate(f"tix.quote.{exc.reason}", lang)) from exc
             except payments.PaymentsError as exc:
                 raise _unavailable(exc, lang) from exc
             outcome.set_result(
@@ -111,7 +135,7 @@ async def join_paid(occurrence_id: UUID, session: DbSession, member: CurrentMemb
                 {
                     "status": res.status,
                     "waitlist_position": res.waitlist_position,
-                    "ticket": _ticket(res.ticket),
+                    "ticket": _ticket(res.ticket, await _type_name(session, occurrence_id, res.ticket)),
                     "checkout_url": res.ticket.checkout_url if res.ticket and res.status == "awaiting_payment" else None,
                 },
             )

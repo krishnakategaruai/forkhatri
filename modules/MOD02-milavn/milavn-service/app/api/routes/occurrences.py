@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 
 from app.api.deps import AppSettings, CurrentMember, DbSession, IdempotencyKeyHeader, Locale
 from app.api.schemas import CardOut
+from app.components.activity import events
 from app.components.activity import interface as activity
 from app.components.authorization import interface as authz
 from app.components.conversation import interface as conversation
@@ -46,6 +47,13 @@ class CreateOccurrenceRequest(BaseModel):
     locality_city: str
     locality_zone: str | None = None
     locality_locality: str | None = None
+    locality_state: str | None = None
+    locality_lat: float | None = None
+    locality_lng: float | None = None
+    attendance_mode: str = "in_person"  # in_person | online | hybrid
+    venue_address: str | None = Field(default=None, max_length=400)  # exact address: confirmed attendees and organizers only
+    venue_notes: str | None = Field(default=None, max_length=400)
+    join_link: str | None = Field(default=None, max_length=500)  # https link for online / hybrid: same protection
     description: str | None = None
     capacity: int | None = None
     visibility_scope: str = "public"
@@ -59,6 +67,8 @@ class CreateOccurrenceRequest(BaseModel):
     audience_tags: list[str] = Field(default_factory=list)  # [FR110] family_friendly | elder_friendly | beginner_friendly
     food_tags: list[str] = Field(default_factory=list)  # [FR110] veg | jain_options | non_veg | alcohol_free
     max_guests_per_member: int = 0  # [FR114] how many people each person may bring (free activities only)
+    event_format: str | None = None  # [054] workshop | webinar | tournament ... (see activity.EVENT_FORMATS)
+    team_size_max: int | None = None  # [054] tournaments only: most people per team, captain included
 
 
 class UpdateOccurrenceRequest(BaseModel):
@@ -70,6 +80,13 @@ class UpdateOccurrenceRequest(BaseModel):
     locality_city: str | None = None
     locality_zone: str | None = None
     locality_locality: str | None = None
+    locality_state: str | None = None
+    locality_lat: float | None = None
+    locality_lng: float | None = None
+    attendance_mode: str | None = None
+    venue_address: str | None = Field(default=None, max_length=400)
+    venue_notes: str | None = Field(default=None, max_length=400)
+    join_link: str | None = Field(default=None, max_length=500)
     capacity: int | None = None
     high_risk: bool | None = None
     visibility_scope: str | None = None
@@ -80,6 +97,8 @@ class UpdateOccurrenceRequest(BaseModel):
     audience_tags: list[str] | None = None
     food_tags: list[str] | None = None
     max_guests_per_member: int | None = None
+    event_format: str | None = None
+    team_size_max: int | None = None
 
 
 class ParticipationRequest(BaseModel):
@@ -162,6 +181,13 @@ async def create_occurrence(
                     locality_city=body.locality_city,
                     locality_zone=body.locality_zone,
                     locality_locality=body.locality_locality,
+                    locality_state=body.locality_state,
+                    locality_lat=body.locality_lat,
+                    locality_lng=body.locality_lng,
+                    attendance_mode=body.attendance_mode,
+                    venue_address=body.venue_address,
+                    venue_notes=body.venue_notes,
+                    join_link=body.join_link,
                     description=body.description,
                     capacity=body.capacity,
                     visibility_scope=body.visibility_scope,
@@ -175,6 +201,8 @@ async def create_occurrence(
                     audience_tags=body.audience_tags,
                     food_tags=body.food_tags,
                     max_guests_per_member=body.max_guests_per_member,
+                    event_format=body.event_format,
+                    team_size_max=body.team_size_max,
                 )
             except activity.InvalidInput as exc:
                 raise HTTPException(status_code=422, detail={"fields": exc.fields}) from exc
@@ -212,6 +240,10 @@ async def add_series_occurrence(
         locality_city=body.locality_city or parent.locality_city,
         locality_zone=body.locality_zone or parent.locality_zone,
         locality_locality=body.locality_locality or parent.locality_locality,
+        locality_state=body.locality_state or parent.locality_state,
+        locality_lat=body.locality_lat if body.locality_lat is not None else parent.locality_lat,
+        locality_lng=body.locality_lng if body.locality_lng is not None else parent.locality_lng,
+        attendance_mode=body.attendance_mode or parent.attendance_mode,
         description=body.description or parent.description,
         capacity=body.capacity if body.capacity is not None else parent.capacity,
         visibility_scope=body.visibility_scope or parent.visibility_scope,
@@ -220,6 +252,8 @@ async def add_series_occurrence(
         activity_id=parent.activity_id,
         price_paise=body.price_paise if body.price_paise is not None else parent.price_paise,
         refund_cutoff_hours=body.refund_cutoff_hours if "refund_cutoff_hours" in body.model_fields_set else parent.refund_cutoff_hours,
+        event_format=body.event_format if "event_format" in body.model_fields_set else parent.event_format,
+        team_size_max=body.team_size_max if "team_size_max" in body.model_fields_set else parent.team_size_max,
     )
     return (await _card(session, occ, member)).model_dump(mode="json")
 
@@ -248,17 +282,17 @@ async def my_occurrences(session: DbSession, member: CurrentMember) -> dict:
 
 
 @router.get("/by-slug/{slug}")
-async def get_by_slug(slug: str, session: DbSession, member: CurrentMember, lang: Locale) -> dict:
+async def get_by_slug(slug: str, session: DbSession, member: CurrentMember, lang: Locale, settings: AppSettings) -> dict:
     """Authenticated detail by canonical slug (circle-scoped items have no public page, FR050)."""
     try:
         occ = await activity.get_by_slug(session, slug=slug)
     except activity.OccurrenceNotFound as exc:
         raise _404(lang) from exc
-    return await get_occurrence(occ.id, session, member, lang)
+    return await get_occurrence(occ.id, session, member, lang, settings)
 
 
 @router.get("/{occurrence_id}")
-async def get_occurrence(occurrence_id: UUID, session: DbSession, member: CurrentMember, lang: Locale) -> dict:
+async def get_occurrence(occurrence_id: UUID, session: DbSession, member: CurrentMember, lang: Locale, settings: AppSettings) -> dict:
     """[FR006 + FR063/FR064] Detail: card + description + organizer identity for RSVP'd + safety block."""
     try:
         occ = await activity.get(session, occurrence_id=occurrence_id)
@@ -288,11 +322,37 @@ async def get_occurrence(occurrence_id: UUID, session: DbSession, member: Curren
     now = datetime.now(UTC)
     # [FR103] Ask "still coming?" in place during the last 28 hours, until answered.
     still_coming_due = bool(plan and plan.confirmed_at is None and card.viewer_status == "going" and now < occ.time_start <= now + timedelta(hours=28))
+    # [054] The join link reaches a confirmed attendee only from a few minutes before the start until the end
+    # (organizers always have it); the provider is recognised from the link itself.
+    venue = await activity.get_venue(session, occurrence_id=occurrence_id, member_id=member.member_id)
+    online = None
+    if occ.attendance_mode in ("online", "hybrid"):
+        state, opens_at = events.join_window(occ.time_start, occ.time_end, settings.online_join_open_minutes, now)
+        online = {
+            "state": state,
+            "opens_at": opens_at.isoformat(),
+            "open_minutes": settings.online_join_open_minutes,
+            "provider": events.link_provider(venue.get("join_link")) if venue else None,
+        }
+        if venue and not is_organizer and state != "open":
+            venue = {**venue, "join_link": None}
     return {
         **card.model_dump(mode="json"),
         "description": occ.description,
         "share_url": f"/a/{occ.canonical_url_slug}",
         "viewer_role": role.value,
+        "attendance_mode": occ.attendance_mode,
+        # The approximate place (never an address): lets the editor show and keep what was picked.
+        "place": {
+            "locality_city": occ.locality_city, "locality_zone": occ.locality_zone, "locality_locality": occ.locality_locality,
+            "locality_state": occ.locality_state, "lat": occ.locality_lat, "lon": occ.locality_lng,
+        },
+        # The exact address, arrival notes and join link: organizers and confirmed attendees only. Decided in the
+        # database (row-level security) and checked again here; everyone else gets null, never a partial value.
+        "venue": venue,
+        "online": online,
+        "event_format": occ.event_format,
+        "team_size_max": occ.team_size_max,
         "organizer": {
             "member_id": str(occ.creator_member_id),
             "display_name": host_ident.display_name,
@@ -338,6 +398,12 @@ async def update_occurrence(occurrence_id: UUID, body: UpdateOccurrenceRequest, 
     """[FR012] Edit; material time/place changes notify participants (FR017).
     [FR102] Price and refund window lock once anyone is paying or has paid, so nobody's terms change under them."""
     changes = body.model_dump(exclude_unset=True)
+    # [052] With ticket types the event's price is its cheapest ticket; it is changed by editing the types, not here.
+    if "price_paise" in changes and await ticketing.ticket_types(session, occurrence_id):
+        current_price = (await activity.get(session, occurrence_id=occurrence_id)).price_paise
+        if changes["price_paise"] != current_price:
+            raise HTTPException(status_code=409, detail=translate("tix.err.priceFromTypes", lang))
+        changes.pop("price_paise")
     if "price_paise" in changes or "refund_cutoff_hours" in changes:
         try:
             current = await activity.get(session, occurrence_id=occurrence_id)

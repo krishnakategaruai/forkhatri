@@ -18,6 +18,9 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import DBAPIError
+
+from app.components.circle.interface import WomenOnly
 
 from app.api.routes import identity, profile
 from app.config.settings import get_settings
@@ -157,6 +160,26 @@ def create_app() -> FastAPI:
             headers={"Retry-After": str(secs)},
         )
 
+    def _women_only_response(request: Request, needs_answer: bool) -> JSONResponse:
+        from app.i18n import resolve_language, translate
+
+        lang = resolve_language(request.headers.get("x-milavn-language"))
+        key = "circle.womenOnly.askFirst" if needs_answer else "circle.womenOnly.notEligible"
+        return JSONResponse(status_code=403, content={"detail": {"message": translate(key, lang), "code": "women_only", "needs_answer": needs_answer}})
+
+    @app.exception_handler(WomenOnly)
+    async def _women_only(request: Request, exc: WomenOnly) -> JSONResponse:
+        # [050] The friendly refusal of a women-only circle, whichever door the member came through.
+        return _women_only_response(request, exc.unknown)
+
+    @app.exception_handler(DBAPIError)
+    async def _db_error(request: Request, exc: DBAPIError) -> JSONResponse:
+        # [050] The database itself refuses a membership row in a women-only circle (trigger, SQLSTATE WO001):
+        # invites, links and the organizer's approval all end there. Anything else is a real fault.
+        if "women_only" in str(exc.orig):
+            return _women_only_response(request, False)
+        raise exc
+
     @app.exception_handler(IdempotencyConflict)
     async def _idem_conflict(request: Request, exc: IdempotencyConflict) -> JSONResponse:
         from app.i18n import resolve_language, translate
@@ -207,6 +230,9 @@ def _include_feature_routers(app: FastAPI) -> None:
         "conversation",
         "chat",
         "payments",
+        "tickets",
+        "events",  # [054] agenda, speakers, stalls, tournament teams, online join, recording
+        "circle_social",  # [053] albums, per-circle notification setting, co-hosting circles
     ):
         try:
             module = __import__(f"app.api.routes.{name}", fromlist=["router"])

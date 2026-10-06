@@ -55,6 +55,46 @@ def sniff_image(upload) -> str:  # noqa: ANN001 — a Starlette UploadFile
     raise NotAnImage
 
 
+class NotADocument(Exception):
+    pass
+
+
+# [053] What each accepted file type must look like in its first bytes. A type the configuration
+# lists that is not here is refused, so a new type needs a deliberate entry.
+_OLE = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"  # old Office (.doc / .xls / .ppt)
+_ZIP = b"PK\x03\x04"  # Office Open XML (.docx / .xlsx / .pptx)
+_DOC_MAGIC: dict[str, bytes | None] = {
+    "pdf": b"%PDF-",
+    "doc": _OLE, "xls": _OLE, "ppt": _OLE,
+    "docx": _ZIP, "xlsx": _ZIP, "pptx": _ZIP,
+    "txt": None, "csv": None,  # plain text: no NUL bytes, valid UTF-8
+}
+
+
+def sniff_document(upload, allowed: list[str]) -> str:  # noqa: ANN001
+    """[053] The document's extension ('.pdf', ...) when its name is an allowed type AND its first
+    bytes match that type. Raises NotADocument otherwise."""
+    name = (getattr(upload, "filename", None) or "").lower()
+    ext = name.rsplit(".", 1)[-1] if "." in name else ""
+    if ext not in {a.lower().lstrip(".") for a in allowed} or ext not in _DOC_MAGIC:
+        raise NotADocument
+    fh = upload.file
+    head = fh.read(4096)
+    fh.seek(0)
+    magic = _DOC_MAGIC[ext]
+    if magic is None:
+        if not head or b"\x00" in head:
+            raise NotADocument
+        try:
+            head.decode("utf-8")
+        except UnicodeDecodeError as exc:  # a multi-byte character cut at 4096 is still text
+            if exc.start < len(head) - 3:
+                raise NotADocument from exc
+    elif not head.startswith(magic):
+        raise NotADocument
+    return f".{ext}"
+
+
 def upload_size(upload) -> int:  # noqa: ANN001
     """Size without reading it into memory (the spooled temp file is seekable)."""
     fh = upload.file

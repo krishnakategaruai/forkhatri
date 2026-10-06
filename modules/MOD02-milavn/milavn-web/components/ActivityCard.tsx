@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { resolveMediaUrl, type Card } from '@/lib/api';
 import { formatInr, formatWhen } from '@/lib/format';
 
-const CATEGORY_ICON: Record<string, string> = { play: '🏸', meet: '☕', eat: '🍛', learn: '📚', work: '💼', explore: '🥾', celebrate: '🎉', help: '🤝' };
+const CATEGORY_ICON: Record<string, string> = { play: '🏸', meet: '☕', eat: '🍛', learn: '📚', work: '💼', explore: '🥾', celebrate: '🎉', help: '🤝', professional: '🎤' };
 const DEFAULT_DURATION_MS = 2 * 60 * 60 * 1000;
 
 export function TrustPill({ level, label, positive, onMedia }: { level: string; label: string; positive: boolean; onMedia?: boolean }) {
@@ -68,7 +68,7 @@ export default function ActivityCard({ card, compact = false, hero = false }: { 
         </span>
       </div>
       <div className="poster__body">
-        <span className="poster__eyebrow">{CATEGORY_ICON[card.intent_category]} {card.category_label}{card.is_recurring ? ` · ${t('card.recurring')}` : ''}</span>
+        <span className="poster__eyebrow">{CATEGORY_ICON[card.intent_category]} {card.category_label}{card.event_format ? ` · ${t(`evt.format.${card.event_format}`)}` : ''}{card.is_recurring ? ` · ${t('card.recurring')}` : ''}</span>
         <h3 className="poster__title">{card.title}</h3>
         <div className="poster__meta">
           <span className="datepill">{live.state === 'live' ? t('card.now') : when}</span>

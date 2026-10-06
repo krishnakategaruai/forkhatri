@@ -13,13 +13,15 @@
 
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import ActivityCard from '@/components/ActivityCard';
-import { ArrowLeft, BarChart3, Ellipsis, FileText, Image as ImageIcon, Megaphone, MessageCircle, Paperclip, Pin, Settings2, SmilePlus, UserPlus, X } from 'lucide-react';
+import { ArrowLeft, BarChart3, Bell, BellOff, BellRing, ChevronLeft, ChevronRight, Ellipsis, FileText, Image as ImageIcon, Megaphone, MessageCircle, Paperclip, Pin, Settings2, SmilePlus, UserPlus, X } from 'lucide-react';
 
+import CircleAlbums from '@/components/CircleAlbums';
 import CircleCover from '@/components/CircleCover';
+import GenderAsk from '@/components/GenderAsk';
 import InvitePeopleSheet from '@/components/InvitePeopleSheet';
 import { Sheet } from '@/components/Sheet';
 import { CardSkeleton, ErrorState, Toast } from '@/components/States';
@@ -30,6 +32,8 @@ import { useIdentity } from '@/lib/identity';
 type Post = {
   id: string; member_id: string; display_name: string; avatar: string | null; body: string; created_at: string; mine: boolean;
   photo_url: string | null; doc_url: string | null; doc_name: string | null;
+  // [053] Every photo and file on the post.
+  photos?: string[]; docs?: { url: string; name: string | null; size: number | null }[];
   // [049] Announcements (organizers' voice, react-only), pins, reactions and one level of comments.
   is_announcement?: boolean; pinned?: boolean; reactions?: Record<string, string[]>; comments?: PostComment[];
 };
@@ -49,7 +53,11 @@ type Poll = { id: string; question: string; kind: 'date' | 'activity' | 'questio
 type JoinRequest = { request_id: string; member_id: string; display_name: string; avatar: string | null; answers: string[]; created_at: string };
 
 
+type TripStop = { id?: string; place: string; on_day: string | null; note: string | null };
+
 type Detail = Circle & {
+  entry_state?: 'ok' | 'ask' | 'not_eligible'; // [050] women-only: what the join button should do for this viewer
+  trip_plan?: TripStop[]; // [050] the route of a travel group
   // [FR125] Season circles (temple, travel) carry dates and a computed "concluded".
   starts_on: string | null; ends_on: string | null; is_concluded: boolean;
   posting_policy: 'members' | 'organizers';
@@ -61,10 +69,23 @@ type Detail = Circle & {
   group?: { id: string; name: string } | null; // [FR123] the umbrella this circle sits under
   memory: { member_count: number; activities_held: number; upcoming_count: number; first_activity_at: string | null } | null;
   upcoming: Card[];
+  notify_level?: NotifyLevel | null; // [053] the viewer's own setting for this circle
+  cohost_invites?: CohostInvite[]; // [053] organizer: events asking this circle to co-host
+  cohosted_ids?: string[]; // [053] events this circle co-hosts with another circle
 };
+
+type NotifyLevel = 'all' | 'highlights' | 'off';
+type CohostInvite = { occurrence_id: string; title: string; slug: string; time_start: string; invited_by: string; host_circle_name: string | null; created_at: string };
+type Limits = { max_photos: number; max_files: number; photo_mb: number; file_mb: number; file_types: string[]; album_max_per_upload: number };
+// Used only until the server's own limits (configuration) arrive with the posts.
+const DEFAULT_LIMITS: Limits = { max_photos: 10, max_files: 5, photo_mb: 10, file_mb: 15, file_types: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt'], album_max_per_upload: 20 };
+const photosOf = (p: Post) => p.photos ?? (p.photo_url ? [p.photo_url] : []);
+const docsOf = (p: Post) => p.docs ?? (p.doc_url ? [{ url: p.doc_url, name: p.doc_name, size: null }] : []);
 
 type FeedItem = { at: string } & ({ kind: 'post'; post: Post } | { kind: 'poll'; poll: Poll });
 
+// A plain calendar day (no clock): trip dates are dates, not moments.
+const dayOnly = (iso: string, lang: string) => new Date(`${iso}T00:00:00`).toLocaleDateString(lang, { weekday: 'short', day: 'numeric', month: 'short' });
 const MEMBER_PREVIEW = 8;
 const MAX_JOIN_QUESTIONS = 3;
 const FEED_PREVIEW = 20;
@@ -95,8 +116,13 @@ export default function CircleDetailPage() {
   // Composer: one place to write a post, attach a photo, or ask a question (a poll IS a post).
   const [draft, setDraft] = useState('');
   const [composing, setComposing] = useState(false);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [docFile, setDocFile] = useState<File | null>(null);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [docFiles, setDocFiles] = useState<File[]>([]);
+  const [limits, setLimits] = useState<Limits>(DEFAULT_LIMITS);
+  // Thumbnails of the photos picked for a post, released when the picks change.
+  const photoPreviews = useMemo(() => photoFiles.map((f) => URL.createObjectURL(f)), [photoFiles]);
+  useEffect(() => () => photoPreviews.forEach((u) => URL.revokeObjectURL(u)), [photoPreviews]);
+  const [notifyOpen, setNotifyOpen] = useState(false);
   const [tab, setTab] = useState<Tab>('posts');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [pollMode, setPollMode] = useState(false);
@@ -111,6 +137,11 @@ export default function CircleDetailPage() {
   const [pledging, setPledging] = useState<string | null>(null);
   const [pledgeAmount, setPledgeAmount] = useState('');
   const [menu, setMenu] = useState(false);
+  // [050] Trip route editor, and reporting someone who should not be in a women-only group.
+  const [planning, setPlanning] = useState(false);
+  const [stops, setStops] = useState<TripStop[]>([]);
+  const [reporting, setReporting] = useState<{ member_id: string; display_name: string } | null>(null);
+  const [reportNote, setReportNote] = useState('');
   // [FR121] Invite: the organizer's people from Milavn itself, added in place.
   const [inviting, setInviting] = useState(false);
   const [allMembers, setAllMembers] = useState(false);
@@ -127,7 +158,7 @@ export default function CircleDetailPage() {
   const coverInput = useRef<HTMLInputElement | null>(null);
   const [coverBusy, setCoverBusy] = useState(false);
   const [descOpen, setDescOpen] = useState(false);
-  const [lightbox, setLightbox] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<{ urls: string[]; i: number } | null>(null);
   const [postMenu, setPostMenu] = useState<Post | null>(null);
   // The top bar stays out of the way until the hero has scrolled past.
   const [pastHero, setPastHero] = useState(false);
@@ -140,8 +171,8 @@ export default function CircleDetailPage() {
   };
 
   const loadPosts = useCallback(() => {
-    api<{ posts: Post[]; reactions?: string[]; max_pins?: number }>(`/circles/${id}/posts`)
-      .then((r) => { setPosts(r.posts); setReactionSet(r.reactions ?? []); setMaxPins(r.max_pins ?? 3); })
+    api<{ posts: Post[]; reactions?: string[]; max_pins?: number; limits?: Limits }>(`/circles/${id}/posts`)
+      .then((r) => { setPosts(r.posts); setReactionSet(r.reactions ?? []); setMaxPins(r.max_pins ?? 3); if (r.limits) setLimits(r.limits); })
       .catch(() => setPosts([]));
   }, [id]);
   const loadPolls = useCallback(() => { api<Poll[]>(`/circles/${id}/polls`).then(setPolls).catch(() => setPolls([])); }, [id]);
@@ -159,7 +190,43 @@ export default function CircleDetailPage() {
     if (mode === 'doc') setTimeout(() => docInput.current?.click(), 0);
   };
 
-  const resetComposer = () => { setDraft(''); setPhotoFile(null); setDocFile(null); setPollMode(false); setPollOptions(['', '']); setAnnounce(false); setComposing(false); };
+  const resetComposer = () => { setDraft(''); setPhotoFiles([]); setDocFiles([]); setPollMode(false); setPollOptions(['', '']); setAnnounce(false); setComposing(false); };
+
+  // [053] Several photos and files per post, checked here against the circle's limits before upload
+  // (the server checks again, including what each file really is).
+  const addPhotoFiles = (files: File[]) => {
+    const next = [...photoFiles, ...files];
+    if (next.length > limits.max_photos) { say(t('cs.tooManyPhotos', { n: limits.max_photos }), undefined, 3500); return; }
+    const big = files.find((f) => f.size > limits.photo_mb * 1024 * 1024);
+    if (big) { say(t('cs.tooBig', { name: big.name, mb: limits.photo_mb }), undefined, 3500); return; }
+    setPhotoFiles(next);
+  };
+  const addDocFiles = (files: File[]) => {
+    const next = [...docFiles, ...files];
+    if (next.length > limits.max_files) { say(t('cs.tooManyFiles', { n: limits.max_files }), undefined, 3500); return; }
+    const types = limits.file_types.map((x) => x.toUpperCase()).join(', ');
+    const wrong = files.find((f) => !limits.file_types.includes((f.name.split('.').pop() ?? '').toLowerCase()));
+    if (wrong) { say(t('cs.typeNotAllowed', { name: wrong.name, types }), undefined, 4000); return; }
+    const big = files.find((f) => f.size > limits.file_mb * 1024 * 1024);
+    if (big) { say(t('cs.tooBig', { name: big.name, mb: limits.file_mb }), undefined, 3500); return; }
+    setDocFiles(next);
+  };
+  const fileSize = (n: number | null) => (n === null ? '' : n < 1024 * 1024 ? t('cs.kb', { n: Math.max(1, Math.round(n / 1024)) }) : t('cs.mb', { n: (n / (1024 * 1024)).toFixed(1) }));
+
+  const saveNotify = async (level: NotifyLevel) => {
+    setNotifyOpen(false);
+    setD((cur) => (cur ? { ...cur, notify_level: level } : cur));
+    try { await api(`/circles/${id}/notify`, { method: 'PUT', body: { level } }); say(t('cs.notifySaved')); }
+    catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); load(); }
+  };
+
+  const answerCohost = async (inv: CohostInvite, accept: boolean) => {
+    try {
+      await api(`/circles/${id}/cohost-invites/${inv.occurrence_id}/respond`, { body: { accept } });
+      say(accept ? t('cs.cohostAccepted', { title: inv.title }) : t('cs.cohostDeclined'));
+      load();
+    } catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
+  };
 
   const submitPost = async () => {
     if (posting) return;
@@ -170,10 +237,10 @@ export default function CircleDetailPage() {
         if (!draft.trim() || options.length < 2) { say(t('poll.needTwo')); return; }
         await api(`/circles/${id}/polls`, { body: { question: draft.trim(), kind: 'question', options } });
         loadPolls();
-      } else if (photoFile || docFile) {
+      } else if (photoFiles.length || docFiles.length) {
         const form = new FormData();
-        if (photoFile) form.append('photo', photoFile);
-        if (docFile) form.append('document', docFile);
+        photoFiles.forEach((f) => form.append('photos', f));
+        docFiles.forEach((f) => form.append('documents', f));
         form.append('body', draft.trim());
         if (announce) form.append('announcement', 'true');
         await api(`/circles/${id}/posts/media`, { form });
@@ -246,6 +313,24 @@ export default function CircleDetailPage() {
       setAnswering(false);
       say(r.status === 'pending' ? t('join.asked') : t('circles.joined'));
       load();
+    } catch (e) {
+      say(e instanceof ApiError ? e.message : t('state.error'), undefined, 4000);
+      if (e instanceof ApiError && (e.detail as { code?: string })?.code === 'women_only') load();
+    }
+  };
+
+  const openPlan = () => { setStops(d?.trip_plan?.length ? d.trip_plan.map((x) => ({ ...x })) : [{ place: '', on_day: null, note: null }]); setPlanning(true); };
+  const savePlan = async () => {
+    try {
+      await api(`/circles/${id}/trip-plan`, { method: 'PUT', body: { stops: stops.map((x) => ({ place: x.place, on_day: x.on_day || null, note: x.note || null })) } });
+      setPlanning(false); say(t('group.tripSaved')); load();
+    } catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
+  };
+  const sendReport = async () => {
+    if (!reporting || !d) return;
+    try {
+      await api('/safety/reports', { body: { subject_type: 'user', subject_id: reporting.member_id, reason_category: 'women_only_misuse', description: `${d.name} (${d.id}). ${reportNote.trim()}`.trim() }, idempotent: true });
+      setReporting(null); setReportNote(''); say(t('group.reportSent'), undefined, 3500);
     } catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
   };
 
@@ -401,7 +486,7 @@ export default function CircleDetailPage() {
   const nowIso = new Date().toISOString();
   const upcomingEvents = (d?.upcoming ?? []).filter((c) => c.time_start >= nowIso && c.status !== 'cancelled').sort((a, b) => a.time_start.localeCompare(b.time_start));
   const pastEvents = (d?.upcoming ?? []).filter((c) => c.time_start < nowIso).sort((a, b) => b.time_start.localeCompare(a.time_start));
-  const photoPosts = (posts ?? []).filter((p) => p.photo_url);
+  const postPhotos = (posts ?? []).flatMap((p) => photosOf(p));
   const TABS: { key: Tab; label: string }[] = [
     { key: 'posts', label: t('posts.tabPosts') },
     { key: 'events', label: t('posts.tabEvents') },
@@ -440,7 +525,7 @@ export default function CircleDetailPage() {
 
   const hasHero = Boolean(d?.cover_url);
   const typeText = d ? (d.circle_type === 'public' ? t('circles.openToAll') : d.type_label) : '';
-  const caption = d ? [typeText, d.locality_label, !d.is_open ? t('circles.inviteOnly') : null, d.is_concluded ? t('circles.concluded') : null].filter(Boolean).join(' · ') : '';
+  const caption = d ? [typeText, d.women_only ? t('group.womenOnly') : null, d.locality_label, !d.is_open ? t('circles.inviteOnly') : null, d.is_concluded ? t('circles.concluded') : null].filter(Boolean).join(' · ') : '';
 
   const membersList = d && d.members.length > 0 && (
     <div className="cx-list">
@@ -458,6 +543,9 @@ export default function CircleDetailPage() {
             <button className="cx-textbtn" onClick={() => setRole(m.member_id, m.role === 'assistant' ? 'member' : 'assistant')}>
               {m.role === 'assistant' ? t('role.stepDown') : t('role.makeAssistant')}
             </button>
+          )}
+          {d.women_only && d.viewer_role && m.member_id !== identity?.member_id && (
+            <button className="cx-textbtn" style={{ color: 'var(--cx-muted)' }} onClick={() => setReporting({ member_id: m.member_id, display_name: m.display_name })}>{t('group.reportAction')}</button>
           )}
           {((d.viewer_role === 'organizer' && m.role !== 'organizer') || (d.viewer_role === 'assistant' && m.role === 'member')) && (
             <button className="cx-textbtn" style={{ color: confirmRemove === m.member_id ? 'var(--danger)' : 'var(--cx-muted)' }} onClick={() => removeMember(m.member_id, m.display_name)}>
@@ -532,7 +620,14 @@ export default function CircleDetailPage() {
           <Link href={`/create?circle=${d.id}`} className={`cx-btn ${d.viewer_role === 'organizer' ? 'cx-btn--primary' : 'cx-btn--quiet'} cx-btn--lg grow`}>{t('circles.newActivity')}</Link>
           {(d.is_open || canManage) && <button className="cx-iconbtn" aria-label={t('circles.invite')} onClick={openInvite}><UserPlus size={20} strokeWidth={1.75} /></button>}
           {d.viewer_role === 'organizer' && <button className="cx-iconbtn" aria-label={t('manage.button')} onClick={openManage}><Settings2 size={20} strokeWidth={1.75} /></button>}
+          <button className="cx-iconbtn" aria-label={`${t('cs.notifyButton')}: ${t(d.notify_level === 'off' ? 'cs.notifyOff' : d.notify_level === 'highlights' ? 'cs.notifyHighlights' : 'cs.notifyAll')}`} onClick={() => setNotifyOpen(true)}>
+            {d.notify_level === 'off' ? <BellOff size={20} strokeWidth={1.75} /> : d.notify_level === 'highlights' ? <Bell size={20} strokeWidth={1.75} /> : <BellRing size={20} strokeWidth={1.75} />}
+          </button>
                   </>
+      ) : d.is_open && d.entry_state === 'ask' ? (
+        <div className="stack grow" style={{ gap: 10 }}><GenderAsk onAnswered={() => load()} /></div>
+      ) : d.is_open && d.entry_state === 'not_eligible' ? (
+        <span className="cx-caption grow" role="note">{t('group.notEligible')}</span>
       ) : d.is_open ? (
         d.my_request_status === 'pending' ? (
           <button className="cx-btn cx-btn--quiet cx-btn--lg grow" disabled>{t('join.waiting')}</button>
@@ -596,6 +691,31 @@ export default function CircleDetailPage() {
                 {d.description && d.description.length > 160 && !descOpen && <button className="cx-textbtn" style={{ alignSelf: 'flex-start' }} onClick={() => setDescOpen(true)}>{t('circles.readMore')}</button>}
               </div>
 
+              {d.women_only && <p className="cx-caption" style={{ margin: 0 }}>{t('group.womenOnlyNote')}</p>}
+
+              {d.circle_type === 'travel' && (d.trip_plan?.length || d.starts_on || canManage) && (
+                <section className="cx-block" aria-label={t('group.tripTitle')}>
+                  <div className="cx-sechead">
+                    <span className="cx-label">{t('group.tripTitle')}</span>
+                    {canManage && <button className="cx-textbtn" onClick={openPlan}>{t('group.tripEdit')}</button>}
+                  </div>
+                  {d.starts_on && <span className="cx-strong">{d.ends_on && d.ends_on !== d.starts_on ? t('group.tripDates', { from: dayOnly(d.starts_on, i18n.language), to: dayOnly(d.ends_on, i18n.language) }) : dayOnly(d.starts_on, i18n.language)}</span>}
+                  {(d.trip_plan?.length ?? 0) === 0 ? (
+                    <span className="cx-caption">{t('group.tripEmpty')}</span>
+                  ) : (
+                    <ol className="stack" style={{ gap: 10, margin: 0, paddingLeft: 20 }}>
+                      {(d.trip_plan ?? []).map((st, i) => (
+                        <li key={st.id ?? i}>
+                          <span className="cx-strong">{st.place}</span>
+                          {st.on_day && <span className="cx-caption"> · {dayOnly(st.on_day, i18n.language)}</span>}
+                          {st.note && <><br /><span className="cx-caption">{st.note}</span></>}
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </section>
+              )}
+
               {/* One action block: under the head on a phone, first in the aside on desktop (Luma's action card). */}
               <div className="cx-only-narrow">{actionsBlock}</div>
 
@@ -620,6 +740,24 @@ export default function CircleDetailPage() {
                         <button className="cx-btn cx-btn--primary" onClick={() => decide(r, true)}>{t('join.letThemIn')}</button>
                       </div>
                       {(d.join_questions ?? []).map((q, i) => (r.answers[i] ? <span key={i} className="cx-caption">{q} — <b>{r.answers[i]}</b></span> : null))}
+                    </div>
+                  ))}
+                </section>
+              )}
+
+              {(d.cohost_invites?.length ?? 0) > 0 && (
+                <section className="cx-block" aria-label={t('cs.cohostAskTitle', { count: d.cohost_invites?.length ?? 0 })}>
+                  <span className="cx-label">{t('cs.cohostAskTitle', { count: d.cohost_invites?.length ?? 0 })}</span>
+                  {(d.cohost_invites ?? []).map((inv) => (
+                    <div key={inv.occurrence_id} className="stack" style={{ gap: 8 }}>
+                      <Link href={`/a/${inv.slug}`} className="stack" style={{ gap: 2 }}>
+                        <span className="cx-strong">{inv.title}</span>
+                        <span className="cx-caption">{formatWhen(inv.time_start, i18n.language)} · {inv.host_circle_name ? t('cs.cohostFromCircle', { name: inv.invited_by, circle: inv.host_circle_name }) : t('cs.cohostFrom', { name: inv.invited_by })}</span>
+                      </Link>
+                      <div className="row" style={{ gap: 8 }}>
+                        <button className="cx-btn cx-btn--ghost" onClick={() => answerCohost(inv, false)}>{t('cs.cohostDecline')}</button>
+                        <button className="cx-btn cx-btn--primary" onClick={() => answerCohost(inv, true)}>{t('cs.cohostAccept')}</button>
+                      </div>
                     </div>
                   ))}
                 </section>
@@ -685,23 +823,37 @@ export default function CircleDetailPage() {
                             <input key={i} className="cx-input" name={`poll-option-${i}`} maxLength={120} placeholder={t('posts.option', { n: i + 1 })} value={v} onChange={(e) => setPollOptions((prev) => prev.map((x, j) => (j === i ? e.target.value : x)))} />
                           ))}
                           {pollMode && pollOptions.length < 4 && <button className="cx-textbtn" style={{ alignSelf: 'flex-start' }} onClick={() => setPollOptions((prev) => [...prev, ''])}>{t('posts.addOption')}</button>}
-                          {photoFile && !pollMode && <span className="cx-attach"><ImageIcon size={16} strokeWidth={1.75} /> <span className="grow truncate">{photoFile.name}</span><button className="cx-plain" aria-label={t('common.close')} onClick={() => setPhotoFile(null)}><X size={16} /></button></span>}
-                          {docFile && !pollMode && <span className="cx-attach"><Paperclip size={16} strokeWidth={1.75} /> <span className="grow truncate">{docFile.name}</span><button className="cx-plain" aria-label={t('common.close')} onClick={() => setDocFile(null)}><X size={16} /></button></span>}
+                          {!pollMode && photoFiles.length > 0 && (
+                            <div className="cx-thumbs">
+                              {photoFiles.map((f, i) => (
+                                <span key={`${f.name}-${i}`} className="cx-thumb">
+                                  <img src={photoPreviews[i]} alt={f.name} />
+                                  <button className="cx-albumtile__x" aria-label={t('cs.removePhoto')} onClick={() => setPhotoFiles((cur) => cur.filter((_, j) => j !== i))}><X size={14} strokeWidth={2} /></button>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {!pollMode && docFiles.map((f, i) => (
+                            <span key={`${f.name}-${i}`} className="cx-attach"><Paperclip size={16} strokeWidth={1.75} /> <span className="grow truncate">{f.name}</span><span className="cx-caption">{fileSize(f.size)}</span><button className="cx-plain" aria-label={t('common.close')} onClick={() => setDocFiles((cur) => cur.filter((_, j) => j !== i))}><X size={16} /></button></span>
+                          ))}
+                          {!pollMode && (photoFiles.length > 0 || docFiles.length > 0) && (
+                            <span className="cx-caption">{t('cs.limitsHint', { photos: limits.max_photos, files: limits.max_files, types: limits.file_types.map((x) => x.toUpperCase()).join(', ') })}</span>
+                          )}
                           <div className="row" style={{ gap: 6 }}>
                             {!pollMode && <button className="cx-iconbtn cx-iconbtn--sm" aria-label={t('posts.addPhoto')} onClick={() => fileInput.current?.click()}><ImageIcon size={18} strokeWidth={1.75} /></button>}
                             {!pollMode && <button className="cx-iconbtn cx-iconbtn--sm" aria-label={t('posts.addDocument')} onClick={() => docInput.current?.click()}><Paperclip size={18} strokeWidth={1.75} /></button>}
-                            <button className="cx-iconbtn cx-iconbtn--sm" aria-pressed={pollMode} aria-label={t('posts.askQuestion')} onClick={() => { setPollMode((v) => !v); setAnnounce(false); setPhotoFile(null); setDocFile(null); }}><BarChart3 size={18} strokeWidth={1.75} /></button>
+                            <button className="cx-iconbtn cx-iconbtn--sm" aria-pressed={pollMode} aria-label={t('posts.askQuestion')} onClick={() => { setPollMode((v) => !v); setAnnounce(false); setPhotoFiles([]); setDocFiles([]); }}><BarChart3 size={18} strokeWidth={1.75} /></button>
                             {canManage && !pollMode && (
                               <button className="cx-chip" aria-pressed={announce} title={t('posts.announceHint')} onClick={() => setAnnounce((v) => !v)}><Megaphone size={16} strokeWidth={1.75} aria-hidden="true" />{t('posts.announcement')}</button>
                             )}
                             <span className="grow" />
                             <button className="cx-btn cx-btn--ghost" onClick={resetComposer}>{t('common.cancel')}</button>
-                            <button className="cx-btn cx-btn--primary" disabled={posting || (!draft.trim() && !photoFile && !docFile)} onClick={submitPost}>{t('posts.post')}</button>
+                            <button className="cx-btn cx-btn--primary" disabled={posting || (!draft.trim() && photoFiles.length === 0 && docFiles.length === 0)} onClick={submitPost}>{t('posts.post')}</button>
                           </div>
                         </div>
                       )}
-                      <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => { setPhotoFile(e.target.files?.[0] ?? null); e.target.value = ''; }} />
-                      <input ref={docInput} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" hidden onChange={(e) => { setDocFile(e.target.files?.[0] ?? null); e.target.value = ''; }} />
+                      <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={(e) => { const fs = Array.from(e.target.files ?? []); e.target.value = ''; addPhotoFiles(fs); }} />
+                      <input ref={docInput} type="file" accept={limits.file_types.map((x) => `.${x}`).join(',')} multiple hidden onChange={(e) => { const fs = Array.from(e.target.files ?? []); e.target.value = ''; addDocFiles(fs); }} />
                     </div>
                   )}
 
@@ -726,18 +878,34 @@ export default function CircleDetailPage() {
                             {(item.post.mine || canManage) && <button className="cx-plain cx-post__more" aria-label={t('common.more')} onClick={() => setPostMenu(item.post)}><Ellipsis size={18} strokeWidth={1.75} /></button>}
                           </div>
                           {item.post.body && <p className="cx-post__body">{item.post.body}</p>}
-                          {item.post.photo_url && (
-                            <button className="cx-plain cx-post__photo" onClick={() => setLightbox(item.post.photo_url)}>
-                              <img src={resolveMediaUrl(item.post.photo_url) ?? ''} alt="" loading="lazy" />
-                            </button>
-                          )}
-                          {item.post.doc_url && (
-                            <a className="cx-doc" href={resolveMediaUrl(item.post.doc_url) ?? ''} target="_blank" rel="noopener noreferrer">
+                          {(() => {
+                            const urls = photosOf(item.post);
+                            if (urls.length === 0) return null;
+                            if (urls.length === 1) return (
+                              <button className="cx-plain cx-post__photo" onClick={() => setLightbox({ urls, i: 0 })}>
+                                <img src={resolveMediaUrl(urls[0]) ?? ''} alt="" loading="lazy" />
+                              </button>
+                            );
+                            const shown = urls.slice(0, 4);
+                            return (
+                              <div className={`cx-pgrid cx-pgrid--${shown.length}`}>
+                                {shown.map((u, i) => (
+                                  <button key={u} className="cx-plain cx-pgrid__cell" aria-label={t('cs.photoOf', { i: i + 1, n: urls.length })} onClick={() => setLightbox({ urls, i })}>
+                                    <img src={resolveMediaUrl(u) ?? ''} alt="" loading="lazy" />
+                                    {i === 3 && urls.length > 4 && <span className="cx-pgrid__more">{t('cs.morePhotos', { n: urls.length - 4 })}</span>}
+                                  </button>
+                                ))}
+                              </div>
+                            );
+                          })()}
+                          {docsOf(item.post).map((doc) => (
+                            <a key={doc.url} className="cx-doc" href={resolveMediaUrl(doc.url) ?? ''} target="_blank" rel="noopener noreferrer">
                               <FileText size={20} strokeWidth={1.75} aria-hidden="true" />
-                              <span className="grow truncate">{item.post.doc_name}</span>
+                              <span className="grow truncate">{doc.name}</span>
+                              {doc.size !== null && <span className="cx-caption">{fileSize(doc.size)}</span>}
                               <span className="cx-textbtn">{t('posts.openDoc')}</span>
                             </a>
-                          )}
+                          ))}
                           {(() => {
                             const p = item.post;
                             const me = identity?.member_id ?? '';
@@ -849,15 +1017,23 @@ export default function CircleDetailPage() {
 
               {tab === 'photos' && (
                 !d.viewer_role ? <p className="cx-caption cx-empty">{t('posts.membersOnly')}</p>
-                : photoPosts.length === 0 ? <p className="cx-caption cx-empty">{t('posts.noPhotos')}</p>
                 : (
-                  <div className="cx-photos">
-                    {photoPosts.map((p) => (
-                      <button key={p.id} className="cx-plain" onClick={() => setLightbox(p.photo_url)}>
-                        <img src={resolveMediaUrl(p.photo_url) ?? ''} alt={p.body || p.display_name} loading="lazy" />
-                      </button>
-                    ))}
-                  </div>
+                  <>
+                    {/* [053] Named albums first, then every photo shared in posts. */}
+                    <CircleAlbums circleId={d.id} canManage={canManage} maxPerUpload={limits.album_max_per_upload} photoMb={limits.photo_mb} say={(m) => say(m, undefined, 3000)} openPhotos={(urls, i) => setLightbox({ urls, i })} />
+                    <section className="stack" style={{ gap: 0, paddingTop: 16 }}>
+                      <span className="cx-label">{t('cs.fromPosts')}</span>
+                      {postPhotos.length === 0 ? <p className="cx-caption" style={{ margin: '8px 0 0' }}>{t('posts.noPhotos')}</p> : (
+                        <div className="cx-photos">
+                          {postPhotos.map((u, i) => (
+                            <button key={u} className="cx-plain" aria-label={t('cs.photoOf', { i: i + 1, n: postPhotos.length })} onClick={() => setLightbox({ urls: postPhotos, i })}>
+                              <img src={resolveMediaUrl(u) ?? ''} alt="" loading="lazy" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </section>
+                  </>
                 )
               )}
 
@@ -1019,12 +1195,75 @@ export default function CircleDetailPage() {
         </div>
       </Sheet>
 
+      <Sheet open={planning} onClose={() => setPlanning(false)} label={t('group.tripTitle')}>
+        <div className="stack cx" style={{ gap: 14 }}>
+          <h2 className="cx-h2">{t('group.tripRoute')}</h2>
+          {stops.map((st, i) => (
+            <div key={i} className="stack" style={{ gap: 6 }}>
+              <div className="row" style={{ gap: 8 }}>
+                <input className="cx-input grow" name={`stop-place-${i}`} maxLength={80} placeholder={`${i + 1}. ${t('group.tripPlace')}`} aria-label={t('group.tripPlace')} value={st.place} onChange={(e) => setStops((prev) => prev.map((x, j) => (j === i ? { ...x, place: e.target.value } : x)))} />
+                <input className="cx-input" type="date" name={`stop-day-${i}`} aria-label={t('group.tripDay')} min={d?.starts_on ?? undefined} max={d?.ends_on ?? d?.starts_on ?? undefined} value={st.on_day ?? ''} onChange={(e) => setStops((prev) => prev.map((x, j) => (j === i ? { ...x, on_day: e.target.value || null } : x)))} />
+                <button className="cx-iconbtn cx-iconbtn--sm" aria-label={t('group.tripRemove')} onClick={() => setStops((prev) => prev.filter((_, j) => j !== i))}><X size={16} /></button>
+              </div>
+              <input className="cx-input" name={`stop-note-${i}`} maxLength={200} placeholder={t('group.tripNote')} aria-label={t('group.tripNote')} value={st.note ?? ''} onChange={(e) => setStops((prev) => prev.map((x, j) => (j === i ? { ...x, note: e.target.value } : x)))} />
+            </div>
+          ))}
+          {stops.length < 20 && <button className="cx-textbtn" style={{ alignSelf: 'flex-start' }} onClick={() => setStops((prev) => [...prev, { place: '', on_day: null, note: null }])}>{t('group.tripAddStop')}</button>}
+          <div className="row cx-sheetfoot" style={{ gap: 8 }}>
+            <button className="cx-btn cx-btn--ghost grow" onClick={() => setPlanning(false)}>{t('common.cancel')}</button>
+            <button className="cx-btn cx-btn--primary grow" onClick={savePlan}>{t('group.tripSave')}</button>
+          </div>
+        </div>
+      </Sheet>
+
+      <Sheet open={reporting !== null} onClose={() => setReporting(null)} label={t('group.reportTitle')}>
+        <div className="stack cx" style={{ gap: 14 }}>
+          <h2 className="cx-h2">{t('group.reportTitle')}</h2>
+          <span className="cx-strong">{reporting?.display_name}</span>
+          <p className="cx-caption" style={{ margin: 0 }}>{t('group.reportBody')}</p>
+          <textarea className="cx-input" name="report-note" rows={3} maxLength={400} placeholder={t('group.reportNote')} value={reportNote} onChange={(e) => setReportNote(e.target.value)} />
+          <div className="row cx-sheetfoot" style={{ gap: 8 }}>
+            <button className="cx-btn cx-btn--ghost grow" onClick={() => setReporting(null)}>{t('common.cancel')}</button>
+            <button className="cx-btn cx-btn--primary grow" onClick={sendReport}>{t('group.reportSend')}</button>
+          </div>
+        </div>
+      </Sheet>
+
       {lightbox && (
-        <div className="cx-lightbox" role="dialog" aria-modal="true" onClick={() => setLightbox(null)}>
+        <div
+          className="cx-lightbox" role="dialog" aria-modal="true" aria-label={t('cs.photoOf', { i: lightbox.i + 1, n: lightbox.urls.length })}
+          onClick={() => setLightbox(null)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setLightbox(null);
+            if (e.key === 'ArrowRight') setLightbox((l) => (l ? { ...l, i: Math.min(l.urls.length - 1, l.i + 1) } : l));
+            if (e.key === 'ArrowLeft') setLightbox((l) => (l ? { ...l, i: Math.max(0, l.i - 1) } : l));
+          }}
+          tabIndex={-1}
+        >
           <button className="cx-iconbtn cx-lightbox__close" aria-label={t('common.close')} onClick={() => setLightbox(null)}><X size={20} /></button>
-          <img src={resolveMediaUrl(lightbox) ?? ''} alt="" />
+          <img src={resolveMediaUrl(lightbox.urls[lightbox.i]) ?? ''} alt="" onClick={(e) => e.stopPropagation()} />
+          {lightbox.urls.length > 1 && (
+            <>
+              <button className="cx-iconbtn cx-lightbox__nav cx-lightbox__nav--prev" aria-label={t('cs.prev')} disabled={lightbox.i === 0} onClick={(e) => { e.stopPropagation(); setLightbox((l) => (l ? { ...l, i: Math.max(0, l.i - 1) } : l)); }}><ChevronLeft size={22} /></button>
+              <button className="cx-iconbtn cx-lightbox__nav cx-lightbox__nav--next" aria-label={t('cs.next')} disabled={lightbox.i === lightbox.urls.length - 1} onClick={(e) => { e.stopPropagation(); setLightbox((l) => (l ? { ...l, i: Math.min(l.urls.length - 1, l.i + 1) } : l)); }}><ChevronRight size={22} /></button>
+              <span className="cx-lightbox__count">{t('cs.photoOf', { i: lightbox.i + 1, n: lightbox.urls.length })}</span>
+            </>
+          )}
         </div>
       )}
+
+      {/* [053] This circle's notifications for the viewer: one tap applies and closes. */}
+      <Sheet open={notifyOpen} onClose={() => setNotifyOpen(false)} label={t('cs.notifyTitle')}>
+        <div className="stack cx" style={{ gap: 8 }}>
+          <h2 className="cx-h2">{t('cs.notifyTitle')}</h2>
+          {(['all', 'highlights', 'off'] as NotifyLevel[]).map((lv) => (
+            <button key={lv} className="cx-choice" aria-pressed={(d?.notify_level ?? 'all') === lv} onClick={() => saveNotify(lv)}>
+              <span className="cx-strong">{t(lv === 'all' ? 'cs.notifyAll' : lv === 'highlights' ? 'cs.notifyHighlights' : 'cs.notifyOff')}</span>
+              <span className="cx-caption">{t(lv === 'all' ? 'cs.notifyAllHint' : lv === 'highlights' ? 'cs.notifyHighlightsHint' : 'cs.notifyOffHint')}</span>
+            </button>
+          ))}
+        </div>
+      </Sheet>
 
       <Toast text={toast?.text ?? null} actionLabel={toast?.actionLabel} onAction={toast?.onAction} />
     </div>

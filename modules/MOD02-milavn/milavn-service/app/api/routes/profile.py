@@ -10,8 +10,8 @@ from pydantic import BaseModel, Field
 
 from app import media_files
 from app.api.deps import CurrentMember, DbSession, Locale
+from app.components.places import interface as places
 from app.components.profile import interface as profile
-from app.config import localities
 from app.config.interests import taxonomy_payload
 from app.i18n import translate
 
@@ -23,6 +23,9 @@ class ProfileResponse(BaseModel):
     locality_city: str
     locality_zone: str | None
     locality_locality: str | None
+    locality_state: str | None = None
+    locality_lat: float | None = None
+    locality_lng: float | None = None
     language_preference: str
     interests: list[str]
     interest_labels: list[str]
@@ -34,8 +37,20 @@ class OnboardingRequest(BaseModel):
     locality_city: str | None = None
     locality_zone: str | None = None
     locality_locality: str | None = None
+    locality_state: str | None = None
+    locality_lat: float | None = None
+    locality_lng: float | None = None
     interests: list[str] = Field(default_factory=list)
     language_preference: str | None = None
+
+
+class PlaceRequest(BaseModel):
+    locality_city: str
+    locality_zone: str | None = None
+    locality_locality: str | None = None
+    locality_state: str | None = None
+    locality_lat: float | None = None
+    locality_lng: float | None = None
 
 
 class LanguageRequest(BaseModel):
@@ -48,6 +63,9 @@ def _to_response(p: profile.ProfileSummary) -> ProfileResponse:
         locality_city=p.locality_city,
         locality_zone=p.locality_zone,
         locality_locality=p.locality_locality,
+        locality_state=p.locality_state,
+        locality_lat=p.locality_lat,
+        locality_lng=p.locality_lng,
         language_preference=p.language_preference,
         interests=p.interests,
         interest_labels=p.interest_labels,
@@ -72,6 +90,9 @@ async def save_onboarding(body: OnboardingRequest, session: DbSession, member: C
             locality_city=body.locality_city,
             locality_zone=body.locality_zone,
             locality_locality=body.locality_locality,
+            locality_state=body.locality_state,
+            locality_lat=body.locality_lat,
+            locality_lng=body.locality_lng,
             interests=body.interests,
             language_preference=body.language_preference,
         )
@@ -81,6 +102,18 @@ async def save_onboarding(body: OnboardingRequest, session: DbSession, member: C
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={"fields": exc.fields, "message": translate("profile.missingFields", lang, fields=names)},
         ) from exc
+    return _to_response(result)
+
+
+@router.patch("/place", response_model=ProfileResponse)
+async def set_place(body: PlaceRequest, session: DbSession, member: CurrentMember, lang: Locale) -> ProfileResponse:
+    """[FR001/FR038] Change my approximate home place (picked from the live place search)."""
+    try:
+        result = await profile.save_place(session, member_id=member.member_id, **body.model_dump())
+    except profile.MissingRequiredFields as exc:
+        raise HTTPException(status_code=422, detail={"fields": exc.fields, "message": translate("profile.missingFields", lang, fields=", ".join(exc.fields))}) from exc
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={"code": "profile_required", "message": translate("profile.notFound", lang)})
     return _to_response(result)
 
 
@@ -128,14 +161,22 @@ async def interests_taxonomy() -> list[dict]:
     return taxonomy_payload()
 
 
-@router.get("/localities")
-async def locality_hierarchy() -> list[dict]:
-    """[FR038/TR29] The approximate City -> Zone -> Locality picker data."""
-    return localities.hierarchy_payload()
+@router.get("/places")
+async def search_places(member: CurrentMember, lang: Locale, q: str = "") -> list[dict]:
+    """[FR038/TR29] Live India place search (state, district, city, area) for the place picker."""
+    try:
+        return await places.search(q, lang)
+    except (places.PlacesNotConfigured, places.PlacesUnavailable) as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail={"code": "places_unavailable", "message": translate("place.unavailable", lang)}) from exc
 
 
-@router.get("/localities/nearest")
-async def nearest_locality(lat: float, lng: float) -> dict:
-    """[FR081] Resolve a device position to the nearest approximate locality."""
-    loc = localities.nearest(lat, lng)
-    return {"city": loc.city, "zone": loc.zone, "locality": loc.locality}
+@router.get("/places/nearest")
+async def nearest_place(member: CurrentMember, lang: Locale, lat: float, lng: float) -> dict:
+    """[FR081] Resolve a device position to an approximate place (area centre, never the position itself)."""
+    try:
+        found = await places.nearest(lat, lng, lang)
+    except (places.PlacesNotConfigured, places.PlacesUnavailable) as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail={"code": "places_unavailable", "message": translate("place.unavailable", lang)}) from exc
+    if found is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={"code": "place_not_found", "message": translate("place.notFound", lang)})
+    return found

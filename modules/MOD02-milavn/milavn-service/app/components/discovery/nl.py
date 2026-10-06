@@ -21,11 +21,10 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from app.config.interests import INTEREST_TAXONOMY, TAG_LABELS, TAG_TO_CATEGORY
-from app.config.localities import LOCALITIES
 
 IST = ZoneInfo("Asia/Kolkata")
 
-CATEGORIES = ("play", "meet", "eat", "learn", "work", "explore", "celebrate", "help")
+CATEGORIES = ("play", "meet", "eat", "learn", "work", "explore", "celebrate", "help", "professional")
 
 # Category synonyms (en/hi/te + common Hinglish) -> intent category.
 _CATEGORY_WORDS: dict[str, str] = {
@@ -69,6 +68,19 @@ _CATEGORY_WORDS: dict[str, str] = {
     "career": "work",
     "काम": "work",
     "పని": "work",
+    "professional": "professional",
+    "professionals": "professional",
+    "consulting": "professional",
+    "consultant": "professional",
+    "expert": "professional",
+    "experts": "professional",
+    "conference": "professional",
+    "seminar": "professional",
+    "masterclass": "professional",
+    "पेशेवर": "professional",
+    "विशेषज्ञ": "professional",
+    "నిపుణులు": "professional",
+    "వృత్తిపరమైన": "professional",
     "explore": "explore",
     "trek": "explore",
     "hike": "explore",
@@ -91,6 +103,96 @@ _CATEGORY_WORDS: dict[str, str] = {
     "drive": "help",
     "मदद": "help",
     "సహాయం": "help",
+}
+
+# [054] Event format words (en/hi/te) -> event format. Checked before the category words, so "book club" or
+# "tournament" filters by what kind of event it is rather than guessing a category from the same word.
+_FORMAT_WORDS: dict[str, str] = {
+    "workshop": "workshop",
+    "workshops": "workshop",
+    "कार्यशाला": "workshop",
+    "వర్క్‌షాప్": "workshop",
+    "webinar": "webinar",
+    "webinars": "webinar",
+    "वेबिनार": "webinar",
+    "వెబినార్": "webinar",
+    "talk": "talk",
+    "lecture": "talk",
+    "व्याख्यान": "talk",
+    "ఉపన్యాసం": "talk",
+    "panel": "panel",
+    "panel discussion": "panel",
+    "परिचर्चा": "panel",
+    "masterclass": "masterclass",
+    "master class": "masterclass",
+    "book club": "book_club",
+    "reading circle": "book_club",
+    "पुस्तक क्लब": "book_club",
+    "బుక్ క్లబ్": "book_club",
+    "skill share": "skill_share",
+    "skill-share": "skill_share",
+    "skillshare": "skill_share",
+    "office hours": "office_hours",
+    "ask me anything": "office_hours",
+    "bootcamp": "bootcamp",
+    "boot camp": "bootcamp",
+    "multi-day": "bootcamp",
+    "conference": "conference",
+    "summit": "conference",
+    "सम्मेलन": "conference",
+    "సదస్సు": "conference",
+    "expo": "expo",
+    "exhibition": "expo",
+    "प्रदर्शनी": "expo",
+    "ప్రదర్శన": "expo",
+    "cultural night": "cultural_night",
+    "concert": "cultural_night",
+    "music night": "cultural_night",
+    "सांस्कृतिक संध्या": "cultural_night",
+    "संगीत संध्या": "cultural_night",
+    "సాంస్కృతిక కార్యక్రమం": "cultural_night",
+    "సంగీత కచేరీ": "cultural_night",
+    "tournament": "tournament",
+    "league": "tournament",
+    "टूर्नामेंट": "tournament",
+    "టోర్నమెంట్": "tournament",
+    "festival": "festival",
+    "mela": "festival",
+    "उत्सव": "festival",
+    "मेला": "festival",
+    "ఉత్సవం": "festival",
+    "satsang": "satsang",
+    "bhajan": "satsang",
+    "bhajan sandhya": "satsang",
+    "भजन संध्या": "satsang",
+    "kirtan": "satsang",
+    "सत्संग": "satsang",
+    "भजन": "satsang",
+    "कीर्तन": "satsang",
+    "సత్సంగం": "satsang",
+    "భజన": "satsang",
+    "కీర్తన": "satsang",
+    "live darshan": "darshan_stream",
+    "darshan": "darshan_stream",
+    "दर्शन": "darshan_stream",
+    "దర్శనం": "darshan_stream",
+    "town hall": "town_hall",
+    "townhall": "town_hall",
+    "टाउन हॉल": "town_hall",
+    "టౌన్ హాల్": "town_hall",
+    "volunteering": "volunteering",
+    "volunteer drive": "volunteering",
+    "seva": "volunteering",
+    "सेवा": "volunteering",
+    "సేవ": "volunteering",
+    "trip": "trip",
+    "yatra": "trip",
+    "यात्रा": "trip",
+    "యాత్ర": "trip",
+    "meetup": "meetup",
+    "meet-up": "meetup",
+    "मीटअप": "meetup",
+    "మీటప్": "meetup",
 }
 
 _WHEN_WORDS: dict[str, str] = {
@@ -155,6 +257,7 @@ _DAYPART = {"morning": 8, "noon": 12, "afternoon": 15, "evening": 18, "tonight":
 @dataclass(slots=True)
 class Understanding:
     category: str | None = None
+    event_format: str | None = None  # [054]
     when: str | None = None
     distance: str | None = None
     query: str | None = None
@@ -189,6 +292,12 @@ def understand(text: str) -> Understanding:
     if not t:
         return u
     remainder = t
+    fmt, fphrase = _find_phrase(t, _FORMAT_WORDS)
+    if fmt:
+        u.event_format = fmt
+        u.chips.append(fphrase or fmt)
+        remainder = re.sub(rf"(?<!\w){re.escape(fphrase or '')}(?!\w)", " ", remainder)
+        t = re.sub(rf"(?<!\w){re.escape(fphrase or '')}(?!\w)", " ", t)  # the same word is not read again as a category
     when, phrase = _find_phrase(t, _WHEN_WORDS)
     if when:
         u.when = when
@@ -226,7 +335,9 @@ class Draft:
     time_start: str | None = None  # ISO 8601 with offset
     locality_city: str | None = None
     locality_locality: str | None = None
+    place: dict | None = None  # the full approximate place, when it matched one the caller knows
     capacity: int | None = None
+    event_format: str | None = None  # [054]
     matched: list[str] = field(default_factory=list)
 
 
@@ -253,13 +364,19 @@ def _parse_time(t: str) -> tuple[int | None, int, str | None]:
     return None, 0, None
 
 
-def smart_fill(text: str, *, now: datetime | None = None, default_city: str | None = None) -> Draft:
+def smart_fill(text: str, *, now: datetime | None = None, default_city: str | None = None, known_places: list[dict] | None = None) -> Draft:
     t = _norm(text)
     d = Draft()
     if not t:
         return d
     now = (now or datetime.now(IST)).astimezone(IST)
     remainder = t
+
+    # [054] The kind of event, when the sentence names one ("book club", "tournament"); the word stays in the title.
+    fmt, fphrase = _find_phrase(t, _FORMAT_WORDS)
+    if fmt:
+        d.event_format = fmt
+        d.matched.append(fphrase or fmt)
 
     # Category via interest label or synonym.
     tag, label, cat = _find_interest(t)
@@ -304,12 +421,13 @@ def smart_fill(text: str, *, now: datetime | None = None, default_city: str | No
             start = start + timedelta(days=1) if not day_phrase else start
         d.time_start = start.isoformat()
 
-    # Where: locality names from the module's own hierarchy.
-    for loc in sorted(LOCALITIES, key=lambda x: -len(x.locality)):
-        if re.search(rf"(?<!\w){re.escape(loc.locality.lower())}(?!\w)", t):
-            d.locality_city, d.locality_locality = loc.city, loc.locality
-            d.matched.append(loc.locality)
-            remainder = re.sub(rf"(?<!\w)(at|in|near)?\s*{re.escape(loc.locality.lower())}(?!\w)", " ", remainder)
+    # Where: area names the caller knows (the member's own place and places real events already use).
+    for loc in sorted((k for k in (known_places or []) if k.get("locality_locality")), key=lambda x: -len(x["locality_locality"])):
+        name = loc["locality_locality"]
+        if re.search(rf"(?<!\w){re.escape(name.lower())}(?!\w)", t):
+            d.locality_city, d.locality_locality, d.place = loc["locality_city"], name, loc
+            d.matched.append(name)
+            remainder = re.sub(rf"(?<!\w)(at|in|near)?\s*{re.escape(name.lower())}(?!\w)", " ", remainder)
             break
     if d.locality_city is None and default_city:
         d.locality_city = default_city

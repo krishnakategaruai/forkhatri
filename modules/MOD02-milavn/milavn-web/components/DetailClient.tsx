@@ -18,7 +18,11 @@ import { useTranslation } from 'react-i18next';
 import { TrustPill } from '@/components/ActivityCard';
 import Moments from '@/components/Moments';
 import QrCode from '@/components/QrCode';
+import { OrganizerContact, TicketPicker, TicketQrCard, type TicketChoice, type Tix } from '@/components/TicketPanel';
 import Thread from '@/components/Thread';
+import CohostPanel from '@/components/CohostPanel'; // [053] circles co-hosting this event
+import EventProgram from '@/components/EventProgram';
+import { daySpan, type Provider } from '@/lib/event-formats';
 import { Modal, Sheet } from '@/components/Sheet';
 import { CardSkeleton, ErrorState, Toast } from '@/components/States';
 import { api, ApiError, resolveMediaUrl, type Card } from '@/lib/api';
@@ -41,6 +45,10 @@ export type PublicPage = {
   viewer_role: string | null;
 };
 
+const directionsHref = (query: string) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+// [054] The exact venue pin: directions straight to the point, not a search on the address text.
+const directionsToPoint = (lat: number, lng: number) => `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+
 type Detail = Card & {
   description: string | null; share_url: string; viewer_role: string;
   organizer: { member_id: string; display_name: string; avatar: string | null; trust_label: string; trust_positive: boolean; reputation: string[]; identity_visible: boolean };
@@ -55,6 +63,12 @@ type Detail = Card & {
   my_plan?: { travel: string | null; company: string | null; confirmed_at: string | null } | null;
   still_coming_due?: boolean;
   max_guests_per_member?: number; // [FR114] what the host allows
+  attendance_mode?: 'in_person' | 'online' | 'hybrid';
+  venue?: { venue_address: string | null; venue_notes: string | null; join_link: string | null; lat?: number | null; lng?: number | null } | null; // only for organizers and confirmed attendees
+  // [054] Online / hybrid: the join link reaches confirmed attendees only from open_minutes before the start until the end.
+  online?: { state: 'later' | 'open' | 'ended'; opens_at: string; open_minutes: number; provider: Provider | null } | null;
+  event_format?: string | null;
+  team_size_max?: number | null;
   my_guests?: number; // how many I am bringing
   guest_total?: number; // how many guests altogether
   first_time?: boolean;
@@ -72,10 +86,10 @@ const COMPANY = ['alone', 'friend', 'family'] as const;
 // FR102 paid spots: what the member needs to decide and to know where they stand.
 type TicketInfo = {
   price_paise: number | null; refund_cutoff_hours: number; refund_deadline: string; refund_if_withdraw_now_paise: number; payments_available: boolean;
-  ticket: { kind: string; status: string; amount_paise: number; checkout_url: string | null; hold_active: boolean; hold_expires_at: string | null; refund_amount_paise: number | null } | null;
+  ticket: { kind: string; status: string; amount_paise: number; checkout_url: string | null; hold_active: boolean; hold_expires_at: string | null; refund_amount_paise: number | null; type_name?: string | null; qr_code?: string | null; discount_paise?: number } | null;
 };
 
-const CATEGORY_ICON: Record<string, string> ={ play: '🏸', meet: '☕', eat: '🍛', learn: '📚', work: '💼', explore: '🥾', celebrate: '🎉', help: '🤝' };
+const CATEGORY_ICON: Record<string, string> ={ play: '🏸', meet: '☕', eat: '🍛', learn: '📚', work: '💼', explore: '🥾', celebrate: '🎉', help: '🤝', professional: '🎤' };
 const NOTIF_KEY = 'milavn.notifPrimed';
 
 export default function DetailClient({ slug, initial }: { slug: string; initial: PublicPage | null }) {
@@ -109,6 +123,8 @@ export default function DetailClient({ slug, initial }: { slug: string; initial:
   const [icsHref, setIcsHref] = useState<string | null>(null);
   const [pay, setPay] = useState<TicketInfo | null>(null);
   const [payAsk, setPayAsk] = useState(false);
+  const [tix, setTix] = useState<Tix | null>(null); // [052] ticket types, organizer contact, Counsel link
+  const [choice, setChoice] = useState<TicketChoice>({ typeId: null, code: '', amount: null });
   const [planEdit, setPlanEdit] = useState(false);
   const [hideAsk, setHideAsk] = useState(false);
 
@@ -123,6 +139,7 @@ export default function DetailClient({ slug, initial }: { slug: string; initial:
       const d = await api<Detail>(`/occurrences/by-slug/${encodeURIComponent(slug)}`);
       setDetail(d); setStatus(d.viewer_status); setGoing(d.going_count); setSpotsLeft(d.spots_left ?? null); setError(false);
       if (d.price_paise != null) void loadTicket(d.id);
+      api<Tix>(`/occurrences/${d.id}/ticketing`).then(setTix).catch(() => setTix(null));
       if (['attended', 'checked_in'].includes(d.viewer_status ?? '')) api<{ eligible: boolean; already_submitted: boolean }>(`/feedback/prompt/${d.id}`).then(setFeedback).catch(() => undefined);
     } catch (e) {
       if (!pub) setError(true);
@@ -187,6 +204,7 @@ export default function DetailClient({ slug, initial }: { slug: string; initial:
   const safety = detail?.safety_guidelines ?? pub?.safety_guidelines ?? [];
   const isOrganizer = detail?.viewer_role === 'organizer' || detail?.viewer_role === 'co_organizer';
   const cancelled = card?.status === 'cancelled';
+  const venue = detail?.venue ?? null;
   const rsvpd = !!status && !['cancelled', 'no_show'].includes(status);
 
   const setRsvp = async (desired: 'interested' | 'going' | 'cancelled') => {
@@ -212,7 +230,7 @@ export default function DetailClient({ slug, initial }: { slug: string; initial:
     if (!card || busy) return;
     setBusy(true);
     try {
-      const r = await api<{ status: string; checkout_url: string | null; waitlist_position: number | null }>(`/occurrences/${card.id}/ticket`, { body: {}, idempotent: true });
+      const r = await api<{ status: string; checkout_url: string | null; waitlist_position: number | null }>(`/occurrences/${card.id}/ticket`, { body: { ticket_type_id: choice.typeId, code: choice.code || null }, idempotent: true });
       if (r.status === 'awaiting_payment' && r.checkout_url) { window.location.assign(r.checkout_url); return; }
       if (r.status === 'waitlisted') { setStatus('waitlisted'); setWaitPos(r.waitlist_position); say(t('pay.waitlisted')); }
       await loadTicket(card.id);
@@ -230,6 +248,15 @@ export default function DetailClient({ slug, initial }: { slug: string; initial:
       await loadAuth();
     } catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
     finally { setBusy(false); }
+  };
+
+  // [054] Tapping Join opens the organizer's meeting link (a plain link, so the browser never blocks it) and tells the
+  // server, which marks a confirmed attendee checked in. Organizers just open it.
+  const joinOnline = () => {
+    if (!card || isOrganizer) return;
+    api<{ status: string }>(`/occurrences/${card.id}/join-online`, { body: {} })
+      .then(() => setStatus('checked_in'))
+      .catch((e) => say(e instanceof ApiError ? e.message : t('state.error')));
   };
 
   // [FR105] Plan: how I'm getting there, who with. [FR103] Still coming? — or free the spot for someone waiting.
@@ -419,14 +446,14 @@ export default function DetailClient({ slug, initial }: { slug: string; initial:
     ) : tk?.hold_active ? (
       <>
         <button className="btn btn--primary btn--glow grow" onClick={() => (tk.checkout_url ? window.location.assign(tk.checkout_url) : void joinPaid())} disabled={busy}>
-          {tk.kind === 'waitlist_offer' ? t('pay.claimSpot', { amount: priceLabel }) : t('pay.completePayment', { amount: priceLabel })}
+          {tk.kind === 'waitlist_offer' ? t('pay.claimSpot', { amount: formatInr(tk.amount_paise, i18n.language) }) : t('pay.completePayment', { amount: formatInr(tk.amount_paise, i18n.language) })}
         </button>
         <button className="btn btn--ghost" onClick={withdrawPaid} disabled={busy}>{t('pay.release')}</button>
       </>
     ) : status === 'waitlisted' ? (
       <button className="btn btn--secondary grow" onClick={withdrawPaid} disabled={busy}>✓ {t('card.youAre.waitlisted')} · {t('detail.withdraw')}</button>
     ) : (
-      <button className="btn btn--primary btn--glow btn--spring grow" onClick={joinPaid} disabled={busy || pay?.payments_available === false}>{t('pay.join', { amount: priceLabel })}</button>
+      <button className="btn btn--primary btn--glow btn--spring grow" onClick={joinPaid} disabled={busy || pay?.payments_available === false || (!!tix?.tiered && !choice.typeId)}>{tix?.tiered && !choice.typeId ? t('tix.pickFirst') : t('pay.join', { amount: choice.amount != null ? formatInr(choice.amount, i18n.language) : priceLabel })}</button>
     )
   ) : null;
 
@@ -463,7 +490,7 @@ export default function DetailClient({ slug, initial }: { slug: string; initial:
           )}
         </div>
         <div className="hero__title">
-          <span className="pill" style={{ background: 'rgba(255,255,255,0.18)', color: '#fff', backdropFilter: 'blur(4px)' }}>{CATEGORY_ICON[card.intent_category]} {card.category_label}{card.is_recurring ? ` · ${t('card.recurring')}` : ''}</span>
+          <span className="pill" style={{ background: 'rgba(255,255,255,0.18)', color: '#fff', backdropFilter: 'blur(4px)' }}>{CATEGORY_ICON[card.intent_category]} {card.category_label}{card.event_format ? ` · ${t(`evt.format.${card.event_format}`)}` : ''}{card.is_recurring ? ` · ${t('card.recurring')}` : ''}</span>
           <h1>{card.title}</h1>
         </div>
       </div>
@@ -538,13 +565,13 @@ export default function DetailClient({ slug, initial }: { slug: string; initial:
         <div className="stack" style={{ gap: 8 }}>
           <div className="datetile">
             <span className="datetile__day"><small>{new Intl.DateTimeFormat(i18n.language === 'hi' ? 'hi-IN' : i18n.language === 'te' ? 'te-IN' : 'en-IN', { timeZone: 'Asia/Kolkata', month: 'short' }).format(new Date(card.time_start))}</small><b>{new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric' }).format(new Date(card.time_start))}</b></span>
-            <span><div className="title">{formatDateLong(card.time_start, i18n.language)}</div><div className="caption">{card.category_label}{card.is_recurring ? ` · ${t('card.recurring')}` : ''}</div></span>
+            <span><div className="title">{formatDateLong(card.time_start, i18n.language)}</div><div className="caption">{card.category_label}{card.event_format ? ` · ${t(`evt.format.${card.event_format}`)}` : ''}{card.is_recurring ? ` · ${t('card.recurring')}` : ''}</div></span>
           </div>
+          {daySpan(card.time_start, card.time_end) > 1 && card.time_end && (
+            <div className="caption">{t('evt.multiDay', { count: daySpan(card.time_start, card.time_end), until: formatDateLong(card.time_end, i18n.language) })}</div>
+          )}
           <div className="muted">
             {card.location_label}{card.distance_label ? ` · ${card.distance_label}` : ''}
-            {rsvpd && status === 'going' && (
-              <> · <a className="link" href={`https://www.google.com/maps/search/${encodeURIComponent(`${card.location_label}, ${card.location_label}`)}`} target="_blank" rel="noopener">{t('detail.directions')}</a></>
-            )}
           </div>
           <div className="row" style={{ gap: 12 }}>
             {ended ? <strong>{t('detail.wentCount', { count: going })}</strong> : going === 0 && !cancelled ? <strong style={{ color: 'var(--accent-pressed)' }}>{t('detail.beFirst')}</strong> : <strong>{t('card.going', { count: going })}</strong>}
@@ -555,13 +582,19 @@ export default function DetailClient({ slug, initial }: { slug: string; initial:
           <span className="caption">{t(ended ? 'detail.attendeesPrivatePast' : 'detail.attendeesPrivate')}</span>
           {paidActivity && (
             <div className="paynote">
-              <b>{t('pay.pricePerPersonValue', { amount: priceLabel })}</b>
+              <b>{tix?.tiered ? t('tix.fromPrice', { amount: priceLabel }) : t('pay.pricePerPersonValue', { amount: priceLabel })}</b>
               {pay && <span className="caption">{pay.refund_cutoff_hours === 0 ? t('pay.refundUntilStart') : t('pay.refundUntil', { time: formatDateLong(pay.refund_deadline, i18n.language) })}</span>}
               {tk?.hold_active && tk.hold_expires_at && <span className="caption">{t('pay.heldUntil', { time: formatWhen(tk.hold_expires_at, i18n.language) })}</span>}
               {tk?.status === 'refund_pending' && <span className="pill pill--neutral" style={{ alignSelf: 'flex-start' }}>{t('pay.refundPending', { amount: formatInr(tk.refund_amount_paise ?? tk.amount_paise, i18n.language) })}</span>}
               {tk?.status === 'refunded' && <span className="pill pill--trust" style={{ alignSelf: 'flex-start' }}>{t('pay.refunded', { amount: formatInr(tk.refund_amount_paise ?? tk.amount_paise, i18n.language) })}</span>}
               {pay && !pay.payments_available && <span className="caption">{t('pay.notOpenYet')}</span>}
             </div>
+          )}
+          {paidActivity && tix && identity && !cancelled && !ended && !isOrganizer && !tk?.hold_active && tk?.status !== 'paid' && status !== 'waitlisted' && !['checked_in', 'attended'].includes(status ?? '') && (
+            <TicketPicker eventId={card.id} tix={tix} basePaise={card.price_paise ?? null} onChange={setChoice} />
+          )}
+          {tk?.status === 'paid' && tk.qr_code && !isOrganizer && (
+            <TicketQrCard code={tk.qr_code} typeName={tk.type_name ?? null} savedPaise={tk.discount_paise ?? 0} checkedIn={['checked_in', 'attended'].includes(status ?? '')} />
           )}
           {((card.audience_tags?.length ?? 0) > 0 || (card.food_tags?.length ?? 0) > 0) && (
             <div className="chips" aria-label={t('fit.whoFor')}>
@@ -583,11 +616,59 @@ export default function DetailClient({ slug, initial }: { slug: string; initial:
               <span className="label">{t('detail.where')}</span>
               {icsHref && <a className="link caption" href={icsHref} download={`${card.slug}.ics`}>📅 {t('detail.addToCalendar')}</a>}
             </div>
-            <a href={`https://www.google.com/maps/search/${encodeURIComponent(card.location_label)}`} target="_blank" rel="noopener" aria-label={t('detail.directions')} style={{ display: 'block' }}>
-              <MiniMap lat={card.lat} lng={card.lng} label={card.location_label} />
-            </a>
+            {venue?.lat != null && venue.lng != null ? (
+              // [054] Confirmed attendees and organizers: the exact venue pin. Everyone else keeps the approximate area.
+              <a href={directionsToPoint(venue.lat, venue.lng)} target="_blank" rel="noopener" aria-label={t('detail.directions')} style={{ display: 'block' }}>
+                <MiniMap lat={venue.lat} lng={venue.lng} label={venue.venue_address ?? card.location_label} exact />
+              </a>
+            ) : (
+              <a href={directionsHref(venue?.venue_address || card.location_label)} target="_blank" rel="noopener" aria-label={t('detail.directions')} style={{ display: 'block' }}>
+                <MiniMap lat={card.lat} lng={card.lng} label={card.location_label} />
+              </a>
+            )}
           </section>
         )}
+
+        {/* The exact address and the join link come from the server only for organizers and confirmed attendees. */}
+        {(venue?.venue_address || venue?.venue_notes || venue?.join_link || (venue && detail?.online)) ? (
+          <section className="stack fade-in" style={{ gap: 8 }} aria-label={t('detail.venue.title')}>
+            <span className="label">{t('detail.venue.title')}</span>
+            {venue.venue_address && (
+              <div className="stack" style={{ gap: 4 }}>
+                <b style={{ whiteSpace: 'pre-line' }}>{venue.venue_address}</b>
+                {venue.venue_notes && <span className="caption">{venue.venue_notes}</span>}
+                <a className="btn btn--secondary btn--sm" style={{ alignSelf: 'flex-start' }} href={venue.lat != null && venue.lng != null ? directionsToPoint(venue.lat, venue.lng) : directionsHref(venue.venue_address)} target="_blank" rel="noopener">{t('detail.directions')}</a>
+              </div>
+            )}
+            {!venue.venue_address && venue.venue_notes && <span className="caption">{venue.venue_notes}</span>}
+            {detail?.online && !cancelled && (() => {
+              // [054] Which service it is (from the link), when the link appears, and Join that marks attendance.
+              const on = detail.online;
+              const provider = on.provider ? t(`evt.provider.${on.provider}`) : null;
+              if (venue.join_link) {
+                return (
+                  <div className="stack" style={{ gap: 4 }}>
+                    <a className="btn btn--primary btn--sm" style={{ alignSelf: 'flex-start' }} href={venue.join_link} target="_blank" rel="noopener noreferrer" onClick={joinOnline}>
+                      {provider && on.provider !== 'other' ? t('evt.online.joinOn', { provider }) : t('detail.venue.join')}
+                    </a>
+                    {!isOrganizer && <span className="caption">{t('evt.online.joinMarks')}</span>}
+                    {isOrganizer && on.state === 'later' && <span className="caption">{t('evt.online.organizerWhen', { minutes: on.open_minutes })}</span>}
+                  </div>
+                );
+              }
+              if (on.state === 'later' && on.provider) return <span className="caption">{t('evt.online.linkLater', { provider: provider ?? '', minutes: on.open_minutes, time: formatWhen(on.opens_at, i18n.language) })}</span>;
+              if (on.state === 'ended') return <span className="caption">{t('evt.online.ended')}</span>;
+              return null;
+            })()}
+            {isOrganizer && <span className="caption">{t('detail.venue.organizerNote')}</span>}
+          </section>
+        ) : (
+          identity && !cancelled && !ended && (
+            <p className="caption" style={{ margin: 0 }}>{t(detail?.attendance_mode === 'online' ? 'detail.venue.linkAfterGoing' : 'detail.venue.afterGoing')}</p>
+          )
+        )}
+
+        {identity && !cancelled && <CohostPanel occurrenceId={card.id} ended={ended} />}
 
         {detail?.circle_peers && detail.circle_peers.length > 0 && (
           <section className="stack fade-in" style={{ gap: 8 }}>
@@ -600,6 +681,8 @@ export default function DetailClient({ slug, initial }: { slug: string; initial:
             </div>
           </section>
         )}
+
+        {tix && organizer && <OrganizerContact tix={tix} organizerName={organizer.display_name} />}
 
         {organizer && (
           <section className="card stack" style={{ gap: 10 }}>
@@ -624,6 +707,14 @@ export default function DetailClient({ slug, initial }: { slug: string; initial:
             <span className="label">{t('detail.about')}</span>
             <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{description}</p>
           </section>
+        )}
+
+        {detail && (
+          <EventProgram
+            eventId={detail.id} start={card.time_start} end={card.time_end} viewerId={identity?.member_id ?? null}
+            confirmed={['going', 'checked_in', 'attended'].includes(status ?? '')} isOrganizer={isOrganizer} ended={ended || cancelled}
+            say={say} refreshKey={status}
+          />
         )}
 
         {detail?.thread_access && <Thread occurrenceId={card.id} onError={say} />}

@@ -72,10 +72,12 @@ export type Card = {
   high_risk: boolean; status: string; is_recurring: boolean; lat: number | null; lng: number | null;
   price_paise?: number | null; // FR102: null = free
   audience_tags?: string[]; food_tags?: string[]; // FR110: who it's for, food and drink
+  event_format?: string | null; // [054] workshop | webinar | tournament ... (labels: evt.format.*)
 };
 
 export type Profile = {
   member_id: string; locality_city: string; locality_zone: string | null; locality_locality: string | null;
+  locality_state?: string | null; locality_lat?: number | null; locality_lng?: number | null;
   language_preference: string; interests: string[]; interest_labels: string[]; bio: string | null; photo_url: string | null;
 };
 
@@ -86,6 +88,8 @@ export type Circle = {
   created_by_member_id: string; created_at: string; member_count: number; viewer_role: string | null; is_open: boolean;
   locality_city?: string | null; locality_locality?: string | null; locality_label?: string | null; near_you?: boolean;
   cover_url?: string | null; // organizer-uploaded cover photo
+  kind_label?: string | null; women_only?: boolean; // [050] the creator's own kind label; women-only groups
+  starts_on?: string | null; ends_on?: string | null;
   faces?: { member_id: string; display_name: string; avatar: string | null }[]; // your circles only: a few members' faces
 };
 

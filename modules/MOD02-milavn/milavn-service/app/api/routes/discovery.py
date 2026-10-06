@@ -36,10 +36,14 @@ async def _viewer(session, member, lang, lat: float | None = None, lng: float | 
         # It changes what this request shows; the stored profile locality is untouched, nothing is persisted.
         from dataclasses import replace
 
-        from app.config import localities
+        from app.components.places import interface as places
 
-        near = localities.nearest(lat, lng)
-        v = replace(v, city=near.city, zone=near.zone, locality=near.locality)
+        try:
+            near = await places.nearest(lat, lng, lang)
+        except (places.PlacesNotConfigured, places.PlacesUnavailable):
+            near = None
+        if near:
+            v = replace(v, city=near["locality_city"], zone=near["locality_zone"], locality=near["locality_locality"], lat=near["lat"], lng=near["lon"])
     return v
 
 
@@ -80,6 +84,7 @@ async def search(
     free: bool | None = None,
     audience: str | None = Query(default=None, pattern="^(family_friendly|elder_friendly|beginner_friendly)$"),
     food: str | None = Query(default=None, pattern="^(veg|jain_options|alcohol_free)$"),
+    format: str | None = Query(default=None, pattern="^(workshop|webinar|talk|panel|masterclass|book_club|skill_share|office_hours|bootcamp|conference|expo|cultural_night|tournament|festival|satsang|darshan_stream|town_hall|volunteering|trip|meetup)$"),  # noqa: A002 - the query parameter's public name
 ) -> list[CardOut]:
     """[FR005/FR009] Search mode with common filters by default; advanced filters on request.
     [FR102/FR110] Free only; who it's for; food."""
@@ -96,6 +101,7 @@ async def search(
         free=free,
         audience=audience,
         food=food,
+        event_format=format,
     )
     return [CardOut.from_card(c) for c in cards]
 
@@ -118,7 +124,7 @@ async def understand(q: str, member: CurrentMember) -> dict:
     from app.components.discovery import nl
 
     u = nl.understand(q)
-    return {"category": u.category, "when": u.when, "distance": u.distance, "q": u.query, "chips": u.chips}
+    return {"category": u.category, "format": u.event_format, "when": u.when, "distance": u.distance, "q": u.query, "chips": u.chips}
 
 
 @router.get("/smart-fill")
@@ -127,9 +133,12 @@ async def smart_fill(text: str, session: DbSession, member: CurrentMember) -> di
     from app.components.discovery import nl
 
     v = await discovery.viewer_profile(session, member.member_id)
-    d = nl.smart_fill(text, default_city=v.city if v else None)
+    known = await discovery.known_places(session, v)
+    d = nl.smart_fill(text, default_city=v.city if v else None, known_places=known)
     return {
+        "place": d.place,
         "category": d.category,
+        "event_format": d.event_format,
         "title": d.title,
         "time_start": d.time_start,
         "locality_city": d.locality_city,

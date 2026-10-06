@@ -92,11 +92,42 @@ class Settings(BaseSettings):
     payment_services_key: str = "CHANGE_ME"
     payment_services_webhook_key: str = "CHANGE_ME"
 
+    # --- Counsel link (Step 3, large events) -----------------------------------------
+    # Optional "book a one-to-one with this expert" link on an event whose organizer switched it on. The address
+    # comes only from here (never from code or from the organizer). "{member_id}" is replaced by the organizer's
+    # ForKhatri member id. Empty = the link is never shown.
+    counsel_booking_url: str = ""
+
+    # --- Online events (Phase 2 Step 5) ------------------------------------------------
+    # The organizer's own Google Meet / Zoom / Teams / YouTube link is shown to people with a confirmed spot only from
+    # this many minutes before the start until the end (organizers always see it). Tapping Join marks them checked in.
+    online_join_open_minutes: int = 15
+
+    # --- Circle posts and albums (Phase 2, Step 6) -------------------------------------
+    # How many photos and files one circle post may carry, their size caps, and the file types
+    # accepted (by extension; the first bytes are checked too, see media_files.sniff_document).
+    circle_post_max_photos: int = 10
+    circle_post_max_files: int = 5
+    circle_photo_max_mb: int = 10
+    circle_file_max_mb: int = 15
+    circle_file_types: list[str] = ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt"]
+    circle_album_max_photos_per_upload: int = 20
+
     # --- External services (config/external_services.yaml placeholders) -------
     map_tile_vendor: str = "maptiler"
     map_tile_api_key: str = "REPLACE_ME_MAPTILER_API_KEY"
     geocoding_vendor: str = "opencage"
     geocoding_api_key: str = "REPLACE_ME_OPENCAGE_API_KEY"
+
+    # --- Place search (shared utility: forkhatri_integrations.places) -----------
+    # "nominatim" = free OpenStreetMap data, public or self-hosted via PLACES_BASE_URL
+    # (the public server's policy: a real User-Agent, at most 1 request/second, cached
+    # answers; the adapter does the throttling and caching). "none" switches search off.
+    # A paid geocoder later is one adapter in the shared library plus these values.
+    places_provider: str = "nominatim"
+    places_base_url: str = "https://nominatim.openstreetmap.org"
+    places_user_agent: str = "ForKhatri-Milavn/1.0"
+    places_contact_email: str = ""
 
     @property
     def sqlalchemy_url(self) -> str:

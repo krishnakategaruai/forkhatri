@@ -51,18 +51,8 @@ class UnsupportedMedia(Exception):
 TooLarge = media_files.TooLarge  # re-exported: the routes map it to 413
 
 
-# Circle posts may carry a document: agendas, checklists, schedules. Office formats and PDF only.
-_ALLOWED_DOC_TYPES = {
-    "application/pdf": ".pdf",
-    "application/msword": ".doc",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
-    "application/vnd.ms-excel": ".xls",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
-    "application/vnd.ms-powerpoint": ".ppt",
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".pptx",
-    "text/plain": ".txt",
-}
-MAX_DOC_BYTES = media_files.MAX_DOC_BYTES
+# Circle posts carry photos and files (agendas, checklists, schedules). [053] Which file types, how
+# many and how large come from configuration (settings.circle_*); see attachment_limits().
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,6 +72,9 @@ class Message:
     pinned: bool = False
     reactions: dict | None = None
     comments: tuple = ()
+    # [053] Every photo and file on the post (older posts: their single photo / document).
+    photos: tuple = ()
+    docs: tuple = ()  # ({"url", "name", "size"}, ...)
 
 
 @dataclass(frozen=True, slots=True)
@@ -291,6 +284,7 @@ async def list_posts(session: AsyncSession, *, circle_id: UUID, viewer_member_id
     rows = sorted(rows, key=lambda r: board_order_key(r[8], r[3]))
     post_ids = [str(r[0]) for r in rows]
     reactions: dict[UUID, dict[str, list[str]]] = {}
+    media: dict[UUID, list[tuple]] = {}
     comment_rows: list = []
     if post_ids:
         for pid, emoji, who in (
@@ -300,6 +294,16 @@ async def list_posts(session: AsyncSession, *, circle_id: UUID, viewer_member_id
             )
         ).all():
             reactions.setdefault(pid, {}).setdefault(emoji, []).append(str(who))
+        for pid, kind, ref, fname, size in (
+            await session.execute(
+                text(
+                    "SELECT post_id, kind, storage_ref, file_name, byte_size FROM milavn_circle.circle_post_media "
+                    "WHERE post_id = ANY(CAST(:ids AS uuid[])) ORDER BY post_id, position"
+                ),
+                {"ids": post_ids},
+            )
+        ).all():
+            media.setdefault(pid, []).append((kind, ref, fname, size))
         comment_rows = (
             await session.execute(
                 text(
@@ -317,15 +321,23 @@ async def list_posts(session: AsyncSession, *, circle_id: UUID, viewer_member_id
         if c[2] in hidden:
             continue
         comments.setdefault(c[1], []).append(Comment(c[0], c[2], names[c[2]].display_name, names[c[2]].avatar, c[3], c[4], c[2] == viewer_member_id))
-    return [
-        Message(
-            r[0], r[1], names[r[1]].display_name, names[r[1]].avatar, r[2], r[3], r[1] == viewer_member_id,
-            f"/media/{r[4]}" if r[4] else None, f"/media/{r[5]}" if r[5] else None, r[6],
-            bool(r[7]), r[8] is not None, reactions.get(r[0], {}), tuple(comments.get(r[0], [])),
+    out: list[Message] = []
+    for r in rows:
+        if r[1] in hidden:
+            continue
+        photos = ([f"/media/{r[4]}"] if r[4] else []) + [f"/media/{m[1]}" for m in media.get(r[0], []) if m[0] == "photo"]
+        docs = ([{"url": f"/media/{r[5]}", "name": r[6], "size": None}] if r[5] else []) + [
+            {"url": f"/media/{m[1]}", "name": m[2], "size": m[3]} for m in media.get(r[0], []) if m[0] == "doc"
+        ]
+        out.append(
+            Message(
+                r[0], r[1], names[r[1]].display_name, names[r[1]].avatar, r[2], r[3], r[1] == viewer_member_id,
+                photos[0] if photos else None, docs[0]["url"] if docs else None, docs[0]["name"] if docs else None,
+                bool(r[7]), r[8] is not None, reactions.get(r[0], {}), tuple(comments.get(r[0], [])),
+                tuple(photos), tuple(docs),
+            )
         )
-        for r in rows
-        if r[1] not in hidden
-    ]
+    return out
 
 
 class PinLimit(Exception):
@@ -412,7 +424,14 @@ class PostNotFound(Exception):
 async def delete_post(session: AsyncSession, *, circle_id: UUID, post_id: UUID, member_id: UUID) -> None:
     """[B8] The author takes their post back; the circle's organizer or an assistant can take down
     anyone's post (as Facebook / WhatsApp group admins can). Definer function, migration 043.
-    [B5] The post's photo and document leave the disk with it."""
+    [B5] The post's photo and document leave the disk with it. [053] So do its extra attachments
+    (read first, while the post is still live and visible to the actor)."""
+    extra = (
+        await session.execute(
+            text("SELECT storage_ref FROM milavn_circle.circle_post_media WHERE post_id = :p AND circle_id = :c"),
+            {"p": str(post_id), "c": str(circle_id)},
+        )
+    ).scalars().all()
     row = (
         await session.execute(
             text("SELECT r_outcome, r_photo_ref, r_doc_ref FROM milavn_circle.delete_circle_post(:c, :p, :m)"),
@@ -424,7 +443,7 @@ async def delete_post(session: AsyncSession, *, circle_id: UUID, post_id: UUID, 
         raise PostNotFound
     if outcome != "deleted":
         raise NotAllowed
-    media_files.remove(row[1], row[2])
+    media_files.remove(row[1], row[2], *extra)
 
 
 class OrganizersOnly(NotAllowed):
@@ -474,55 +493,105 @@ async def _is_manager(session: AsyncSession, circle_id: UUID, member_id: UUID) -
     return role in ("organizer", "assistant")
 
 
+class TooMany(Exception):
+    """[053] More photos or files than one post may carry (circle_post_max_photos / _files)."""
+
+    def __init__(self, kind: str, limit: int) -> None:
+        super().__init__(kind)
+        self.kind = kind
+        self.limit = limit
+
+
+def attachment_limits() -> dict:
+    """[053] What one circle post may carry, from configuration — the composer shows the same."""
+    from app.config.settings import get_settings
+
+    st = get_settings()
+    return {
+        "max_photos": st.circle_post_max_photos,
+        "max_files": st.circle_post_max_files,
+        "photo_mb": st.circle_photo_max_mb,
+        "file_mb": st.circle_file_max_mb,
+        "file_types": [t.lower().lstrip(".") for t in st.circle_file_types],
+        "album_max_per_upload": st.circle_album_max_photos_per_upload,
+    }
+
+
 async def post_to_board(
     session: AsyncSession,
     *,
     circle_id: UUID,
     member_id: UUID,
     body: str,
-    photo: UploadFile | None = None,
-    document: UploadFile | None = None,
+    photos: list[UploadFile] | None = None,
+    documents: list[UploadFile] | None = None,
     announcement: bool = False,
 ) -> UUID:
+    """A post: words, and/or several photos and files ([053] limits and types from configuration).
+    Every attachment is checked before any is stored, so a bad one never leaves the others behind."""
+    photos = [p for p in (photos or []) if p is not None]
+    documents = [d for d in (documents or []) if d is not None]
     body = (body or "").strip()
-    if (not body and photo is None and document is None) or len(body) > 1000:
+    if (not body and not photos and not documents) or len(body) > 1000:
         raise InvalidInput()
+    limits = attachment_limits()
+    if len(photos) > limits["max_photos"]:
+        raise TooMany("photo", limits["max_photos"])
+    if len(documents) > limits["max_files"]:
+        raise TooMany("document", limits["max_files"])
     await check_may_post(session, circle_id, member_id)
     # [049] Announcements are the organizer's / an assistant's voice only.
     if announcement and not await _is_manager(session, circle_id, member_id):
         raise OrganizersOnly()
-    # [B6] Both attachments are validated before either is stored, so a bad document never leaves
-    # an orphaned photo on disk (and vice versa).
-    photo_ext = doc_ext = None
-    if photo is not None:
+    photo_max = limits["photo_mb"] * media_files.MB
+    file_max = limits["file_mb"] * media_files.MB
+    checked: list[tuple[str, UploadFile, str, int]] = []  # (kind, upload, ext, cap)
+    for p in photos:
         try:
-            photo_ext = media_files.sniff_image(photo)
+            ext = media_files.sniff_image(p)
         except media_files.NotAnImage as exc:
             raise UnsupportedMedia("photo") from exc
-        media_files.check_size(photo, media_files.MAX_PHOTO_BYTES)  # [B7] 10 MB
-    if document is not None:
-        doc_ext = _ALLOWED_DOC_TYPES.get(document.content_type or "")
-        if doc_ext is None:
-            raise UnsupportedMedia("document")
-        media_files.check_size(document, MAX_DOC_BYTES)
-    photo_ref = doc_ref = doc_name = None
+        media_files.check_size(p, photo_max)
+        checked.append(("photo", p, ext, photo_max))
+    for d in documents:
+        try:
+            ext = media_files.sniff_document(d, limits["file_types"])
+        except media_files.NotADocument as exc:
+            raise UnsupportedMedia("document") from exc
+        media_files.check_size(d, file_max)
+        checked.append(("doc", d, ext, file_max))
+    stored: list[tuple[str, str, str | None, int]] = []  # (kind, ref, name, size)
     try:
-        if photo is not None:
-            photo_ref = media_files.store(photo, "circle-posts", str(circle_id), photo_ext, media_files.MAX_PHOTO_BYTES)
-        if document is not None:
-            doc_ref = media_files.store(document, "circle-docs", str(circle_id), doc_ext, MAX_DOC_BYTES)
-            doc_name = Path(document.filename or f"document{doc_ext}").name[:120]
+        for kind, up, ext, cap in checked:
+            folder = "circle-posts" if kind == "photo" else "circle-docs"
+            ref = media_files.store(up, folder, str(circle_id), ext, cap)
+            name = Path(up.filename or f"document{ext}").name[:120] if kind == "doc" else None
+            stored.append((kind, ref, name, media_files.upload_size(up)))
     except BaseException:
-        media_files.remove(photo_ref, doc_ref)
+        media_files.remove(*[x[1] for x in stored])
         raise
     post_id = uuid4()
-    await session.execute(
-        text(
-            "INSERT INTO milavn_circle.circle_post (id, circle_id, member_id, body, photo_ref, doc_ref, doc_name, is_announcement) "
-            "VALUES (:id, :c, :m, :b, :p, :d, :dn, :a)"
-        ),
-        {"id": str(post_id), "c": str(circle_id), "m": str(member_id), "b": body, "p": photo_ref, "d": doc_ref, "dn": doc_name, "a": announcement},
-    )
+    try:
+        await session.execute(
+            text(
+                "INSERT INTO milavn_circle.circle_post (id, circle_id, member_id, body, is_announcement, attachment_count) "
+                "VALUES (:id, :c, :m, :b, :a, :n)"
+            ),
+            {"id": str(post_id), "c": str(circle_id), "m": str(member_id), "b": body, "a": announcement, "n": len(stored)},
+        )
+        for i, (kind, ref, name, size) in enumerate(stored):
+            await session.execute(
+                text(
+                    "INSERT INTO milavn_circle.circle_post_media (post_id, circle_id, kind, storage_ref, file_name, byte_size, position) "
+                    "VALUES (:p, :c, :k, :r, :n, :s, :i)"
+                ),
+                {"p": str(post_id), "c": str(circle_id), "k": kind, "r": ref, "n": name, "s": size, "i": i},
+            )
+    except BaseException:
+        media_files.remove(*[x[1] for x in stored])
+        raise
+    from app.events import bus
+
     if announcement:
         # [049] An announcement goes to the top of Posts: it takes a pin, releasing the oldest pins
         # when all three are in use. Then every member is told, in their own language.
@@ -535,12 +604,19 @@ async def post_to_board(
         for old in pins_to_release(len(pins), pins):
             await pin_post(session, circle_id=circle_id, post_id=old, member_id=member_id, pinned=False)
         await pin_post(session, circle_id=circle_id, post_id=post_id, member_id=member_id, pinned=True)
-        from app.events import bus
-
         await bus.publish(
             session,
             schema="milavn_circle",
             event_type="circle.announcement_posted",
+            aggregate_id=circle_id,
+            payload={"circle_id": circle_id, "post_id": post_id, "member_id": member_id},
+        )
+    else:
+        # [053] An ordinary post: members whose setting for this circle is "all" hear about it, grouped.
+        await bus.publish(
+            session,
+            schema="milavn_circle",
+            event_type="circle.post_created",
             aggregate_id=circle_id,
             payload={"circle_id": circle_id, "post_id": post_id, "member_id": member_id},
         )

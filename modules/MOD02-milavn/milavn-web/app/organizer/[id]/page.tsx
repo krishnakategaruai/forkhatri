@@ -11,6 +11,8 @@ import { useTranslation } from 'react-i18next';
 
 import QrCode from '@/components/QrCode';
 import { Sheet } from '@/components/Sheet';
+import TicketsManager from '@/components/TicketsManager';
+import { EventProgramManager } from '@/components/EventProgram';
 import { ErrorState, Toast } from '@/components/States';
 import { api, ApiError, resolveMediaUrl, type Card, type Identity } from '@/lib/api';
 import { formatDateLong, formatInr, formatRelative } from '@/lib/format';
@@ -98,6 +100,8 @@ export default function OrganizerPage() {
                 {!money.payouts_connected && <span className="caption">{t('pay.organizer.payoutsPending')}</span>}
               </section>
             )}
+            <TicketsManager eventId={d.id} onChanged={load} say={say} />
+            <EventProgramManager eventId={d.id} start={d.time_start} end={d.time_end} say={say} />
             <div className="grid-2">
               <Link href={`/create?edit=${d.id}`} className="btn btn--secondary">{t('create.edit')}</Link>
               <Link href={`/a/${d.slug}`} className="btn btn--secondary">{t('create.view')}</Link>

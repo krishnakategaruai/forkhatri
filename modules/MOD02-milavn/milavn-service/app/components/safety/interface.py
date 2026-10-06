@@ -26,7 +26,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.events import bus
 
 REPORT_SUBJECTS = ("activity", "occurrence", "user", "organization", "content")
-REASONS = ("spam", "unsafe", "harassment", "misleading", "other")
+REASONS = ("spam", "unsafe", "harassment", "misleading", "other", "women_only_misuse")  # [050] women_only_misuse: someone in a women-only circle who should not be
 ACTIONS = ("dismiss", "warn", "escalate", "restrict")
 REASON_CODE = re.compile(r"^[a-z0-9_.-]{1,64}$")  # mirrors moderation_action_reason_code_shape (045)
 # [045] How long a report may wait for a human: safety reports within a day, the rest within three.

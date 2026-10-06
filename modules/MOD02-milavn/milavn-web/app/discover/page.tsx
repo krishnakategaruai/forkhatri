@@ -16,9 +16,10 @@ import { Sheet } from '@/components/Sheet';
 import { CardSkeleton, EmptyState, ErrorState } from '@/components/States';
 import { api, type Card } from '@/lib/api';
 import { formatWhen } from '@/lib/format';
+import { EVENT_FORMATS } from '@/lib/event-formats';
 
 const MapView = dynamic(() => import('@/components/MapView'), { ssr: false, loading: () => <div className="sk map" /> });
-const CATEGORIES = ['play', 'meet', 'eat', 'learn', 'work', 'explore', 'celebrate', 'help'];
+const CATEGORIES = ['play', 'meet', 'eat', 'learn', 'work', 'explore', 'celebrate', 'help', 'professional'];
 
 function DiscoverInner() {
   const { t } = useTranslation();
@@ -32,6 +33,7 @@ function DiscoverInner() {
   const [when, setWhen] = useState<string | null>(null);
   const [distance, setDistance] = useState<string | null>(null);
   const [category, setCategory] = useState<string | null>(null);
+  const [format, setFormat] = useState<string | null>(null); // [054] what kind of event
   const [scope, setScope] = useState<string | null>(null);
   const [safeOnly, setSafeOnly] = useState(false);
   // FR102/FR110: free only, who it's for, food.
@@ -46,7 +48,7 @@ function DiscoverInner() {
   const [widened, setWidened] = useState<string | null>(null);
 
   const applyUnderstanding = useCallback((u: Understood) => {
-    setQ(u.q ?? ''); setWhen(u.when); setDistance(u.distance); setCategory(u.category); setAskChips(u.chips);
+    setQ(u.q ?? ''); setWhen(u.when); setDistance(u.distance); setCategory(u.category); setFormat(u.format ?? null); setAskChips(u.chips);
   }, []);
   // Arriving from Home's Ask bar: interpret once, then let the chips take over.
   useEffect(() => {
@@ -65,7 +67,7 @@ function DiscoverInner() {
       const qs = new URLSearchParams();
       if (q) qs.set('q', q); if (when) qs.set('when', when); if (distance) qs.set('distance', distance);
       if (category) qs.set('category', category); if (scope) qs.set('scope', scope); if (safeOnly) qs.set('safe_only', 'true');
-      if (free) qs.set('free', 'true'); if (audience) qs.set('audience', audience); if (food) qs.set('food', food);
+      if (free) qs.set('free', 'true'); if (audience) qs.set('audience', audience); if (food) qs.set('food', food); if (format) qs.set('format', format);
       p = api<Card[]>(`/discovery/search?${qs}`);
     }
     p.then(async (list) => {
@@ -76,7 +78,7 @@ function DiscoverInner() {
           const qs2 = new URLSearchParams();
           if (q) qs2.set('q', q); if (when && drop !== 'when') qs2.set('when', when); if (distance && drop === 'when') qs2.set('distance', distance);
           if (category) qs2.set('category', category); if (scope) qs2.set('scope', scope); if (safeOnly) qs2.set('safe_only', 'true');
-          if (free) qs2.set('free', 'true'); if (audience) qs2.set('audience', audience); if (food) qs2.set('food', food);
+          if (free) qs2.set('free', 'true'); if (audience) qs2.set('audience', audience); if (food) qs2.set('food', food); if (format) qs2.set('format', format);
           return api<Card[]>(`/discovery/search?${qs2}`);
         };
         if (distance) { const r = await retry('distance'); if (r.length) { setWidened(t('ask.widenedDistance')); setCards(r); return; } }
@@ -84,7 +86,7 @@ function DiscoverInner() {
       }
       setCards(list);
     }).catch(() => setError(true));
-  }, [mode, day, q, when, distance, category, scope, safeOnly, free, audience, food, t]);
+  }, [mode, day, q, when, distance, category, format, scope, safeOnly, free, audience, food, t]);
 
   useEffect(() => { const id = setTimeout(load, mode === 'search' ? 250 : 0); return () => clearTimeout(id); }, [load, mode]);
 
@@ -112,7 +114,7 @@ function DiscoverInner() {
         {mode === 'search' && (
           <>
             <AskBar initial={ask} autoNavigate={false} onUnderstood={(u) => applyUnderstanding(u)} />
-            {askChips.length > 0 && <div className="ask__understood"><span>{t('ask.filtersFrom')}</span>{askChips.map((c) => <span key={c} className="pill">{c}</span>)}<button className="link" style={{ fontSize: '0.8125rem' }} onClick={() => { setAskChips([]); setQ(''); setWhen(null); setDistance(null); setCategory(null); }}>{t('ask.clear')}</button></div>}
+            {askChips.length > 0 && <div className="ask__understood"><span>{t('ask.filtersFrom')}</span>{askChips.map((c) => <span key={c} className="pill">{c}</span>)}<button className="link" style={{ fontSize: '0.8125rem' }} onClick={() => { setAskChips([]); setQ(''); setWhen(null); setDistance(null); setCategory(null); setFormat(null); }}>{t('ask.clear')}</button></div>}
             <label className="field">
               <input className="field__input" type="search" placeholder={t('discover.searchPlaceholder')} value={q} onChange={(e) => setQ(e.target.value)} aria-label={t('discover.searchPlaceholder')} />
             </label>
@@ -121,6 +123,7 @@ function DiscoverInner() {
               <button className="chip chip--sm" aria-pressed={when === 'weekend'} onClick={() => setWhen(when === 'weekend' ? null : 'weekend')}>{t('discover.filters.weekend')}</button>
               <button className="chip chip--sm" aria-pressed={distance === 'zone'} onClick={() => setDistance(distance === 'zone' ? null : 'zone')}>{t('discover.filters.nearby')}</button>
               <button className="chip chip--sm" aria-pressed={category !== null} onClick={() => setMore(true)}>{category ? t(`create.categories.${category}`) : t('discover.filters.category')}</button>
+              <button className="chip chip--sm" aria-pressed={format !== null} onClick={() => setMore(true)}>{format ? t(`evt.format.${format}`) : t('evt.filter.format')}</button>
               <button className="chip chip--sm" aria-pressed={free} onClick={() => setFree((v) => !v)}>{t('discover.filters.free')}</button>
               <button className="chip chip--sm" aria-pressed={audience === 'family_friendly'} onClick={() => setAudience(audience === 'family_friendly' ? null : 'family_friendly')}>{t('fit.audience.family_friendly')}</button>
               <button className="chip chip--sm" onClick={() => setMore(true)}>{t('discover.filters.more')} ›</button>
@@ -168,6 +171,13 @@ function DiscoverInner() {
               {CATEGORIES.map((c) => <button key={c} className="chip chip--sm" aria-pressed={category === c} onClick={() => setCategory(c)}>{t(`create.categories.${c}`)}</button>)}
             </div>
           </div>
+          <label className="field">
+            <span className="label">{t('evt.filter.format')}</span>
+            <select className="field__input" value={format ?? ''} onChange={(e) => setFormat(e.target.value || null)} aria-label={t('evt.filter.format')}>
+              <option value="">{t('discover.filters.any')}</option>
+              {EVENT_FORMATS.map((f) => <option key={f} value={f}>{t(`evt.format.${f}`)}</option>)}
+            </select>
+          </label>
           <div className="stack" style={{ gap: 8 }}>
             <span className="label">{t('discover.filters.distance')}</span>
             <div className="chips">

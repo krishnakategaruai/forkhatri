@@ -9,12 +9,14 @@
  * suggestions (FR022) are real groups only and need a second person's yes. */
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Lock, MapPin, Plus, Search } from 'lucide-react';
 
 import CircleCover, { coverKind } from '@/components/CircleCover';
+import GenderAsk from '@/components/GenderAsk';
 import { Sheet } from '@/components/Sheet';
 import TopActions from '@/components/TopActions';
 import { ErrorState, Toast } from '@/components/States';
@@ -47,7 +49,7 @@ function knownLine(t: (k: string, o?: Record<string, unknown>) => string, r: Rec
 
 function CircleCard({ c, onJoin, known }: { c: Circle; onJoin?: (c: Circle) => void; known?: { faces: Face[]; line: string } }) {
   const { t } = useTranslation();
-  const caption = [c.circle_type === 'public' ? t('circles.openToAll') : c.type_label, c.locality_label].filter(Boolean).join(' · ');
+  const caption = [c.circle_type === 'public' ? t('circles.openToAll') : c.type_label, c.women_only ? t('group.womenOnly') : null, c.locality_label].filter(Boolean).join(' · ');
   // No photo and no faces: the card itself is the typographic cover — never the same words twice.
   const typeOnly = coverKind(c.cover_url, c.faces) === 'type';
   return (
@@ -79,8 +81,11 @@ function CircleCard({ c, onJoin, known }: { c: Circle; onJoin?: (c: Circle) => v
   );
 }
 
+const DATED_TYPES = ['temple', 'travel'];
+
 export default function CirclesPage() {
   const { t } = useTranslation();
+  const router = useRouter();
   const { profile } = useIdentity();
   const [mine, setMine] = useState<Circle[] | null>(null);
   const [nearOnly, setNearOnly] = useState(false);
@@ -100,6 +105,13 @@ export default function CirclesPage() {
   const [name, setName] = useState('');
   const [type, setType] = useState('public');
   const [desc, setDesc] = useState('');
+  // [050] Any group can carry its own kind label; women-only is enforced by the server from each member's own answer.
+  const [ownKind, setOwnKind] = useState(false);
+  const [kindLabel, setKindLabel] = useState('');
+  const [womenOnly, setWomenOnly] = useState(false);
+  const [myGender, setMyGender] = useState<string | null | undefined>(undefined);
+  const [startsOn, setStartsOn] = useState('');
+  const [endsOn, setEndsOn] = useState('');
   const [toast, setToast] = useState<string | null>(null);
   const say = (m: string) => { setToast(m); setTimeout(() => setToast(null), 2000); };
 
@@ -127,6 +139,8 @@ export default function CirclesPage() {
   };
 
   const join = async (c: Circle) => {
+    // A women-only group has its own front door on its page (the one-time question, the explanation).
+    if (c.women_only) { router.push(`/circles/${c.id}`); return; }
     try {
       const r = await api<{ status: string }>(`/circles/${c.id}/join`, { body: {} });
       say(r.status === 'pending' ? t('join.asked') : t('circles.joined'));
@@ -144,10 +158,20 @@ export default function CirclesPage() {
   };
   const submit = async () => {
     const place = homeLocality === 'home' && profile ? { locality_city: profile.locality_city, locality_locality: profile.locality_locality } : {};
+    const own = ownKind ? { kind_label: kindLabel.trim() } : {};
+    const dated = DATED_TYPES.includes(type) ? { starts_on: startsOn, ends_on: endsOn || null } : {};
     const joinSetup = { join_policy: askFirst ? 'approval' : 'open', join_questions: askFirst ? questions.map((q) => q.trim()).filter(Boolean) : [] };
-    try { const c = await api<Circle>('/circles', { body: { name, circle_type: type, description: desc, ...place, ...joinSetup } }); setCreate(false); setName(''); setDesc(''); setAskFirst(false); setQuestions(['', '']); say(`${c.name} ✓`); load(); }
+    try { const c = await api<Circle>('/circles', { body: { name, circle_type: type, description: desc, ...place, ...joinSetup, ...own, ...dated, women_only: womenOnly } }); setCreate(false); setName(''); setDesc(''); setAskFirst(false); setQuestions(['', '']); setOwnKind(false); setKindLabel(''); setWomenOnly(false); setStartsOn(''); setEndsOn(''); setType('public'); say(`${c.name} ✓`); load(); }
     catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
   };
+
+  const openCreate = () => {
+    setCreate(true);
+    api<{ gender: string | null }>('/circles/gender/me').then((r) => setMyGender(r.gender)).catch(() => setMyGender(null));
+  };
+  const needsDate = DATED_TYPES.includes(type);
+  const womenBlocked = womenOnly && myGender !== 'woman';
+  const canCreate = !!name.trim() && (!ownKind || !!kindLabel.trim()) && (!needsDate || !!startsOn) && !womenBlocked;
 
   const mineIds = new Set((mine ?? []).map((c) => c.id));
   const recoShown = new Set(!q && typeFilter === null ? (recommended ?? []).slice(0, 6).map((r) => r.id) : []);
@@ -163,7 +187,7 @@ export default function CirclesPage() {
         <h1>{t('circles.title')}</h1>
         <div className="row" style={{ gap: 8 }}>
           {/* Finding is this screen's job, so creating is a quiet icon, not an orange pill. */}
-          <button className="icon-btn" aria-label={t('circles.create')} onClick={() => setCreate(true)}><Plus size={20} strokeWidth={1.75} /></button>
+          <button className="icon-btn" aria-label={t('circles.create')} onClick={openCreate}><Plus size={20} strokeWidth={1.75} /></button>
           <TopActions />
         </div>
       </header>
@@ -210,7 +234,7 @@ export default function CirclesPage() {
           {mine && mine.length === 0 && (
             <div className="cx-hairrow">
               <span className="grow">{t('circles.notInAny')}</span>
-              <button className="cx-btn cx-btn--quiet" onClick={() => setCreate(true)}>{t('circles.create')}</button>
+              <button className="cx-btn cx-btn--quiet" onClick={openCreate}>{t('circles.create')}</button>
             </div>
           )}
           {mine && mine.length > 0 && <div className="cx-rail fade-in">{mine.map((c) => <CircleTile key={c.id} c={c} />)}</div>}
@@ -270,12 +294,28 @@ export default function CirclesPage() {
             <span className="cx-label">{t('circles.type')}</span>
             <div className="cx-chips cx-chips--wrap">
               {types.map((ty) => (
-                <button key={ty.value} className="cx-chip" aria-pressed={type === ty.value} onClick={() => setType(ty.value)}>
+                <button key={ty.value} className="cx-chip" aria-pressed={!ownKind && type === ty.value} onClick={() => { setOwnKind(false); setType(ty.value); }}>
                   {typeLabel(ty.value, ty.label)}{!ty.is_open && <Lock size={14} strokeWidth={2} aria-label={t('circles.inviteOnly')} />}
                 </button>
               ))}
+              <button className="cx-chip" aria-pressed={ownKind} onClick={() => { setOwnKind(true); setType('interest'); }}>{t('group.kindOwn')}</button>
             </div>
+            {ownKind && <input className="cx-input" name="kind-label" maxLength={40} placeholder={t('group.kindOwnPlaceholder')} aria-label={t('group.kindOwn')} value={kindLabel} onChange={(e) => setKindLabel(e.target.value)} />}
           </div>
+          {needsDate && (
+            <div className="stack" style={{ gap: 8 }}>
+              <label className="stack" style={{ gap: 6 }}>
+                <span className="cx-label">{type === 'travel' ? t('group.tripStartsOn') : t('group.dateOn')}</span>
+                <input className="cx-input" type="date" name="starts-on" value={startsOn} onChange={(e) => setStartsOn(e.target.value)} />
+              </label>
+              {type === 'travel' && (
+                <label className="stack" style={{ gap: 6 }}>
+                  <span className="cx-label">{t('group.tripEndsOn')}</span>
+                  <input className="cx-input" type="date" name="ends-on" min={startsOn || undefined} value={endsOn} onChange={(e) => setEndsOn(e.target.value)} />
+                </label>
+              )}
+            </div>
+          )}
           <label className="stack" style={{ gap: 6 }}>
             <span className="cx-label">{t('manage.description')}</span>
             <textarea className="cx-input" rows={3} placeholder={t('circles.descriptionPlaceholder')} value={desc} onChange={(e) => setDesc(e.target.value)} />
@@ -310,7 +350,16 @@ export default function CirclesPage() {
               </>
             )}
           </div>
-          <button className="cx-btn cx-btn--primary cx-btn--lg" disabled={!name.trim()} onClick={submit}>{t('circles.create')}</button>
+          <div className="stack" style={{ gap: 8 }}>
+            <span className="cx-label">{t('group.womenOnly')}</span>
+            <div className="cx-chips cx-chips--wrap">
+              <button type="button" className="cx-chip" aria-pressed={womenOnly} onClick={() => setWomenOnly((v) => !v)}>{t('group.womenOnly')}</button>
+            </div>
+            <span className="cx-caption">{t('group.womenOnlyHint')}</span>
+            {womenOnly && myGender === null && <GenderAsk onAnswered={setMyGender} />}
+            {womenOnly && myGender === 'man' && <span className="cx-caption" role="alert">{t('group.notEligible')}</span>}
+          </div>
+          <button className="cx-btn cx-btn--primary cx-btn--lg" disabled={!canCreate} onClick={submit}>{t('circles.create')}</button>
         </div>
       </Sheet>
       <Toast text={toast} />

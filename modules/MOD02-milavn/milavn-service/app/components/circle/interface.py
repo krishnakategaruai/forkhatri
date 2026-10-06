@@ -42,6 +42,9 @@ TYPE_LABELS = {
 }
 
 
+MAX_KIND_LABEL = 40
+
+
 def type_label(circle_type: str) -> str:
     """[FR002/FR021] The enum's label in the request language; English is the fallback."""
     from app.i18n import current_language, translate
@@ -53,6 +56,15 @@ def type_label(circle_type: str) -> str:
 
 class CircleNotFound(Exception):
     pass
+
+
+class WomenOnly(Exception):
+    """[050] A women-only circle and a member who is not (or has not said they are) a woman.
+    `unknown` is True when the member has simply not answered yet, so the screen can ask once."""
+
+    def __init__(self, unknown: bool = False) -> None:
+        super().__init__("women_only")
+        self.unknown = unknown
 
 
 class NotMember(Exception):
@@ -109,11 +121,13 @@ class Circle:
     group_id: UUID | None = None  # [FR123] the umbrella this circle sits under, if any
     posting_policy: str = "members"  # who posts in the feed: 'members' or 'organizers' (announcement-style)
     cover_ref: str | None = None  # organizer-uploaded cover photo (migration 042), local-disk media ref
+    kind_label: str | None = None  # [050] the creator's own label for what kind of group this is
+    women_only: bool = False  # [050] only members who say they are women may be in it (enforced in the database)
 
 
 _COLS = (
     "c.id, c.name, c.circle_type::text, c.description, c.created_by_member_id, c.created_at, "
-    "c.locality_city, c.locality_locality, c.join_policy, c.join_questions, c.starts_on, c.ends_on, c.group_id, c.posting_policy, c.cover_ref"
+    "c.locality_city, c.locality_locality, c.join_policy, c.join_questions, c.starts_on, c.ends_on, c.group_id, c.posting_policy, c.cover_ref, c.kind_label, c.women_only"
 )
 
 
@@ -126,6 +140,8 @@ def _row(r, member_count: int, viewer_role: str | None) -> Circle:  # noqa: ANN0
     circle.group_id = r[12]
     circle.posting_policy = r[13] or "members"
     circle.cover_ref = r[14]
+    circle.kind_label = r[15]
+    circle.women_only = bool(r[16])
     return circle
 
 
@@ -163,8 +179,13 @@ async def create(
     join_questions: list[str] | None = None,
     starts_on: str | None = None,
     ends_on: str | None = None,
+    kind_label: str | None = None,
+    women_only: bool = False,
 ) -> Circle:
     fields = invalid_join_setup(join_policy, join_questions)
+    label = " ".join((kind_label or "").split())
+    if len(label) > MAX_KIND_LABEL:
+        fields.append("kind_label")
     if not name or not name.strip():
         fields.append("name")
     if circle_type not in CIRCLE_TYPES:  # [FR021] enum, never free text
@@ -179,13 +200,18 @@ async def create(
         fields.append("ends_on")
     if fields:
         raise InvalidCircle(fields)
+    if women_only:
+        # [050] Only a woman can start a women-only circle (the database would refuse her membership anyway).
+        mine = await gender_of(session, creator_member_id)
+        if mine != "woman":
+            raise WomenOnly(unknown=mine is None)
     circle_id = uuid4()
     await session.execute(
         text(
             "INSERT INTO milavn_circle.circle (id, name, circle_type, description, created_by_member_id, locality_city, locality_locality, "
-            "join_policy, join_questions, starts_on, ends_on) "
+            "join_policy, join_questions, starts_on, ends_on, kind_label, women_only) "
             "VALUES (:id, :name, CAST(:t AS milavn_circle.circle_type), NULLIF(:d, ''), :creator, NULLIF(:city, ''), NULLIF(:loc, ''), "
-            ":policy, CAST(:questions AS text[]), CAST(NULLIF(:starts, '') AS date), CAST(NULLIF(:ends, '') AS date))"
+            ":policy, CAST(:questions AS text[]), CAST(NULLIF(:starts, '') AS date), CAST(NULLIF(:ends, '') AS date), NULLIF(:label, ''), :wo)"
         ),
         {
             "id": str(circle_id),
@@ -199,6 +225,8 @@ async def create(
             "questions": [q.strip() for q in (join_questions or []) if q and q.strip()],
             "starts": starts_on or "",
             "ends": ends_on or "",
+            "label": label,
+            "wo": bool(women_only),
         },
     )
     await session.execute(
@@ -231,6 +259,114 @@ async def join(session: AsyncSession, *, circle_id: UUID, member_id: UUID) -> Ci
     return await get(session, circle_id=circle_id, viewer_member_id=member_id)
 
 
+# --- Women-only circles and the member's own answer (050) ------------------------------
+
+
+async def gender_of(session: AsyncSession, member_id: UUID) -> str | None:
+    """The member's OWN answer ('woman' | 'man'), or None if they have not given one. Private:
+    the row is readable only by the member, so this answers only for the signed-in member."""
+    return (await session.execute(text("SELECT gender FROM milavn_profile.member_gender WHERE member_id = :m"), {"m": str(member_id)})).scalar_one_or_none()
+
+
+async def set_gender(session: AsyncSession, *, member_id: UUID, gender: str) -> str:
+    if gender not in ("woman", "man"):
+        raise InvalidCircle(["gender"])
+    if gender != "woman":
+        # Someone inside a women-only circle cannot switch their answer and stay there.
+        inside = (
+            await session.execute(
+                text(
+                    "SELECT 1 FROM milavn_circle.circle_membership m JOIN milavn_circle.circle c ON c.id = m.circle_id "
+                    "WHERE m.member_id = :m AND m.left_at IS NULL AND c.women_only LIMIT 1"
+                ),
+                {"m": str(member_id)},
+            )
+        ).first()
+        if inside is not None:
+            raise WomenOnly(unknown=False)
+    await session.execute(
+        text(
+            "INSERT INTO milavn_profile.member_gender (member_id, gender) VALUES (:m, :g) "
+            "ON CONFLICT (member_id) DO UPDATE SET gender = EXCLUDED.gender, declared_at = now()"
+        ),
+        {"m": str(member_id), "g": gender},
+    )
+    return gender
+
+
+async def assert_may_enter(session: AsyncSession, *, circle_id: UUID, member_id: UUID) -> None:
+    """[050] The friendly front door of the rule the database enforces on every membership row."""
+    ok = (await session.execute(text("SELECT milavn_circle.may_enter(:c, :m)"), {"c": str(circle_id), "m": str(member_id)})).scalar_one()
+    if not ok:
+        raise WomenOnly(unknown=await gender_of(session, member_id) is None)
+
+
+async def entry_state(session: AsyncSession, *, c: Circle, member_id: UUID) -> str:
+    """What the join button should do for this viewer: 'ok' | 'ask' (women-only, no answer yet) | 'not_eligible'."""
+    if not c.women_only or c.viewer_role:
+        return "ok"
+    g = await gender_of(session, member_id)
+    return "ok" if g == "woman" else ("ask" if g is None else "not_eligible")
+
+
+# --- Trip plan for a travel circle (050): dates live on the circle; this is the route ----
+
+MAX_TRIP_STOPS = 20
+
+
+async def trip_plan(session: AsyncSession, *, circle_id: UUID) -> list[dict]:
+    rows = (
+        await session.execute(
+            text("SELECT id, place, on_day, note FROM milavn_circle.trip_stop WHERE circle_id = :c ORDER BY position"),
+            {"c": str(circle_id)},
+        )
+    ).all()
+    return [{"id": str(r[0]), "place": r[1], "on_day": r[2].isoformat() if r[2] else None, "note": r[3]} for r in rows]
+
+
+async def set_trip_plan(session: AsyncSession, *, circle_id: UUID, actor_member_id: UUID, stops: list[dict]) -> list[dict]:
+    """The organizer or an assistant sets the whole route in one go (replacing the old one)."""
+    ctype = (await session.execute(text("SELECT circle_type::text FROM milavn_circle.circle WHERE id = :c"), {"c": str(circle_id)})).scalar_one_or_none()
+    if ctype is None:
+        raise CircleNotFound
+    if not (await session.execute(text("SELECT milavn_circle.is_manager_of(:c, :m)"), {"c": str(circle_id), "m": str(actor_member_id)})).scalar_one():
+        raise NotMember
+    clean: list[dict] = []
+    bad: list[str] = []
+    if ctype != "travel":
+        bad.append("circle_type")
+    for s_ in stops:
+        place = " ".join((s_.get("place") or "").split())
+        note = " ".join((s_.get("note") or "").split())
+        day = (s_.get("on_day") or "").strip()
+        if not place and not note and not day:
+            continue  # an untouched blank row
+        if not place or len(place) > 80:
+            bad.append("place")
+        if len(note) > 200:
+            bad.append("note")
+        if day:
+            try:
+                datetime.fromisoformat(day)
+            except ValueError:
+                bad.append("on_day")
+        clean.append({"place": place, "note": note, "on_day": day})
+    if len(clean) > MAX_TRIP_STOPS:
+        bad.append("stops")
+    if bad:
+        raise InvalidCircle(sorted(set(bad)))
+    await session.execute(text("DELETE FROM milavn_circle.trip_stop WHERE circle_id = :c"), {"c": str(circle_id)})
+    for i, st in enumerate(clean):
+        await session.execute(
+            text(
+                "INSERT INTO milavn_circle.trip_stop (circle_id, position, place, on_day, note) "
+                "VALUES (:c, :p, :place, CAST(NULLIF(:day, '') AS date), NULLIF(:note, ''))"
+            ),
+            {"c": str(circle_id), "p": i, "place": st["place"], "day": st["on_day"], "note": st["note"]},
+        )
+    return await trip_plan(session, circle_id=circle_id)
+
+
 # --- Joining: questions and the organizer's yes (FR115) ---------------------------
 
 MAX_JOIN_QUESTIONS = 3
@@ -257,6 +393,7 @@ async def request_join(session: AsyncSession, *, circle_id: UUID, member_id: UUI
     visible = (await session.execute(text("SELECT 1 FROM milavn_circle.circle WHERE id = :c"), {"c": str(circle_id)})).first()
     if visible is None:
         raise CircleNotFound
+    await assert_may_enter(session, circle_id=circle_id, member_id=member_id)
     result = (
         await session.execute(
             text("SELECT milavn_circle.request_to_join(:c, :m, CAST(:a AS text[]))"),
@@ -781,6 +918,14 @@ async def close_poll(session: AsyncSession, *, circle_id: UUID, poll_id: UUID, m
         raise NotPollAuthor
     if closed_at is None:
         await session.execute(text("UPDATE milavn_circle.poll SET closed_at = now() WHERE id = :p AND closed_at IS NULL"), {"p": str(poll_id)})
+        # [053] The circle hears what was decided (members whose setting allows highlights).
+        await bus.publish(
+            session,
+            schema="milavn_circle",
+            event_type="poll.closed",
+            aggregate_id=circle_id,
+            payload={"circle_id": circle_id, "poll_id": poll_id, "created_by_member_id": member_id},
+        )
 
 
 # --- Chapters under one umbrella (FR123) ------------------------------------------

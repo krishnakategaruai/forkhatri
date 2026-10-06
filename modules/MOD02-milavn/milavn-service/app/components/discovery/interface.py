@@ -32,8 +32,8 @@ from app.components.activity import interface as activity
 from app.components.activity.interface import Occurrence
 from app.components.identity_bridge import interface as identity
 from app.components.locationprivacy import interface as locpriv
+from app.components.places.interface import distance_km
 from app.components.trust import interface as trust
-from app.config import localities
 from app.config.interests import TAG_LABELS, TAG_TO_CATEGORY
 from app.i18n import current_language, translate
 
@@ -51,6 +51,7 @@ CATEGORY_LABELS = {
     "explore": "Explore",
     "celebrate": "Celebrate",
     "help": "Help",
+    "professional": "Professional",
 }
 
 
@@ -91,6 +92,7 @@ class Card:
     price_paise: int | None = None  # [FR102] None = free
     audience_tags: tuple[str, ...] = ()  # [FR110] family_friendly | elder_friendly | beginner_friendly
     food_tags: tuple[str, ...] = ()  # [FR110] veg | jain_options | non_veg | alcohol_free
+    event_format: str | None = None  # [054] workshop | webinar | tournament ...
     score: float = field(default=0.0, repr=False)
 
 
@@ -102,6 +104,8 @@ class ViewerProfile:
     locality: str | None
     interests: list[str]
     circle_ids: list[UUID]
+    lat: float | None = None  # centre of the viewer's approximate place (never a live position)
+    lng: float | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -135,7 +139,7 @@ async def viewer_profile(session: AsyncSession, member_id: UUID) -> ViewerProfil
     if p is None:
         return None
     circle_ids = await circle.my_circle_ids(session, member_id=member_id)
-    return ViewerProfile(member_id, p.locality_city, p.locality_zone, p.locality_locality, p.interests, circle_ids)
+    return ViewerProfile(member_id, p.locality_city, p.locality_zone, p.locality_locality, p.interests, circle_ids, p.locality_lat, p.locality_lng)
 
 
 TRUST_SCORE = {
@@ -155,10 +159,8 @@ def _locality_factor(occ: Occurrence, viewer: ViewerProfile) -> tuple[float, Rea
         return 1.0, ("reason.locality", {"place": occ.locality_locality})
     if viewer.zone and occ.locality_zone and viewer.zone.lower() == occ.locality_zone.lower():
         return 0.65, ("reason.zone", {"place": occ.locality_zone})
-    a = localities.find(viewer.city, viewer.locality)
-    b = localities.find(occ.locality_city, occ.locality_locality)
-    if a and b:
-        km = localities.distance_km(a, b)
+    if viewer.lat is not None and viewer.lng is not None and occ.locality_lat is not None and occ.locality_lng is not None:
+        km = distance_km(viewer.lat, viewer.lng, occ.locality_lat, occ.locality_lng)
         if km <= 5:
             return 0.6, ("reason.km", {"km": f"{km:.0f}"})
         if km <= 12:
@@ -392,9 +394,13 @@ async def build_cards(
             locality=occ.locality_locality,
             viewer_city=viewer.city if viewer else None,
             viewer_locality=viewer.locality if viewer else None,
+            lat=occ.locality_lat,
+            lng=occ.locality_lng,
+            viewer_lat=viewer.lat if viewer else None,
+            viewer_lng=viewer.lng if viewer else None,
+            viewer_zone=viewer.zone if viewer else None,
         )
         host = hosts[occ.creator_member_id]
-        loc = localities.find(occ.locality_city, occ.locality_locality)
         cards.append(
             Card(
                 id=occ.id,
@@ -425,11 +431,12 @@ async def build_cards(
                 high_risk=occ.high_risk,
                 status=occ.status,
                 is_recurring=occ.activity_id is not None,
-                lat=loc.lat if loc else None,
-                lng=loc.lng if loc else None,
+                lat=occ.locality_lat,
+                lng=occ.locality_lng,
                 price_paise=occ.price_paise,
                 audience_tags=tuple(occ.audience_tags),
                 food_tags=tuple(occ.food_tags),
+                event_format=occ.event_format,
                 score=score,
             )
         )
@@ -548,6 +555,7 @@ async def search(
     free: bool | None = None,
     audience: str | None = None,
     food: str | None = None,
+    event_format: str | None = None,
 ) -> list[Card]:
     """[FR005/FR009] Common filters (date, distance, category, scope) + advanced.
     [FR102/FR110] Free only, who it's for (family, elders, beginners) and food (veg, alcohol-free)."""
@@ -567,6 +575,8 @@ async def search(
         occs = [o for o in occs if audience in o.audience_tags]
     if food:
         occs = [o for o in occs if food in o.food_tags]
+    if event_format:
+        occs = [o for o in occs if o.event_format == event_format]
     cards = await build_cards(session, occs, viewer, exclude_hidden=True)
     if distance == "locality" and viewer.locality:
         cards = [c for c in cards if c.location_label.lower() == viewer.locality.lower()]
@@ -616,3 +626,19 @@ class MilavnActivityFeedReader:
             if o.time_start >= datetime.now(UTC):
                 out.append({"id": str(o.id), "title": o.title, "time_start": o.time_start.isoformat(), "status": status, "slug": o.canonical_url_slug})
         return sorted(out, key=lambda x: x["time_start"])
+
+
+async def known_places(session: AsyncSession, viewer: ViewerProfile | None) -> list[dict]:
+    """Areas the smart-fill sentence can name: the member's own place and the areas real events already use."""
+    rows = (
+        await session.execute(
+            text(
+                "SELECT DISTINCT locality_city, locality_zone, locality_locality, locality_state, locality_lat, locality_lng "
+                "FROM milavn_activity.occurrence WHERE locality_locality IS NOT NULL AND status = 'active' LIMIT 400"
+            )
+        )
+    ).all()
+    out = [{"locality_city": r[0], "locality_zone": r[1], "locality_locality": r[2], "locality_state": r[3], "lat": r[4], "lon": r[5]} for r in rows]
+    if viewer and viewer.locality:
+        out.append({"locality_city": viewer.city, "locality_zone": viewer.zone, "locality_locality": viewer.locality, "locality_state": None, "lat": viewer.lat, "lon": viewer.lng})
+    return out

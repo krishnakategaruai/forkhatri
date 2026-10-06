@@ -43,6 +43,7 @@ class CardOut(BaseModel):
     price_paise: int | None = None  # [FR102] None = free
     audience_tags: list[str] = []  # [FR110]
     food_tags: list[str] = []  # [FR110]
+    event_format: str | None = None  # [054]
 
     @classmethod
     def from_card(cls, c: Card) -> CardOut:
@@ -80,4 +81,5 @@ class CardOut(BaseModel):
             price_paise=c.price_paise,
             audience_tags=list(c.audience_tags),
             food_tags=list(c.food_tags),
+            event_format=c.event_format,
         )

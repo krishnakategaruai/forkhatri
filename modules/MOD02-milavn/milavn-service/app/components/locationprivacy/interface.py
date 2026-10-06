@@ -15,7 +15,7 @@ from uuid import UUID
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import localities
+from app.components.places.interface import distance_km as _distance_km
 
 PRECISION_ORDER = ("city", "zone", "locality", "precise")
 
@@ -73,24 +73,25 @@ def display_location(
     locality: str | None,
     viewer_city: str | None,
     viewer_locality: str | None,
+    lat: float | None = None,
+    lng: float | None = None,
+    viewer_lat: float | None = None,
+    viewer_lng: float | None = None,
+    viewer_zone: str | None = None,
 ) -> LocationDisplay:
     """[FR038] Locality > Zone > City label, plus an approximate distance from the viewer's locality."""
-    label = locality or zone or city
+    label = locality or city  # the district (zone) is context for matching, not a label that stands for the place
     distance_km: float | None = None
     distance_label: str | None = None
     if viewer_city and viewer_city.lower() == city.lower():
-        a = localities.find(viewer_city, viewer_locality)
-        b = localities.find(city, locality)
-        if a and b:
-            distance_km = round(localities.distance_km(a, b), 1)
+        if None not in (lat, lng, viewer_lat, viewer_lng) and locality and viewer_locality:
+            distance_km = round(_distance_km(viewer_lat, viewer_lng, lat, lng), 1)
             if distance_km < 1.0:
                 distance_label = "Same locality"
             else:
                 distance_label = f"~{distance_km:g} km away"
-        elif zone and viewer_locality:
-            va = localities.find(viewer_city, viewer_locality)
-            if va and va.zone == zone:
-                distance_label = f"In {zone}"
+        elif zone and viewer_zone and viewer_zone == zone:
+            distance_label = f"In {zone}"
     elif viewer_city:
         distance_label = city
     return LocationDisplay(label, city, zone, locality, distance_km, distance_label)

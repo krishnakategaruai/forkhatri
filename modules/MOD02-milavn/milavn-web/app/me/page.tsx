@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import ActivityCard from '@/components/ActivityCard';
 import { Modal, Sheet } from '@/components/Sheet';
 import { Toast } from '@/components/States';
+import PlacePicker from '@/components/PlacePicker';
 import TopActions from '@/components/TopActions';
 import { api, ApiError, resolveMediaUrl, type Card, type Profile } from '@/lib/api';
 import { LANGUAGE_NATIVE, SUPPORTED_LANGUAGES, type Language } from '@/lib/i18n/config';
@@ -91,7 +92,7 @@ export default function MePage() {
 
   if (!identity || !profile) return <main className="screen" />;
   const lang = (profile.language_preference as Language) ?? 'en';
-  const place = profile.locality_locality ?? profile.locality_zone ?? profile.locality_city;
+  const place = profile.locality_locality ?? profile.locality_city;
 
   return (
     <>
@@ -107,10 +108,23 @@ export default function MePage() {
           {profile.photo_url || identity.avatar ? <img className="avatar avatar--xl" src={resolveMediaUrl(profile.photo_url ?? identity.avatar) ?? ''} alt="" /> : <span className="avatar avatar--xl" />}
           <div className="grow">
             <div className="greeting" style={{ fontSize: '1.7rem' }}>{identity.display_name}</div>
-            <div className="caption">@{identity.handle} · <MapPin size={12} aria-hidden="true" style={{ verticalAlign: '-1px' }} /> {place}, {profile.locality_city}</div>
+            <div className="caption">@{identity.handle} · <MapPin size={12} aria-hidden="true" style={{ verticalAlign: '-1px' }} /> {[place, profile.locality_locality ? profile.locality_city : null, profile.locality_state].filter((v, i, a) => v && a.indexOf(v) === i).join(', ')}</div>
             {profile.bio && <p className="muted" style={{ margin: '4px 0 0' }}>{profile.bio}</p>}
           </div>
           <button className="btn btn--secondary btn--sm" onClick={() => setEdit(true)}>{t('profile.edit')}</button>
+        </div>
+
+        <div className="stack" style={{ gap: 6 }}>
+          <span className="label">{t('profile.homePlace')}</span>
+          <PlacePicker
+            city={profile.locality_city} locality={profile.locality_locality ?? ''} state={profile.locality_state} label={t('profile.homePlace')}
+            onChange={async (p) => {
+              try {
+                setProfile(await api<Profile>('/profile/place', { method: 'PATCH', body: { locality_city: p.locality_city, locality_zone: p.locality_zone, locality_locality: p.locality_locality, locality_state: p.locality_state, locality_lat: p.lat, locality_lng: p.lon } }));
+                say(t('profile.saved'));
+              } catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
+            }}
+          />
         </div>
 
         <div className="row" style={{ gap: 8 }}>

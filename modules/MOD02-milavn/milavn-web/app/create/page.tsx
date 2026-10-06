@@ -9,7 +9,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import PlacePicker from '@/components/PlacePicker';
+import PlacePicker, { type PickedPlace } from '@/components/PlacePicker';
 import QrCode from '@/components/QrCode';
 import WhenPicker from '@/components/WhenPicker';
 import { Modal } from '@/components/Sheet';
@@ -18,8 +18,9 @@ import { api, ApiError, type Card, type Circle } from '@/lib/api';
 import { appUrl } from '@/lib/base-path';
 import { toLocalInputValue } from '@/lib/format';
 import { useIdentity } from '@/lib/identity';
+import { EVENT_FORMATS, MULTI_DAY_FORMATS, ONLINE_FORMATS, daySpan } from '@/lib/event-formats';
 
-const CATEGORIES: [string, string][] = [['play', '🏸'], ['meet', '☕'], ['eat', '🍛'], ['learn', '📚'], ['work', '💼'], ['explore', '🥾'], ['celebrate', '🎉'], ['help', '🤝']];
+const CATEGORIES: [string, string][] = [['play', '🏸'], ['meet', '☕'], ['eat', '🍛'], ['learn', '📚'], ['work', '💼'], ['explore', '🥾'], ['celebrate', '🎉'], ['help', '🤝'], ['professional', '🎤']];
 // One-tap "when" (thesis §40: one-tap actions over forms). Each returns a local Date.
 function at(daysAhead: number, hour: number): Date { const d = new Date(); d.setDate(d.getDate() + daysAhead); d.setHours(hour, 0, 0, 0); return d; }
 function nextWeekday(weekday: number, hour: number): Date { const d = new Date(); const delta = (weekday - d.getDay() + 7) % 7 || 7; return at(delta, hour); }
@@ -45,6 +46,24 @@ function CreateInner() {
   const [when, setWhen] = useState('');
   const [city, setCity] = useState(profile?.locality_city ?? '');
   const [locality, setLocality] = useState(profile?.locality_locality ?? '');
+  const [place, setPlace] = useState<PickedPlace | null>(null);
+  // Step 2: the exact address and the join link stay private to people who are going (and the organizers).
+  const [mode, setMode] = useState<'in_person' | 'online' | 'hybrid'>('in_person');
+  const [venueAddress, setVenueAddress] = useState('');
+  const [venueNotes, setVenueNotes] = useState('');
+  const [joinLink, setJoinLink] = useState('');
+  // [054] What kind of event (separate from the category), team size for a tournament, and how many days it runs.
+  const [format, setFormat] = useState('');
+  const [teamSize, setTeamSize] = useState('');
+  const [days, setDays] = useState(1);
+  const [endTime, setEndTime] = useState('');
+  const [showEnd, setShowEnd] = useState(false);
+  const pickFormat = (f: string) => {
+    setFormat(f);
+    if (MULTI_DAY_FORMATS.includes(f)) setShowEnd(true);
+    if (ONLINE_FORMATS.includes(f) && mode === 'in_person' && !venueAddress.trim()) setMode('online');
+  };
+  const pickPlace = (p: PickedPlace) => { setPlace(p); setCity(p.locality_city); setLocality(p.locality_locality ?? ''); };
   const [count, setCount] = useState<number | null>(null);
   // FR102: free by default; a price only when the organizer chooses Paid.
   const [paid, setPaid] = useState(false);
@@ -76,12 +95,13 @@ function CreateInner() {
     if (!smart.trim()) return;
     setSmartBusy(true);
     try {
-      const d = await api<{ category: string | null; title: string | null; time_start: string | null; locality_city: string | null; locality_locality: string | null; capacity: number | null; matched: string[] }>(`/discovery/smart-fill?text=${encodeURIComponent(smart)}`);
+      const d = await api<{ category: string | null; event_format?: string | null; title: string | null; time_start: string | null; locality_city: string | null; locality_locality: string | null; place: PickedPlace | null; capacity: number | null; matched: string[] }>(`/discovery/smart-fill?text=${encodeURIComponent(smart)}`);
       if (d.category) setCategory(d.category);
+      if (d.event_format) pickFormat(d.event_format);
       if (d.title) setTitle(d.title);
       if (d.time_start) setWhen(toLocalInputValue(d.time_start));
-      if (d.locality_city) setCity(d.locality_city);
-      if (d.locality_locality) setLocality(d.locality_locality);
+      if (d.place) pickPlace(d.place);
+      else if (d.locality_city) { setCity(d.locality_city); setLocality(d.locality_locality ?? ''); }
       if (d.capacity) setCount(d.capacity);
       setSmartMatched(d.matched);
     } catch { setToast(t('state.error')); setTimeout(() => setToast(null), 2000); }
@@ -91,7 +111,14 @@ function CreateInner() {
   useEffect(() => {
     api<Circle[]>('/circles/mine').then(setCircles).catch(() => undefined);
     if (editId) {
-      api<Card & { description: string | null; refund_cutoff_hours?: number; max_guests_per_member?: number }>(`/occurrences/${editId}`).then((o) => {
+      api<Card & { description: string | null; refund_cutoff_hours?: number; max_guests_per_member?: number; place?: { locality_city: string; locality_zone: string | null; locality_locality: string | null; locality_state: string | null; lat: number | null; lon: number | null }; attendance_mode?: 'in_person' | 'online' | 'hybrid'; event_format?: string | null; team_size_max?: number | null; venue?: { venue_address: string | null; venue_notes: string | null; join_link: string | null } | null }>(`/occurrences/${editId}`).then((o) => {
+        if (o.place) pickPlace(o.place);
+        setMode(o.attendance_mode ?? 'in_person'); setVenueAddress(o.venue?.venue_address ?? ''); setVenueNotes(o.venue?.venue_notes ?? ''); setJoinLink(o.venue?.join_link ?? '');
+        setFormat(o.event_format ?? ''); setTeamSize(o.team_size_max ? String(o.team_size_max) : '');
+        if (o.time_end) {
+          setShowEnd(true); setDays(daySpan(o.time_start, o.time_end));
+          setEndTime(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(o.time_end)));
+        }
         setTitle(o.title); setCategory(o.intent_category); setWhen(toLocalInputValue(o.time_start)); setCount(o.capacity);
         setPaid(o.price_paise != null); setPriceRupees(o.price_paise != null ? String(o.price_paise / 100) : ''); setCutoff(o.refund_cutoff_hours ?? 24);
         setAudience(o.audience_tags ?? []); setFood(o.food_tags ?? []); setFoodTouched(true);
@@ -102,7 +129,12 @@ function CreateInner() {
       }).catch(() => undefined);
     }
   }, [editId]);
-  useEffect(() => { if (profile && !editId) { setCity(profile.locality_city); setLocality(profile.locality_locality ?? ''); } }, [profile, editId]);
+  useEffect(() => {
+    if (profile && !editId) {
+      setCity(profile.locality_city); setLocality(profile.locality_locality ?? '');
+      setPlace({ locality_city: profile.locality_city, locality_zone: profile.locality_zone, locality_locality: profile.locality_locality, locality_state: profile.locality_state ?? null, lat: profile.locality_lat ?? null, lon: profile.locality_lng ?? null });
+    }
+  }, [profile, editId]);
 
   // FR110: community food defaults — vegetarian and alcohol-free unless the host changes it (81% of Indians limit meat, Pew 2021).
   const pickCategory = (c: string) => {
@@ -125,7 +157,17 @@ function CreateInner() {
 
   const pricePaise = paid ? Math.round(Number(priceRupees) * 100) : null;
   const priceOk = !paid || (pricePaise !== null && Number.isFinite(pricePaise) && pricePaise >= 100 && pricePaise <= 10_000_000);
-  const canSubmit = !!category && title.trim().length > 0 && !!when && !!city && (scope !== 'circle' || !!circleId) && priceOk;
+  const linkOk = !joinLink.trim() || /^https:\/\/\S+$/i.test(joinLink.trim());
+  // The end: the start's own day plus (days - 1), at the end time. Multi-day needs an end time; one day may have one.
+  const endIso = (() => {
+    if (!showEnd || !when || !/^\d{2}:\d{2}$/.test(endTime)) return null;
+    const [y, m, d] = when.slice(0, 10).split('-').map(Number);
+    const [hh, mm] = endTime.split(':').map(Number);
+    return new Date(y, m - 1, d + days - 1, hh, mm).toISOString();
+  })();
+  const endOk = !showEnd || (days === 1 && !endTime) || (endIso !== null && !!when && Date.parse(endIso) > new Date(when).getTime());
+  const teamOk = format !== 'tournament' || !teamSize || (Number.isInteger(Number(teamSize)) && Number(teamSize) >= 2 && Number(teamSize) <= 50);
+  const canSubmit = endOk && teamOk && linkOk && !!category && title.trim().length > 0 && !!when && !!city && (scope !== 'circle' || !!circleId) && priceOk;
 
   const uploadCover = async (file: File | undefined) => {
     if (!file) return;
@@ -138,7 +180,10 @@ function CreateInner() {
     if (!canSubmit) { setShakeKey((k) => k + 1); return; }
     setBusy(true); setErr(null);
     const body = {
-      title: title.trim(), intent_category: category, time_start: new Date(when).toISOString(), locality_city: city, locality_locality: locality || null,
+      title: title.trim(), intent_category: category, time_start: new Date(when).toISOString(), time_end: endIso,
+      event_format: format || null, team_size_max: format === 'tournament' && teamSize ? Number(teamSize) : null, locality_city: city, locality_zone: place?.locality_zone ?? null, locality_locality: locality || null, locality_state: place?.locality_state ?? null,
+      locality_lat: place?.lat ?? null, locality_lng: place?.lon ?? null, attendance_mode: mode,
+      venue_address: mode === 'online' ? '' : venueAddress.trim(), venue_notes: mode === 'online' ? '' : venueNotes.trim(), join_link: mode === 'in_person' ? '' : joinLink.trim(),
       capacity: count, description: description || null, visibility_scope: scope, circle_id: scope === 'circle' ? circleId : null,
       high_risk: highRisk, recurrence_rule: recurring ? { freq: 'weekly' } : null, cover_image_media_id: cover?.media_id ?? null,
       price_paise: pricePaise, refund_cutoff_hours: cutoff, audience_tags: audience, food_tags: food,
@@ -218,7 +263,22 @@ function CreateInner() {
               </button>
             ))}
           </div>
+          {category === 'professional' && <p className="caption fade-in" style={{ margin: 0 }}>{t('tix.professionalHint')}</p>}
           <label className="field"><input className="field__input" placeholder={t('create.titlePlaceholder')} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={140} /></label>
+          <label className="field">
+            <span className="field__label">{t('evt.create.format')}</span>
+            <select className="field__input" value={format} onChange={(e) => pickFormat(e.target.value)}>
+              <option value="">{t('evt.create.formatNone')}</option>
+              {EVENT_FORMATS.map((f) => <option key={f} value={f}>{t(`evt.format.${f}`)}</option>)}
+            </select>
+          </label>
+          {format === 'tournament' && (
+            <label className="field fade-in">
+              <span className="field__label">{t('evt.create.teamSize')}</span>
+              <input className="field__input" type="number" inputMode="numeric" min={2} max={50} step={1} value={teamSize} onChange={(e) => setTeamSize(e.target.value)} placeholder={t('evt.create.teamSizePh')} aria-invalid={!teamOk} />
+              <span className="caption">{t('evt.create.teamSizeHint')}</span>
+            </label>
+          )}
         </section>
 
         <div className="stack" style={{ gap: 8 }}>
@@ -230,11 +290,54 @@ function CreateInner() {
             })}
           </div>
           <WhenPicker value={when} onChange={setWhen} />
+          {!showEnd ? (
+            <button type="button" className="link" style={{ alignSelf: 'flex-start' }} onClick={() => setShowEnd(true)}>{t('evt.create.addEnd')}</button>
+          ) : (
+            <div className="row fade-in" style={{ gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div className="stack" style={{ gap: 6 }}>
+                <span className="field__label">{t('evt.create.days')}</span>
+                <div className="stepper" aria-live="polite">
+                  <button type="button" aria-label={t('evt.create.fewerDays')} onClick={() => setDays((n) => Math.max(1, n - 1))}>−</button>
+                  <output>{t('evt.create.dayCount', { count: days })}</output>
+                  <button type="button" aria-label={t('evt.create.moreDays')} onClick={() => setDays((n) => Math.min(31, n + 1))}>+</button>
+                </div>
+              </div>
+              <label className="field" style={{ margin: 0 }}>
+                <span className="field__label">{t('evt.create.endsAt')}</span>
+                <input className="field__input" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} aria-invalid={!endOk} />
+              </label>
+            </div>
+          )}
+          {showEnd && days > 1 && <p className="caption" style={{ margin: 0 }}>{t('evt.create.oneBooking')}</p>}
+          {!endOk && <span className="field__error" role="alert">{t('evt.create.endInvalid')}</span>}
         </div>
 
         <div className="stack" style={{ gap: 8 }}>
           <span className="field__label">{t('create.where')}</span>
-          <PlacePicker city={city} locality={locality} onChange={(c, l) => { setCity(c); setLocality(l); }} label={t('create.where')} />
+          <PlacePicker city={city} locality={locality} state={place?.locality_state} onChange={pickPlace} label={t('create.where')} />
+          <div className="chips" role="radiogroup" aria-label={t('create.mode.label')}>
+            {(['in_person', 'online', 'hybrid'] as const).map((m) => <button key={m} type="button" role="radio" className="chip chip--sm" aria-checked={mode === m} aria-pressed={mode === m} onClick={() => setMode(m)}>{t(`create.mode.${m}`)}</button>)}
+          </div>
+          {mode !== 'online' && (
+            <div className="stack fade-in" style={{ gap: 8 }}>
+              <label className="field">
+                <span className="field__label">{t('create.venueAddress')}</span>
+                <textarea className="field__input" rows={2} maxLength={400} value={venueAddress} onChange={(e) => setVenueAddress(e.target.value)} placeholder={t('create.venueAddressHint')} />
+              </label>
+              <label className="field">
+                <span className="field__label">{t('create.venueNotes')}</span>
+                <input className="field__input" maxLength={400} value={venueNotes} onChange={(e) => setVenueNotes(e.target.value)} placeholder={t('create.venueNotesHint')} />
+              </label>
+            </div>
+          )}
+          {mode !== 'in_person' && (
+            <label className="field fade-in">
+              <span className="field__label">{t('create.joinLink')}</span>
+              <input className="field__input" type="url" inputMode="url" maxLength={500} value={joinLink} onChange={(e) => setJoinLink(e.target.value)} placeholder="https://" aria-invalid={!linkOk} />
+              {!linkOk && <span className="field__error" role="alert">{t('create.joinLinkInvalid')}</span>}
+            </label>
+          )}
+          {(mode !== 'online' || joinLink) && <p className="caption" style={{ margin: 0 }}>{t('create.venuePrivate')}</p>}
         </div>
 
         <div className="row row--between">

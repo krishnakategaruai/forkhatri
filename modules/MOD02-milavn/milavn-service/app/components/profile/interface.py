@@ -23,7 +23,7 @@ from fastapi import UploadFile
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import localities
+from app.components.places.interface import approximate_centre
 from app.config.interests import TAG_LABELS
 
 __all__ = [
@@ -60,6 +60,9 @@ class ProfileSummary:
     locality_city: str
     locality_zone: str | None
     locality_locality: str | None
+    locality_state: str | None
+    locality_lat: float | None
+    locality_lng: float | None
     language_preference: str
     interests: list[str]
     interest_labels: list[str]
@@ -69,7 +72,7 @@ class ProfileSummary:
 
 _SELECT_PROFILE = text(
     """
-    SELECT p.member_id, p.locality_city, p.locality_zone, p.locality_locality,
+    SELECT p.member_id, p.locality_city, p.locality_zone, p.locality_locality, p.locality_state, p.locality_lat, p.locality_lng,
            p.language_preference, p.bio, m.storage_ref
     FROM milavn_profile.member_profile p
     LEFT JOIN milavn_profile.member_profile_media m
@@ -90,6 +93,9 @@ async def get_own_profile(session: AsyncSession, *, member_id: UUID) -> ProfileS
         locality_city=row.locality_city,
         locality_zone=row.locality_zone,
         locality_locality=row.locality_locality,
+        locality_state=row.locality_state,
+        locality_lat=row.locality_lat,
+        locality_lng=row.locality_lng,
         language_preference=row.language_preference,
         interests=tags,
         interest_labels=[TAG_LABELS.get(t, t) for t in tags],
@@ -112,6 +118,25 @@ async def get_public_profile(session: AsyncSession, *, member_id: UUID) -> dict 
     return dict(row._mapping) if row else None
 
 
+async def save_place(
+    session: AsyncSession, *, member_id: UUID, locality_city: str | None, locality_zone: str | None, locality_locality: str | None,
+    locality_state: str | None, locality_lat: float | None, locality_lng: float | None,
+) -> ProfileSummary | None:
+    """Change the member's approximate home place (from the live place search) without touching anything else."""
+    city = (locality_city or "").strip()
+    if not city:
+        raise MissingRequiredFields(["locality_city"])
+    lat, lng = approximate_centre(locality_lat, locality_lng)
+    await session.execute(
+        text(
+            "UPDATE milavn_profile.member_profile SET locality_city = :city, locality_zone = :zone, locality_locality = :loc, "
+            "locality_state = :state, locality_lat = :lat, locality_lng = :lng, updated_at = now() WHERE member_id = :m"
+        ),
+        {"m": str(member_id), "city": city, "zone": locality_zone or None, "loc": locality_locality or None, "state": locality_state or None, "lat": lat, "lng": lng},
+    )
+    return await get_own_profile(session, member_id=member_id)
+
+
 async def save_onboarding(
     session: AsyncSession,
     *,
@@ -121,6 +146,9 @@ async def save_onboarding(
     locality_locality: str | None,
     interests: list[str],
     language_preference: str | None,
+    locality_state: str | None = None,
+    locality_lat: float | None = None,
+    locality_lng: float | None = None,
 ) -> ProfileSummary:
     missing: list[str] = []
     city = (locality_city or "").strip()
@@ -132,20 +160,23 @@ async def save_onboarding(
     if missing:
         raise MissingRequiredFields(missing)
 
-    loc = localities.find(city, locality_locality)
-    zone = loc.zone if loc else (locality_zone or None)
+    zone = locality_zone or None
+    lat, lng = approximate_centre(locality_lat, locality_lng)
     lang = language_preference if language_preference in SUPPORTED_LANGUAGES else None
 
     await session.execute(
         text(
             """
             INSERT INTO milavn_profile.member_profile
-                (member_id, locality_city, locality_zone, locality_locality, language_preference)
-            VALUES (:member_id, :city, :zone, :locality, COALESCE(:lang, 'en'))
+                (member_id, locality_city, locality_zone, locality_locality, locality_state, locality_lat, locality_lng, language_preference)
+            VALUES (:member_id, :city, :zone, :locality, :state, :lat, :lng, COALESCE(:lang, 'en'))
             ON CONFLICT (member_id) DO UPDATE
               SET locality_city = EXCLUDED.locality_city,
                   locality_zone = EXCLUDED.locality_zone,
                   locality_locality = EXCLUDED.locality_locality,
+                  locality_state = EXCLUDED.locality_state,
+                  locality_lat = EXCLUDED.locality_lat,
+                  locality_lng = EXCLUDED.locality_lng,
                   language_preference = COALESCE(:lang, milavn_profile.member_profile.language_preference),
                   updated_at = now()
             """
@@ -155,6 +186,9 @@ async def save_onboarding(
             "city": city,
             "zone": zone,
             "locality": (locality_locality or None),
+            "state": (locality_state or None),
+            "lat": lat,
+            "lng": lng,
             "lang": lang,
         },
     )

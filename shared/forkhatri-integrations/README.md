@@ -7,6 +7,7 @@ One place for the things every module needs from the outside world:
 | `payments` | Take a payment, check it, refund it, pay a person out, read the provider's webhook | `from forkhatri_integrations import payments` |
 | `messaging` | Send SMS, WhatsApp, email and push | `from forkhatri_integrations import messaging` |
 | `delivery` | Send what a module queued in its outbox, with retries and backoff | `from forkhatri_integrations import delivery` |
+| `places` | Live India place search (state, district, city, area) and reverse lookup; free OpenStreetMap data now (adapter `nominatim`, `none` = off) | `from forkhatri_integrations import places` |
 
 It uses the Python standard library only. It never reads a module's `.env`: the module passes its own settings in.
 

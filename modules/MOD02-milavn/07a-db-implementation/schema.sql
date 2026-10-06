@@ -287,7 +287,8 @@ GRANT SELECT ON ALL TABLES IN SCHEMA milavn_discovery TO milavn_app;
 CREATE SCHEMA IF NOT EXISTS milavn_circle AUTHORIZATION milavn_owner;
 
 DO $$ BEGIN
-  CREATE TYPE milavn_circle.circle_type AS ENUM ('public','community','private','organization','interest','local','recurring_activity');
+  -- Reconciled with app/components/circle/interface.py CIRCLE_TYPES (migration 035 added temple, travel). Custom labels: circle.kind_label (050).
+  CREATE TYPE milavn_circle.circle_type AS ENUM ('public','community','private','organization','interest','local','recurring_activity','temple','travel');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN

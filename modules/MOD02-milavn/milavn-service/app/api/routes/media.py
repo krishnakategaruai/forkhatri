@@ -5,6 +5,7 @@
 # exactly as they were (`/media/<folder>/<file>`, what the database keeps and every response
 # returns), but the private folders are answered here, and only to someone allowed to see them:
 #   circle-posts, circle-docs   the circle's active members, its creator, moderators
+#   circle-albums               [053] album photos: the circle's active members, its creator, moderators
 #   circle-covers               anyone for an open circle (discover cards); otherwise the members,
 #                               moderators, a pending invitee, or `?invite=<token>` of a working link
 #   chat                        the conversation's members (chat_message RLS); a retracted photo is gone
@@ -33,7 +34,7 @@ from app.config.settings import get_settings
 
 router = APIRouter(tags=["media"])
 
-PRIVATE_FOLDERS = frozenset({"circle-posts", "circle-docs", "circle-covers", "chat", "moments"})
+PRIVATE_FOLDERS = frozenset({"circle-posts", "circle-docs", "circle-covers", "circle-albums", "chat", "moments"})
 _NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*(\.[A-Za-z0-9]{1,5})?$")
 _TYPES = {
     ".jpg": "image/jpeg",
@@ -48,6 +49,7 @@ _TYPES = {
     ".ppt": "application/vnd.ms-powerpoint",
     ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     ".txt": "text/plain; charset=utf-8",
+    ".csv": "text/csv; charset=utf-8",
 }
 GATED_CACHE = "private, max-age=300"
 OPEN_CACHE = "public, max-age=300"
@@ -101,7 +103,7 @@ async def _circle_file(session: DbSession, folder: str, name: str, invite: str |
             {"r": f"{folder}/{name}", "h": token_hash},
         )
     ).first()
-    expected = {"circle-covers": "cover", "circle-posts": "photo", "circle-docs": "doc"}[folder]
+    expected = {"circle-covers": "cover", "circle-posts": "photo", "circle-docs": "doc", "circle-albums": "album"}[folder]
     if row is None or row[0] != expected:
         raise _not_found()
     if row[0] == "doc":
@@ -117,6 +119,11 @@ async def circle_post_photo(name: str, session: DbSession, member: OptionalMembe
 @router.api_route("/media/circle-docs/{name}", methods=["GET", "HEAD"], include_in_schema=False)
 async def circle_post_document(name: str, session: DbSession, member: OptionalMember) -> FileResponse:
     return await _circle_file(session, "circle-docs", name, None)
+
+
+@router.api_route("/media/circle-albums/{name}", methods=["GET", "HEAD"], include_in_schema=False)
+async def circle_album_photo(name: str, session: DbSession, member: OptionalMember) -> FileResponse:
+    return await _circle_file(session, "circle-albums", name, None)
 
 
 @router.api_route("/media/circle-covers/{name}", methods=["GET", "HEAD"], include_in_schema=False)

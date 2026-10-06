@@ -30,6 +30,8 @@ class CreateCircleRequest(BaseModel):
     locality_locality: str | None = None
     starts_on: str | None = None  # [FR125] ISO date — required for 'temple'/'travel'
     ends_on: str | None = None  # [FR125] a trip's last day; omit for a single day
+    kind_label: str | None = Field(default=None, max_length=40)  # [050] the creator's own label for the kind of group
+    women_only: bool = False  # [050] only members who say they are women may be in it
 
 
 class JoinRequest(BaseModel):
@@ -65,7 +67,9 @@ def _out(c: circle.Circle) -> dict:
         "id": str(c.id),
         "name": c.name,
         "circle_type": c.circle_type,
-        "type_label": circle.type_label(c.circle_type),
+        "type_label": c.kind_label or circle.type_label(c.circle_type),
+        "kind_label": c.kind_label,
+        "women_only": c.women_only,
         "description": c.description,
         "created_by_member_id": str(c.created_by_member_id),
         "created_at": c.created_at.isoformat(),
@@ -208,6 +212,8 @@ async def create(body: CreateCircleRequest, session: DbSession, member: CurrentM
             join_questions=body.join_questions,
             starts_on=body.starts_on,
             ends_on=body.ends_on,
+            kind_label=body.kind_label,
+            women_only=body.women_only,
         )
     except circle.InvalidCircle as exc:
         raise HTTPException(status_code=422, detail={"fields": exc.fields}) from exc
@@ -258,6 +264,25 @@ async def create_organization(body: OrgScopeRequest, session: DbSession, member:
     return {"organization_scope_id": str(o["organization_scope_id"]), "display_name": o["display_name"]}
 
 
+class GenderRequest(BaseModel):
+    gender: str  # 'woman' | 'man' — the member's own answer, asked once
+
+
+@router.get("/gender/me")
+async def my_gender(session: DbSession, member: CurrentMember) -> dict:
+    """[050] The member's own answer for women-only circles; private to them."""
+    return {"gender": await circle.gender_of(session, member.member_id)}
+
+
+@router.put("/gender/me")
+async def set_my_gender(body: GenderRequest, session: DbSession, member: CurrentMember) -> dict:
+    """[050] Asked once, only when someone tries to enter a women-only circle (or in their settings)."""
+    try:
+        return {"gender": await circle.set_gender(session, member_id=member.member_id, gender=body.gender)}
+    except circle.InvalidCircle as exc:
+        raise HTTPException(status_code=422, detail={"fields": exc.fields}) from exc
+
+
 @router.get("/groups")
 async def list_groups(session: DbSession, member: CurrentMember) -> list[dict]:
     """[FR123] Umbrellas a circle can sit under. Declared before `/{circle_id}`, which otherwise
@@ -280,6 +305,21 @@ async def detail(circle_id: UUID, session: DbSession, member: CurrentMember, lan
         memory = None
     v = await discovery.viewer_profile(session, member.member_id)
     occs = await activity.list_visible(session, city=None, start=None, end=None, circle_id=circle_id)
+    # [053] Events this circle co-hosts with another circle show here too (each read through RLS).
+    from app.components.activity import cohost
+    from app.components.circle import social
+
+    own = {o.id for o in occs}
+    for occ_id in await cohost.cohosted_occurrence_ids(session, circle_id=circle_id):
+        if occ_id in own:
+            continue
+        try:
+            o = await activity.get(session, occurrence_id=occ_id)
+        except activity.OccurrenceNotFound:
+            continue
+        if o.status == "active":
+            occs.append(o)
+    occs.sort(key=lambda o: o.time_start)
     cards = await discovery.build_cards(session, occs, v, rank=False)
     # [FR115] What the viewer needs to know about getting in, and what the organizer must act on.
     my_request = await circle.my_request_status(session, circle_id=circle_id, member_id=member.member_id)
@@ -290,11 +330,18 @@ async def detail(circle_id: UUID, session: DbSession, member: CurrentMember, lan
         "join_questions": list(c.join_questions),
         "my_request_status": my_request,
         "join_requests": requests,
+        # [050] What the join button should do: 'ok' | 'ask' (women-only, no answer yet) | 'not_eligible'.
+        "entry_state": await circle.entry_state(session, c=c, member_id=member.member_id),
+        "trip_plan": await circle.trip_plan(session, circle_id=circle_id) if c.circle_type == "travel" else [],
         # [FR123] The umbrella this circle sits under, if any.
         "group": await circle.group_of(session, circle_id=circle_id),
         "members": [{"member_id": str(m), "display_name": names[m].display_name, "avatar": names[m].avatar, "role": role} for (m, role, _j) in rows],
         "memory": {**memory, "first_activity_at": memory["first_activity_at"].isoformat() if memory and memory.get("first_activity_at") else None} if memory else None,
         "upcoming": [CardOut.from_card(x).model_dump(mode="json") for x in cards],
+        # [053] The viewer's own notification setting for this circle, and (organizer) events asking it to co-host.
+        "notify_level": await social.notify_level(session, circle_id=circle_id, member_id=member.member_id) if c.viewer_role else None,
+        "cohost_invites": await cohost.invites_for_circle(session, circle_id=circle_id, viewer_member_id=member.member_id) if c.viewer_role == "organizer" else [],
+        "cohosted_ids": [str(i) for i in await cohost.cohosted_occurrence_ids(session, circle_id=circle_id)],
     }
 
 
@@ -327,6 +374,29 @@ async def update(circle_id: UUID, body: UpdateCircleRequest, session: DbSession,
     except circle.InvalidCircle as exc:
         raise HTTPException(status_code=422, detail={"fields": exc.fields}) from exc
     return _out(c)
+
+
+class TripStopIn(BaseModel):
+    place: str = Field(default="", max_length=80)
+    on_day: str | None = None
+    note: str | None = Field(default=None, max_length=200)
+
+
+class TripPlanRequest(BaseModel):
+    stops: list[TripStopIn] = Field(default_factory=list, max_length=circle.MAX_TRIP_STOPS)
+
+
+@router.put("/{circle_id}/trip-plan")
+async def set_trip_plan(circle_id: UUID, body: TripPlanRequest, session: DbSession, member: CurrentMember, lang: Locale) -> list[dict]:
+    """[050] The route of a travel circle: organizer or assistant, one list of stops replacing the last."""
+    try:
+        return await circle.set_trip_plan(session, circle_id=circle_id, actor_member_id=member.member_id, stops=[s.model_dump() for s in body.stops])
+    except circle.CircleNotFound as exc:
+        raise HTTPException(status_code=404, detail=translate("circle.notFound", lang)) from exc
+    except circle.NotMember as exc:
+        raise HTTPException(status_code=403, detail=translate("circle.notOrganizer", lang)) from exc
+    except circle.InvalidCircle as exc:
+        raise HTTPException(status_code=422, detail={"fields": exc.fields}) from exc
 
 
 @router.post("/{circle_id}/cover")

@@ -47,6 +47,17 @@ class NotPaidActivity(Exception):
     pass
 
 
+class TicketChoiceError(Exception):
+    """The chosen ticket type or discount code cannot be used. `reason` is one of the keys in QUOTE_ERRORS."""
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(reason)
+        self.reason = reason
+
+
+QUOTE_ERRORS = ("not_paid", "type_required", "no_type", "sold_out", "code_invalid", "code_expired", "code_used_up")
+
+
 class ActivityClosed(Exception):
     """Cancelled, or already started: no new paid spots."""
 
@@ -67,6 +78,10 @@ class Ticket:
     refunded_at: datetime | None
     created_at: datetime
     payment_reference: str | None
+    ticket_type_id: UUID | None = None
+    list_price_paise: int | None = None
+    discount_paise: int = 0
+    qr_code: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -95,8 +110,10 @@ class WithdrawOutcome:
 
 _COLS = (
     "id, occurrence_id, member_id, kind, amount_paise, status, checkout_url, hold_expires_at, paid_at, "
-    "refund_amount_paise, refund_reason, refunded_at, created_at, payment_reference"
+    "refund_amount_paise, refund_reason, refunded_at, created_at, payment_reference, "
+    "ticket_type_id, list_price_paise, discount_paise, qr_code"
 )
+_N_COLS = len(_COLS.split(","))
 
 
 # --- pure rules (unit-tested) ------------------------------------------------------
@@ -163,7 +180,7 @@ async def my_tickets(session: AsyncSession, *, member_id: UUID, limit: int = 50)
             {"m": str(member_id), "l": limit},
         )
     ).all()
-    return [(Ticket(*r[:14]), Context(*r[14:])) for r in rows]
+    return [(Ticket(*r[:_N_COLS]), Context(*r[_N_COLS:])) for r in rows]
 
 
 async def money_summary(session: AsyncSession, occurrence_id: UUID) -> dict:
@@ -176,6 +193,137 @@ async def money_summary(session: AsyncSession, occurrence_id: UUID) -> dict:
     return {"paid_spots": row[0], "collected_paise": int(row[1]), "refunds_paise": int(row[2]), "refunds_pending": row[3], "holds_active": row[4]}
 
 
+# --- ticket types, discount codes, sales, check-in (Step 3 of PLAN-places-events-groups.md) ---------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class TicketType:
+    id: UUID
+    name: str
+    price_paise: int
+    quota: int
+    taken: int
+    active: bool
+
+    @property
+    def left(self) -> int:
+        return max(self.quota - self.taken, 0)
+
+
+@dataclass(frozen=True, slots=True)
+class Quote:
+    error: str | None
+    ticket_type_id: UUID | None
+    list_price_paise: int | None
+    discount_paise: int | None
+    amount_paise: int | None
+    discount_code_id: UUID | None
+
+
+class OrganizerWriteRefused(Exception):
+    """The database refused an organizer write. `reason` is the function's result word (not_allowed, not_found, locked, ...)."""
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(reason)
+        self.reason = reason
+
+
+async def ticket_types(session: AsyncSession, occurrence_id: UUID) -> list[TicketType]:
+    rows = (await session.execute(text("SELECT id, name, price_paise, quota, taken, active FROM milavn_ticketing.ticket_types_for(:o)"), {"o": str(occurrence_id)})).all()
+    return [TicketType(*r) for r in rows]
+
+
+async def quote(session: AsyncSession, *, occurrence_id: UUID, ticket_type_id: UUID | None, code: str | None) -> Quote:
+    r = (
+        await session.execute(
+            text("SELECT error, ticket_type_id, list_price_paise, discount_paise, amount_paise, discount_code_id FROM milavn_ticketing.quote_ticket(:o, :t, :c)"),
+            {"o": str(occurrence_id), "t": str(ticket_type_id) if ticket_type_id else None, "c": code},
+        )
+    ).one()
+    return Quote(*r)
+
+
+def _check(result: str) -> None:
+    if result != "ok":
+        raise OrganizerWriteRefused(result)
+
+
+async def save_ticket_type(
+    session: AsyncSession, *, occurrence_id: UUID, actor: UUID, type_id: UUID | None, name: str, price_paise: int, quota: int, active: bool | None
+) -> None:
+    res = (
+        await session.execute(
+            text("SELECT milavn_ticketing.save_ticket_type(:o, :a, :id, :n, :p, :q, :act)"),
+            {"o": str(occurrence_id), "a": str(actor), "id": str(type_id) if type_id else None, "n": name, "p": price_paise, "q": quota, "act": active},
+        )
+    ).scalar_one()
+    _check(res)
+
+
+async def remove_ticket_type(session: AsyncSession, *, occurrence_id: UUID, actor: UUID, type_id: UUID) -> None:
+    _check((await session.execute(text("SELECT milavn_ticketing.remove_ticket_type(:o, :a, :id)"), {"o": str(occurrence_id), "a": str(actor), "id": str(type_id)})).scalar_one())
+
+
+async def save_discount_code(
+    session: AsyncSession, *, occurrence_id: UUID, actor: UUID, code: str, kind: str, value: int, max_uses: int | None, expires_at: datetime | None
+) -> None:
+    res = (
+        await session.execute(
+            text("SELECT milavn_ticketing.save_discount_code(:o, :a, :c, :k, :v, :m, :e)"),
+            {"o": str(occurrence_id), "a": str(actor), "c": code, "k": kind, "v": value, "m": max_uses, "e": expires_at},
+        )
+    ).scalar_one()
+    _check(res)
+
+
+async def set_discount_active(session: AsyncSession, *, occurrence_id: UUID, actor: UUID, code_id: UUID, active: bool) -> None:
+    _check(
+        (await session.execute(text("SELECT milavn_ticketing.set_discount_active(:o, :a, :id, :act)"), {"o": str(occurrence_id), "a": str(actor), "id": str(code_id), "act": active})).scalar_one()
+    )
+
+
+async def discount_codes(session: AsyncSession, *, occurrence_id: UUID, actor: UUID) -> list[dict]:
+    rows = (
+        await session.execute(
+            text("SELECT id, code, kind, value, max_uses, expires_at, active, uses FROM milavn_ticketing.discount_codes_for(:o, :a)"), {"o": str(occurrence_id), "a": str(actor)}
+        )
+    ).all()
+    return [
+        {"id": str(r[0]), "code": r[1], "kind": r[2], "value": r[3], "max_uses": r[4], "expires_at": r[5].isoformat() if r[5] else None, "active": r[6], "uses": r[7]}
+        for r in rows
+    ]
+
+
+async def sales_by_type(session: AsyncSession, *, occurrence_id: UUID, actor: UUID) -> list[dict]:
+    rows = (
+        await session.execute(
+            text("SELECT ticket_type_id, name, price_paise, quota, active, sold, held, checked_in, revenue_paise FROM milavn_ticketing.sales_by_type(:o, :a)"),
+            {"o": str(occurrence_id), "a": str(actor)},
+        )
+    ).all()
+    return [
+        {"id": str(r[0]), "name": r[1], "price_paise": r[2], "quota": r[3], "active": r[4], "sold": r[5], "held": r[6], "checked_in": r[7], "revenue_paise": int(r[8])} for r in rows
+    ]
+
+
+@dataclass(frozen=True, slots=True)
+class CheckinLookup:
+    result: str  # ok | not_valid | not_found | not_allowed
+    member_id: UUID | None
+    type_name: str | None
+    participation_status: str | None
+
+
+async def ticket_for_checkin(session: AsyncSession, *, occurrence_id: UUID, actor: UUID, code: str) -> CheckinLookup:
+    r = (
+        await session.execute(
+            text("SELECT result, member_id, type_name, participation_status FROM milavn_ticketing.ticket_for_checkin(:o, :a, :c)"),
+            {"o": str(occurrence_id), "a": str(actor), "c": code},
+        )
+    ).one()
+    return CheckinLookup(*r)
+
+
 # --- flows -----------------------------------------------------------------------------
 
 
@@ -183,12 +331,14 @@ async def _lock(session: AsyncSession, occurrence_id: UUID) -> None:
     await session.execute(text("SELECT pg_advisory_xact_lock(hashtext(:id))"), {"id": str(occurrence_id)})
 
 
-async def _charge(session: AsyncSession, provider: payments.PaymentServices, *, ticket_id: UUID, member_id: UUID, ctx: Context, occurrence_id: UUID) -> None:
+async def _charge(
+    session: AsyncSession, provider: payments.PaymentServices, *, ticket_id: UUID, member_id: UUID, ctx: Context, occurrence_id: UUID, amount_paise: int
+) -> None:
     settings = get_settings()
     charge = await provider.create_charge(
         idempotency_key=f"milavn-ticket-{ticket_id}",
         payer_member_id=member_id,
-        amount_paise=int(ctx.price_paise or 0),
+        amount_paise=int(amount_paise),
         description=ctx.title,
         return_url=f"{settings.web_base_url}/a/{ctx.slug}?payment=return",
         metadata={"occurrence_id": str(occurrence_id), "ticket_id": str(ticket_id)},
@@ -205,7 +355,9 @@ async def _cancel_quietly(provider: payments.PaymentServices, reference: str | N
         logger.warning("could not cancel charge %s; the provider expires unpaid charges on its own", reference)
 
 
-async def start_join(session: AsyncSession, *, occurrence_id: UUID, member_id: UUID) -> JoinOutcome:
+async def start_join(
+    session: AsyncSession, *, occurrence_id: UUID, member_id: UUID, ticket_type_id: UUID | None = None, code: str | None = None
+) -> JoinOutcome:
     ctx = await context(session, occurrence_id)
     if ctx is None:
         raise activity.OccurrenceNotFound
@@ -222,7 +374,7 @@ async def start_join(session: AsyncSession, *, occurrence_id: UUID, member_id: U
     if current is not None and current.status == "awaiting_payment":
         if current.hold_expires_at and current.hold_expires_at > now:
             if not current.checkout_url:  # an offer whose charge could not be created earlier
-                await _charge(session, provider, ticket_id=current.id, member_id=member_id, ctx=ctx, occurrence_id=occurrence_id)
+                await _charge(session, provider, ticket_id=current.id, member_id=member_id, ctx=ctx, occurrence_id=occurrence_id, amount_paise=current.amount_paise)
             return JoinOutcome("awaiting_payment", await my_latest_ticket(session, occurrence_id=occurrence_id, member_id=member_id), None)
         await _cancel_quietly(provider, current.payment_reference)
         await session.execute(text("SELECT milavn_ticketing.mark_void(:t)"), {"t": str(current.id)})
@@ -233,15 +385,24 @@ async def start_join(session: AsyncSession, *, occurrence_id: UUID, member_id: U
             return JoinOutcome("waitlisted", None, position)
     if not provider.configured:
         raise payments.PaymentsNotConfigured
+    # The price is worked out here, under the same per-event lock the capacity check used, so a tier's last seat and a
+    # code's last use can each be taken by only one buyer.
+    q = await quote(session, occurrence_id=occurrence_id, ticket_type_id=ticket_type_id, code=code)
+    if q.error:
+        raise TicketChoiceError(q.error)
     ticket_id = uuid4()
     await session.execute(
         text(
-            "INSERT INTO milavn_ticketing.ticket (id, occurrence_id, member_id, kind, amount_paise, status, hold_expires_at) "
-            "VALUES (:id, :o, :m, 'join', :amount, 'awaiting_payment', :hold)"
+            "INSERT INTO milavn_ticketing.ticket (id, occurrence_id, member_id, kind, amount_paise, status, hold_expires_at, ticket_type_id, discount_code_id, list_price_paise, discount_paise) "
+            "VALUES (:id, :o, :m, 'join', :amount, 'awaiting_payment', :hold, :tt, :dc, :list, :disc)"
         ),
-        {"id": str(ticket_id), "o": str(occurrence_id), "m": str(member_id), "amount": ctx.price_paise, "hold": now + HOLD},
+        {
+            "id": str(ticket_id), "o": str(occurrence_id), "m": str(member_id), "amount": q.amount_paise, "hold": now + HOLD,
+            "tt": str(q.ticket_type_id) if q.ticket_type_id else None, "dc": str(q.discount_code_id) if q.discount_code_id else None,
+            "list": q.list_price_paise, "disc": q.discount_paise,
+        },
     )
-    await _charge(session, provider, ticket_id=ticket_id, member_id=member_id, ctx=ctx, occurrence_id=occurrence_id)
+    await _charge(session, provider, ticket_id=ticket_id, member_id=member_id, ctx=ctx, occurrence_id=occurrence_id, amount_paise=q.amount_paise or 0)
     return JoinOutcome("awaiting_payment", await my_latest_ticket(session, occurrence_id=occurrence_id, member_id=member_id), None)
 
 
@@ -323,7 +484,7 @@ async def offer_next(session: AsyncSession, occurrence_id: UUID) -> UUID | None:
     if row is None:
         return None
     try:
-        await _charge(session, provider, ticket_id=row[0], member_id=row[1], ctx=ctx, occurrence_id=occurrence_id)
+        await _charge(session, provider, ticket_id=row[0], member_id=row[1], ctx=ctx, occurrence_id=occurrence_id, amount_paise=row[2])
     except payments.PaymentsError:
         logger.warning("offer created without a charge for ticket %s; the member's Pay button retries", row[0])
     await bus.publish(

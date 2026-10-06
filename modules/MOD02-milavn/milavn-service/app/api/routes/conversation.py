@@ -53,6 +53,8 @@ def _msg(m: conversation.Message) -> dict:
         "photo_url": m.photo_url,
         "doc_url": m.doc_url,
         "doc_name": m.doc_name,
+        "photos": list(m.photos),  # [053] every photo on the post
+        "docs": list(m.docs),  # [053] every file: {url, name, size}
         "is_announcement": m.is_announcement,
         "pinned": m.pinned,
         "reactions": m.reactions or {},
@@ -178,7 +180,12 @@ async def delete_photo(occurrence_id: UUID, photo_id: UUID, session: DbSession, 
 @router.get("/circles/{circle_id}/posts")
 async def list_posts(circle_id: UUID, session: DbSession, member: CurrentMember) -> dict:
     posts = await conversation.list_posts(session, circle_id=circle_id, viewer_member_id=member.member_id)
-    return {"posts": [_msg(m) for m in posts], "reactions": list(conversation.POST_REACTIONS), "max_pins": conversation.MAX_PINS}
+    return {
+        "posts": [_msg(m) for m in posts],
+        "reactions": list(conversation.POST_REACTIONS),
+        "max_pins": conversation.MAX_PINS,
+        "limits": conversation.attachment_limits(),  # [053] what one post may carry
+    }
 
 
 @router.post("/circles/{circle_id}/posts", status_code=status.HTTP_201_CREATED)
@@ -206,17 +213,27 @@ async def post_photo_to_board(
     session: DbSession,
     member: CurrentMember,
     lang: Locale,
+    photos: list[UploadFile] = File(default=[]),
+    documents: list[UploadFile] = File(default=[]),
     photo: UploadFile | None = File(default=None),
     document: UploadFile | None = File(default=None),
     body: str = Form(default=""),
     announcement: bool = Form(default=False),
 ) -> dict:
-    """An Instagram/FB-style post with a photo and/or a document; the write-up is optional."""
+    """A post with several photos and/or files ([053]); the write-up is optional. `photo` / `document`
+    (one each) are still accepted from older clients."""
     await enforce(session, scope=RateLimitScope.MESSAGE_POST, subject=str(member.member_id), limit_max=60, window_seconds=600)
-    if photo is None and document is None:
-        raise HTTPException(status_code=422, detail={"fields": ["photo", "document"]})
+    all_photos = [p for p in [*photos, photo] if p is not None and (p.filename or p.size)]
+    all_docs = [d for d in [*documents, document] if d is not None and (d.filename or d.size)]
+    if not all_photos and not all_docs:
+        raise HTTPException(status_code=422, detail={"fields": ["photos", "documents"]})
     try:
-        pid = await conversation.post_to_board(session, circle_id=circle_id, member_id=member.member_id, body=body, photo=photo, document=document, announcement=announcement)
+        pid = await conversation.post_to_board(
+            session, circle_id=circle_id, member_id=member.member_id, body=body, photos=all_photos, documents=all_docs, announcement=announcement
+        )
+    except conversation.TooMany as exc:
+        key = "media.tooManyDocuments" if exc.kind == "document" else "media.tooManyPhotos"
+        raise HTTPException(status_code=422, detail=translate(key, lang, n=exc.limit)) from exc
     except conversation.OrganizersOnly as exc:
         raise HTTPException(status_code=403, detail=translate("circle.organizersPost", lang)) from exc
     except conversation.NotAllowed as exc:
