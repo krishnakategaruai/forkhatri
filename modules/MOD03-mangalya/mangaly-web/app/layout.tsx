@@ -3,8 +3,10 @@ import {
   Instrument_Sans,
   Instrument_Serif,
   Noto_Sans_Devanagari,
+  Noto_Sans_Kannada,
   Noto_Sans_Telugu,
   Noto_Serif_Devanagari,
+  Noto_Serif_Kannada,
   Noto_Serif_Telugu,
 } from 'next/font/google';
 import './globals.css';
@@ -58,6 +60,23 @@ const bodyTelugu = Noto_Sans_Telugu({
   variable: '--font-body-telugu',
   display: 'swap',
 });
+/* [Owner, 2026-10-06] Kannada gets the same pairing (Noto Serif headings,
+ * Noto Sans body). Marathi is Devanagari and uses the Devanagari fonts above.
+ * Not preloaded: only a Kannada reader's page asks for these files. */
+const displayKannada = Noto_Serif_Kannada({
+  subsets: ['kannada'],
+  weight: ['500', '600', '700'],
+  variable: '--font-display-kannada',
+  display: 'swap',
+  preload: false,
+});
+const bodyKannada = Noto_Sans_Kannada({
+  subsets: ['kannada'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-body-kannada',
+  display: 'swap',
+  preload: false,
+});
 const bodyFont = Instrument_Sans({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
@@ -97,7 +116,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${displayLatin.variable} ${displayDevanagari.variable} ${displayTelugu.variable} ${bodyDevanagari.variable} ${bodyTelugu.variable} ${bodyFont.variable}`}
+      className={`${displayLatin.variable} ${displayDevanagari.variable} ${displayTelugu.variable} ${bodyDevanagari.variable} ${bodyTelugu.variable} ${displayKannada.variable} ${bodyKannada.variable} ${bodyFont.variable}`}
       suppressHydrationWarning
     >
       <body>
@@ -111,7 +130,12 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{var t=localStorage.getItem('mangaly.theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}try{var z=localStorage.getItem('mangaly.textSize');if(z==='larger'||z==='largest'){document.documentElement.setAttribute('data-text-size',z);}}catch(e){}try{if(!sessionStorage.getItem('mangaly.splash')&&!matchMedia('(prefers-reduced-motion: reduce)').matches){document.documentElement.setAttribute('data-splash','1');}}catch(e){}",
+              "try{var t=localStorage.getItem('mangaly.theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}try{var z=localStorage.getItem('mangaly.textSize');if(z==='larger'||z==='largest'){document.documentElement.setAttribute('data-text-size',z);}}catch(e){}try{if(!sessionStorage.getItem('mangaly.splash')&&!matchMedia('(prefers-reduced-motion: reduce)').matches){document.documentElement.setAttribute('data-splash','1');}}catch(e){}" +
+              // [D17] A saved (or device) language other than English: set it on
+              // <html> and keep the page hidden until lib/i18n/provider.tsx has
+              // applied it, so the server's English never shows first. A 2.5 s
+              // safety net reveals the page even if the app fails to start.
+              "try{var d=document.documentElement,l=null,g=localStorage.getItem('mangaly.language');if(['en','hi','te','mr','kn'].indexOf(g)>=0){l=g;}else{var n=(navigator.language||'').split('-')[0];if(['en','hi','te','mr','kn'].indexOf(n)>=0){l=n;}}if(l&&l!=='en'){d.lang=l;d.setAttribute('data-i18n-pending','1');setTimeout(function(){d.removeAttribute('data-i18n-pending');},2500);}}catch(e){}",
           }}
         />
         <I18nProvider>

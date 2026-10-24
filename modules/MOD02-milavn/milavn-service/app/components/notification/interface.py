@@ -291,6 +291,8 @@ async def _on_series_date_added(event: DomainEvent) -> None:
 
 async def _on_circle_join_requested(event: DomainEvent) -> None:
     """[FR115] Someone is waiting to be let into a circle: its organizers are told, once each."""
+    from app.i18n import translate
+
     member_id = event.payload.get("member_id")
     if not member_id:
         return
@@ -304,12 +306,13 @@ async def _on_circle_join_requested(event: DomainEvent) -> None:
         for organizer in organizers:
             if str(organizer) == str(member_id):
                 continue
+            lang = (await s.execute(text("SELECT milavn_profile.language_of(:m)"), {"m": str(organizer)})).scalar_one_or_none() or "en"
             await deliver(
                 s,
                 member_id=organizer,
                 notification_class="important",
-                title=f"{who} would like to join {name}",
-                body="They answered your questions. Let them in, or not — either way they are told nothing about who decided.",
+                title=translate("notify.circleJoinAsk.title", lang, who=who, circle=name),
+                body=translate("notify.circleJoinAsk.body", lang),
                 deep_link=f"/circles/{event.aggregate_id}",
                 occurrence_id=None,
             )
@@ -318,6 +321,8 @@ async def _on_circle_join_requested(event: DomainEvent) -> None:
 async def _on_circle_join_decided(event: DomainEvent) -> None:
     """[FR115] Being let in is worth saying. A "no" is deliberately NOT announced: the person sees it
     on the circle page if they look, and a push that says "you were turned down" helps nobody."""
+    from app.i18n import translate
+
     if not event.payload.get("approved"):
         return
     member_id = event.payload.get("member_id")
@@ -333,12 +338,13 @@ async def _on_circle_join_decided(event: DomainEvent) -> None:
         name = (await s.execute(text("SELECT milavn_circle.circle_name(:c)"), {"c": str(circle_id)})).scalar_one_or_none()
         if not name:
             return
+        lang = (await s.execute(text("SELECT milavn_profile.language_of(:m)"), {"m": str(member_id)})).scalar_one_or_none() or "en"
         await deliver(
             s,
             member_id=UUID(str(member_id)),
             notification_class="social",
-            title=f"You are in: {name}",
-            body="Say hello on the circle board, and see what they have planned.",
+            title=translate("notify.circleJoinApproved.title", lang, circle=name),
+            body=translate("notify.circleJoinApproved.body", lang),
             deep_link=f"/circles/{circle_id}",
             occurrence_id=None,
         )
@@ -723,8 +729,15 @@ def _rupees(paise: int) -> str:
     return f"₹{paise // 100:,}" if paise % 100 == 0 else f"₹{paise / 100:,.2f}"
 
 
+async def _lang_of(s: AsyncSession, member_id: UUID) -> str:
+    return (await s.execute(text("SELECT coalesce(milavn_profile.language_of(:m), 'en')"), {"m": str(member_id)})).scalar_one() or "en"
+
+
 async def _on_ticket(event: DomainEvent) -> None:
-    """[FR102] Money moments are always Important: the member must never wonder whether they are in or refunded."""
+    """[FR102] Money moments are always Important: the member must never wonder whether they are in or refunded.
+    Each person hears it in their own language."""
+    from app.i18n import translate
+
     p = event.payload
     member = UUID(str(p["member_id"]))
     amount = _rupees(int(p.get("amount_paise") or 0))
@@ -734,25 +747,27 @@ async def _on_ticket(event: DomainEvent) -> None:
         if brief is None:
             return
         title, slug, _members, creator = brief
+        lang = await _lang_of(s, member)
         if event.event_type == "ticket.paid":
-            head, body = f"You're in: {title}", f"{amount} paid. Your spot is confirmed."
+            head, body = translate("notify.ticket.paidTitle", lang, title=title), translate("notify.ticket.paidBody", lang, amount=amount)
         elif event.event_type == "ticket.offered":
             until = datetime.fromisoformat(str(p["hold_until"])).astimezone(ZoneInfo("Asia/Kolkata"))
-            head = f"A spot opened: {title}"
-            body = f"Pay {amount} by {until:%d %b}, {until:%I:%M %p}".replace(" 0", " ") + " to take it. After that it goes to the next person."
+            head = translate("notify.ticket.offeredTitle", lang, title=title)
+            body = translate("notify.ticket.offeredBody", lang, amount=amount, when=f"{until:%d %b}, {until:%I:%M %p}".replace(" 0", " "))
         elif event.event_type == "ticket.refund_started":
-            head, body = f"Refund started: {title}", f"{amount} is on its way back to you."
+            head, body = translate("notify.ticket.refundStartedTitle", lang, title=title), translate("notify.ticket.refundStartedBody", lang, amount=amount)
         else:
-            head, body = f"Refunded: {title}", f"{amount} has been returned to you."
+            head, body = translate("notify.ticket.refundedTitle", lang, title=title), translate("notify.ticket.refundedBody", lang, amount=amount)
         await deliver(s, member_id=member, notification_class="important", title=head, body=body, deep_link=f"/a/{slug}", occurrence_id=event.aggregate_id)
         if event.event_type == "ticket.paid" and member != creator:
             name = (await identity.display_names_for([member]))[member].display_name
+            clang = await _lang_of(s, creator)
             await deliver(
                 s,
                 member_id=creator,
                 notification_class="social",
-                title=f"{name} is going",
-                body=f"{name} joined {title}.",
+                title=translate("notify.ticket.goingTitle", clang, name=name),
+                body=translate("notify.ticket.goingBody", clang, name=name, title=title),
                 deep_link=f"/a/{slug}",
                 occurrence_id=event.aggregate_id,
             )

@@ -732,7 +732,7 @@ async def set_applicant_stage(
 @mcp.tool(annotations=WRITE)
 async def draft_opportunity(
     text: Annotated[str, Field(description="What the member needs, in their own words (English, Hindi, Telugu or Hinglish).")],
-    language: Annotated[Literal["en", "hi", "te"] | None, Field(description="Language to draft in.")] = None,
+    language: Annotated[Literal["en", "hi", "te", "mr", "kn"] | None, Field(description="Language to draft in.")] = None,
 ) -> dict:
     """Ask Vyapar to draft a structured opportunity from a plain brief. Returns a draft for the member
     to review; nothing is posted."""
@@ -750,7 +750,7 @@ async def next_interview_question(
     flow: InterviewFlow,
     answers: Annotated[dict[str, Any], Field(description="Confirmed answers so far, keyed by field, exactly as interpret_interview_answer returned them.")] = {},  # noqa: B006
     skipped: Annotated[list[str], Field(description="Fields the member chose to skip.")] = [],  # noqa: B006
-    language: Annotated[Literal["en", "hi", "te"] | None, Field(description="Language to ask in.")] = None,
+    language: Annotated[Literal["en", "hi", "te", "mr", "kn"] | None, Field(description="Language to ask in.")] = None,
 ) -> dict:
     """Voice interview: the next question to ask the member (one at a time, in their own words), or, when
     nothing is missing, done=true with a summary and a draft. Things Vyapar already knows are never asked.
@@ -768,7 +768,7 @@ async def interpret_interview_answer(
     field: Annotated[str, Field(description="The field the question asked for (from next_interview_question).")],
     text: Annotated[str, Field(description="What the member said or typed, as is.")],
     answers: Annotated[dict[str, Any], Field(description="Confirmed answers so far.")] = {},  # noqa: B006
-    language: Annotated[Literal["en", "hi", "te"] | None, Field(description="Language of the conversation.")] = None,
+    language: Annotated[Literal["en", "hi", "te", "mr", "kn"] | None, Field(description="Language of the conversation.")] = None,
 ) -> dict:
     """Voice interview: read one answer. Returns understood, the typed value, a read-back sentence to confirm
     with the member, and intent (answer, skip, yes, no, repeat, unclear). When not understood, `reprompt` is

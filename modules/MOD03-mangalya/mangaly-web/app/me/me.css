@@ -85,7 +85,7 @@
   text-transform: uppercase;
   color: var(--ink-3);
 }
-html:is([lang='hi'], [lang='te']) .me-row__label {
+html:is([lang='hi'], [lang='te'], [lang='mr'], [lang='kn']) .me-row__label {
   letter-spacing: 0;
 }
 .me-row__title {

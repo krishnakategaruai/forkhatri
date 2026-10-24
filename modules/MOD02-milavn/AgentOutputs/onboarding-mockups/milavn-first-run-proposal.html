@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Milavn first run (proposal)</title>
+<!-- Static design proposal for ONBOARDING-REDESIGN-2026-10.md. Not product code; copy is English
+     sample text only (the build would use en/hi/te i18n keys). Colours follow milavn-web globals.css (dark). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anek+Latin:wght@400;500;600&family=Anek+Telugu:wght@400;600&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b1220; --card: #0f1b33; --raised: #14213d; --line: #24365a;
+    --ink: #faf6f0; --muted: #b9c1d3; --accent: #e8912b; --accent-2: #f2b25a; --ok: #3fbf86;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #070c16; color: var(--ink); font-family: 'Anek Latin', 'Anek Telugu', system-ui, sans-serif; padding: 24px 16px 48px; }
+  h1.page { font-family: 'Fraunces', serif; font-weight: 600; margin: 0 0 4px; font-size: 1.6rem; }
+  p.lede { color: var(--muted); margin: 0 0 24px; max-width: 70ch; }
+  .wall { display: flex; flex-wrap: wrap; gap: 28px; }
+  .shot { width: 360px; max-width: 100%; }
+  .shot h2 { font-size: .95rem; margin: 0 0 4px; color: var(--accent-2); }
+  .shot .why { font-size: .82rem; color: var(--muted); margin: 0 0 10px; min-height: 3.2em; }
+  .phone { background: var(--bg); border: 1px solid var(--line); border-radius: 28px; padding: 22px 18px; min-height: 690px; position: relative; overflow: hidden; }
+  .display { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.85rem; line-height: 1.08; margin: 6px 0 8px; }
+  .muted { color: var(--muted); font-size: .92rem; margin: 0; }
+  .btn { display: block; width: 100%; border: 0; border-radius: 999px; padding: 14px 18px; font: 600 1rem 'Anek Latin', sans-serif; text-align: center; margin-top: 10px; }
+  .btn--primary { background: linear-gradient(135deg, var(--accent-2), var(--accent)); color: #14213d; }
+  .btn--ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  .btn--link { background: none; color: var(--accent-2); padding: 10px; }
+  .search { display: flex; align-items: center; gap: 10px; background: var(--raised); border: 1px solid var(--line); border-radius: 16px; padding: 13px 14px; margin-top: 16px; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .chip { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 9px 14px; font-size: .92rem; }
+  .chip--on { background: var(--accent); color: #14213d; border-color: var(--accent); }
+  .label { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 18px 0 2px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 14px; margin-top: 12px; }
+  .row { display: flex; align-items: center; gap: 12px; }
+  .grow { flex: 1; min-width: 0; }
+  .pin { width: 40px; height: 40px; border-radius: 12px; background: #3a2a10; display: grid; place-items: center; }
+  .tiny { font-size: .8rem; color: var(--muted); }
+  .bar { height: 8px; border-radius: 99px; background: var(--raised); overflow: hidden; margin: 8px 0; }
+  .bar span { display: block; height: 100%; width: 40%; background: linear-gradient(90deg, var(--accent-2), var(--accent)); }
+  .tile { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 12px; }
+  .tile b { display: block; font-size: .95rem; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+  .pic { border: 1px solid var(--line); background: var(--card); border-radius: 16px; padding: 10px 4px; text-align: center; font-size: .78rem; }
+  .pic i { display: block; font-style: normal; font-size: 1.5rem; }
+  .pic--on { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(232,145,43,.35) inset; }
+  .ev { display: flex; gap: 10px; align-items: center; }
+  .ev .d { width: 46px; text-align: center; background: var(--raised); border-radius: 12px; padding: 6px 0; font-size: .75rem; color: var(--muted); }
+  .ev .d b { display: block; color: var(--ink); font-size: 1.1rem; }
+  .pill { font-size: .72rem; border: 1px solid #2d5a45; color: var(--ok); border-radius: 99px; padding: 2px 8px; }
+  .note { position: absolute; left: 12px; right: 12px; bottom: 12px; font-size: .74rem; color: #8f9ab1; border-top: 1px dashed var(--line); padding-top: 8px; }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--raised); border-top-left-radius: 24px; border-top-right-radius: 24px; padding: 18px; border-top: 1px solid var(--line); }
+  .te { font-family: 'Anek Telugu', sans-serif; }
+</style>
+</head>
+<body>
+<h1 class="page">Milavn first run — proposal</h1>
+<p class="lede">Five screens from the proposal in <code>modules/MOD02-milavn/ONBOARDING-REDESIGN-2026-10.md</code>. Each note says where the idea comes from. Sample copy is English except screen A2, which shows the Telugu path. Nothing here is built.</p>
+
+<div class="wall">
+
+  <!-- A: the only first-run screen -->
+  <section class="shot">
+    <h2>A · Where should we look? (the only first-run screen)</h2>
+    <p class="why">Replaces 3 screens. The search box is typed into on the screen itself, no extra sheet. Big city chips cover "I only know my city" and need no typing. Picking a place goes straight in, with no Continue button.</p>
+    <div class="phone">
+      <div class="display">Namaste Sonal.<br>Where should we look?</div>
+      <p class="muted">We keep only your area, never your address. You can change it any time.</p>
+      <button class="btn btn--primary">📍 Use where I am</button>
+      <div class="search">🔎 <span>Type your area or city…</span></div>
+      <div class="label">Or tap your city</div>
+      <div class="chips">
+        <span class="chip">Hyderabad</span><span class="chip">Pune</span><span class="chip">Delhi</span>
+        <span class="chip">Mumbai</span><span class="chip">Bengaluru</span><span class="chip">Jaipur</span>
+      </div>
+      <div class="card tiny">If location is off: "We couldn't get your location. That's fine. Tap your city above or type it." (NN/g permission guidance)</div>
+      <button class="btn btn--link">I'll choose later — just show me everything</button>
+      <div class="note">Sources: Eventbrite app location step has "use current location" and Skip (lazyweb flow). Luma Discover lets you browse by city. NN/g 2019: ask for permission in context and explain a denial. Language is not asked; ForKhatri already knows it.</div>
+    </div>
+  </section>
+
+  <!-- A2: same screen, Telugu elder, after GPS -->
+  <section class="shot">
+    <h2>A2 · Same screen in Telugu, after "Use where I am"</h2>
+    <p class="why">The app shows what it found and needs one tap to confirm. It speaks in the language she already chose in ForKhatri.</p>
+    <div class="phone te">
+      <div class="display">మీరు దిల్‌సుఖ్‌నగర్ దగ్గర ఉన్నారా?</div>
+      <p class="muted">మీ ప్రాంతం మాత్రమే ఉంచుతాము, పూర్తి చిరునామా కాదు.</p>
+      <div class="card"><div class="row"><span class="pin">📍</span><div class="grow"><b>దిల్‌సుఖ్‌నగర్</b><div class="tiny">హైదరాబాద్, తెలంగాణ</div></div></div></div>
+      <button class="btn btn--primary">అవును, ఇదే</button>
+      <button class="btn btn--ghost">వేరే ప్రాంతం ఎంచుకుంటాను</button>
+      <div class="note">One tap after location. Nothing to scroll. Uses the ForKhatri language (never-reask rule). The Telugu wording here is a sample; a Telugu speaker must review it before it ships.</div>
+    </div>
+  </section>
+
+  <!-- B: first Home -->
+  <section class="shot">
+    <h2>B · First Home: something useful, never "quiet"</h2>
+    <p class="why">When nothing is on in her area, Home widens the search step by step: the city, then online events, then groups near her. It always offers a ready-made way to start something.</p>
+    <div class="phone">
+      <div class="display" style="font-size:1.5rem">Good evening, Sonal.</div>
+      <p class="muted">Nothing in Baner this week, so here is Pune and online.</p>
+      <div class="label">This weekend in Pune</div>
+      <div class="card ev"><span class="d">SAT<b>10</b></span><div class="grow"><b>Sinhagad sunrise trek</b><div class="tiny">Hadapsar · 18 going</div></div></div>
+      <div class="card ev"><span class="d">SUN<b>11</b></span><div class="grow"><b>Board games café night</b><div class="tiny">Online-friendly · 6 going</div></div></div>
+      <div class="label">Groups near you</div>
+      <div class="card row"><div class="grow"><b>Pune Weekend Walkers</b><div class="tiny">42 members · open to all</div></div><span class="chip">Join</span></div>
+      <div class="label">Nothing fits? Start one in a minute</div>
+      <div class="chips"><span class="chip">🙏 Satsang</span><span class="chip">🥾 Walk</span><span class="chip">☕ Chai meet</span><span class="chip">🎲 Games</span></div>
+      <div class="note">Sources: NN/g empty states (2021): show status, teach, give a direct path. Meetup users complain of irrelevant far-away groups, so label the widened areas plainly. Luma: browse by city calendars.</div>
+    </div>
+  </section>
+
+  <!-- C: optional interests card on Home -->
+  <section class="shot">
+    <h2>C · "What do you enjoy?": optional, on Home, broad groups</h2>
+    <p class="why">This is no longer a gate. It shows as a Home card after the first visit, or when a search finds nothing. There are 9 picture tiles (Spiritual included) and "Other — add your own". It closes with Skip.</p>
+    <div class="phone">
+      <div class="display" style="font-size:1.5rem">What do you enjoy?</div>
+      <p class="muted">Tap any. It only helps us put the right things first.</p>
+      <div class="grid4" style="grid-template-columns:repeat(3,1fr)">
+        <div class="pic pic--on"><i>🙏</i>Spiritual &amp; temple</div>
+        <div class="pic"><i>🏸</i>Sports</div>
+        <div class="pic pic--on"><i>🥾</i>Walks &amp; treks</div>
+        <div class="pic"><i>🎶</i>Music &amp; culture</div>
+        <div class="pic"><i>🍛</i>Food</div>
+        <div class="pic"><i>📚</i>Learning</div>
+        <div class="pic"><i>💼</i>Work &amp; career</div>
+        <div class="pic"><i>👨‍👩‍👧</i>Family &amp; kids</div>
+        <div class="pic"><i>🤝</i>Seva &amp; volunteering</div>
+      </div>
+      <div class="chips"><span class="chip">＋ Other — add your own</span></div>
+      <p class="tiny" style="margin-top:8px">Tap a tile again to see more, e.g. Spiritual → Satsang · Bhajan · Yatra · Temple visit.</p>
+      <button class="btn btn--primary">Done</button>
+      <button class="btn btn--link">Skip for now</button>
+      <div class="note">Sources: GroupLens (CSCW 2015): choosing groups took under half the time of rating items and gave recommendations users found more useful. Pinterest: topics help only when they visibly change the feed. Meetup study: 7 of 7 users could not find where to edit interests, so editing lives on Profile too.</div>
+    </div>
+  </section>
+
+  <!-- D: profile completion -->
+  <section class="shot">
+    <h2>D · Profile: one next question, not a form</h2>
+    <p class="why">A small card shows how complete the profile is and asks one question at a time: photo, then a line about you, then interests. Each can be skipped. Interests can be removed as well as added.</p>
+    <div class="phone">
+      <div class="row"><span style="width:64px;height:64px;border-radius:50%;border:2px dashed var(--line);display:grid;place-items:center">📷</span><div class="grow"><div class="display" style="font-size:1.4rem;margin:0">Sonal Deshpande</div><div class="tiny">Baner, Pune · New to the community</div></div></div>
+      <div class="card">
+        <div class="row"><b class="grow">Your profile is 40% done</b><span class="tiny">2 of 5</span></div>
+        <div class="bar"><span></span></div>
+        <b>Add a photo so hosts recognise you at the door</b>
+        <div class="grid2"><button class="btn btn--primary" style="margin:0">Take a photo</button><button class="btn btn--ghost" style="margin:0">From gallery</button></div>
+        <button class="btn btn--link">Not now</button>
+      </div>
+      <div class="label">Interests</div>
+      <div class="chips"><span class="chip chip--on">Trekking ✕</span><span class="chip chip--on">Yoga ✕</span><span class="chip chip--on">Board games ✕</span><span class="chip">＋ Add</span></div>
+      <div class="note">Sources: LinkedIn profile meter: levels plus the next prompt below the meter, and the meter disappears when done. Instagram: the photo step has "Skip". Bumble BFF's forced photo and selfie walls draw complaints, so Milavn never forces a photo.</div>
+    </div>
+  </section>
+
+  <!-- E: women-only join -->
+  <section class="shot">
+    <h2>E · Women-only group: ask once, then finish the join</h2>
+    <p class="why">The question stays where it is now, asked only at the moment it matters. The fix is that answering it moves straight on to the join. The Send button sits in a sheet above the bottom bar.</p>
+    <div class="phone">
+      <div class="tiny">TRAVEL · WOMEN ONLY</div>
+      <div class="display" style="font-size:1.5rem">Women's yatra — Srisailam</div>
+      <p class="muted">Fri 20 – Sun 22 Nov · 2 members</p>
+      <div class="sheet">
+        <b>This group is for women</b>
+        <p class="tiny">Please tell us once. Only you see this, and it is used only for groups like this.</p>
+        <div class="grid2"><button class="btn btn--primary" style="margin:0">I am a woman</button><button class="btn btn--ghost" style="margin:0">I am a man</button></div>
+        <div class="label">The organiser asks</div>
+        <b style="font-size:.95rem">Have you travelled with a group before?</b>
+        <div class="chips"><span class="chip">Yes</span><span class="chip">No, first time</span><span class="chip">🎤 Say it</span></div>
+        <button class="btn btn--primary">Send request</button>
+      </div>
+      <div class="note" style="bottom:auto;top:200px">Source: Facebook Groups membership questions are asked only when you ask to join, set per group, and admins choose whether they are required (socialmediatoday; Meta 2022). Luma hosts' registration questions work the same way.</div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

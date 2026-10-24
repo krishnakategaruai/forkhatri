@@ -991,6 +991,10 @@ class InvalidFundraiser(Exception):
         self.fields = fields
 
 
+class FundraiserClosed(Exception):
+    """The drive is over: nobody can add or change a promise any more."""
+
+
 async def create_fundraiser(
     session: AsyncSession, *, circle_id: UUID, member_id: UUID, title: str, purpose: str | None, target_paise: int | None, closes_on: str | None
 ) -> UUID:
@@ -1078,6 +1082,9 @@ async def pledge(session: AsyncSession, *, fundraiser_id: UUID, member_id: UUID,
         return
     if not 10_000 <= int(amount_paise) <= 100_000_000:
         raise InvalidFundraiser(["amount_paise"])
+    closed = (await session.execute(text("SELECT closed_at IS NOT NULL FROM milavn_circle.fundraiser WHERE id = :f"), {"f": str(fundraiser_id)})).scalar_one_or_none()
+    if closed:
+        raise FundraiserClosed
     await session.execute(
         text(
             "INSERT INTO milavn_circle.fundraiser_pledge (fundraiser_id, member_id, amount_paise, note) "
@@ -1130,11 +1137,18 @@ async def mark_pledge_paid(session: AsyncSession, *, fundraiser_id: UUID, member
     return True
 
 
-async def close_fundraiser(session: AsyncSession, *, fundraiser_id: UUID, actor_member_id: UUID) -> None:
-    await session.execute(
-        text("UPDATE milavn_circle.fundraiser SET closed_at = now() WHERE id = :f AND closed_at IS NULL AND milavn_circle.can_moderate_circle(circle_id, :a)"),
-        {"f": str(fundraiser_id), "a": str(actor_member_id)},
-    )
+async def close_fundraiser(session: AsyncSession, *, fundraiser_id: UUID, actor_member_id: UUID) -> bool:
+    """False when the actor may not close it (only organizers and assistants may); closing twice is harmless."""
+    allowed = (
+        await session.execute(
+            text("SELECT milavn_circle.can_moderate_circle(f.circle_id, :a) FROM milavn_circle.fundraiser f WHERE f.id = :f"),
+            {"f": str(fundraiser_id), "a": str(actor_member_id)},
+        )
+    ).scalar_one_or_none()
+    if not allowed:
+        return False
+    await session.execute(text("UPDATE milavn_circle.fundraiser SET closed_at = now() WHERE id = :f AND closed_at IS NULL"), {"f": str(fundraiser_id)})
+    return True
 
 
 # --- Samaj updates: one announcement, every chapter (FR126) ------------------------
@@ -1428,7 +1442,8 @@ async def my_invites(session: AsyncSession, *, member_id: UUID) -> list[dict]:
     rows = (await session.execute(text("SELECT * FROM milavn_circle.my_circle_invites(:m)"), {"m": str(member_id)})).all()
     out = []
     for r in rows:
-        c = _row(tuple(r[3:18]), int(r[18] or 0), None)
+        # my_circle_invites (044) predates kind_label and women_only (050); pad them so the row has every column _row reads.
+        c = _row((*tuple(r[3:18]), None, False), int(r[18] or 0), None)
         out.append({"invite_id": r[0], "invited_by_member_id": r[1], "created_at": r[2], "circle": c})
     return out
 

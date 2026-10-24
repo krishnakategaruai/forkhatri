@@ -1,0 +1,72 @@
+{
+  "report": {
+    "received": "धन्यवाद. तुमची तक्रार मिळाली आहे आणि आमची सुरक्षा टीम तिची तपासणी करेल."
+  },
+  "error": {
+    "cannotBlockSelf": "तुम्ही स्वतःलाच ब्लॉक करू शकत नाही.",
+    "invalidReason": "कृपया तक्रारीसाठी योग्य कारण निवडा.",
+    "rateLimited": "या कृतीची आजची मर्यादा तुम्ही गाठली आहे. कृपया उद्या पुन्हा प्रयत्न करा.",
+    "suspended": "सुरक्षा तपासणीनंतर हे खाते निलंबित केले आहे. ही चूक आहे असे वाटत असल्यास, ForKhatri सहाय्य विभागाशी संपर्क साधा."
+  },
+  "ops": {
+    "error": {
+      "notChanged": "हे प्रकरण सध्या अशा स्थितीत नाही की ही कृती करता येईल.",
+      "invalidOutcome": "कृपया योग्य निकाल निवडा."
+    }
+  },
+  "admin": {
+    "casesTitle": "मंगल्य मॉडरेशन प्रकरणे",
+    "someone": "एक सदस्य",
+    "summary": "{name} यांच्याबद्दल {category} ची तक्रार",
+    "member": {
+      "profile": "विवाह प्रोफाइल",
+      "searchable": "शोधात दिसते",
+      "notSearchable": "शोधात दिसत नाही",
+      "reports": "त्यांच्याबद्दलच्या तक्रारी",
+      "reportsValue": "{total} पैकी {open} प्रलंबित",
+      "blocks": "ब्लॉक",
+      "blocksValue": "{made} जणांना ब्लॉक केले · {by} जणांनी ब्लॉक केले",
+      "planEnds": "प्लॅन कधीपर्यंत",
+      "rm": "रिलेशनशिप मॅनेजर",
+      "lastOrder": "शेवटची ऑर्डर",
+      "lastOrderValue": "{plan}, {total}, {status}, {date}",
+      "planActive": "सुरू",
+      "planCancelled": "रद्द (शेवटच्या तारखेपर्यंत चालू)",
+      "order": {
+        "created": "पेमेंट पूर्ण झाले नाही",
+        "paid": "पैसे भरले",
+        "failed": "पेमेंट अयशस्वी",
+        "refunded": "परतावा दिला"
+      }
+    },
+    "field": {
+      "reason": "कारण",
+      "about": "कोणाबद्दल",
+      "state": "स्थिती",
+      "priority": "प्राधान्य",
+      "reported": "तक्रारीची तारीख",
+      "description": "त्यांनी काय सांगितले",
+      "due": "मुदत",
+      "outcome": "निकाल",
+      "account": "खाते"
+    },
+    "state": {
+      "open": "प्रलंबित",
+      "acknowledged": "कारवाई सुरू",
+      "resolved": "निकाली"
+    },
+    "priority": {
+      "urgent": "तातडीचे",
+      "high": "उच्च",
+      "normal": "सामान्य"
+    },
+    "outcome": {
+      "no_action": "कारवाईची गरज नाही",
+      "warned": "ताकीद दिली",
+      "content_removed": "मजकूर काढला",
+      "account_suspended": "खाते निलंबित",
+      "escalated_to_investigation": "चौकशीसाठी पाठवले"
+    },
+    "suspended": "मंगल्यमध्ये निलंबित"
+  }
+}

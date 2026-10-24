@@ -83,6 +83,78 @@ export interface FirstRunState {
   step: number;
   done: boolean;
   display_name: string;
+  language?: string;
+  locality?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  capabilities?: string[];
+  help_with?: string[];
+  /** [Start flow 2026-10] show the 3-question start (once; never to a member with a trade or a post). */
+  needs_start?: boolean;
+  goal?: "find_work" | "hire" | "get_customers" | null;
+  has_trade?: boolean;
+  has_post?: boolean;
+  date_of_birth_known?: boolean;
+  /** 18 and over (or not yet asked). */
+  eligible?: boolean;
+}
+
+// ---- [Start flow 2026-10] the 3-question start ------------------------------------------
+export type StartGoal = "find_work" | "hire" | "get_customers";
+
+export interface TradeTile {
+  slug: string;
+  label: string;
+  category: string | null;
+}
+
+export interface StartInput {
+  goal: StartGoal;
+  capabilities?: string[];
+  capabilities_other?: string[];
+  locality?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  /** ISO date; asked only when the identity does not know it. */
+  date_of_birth?: string | null;
+  business_name?: string | null;
+  experience_years?: number | null;
+  own_assets?: string[] | null;
+  headline?: string | null;
+}
+
+export interface StartOut {
+  state: FirstRunState;
+  eligible: boolean;
+  profile_id: string | null;
+  live: boolean;
+  publish_blocked: string | null;
+  next: "discover" | "post" | "visible" | "under_18";
+}
+
+export interface CompletionQuestion {
+  key: "experience_years" | "own_assets" | "headline" | "service_radius_km";
+  kind: "choice" | "multi" | "text";
+  question: string;
+  options: { value: string; label: string }[];
+  placeholder: string | null;
+}
+
+export interface ProfileCompletion {
+  percent: number;
+  done: string[];
+  next: CompletionQuestion | null;
+}
+
+export interface LocateResult {
+  matched: boolean;
+  locality: string | null;
+  lat: number;
+  lng: number;
+  distance_km?: number | null;
+  /** Areas within about 25 km, nearest first; empty anywhere else. */
+  nearby: string[];
+  source?: "gazetteer" | "listings" | "places" | "none";
 }
 
 // ---- opportunities ----------------------------------------------------------------

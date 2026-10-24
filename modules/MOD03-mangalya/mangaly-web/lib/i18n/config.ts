@@ -73,7 +73,10 @@ import enGuides from "@/locales/en/guides.json";
 import hiGuides from "@/locales/hi/guides.json";
 import teGuides from "@/locales/te/guides.json";
 
-export const SUPPORTED_LANGUAGES = ["en", "hi", "te"] as const;
+// [Owner, 2026-10-06] Marathi (mr) and Kannada (kn) added. Their files are
+// loaded on demand by `lazyLocales` below rather than bundled, so a namespace
+// not yet translated falls back to English instead of breaking the build.
+export const SUPPORTED_LANGUAGES = ["en", "hi", "te", "mr", "kn"] as const;
 export type Language = (typeof SUPPORTED_LANGUAGES)[number];
 
 export const DEFAULT_LANGUAGE: Language = "en";
@@ -162,6 +165,26 @@ export function isSupported(
   return !!value && (SUPPORTED_LANGUAGES as readonly string[]).includes(value);
 }
 
+/** Loads `locales/<lang>/<namespace>.json` for a language that is not bundled
+ * above (Marathi, Kannada). i18next waits for it before switching language,
+ * so the screen changes once, already translated. A file that does not exist
+ * yet resolves to an empty catalog: every key then shows its English text. */
+const lazyLocales = {
+  type: "backend" as const,
+  init() {},
+  read(
+    language: string,
+    namespace: string,
+    callback: (error: unknown, data: Record<string, unknown> | null) => void,
+  ) {
+    import(`../../locales/${language}/${namespace}.json`)
+      .then((mod: { default?: Record<string, unknown> } & Record<string, unknown>) =>
+        callback(null, mod.default ?? mod),
+      )
+      .catch(() => callback(null, {}));
+  },
+};
+
 let instance: I18nInstance | null = null;
 
 export function getI18n(
@@ -170,8 +193,11 @@ export function getI18n(
   if (instance) return instance;
 
   const i18n = i18next.createInstance();
-  void i18n.use(initReactI18next).init({
+  void i18n.use(lazyLocales).use(initReactI18next).init({
     resources,
+    // Bundled languages come from `resources`; any other supported language
+    // is fetched through `lazyLocales`.
+    partialBundledLanguages: true,
     lng: initialLanguage,
     fallbackLng: DEFAULT_LANGUAGE,
     ns: NAMESPACES,

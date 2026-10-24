@@ -1,0 +1,267 @@
+{
+  "view": {
+    "moderation": "ದೂರು ಬಂದ ವಿಷಯ",
+    "verification": "ಬಿಸಿನೆಸ್ ವೆರಿಫಿಕೇಶನ್",
+    "opportunities": "ಪೋಸ್ಟ್ ಪರಿಶೀಲನೆ",
+    "appeals": "ಅಪೀಲ್‌ಗಳು",
+    "disputes": "ವಿವಾದಗಳು",
+    "commercial": "ಆರ್ಡರ್‌ಗಳು ಮತ್ತು ರೀಫಂಡ್‌ಗಳು"
+  },
+  "error": {
+    "permissionRequired": "ಅಡ್ಮಿನ್ ಕನ್ಸೋಲ್‌ನ ಈ ಭಾಗಕ್ಕೆ ನಿಮಗೆ ಪ್ರವೇಶ ಇಲ್ಲ.",
+    "itemNotFound": "ಈ ಐಟಂ ಈಗ ಲಭ್ಯವಿಲ್ಲ.",
+    "actionNotAvailable": "ಈ ಐಟಂ ಮೇಲೆ ಇನ್ನು ಈ ಕ್ರಮ ತೆಗೆದುಕೊಳ್ಳಲು ಆಗುವುದಿಲ್ಲ.",
+    "reasonRequired": "ಈ ಕ್ರಮ ತೆಗೆದುಕೊಳ್ಳುವ ಮೊದಲು ಒಂದು ಕಾರಣ ಆಯ್ಕೆಮಾಡಿ.",
+    "reasonNotAllowed": "ಆ ಕಾರಣವನ್ನು ಈ ಕ್ರಮಕ್ಕೆ ಬಳಸಲು ಆಗುವುದಿಲ್ಲ."
+  },
+  "itemType": {
+    "moderation_case": "ದೂರು ಬಂದ ವಿಷಯ",
+    "verification_record": "ವೆರಿಫಿಕೇಶನ್ ಕೋರಿಕೆ",
+    "opportunity_review": "ಪರಿಶೀಲನೆಗೆ ಕಾಯುತ್ತಿರುವ ಪೋಸ್ಟ್",
+    "stale_opportunity": "ಇತ್ತೀಚೆಗೆ ಅಪ್‌ಡೇಟ್ ಆಗದ ಪೋಸ್ಟ್",
+    "appeal": "ಅಪೀಲ್",
+    "contract_dispute": "ಒಪ್ಪಂದದ ವಿವಾದ",
+    "review_dispute": "ರಿವ್ಯೂ ವಿವಾದ",
+    "promotion_order": "ಪ್ರಮೋಷನ್ ಆರ್ಡರ್",
+    "plan_order": "ಬಿಸಿನೆಸ್ ವರ್ಕ್‌ಸ್ಪೇಸ್ ಪ್ಲಾನ್",
+    "campaign_order": "ಕ್ಯಾಂಪೇನ್ ಆರ್ಡರ್"
+  },
+  "status": {
+    "open": "ತೆರೆದಿದೆ",
+    "in_review": "ಪರಿಶೀಲನೆಯಲ್ಲಿದೆ",
+    "escalated": "ಮೇಲಿನವರಿಗೆ ಕಳುಹಿಸಲಾಗಿದೆ",
+    "actioned": "ಕ್ರಮ ತೆಗೆದುಕೊಳ್ಳಲಾಗಿದೆ",
+    "dismissed": "ತಳ್ಳಿಹಾಕಲಾಗಿದೆ",
+    "pending": "ನಿರ್ಧಾರಕ್ಕಾಗಿ ಕಾಯುತ್ತಿದೆ",
+    "verified": "ವೆರಿಫೈ ಆಗಿದೆ",
+    "rejected": "ತಿರಸ್ಕರಿಸಲಾಗಿದೆ",
+    "needs_clearer_copy": "ಸ್ಪಷ್ಟ ಪ್ರತಿ ಕೇಳಲಾಗಿದೆ",
+    "expired": "ಅವಧಿ ಮುಗಿದಿದೆ",
+    "revoked": "ರದ್ದುಮಾಡಲಾಗಿದೆ",
+    "pending_review": "ಪರಿಶೀಲನೆಗೆ ಕಾಯುತ್ತಿದೆ",
+    "draft": "ಪೋಸ್ಟ್ ಮಾಡಿದವರಿಗೆ ವಾಪಸ್ ಕಳುಹಿಸಲಾಗಿದೆ",
+    "active": "ಲೈವ್",
+    "paused": "ನಿಲ್ಲಿಸಲಾಗಿದೆ",
+    "stale": "ಇತ್ತೀಚೆಗೆ ಅಪ್‌ಡೇಟ್ ಇಲ್ಲ",
+    "removed": "ತೆಗೆದುಹಾಕಲಾಗಿದೆ",
+    "closed": "ಮುಚ್ಚಲಾಗಿದೆ",
+    "delayed": "ತಡವಾಗಿದೆ",
+    "upheld": "ನಿರ್ಧಾರ ಹಾಗೆಯೇ ಉಳಿದಿದೆ",
+    "overturned": "ನಿರ್ಧಾರ ಬದಲಿಸಲಾಗಿದೆ",
+    "resolved_client": "ಕ್ಲೈಂಟ್ ಪರವಾಗಿ ಬಗೆಹರಿಸಲಾಗಿದೆ",
+    "resolved_provider": "ಪ್ರೊಫೆಷನಲ್ ಪರವಾಗಿ ಬಗೆಹರಿಸಲಾಗಿದೆ",
+    "awaiting_payment": "ಪೇಮೆಂಟ್‌ಗಾಗಿ ಕಾಯುತ್ತಿದೆ",
+    "scheduled": "ನಿಗದಿಯಾಗಿದೆ",
+    "completed": "ಪೂರ್ಣಗೊಂಡಿದೆ",
+    "cancelled": "ರದ್ದಾಗಿದೆ",
+    "refunded": "ರೀಫಂಡ್ ಆಗಿದೆ",
+    "succeeded": "ಪಾವತಿಯಾಗಿದೆ",
+    "failed": "ಪೇಮೆಂಟ್ ವಿಫಲವಾಗಿದೆ",
+    "cancelling": "ಈ ಅವಧಿಯ ಕೊನೆಗೆ ಮುಗಿಯುತ್ತದೆ"
+  },
+  "objectKind": {
+    "listing": "ಬಿಸಿನೆಸ್ ಪ್ರೊಫೈಲ್",
+    "opportunity": "ಪೋಸ್ಟ್",
+    "enquiry": "ರಿಕ್ವೆಸ್ಟ್ ಸಂಭಾಷಣೆ",
+    "partnership": "ಪಾಲುದಾರಿಕೆ ರಿಕ್ವೆಸ್ಟ್",
+    "review": "ರಿವ್ಯೂ"
+  },
+  "subject": {
+    "untitled": "{name} ಅವರಿಂದ {kind}",
+    "contract": "ಒಪ್ಪಂದ: {title}"
+  },
+  "summary": {
+    "reported": "{kind} “{title}” ಬಗ್ಗೆ {count} ಸಲ ದೂರು ಬಂದಿದೆ: {reason}.",
+    "autoFlagged": "{kind} “{title}” ತಾನಾಗಿಯೇ ಗುರುತಿಸಲ್ಪಟ್ಟಿದೆ: {reason}.",
+    "verification": "“{listing}” ಗಾಗಿ {owner} ಅವರು {document} ಕಳುಹಿಸಿದ್ದಾರೆ.",
+    "opportunityReview": "{poster} ಪೋಸ್ಟ್ ಮಾಡಿದ “{title}” ಪರಿಶೀಲನೆಗೆ ಕಾಯುತ್ತಿದೆ.",
+    "opportunityFlagged": "{poster} ಪೋಸ್ಟ್ ಮಾಡಿದ “{title}” ಪರಿಶೀಲಿಸಬೇಕು: {flags}.",
+    "stale": "{poster} ಪೋಸ್ಟ್ ಮಾಡಿದ “{title}” {days} ದಿನಗಳಿಂದ ಅಪ್‌ಡೇಟ್ ಆಗಿಲ್ಲ.",
+    "staleNeverPublished": "{poster} ಪೋಸ್ಟ್ ಮಾಡಿದ “{title}” ಎಂದಿಗೂ ಪ್ರಕಟವಾಗಿಲ್ಲ.",
+    "appeal": "{kind} “{title}” ಮೇಲಿನ “{action}” ನಿರ್ಧಾರದ ವಿರುದ್ಧ {member} ಅಪೀಲ್ ಮಾಡಿದ್ದಾರೆ.",
+    "contractDispute": "{other} ಜೊತೆಗಿನ “{title}” ಒಪ್ಪಂದದ ಬಗ್ಗೆ {opener} ವಿವಾದ ತೆರೆದಿದ್ದಾರೆ.",
+    "reviewDispute": "{author} ಬರೆದ ರಿವ್ಯೂಗೆ {subject} ಆಕ್ಷೇಪಣೆ ಸಲ್ಲಿಸಿದ್ದಾರೆ: {reason}.",
+    "promotionOrder": "“{target}” ಗಾಗಿ {owner} ಅವರು {product} ಖರೀದಿಸಿದ್ದಾರೆ — {amount}.",
+    "planOrder": "“{listing}” ಗಾಗಿ {owner} ಅವರು {product} ಖರೀದಿಸಿದ್ದಾರೆ — {amount}.",
+    "campaignOrder": "{owner} ಅವರು {product} “{name}” ಖರೀದಿಸಿದ್ದಾರೆ — {amount}.",
+    "unpaidOrder": "{owner} ಅವರು {product} ಶುರು ಮಾಡಿದ್ದಾರೆ — ಇನ್ನೂ ಪಾವತಿಸಿಲ್ಲ.",
+    "refundedPart": "ಇದುವರೆಗೆ {amount} ರೀಫಂಡ್ ಆಗಿದೆ."
+  },
+  "flag": {
+    "source_unreachable": "ಮೂಲ ಲಿಂಕ್ ತಲುಪಲು ಆಗಲಿಲ್ಲ",
+    "unconfirmed_fields": "ಕೆಲವು ವಿವರಗಳನ್ನು ಪೋಸ್ಟ್ ಮಾಡಿದವರು ಖಚಿತಪಡಿಸಿಲ್ಲ"
+  },
+  "document": {
+    "gst": "GST ಪ್ರಮಾಣಪತ್ರ",
+    "udyam": "ಉದ್ಯಮ್ ನೋಂದಣಿ",
+    "pan": "PAN ಕಾರ್ಡ್",
+    "shops_est": "ಶಾಪ್ಸ್ ಮತ್ತು ಎಸ್ಟ್ಯಾಬ್ಲಿಷ್‌ಮೆಂಟ್ ಲೈಸೆನ್ಸ್",
+    "credential": "{issuer} ನೀಡಿದ “{name}” ಪ್ರಮಾಣಪತ್ರ"
+  },
+  "primaryReason": {
+    "scam": "ಮೋಸ ಅಥವಾ ಮುಂಗಡ ಹಣ",
+    "fake": "ನಕಲಿ ಅಥವಾ ದಾರಿ ತಪ್ಪಿಸುವಂತದ್ದು",
+    "impersonation": "ಬೇರೆಯವರಂತೆ ನಟನೆ",
+    "harassment": "ಕಿರುಕುಳ",
+    "discrimination": "ತಾರತಮ್ಯ",
+    "spam": "ಸ್ಪ್ಯಾಮ್",
+    "stale": "ಹಳೆಯದು",
+    "privacy": "ಗೌಪ್ಯತೆ",
+    "other": "ಬೇರೆ",
+    "advance_payment": "ಮುಂಗಡ ಹಣ ಅಥವಾ ಶುಲ್ಕದ ಉಲ್ಲೇಖ",
+    "prohibited_content": "ನಿಷೇಧಿತ ಪದಗಳು",
+    "spam_pattern": "ಸ್ಪ್ಯಾಮ್‌ನಂತೆ ಕಾಣುತ್ತದೆ",
+    "retaliation": "ಸೇಡಿನ ರಿವ್ಯೂ",
+    "manipulation": "ರಿವ್ಯೂ ತಿರುಚುವಿಕೆ",
+    "not_the_interaction": "ಈ ವ್ಯವಹಾರಕ್ಕೆ ಸಂಬಂಧಿಸಿಲ್ಲ",
+    "abusive": "ನಿಂದನೆಯ ರಿವ್ಯೂ",
+    "asked_for_money": "ಅರ್ಜಿದಾರರಿಂದ ಹಣ ಕೇಳಿದ್ದಾರೆ"
+  },
+  "reasonCode": {
+    "scam_confirmed": "ಖಚಿತವಾದ ಮೋಸ ಅಥವಾ ಮುಂಗಡ ಹಣದ ಬೇಡಿಕೆ",
+    "fake_listing": "ನಕಲಿ ಅಥವಾ ದಾರಿ ತಪ್ಪಿಸುವ ಮಾಹಿತಿ",
+    "impersonation": "ಬೇರೆಯವರಂತೆ ನಟಿಸುವುದು",
+    "harassment": "ಕಿರುಕುಳ ಅಥವಾ ನಿಂದನೆ",
+    "discrimination": "ತಾರತಮ್ಯ",
+    "spam": "ಸ್ಪ್ಯಾಮ್",
+    "stale_info": "ಹಳೆಯ ಮಾಹಿತಿ",
+    "privacy_violation": "ಗೌಪ್ಯತೆಯ ಉಲ್ಲಂಘನೆ",
+    "policy_other": "ಬೇರೆ ನಿಯಮದ ಉಲ್ಲಂಘನೆ",
+    "no_violation": "ಯಾವುದೇ ಉಲ್ಲಂಘನೆ ಕಂಡುಬಂದಿಲ್ಲ",
+    "appeal_evidence_accepted": "ಅಪೀಲ್‌ನ ಪುರಾವೆ ಒಪ್ಪಿಕೊಳ್ಳಲಾಗಿದೆ",
+    "asked_for_money": "ಅರ್ಜಿದಾರರಿಂದ ಹಣ ಕೇಳಿದ್ದಾರೆ",
+    "document_illegible": "ದಾಖಲೆ ಓದಲು ಆಗುತ್ತಿಲ್ಲ / ತುಂಬಾ ಮಸುಕಾಗಿದೆ",
+    "document_expired": "ದಾಖಲೆಯ ಅವಧಿ ಮುಗಿದಿದೆ",
+    "name_mismatch": "ಬಿಸಿನೆಸ್ ಹೆಸರು ದಾಖಲೆಗೆ ಹೊಂದುತ್ತಿಲ್ಲ",
+    "document_type_mismatch": "ತಪ್ಪು ರೀತಿಯ ದಾಖಲೆ ಕಳುಹಿಸಲಾಗಿದೆ",
+    "suspected_fraud": "ನಕಲಿ ದಾಖಲೆ ಎಂಬ ಸಂಶಯ",
+    "other": "ಬೇರೆ",
+    "missing_details": "ಮುಖ್ಯ ವಿವರಗಳು ಇಲ್ಲ",
+    "unclear_pay": "ಸಂಬಳ ಅಥವಾ ಷರತ್ತುಗಳು ಸ್ಪಷ್ಟವಾಗಿಲ್ಲ",
+    "source_unreachable": "ಮೂಲವನ್ನು ಪರಿಶೀಲಿಸಲು ಆಗುತ್ತಿಲ್ಲ",
+    "duplicate": "ಇನ್ನೊಂದು ಪೋಸ್ಟ್‌ನ ನಕಲು",
+    "prohibited_content": "ನಿಷೇಧಿತ ವಿಷಯ",
+    "seeker_charge": "ಅರ್ಜಿದಾರರಿಂದ ಶುಲ್ಕ ಅಥವಾ ಠೇವಣಿ ಕೇಳುತ್ತದೆ"
+  },
+  "action": {
+    "moderation": {
+      "dismiss": "ಉಲ್ಲಂಘನೆ ಇಲ್ಲ, ದೂರು ಮುಚ್ಚಿ",
+      "limit": "ಯಾರಿಗೆ ಕಾಣಬೇಕು ಎಂಬುದನ್ನು ಮಿತಿಗೊಳಿಸಿ",
+      "remove": "ತೆಗೆದುಹಾಕಿ",
+      "request_verification": "ಮತ್ತೆ ವೆರಿಫಿಕೇಶನ್ ಕೇಳಿ",
+      "suspend": "ಸದಸ್ಯರ ಪೋಸ್ಟ್‌ಗಳನ್ನು ತಡೆಹಿಡಿಯಿರಿ"
+    },
+    "verification": {
+      "verify": "ವೆರಿಫೈ ಮಾಡಿ",
+      "reject": "ತಿರಸ್ಕರಿಸಿ",
+      "needs_clearer_copy": "ಸ್ಪಷ್ಟ ಪ್ರತಿ ಕೇಳಿ"
+    },
+    "opportunity": {
+      "approve": "ಒಪ್ಪಿ ಪ್ರಕಟಿಸಿ",
+      "return": "ಬದಲಾವಣೆಗಾಗಿ ಪೋಸ್ಟ್ ಮಾಡಿದವರಿಗೆ ವಾಪಸ್ ಕಳುಹಿಸಿ",
+      "remove": "ತೆಗೆದುಹಾಕಿ"
+    },
+    "stale": {
+      "remind": "ಪೋಸ್ಟ್ ಮಾಡಿದವರಿಗೆ ನೆನಪಿಸಿ",
+      "expire": "ಅವಧಿ ಮುಗಿದಿದೆ ಎಂದು ಗುರುತಿಸಿ"
+    },
+    "appeal": {
+      "upheld": "ನಿರ್ಧಾರವನ್ನು ಹಾಗೆಯೇ ಇಡಿ",
+      "overturned": "ನಿರ್ಧಾರ ಬದಲಿಸಿ ಮರಳಿ ತನ್ನಿ"
+    },
+    "contract": {
+      "resolved_client": "ಕ್ಲೈಂಟ್ ಪರವಾಗಿ ಬಗೆಹರಿಸಿ (ಮುಂಗಡ ಜಮಾ ಹಣ ವಾಪಸ್)",
+      "resolved_provider": "ಪ್ರೊಫೆಷನಲ್ ಪರವಾಗಿ ಬಗೆಹರಿಸಿ (ಮುಂಗಡ ಜಮಾ ಹಣ ಬಿಡುಗಡೆ)",
+      "closed": "ಯಾವುದೇ ಬದಲಾವಣೆ ಇಲ್ಲದೆ ಮುಚ್ಚಿ"
+    },
+    "review": {
+      "keep": "ರಿವ್ಯೂ ಪ್ರಕಟವಾಗಿಯೇ ಇರಲಿ",
+      "hide": "ರಿವ್ಯೂ ಮರೆಮಾಡಿ",
+      "remove": "ರಿವ್ಯೂ ತೆಗೆದುಹಾಕಿ"
+    },
+    "commercial": {
+      "reject": "ಈ ಪ್ರಮೋಷನ್ ನಿಲ್ಲಿಸಿ ತಿರಸ್ಕರಿಸಿ (ಪಾವತಿಸಿದ್ದರೆ ರೀಫಂಡ್)",
+      "refund": "ಉಳಿದ ಮೊತ್ತವನ್ನು ರೀಫಂಡ್ ಮಾಡಿ"
+    }
+  },
+  "history": {
+    "caseOpened": "ಕೇಸ್ ತೆರೆಯಲಾಗಿದೆ",
+    "reported": "ದೂರು: {reason}",
+    "autoFlagged": "ತಾನಾಗಿಯೇ ಗುರುತಿಸಲಾಗಿದೆ: {reason}",
+    "decided": "ನಿರ್ಧಾರ: {action}",
+    "submitted": "ದಾಖಲೆ ಕಳುಹಿಸಲಾಗಿದೆ",
+    "verificationDecided": "ವೆರಿಫಿಕೇಶನ್ ನಿರ್ಧಾರ: {state}",
+    "posted": "ಪೋಸ್ಟ್ ಮಾಡಲಾಗಿದೆ",
+    "published": "ಪ್ರಕಟವಾಗಿದೆ",
+    "appealFiled": "ಅಪೀಲ್ ಕಳುಹಿಸಲಾಗಿದೆ",
+    "appealDecided": "ಅಪೀಲ್ ನಿರ್ಧಾರ: {state}",
+    "disputeOpened": "ವಿವಾದ ತೆರೆಯಲಾಗಿದೆ",
+    "disputeResolved": "ವಿವಾದ ಬಗೆಹರಿದಿದೆ: {state}",
+    "reviewWritten": "ರಿವ್ಯೂ ಬರೆಯಲಾಗಿದೆ",
+    "consoleAction": "ಅಡ್ಮಿನ್ ಕನ್ಸೋಲ್: {action}",
+    "auditAction": "ದಾಖಲಾದ ಕ್ರಮ: {action}",
+    "orderPlaced": "ಆರ್ಡರ್ ಮಾಡಲಾಗಿದೆ",
+    "orderState": "ಸ್ಥಿತಿ ಬದಲಾಗಿದೆ: {state}",
+    "refundProcessed": "{amount} ರೀಫಂಡ್",
+    "refundFailed": "ರೀಫಂಡ್ ಪೂರ್ಣಗೊಳ್ಳಲಿಲ್ಲ",
+    "refundRejected": "ರೀಫಂಡ್ ನಿರಾಕರಿಸಲಾಗಿದೆ: ಉಳಿದ ಮೊತ್ತಕ್ಕಿಂತ ಹೆಚ್ಚು"
+  },
+  "actor": {
+    "reporter": "ಒಬ್ಬ ಸದಸ್ಯರು (ಗೌಪ್ಯವಾಗಿ ಇಡಲಾಗಿದೆ)",
+    "system": "ವ್ಯಾಪಾರ್ (ತಾನಾಗಿಯೇ)",
+    "unknown": "ಗೊತ್ತಿಲ್ಲದ ಸದಸ್ಯರು"
+  },
+  "label": {
+    "none": "ಯಾವುದೂ ಇಲ್ಲ"
+  },
+  "product": {
+    "boost_3d": "ಪ್ರಮೋಷನ್ · 3 ದಿನ",
+    "boost_7d": "ಪ್ರಮೋಷನ್ · 7 ದಿನ",
+    "boost_14d": "ಪ್ರಮೋಷನ್ · 14 ದಿನ",
+    "campaign_s": "ಕ್ಯಾಂಪೇನ್ · ಸ್ಟಾರ್ಟರ್",
+    "campaign_m": "ಕ್ಯಾಂಪೇನ್ · ಸೀಸನ್",
+    "workspace_monthly": "ಬಿಸಿನೆಸ್ ವರ್ಕ್‌ಸ್ಪೇಸ್ · ತಿಂಗಳಿಗೆ",
+    "workspace_annual": "ಬಿಸಿನೆಸ್ ವರ್ಕ್‌ಸ್ಪೇಸ್ · ವರ್ಷಕ್ಕೆ",
+    "custom_boost": "ಪ್ರಮೋಷನ್ · ನಿಮಗೆ ಬೇಕಾದ ಅವಧಿ"
+  },
+  "payment": {
+    "pending": "ಪೇಮೆಂಟ್ ಬಾಕಿ ಇದೆ",
+    "succeeded": "ಪಾವತಿಯಾಗಿದೆ",
+    "failed": "ಪೇಮೆಂಟ್ ವಿಫಲವಾಗಿದೆ",
+    "refunded": "ರೀಫಂಡ್ ಆಗಿದೆ",
+    "none": "ಇನ್ನೂ ಪೇಮೆಂಟ್ ಇಲ್ಲ",
+    "refundFailed": "ಕೊನೆಯ ರೀಫಂಡ್ ಪೂರ್ಣಗೊಳ್ಳಲಿಲ್ಲ"
+  },
+  "member": {
+    "fact": {
+      "memberSince": "ಸದಸ್ಯರಾದಾಗಿನಿಂದ",
+      "listings": "ಬಿಸಿನೆಸ್ ಪ್ರೊಫೈಲ್‌ಗಳು",
+      "verification": "ವೆರಿಫಿಕೇಶನ್",
+      "openOpportunities": "ತೆರೆದಿರುವ ಪೋಸ್ಟ್‌ಗಳು",
+      "activeBoosts": "ನಡೆಯುತ್ತಿರುವ ಪ್ರಮೋಷನ್‌ಗಳು",
+      "campaigns": "ನಡೆಯುತ್ತಿರುವ ಕ್ಯಾಂಪೇನ್‌ಗಳು",
+      "contracts": "ಚಾಲ್ತಿಯಲ್ಲಿರುವ ಒಪ್ಪಂದಗಳು",
+      "openReports": "ಈ ಸದಸ್ಯರ ಬಗ್ಗೆ ತೆರೆದಿರುವ ದೂರುಗಳು",
+      "totalPaid": "ಇದುವರೆಗೆ ವ್ಯಾಪಾರ್‌ಗೆ ಪಾವತಿಸಿದ್ದು"
+    },
+    "value": {
+      "verification": "{verified} ವೆರಿಫೈ ಆಗಿವೆ, {pending} ಕಾಯುತ್ತಿವೆ",
+      "noListing": "ಬಿಸಿನೆಸ್ ಪ್ರೊಫೈಲ್ ಇಲ್ಲ"
+    },
+    "flag": {
+      "open_reports": "ತೆರೆದಿರುವ ದೂರುಗಳಿವೆ",
+      "content_suspended": "ಪೋಸ್ಟ್‌ಗಳನ್ನು ತಡೆಹಿಡಿಯಲಾಗಿದೆ",
+      "appeal_open": "ಒಂದು ಅಪೀಲ್ ಕಾಯುತ್ತಿದೆ",
+      "verification_pending": "ವೆರಿಫಿಕೇಶನ್ ನಿರ್ಧಾರಕ್ಕಾಗಿ ಕಾಯುತ್ತಿದೆ",
+      "verification_rejected": "ಒಂದು ವೆರಿಫಿಕೇಶನ್ ತಿರಸ್ಕರಿಸಲಾಗಿದೆ",
+      "plan_paused": "ಬಿಸಿನೆಸ್ ವರ್ಕ್‌ಸ್ಪೇಸ್ ಪ್ಲಾನ್ ನಿಲ್ಲಿಸಲಾಗಿದೆ",
+      "plan_ending": "ಬಿಸಿನೆಸ್ ವರ್ಕ್‌ಸ್ಪೇಸ್ ಪ್ಲಾನ್ ಈ ಅವಧಿಗೆ ಮುಗಿಯುತ್ತದೆ",
+      "payment_failed": "ಇತ್ತೀಚಿನ ಒಂದು ಪೇಮೆಂಟ್ ವಿಫಲವಾಗಿದೆ",
+      "contract_disputed": "ಒಂದು ಒಪ್ಪಂದ ವಿವಾದದಲ್ಲಿದೆ",
+      "operator": "ವ್ಯಾಪಾರ್ ಆಪರೇಟರ್"
+    }
+  },
+  "orderStatus": {
+    "draft": "ಡ್ರಾಫ್ಟ್, ಇನ್ನೂ ಖಚಿತವಾಗಿಲ್ಲ"
+  }
+}

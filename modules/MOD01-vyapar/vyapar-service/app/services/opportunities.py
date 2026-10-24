@@ -190,6 +190,11 @@ def _normalize_structured(struct: OpportunityStructured, type_: str, lang: str) 
     out["screening_questions"] = []
     if type_ == "employment":
         lo, hi = data["salary_min_paise"], data["salary_max_paise"]
+        # [Start flow 2026-10, decision 11] fixed pay is one amount: a single
+        # side given means min = max ("₹10,000 a month"), never a refusal.
+        if (lo is None) != (hi is None):
+            data["salary_min_paise"] = data["salary_max_paise"] = lo if lo is not None else hi
+            lo = hi = data["salary_min_paise"]
         if lo is not None and hi is not None and lo > hi:
             raise ApiError(422, "opportunities.error.salaryRangeInvalid", lang)
         elo, ehi = data["experience_min_months"], data["experience_max_months"]
@@ -759,6 +764,13 @@ async def create_opportunity(
 ) -> OpportunityOut:
     if body.source_segment == "public" and not (body.source_name or body.source_url):
         raise ApiError(422, "opportunities.error.sourceRequired", lang)
+    # [Start flow 2026-10, decision 3] the one profile is created from the
+    # ForKhatri identity here, with the post's own area when the member has
+    # not named theirs yet, so "without a profile nothing moves forward"
+    # holds without a "Create your profile first" wall.
+    from app.services.profile import ensure_profile
+
+    await ensure_profile(conn, ctx, lang, locality=body.location, lat=body.lat, lng=body.lng)
     await require_profile(conn, ctx.member_id, lang)
 
     title, type_ = body.title, body.type
@@ -976,7 +988,7 @@ async def list_matching_profiles(
     Poster-only: to anyone else this list would be noise. Only profiles
     that opted in to opportunities (opportunity_participation) appear."""
     row = await conn.fetchrow(
-        "SELECT poster_id, required_capabilities, location FROM vyapar_opportunities.opportunities WHERE id = $1",
+        "SELECT poster_id, required_capabilities, location, lat, lng, work_mode FROM vyapar_opportunities.opportunities WHERE id = $1",
         opportunity_id,
     )
     if row is None:
@@ -985,6 +997,12 @@ async def list_matching_profiles(
         return []
     from app.services.taste import taste_or_empty
 
+    # [Start flow 2026-10, decision 14] matching honours distance: an on-site
+    # post in Delhi must not suggest people in Kukatpally. With coordinates,
+    # profiles beyond the poster's radius are out; without them, only
+    # profiles in the same named area are suggested.
+    radius = await conn.fetchval("SELECT radius_km FROM vyapar_identity.members WHERE id = $1", ctx.member_id)
+    remote = row["work_mode"] == "remote"
     return await recommend_profiles(
         conn,
         skills=list(row["required_capabilities"]),
@@ -995,6 +1013,7 @@ async def list_matching_profiles(
         require_opportunity_participation=True,
         lang=lang,
         taste=await taste_or_empty(conn, ctx.member_id),
+        within=None if remote else (row["lat"], row["lng"], float(max(radius or 10, 10))),
     )
 
 
@@ -1123,6 +1142,14 @@ async def publish_opportunity(
         lang=lang, type_=current["type"], title=current["title"], description=current["description"],
         requirements=current["requirements"], compensation=current["compensation"], columns=structured.model_dump(),
     )
+    if current["type"] == "employment" and (structured.salary_min_paise is None) != (structured.salary_max_paise is None):
+        # [Decision 11] a post saved before fixed pay was allowed: one side is the fixed amount
+        fixed = structured.salary_min_paise if structured.salary_min_paise is not None else structured.salary_max_paise
+        await conn.execute(
+            "UPDATE vyapar_opportunities.opportunities SET salary_min_paise = $2, salary_max_paise = $2, updated_at = now() WHERE id = $1",
+            current["id"], fixed,
+        )
+        structured.salary_min_paise = structured.salary_max_paise = fixed
     if current["type"] == "employment" and (structured.salary_min_paise is None or structured.salary_max_paise is None):
         raise ApiError(422, "opportunities.error.salaryRequired", lang)
     if current["type"] == "freelance" and not has_budget(structured):

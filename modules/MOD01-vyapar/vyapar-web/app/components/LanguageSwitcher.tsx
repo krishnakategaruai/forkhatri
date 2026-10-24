@@ -20,7 +20,7 @@ import { SUPPORTED_LANGUAGES, type Language } from "@/lib/i18n/config";
 import { setPreferredLanguage } from "@/lib/i18n/provider";
 import { getContrast, getTextSize, setContrast, setTextSize, type TextSize } from "@/lib/display";
 
-const SHORT: Record<string, string> = { en: "EN", hi: "हि", te: "తె" };
+const SHORT: Record<string, string> = { en: "EN", hi: "हि", te: "తె", mr: "मरा", kn: "ಕ" };
 
 export default function LanguageSwitcher() {
   const { t, i18n } = useTranslation("common");

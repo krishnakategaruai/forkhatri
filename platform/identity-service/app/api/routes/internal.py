@@ -74,7 +74,7 @@ async def resolve_session(
 class ProvisionRequest(BaseModel):
     phone: str = Field(min_length=6, max_length=32)
     display_name: str = Field(min_length=1, max_length=80)
-    preferred_language: str = Field(default="en", pattern="^(en|hi|te)$")
+    preferred_language: str = Field(default="en", pattern="^(en|hi|te|mr|kn)$")
 
 
 @router.post("/members/provision", status_code=201)

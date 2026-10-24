@@ -12,6 +12,7 @@
 // Traces to: FR46, FR48, TR046, TR048
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { numberLocale } from "@/lib/i18n/languages";
 import { Activity, AlertTriangle, CheckCircle2, ClipboardList, Clock, ShieldAlert, Tags } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import Screen from "@/app/components/Screen";
@@ -54,6 +55,8 @@ interface TaxonomyTerm {
   name_en: string;
   name_hi: string | null;
   name_te: string | null;
+  name_mr?: string | null;
+  name_kn?: string | null;
   aliases: string[];
   status: string;
 }
@@ -151,7 +154,7 @@ export default function AdminOpsPage() {
     );
   }
 
-  const number = (n: number) => new Intl.NumberFormat(`${(i18n.language || "en").slice(0, 2)}-IN`, { maximumFractionDigits: 2 }).format(n);
+  const number = (n: number) => new Intl.NumberFormat(numberLocale(i18n.language), { maximumFractionDigits: 2 }).format(n);
   const allStaleSelected = staleQueue.length > 0 && selectedStale.length === staleQueue.length;
 
   return (
@@ -304,7 +307,7 @@ export default function AdminOpsPage() {
                   <tr key={term.id}>
                     <td>
                       {term.name_en}
-                      {(term.name_hi || term.name_te) && <div className="vy-dl-fine">{[term.name_hi, term.name_te].filter(Boolean).join(" · ")}</div>}
+                      {(term.name_hi || term.name_te || term.name_mr || term.name_kn) && <div className="vy-dl-fine">{[term.name_hi, term.name_te, term.name_mr, term.name_kn].filter(Boolean).join(" · ")}</div>}
                     </td>
                     <td><span className="vy-dl-code">{term.slug}</span></td>
                     <td>{t(`adminOps:taxonomy.kind.${term.kind}` as "taxonomy.kind.category")}</td>

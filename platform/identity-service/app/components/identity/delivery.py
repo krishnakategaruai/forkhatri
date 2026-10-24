@@ -64,7 +64,9 @@ def _email_body(code: str, minutes: int) -> tuple[str, str, str]:
     text = (
         f"Your ForKhatri sign-in code is {code}. It expires in {minutes} minutes.\n"
         f"आपका ForKhatri साइन-इन कोड {code} है। यह {minutes} मिनट में समाप्त हो जाएगा।\n"
-        f"మీ ForKhatri సైన్-ఇన్ కోడ్ {code}. ఇది {minutes} నిమిషాల్లో ముగుస్తుంది.\n\n"
+        f"మీ ForKhatri సైన్-ఇన్ కోడ్ {code}. ఇది {minutes} నిమిషాల్లో ముగుస్తుంది.\n"
+        f"तुमचा ForKhatri साइन-इन कोड {code} आहे. तो {minutes} मिनिटांत संपेल.\n"
+        f"ನಿಮ್ಮ ForKhatri ಸೈನ್-ಇನ್ ಕೋಡ್ {code}. ಇದು {minutes} ನಿಮಿಷಗಳಲ್ಲಿ ಮುಕ್ತಾಯವಾಗುತ್ತದೆ.\n\n"
         "If you did not ask for this code, you can ignore this email. ForKhatri will never ask you to share it."
     )
     html = (
@@ -73,7 +75,9 @@ def _email_body(code: str, minutes: int) -> tuple[str, str, str]:
         f'<p style="font-size:32px;letter-spacing:8px;font-weight:700;margin:0 0 16px">{code}</p>'
         f'<p style="margin:0 0 4px">It expires in {minutes} minutes.</p>'
         f'<p style="margin:0 0 4px">आपका ForKhatri साइन-इन कोड {code} है। यह {minutes} मिनट में समाप्त हो जाएगा।</p>'
-        f'<p style="margin:0 0 16px">మీ ForKhatri సైన్-ఇన్ కోడ్ {code}. ఇది {minutes} నిమిషాల్లో ముగుస్తుంది.</p>'
+        f'<p style="margin:0 0 4px">మీ ForKhatri సైన్-ఇన్ కోడ్ {code}. ఇది {minutes} నిమిషాల్లో ముగుస్తుంది.</p>'
+        f'<p style="margin:0 0 4px">तुमचा ForKhatri साइन-इन कोड {code} आहे. तो {minutes} मिनिटांत संपेल.</p>'
+        f'<p style="margin:0 0 16px">ನಿಮ್ಮ ForKhatri ಸೈನ್-ಇನ್ ಕೋಡ್ {code}. ಇದು {minutes} ನಿಮಿಷಗಳಲ್ಲಿ ಮುಕ್ತಾಯವಾಗುತ್ತದೆ.</p>'
         '<p style="color:#666;font-size:13px;margin:0">If you did not ask for this code, ignore this email. '
         "ForKhatri will never ask you to share it.</p></div>"
     )

@@ -1,0 +1,170 @@
+{
+  "reason": {
+    "relocation": "ಸ್ಥಳಾಂತರದ ಬಗ್ಗೆ ಇಬ್ಬರದೂ ಒಂದೇ ಅಭಿಪ್ರಾಯ ({value}).",
+    "diet": "ಇಬ್ಬರದೂ {value} ಆಹಾರ ಪದ್ಧತಿ.",
+    "education": "ಇಬ್ಬರೂ {value} ಮಟ್ಟದ ಶಿಕ್ಷಣ ಪಡೆದಿದ್ದಾರೆ.",
+    "locality": "{locality} ನಲ್ಲಿದ್ದಾರೆ, ಆದ್ಯತೆಯ ಪ್ರದೇಶಕ್ಕೆ ಹೊಂದುತ್ತದೆ."
+  },
+  "value": {
+    "relocation_willingness": {
+      "open_to_discussion": "ಚರ್ಚೆಗೆ ಸಿದ್ಧ",
+      "willing": "ಸ್ಥಳಾಂತರಕ್ಕೆ ಸಿದ್ಧ",
+      "not_willing": "ಸ್ಥಳಾಂತರ ಬೇಡ ಎನ್ನುತ್ತಾರೆ",
+      "depends": "ಸಂಬಂಧವನ್ನು ಅವಲಂಬಿಸಿದೆ"
+    },
+    "diet": {
+      "vegetarian": "ಸಸ್ಯಾಹಾರಿ",
+      "non_vegetarian": "ಮಾಂಸಾಹಾರಿ",
+      "vegan": "ವೀಗನ್",
+      "eggetarian": "ಮೊಟ್ಟೆ ತಿನ್ನುವ ಸಸ್ಯಾಹಾರಿ",
+      "jain": "ಜೈನ"
+    },
+    "education_level": {
+      "high_school": "ಪ್ರೌಢಶಾಲೆ",
+      "diploma": "ಡಿಪ್ಲೊಮಾ",
+      "bachelors": "ಪದವಿ",
+      "masters": "ಸ್ನಾತಕೋತ್ತರ",
+      "doctorate": "ಡಾಕ್ಟರೇಟ್",
+      "professional": "ವೃತ್ತಿಪರ"
+    },
+    "mother_tongue": {
+      "telugu": "ತೆಲುಗು",
+      "tamil": "ತಮಿಳು",
+      "kannada": "ಕನ್ನಡ",
+      "hindi": "ಹಿಂದಿ",
+      "punjabi": "ಪಂಜಾಬಿ",
+      "marathi": "ಮರಾಠಿ",
+      "gujarati": "ಗುಜರಾತಿ",
+      "english": "ಇಂಗ್ಲಿಷ್"
+    },
+    "sub_community": {
+      "khatri": "ಖತ್ರಿ",
+      "arora": "ಅರೋರಾ",
+      "sood": "ಸೂದ್",
+      "bhatia": "ಭಾಟಿಯಾ"
+    },
+    "family_involvement": {
+      "close_knit": "ಹತ್ತಿರದಿಂದ ಭಾಗಿಯಾಗಿ",
+      "moderate": "ದೊಡ್ಡ ನಿರ್ಧಾರಗಳಲ್ಲಿ ಭಾಗಿಯಾಗಿ",
+      "independent": "ಹತ್ತಿರವಿದ್ದರೂ ಸ್ವತಂತ್ರವಾಗಿ"
+    },
+    "relationship": {
+      "parent": "ತಂದೆ/ತಾಯಿ",
+      "guardian": "ಪೋಷಕರು",
+      "sibling": "ಒಡಹುಟ್ಟಿದವರು",
+      "relative": "ಸಂಬಂಧಿಕರು"
+    },
+    "relation": {
+      "mother": "ತಾಯಿ",
+      "father": "ತಂದೆ",
+      "brother": "ಅಣ್ಣ/ತಮ್ಮ",
+      "sister": "ಅಕ್ಕ/ತಂಗಿ",
+      "guardian": "ಪೋಷಕರು",
+      "grandmother": "ಅಜ್ಜಿ",
+      "grandfather": "ಅಜ್ಜ",
+      "paternal_uncle": "ಚಿಕ್ಕಪ್ಪ/ದೊಡ್ಡಪ್ಪ",
+      "maternal_uncle": "ಸೋದರಮಾವ",
+      "paternal_aunt": "ಸೋದರತ್ತೆ",
+      "maternal_aunt": "ಚಿಕ್ಕಮ್ಮ/ದೊಡ್ಡಮ್ಮ",
+      "cousin": "ಸೋದರ ಸಂಬಂಧಿ",
+      "brother_in_law": "ಭಾವ/ಮೈದುನ",
+      "sister_in_law": "ಅತ್ತಿಗೆ/ನಾದಿನಿ",
+      "family_friend": "ಕುಟುಂಬದ ಸ್ನೇಹಿತರು"
+    },
+    "family_values": {
+      "traditional": "ಸಾಂಪ್ರದಾಯಿಕ",
+      "moderate": "ಮಧ್ಯಮ",
+      "liberal": "ಉದಾರ"
+    },
+    "family_type": {
+      "joint": "ಅವಿಭಕ್ತ",
+      "nuclear": "ವಿಭಕ್ತ",
+      "extended": "ವಿಸ್ತೃತ"
+    },
+    "hobby": {
+      "cooking": "ಅಡುಗೆ",
+      "street_food": "ಬೀದಿ ತಿಂಡಿ",
+      "trekking": "ಚಾರಣ",
+      "road_trips": "ರಸ್ತೆ ಪ್ರವಾಸ",
+      "pilgrimages": "ತೀರ್ಥಯಾತ್ರೆ",
+      "beaches": "ಕಡಲತೀರಗಳು",
+      "cricket": "ಕ್ರಿಕೆಟ್",
+      "badminton": "ಬ್ಯಾಡ್ಮಿಂಟನ್",
+      "yoga": "ಯೋಗ",
+      "fitness": "ಫಿಟ್‌ನೆಸ್",
+      "music": "ಸಂಗೀತ",
+      "classical_dance": "ಶಾಸ್ತ್ರೀಯ ನೃತ್ಯ",
+      "movies": "ಸಿನಿಮಾ",
+      "reading": "ಓದು",
+      "photography": "ಫೋಟೋಗ್ರಫಿ",
+      "gardening": "ತೋಟಗಾರಿಕೆ",
+      "volunteering": "ಸ್ವಯಂಸೇವೆ",
+      "spirituality": "ಆಧ್ಯಾತ್ಮ",
+      "board_games": "ಬೋರ್ಡ್ ಆಟಗಳು",
+      "art": "ಕಲೆ ಮತ್ತು ಕರಕುಶಲ"
+    }
+  },
+  "shelf": {
+    "reason": {
+      "sharedHobbies": "ನೀವಿಬ್ಬರೂ {list} ಇಷ್ಟಪಡುತ್ತೀರಿ",
+      "sameTongue": "ಇವರೂ {value} ಮಾತನಾಡುತ್ತಾರೆ",
+      "sameCommunity": "ಇವರೂ {value}",
+      "sameNative": "ಕುಟುಂಬವೂ {place} ನವರು",
+      "sameDiet": "ಇವರೂ {value}",
+      "sameCity": "ನಿಮ್ಮಂತೆಯೇ {city} ನಲ್ಲಿದ್ದಾರೆ",
+      "openToMove": "{city} ನಲ್ಲಿದ್ದಾರೆ · ಸ್ಥಳಾಂತರಕ್ಕೆ ಸಿದ್ಧ",
+      "suggestedBy": "ನಿಮ್ಮ {relation} ಸೂಚಿಸಿದ್ದಾರೆ",
+      "sameFamilyView": "ಇವರೂ ಕುಟುಂಬ {value} ಇರಬೇಕೆಂದು ಬಯಸುತ್ತಾರೆ",
+      "joined": "{days} ದಿನಗಳ ಹಿಂದೆ ಸೇರಿದ್ದಾರೆ",
+      "joinedToday": "ಇಂದು ಸೇರಿದ್ದಾರೆ",
+      "joinedYesterday": "ನಿನ್ನೆ ಸೇರಿದ್ದಾರೆ",
+      "suggestedByYou": "ನೀವು ಇದನ್ನು ಸೂಚಿಸಿದ್ದೀರಿ",
+      "mutualFit": "ನೀವಿಬ್ಬರೂ ಪರಸ್ಪರರ ಆದ್ಯತೆಗಳಿಗೆ ಹೊಂದುತ್ತೀರಿ",
+      "wantsYourCity": "ಇವರೂ {city} ನಲ್ಲಿರುವವರನ್ನು ಬಯಸುತ್ತಾರೆ",
+      "wantsYourAge": "ನಿಮ್ಮ ವಯಸ್ಸಿನವರನ್ನು ಹುಡುಕುತ್ತಿದ್ದಾರೆ",
+      "nearby": "{city} ನಲ್ಲಿ · ಸುಮಾರು {km} ಕಿ.ಮೀ. ದೂರ",
+      "sameFamilyValues": "ಇವರದೂ {value} ಕುಟುಂಬ",
+      "sameFamilyType": "ಇವರದೂ {value} ಕುಟುಂಬ",
+      "sameEducation": "ಇವರೂ {value} ಮಟ್ಟದವರೆಗೆ ಓದಿದ್ದಾರೆ",
+      "horoscopeGuna": "{max} ರಲ್ಲಿ {n} ಗುಣಗಳು ಹೊಂದುತ್ತವೆ"
+    },
+    "reasonFor": {
+      "sharedHobbies": "{name} ಅವರಂತೆ {list} ಇಷ್ಟಪಡುತ್ತಾರೆ",
+      "sameTongue": "{name} ಅವರಂತೆ {value} ಮಾತನಾಡುತ್ತಾರೆ",
+      "sameCommunity": "{name} ಅವರಂತೆ {value}",
+      "sameNative": "ಕುಟುಂಬವೂ {place} ನವರು",
+      "sameDiet": "{name} ಅವರಂತೆ {value}",
+      "sameCity": "{name} ಅವರಂತೆ {city} ನಲ್ಲಿದ್ದಾರೆ",
+      "suggestedBy": "{name} ಅವರ {relation} ಸೂಚಿಸಿದ್ದಾರೆ",
+      "suggestedByYou": "ನೀವು ಇದನ್ನು ಸೂಚಿಸಿದ್ದೀರಿ",
+      "sameFamilyView": "ಇವರೂ ಕುಟುಂಬ {value} ಇರಬೇಕೆಂದು ಬಯಸುತ್ತಾರೆ",
+      "mutualFit": "{name} ಕೇಳಿದ್ದಕ್ಕೆ ಇವರು ಹೊಂದುತ್ತಾರೆ, ಇವರು ಕೇಳಿದ್ದಕ್ಕೆ {name} ಹೊಂದುತ್ತಾರೆ",
+      "wantsYourCity": "{name} ಇರುವ {city} ನಲ್ಲಿರುವವರನ್ನು ಬಯಸುತ್ತಾರೆ",
+      "wantsYourAge": "{name} ಅವರ ವಯಸ್ಸಿನವರನ್ನು ಹುಡುಕುತ್ತಿದ್ದಾರೆ",
+      "nearby": "{city} ನಲ್ಲಿ · {name} ಅವರಿಂದ ಸುಮಾರು {km} ಕಿ.ಮೀ. ದೂರ",
+      "sameFamilyValues": "{name} ಅವರಂತೆಯೇ {value} ಕುಟುಂಬ",
+      "sameFamilyType": "{name} ಅವರಂತೆಯೇ {value} ಕುಟುಂಬ",
+      "sameEducation": "{name} ಅವರಂತೆ {value} ಮಟ್ಟದವರೆಗೆ ಓದಿದ್ದಾರೆ",
+      "horoscopeGuna": "{name} ಅವರೊಂದಿಗೆ {max} ರಲ್ಲಿ {n} ಗುಣಗಳು ಹೊಂದುತ್ತವೆ",
+      "openToMove": "{city} ನಲ್ಲಿದ್ದಾರೆ · ಸ್ಥಳಾಂತರಕ್ಕೆ ಸಿದ್ಧ"
+    }
+  },
+  "error": {
+    "lookingForMissing": "ಹೊಂದಾಣಿಕೆಗಳನ್ನು ನೋಡಲು, ನೀವು ವಧುವನ್ನು ಹುಡುಕುತ್ತಿದ್ದೀರೋ ವರನನ್ನೋ ಎಂದು ತಿಳಿಸಿ."
+  },
+  "because": {
+    "title": "{name} ಅಂಥವರು ಇನ್ನಷ್ಟು",
+    "like": "ಇವರೂ: {facts}",
+    "anon": "ಈ {age} ವರ್ಷದ ವ್ಯಕ್ತಿ",
+    "anonWork": "ಈ {age} ವರ್ಷದ {work}",
+    "anonNone": "ಈ ಪ್ರೊಫೈಲ್",
+    "sub": {
+      "request": "ನೀವು ಇವರಿಗೆ ವಿನಂತಿ ಕಳುಹಿಸಿದ್ದರಿಂದ",
+      "requestFor": "{name} ಅವರಿಗಾಗಿ ಇವರಿಗೆ ವಿನಂತಿ ಹೋಗಿದ್ದರಿಂದ",
+      "suggested": "ನಿಮ್ಮ ಕುಟುಂಬದವರು ಇವರನ್ನು ಸೂಚಿಸಿದ್ದರಿಂದ",
+      "suggestedBy": "{name} ಇವರನ್ನು ಸೂಚಿಸಿದ್ದರಿಂದ",
+      "suggestedByYou": "ನೀವು ಇವರನ್ನು ಸೂಚಿಸಿದ್ದರಿಂದ",
+      "saved": "ನೀವು ಇವರನ್ನು ಉಳಿಸಿಕೊಂಡಿದ್ದರಿಂದ"
+    }
+  }
+}

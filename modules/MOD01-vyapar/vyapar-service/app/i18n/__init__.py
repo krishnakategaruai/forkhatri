@@ -32,7 +32,8 @@ from typing import Final
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_LANGUAGES: Final = ("en", "hi", "te")
+# Marathi (mr) and Kannada (kn) added 2026-10-06.
+SUPPORTED_LANGUAGES: Final = ("en", "hi", "te", "mr", "kn")
 DEFAULT_LANGUAGE: Final = "en"
 # Alias used by every "render this text in all three languages" caller
 # (notifications handed to a SECURITY DEFINER function that picks the
@@ -107,9 +108,10 @@ def translate(key: str, lang: str | None = None, **params: object) -> str:
 # [Trust pack] Plurals, i18next style: `<key>.one` / `<key>.other`, chosen by
 # the CLDR rule of the language (Hindi counts 0 and 1 as "one"; English and
 # Telugu only 1). `{count}` is filled in. A key without the two forms is
-# translated as is.
+# translated as is. Kannada follows Hindi (0 and 1 are "one"); Marathi
+# follows English (only 1).
 def _plural_form(lang: str, count: int) -> str:
-    if lang == "hi":
+    if lang in ("hi", "kn"):
         return "one" if count in (0, 1) else "other"
     return "one" if count == 1 else "other"
 

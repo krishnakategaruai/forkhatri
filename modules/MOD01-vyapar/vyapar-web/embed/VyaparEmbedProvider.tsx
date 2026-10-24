@@ -18,7 +18,7 @@ export interface VyaparEmbedProviderProps {
   sdk: VyaparSdk;
   /** Host config; defaults to the standalone host (neutral brand, no dev tools). */
   host?: HostConfig;
-  /** "en" | "hi" | "te". Defaults to English. */
+  /** "en" | "hi" | "te" | "mr" | "kn". Defaults to English. */
   language?: string;
   children: React.ReactNode;
 }

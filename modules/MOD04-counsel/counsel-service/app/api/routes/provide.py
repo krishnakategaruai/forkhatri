@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from app import db
 from app.components import audit, bookings, notifications, places, providers, storage
 from app.errors import DomainError, not_found
-from app.i18n import area_name, request_language
+from app.i18n import AREA_NAME_COLUMNS, area_name, request_language
 from app.identity import Actor, current_actor
 
 router = APIRouter(prefix="/provide", tags=["provide"])
@@ -197,7 +197,7 @@ class ServiceIn(BaseModel):
 @router.get("/services")
 async def my_services(request: Request, actor: Actor = Depends(current_actor)):
     lang = request_language(request)
-    rows = await db.fetch("SELECT s.*, a.name_en, a.name_hi, a.name_te FROM service s JOIN expertise_area a ON a.id=s.area_id WHERE s.provider_id=$1 AND s.status<>'archived' ORDER BY s.created_at", actor.member_id)
+    rows = await db.fetch(f"SELECT s.*, {AREA_NAME_COLUMNS} FROM service s JOIN expertise_area a ON a.id=s.area_id WHERE s.provider_id=$1 AND s.status<>'archived' ORDER BY s.created_at", actor.member_id)
     out = []
     for r in rows:
         d = dict(r); d["area_name"] = area_name(d, lang); out.append(d)

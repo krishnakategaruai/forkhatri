@@ -19,7 +19,7 @@
 // direction, product-owner i18n rule (2026-09-15, not a numbered FR)
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { Anek_Latin, Anek_Devanagari, Anek_Telugu } from "next/font/google";
+import { Anek_Latin, Anek_Devanagari, Anek_Telugu, Anek_Kannada } from "next/font/google";
 import "./globals.css";
 // [FE2] contact, packages, filters, contracts, badges, Hire/Find work menu
 import "./styles/fe2.css";
@@ -57,6 +57,8 @@ import { DISPLAY_BOOT_SCRIPT } from "@/lib/display";
 const anekLatin = Anek_Latin({ subsets: ["latin"], display: "swap", variable: "--font-anek-latin" });
 const anekDevanagari = Anek_Devanagari({ subsets: ["devanagari"], display: "swap", preload: false, variable: "--font-anek-deva" });
 const anekTelugu = Anek_Telugu({ subsets: ["telugu"], display: "swap", preload: false, variable: "--font-anek-telugu" });
+// [2026-10-06] Kannada from the same Anek family (Marathi uses Anek Devanagari above).
+const anekKannada = Anek_Kannada({ subsets: ["kannada"], display: "swap", preload: false, variable: "--font-anek-kannada" });
 
 export const metadata: Metadata = {
   title: hostMetadata.title,
@@ -69,7 +71,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const saved = (await cookies()).get(LANGUAGE_COOKIE)?.value;
   const language = isSupported(saved) ? saved : DEFAULT_LANGUAGE;
   return (
-    <html lang={language} className={`${anekLatin.variable} ${anekDevanagari.variable} ${anekTelugu.variable}`} suppressHydrationWarning>
+    <html lang={language} className={`${anekLatin.variable} ${anekDevanagari.variable} ${anekTelugu.variable} ${anekKannada.variable}`} suppressHydrationWarning>
       <head>
         {/* Text size and high contrast before first paint (lib/display.ts). */}
         <script dangerouslySetInnerHTML={{ __html: DISPLAY_BOOT_SCRIPT }} />

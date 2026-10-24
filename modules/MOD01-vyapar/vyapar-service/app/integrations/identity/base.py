@@ -45,20 +45,26 @@ class IdentityProvider(Protocol):
     async def resolve(self, request: Request) -> ResolvedIdentity | None: ...
 
 
-async def ensure_member_row(member_id: str, display_name: str, phone: str | None, language: str) -> None:
+async def ensure_member_row(member_id: str, display_name: str, phone: str | None, language: str,
+                            phone_verified: bool = False) -> None:
     """[TR050/IA050] Runs BEFORE vyapar.authz_context is meaningful for a
     brand-new member — calls the SECURITY DEFINER pre-authorization escape
     hatch documented in 07a-db-implementation/README.md, never a plain
     INSERT from this service (which would be blocked by RLS for a new row
-    with no context set yet)."""
+    with no context set yet).
+    [Start flow 2026-10, decision 2] `phone_verified` is the host adapter's
+    claim that IT verified this phone at sign-in; Vyapar then counts it as
+    the profile's contact verification (migration 032). Only a provider that
+    checked the session with the host may pass True."""
     from app.db import get_pool
 
     pool = get_pool()
     async with pool.acquire() as conn:
         await conn.execute(
-            "SELECT vyapar_identity.ensure_member($1, $2, $3, $4)",
+            "SELECT vyapar_identity.ensure_member($1, $2, $3, $4, $5)",
             member_id,
             display_name,
             phone,
             language,
+            bool(phone_verified and phone),
         )

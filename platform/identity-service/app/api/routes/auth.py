@@ -45,7 +45,7 @@ class VerifyRequest(BaseModel):
 
 class WelcomeRequest(VerifyRequest):
     display_name: DisplayName
-    preferred_language: Literal["en", "hi", "te"] = "en"
+    preferred_language: Literal["en", "hi", "te", "mr", "kn"] = "en"
 
 
 class PasswordRequest(BaseModel):

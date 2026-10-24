@@ -1,0 +1,100 @@
+{
+  "home": {
+    "greeting": "नमस्कार, {{name}}",
+    "postOpportunity": "+ पोस्ट करा",
+    "openDirectory": "बिझनेस आणि प्रोफेशनल",
+    "loadingFeed": "तुमची फीड लोड होत आहे…",
+    "addCapabilities": "माझी स्किल जोडा",
+    "noOpportunities": "दाखवण्यासाठी अजून कोणतीही पोस्ट नाही — त्याऐवजी प्रोफाइल पाहण्यासाठी बिझनेस आणि प्रोफेशनल उघडा.",
+    "sectionForYou": "तुमच्यासाठी",
+    "sectionExplore": "आणखी पाहा",
+    "sectionNearYou": "तुमच्या जवळ",
+    "sectionCommunity": "तुमच्या समाजातून",
+    "sectionPublic": "बाहेरून शेअर केलेली",
+    "seeAll": "सर्व {{count}} पाहा",
+    "emptyBody": "तुमच्याशी जुळणारे अजून काहीही पोस्ट झालेले नाही. तुम्हाला जे हवे ते पोस्ट करा, तुमच्या समाजातील लोक ते पाहतील.",
+    "emptyAction": "काहीतरी पोस्ट करा"
+  },
+  "enrichment": {
+    "sparseProfile": "अधिक योग्य जुळण्यांसाठी तुमची स्किल जोडा — सध्या आम्ही तुमची फीड तुमच्यानुसार फारशी बनवू शकत नाही."
+  },
+  "card": {
+    "postedToday": "आज पोस्ट केली",
+    "postedYesterday": "काल पोस्ट केली",
+    "postedDaysAgo": "{{days}} दिवसांपूर्वी पोस्ट केली"
+  },
+  "businesses": {
+    "title": "बिझनेस आणि प्रोफेशनल",
+    "searchPlaceholder": "उदा. \"अमीरपेटजवळ प्लंबर\"",
+    "search": "शोधा",
+    "chipCategory": "श्रेणी: {{category}}",
+    "chipNear": "जवळ: {{locality}}",
+    "verifiedLabel": "बिझनेस व्हेरिफाइड",
+    "noExactMatch": "अगदी जुळणारे काही सापडले नाही.",
+    "postWhatYouNeed": "तुम्हाला जे हवे ते पोस्ट करा",
+    "hint": "नाव, श्रेणी किंवा भागानुसार शोधा — किंवा फक्त शोधा दाबून सगळे पाहा.",
+    "broadenRadius": "{{km}} किमीपर्यंत वाढवा",
+    "broadenAdjacentCategories": "जवळच्या श्रेणीही घ्या",
+    "broadenRemoveFilter": "एक फिल्टर काढा",
+    "broadenIncludeUnverified": "व्हेरिफाइड नसलेली प्रोफाइलही घ्या",
+    "tooManySearches": "खूप जास्त शोध झाले — कृपया थोडे थांबा.",
+    "searchUnavailable": "शोध सध्या तात्पुरता उपलब्ध नाही — त्याऐवजी नुकतीच जोडलेली प्रोफाइल दाखवत आहोत.",
+    "recentlyAdded": "नुकतेच जोडले",
+    "filters": "फिल्टर",
+    "filtersActive": "फिल्टर ({{count}})",
+    "radius": "अंतर",
+    "radiusAny": "कितीही अंतर",
+    "radiusKm": "{{km}} किमीच्या आत",
+    "serviceMode": "सेवेची पद्धत",
+    "serviceModeAny": "कोणतीही",
+    "serviceModeOnSite": "जागेवर येऊन",
+    "serviceModeRemote": "रिमोट",
+    "serviceModeBoth": "जागेवर येऊन किंवा रिमोट",
+    "availability": "उपलब्धता",
+    "availabilityAny": "कधीही",
+    "availabilityNow": "आत्ता उपलब्ध",
+    "availabilityThisWeek": "या आठवड्यात",
+    "availabilityLater": "नंतर",
+    "verifiedOnly": "फक्त व्हेरिफाइड",
+    "sortBy": "या क्रमाने दाखवा",
+    "sortRelevance": "सर्वात जुळणारे",
+    "sortDistance": "अंतर",
+    "sortFreshness": "सर्वात नवे",
+    "sortVerifiedFirst": "आधी व्हेरिफाइड",
+    "skills": "स्किल",
+    "skillsSearchPlaceholder": "स्किल शोधा",
+    "clearFilters": "फिल्टर काढा",
+    "applyFilters": "लागू करा",
+    "distanceAway": "{{km}} किमी दूर",
+    "resultsCount": "{{count}} निकाल",
+    "resultsCount_one": "1 निकाल",
+    "resultsCount_other": "{{count}} निकाल"
+  },
+  "post": {
+    "title": "तुम्हाला काय पोस्ट करायचे आहे?",
+    "listingTitle": "तुमचे प्रोफाइल",
+    "listingDesc": "तुमचे कामाचे प्रोफाइल आणि तुमचा बिझनेस तयार करा किंवा अपडेट करा, म्हणजे लोक तुम्हाला शोधू शकतील.",
+    "opportunityTitle": "एक पोस्ट",
+    "opportunityDesc": "नोकरी, प्रोजेक्ट, लोकल सर्व्हिसची गरज, ट्रेनिंग किंवा कार्यक्रम.",
+    "subtitle": "पोस्ट लोकांपर्यंत आत्ता पोहोचते. तुमच्या प्रोफाइलमुळे लोक तुम्हाला कधीही शोधू शकतात."
+  },
+  "profiles": {
+    "similarTitle": "अशीच प्रोफाइल",
+    "matchingTitle": "याच्याशी जुळणारी प्रोफाइल",
+    "matchingHelp": "व्यापारवरील असे लोक आणि बिझनेस, ज्यांच्याकडे तुम्ही मागितलेली स्किल आधीच आहेत.",
+    "hasSkills": "{{skills}} येते",
+    "availableNow": "आत्ता उपलब्ध",
+    "experience_one": "{{count}} वर्षाचा अनुभव",
+    "experience_other": "{{count}} वर्षांचा अनुभव",
+    "kind": {
+      "business": "बिझनेस",
+      "professional": "प्रोफेशनल"
+    }
+  },
+  "broaden": {
+    "radius": "{{km}} किमीपर्यंत वाढवा",
+    "adjacent_categories": "मिळत्याजुळत्या श्रेणीही दाखवा",
+    "remove_filter": "एक फिल्टर काढा",
+    "include_unverified": "व्हेरिफाइड नसलेली प्रोफाइलही दाखवा"
+  }
+}

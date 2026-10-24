@@ -37,6 +37,7 @@ import Screen from "@/app/components/Screen";
 import ProfileSetup from "@/app/components/ProfileSetup";
 import { useTaxonomyAliases, useTaxonomyTree } from "@/app/hooks/hiring";
 import ComposerForm, { fieldLabel, useComposerControls } from "@/app/components/composer/ComposerForm";
+import { readbackRange } from "@/app/components/composer/fields";
 import OpportunityPreview from "@/app/components/composer/OpportunityPreview";
 import ReviewStep from "@/app/components/composer/ReviewStep";
 import StartPanel from "@/app/components/composer/StartPanel";
@@ -152,6 +153,11 @@ function Composer() {
   const [applying, setApplying] = useState<FixKey | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [needsAccept, setNeedsAccept] = useState<LegalKind | null>(null);
+  // [Start flow 2026-10, decision 3] No "Create your profile first" wall: the
+  // server creates the one profile from the identity on the first post. Only
+  // when it says it cannot (403 profile_required: no real name known) is the
+  // profile block shown, in place of the form.
+  const [needsProfile, setNeedsProfile] = useState(false);
 
   const skillLabel = useMemo(() => {
     const m = new Map<string, string>();
@@ -207,6 +213,10 @@ function Composer() {
       setNeedsAccept(legal);
       return;
     }
+    if (e instanceof ApiError && e.status === 403 && e.code === "profile_required") {
+      setNeedsProfile(true);
+      return;
+    }
     const scam = scamFromError(e);
     if (scam && scam.field !== "candidate_pays") {
       const m = String(scam.matched ?? "").toLowerCase();
@@ -248,7 +258,9 @@ function Composer() {
     // The type the poster tapped wins over the type the draft inferred.
     const r = draftFromAi(kind ? retypeAiDraft(ai, kind) : ai, base);
     setDraft(r.draft.location.trim() || !savedLocality ? r.draft : { ...r.draft, location: savedLocality });
-    setFlagged(new Set(r.flagged));
+    // [Decision 11] the inferred shift is shown as a confirm chip too (it
+    // never blocks publishing; only money and openings do).
+    setFlagged(new Set(r.draft.type === "employment" && r.draft.shift ? [...r.flagged, "shift" as FieldCode] : r.flagged));
     setQuestions(r.questions);
     setFromAi(ai.source);
     setErrors({});
@@ -393,6 +405,22 @@ function Composer() {
   // [Critique L8] Amounts and openings the draft filled must be looked at
   // before publishing; the other "please check" marks stay advisory.
   const mustCheck = [...flagged].filter((c) => MUST_CHECK.includes(c));
+  /** The value a confirm chip shows for a field the draft filled. */
+  function confirmValue(code: FieldCode): string {
+    const lang = i18n.language;
+    if (code === "salary") {
+      const r = readbackRange(draft.salaryMin, draft.salaryMax, lang);
+      return r ? t("hiring:preview.perMonth", { range: r }) : "—";
+    }
+    if (code === "budget") {
+      if (draft.type === "local_service") return draft.localBudget ? (readbackRange(draft.localBudget, draft.localBudget, lang) ?? "—") : draft.compensation || "—";
+      return readbackRange(draft.budgetMin, draft.budgetMax, lang) ?? "—";
+    }
+    if (code === "openings") return draft.openings != null ? String(draft.openings) : "—";
+    if (code === "incentive_type") return t(`hiring:options.incentive.${draft.incentiveType}`);
+    if (code === "shift") return draft.shift ? t(`hiring:options.shift.${draft.shift}`) : "—";
+    return "—";
+  }
   const fixes = useMemo(() => mergeFixes(suggestions, tips, draft), [suggestions, tips, draft]);
   const { renderControl } = useComposerControls({ draft, onChange: change, tree: tree.data, errors, aliases });
 
@@ -445,7 +473,7 @@ function Composer() {
     return !val[q.code];
   });
 
-  if (me?.profiles && !me.profiles.complete) {
+  if (needsProfile && me?.profiles && !me.profiles.complete) {
     return (
       <Screen width="wide">
         <h1>{t("hiring:composer.startTitle")}</h1>
@@ -621,14 +649,27 @@ function Composer() {
             <>
               <ReviewStep draft={draft} fixes={fixes} loadingFixes={loadingFixes} applying={applying} onApply={applyFix} onEdit={goToField} />
               {flagged.size > 0 && (
-                <p className={mustCheck.length ? "vy-error" : "vy-field-hint"} role={mustCheck.length ? "alert" : undefined}>
-                  {mustCheck.length
-                    ? t("hiring:composer.checkBeforePublish", { fields: mustCheck.map((c) => fieldLabel(t, c, draft.type)).join(", "), ok: t("hiring:composer.looksRight") })
-                    : t("hiring:composer.stillUnchecked", { fields: [...flagged].map((c) => fieldLabel(t, c, draft.type)).join(", ") })}{" "}
-                  <button type="button" className="vy-check-ok" onClick={() => goToField([...flagged][0])}>
-                    {t("hiring:composer.checkNow")}
-                  </button>
-                </p>
+                // [Audit 2026-10-06, decision 11] What the AI read from the
+                // poster's words is confirmed HERE, one tap each, never by
+                // bouncing back to step 1 ("check money info").
+                <section className="vy-card vy-stack vy-confirm-chips" aria-label={t("hiring:composer.confirmTitle")} style={{ gap: 10, padding: 14 }}>
+                  <strong style={{ fontSize: 14 }}>{t("hiring:composer.confirmTitle")}</strong>
+                  {[...flagged].map((code) => (
+                    <div key={code} className="vy-row" style={{ gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                      <span style={{ flex: "1 1 160px", fontSize: 14 }}>
+                        <span className="vy-field-hint">{fieldLabel(t, code, draft.type)}: </span>
+                        <strong>{confirmValue(code)}</strong>
+                      </span>
+                      <button type="button" className="vy-chip" onClick={() => setFlagged((f) => new Set([...f].filter((c) => c !== code)))}>
+                        ✓ {t("hiring:composer.looksRight")}
+                      </button>
+                      <button type="button" className="vy-chip" onClick={() => goToField(code)}>
+                        {t("hiring:composer.changeField")}
+                      </button>
+                    </div>
+                  ))}
+                  {mustCheck.length > 0 && <p className="vy-field-hint" role="alert">{t("hiring:composer.confirmToPublish")}</p>}
+                </section>
               )}
               <div className="vy-mobile-only">{preview}</div>
               {needsAccept && (

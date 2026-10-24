@@ -77,7 +77,7 @@ export const DISCOVERABILITY_CATEGORIES: CategoryDef[] = [
         key: 'highest_education_level',
         kind: 'select',
         labelKey: 'field.education.highest_education_level',
-        options: ['high_school', 'bachelors', 'masters', 'doctorate', 'other'],
+        options: ['high_school', 'diploma', 'bachelors', 'professional', 'masters', 'doctorate', 'other'],
       },
     ],
   },

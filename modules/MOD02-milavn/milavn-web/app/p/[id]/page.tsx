@@ -15,9 +15,10 @@ import ActivityCard from '@/components/ActivityCard';
 import { Modal } from '@/components/Sheet';
 import { CardSkeleton, ErrorState, Toast } from '@/components/States';
 import { api, API_BASE, ApiError, resolveMediaUrl, type Card } from '@/lib/api';
+import { interestLabel } from '@/lib/interests';
 
 type Person = {
-  member_id: string; display_name: string; handle: string; avatar: string | null; bio: string | null; interests: string[];
+  member_id: string; display_name: string; handle: string; avatar: string | null; bio: string | null; interests: string[]; interest_tags?: string[];
   location_label: string | null; reputation: string[]; shared_circles: { id: string; name: string }[]; hosting: Card[]; is_me: boolean; can_message?: boolean;
   familiar_count?: number; // [FR116] activities you have both been to
   following?: boolean; // [FR122] do I follow their calendar
@@ -98,7 +99,7 @@ export default function PersonPage() {
             {p.interests.length > 0 && (
               <section className="stack" style={{ gap: 8 }}>
                 <span className="label">{t('profile.interests')}</span>
-                <div className="chips">{p.interests.map((i) => <span key={i} className="chip chip--sm chip--on">{i}</span>)}</div>
+                <div className="chips">{p.interests.map((i, n) => <span key={i} className="chip chip--sm chip--on">{p.interest_tags?.[n] ? interestLabel(t, p.interest_tags[n], i) : i}</span>)}</div>
               </section>
             )}
 

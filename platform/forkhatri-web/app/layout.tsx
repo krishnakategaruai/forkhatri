@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Noto_Sans_Devanagari, Noto_Sans_Telugu, Sora } from "next/font/google";
+import { Geist, Noto_Sans_Devanagari, Noto_Sans_Kannada, Noto_Sans_Telugu, Sora } from "next/font/google";
 import { SPLASH_BOOT_SCRIPT, SPLASH_IMAGE } from "@/lib/splash-script";
 import { THEME_BOOT_SCRIPT, THEME_COLORS } from "@/lib/theme-script";
 import "./globals.css";
@@ -8,11 +8,13 @@ import "./hub.css";
 import "./splash.css";
 
 // Latin UI face + a variable display face, with Noto faces that render
-// Devanagari and Telugu properly. The browser picks per glyph from the stack.
+// Devanagari (Hindi, Marathi), Telugu and Kannada properly. The browser picks
+// per glyph from the stack.
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
 const sora = Sora({ subsets: ["latin"], variable: "--font-sora", display: "swap" });
 const devanagari = Noto_Sans_Devanagari({ subsets: ["devanagari"], variable: "--font-deva", display: "swap" });
 const telugu = Noto_Sans_Telugu({ subsets: ["telugu"], variable: "--font-telugu", display: "swap" });
+const kannada = Noto_Sans_Kannada({ subsets: ["kannada"], variable: "--font-kannada", display: "swap" });
 
 export const metadata: Metadata = {
   title: "ForKhatri",
@@ -35,7 +37,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     // `lang` is updated on the client once the member's language is known.
-    <html lang="en" suppressHydrationWarning className={`${geist.variable} ${sora.variable} ${devanagari.variable} ${telugu.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${geist.variable} ${sora.variable} ${devanagari.variable} ${telugu.variable} ${kannada.variable}`}>
       <head>
         {/* Sets data-theme before first paint so a reload never flashes the wrong appearance. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />

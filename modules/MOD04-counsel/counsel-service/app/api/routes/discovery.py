@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from app import db
 from app.components import ai, availability, places, providers
 from app.errors import not_found
-from app.i18n import area_name, request_language
+from app.i18n import AREA_NAME_COLUMNS, area_name, request_language
 from app.identity import Actor, optional_actor
 
 router = APIRouter(tags=["discovery"])
@@ -112,7 +112,7 @@ async def provider_profile(provider_id: UUID, request: Request, actor: Actor | N
 async def service(service_id: UUID, request: Request, actor: Actor | None = Depends(optional_actor)):
     lang = request_language(request)
     s = await db.fetchrow(
-        "SELECT s.*, a.name_en, a.name_hi, a.name_te, a.regulated, m.display_name AS provider_name, p.timezone AS provider_timezone, p.photo_url "
+        f"SELECT s.*, {AREA_NAME_COLUMNS}, a.regulated, m.display_name AS provider_name, p.timezone AS provider_timezone, p.photo_url "
         "FROM service s JOIN expertise_area a ON a.id=s.area_id JOIN provider p ON p.member_id=s.provider_id JOIN member m ON m.member_id=p.member_id WHERE s.id=$1", service_id)
     if not s:
         raise not_found("service")

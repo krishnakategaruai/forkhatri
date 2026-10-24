@@ -97,6 +97,57 @@ import teExplore from '@/locales/te/explore.json';
 import enVoice from '@/locales/en/voice.json';
 import hiVoice from '@/locales/hi/voice.json';
 import teVoice from '@/locales/te/voice.json';
+// [2026-10-06] Marathi (mr) and Kannada (kn)
+import mrActivity from '@/locales/mr/activity.json';
+import mrCommon from '@/locales/mr/common.json';
+import mrDiscover from '@/locales/mr/discover.json';
+import mrFirstRun from '@/locales/mr/firstRun.json';
+import mrEnquiries from '@/locales/mr/enquiries.json';
+import mrVerification from '@/locales/mr/verification.json';
+import mrTrustSafety from '@/locales/mr/trustSafety.json';
+import mrReviews from '@/locales/mr/reviews.json';
+import mrPartnerships from '@/locales/mr/partnerships.json';
+import mrCommercial from '@/locales/mr/commercial.json';
+import mrWorkspace from '@/locales/mr/workspace.json';
+import mrAdminCommercial from '@/locales/mr/adminCommercial.json';
+import mrPrivacy from '@/locales/mr/privacy.json';
+import mrAdminOps from '@/locales/mr/adminOps.json';
+import mrListings from '@/locales/mr/listings.json';
+import mrNotifications from '@/locales/mr/notifications.json';
+import mrOpportunities from '@/locales/mr/opportunities.json';
+import mrProfile from '@/locales/mr/profile.json';
+import mrRanking from '@/locales/mr/ranking.json';
+import mrHiring from '@/locales/mr/hiring.json';
+import mrContact from '@/locales/mr/contact.json';
+import mrContracts from '@/locales/mr/contracts.json';
+import mrPackages from '@/locales/mr/packages.json';
+import mrExplore from '@/locales/mr/explore.json';
+import mrVoice from '@/locales/mr/voice.json';
+import knActivity from '@/locales/kn/activity.json';
+import knCommon from '@/locales/kn/common.json';
+import knDiscover from '@/locales/kn/discover.json';
+import knFirstRun from '@/locales/kn/firstRun.json';
+import knEnquiries from '@/locales/kn/enquiries.json';
+import knVerification from '@/locales/kn/verification.json';
+import knTrustSafety from '@/locales/kn/trustSafety.json';
+import knReviews from '@/locales/kn/reviews.json';
+import knPartnerships from '@/locales/kn/partnerships.json';
+import knCommercial from '@/locales/kn/commercial.json';
+import knWorkspace from '@/locales/kn/workspace.json';
+import knAdminCommercial from '@/locales/kn/adminCommercial.json';
+import knPrivacy from '@/locales/kn/privacy.json';
+import knAdminOps from '@/locales/kn/adminOps.json';
+import knListings from '@/locales/kn/listings.json';
+import knNotifications from '@/locales/kn/notifications.json';
+import knOpportunities from '@/locales/kn/opportunities.json';
+import knProfile from '@/locales/kn/profile.json';
+import knRanking from '@/locales/kn/ranking.json';
+import knHiring from '@/locales/kn/hiring.json';
+import knContact from '@/locales/kn/contact.json';
+import knContracts from '@/locales/kn/contracts.json';
+import knPackages from '@/locales/kn/packages.json';
+import knExplore from '@/locales/kn/explore.json';
+import knVoice from '@/locales/kn/voice.json';
 
 import { DEFAULT_LANGUAGE, LANGUAGE_COOKIE, SUPPORTED_LANGUAGES, isSupported, type Language } from './languages';
 export { DEFAULT_LANGUAGE, LANGUAGE_COOKIE, SUPPORTED_LANGUAGES, isSupported, type Language };
@@ -215,6 +266,60 @@ const resources = {
     packages: tePackages,
     explore: teExplore,
     voice: teVoice,
+  },
+  mr: {
+    common: mrCommon,
+    firstRun: mrFirstRun,
+    listings: mrListings,
+    opportunities: mrOpportunities,
+    discover: mrDiscover,
+    activity: mrActivity,
+    profile: mrProfile,
+    ranking: mrRanking,
+    notifications: mrNotifications,
+    enquiries: mrEnquiries,
+    verification: mrVerification,
+    trustSafety: mrTrustSafety,
+    reviews: mrReviews,
+    partnerships: mrPartnerships,
+    commercial: mrCommercial,
+    workspace: mrWorkspace,
+    adminCommercial: mrAdminCommercial,
+    privacy: mrPrivacy,
+    adminOps: mrAdminOps,
+    hiring: mrHiring,
+    contact: mrContact,
+    contracts: mrContracts,
+    packages: mrPackages,
+    explore: mrExplore,
+    voice: mrVoice,
+  },
+  kn: {
+    common: knCommon,
+    firstRun: knFirstRun,
+    listings: knListings,
+    opportunities: knOpportunities,
+    discover: knDiscover,
+    activity: knActivity,
+    profile: knProfile,
+    ranking: knRanking,
+    notifications: knNotifications,
+    enquiries: knEnquiries,
+    verification: knVerification,
+    trustSafety: knTrustSafety,
+    reviews: knReviews,
+    partnerships: knPartnerships,
+    commercial: knCommercial,
+    workspace: knWorkspace,
+    adminCommercial: knAdminCommercial,
+    privacy: knPrivacy,
+    adminOps: knAdminOps,
+    hiring: knHiring,
+    contact: knContact,
+    contracts: knContracts,
+    packages: knPackages,
+    explore: knExplore,
+    voice: knVoice,
   },
 } as const;
 

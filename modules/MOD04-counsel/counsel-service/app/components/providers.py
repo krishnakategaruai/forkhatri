@@ -10,13 +10,13 @@ from uuid import UUID
 
 from app import db
 from app.components import places
-from app.i18n import area_name
+from app.i18n import AREA_NAME_COLUMNS, SUPPORTED, area_name
 
 VERIFICATION_DIMENSIONS = ("identity", "contact", "experience", "qualification", "certification", "registration", "business", "portfolio")
 
 
 def _fold(s: str) -> str:
-    return re.sub(r"[^a-z0-9ऀ-ॿఀ-౿ ]+", " ", (s or "").lower()).strip()
+    return re.sub(r"[^a-z0-9ऀ-ॿఀ-౿ಀ-೿ ]+", " ", (s or "").lower()).strip()
 
 
 async def reputation(conn, provider_id: UUID) -> dict:
@@ -59,7 +59,7 @@ async def verifications(conn, provider_id: UUID) -> list[str]:
 
 async def expertise_of(conn, provider_id: UUID, lang: str) -> list[dict]:
     rows = await conn.fetch(
-        "SELECT a.id, a.name_en, a.name_hi, a.name_te, a.regulated, pe.years, pe.is_primary FROM provider_expertise pe JOIN expertise_area a ON a.id=pe.area_id "
+        f"SELECT a.id, {AREA_NAME_COLUMNS}, a.regulated, pe.years, pe.is_primary FROM provider_expertise pe JOIN expertise_area a ON a.id=pe.area_id "
         "WHERE pe.provider_id=$1 ORDER BY pe.is_primary DESC, pe.years DESC", provider_id)
     return [{"id": r["id"], "name": area_name(dict(r), lang), "years": r["years"], "primary": r["is_primary"], "regulated": r["regulated"]} for r in rows]
 
@@ -128,11 +128,11 @@ async def profile(conn, provider_id: UUID, lang: str, viewer_id: UUID | None = N
         return None
     p = await conn.fetchrow("SELECT * FROM provider WHERE member_id=$1", provider_id)
     services = db.rows(await conn.fetch(
-        "SELECT s.*, a.name_en, a.name_hi, a.name_te FROM service s JOIN expertise_area a ON a.id=s.area_id WHERE s.provider_id=$1 AND s.status='active' ORDER BY s.price_minor", provider_id))
+        f"SELECT s.*, {AREA_NAME_COLUMNS} FROM service s JOIN expertise_area a ON a.id=s.area_id WHERE s.provider_id=$1 AND s.status='active' ORDER BY s.price_minor", provider_id))
     for s in services:
         s["area_name"] = area_name(s, lang)
         s["id"] = str(s["id"]); s["provider_id"] = str(s["provider_id"])
-        for k in ("name_en", "name_hi", "name_te"):
+        for k in [f"name_{lang}" for lang in SUPPORTED]:
             s.pop(k, None)
     evidence = db.rows(await conn.fetch(
         "SELECT id, kind, title, issuer, year_from, year_to, status FROM provider_evidence WHERE provider_id=$1 ORDER BY kind, year_from DESC NULLS LAST", provider_id))
@@ -177,7 +177,7 @@ async def search(conn, *, lang: str, q: str = "", area: str | None = None, max_p
         """
         SELECT p.member_id, m.display_name, p.headline, p.intro, p.languages, p.city, p.reviewed_at,
                array_remove(array_agg(DISTINCT pe.area_id), NULL) AS areas,
-               array_remove(array_agg(DISTINCT a.name_en || ' ' || a.name_hi || ' ' || a.name_te), NULL) AS area_names,
+               array_remove(array_agg(DISTINCT nullif(concat_ws(' ', a.name_en, a.name_hi, a.name_te, a.name_mr, a.name_kn), '')), NULL) AS area_names,
                array_remove(array_agg(DISTINCT s.title || ' ' || s.description), NULL) AS service_text,
                min(s.price_minor) AS from_minor, min(s.duration_min) AS min_duration,
                (SELECT coalesce(sum(years),0) FROM provider_expertise x WHERE x.provider_id=p.member_id) AS years,

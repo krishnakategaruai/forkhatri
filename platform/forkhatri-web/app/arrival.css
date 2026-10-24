@@ -583,9 +583,15 @@
     letter-spacing: -0.025em;
   }
   .question:lang(hi),
-  .question:lang(te) {
+  .question:lang(te),
+  .question:lang(mr),
+  .question:lang(kn) {
     line-height: 1.4;
     font-size: clamp(1.5rem, 1.05rem + 2.2vw, 2.3rem);
+  }
+  /* Kannada glyphs carry tall vowel signs above and below the line. */
+  .question:lang(kn) {
+    line-height: 1.5;
   }
   .code-step {
     display: flex;
@@ -835,5 +841,35 @@
   .toast[data-tone="error"] {
     border-color: color-mix(in oklab, var(--danger) 55%, transparent);
     color: var(--danger);
+  }
+
+  /* Five language chips (en, hi, te, mr, kn) must fit beside the wordmark on a phone.
+     Wider screens keep the original sizes; below 440px the chips and wordmark tighten,
+     and below 373px only the mark is shown (the welcome line below still names ForKhatri). */
+  @media (max-width: 440px) {
+    .topbar {
+      gap: 8px;
+    }
+    .wordmark {
+      gap: 8px;
+      font-size: 1.08rem;
+    }
+    .lang-switch {
+      gap: 1px;
+    }
+    .lang-switch button {
+      min-width: 40px;
+      padding: 0 4px;
+    }
+  }
+  @media (max-width: 372px) {
+    .wordmark > :not(.wordmark-mark) {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
   }
 }

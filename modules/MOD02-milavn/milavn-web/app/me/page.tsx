@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import ActivityCard from '@/components/ActivityCard';
+import InterestPicker from '@/components/InterestPicker';
 import { Modal, Sheet } from '@/components/Sheet';
 import { Toast } from '@/components/States';
 import PlacePicker from '@/components/PlacePicker';
@@ -22,11 +23,11 @@ import { api, ApiError, resolveMediaUrl, type Card, type Profile } from '@/lib/a
 import { LANGUAGE_NATIVE, SUPPORTED_LANGUAGES, type Language } from '@/lib/i18n/config';
 import { chooseLanguage } from '@/lib/i18n/provider';
 import { formatDateLong, formatInr } from '@/lib/format';
+import { interestLabel } from '@/lib/interests';
 import { useIdentity } from '@/lib/identity';
 import { FORKHATRI_ACCOUNT_URL, FORKHATRI_ENTRANCE_URL } from '@/lib/platform';
 import { readThemeChoice, setThemeChoice, type ThemeChoice } from '@/lib/theme';
 
-type Taxonomy = { group: string; interests: { tag: string; label: string }[] }[];
 type MyTicket = { id: string; status: string; amount_paise: number; refund_amount_paise: number | null; title: string; slug: string; time_start: string };
 
 export default function MePage() {
@@ -36,8 +37,8 @@ export default function MePage() {
   const [edit, setEdit] = useState(false);
   const [settings, setSettings] = useState(false);
   const [bio, setBio] = useState(profile?.bio ?? '');
-  const [taxonomy, setTaxonomy] = useState<Taxonomy>([]);
-  const [extra, setExtra] = useState<string[]>([]);
+  // [FR003, 2026-10-06] Interests are optional and fully editable here: add, remove, or add your own words.
+  const [picks, setPicks] = useState<string[]>(profile?.interests ?? []);
   const [photo, setPhoto] = useState<File | null>(null);
   const [precision, setPrecision] = useState<string>('locality');
   const [noPhotos, setNoPhotos] = useState(false); // FR113
@@ -56,11 +57,10 @@ export default function MePage() {
   useEffect(() => {
     api<{ precision_level: string }>('/privacy/location').then((r) => setPrecision(r.precision_level)).catch(() => undefined);
     api<{ prefer_not_pictured: boolean }>('/moments/preference').then((r) => setNoPhotos(r.prefer_not_pictured)).catch(() => undefined);
-    api<Taxonomy>('/profile/interests/taxonomy').then(setTaxonomy).catch(() => undefined);
     api<{ participating: Card[]; hosting: Card[] }>('/occurrences/mine').then(setMine).catch(() => undefined);
     setTheme(readThemeChoice());
   }, [identity]);
-  useEffect(() => { setBio(profile?.bio ?? ''); }, [profile]);
+  useEffect(() => { setBio(profile?.bio ?? ''); setPicks(profile?.interests ?? []); }, [profile]);
   useEffect(() => {
     if (!identity) return;
     api<string[]>(`/people/reputation/${identity.member_id}`).then(setReputation).catch(() => setReputation([]));
@@ -71,9 +71,18 @@ export default function MePage() {
   const saveEdit = async () => {
     const form = new FormData();
     form.append('bio', bio);
-    if (extra.length) form.append('extra_interests', extra.join(','));
     if (photo) form.append('photo', photo);
-    try { const p = await api<Profile>('/profile/enrichment', { method: 'PATCH', form }); setProfile(p); setEdit(false); setExtra([]); setPhoto(null); say(t('profile.saved')); }
+    try {
+      let p = await api<Profile>('/profile/enrichment', { method: 'PATCH', form });
+      const changed = picks.length !== p.interests.length || picks.some((x) => !p.interests.includes(x));
+      if (changed) p = await api<Profile>('/profile/interests', { method: 'PUT', body: { interests: picks } });
+      setProfile(p); setEdit(false); setPhoto(null); say(t('profile.saved'));
+    }
+    catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
+  };
+  const removeInterest = async (tag: string) => {
+    if (!profile) return;
+    try { setProfile(await api<Profile>('/profile/interests', { method: 'PUT', body: { interests: profile.interests.filter((x) => x !== tag) } })); say(t('profile.saved')); }
     catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
   };
   const setLang = async (l: Language) => {
@@ -142,7 +151,15 @@ export default function MePage() {
 
         <section className="stack" style={{ gap: 8 }}>
           <span className="label">{t('profile.interests')}</span>
-          <div className="chips">{profile.interest_labels.map((l) => <span key={l} className="chip chip--sm chip--on">{l}</span>)}</div>
+          <div className="chips">
+            {profile.interests.map((tag, i) => (
+              <button key={tag} type="button" className="chip chip--sm chip--on" onClick={() => removeInterest(tag)} aria-label={t('interest.remove', { name: interestLabel(t, tag, profile.interest_labels[i]) })}>
+                {interestLabel(t, tag, profile.interest_labels[i])} <span aria-hidden="true">✕</span>
+              </button>
+            ))}
+            <button type="button" className="chip chip--sm" onClick={() => setEdit(true)}>＋ {t('interest.add')}</button>
+          </div>
+          {profile.interests.length === 0 && <span className="caption">{t('interest.noneYet')}</span>}
         </section>
 
         {mine && mine.participating.length > 0 && (
@@ -207,15 +224,25 @@ export default function MePage() {
       <Sheet open={edit} onClose={() => setEdit(false)} label={t('profile.edit')}>
         <div className="stack">
           <h2 className="h2">{t('profile.edit')}</h2>
-          <label className="field"><span className="field__label">{t('profile.photo')}</span><input className="field__input" type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} /></label>
+          <div className="field">
+            <span className="field__label">{t('profile.photo')}</span>
+            {/* Real buttons in the member's language, not the browser's English "Choose File". */}
+            <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+              <label className="btn btn--secondary btn--sm" style={{ cursor: 'pointer' }}>
+                {t('interest.takePhoto')}
+                <input type="file" accept="image/*" capture="user" hidden onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} />
+              </label>
+              <label className="btn btn--ghost btn--sm" style={{ cursor: 'pointer' }}>
+                {t('interest.fromGallery')}
+                <input type="file" accept="image/*" hidden onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} />
+              </label>
+            </div>
+            {photo && <span className="caption">{t('interest.photoChosen', { name: photo.name })}</span>}
+          </div>
           <label className="field"><span className="field__label">{t('profile.bio')}</span><textarea placeholder={t('profile.bioPlaceholder')} value={bio} onChange={(e) => setBio(e.target.value)} maxLength={280} /></label>
           <div className="stack" style={{ gap: 8 }}>
             <span className="field__label">{t('profile.interests')}</span>
-            <div className="chips">
-              {taxonomy.flatMap((g) => g.interests).filter((i) => !profile.interests.includes(i.tag)).map((i) => (
-                <button key={i.tag} className="chip chip--sm" aria-pressed={extra.includes(i.tag)} onClick={() => setExtra((c) => (c.includes(i.tag) ? c.filter((x) => x !== i.tag) : [...c, i.tag]))}>{i.label}</button>
-              ))}
-            </div>
+            <InterestPicker value={picks} onChange={setPicks} />
           </div>
           <button className="btn btn--primary btn--block" onClick={saveEdit}>{t('create.save')}</button>
         </div>

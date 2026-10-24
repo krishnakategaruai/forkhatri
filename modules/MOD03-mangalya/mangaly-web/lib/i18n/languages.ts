@@ -2,7 +2,7 @@
  * root layout can read the person's language (config.ts pulls in react-i18next,
  * which only runs in client components). */
 
-export const SUPPORTED_LANGUAGES = ["en", "hi", "te"] as const;
+export const SUPPORTED_LANGUAGES = ["en", "hi", "te", "mr", "kn"] as const;
 export type Language = (typeof SUPPORTED_LANGUAGES)[number];
 
 export const DEFAULT_LANGUAGE: Language = "en";

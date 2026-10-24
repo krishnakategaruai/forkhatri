@@ -38,6 +38,8 @@ export type Brief = {
   suggested: UnderstoodItem[];
   /** The candidate's own values each theme compares with. */
   theme_facts: Partial<Record<Theme, string[]>>;
+  /** [D14] The candidate has a horoscope chart; "Horoscope match" is offered only then. */
+  has_chart?: boolean;
 };
 
 /** [Owner, 2026-09-28] "What matters to you" — each theme becomes a
@@ -85,6 +87,26 @@ export const ITEM_FIELDS = [
   'manglik',
   'hobbies',
 ] as const;
+
+/** [D14, 2026-10-06] "Read my words" ADDS to what is already set and never
+ *  removes it. A point the words clearly speak to (it carries the words it
+ *  came from) replaces the point on the same field — the family's own words
+ *  win; every other point already set (the age and place from the profile,
+ *  points added by hand) stays exactly as it was. */
+export function mergeUnderstood(existing: UnderstoodItem[], understood: UnderstoodItem[]): UnderstoodItem[] {
+  const said = new Map(
+    understood.filter((u) => (u.quote ?? '').trim()).map((u) => [u.field, u] as const),
+  );
+  const merged = existing.map((it) => said.get(it.field) ?? it);
+  const have = new Set(merged.map((it) => it.field));
+  for (const u of understood) {
+    if (!have.has(u.field)) {
+      merged.push(u);
+      have.add(u.field);
+    }
+  }
+  return merged;
+}
 
 export function getBrief(): Promise<Brief | null> {
   return getJson<Brief>('/profile/matchmaker/brief');

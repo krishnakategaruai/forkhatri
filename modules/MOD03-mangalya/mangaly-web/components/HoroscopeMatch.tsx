@@ -66,6 +66,14 @@ type Props = {
 
 const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
 
+/** [D16] True when either person's birth time is not known (no time saved, or
+ * "Don't know the time"). The horoscope service then marks the match with
+ * BIRTH_TIME_UNKNOWN: the Lagna and Mangal Dosha cannot be fixed, so the
+ * result is shown as provisional. */
+export function isProvisional(match: { warnings?: { code: string }[] } | null | undefined): boolean {
+  return !!match?.warnings?.some((w) => w.code === "BIRTH_TIME_UNKNOWN");
+}
+
 /* One koota as a ring: how much of its points the pair has. One accent,
  * no red/green verdict — the family reads the numbers. */
 function Ring({ score, max, label }: { score: number; max: number; label: string }) {
@@ -151,6 +159,7 @@ export default function HoroscopeMatch({ otherAccountId, forCandidate, result, b
   }
 
   const { ashtakoota, mangal, warnings } = data.match;
+  const provisional = isProvisional(data.match);
   const cls = (c: string) => {
     const star = /^STAR_(\d+)$/.exec(c);
     if (star) return t(`profile:option.nakshatra.${NAKSHATRA_KEYS[Number(star[1]) - 1]}`);
@@ -303,6 +312,12 @@ export default function HoroscopeMatch({ otherAccountId, forCandidate, result, b
   return (
     <section className="hmatch" aria-label={t("horoscope:title")}>
       {head}
+
+      {provisional && (
+        <p className="hmatch__provisional" role="note">
+          {t("horoscope:provisional.label")}
+        </p>
+      )}
 
       {order.map((system) => (system === "porutham" ? poruthamBlock : ashtakootaBlock))}
 

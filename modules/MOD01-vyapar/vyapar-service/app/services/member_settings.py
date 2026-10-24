@@ -19,7 +19,7 @@ from app.taxonomy_cache import labels_for
 
 
 class LanguagePatch(BaseModel):
-    language: Literal["en", "hi", "te"]
+    language: Literal["en", "hi", "te", "mr", "kn"]
 
 
 class ProfileBrief(BaseModel):

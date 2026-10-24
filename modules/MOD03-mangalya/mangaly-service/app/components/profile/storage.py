@@ -19,6 +19,7 @@ TR006's actual signed-URL logic replaces this local stand-in.
 
 from __future__ import annotations
 
+import logging
 import uuid
 from pathlib import Path
 
@@ -27,6 +28,7 @@ from fastapi import UploadFile
 from app.config.settings import get_settings
 
 _LOCAL_MEDIA_ROOT = Path(__file__).resolve().parents[3] / ".local-media"
+_log = logging.getLogger(__name__)
 _ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
 _MAX_BYTES = 8 * 1024 * 1024  # 8 MiB — generous for a phone photo, bounded regardless
 # A voice introduction is short by design; the browser records webm/mp4.
@@ -41,6 +43,16 @@ _MAX_AUDIO_BYTES = 5 * 1024 * 1024  # 5 MiB — about a minute of speech, bounde
 
 class UnsupportedMedia(ValueError):
     """Raised for a content-type or size this endpoint does not accept."""
+
+
+def _sniff_image_type(data: bytes) -> str:
+    if data[:3] == bytes([0xFF, 0xD8, 0xFF]):
+        return "image/jpeg"
+    if data[:8] == bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]):
+        return "image/png"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    return ""
 
 
 async def save_photo(profile_id: uuid.UUID, upload: UploadFile) -> str:
@@ -60,15 +72,16 @@ async def save_photo(profile_id: uuid.UUID, upload: UploadFile) -> str:
             "implements the local-disk stand-in — wire the real backend here."
         )
 
-    content_type = upload.content_type or ""
-    if content_type not in _ALLOWED_CONTENT_TYPES:
-        raise UnsupportedMedia(f"unsupported content type: {content_type!r}")
-
     data = await upload.read()
     if not data:
         raise UnsupportedMedia("empty file")
     if len(data) > _MAX_BYTES:
         raise UnsupportedMedia(f"file exceeds {_MAX_BYTES} bytes")
+    # Phones and some browsers label a photo "image/jpg", "application/octet-stream"
+    # or nothing at all, so the picture's own first bytes decide what it is.
+    content_type = _sniff_image_type(data)
+    if content_type not in _ALLOWED_CONTENT_TYPES:
+        raise UnsupportedMedia(f"unsupported content type: {upload.content_type!r}")
 
     ext = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}[content_type]
     directory = _LOCAL_MEDIA_ROOT / str(profile_id)
@@ -131,3 +144,24 @@ def local_path(storage_ref: str) -> Path:
     if root not in path.parents:
         raise ValueError(f"storage_ref escapes the media root: {storage_ref!r}")
     return path
+
+
+def delete_stored_file(storage_ref: str | None) -> None:
+    """[D17, 2026-10-06] Remove the file behind a `storage_ref` whose row is gone.
+
+    Called only after the database change that dropped or replaced the row has
+    committed (see `profile.interface._delete_file_after_commit`). A file that
+    is already missing is fine; a ref that is not local, or that would point
+    outside the media root, is left alone. A failure is logged (by ref only,
+    never by content) and never surfaces to the member: the row change has
+    already succeeded."""
+    if not storage_ref or not storage_ref.startswith("local://"):
+        return
+    try:
+        path = local_path(storage_ref)
+    except ValueError:
+        return
+    try:
+        path.unlink(missing_ok=True)
+    except OSError:
+        _log.warning("could not delete stored media file for ref %s", storage_ref)

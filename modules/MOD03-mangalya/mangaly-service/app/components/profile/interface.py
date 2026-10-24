@@ -22,7 +22,7 @@ from pathlib import Path
 from uuid import UUID, uuid4
 
 from fastapi import UploadFile
-from sqlalchemy import delete, func, insert, select, text, update
+from sqlalchemy import delete, event, func, insert, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -440,10 +440,33 @@ async def add_photo(session: AsyncSession, *, account_id: UUID, photo: UploadFil
     return PhotoSummary(id=media_id, url=storage.resolve_url(storage_ref), is_primary=is_primary)
 
 
+def _delete_file_after_commit(session: AsyncSession, storage_ref: str | None) -> None:
+    """[D17, 2026-10-06] Delete a removed or replaced photo's stored file, but
+    only once the transaction that dropped its row has committed: a rolled-back
+    removal keeps its file. Every upload gets its own uuid ref and no row copies
+    another's ref, so the file belongs to that one row alone."""
+    if not storage_ref:
+        return
+    sync = session.sync_session
+    settled = False
+
+    def on_commit(_session: object) -> None:
+        nonlocal settled
+        if not settled:
+            settled = True
+            storage.delete_stored_file(storage_ref)
+
+    def on_rollback(_session: object) -> None:
+        nonlocal settled
+        settled = True
+
+    event.listen(sync, "after_commit", on_commit, once=True)
+    event.listen(sync, "after_rollback", on_rollback, once=True)
+
+
 async def delete_photo(session: AsyncSession, *, account_id: UUID, media_id: UUID) -> None:
     """Remove a photo; if it was the main one, the oldest remaining photo is
-    promoted. The file itself is left on the local-disk stand-in — deleting
-    stored bytes belongs to TR006's real Object Storage lifecycle, not here."""
+    promoted. [D17] Its stored file is deleted once the removal commits."""
     profile_id = await _own_profile_id(session, account_id=account_id)
     if profile_id is None:
         raise ProfileNotFound
@@ -467,6 +490,7 @@ async def delete_photo(session: AsyncSession, *, account_id: UUID, media_id: UUI
         event_type="ProfilePhotoRemoved",
         payload={"profile_id": str(profile_id), "media_id": str(media_id)},
     )
+    _delete_file_after_commit(session, target.storage_ref)
 
 
 async def set_primary_photo(session: AsyncSession, *, account_id: UUID, media_id: UUID) -> None:
@@ -1244,6 +1268,13 @@ async def set_member_photo(
     """Store the member's own photo (one; a new one replaces the old, and a
     new photo removes a face-check confirmation, migration 047's trigger)."""
     await _bind_viewer(session, account_id)
+    # [D17] The photo being replaced, so its file can go once the swap commits.
+    previous = (
+        await session.execute(
+            text("SELECT photo_ref FROM mangaly_profile.member_profile WHERE account_id = :a"),
+            {"a": account_id},
+        )
+    ).scalar_one_or_none()
     ref = await storage.save_photo(account_id, photo)
     await session.execute(
         text(
@@ -1252,6 +1283,8 @@ async def set_member_photo(
         ),
         {"a": account_id, "r": ref},
     )
+    if previous and previous != ref:
+        _delete_file_after_commit(session, previous)
     result = await get_member_profile(session, account_id=account_id)
     assert result is not None
     return result

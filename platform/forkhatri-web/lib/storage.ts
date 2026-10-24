@@ -4,7 +4,7 @@
  * - the interface language chosen while signed out
  * Every access is guarded: private windows and blocked storage must not break the page.
  */
-import type { Lang, ModuleEntry } from "./api";
+import { isLang, type Lang, type ModuleEntry } from "./api";
 
 const REGISTRY_KEY = "fk.registry.v1";
 const LANG_KEY = "fk.lang";
@@ -31,7 +31,7 @@ export function saveCachedRegistry(modules: ModuleEntry[]) {
 export function loadStoredLang(): Lang | null {
   try {
     const value = localStorage.getItem(LANG_KEY);
-    return value === "en" || value === "hi" || value === "te" ? value : null;
+    return isLang(value) ? value : null;
   } catch {
     return null;
   }

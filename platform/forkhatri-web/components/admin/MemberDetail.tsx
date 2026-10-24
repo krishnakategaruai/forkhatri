@@ -32,7 +32,7 @@ import {
 } from "./kit";
 
 type Act = "suspend" | "lift" | "signOut" | "ban" | "contact" | null;
-const LANG_NAMES: Record<string, string> = { en: "English", hi: "हिन्दी", te: "తెలుగు" };
+const LANG_NAMES: Record<string, string> = { en: "English", hi: "हिन्दी", te: "తెలుగు", mr: "मराठी", kn: "ಕನ್ನಡ" };
 
 export default function MemberDetail({ memberId }: { memberId: string }) {
   const { t, lang, can, me, changed } = useConsole();

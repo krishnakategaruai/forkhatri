@@ -1,5 +1,7 @@
 # [Voice interview, 2026-09-30] Readers for SPOKEN answers, in English, Hindi,
-# Telugu, Hinglish and Tenglish.
+# Telugu, Hinglish and Tenglish. [2026-10-06] Marathi and Kannada (both
+# scripts' words plus common romanised forms) are added alongside; every
+# en/hi/te form below is unchanged.
 #
 # The voice interview asks one question at a time, so each answer is short
 # and about one thing: "पंद्रह से अठारह हज़ार", "Kukatpally lo", "repu
@@ -76,6 +78,50 @@ _REPEAT = _forms(
 _POLITE = _forms("please", "plz", "sir", "madam", "ji", "जी", "अंडी", "andi", "అండి")
 
 
+def _more(forms: tuple[str, ...], *words: str) -> tuple[str, ...]:
+    # `forms` plus `words`, longest first; the existing forms stay as they are.
+    return tuple(sorted(set(forms) | set(_forms(*words)), key=len, reverse=True))
+
+
+# [Marathi + Kannada, 2026-10-06] Standard Marathi (हो / नाही, not Hindi
+# हाँ / नहीं) and standard Kannada, as people say them and as a speech
+# recogniser writes them, plus the romanised forms people type. नको and ಬೇಡ
+# ("don't want") are a "no": to "Do they need a bike?" they are the answer.
+_YES = _more(
+    _YES,
+    "हो", "होय", "हो हो", "हो बरोबर", "होय बरोबर", "बरोबर", "बरोबर आहे", "ठीक आहे", "चालेल", "हो चालेल", "अगदी बरोबर",
+    "ho", "hoy", "ho barobar", "barobar", "barobar aahe", "barobar ahe", "theek aahe", "thik ahe", "chalel",
+    "ಹೌದು", "ಹೌದು ಸರಿ", "ಹೌದ್", "ಹೂಂ", "ಹೂ", "ಸರಿ", "ಸರಿ ಇದೆ", "ಸರಿಯಾಗಿದೆ", "ಆಯ್ತು", "ಆಯಿತು", "ಓಕೆ", "ಹೌದು ಸರ್",
+    "houdu", "haudu", "hoon", "aytu", "aaytu", "sari ide",
+)
+_NO = _more(
+    _NO,
+    "नाही", "नाही नाही", "नाही हो", "नको", "नको नको", "चूक", "चुकीचे", "चुकीचं", "बरोबर नाही",
+    "naahi", "nako", "nako nako", "chuk", "chukiche",
+    "ಇಲ್ಲ", "ಇಲ್ಲಾ", "ಇಲ್ಲ ಇಲ್ಲ", "ಬೇಡ", "ಬೇಡ ಬೇಡ", "ಅಲ್ಲ", "ತಪ್ಪು", "ಸರಿ ಇಲ್ಲ", "ಸರಿಯಲ್ಲ",
+    "illa", "illaa", "beda", "alla", "sari illa",
+)
+_SKIP = _more(
+    _SKIP,
+    "वगळा", "हे वगळा", "पुढे", "पुढे चला", "पुढचा", "पुढचा प्रश्न", "सोडा", "सोडून द्या", "राहू द्या", "माहीत नाही",
+    "माहिती नाही", "मला माहीत नाही", "नंतर", "नंतर सांगतो", "नंतर सांगते", "स्किप करा",
+    "vagla", "pudhe", "pudhe chala", "pudhcha", "soda", "sodun dya", "rahu dya", "mahit nahi", "mahiti nahi", "nantar",
+    "ಬಿಡಿ", "ಬಿಟ್ಟುಬಿಡಿ", "ಬಿಟ್ಟು ಬಿಡಿ", "ಮುಂದೆ", "ಮುಂದಿನದು", "ಮುಂದಿನ ಪ್ರಶ್ನೆ", "ಗೊತ್ತಿಲ್ಲ", "ಗೊತ್ತಿಲ್ಲಾ", "ನನಗೆ ಗೊತ್ತಿಲ್ಲ",
+    "ಆಮೇಲೆ", "ನಂತರ", "ಆಮೇಲೆ ಹೇಳ್ತೀನಿ", "ಸ್ಕಿಪ್", "ಸ್ಕಿಪ್ ಮಾಡಿ",
+    "bidi", "bittubidi", "bittu bidi", "munde", "mundina prashne", "gottilla", "amele", "aamele", "skip maadi",
+)
+_REPEAT = _more(
+    _REPEAT,
+    "पुन्हा", "पुन्हा सांगा", "पुन्हा एकदा", "परत", "परत सांगा", "परत एकदा", "काय", "काय म्हणालात", "काय म्हणाला",
+    "समजले नाही", "समजलं नाही", "कळले नाही", "कळलं नाही",
+    "punha", "punha sanga", "parat sanga", "parat ekda", "kay", "kaay", "kay mhanalat",
+    "ಮತ್ತೆ", "ಮತ್ತೊಮ್ಮೆ", "ಮತ್ತೆ ಹೇಳಿ", "ಇನ್ನೊಮ್ಮೆ", "ಇನ್ನೊಮ್ಮೆ ಹೇಳಿ", "ಏನು", "ಏನಂದ್ರಿ", "ಏನು ಹೇಳಿದ್ರಿ", "ಏನು ಹೇಳಿದಿರಿ",
+    "ಅರ್ಥ ಆಗಲಿಲ್ಲ", "ಅರ್ಥವಾಗಲಿಲ್ಲ",
+    "matte", "matte heli", "mattomme", "innomme", "innomme heli", "enu", "enandri",
+)
+_POLITE = _more(_POLITE, "कृपया", "सर", "मॅडम", "ದಯವಿಟ್ಟು", "ಸರ್", "ಮೇಡಂ")
+
+
 def _match_whole(t: str, forms: tuple[str, ...]) -> bool:
     return t in forms
 
@@ -108,8 +154,9 @@ def control_intent(text: str) -> tuple[str, str]:
     for intent, forms in (("yes", _YES), ("no", _NO)):
         rest = _match_lead(t, forms)
         # Only real yes/no words lead an answer: "na" or "ha" inside a
-        # sentence are too short to mean "no"/"yes" on their own.
-        if rest and len(rest) >= 2 and not any(t.startswith(f + " ") for f in ("na", "ha", "ji", "ya", "ok")):
+        # sentence are too short to mean "no"/"yes" on their own. Marathi
+        # "हो"/"ho" (yes) leads Hindi "हो गया", so it never leads an answer.
+        if rest and len(rest) >= 2 and not any(t.startswith(f + " ") for f in ("na", "ha", "ji", "ya", "ok", "ho", "हो")):
             return intent, rest
     return "answer", t
 
@@ -156,6 +203,63 @@ _NUM_WORDS.update({norm(w): v for w, v in {
     # halves
     "ढाई": 2.5, "डेढ़": 1.5, "डेढ": 1.5, "dhai": 2.5, "dedh": 1.5,
 }.items()})
+
+# [Marathi + Kannada, 2026-10-06] Added with setdefault, so no Hindi, Telugu
+# or English reading above changes.
+_MR_1_99 = (
+    "एक दोन तीन चार पाच सहा सात आठ नऊ दहा अकरा बारा तेरा चौदा पंधरा सोळा सतरा अठरा एकोणीस वीस "
+    "एकवीस बावीस तेवीस चोवीस पंचवीस सव्वीस सत्तावीस अठ्ठावीस एकोणतीस तीस एकतीस बत्तीस तेहेतीस चौतीस पस्तीस छत्तीस "
+    "सदतीस अडतीस एकोणचाळीस चाळीस एक्केचाळीस बेचाळीस त्रेचाळीस चव्वेचाळीस पंचेचाळीस सेहेचाळीस सत्तेचाळीस अठ्ठेचाळीस "
+    "एकोणपन्नास पन्नास एक्कावन्न बावन्न त्रेपन्न चोपन्न पंचावन्न छप्पन्न सत्तावन्न अठ्ठावन्न एकोणसाठ साठ एकसष्ठ बासष्ठ "
+    "त्रेसष्ठ चौसष्ठ पासष्ठ सहासष्ठ सदुसष्ठ अडुसष्ठ एकोणसत्तर सत्तर एकाहत्तर बाहत्तर त्र्याहत्तर चौऱ्याहत्तर पंच्याहत्तर "
+    "शहात्तर सत्याहत्तर अठ्ठ्याहत्तर एकोणऐंशी ऐंशी एक्याऐंशी ब्याऐंशी त्र्याऐंशी चौऱ्याऐंशी पंच्याऐंशी शहाऐंशी सत्त्याऐंशी "
+    "अठ्ठ्याऐंशी एकोणनव्वद नव्वद एक्क्याण्णव ब्याण्णव त्र्याण्णव चौऱ्याण्णव पंच्याण्णव शहाण्णव सत्त्याण्णव अठ्ठ्याण्णव "
+    "नव्व्याण्णव"
+).split()
+assert len(_MR_1_99) == 99
+_KN_UNITS = {1: "ಒಂದು", 2: "ಎರಡು", 3: "ಮೂರು", 4: "ನಾಲ್ಕು", 5: "ಐದು", 6: "ಆರು", 7: "ಏಳು", 8: "ಎಂಟು", 9: "ಒಂಬತ್ತು"}
+_KN_TEENS = {10: "ಹತ್ತು", 11: "ಹನ್ನೊಂದು", 12: "ಹನ್ನೆರಡು", 13: "ಹದಿಮೂರು", 14: "ಹದಿನಾಲ್ಕು", 15: "ಹದಿನೈದು", 16: "ಹದಿನಾರು",
+             17: "ಹದಿನೇಳು", 18: "ಹದಿನೆಂಟು", 19: "ಹತ್ತೊಂಬತ್ತು"}
+# Kannada writes 21–99 as one word: the tens stem + "ತ್ತ" joined to the unit
+# (ಇಪ್ಪತ್ತೈದು = 25, ಮೂವತ್ತೆರಡು = 32; 3 and 4 also contract: ಇಪ್ಪತ್ಮೂರು, ಇಪ್ಪತ್ನಾಲ್ಕು).
+_KN_TENS_STEM = {20: ("ಇಪ್ಪ",), 30: ("ಮೂವ",), 40: ("ನಲವ", "ನಲ್ವ"), 50: ("ಐವ",), 60: ("ಅರವ",), 70: ("ಎಪ್ಪ",),
+                 80: ("ಎಂಬ", "ಎಂಭ"), 90: ("ತೊಂಬ",)}
+_KN_JOIN = {1: ("ತ್ತೊಂದು",), 2: ("ತ್ತೆರಡು",), 3: ("ತ್ಮೂರು", "ತ್ತಮೂರು", "ತ್ತ್ಮೂರು"), 4: ("ತ್ನಾಲ್ಕು", "ತ್ತನಾಲ್ಕು", "ತ್ತ್ನಾಲ್ಕು"),
+            5: ("ತ್ತೈದು",), 6: ("ತ್ತಾರು",), 7: ("ತ್ತೇಳು",), 8: ("ತ್ತೆಂಟು",), 9: ("ತ್ತೊಂಬತ್ತು", "ತ್ತೊಂಭತ್ತು")}
+_MR_KN_NUMBERS: dict[str, float] = {w: i for i, w in enumerate(_MR_1_99, start=1)}
+_MR_KN_NUMBERS.update({w.replace("ऱ", "र"): i for i, w in enumerate(_MR_1_99, start=1) if "ऱ" in w})
+_MR_KN_NUMBERS.update({w: v for v, w in {**_KN_UNITS, **_KN_TEENS}.items()})
+for _tens, _stems in _KN_TENS_STEM.items():
+    for _stem in _stems:
+        _MR_KN_NUMBERS[_stem + "ತ್ತು"] = _tens
+        for _unit, _joins in _KN_JOIN.items():
+            for _j in _joins:
+                _MR_KN_NUMBERS[_stem + _j] = _tens + _unit
+_MR_KN_NUMBERS.update({
+    # Marathi spelling variants, hundreds, people and fractions
+    "छपन्न": 56, "पंचाहत्तर": 75, "सत्त्याहत्तर": 77, "पंचाण्णव": 95, "नव्याण्णव": 99, "एक्याण्णव": 91, "शंभर": 100,
+    "एकशे": 100, "दोनशे": 200, "तीनशे": 300, "चारशे": 400, "पाचशे": 500, "सहाशे": 600, "सातशे": 700, "आठशे": 800,
+    "नऊशे": 900, "दोघे": 2, "दोघी": 2, "दोघं": 2, "तिघे": 3, "तिघी": 3, "चौघे": 4, "चौघी": 4,
+    "दीड": 1.5, "अडीच": 2.5, "अर्धा": 0.5, "पाऊण": 0.75,
+    # Marathi, romanised ("don" is left out: "don t know" would read as 2)
+    "paach": 5, "saha": 6, "daha": 10, "akra": 11, "pandhra": 15, "vees": 20, "pannas": 50, "shambhar": 100,
+    "didh": 1.5, "adich": 2.5,
+    # Kannada variants, hundreds, people and fractions
+    "ಒಂಭತ್ತು": 9, "ಒಬ್ಬರು": 1, "ಒಬ್ಬ": 1, "ಒಬ್ಬಳು": 1, "ಇಬ್ಬರು": 2, "ಮೂವರು": 3, "ನಾಲ್ವರು": 4, "ಐವರು": 5,
+    "ಇನ್ನೂರು": 200, "ಮುನ್ನೂರು": 300, "ನಾನೂರು": 400, "ನಾನ್ನೂರು": 400, "ಐನೂರು": 500, "ಆರುನೂರು": 600, "ಆರ್ನೂರು": 600,
+    "ಏಳುನೂರು": 700, "ಏಳ್ನೂರು": 700, "ಎಂಟುನೂರು": 800, "ಎಂಟ್ನೂರು": 800, "ಒಂಬೈನೂರು": 900, "ಒಂಬತ್ತುನೂರು": 900,
+    "ಒಂದೂವರೆ": 1.5, "ಎರಡೂವರೆ": 2.5, "ಮೂರೂವರೆ": 3.5, "ನಾಲ್ಕೂವರೆ": 4.5, "ಐದೂವರೆ": 5.5, "ಅರ್ಧ": 0.5, "ಮುಕ್ಕಾಲು": 0.75,
+    # Kannada, romanised
+    "ondu": 1, "eradu": 2, "mooru": 3, "nalku": 4, "naalku": 4, "elu": 7, "entu": 8, "ombattu": 9, "hattu": 10,
+    "hadinaidu": 15, "ippattu": 20, "moovattu": 30, "nalavattu": 40, "aivattu": 50, "obbaru": 1, "ibbaru": 2,
+    "ondoovare": 1.5, "eradoovare": 2.5,
+})
+for _w, _v in _MR_KN_NUMBERS.items():
+    _NUM_WORDS.setdefault(norm(_w), _v)
+# Marathi and Kannada hundreds that a smaller number follows in one amount:
+# "दोनशे पन्नास" = 250, "ಇನ್ನೂರು ಐವತ್ತು" = 250.
+_MR_KN_HUNDREDS = {norm(w) for w, v in _MR_KN_NUMBERS.items() if v >= 100 and norm(w) in _NUM_WORDS
+                   and _NUM_WORDS[norm(w)] == v and not w.isascii()}
 _TENS = {v for v in (20, 30, 40, 50, 60, 70, 80, 90)}
 _HUNDRED = {norm(w) for w in ("hundred", "sau", "सौ", "వంద", "వందలు", "వందల", "నూరు", "vanda", "vandalu")}
 _BIG: dict[str, int] = {norm(w): v for w, v in {
@@ -167,6 +271,15 @@ _BIG: dict[str, int] = {norm(w): v for w, v in {
 }.items()}
 _HALF_PLUS = {norm(w) for w in ("साढ़े", "साढे", "sadhe", "saadhe")}
 _TOKEN = re.compile(r"\d[\d,]*(?:\.\d+)?|[a-zऀ-ॿఀ-౿]+")
+# [Marathi + Kannada, 2026-10-06]
+_HUNDRED |= {norm(w) for w in ("शे", "ನೂರು", "ನೂರ", "nooru")} - set(_NUM_WORDS)
+for _w, _v in {"कोटी": 10_000_000, "hajar": 1000, "ಸಾವಿರ": 1000, "ಸಾವಿರದ": 1000, "savira": 1000, "saavira": 1000,
+               "ಲಕ್ಷ": 100_000, "ಲಕ್ಷದ": 100_000, "ಲಕ್ಷಗಳು": 100_000, "ಕೋಟಿ": 10_000_000, "koti": 10_000_000}.items():
+    _BIG.setdefault(norm(_w), _v)
+_HALF_PLUS |= {norm(w) for w in ("साडे", "sade", "saade")}
+# Marathi quarter prefixes: सव्वा दोन = 2.25, पावणे दोन = 1.75.
+_FRACTION_PREFIX = {norm(w): v for w, v in {"सव्वा": 0.25, "savva": 0.25, "पावणे": -0.25, "pavne": -0.25}.items()}
+_TOKEN = re.compile(r"\d[\d,]*(?:\.\d+)?|[a-zऀ-ॿఀ-౿ಀ-೿]+")
 
 
 def _num(v: float) -> str:
@@ -198,7 +311,8 @@ def words_to_digits(text: str) -> str:
                 break
             prev_kind, prev_w = run[-1]
             # "15 18" or "पंद्रह अठारह" are two numbers, not one; "twenty five" is one.
-            if k2 == "num" and prev_kind == "num" and not (_value(prev_w) in _TENS and _value(tokens[j][2]) < 10):
+            if k2 == "num" and prev_kind == "num" and not (_value(prev_w) in _TENS and _value(tokens[j][2]) < 10) \
+                    and not (prev_w in _MR_KN_HUNDREDS and _value(tokens[j][2]) < 100):  # "दोनशे पन्नास" = 250
                 break
             if k2 == "num" and prev_kind == "big" and _value(tokens[j][2]) >= 1000:
                 break
@@ -226,6 +340,8 @@ def _kind(w: str) -> str | None:
         return "big"
     if w in _HALF_PLUS:
         return "half"
+    if w in _FRACTION_PREFIX:
+        return "frac"
     return None
 
 
@@ -239,20 +355,22 @@ def _render(run: list[tuple[str, str]]) -> str | None:
     kinds = [k for k, _ in run]
     if kinds == ["num"] and run[0][1][0].isdigit():
         return None  # already digits
-    if all(k in ("hundred", "big", "half") for k in kinds):
+    if all(k in ("hundred", "big", "half", "frac") for k in kinds):
         return None  # "lakh" alone is not a number
     # "पंद्रह हज़ार" / "18 వేలు": keep the multiplier as a word, so a range
     # "15 से 18 हज़ार" still reads as thousands on both sides.
-    if kinds[-1] == "big" and kinds.count("big") == 1 and "hundred" not in kinds and "half" not in kinds:
+    if kinds[-1] == "big" and kinds.count("big") == 1 and "hundred" not in kinds and "half" not in kinds and "frac" not in kinds:
         n = sum(_value(w) for k, w in run if k == "num")
         return f"{_num(n)} {run[-1][1]}"
-    total, cur, half = 0.0, None, False
+    total, cur, half, frac = 0.0, None, False, 0.0
     for k, w in run:
         if k == "half":
             half = True
+        elif k == "frac":
+            frac = _FRACTION_PREFIX[w]
         elif k == "num":
-            v = _value(w) + (0.5 if half else 0)
-            half = False
+            v = _value(w) + (0.5 if half else 0) + frac
+            half, frac = False, 0.0
             cur = (cur or 0) + v
         elif k == "hundred":
             cur = (cur or 1) * 100
@@ -282,14 +400,21 @@ _DAYPART_WORDS: dict[str, str] = {norm(w): p for w, p in {
     "evening": "pm", "shaam": "pm", "sham": "pm", "शाम": "pm", "sayantram": "pm", "saayantram": "pm", "సాయంత్రం": "pm",
     "night": "night", "raat": "night", "रात": "night", "ratri": "night", "రాత్రి": "night",
 }.items()}
+for _w, _p in {  # [Marathi + Kannada, 2026-10-06]
+    "सकाळ": "am", "सकाळी": "am", "दुपार": "noon", "दुपारी": "noon", "संध्याकाळ": "pm", "संध्याकाळी": "pm", "सायंकाळी": "pm",
+    "रात्र": "night", "रात्री": "night", "sakali": "am", "dupari": "noon", "sandhyakali": "pm",
+    "ಬೆಳಿಗ್ಗೆ": "am", "ಬೆಳಗ್ಗೆ": "am", "ಮುಂಜಾನೆ": "am", "ಮಧ್ಯಾಹ್ನ": "noon", "ಸಂಜೆ": "pm", "ರಾತ್ರಿ": "night",
+    "beligge": "am", "belagge": "am", "madhyahna": "noon", "sanje": "pm",
+}.items():
+    _DAYPART_WORDS.setdefault(norm(_w), _p)
 _DP = "|".join(sorted(map(re.escape, _DAYPART_WORDS), key=len, reverse=True))
-_MARK = r"am|pm|a m|p m|baje|बजे|గంటలకు|గంటల|గంటలు|o clock|oclock"
-_SEP = r"-|–|to|till|until|se|से|nundi|nunchi|నుండి|నుంచి"
+_MARK = r"am|pm|a m|p m|baje|बजे|గంటలకు|గంటల|గంటలు|o clock|oclock" + r"|वाजता|वाजेपर्यंत|ಗಂಟೆಯವರೆಗೆ|ಗಂಟೆಗೆ|ಗಂಟೆ"
+_SEP = r"-|–|to|till|until|se|से|nundi|nunchi|నుండి|నుంచి" + r"|वाजल्यापासून|पासून|ते|ಗಂಟೆಯಿಂದ|ರಿಂದ"
 _HOURS_RANGE = re.compile(
     rf"(?:({_DP})\s*)?(\d{{1,2}})(?:[:.](\d{{2}}))?\s*({_MARK})?(?:\s*(?:in the\s+|ki\s+|की\s+)?({_DP}))?\s*(?:{_SEP})\s*"
     rf"(?:({_DP})\s*)?(\d{{1,2}})(?:[:.](\d{{2}}))?\s*({_MARK})?(?:\s*(?:in the\s+)?({_DP}))?"
 )
-_HOURS_COUNT = re.compile(r"(\d{1,2})\s*(?:hours?|hrs?|ghante|ghanta|घंटे|घंटा|గంటలు|గంటల)")
+_HOURS_COUNT = re.compile(r"(\d{1,2})\s*(?:hours?|hrs?|ghante|ghanta|घंटे|घंटा|గంటలు|గంటల|तास|taas|ಗಂಟೆಗಳು|ಗಂಟೆಗಳ|ಗಂಟೆ|gante)")
 
 
 def _to24(h: int, mark: str | None, part: str | None, default: str) -> int:
@@ -351,6 +476,12 @@ _WEEKDAYS: dict[str, int] = {norm(w): d for w, d in {
     "గురువారం": 3, "sukravaram": 4, "shukravaram": 4, "శుక్రవారం": 4, "shanivaram": 5, "శనివారం": 5, "aadivaram": 6,
     "adivaram": 6, "ఆదివారం": 6,
 }.items()}
+for _w, _d in {  # [Marathi + Kannada, 2026-10-06]
+    "मंगळवार": 1, "ಸೋಮವಾರ": 0, "ಮಂಗಳವಾರ": 1, "ಬುಧವಾರ": 2, "ಗುರುವಾರ": 3, "ಶುಕ್ರವಾರ": 4, "ಶನಿವಾರ": 5, "ಭಾನುವಾರ": 6,
+    "ಆದಿತ್ಯವಾರ": 6, "somavara": 0, "mangalavara": 1, "budhavara": 2, "guruvara": 3, "shukravara": 4, "shanivara": 5,
+    "bhanuvara": 6,
+}.items():
+    _WEEKDAYS.setdefault(norm(_w), _d)
 _MONTHS: dict[str, int] = {norm(w): i for w, i in {
     "january": 1, "jan": 1, "february": 2, "feb": 2, "march": 3, "mar": 3, "april": 4, "apr": 4, "may": 5, "june": 6,
     "jun": 6, "july": 7, "jul": 7, "august": 8, "aug": 8, "september": 9, "sep": 9, "sept": 9, "october": 10, "oct": 10,
@@ -360,6 +491,12 @@ _MONTHS: dict[str, int] = {norm(w): i for w, i in {
     "జనవరి": 1, "ఫిబ్రవరి": 2, "మార్చి": 3, "ఏప్రిల్": 4, "మే": 5, "జూన్": 6, "జూలై": 7, "ఆగస్టు": 8, "సెప్టెంబర్": 9,
     "అక్టోబర్": 10, "నవంబర్": 11, "డిసెంబర్": 12,
 }.items()}
+for _w, _m in {  # [Marathi + Kannada, 2026-10-06] ("मे" for May is left out: Hindi speech often writes में as मे)
+    "जानेवारी": 1, "फेब्रुवारी": 2, "एप्रिल": 4, "जुलै": 7, "ऑगस्ट": 8, "सप्टेंबर": 9, "ऑक्टोबर": 10, "नोव्हेंबर": 11,
+    "डिसेंबर": 12, "ಜನವರಿ": 1, "ಫೆಬ್ರವರಿ": 2, "ಮಾರ್ಚ್": 3, "ಏಪ್ರಿಲ್": 4, "ಮೇ": 5, "ಜೂನ್": 6, "ಜುಲೈ": 7, "ಆಗಸ್ಟ್": 8,
+    "ಸೆಪ್ಟೆಂಬರ್": 9, "ಅಕ್ಟೋಬರ್": 10, "ನವೆಂಬರ್": 11, "ಡಿಸೆಂಬರ್": 12,
+}.items():
+    _MONTHS.setdefault(norm(_w), _m)
 _TODAY = re.compile(r"(?<![a-z])(?:today|aaj|aj|abhi|right now|now|immediately|asap|urgent|urgently|turant|ivvala|ee roju|eeroju|ippude|ventane)(?![a-z])"
                     r"|आज|अभी|तुरंत|ఈరోజు|ఈ రోజు|ఇవ్వాళ|ఇప్పుడే|వెంటనే|అర్జెంట్")
 _TOMORROW = re.compile(r"(?<![a-z])(?:tomorrow|kal|repu|reppu)(?![a-z])|कल|రేపు")
@@ -371,15 +508,28 @@ _ONGOING = re.compile(r"(?<![a-z])(?:ongoing|long term|long-term|regular|continu
 _NEXT = re.compile(r"(?<![a-z])(?:next|coming|agle|agla|vache|vachche)(?![a-z])|अगले|अगला|आने वाले|వచ్చే")
 _SPAN = re.compile(
     r"(?:(\d+(?:\.\d+)?)\s*)?(?<![a-z])(days?|din|दिन|రోజుల|రోజులు|రోజు|weeks?|hafte|hafta|हफ्ते|हफ्ता|सप्ताह|వారాల|వారాలు|వారం|"
-    r"months?|mahine|mahina|महीने|महीना|నెలల|నెలలు|నెల)(?![a-z])"
+    r"months?|mahine|mahina|महीने|महीना|నెలల|నెలలు|నెల"
+    r"|दिवसा|आठवड|महिन|ದಿನ|ವಾರ|ತಿಂಗಳ)(?![a-z])"  # Marathi and Kannada stems (दिवसांत, आठवड्यात, ವಾರದಲ್ಲಿ, ತಿಂಗಳು)
 )
 _SPAN_UNIT = {"day": 1, "din": 1, "दिन": 1, "రోజుల": 1, "రోజులు": 1, "రోజు": 1,
               "week": 7, "hafte": 7, "hafta": 7, "हफ्ते": 7, "हफ्ता": 7, "सप्ताह": 7, "వారాల": 7, "వారాలు": 7, "వారం": 7,
-              "month": 30, "mahine": 30, "mahina": 30, "महीने": 30, "महीना": 30, "నెలల": 30, "నెలలు": 30, "నెల": 30}
+              "month": 30, "mahine": 30, "mahina": 30, "महीने": 30, "महीना": 30, "నెలల": 30, "నెలలు": 30, "నెల": 30,
+              "दिवसा": 1, "आठवड": 7, "महिन": 30, "ದಿನ": 1, "ವಾರ": 7, "ತಿಂಗಳ": 30}
 _DAY_OF_MONTH = re.compile(
-    r"(?<!\d)(\d{1,2})\s*(?:st|nd|rd|th|tarikh|tareekh|तारीख|తేదీ|వ తేదీ|వ)?\s*(?:ko|को)?\s*"
+    r"(?<!\d)(\d{1,2})\s*(?:st|nd|rd|th|tarikh|tareekh|तारीख|తేదీ|వ తేదీ|వ"
+    r"|तारखेला|तारखेपर्यंत|तारखेच्या|तारखेस|ನೇ ತಾರೀಖು|ನೇ ತಾರೀಕು|ನೇ ತಾರೀಖಿನಂದು|ತಾರೀಖು|ತಾರೀಕು|ರಂದು|ನೇ)?\s*(?:ko|को)?\s*"
     r"(?:(" + "|".join(sorted(map(re.escape, _MONTHS), key=len, reverse=True)) + r"))?(?![\d:])"
 )
+# [Marathi + Kannada, 2026-10-06] Added as further alternatives.
+_TODAY = re.compile(_TODAY.pattern + r"|(?<![a-z])(?:lagech|tabadtob|ivattu|eevattu|indu|eegale|takshana)(?![a-z])"
+                    r"|आत्ता|आताच|लगेच|ताबडतोब|आजच|ಇಂದು|ಇವತ್ತು|ಈವತ್ತು|ಈಗಲೇ|ತಕ್ಷಣ|ಕೂಡಲೇ|ಅರ್ಜೆಂಟ್")
+_TOMORROW = re.compile(_TOMORROW.pattern + r"|(?<![a-z])(?:udya|naale|nale)(?![a-z])|उद्या|ನಾಳೆ")
+_DAY_AFTER = re.compile(_DAY_AFTER.pattern + r"|(?<![a-z])(?:naadiddu|nadiddu)(?![a-z])|परवा|ನಾಡಿದ್ದು")
+_THIS_WEEK = re.compile(_THIS_WEEK.pattern + r"|(?<![a-z])(?:ya athavdyat|ee vaara)(?![a-z])|या आठवड्यात|ह्या आठवड्यात|ಈ ವಾರ")
+_FLEXIBLE = re.compile(_FLEXIBLE.pattern + r"|(?<![a-z])(?:kadhihi|yavaga aadru|yavaga adru|yavagadru)(?![a-z])"
+                       r"|कधीही|कोणत्याही दिवशी|कोणताही दिवस|घाई नाही|ಯಾವಾಗಾದರೂ|ಯಾವಾಗ ಬೇಕಾದರೂ|ಯಾವ ದಿನವಾದರೂ|ಅವಸರ ಇಲ್ಲ|ಆತುರ ಇಲ್ಲ")
+_ONGOING = re.compile(_ONGOING.pattern + r"|दीर्घकाळ|कायमस्वरूपी|रेग्युलर|ದೀರ್ಘಕಾಲ|ರೆಗ್ಯುಲರ್|ಖಾಯಂ")
+_NEXT = re.compile(_NEXT.pattern + r"|(?<![a-z])(?:pudhchya|mundina)(?![a-z])|पुढच्या|पुढील|येत्या|ಮುಂದಿನ|ಬರುವ")
 _DMY = re.compile(r"(?<!\d)(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?(?!\d)")
 
 
@@ -403,7 +553,7 @@ def parse_day(text: str, today: date) -> dict | None:
     if _TOMORROW.search(raw):
         return at(today + timedelta(days=1))
     for word, wd in sorted(_WEEKDAYS.items(), key=lambda kv: -len(kv[0])):
-        if re.search(rf"(?<![a-zऀ-ॿఀ-౿]){re.escape(word)}(?![a-z])", raw):
+        if re.search(rf"(?<![a-zऀ-ॿఀ-౿ಀ-೿]){re.escape(word)}(?![a-z])", raw):
             return at(_next_weekday(today, wd))
     m = _DMY.search(t)
     if m:
@@ -432,7 +582,7 @@ def parse_day(text: str, today: date) -> dict | None:
         if 0 < days <= 730:
             return at(today + timedelta(days=days))
     m = _DAY_OF_MONTH.search(t)
-    if m and (m.group(2) or re.search(r"st|nd|rd|th|tarikh|tareekh|तारीख|తేదీ|వ", t[m.start():m.end()])):
+    if m and (m.group(2) or re.search(r"st|nd|rd|th|tarikh|tareekh|तारीख|తేదీ|వ|तारख|ತಾರೀ|ರಂದು|ನೇ", t[m.start():m.end()])):
         d = int(m.group(1))
         if m.group(2):
             mo = _MONTHS[m.group(2)]
@@ -460,8 +610,9 @@ def parse_day(text: str, today: date) -> dict | None:
 
 _NAME_LEAD = re.compile(
     r"^(?:my name is|my name's|i am|i'm|this is|it's|call me|name is|mera naam|mera nam|मेरा नाम|मेरा नाम है|मैं|"
-    r"naa peru|na peru|నా పేరు|నేను)\s+", re.I)
-_NAME_TAIL = re.compile(r"\s+(?:hai|hoon|hun|है|हूं|हूँ|andi|అండి|ని|గారు)$", re.I)
+    r"naa peru|na peru|నా పేరు|నేను|"
+    r"maze nav|majhe nav|majha nav|माझे नाव|माझं नाव|मी|nanna hesaru|ನನ್ನ ಹೆಸರು|ನಾನು)\s+", re.I)
+_NAME_TAIL = re.compile(r"\s+(?:hai|hoon|hun|है|हूं|हूँ|andi|అండి|ని|గారు|आहे|aahe|ಅಂತ)$", re.I)
 
 
 def parse_name(text: str) -> str | None:

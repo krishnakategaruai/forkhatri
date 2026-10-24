@@ -11,7 +11,7 @@ from app.deps import Locale
 from app.errors import ERROR_RESPONSES
 from app.identity import AuthzContext, resolve_authz_context
 from app.services import profile as svc
-from app.services.profile import LocateIn, LocateOut, MyProfileOut, ProfilePatch
+from app.services.profile import CompletionOut, LocateIn, LocateOut, MyProfileOut, ProfilePatch
 
 router = APIRouter(prefix="/v1/me/profile", tags=["profile"], responses=ERROR_RESPONSES)
 
@@ -26,6 +26,11 @@ async def update_my_profile(body: ProfilePatch, lang: Locale, ctx: AuthzContext 
     return await svc.update_my_profile(conn, ctx, lang, body)
 
 
-@router.post("/locate", response_model=LocateOut, operation_id="locateMyProfile", summary="Nearest known locality for the browser's current position")
-async def locate(body: LocateIn, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn, scope="function")) -> LocateOut:
-    return await svc.locate(conn, body)
+@router.post("/locate", response_model=LocateOut, operation_id="locateMyProfile", summary="Nearest known locality for the browser's current position, with nearby areas for one-tap chips")
+async def locate(body: LocateIn, lang: Locale, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn, scope="function")) -> LocateOut:
+    return await svc.locate(conn, body, lang)
+
+
+@router.get("/completion", response_model=CompletionOut, operation_id="getMyProfileCompletion", summary="How complete the profile is, and the one next question to ask (never blocking)")
+async def completion(lang: Locale, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn, scope="function")) -> CompletionOut:
+    return await svc.profile_completion(conn, ctx, lang)

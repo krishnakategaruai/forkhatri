@@ -16,6 +16,7 @@ import { Sheet } from '@/components/Sheet';
 import { CardSkeleton, EmptyState, ErrorState } from '@/components/States';
 import { api, type Card } from '@/lib/api';
 import { formatWhen } from '@/lib/format';
+import { useIdentity } from '@/lib/identity';
 import { EVENT_FORMATS } from '@/lib/event-formats';
 
 const MapView = dynamic(() => import('@/components/MapView'), { ssr: false, loading: () => <div className="sk map" /> });
@@ -48,7 +49,7 @@ function DiscoverInner() {
   const [widened, setWidened] = useState<string | null>(null);
 
   const applyUnderstanding = useCallback((u: Understood) => {
-    setQ(u.q ?? ''); setWhen(u.when); setDistance(u.distance); setCategory(u.category); setFormat(u.format ?? null); setAskChips(u.chips);
+    setQ(u.q ?? ''); setWhen(u.when); setDistance(u.distance); setCategory(u.category); setFormat(u.format ?? null); setAudience(u.audience ?? null); setAskChips(u.chips);
   }, []);
   // Arriving from Home's Ask bar: interpret once, then let the chips take over.
   useEffect(() => {
@@ -92,6 +93,28 @@ function DiscoverInner() {
 
   const onMode = (m: Mode) => (m === 'feed' ? router.push('/') : router.replace(`/discover?mode=${m}`));
 
+  // [2026-10-06] An honest empty search: say what was looked for and where ("Nothing for This weekend in
+  // Baner yet"), offer "Show everything" only when filters are on, and point to groups, which Search does not list.
+  const { profile } = useIdentity();
+  const searchPlace = profile?.locality_locality || profile?.locality_city || '';
+  const activeFilters = [
+    when ? (when === 'tomorrow' ? t('home.tomorrow') : t(`discover.filters.${when}`)) : null,
+    distance ? t(`discover.filters.${distance === 'zone' ? 'nearby' : distance}`) : null,
+    category ? t(`create.categories.${category}`) : null,
+    format ? t(`evt.format.${format}`) : null,
+    scope ? t(`discover.scopes.${scope}`) : null,
+    free ? t('discover.filters.free') : null,
+    audience ? t(`fit.audience.${audience}`) : null,
+    food ? t(`fit.food.${food}`) : null,
+    safeOnly ? t('discover.filters.safeOnly') : null,
+  ].filter((x): x is string => !!x);
+  const clearAll = () => { setAskChips([]); setQ(''); setWhen(null); setDistance(null); setCategory(null); setFormat(null); setScope(null); setFree(false); setAudience(null); setFood(null); setSafeOnly(false); };
+  const searchEmpty = q.trim()
+    ? t('discover.emptyQuery', { q: q.trim(), place: searchPlace })
+    : activeFilters.length
+      ? t('discover.emptyFor', { filters: activeFilters.join(', '), place: searchPlace })
+      : t('discover.emptyNothing', { place: searchPlace });
+
   return (
     <>
       <header className="topbar"><h1>{t('home.title')}</h1></header>
@@ -114,7 +137,7 @@ function DiscoverInner() {
         {mode === 'search' && (
           <>
             <AskBar initial={ask} autoNavigate={false} onUnderstood={(u) => applyUnderstanding(u)} />
-            {askChips.length > 0 && <div className="ask__understood"><span>{t('ask.filtersFrom')}</span>{askChips.map((c) => <span key={c} className="pill">{c}</span>)}<button className="link" style={{ fontSize: '0.8125rem' }} onClick={() => { setAskChips([]); setQ(''); setWhen(null); setDistance(null); setCategory(null); setFormat(null); }}>{t('ask.clear')}</button></div>}
+            {askChips.length > 0 && <div className="ask__understood"><span>{t('ask.filtersFrom')}</span>{askChips.map((c) => <span key={c} className="pill">{c}</span>)}<button className="link" style={{ fontSize: '0.8125rem' }} onClick={() => { setAskChips([]); setQ(''); setWhen(null); setDistance(null); setCategory(null); setFormat(null); setAudience(null); }}>{t('ask.clear')}</button></div>}
             <label className="field">
               <input className="field__input" type="search" placeholder={t('discover.searchPlaceholder')} value={q} onChange={(e) => setQ(e.target.value)} aria-label={t('discover.searchPlaceholder')} />
             </label>
@@ -148,7 +171,12 @@ function DiscoverInner() {
         {widened && <div className="ask__understood fade-in"><span className="ask__spark" aria-hidden="true">✦</span><span>{widened}</span></div>}
         {cards && mode !== 'map' && (
           cards.length === 0
-            ? <EmptyState message={mode === 'calendar' ? t('discover.emptyDay') : t('discover.emptySearch')} />
+            ? mode === 'calendar' ? <EmptyState message={t('discover.emptyDay')} /> : (
+              <div className="stack" style={{ gap: 8 }}>
+                <EmptyState message={searchEmpty} action={activeFilters.length || q.trim() ? t('discover.showEverything') : undefined} onAction={clearAll} />
+                <button type="button" className="link" style={{ alignSelf: 'center' }} onClick={() => router.push('/circles')}>{t('discover.lookInGroups')} ›</button>
+              </div>
+            )
             : <div className="rail fade-in">{cards.map((c) => <ActivityCard key={c.id} card={c} />)}</div>
         )}
       </main>

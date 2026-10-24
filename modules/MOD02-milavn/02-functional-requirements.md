@@ -77,25 +77,47 @@ with the BR file's own honest-gate convention.
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
-When a new participant completes onboarding, the system shall persist a
-usable profile once locality and at least one interest are provided, and
-shall reject completion naming any still-missing required field.
+When a new participant completes the first run, the system shall persist a
+usable profile once a place (city, or city plus area) is provided, and
+shall reject completion naming the place as the still-missing field.
+Interests are not required at first run; they are optional and asked later
+(FR003). The language is read from the participant's ForKhatri account and
+is never asked or overwritten here (FR002).
+
+> **2026-10-06 change (ONBOARDING-REDESIGN-2026-10.md §9, owner decisions
+> Q1/Q2):** relaxed from "locality + at least one interest" to "place only".
+> Why: a study with three new members showed the three forced screens
+> (place → interests → language) cost 6–9 taps, the interest list had no
+> spiritual/temple option so people picked something wrong, and the
+> pre-ticked English language step silently switched Telugu and Hindi
+> members to English. The first run is now one screen ("Where should we
+> look?"): "Use my location" then "Yes", a big-city chip, or typing a place
+> in place; a location denial is explained on screen and the chips remain.
+> The server (`POST /profile`) accepts a profile with a place and no
+> interests; interests sent by older clients are still stored as before, and
+> a place-only save never deletes an existing member's interests. The
+> participant returns to where they were going afterwards (`?next=`, e.g. a
+> shared circle link); a new organiser opening Create is not gated at all
+> (FR010, Q3). Existing profiles are untouched.
 
 **Intent**
 First demoable slice: a participant has a real, saved profile Discovery
-can rank against.
+can rank against, reached in one tap wherever possible.
 
 **Success outcome**
-Profile saves with locality and interests recorded; participant reaches
-the home ("Around You") experience.
+Profile saves with the place recorded; participant reaches the home
+("Around You") experience, or the link they came in on.
 
 **Failure / edge outcome**
-Missing locality or zero interests blocks completion, with the specific
-gap named.
+A missing place blocks completion, with the gap named. A denied or failed
+device location never blocks: the screen says so and offers the city chips
+and search.
 
 **Acceptance criteria**
-- [ ] Onboarding completes once locality + at least one interest exist.
-- [ ] Onboarding is blocked, with the specific missing item named, otherwise.
+- [x] First run completes once a place exists (city alone is enough).
+- [x] First run is blocked, naming the place, otherwise.
+- [x] Language is never asked at first run and never overwritten.
+- [x] After the first run the participant lands where they were going.
 
 **Quality gate (ISO 29148)**
 Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ ·
@@ -112,7 +134,7 @@ Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
 | Success + failure outcomes | Yes |
 
 **Review history**
-- (none yet)
+- 2026-10-06 — Relaxed to place-only, one screen; interests moved to FR003 as optional; language taken from ForKhatri (owner decisions, ONBOARDING-REDESIGN-2026-10.md §9).
 
 **Approval:** Product Manager / BA — [ ] Approved — name, date
 
@@ -152,7 +174,7 @@ defaults to a platform-level fallback.
 Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ ·
 Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
 
-**Decisions** — none beyond BR01.
+**Decisions** — none beyond BR01. 2026-10-06: Milavn no longer asks the language at first run; the new profile records the participant's ForKhatri language, and the switch stays in Settings (never-reask rule).
 **Assumptions** — the rendering/translation mechanism itself is Common Platform infrastructure (`ARCHITECTURE.md` ADR-010); this FR only fixes that the preference exists as person-level data.
 
 **Handoff readiness**
@@ -177,10 +199,20 @@ Feasible ✓ · Verifiable ✓ · Correct ✓ · Conforming ✓
 **Confidence:** High
 
 **Requirement (ISO 29148 form)**
-When a participant adds optional profile detail (photo, bio, additional
-interests), the system shall accept it without ever requiring it as a
-precondition for any capability already available from FR001's minimum
-state.
+When a participant adds optional profile detail (photo, bio, interests),
+the system shall accept it without ever requiring it as a precondition for
+any capability already available from FR001's minimum state.
+
+> **2026-10-06 change (§9 Q2/Q6):** interests are now part of this
+> optional enrichment, not FR001. They are asked as an optional Home card
+> from the participant's second visit (with Skip), and are editable on
+> Profile: add and remove (`PUT /profile/interests` replaces the set; the old
+> `PATCH /profile/enrichment` add-only path still works). The taxonomy gained
+> the group "Spiritual & temple" (Satsang, Bhajan, Yatra, Temple visit, Seva)
+> and nine broad groups shown in the participant's language, plus "Other —
+> add your own" stored as `other:<own words>` (up to five). Why: the study
+> found no spiritual option, chips in English only, and interests that could
+> never be removed.
 
 **Intent**
 Enforces BR01's two-state (minimum-to-use vs. optional-enrichment) model —
@@ -238,11 +270,19 @@ Participant sees grouped, locally-relevant results immediately on open.
 
 **Failure / edge outcome**
 Zero results in a time group displays an explicit empty state, not a
-blank/broken section.
+blank/broken section. When the participant's own city has fewer than three
+things coming up, Home also shows events in nearby cities (within about
+200 km) and online events, each labelled as such, plus open groups in their
+city and ready-made "start one in a minute" ideas.
+
+> **2026-10-06 change (§9 Q5):** two of three new members met an empty
+> "It's quiet around …" Home. `GET /discovery/around-you` now adds `quiet`,
+> `nearby` and `online` (additive fields; the four groups are unchanged).
 
 **Acceptance criteria**
 - [ ] Home groups results into Today/Tomorrow/This Weekend.
 - [ ] An empty time group shows an explicit empty state.
+- [x] A quiet Home widens to nearby-city and online events, labelled plainly.
 
 **Quality gate (ISO 29148)**
 Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular ✓ ·
@@ -2017,7 +2057,9 @@ explicitly.
 
 **Success outcome**
 Participant's chosen precision is respected everywhere their location is
-used.
+used. A brand-new profile starts at Zone (2026-10-06, §9 Q4: less precise
+than before); the participant may raise it to Locality. An existing
+member's own setting is never changed.
 
 **Failure / edge outcome**
 A feature using a more precise location than the participant selected is
@@ -3943,7 +3985,11 @@ declines still sets locality manually with zero loss of core function.
 
 **Failure / edge outcome**
 A declined permission never blocks onboarding or Discovery — it falls
-back to manual locality entry (FR001).
+back to manual locality entry (FR001). 2026-10-06: a denial or timeout is
+said on screen in one line ("We couldn't get your location. That's fine…")
+with the city chips and search right there; it is never silent. A found
+position is confirmed with one tap ("Are you near X?" → Yes / Choose
+another), never saved unasked.
 
 **Acceptance criteria**
 - [ ] A soft-ask explanation appears before the native permission prompt.

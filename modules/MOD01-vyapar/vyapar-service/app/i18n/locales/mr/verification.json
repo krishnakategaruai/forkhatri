@@ -1,0 +1,56 @@
+{
+  "error": {
+    "permissionRequired": "ऑपरेटरला 'व्हेरिफिकेशन' परवानगी आवश्यक आहे.",
+    "recordNotFound": "व्हेरिफिकेशन रेकॉर्ड सापडले नाही",
+    "credentialFieldsRequired": "क्रेडेन्शियलचे नाव आणि ते देणाऱ्या संस्थेचे नाव जोडा.",
+    "invalidFormat": {
+      "gst": "हा 15 अक्षरांचा वैध GSTIN वाटत नाही.",
+      "pan": "हा 10 अक्षरांचा वैध PAN वाटत नाही.",
+      "udyam": "हा वैध उद्यम नोंदणी क्रमांक वाटत नाही."
+    }
+  },
+  "council": {
+    "type": {
+      "icai_membership": "ICAI सदस्यत्व क्रमांक",
+      "medical_council_registration": "मेडिकल कौन्सिल रजिस्ट्रेशन",
+      "allied_health_registration": "अलाइड हेल्थ रजिस्टर (NCAHP)",
+      "bar_council_enrolment": "बार कौन्सिल एनरोलमेंट",
+      "coa_registration": "कौन्सिल ऑफ आर्किटेक्चर रजिस्ट्रेशन",
+      "digilocker_document": "DigiLocker दस्तऐवज"
+    },
+    "numberHint": {
+      "icai_membership": "6 अंक, उदा. 212345",
+      "medical_council_registration": "तुमच्या रजिस्ट्रेशन सर्टिफिकेटवर छापल्याप्रमाणे",
+      "allied_health_registration": "NCAHP रजिस्टरवर दिसते त्याप्रमाणे",
+      "bar_council_enrolment": "राज्य/क्रमांक/वर्ष, उदा. TS/1234/2015",
+      "coa_registration": "CA/वर्ष/क्रमांक, उदा. CA/2010/12345",
+      "digilocker_document": "दस्तऐवज क्रमांक, आणि त्याची DigiLocker लिंक"
+    },
+    "badge": {
+      "verified": "{council} मध्ये नोंदणीकृत",
+      "claimed": "{council}: तपासणी बाकी",
+      "expired": "{council}: पुन्हा तपासणी आवश्यक",
+      "failed": "{council}: खात्री होऊ शकली नाही"
+    },
+    "checkedOn": "{date} रोजी तपासले",
+    "pendingCheck": "तपासणी बाकी",
+    "error": {
+      "numberFormat": {
+        "icai_membership": "ICAI सदस्यत्व क्रमांकात 6 अंक असतात.",
+        "medical_council_registration": "सर्टिफिकेटवर छापलेला रजिस्ट्रेशन क्रमांक लिहा.",
+        "allied_health_registration": "NCAHP रजिस्टरवर दिसणारा रजिस्ट्रेशन क्रमांक लिहा.",
+        "bar_council_enrolment": "एनरोलमेंट क्रमांक राज्य/क्रमांक/वर्ष असा लिहा, उदा. TS/1234/2015.",
+        "coa_registration": "रजिस्ट्रेशन क्रमांक CA/वर्ष/क्रमांक असा लिहा, उदा. CA/2010/12345.",
+        "digilocker_document": "DigiLocker मध्ये दिसणारा दस्तऐवज क्रमांक लिहा."
+      },
+      "councilRequired": {
+        "bar_council_enrolment": "तुमची राज्य बार कौन्सिल निवडा, उदा. बार कौन्सिल ऑफ तेलंगणा.",
+        "medical_council_registration": "नॅशनल मेडिकल कमिशन किंवा तुमची राज्य मेडिकल कौन्सिल निवडा.",
+        "digilocker_document": "दस्तऐवज कोणी दिला त्यांचे नाव लिहा, उदा. उस्मानिया विद्यापीठ."
+      },
+      "documentUri": "दस्तऐवजाची DigiLocker लिंक जोडा (ती in.gov. ने सुरू होते).",
+      "exists": "हे रजिस्टर आधीच तुमच्या प्रोफाइलवर आहे. क्रमांक बदलण्यासाठी आधी ते काढा.",
+      "notFound": "ही रजिस्टर नोंद तुमच्या प्रोफाइलवर नाही."
+    }
+  }
+}

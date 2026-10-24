@@ -10,6 +10,8 @@ import "@/app/me/verify/verify.css";
 
 /* DEC-V1-016 · The quiet entry point on the Me screen: an invitation to the
  * photo check, or — once done — the fact itself with its month. Never a score.
+ * [D15, owner 2026-10-06] The check is an OPTIONAL trust step, never a gate and
+ * never "Next up": the card says so ("Optional") and offers a plain Start.
  * Rendered only for the member's own profile, never while a parent is
  * filling in a profile for someone else. */
 export default function PhotoCheckCard() {
@@ -54,17 +56,21 @@ export default function PhotoCheckCard() {
       </span>
       <span className="photo-check__text">
         <span className="photo-check__title">
-          {status.verified ? t("card.confirmed") : t("card.title")}
+          {status.verified ? t("card.confirmed") : t("card.optionalTitle")}
         </span>
         <span className="caption">
           {status.verified
             ? t("card.since", { date: monthYear(status.verified_at, i18n.language) })
-            : t("card.hint")}
+            : t("card.optionalHint")}
         </span>
       </span>
-      <span aria-hidden="true" className="photo-check__chev">
-        ›
-      </span>
+      {status.verified ? (
+        <span aria-hidden="true" className="photo-check__chev">
+          ›
+        </span>
+      ) : (
+        <span className="photo-check__start">{t("card.start")}</span>
+      )}
     </Link>
   );
 }

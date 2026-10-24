@@ -1,0 +1,56 @@
+{
+  "error": {
+    "permissionRequired": "ಆಪರೇಟರ್‌ಗೆ 'ವೆರಿಫಿಕೇಶನ್' ಅನುಮತಿ ಬೇಕು.",
+    "recordNotFound": "ವೆರಿಫಿಕೇಶನ್ ದಾಖಲೆ ಸಿಗಲಿಲ್ಲ",
+    "credentialFieldsRequired": "ಪ್ರಮಾಣಪತ್ರದ ಹೆಸರು ಮತ್ತು ಅದನ್ನು ಕೊಟ್ಟ ಸಂಸ್ಥೆಯ ಹೆಸರನ್ನು ಸೇರಿಸಿ.",
+    "invalidFormat": {
+      "gst": "ಇದು ಸರಿಯಾದ 15 ಅಕ್ಷರಗಳ GSTIN ಆಗಿ ಕಾಣುತ್ತಿಲ್ಲ.",
+      "pan": "ಇದು ಸರಿಯಾದ 10 ಅಕ್ಷರಗಳ PAN ಆಗಿ ಕಾಣುತ್ತಿಲ್ಲ.",
+      "udyam": "ಇದು ಸರಿಯಾದ ಉದ್ಯಮ್ ನೋಂದಣಿ ಸಂಖ್ಯೆಯಾಗಿ ಕಾಣುತ್ತಿಲ್ಲ."
+    }
+  },
+  "council": {
+    "type": {
+      "icai_membership": "ICAI ಸದಸ್ಯತ್ವ ಸಂಖ್ಯೆ",
+      "medical_council_registration": "ಮೆಡಿಕಲ್ ಕೌನ್ಸಿಲ್ ನೋಂದಣಿ",
+      "allied_health_registration": "ಅಲೈಡ್ ಹೆಲ್ತ್ ರಿಜಿಸ್ಟರ್ (NCAHP)",
+      "bar_council_enrolment": "ಬಾರ್ ಕೌನ್ಸಿಲ್ ಎನ್‌ರೋಲ್‌ಮೆಂಟ್",
+      "coa_registration": "ಕೌನ್ಸಿಲ್ ಆಫ್ ಆರ್ಕಿಟೆಕ್ಚರ್ ನೋಂದಣಿ",
+      "digilocker_document": "DigiLocker ದಾಖಲೆ"
+    },
+    "numberHint": {
+      "icai_membership": "6 ಅಂಕಿಗಳು, ಉದಾ. 212345",
+      "medical_council_registration": "ನಿಮ್ಮ ನೋಂದಣಿ ಪ್ರಮಾಣಪತ್ರದಲ್ಲಿ ಇರುವಂತೆ",
+      "allied_health_registration": "NCAHP ರಿಜಿಸ್ಟರ್‌ನಲ್ಲಿ ಇರುವಂತೆ",
+      "bar_council_enrolment": "ರಾಜ್ಯ/ಸಂಖ್ಯೆ/ವರ್ಷ, ಉದಾ. TS/1234/2015",
+      "coa_registration": "CA/ವರ್ಷ/ಸಂಖ್ಯೆ, ಉದಾ. CA/2010/12345",
+      "digilocker_document": "ದಾಖಲೆಯ ಸಂಖ್ಯೆ, ಜೊತೆಗೆ ಅದರ DigiLocker ಲಿಂಕ್"
+    },
+    "badge": {
+      "verified": "{council} ನಲ್ಲಿ ನೋಂದಾಯಿತರು",
+      "claimed": "{council}: ಪರಿಶೀಲನೆ ಬಾಕಿ ಇದೆ",
+      "expired": "{council}: ಮತ್ತೆ ಪರಿಶೀಲಿಸಬೇಕು",
+      "failed": "{council}: ಖಚಿತಪಡಿಸಲು ಆಗಲಿಲ್ಲ"
+    },
+    "checkedOn": "{date} ರಂದು ಪರಿಶೀಲಿಸಲಾಗಿದೆ",
+    "pendingCheck": "ಪರಿಶೀಲನೆ ಬಾಕಿ ಇದೆ",
+    "error": {
+      "numberFormat": {
+        "icai_membership": "ICAI ಸದಸ್ಯತ್ವ ಸಂಖ್ಯೆಯಲ್ಲಿ 6 ಅಂಕಿಗಳಿರುತ್ತವೆ.",
+        "medical_council_registration": "ನಿಮ್ಮ ಪ್ರಮಾಣಪತ್ರದಲ್ಲಿ ಇರುವಂತೆ ನೋಂದಣಿ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ.",
+        "allied_health_registration": "NCAHP ರಿಜಿಸ್ಟರ್‌ನಲ್ಲಿ ಇರುವಂತೆ ನೋಂದಣಿ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ.",
+        "bar_council_enrolment": "ಎನ್‌ರೋಲ್‌ಮೆಂಟ್ ಸಂಖ್ಯೆಯನ್ನು ರಾಜ್ಯ/ಸಂಖ್ಯೆ/ವರ್ಷ ಎಂದು ಬರೆಯಿರಿ, ಉದಾ. TS/1234/2015.",
+        "coa_registration": "ನೋಂದಣಿ ಸಂಖ್ಯೆಯನ್ನು CA/ವರ್ಷ/ಸಂಖ್ಯೆ ಎಂದು ಬರೆಯಿರಿ, ಉದಾ. CA/2010/12345.",
+        "digilocker_document": "DigiLocker ನಲ್ಲಿ ಇರುವಂತೆ ದಾಖಲೆಯ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ."
+      },
+      "councilRequired": {
+        "bar_council_enrolment": "ನಿಮ್ಮ ರಾಜ್ಯ ಬಾರ್ ಕೌನ್ಸಿಲ್ ಆಯ್ಕೆಮಾಡಿ, ಉದಾ. ಬಾರ್ ಕೌನ್ಸಿಲ್ ಆಫ್ ತೆಲಂಗಾಣ.",
+        "medical_council_registration": "ನ್ಯಾಷನಲ್ ಮೆಡಿಕಲ್ ಕಮಿಷನ್ ಅಥವಾ ನಿಮ್ಮ ರಾಜ್ಯದ ಮೆಡಿಕಲ್ ಕೌನ್ಸಿಲ್ ಆಯ್ಕೆಮಾಡಿ.",
+        "digilocker_document": "ದಾಖಲೆಯನ್ನು ಯಾರು ಕೊಟ್ಟರು ಎಂದು ಬರೆಯಿರಿ, ಉದಾ. ಉಸ್ಮಾನಿಯಾ ವಿಶ್ವವಿದ್ಯಾಲಯ."
+      },
+      "documentUri": "ದಾಖಲೆಯ DigiLocker ಲಿಂಕ್ ಸೇರಿಸಿ (ಅದು in.gov. ಇಂದ ಶುರುವಾಗುತ್ತದೆ).",
+      "exists": "ಈ ರಿಜಿಸ್ಟರ್ ಈಗಾಗಲೇ ನಿಮ್ಮ ಪ್ರೊಫೈಲ್‌ನಲ್ಲಿದೆ. ಸಂಖ್ಯೆ ಬದಲಿಸಲು ಮೊದಲು ಅದನ್ನು ತೆಗೆಯಿರಿ.",
+      "notFound": "ಆ ರಿಜಿಸ್ಟರ್ ನಮೂದು ನಿಮ್ಮ ಪ್ರೊಫೈಲ್‌ನಲ್ಲಿ ಇಲ್ಲ."
+    }
+  }
+}

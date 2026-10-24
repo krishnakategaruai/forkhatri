@@ -11,6 +11,7 @@ from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile, status
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from app.api.deps import AuthenticatedAccount, DbSession, Locale
@@ -50,14 +51,23 @@ def _to_response(p: profile.ProfileSummary) -> ProfileResponse:
     )
 
 
+# [D10, 2026-10-06] Diploma and professional degrees (CA, MBBS) join the
+# list; "other" carries the family's own words in `education.education_other`.
+_EDUCATION_PATTERN = "^(high_school|diploma|bachelors|professional|masters|doctorate|other)$"
+
+
 def _first_details(
     education_level: str | None,
     occupation: str | None,
     marital_status: str | None,
     relocation_willingness: str | None,
+    education_other: str | None = None,
 ) -> dict[tuple[str, str], str]:
     given = {
         ("education", "highest_education_level"): education_level,
+        ("education", "education_other"): (education_other or "").strip() or None
+        if education_level == "other"
+        else None,
         ("profession", "occupation"): (occupation or "").strip() or None,
         ("marital_history", "marital_status"): marital_status,
         ("relocation", "relocation_willingness"): relocation_willingness,
@@ -76,7 +86,8 @@ async def create_profile(
     looking_for: str = Form(..., pattern="^(bride|groom)$"),  # noqa: B008
     city_locality: str = Form(..., min_length=1, max_length=200),  # noqa: B008
     photo: UploadFile = File(...),  # noqa: B008
-    education_level: str | None = Form(None, pattern="^(high_school|bachelors|masters|doctorate|other)$"),  # noqa: B008
+    education_level: str | None = Form(None, pattern=_EDUCATION_PATTERN),  # noqa: B008
+    education_other: str | None = Form(None, max_length=120),  # noqa: B008
     occupation: str | None = Form(None, max_length=120),  # noqa: B008
     marital_status: str | None = Form(None, pattern="^(never_married|divorced|widowed|awaiting_divorce)$"),  # noqa: B008
     relocation_willingness: str | None = Form(None, pattern="^(yes|no|open_to_discussion|open_to_relocate)$"),  # noqa: B008
@@ -95,7 +106,7 @@ async def create_profile(
             photo=photo,
             looking_for=looking_for,
             first_details=_first_details(
-                education_level, occupation, marital_status, relocation_willingness
+                education_level, occupation, marital_status, relocation_willingness, education_other
             ),
         )
     except profile.MissingRequiredFields as exc:
@@ -144,7 +155,8 @@ async def create_profile_for_child(
     looking_for: str = Form(..., pattern="^(bride|groom)$"),  # noqa: B008
     city_locality: str = Form(..., min_length=1, max_length=200),  # noqa: B008
     photo: UploadFile = File(...),  # noqa: B008
-    education_level: str | None = Form(None, pattern="^(high_school|bachelors|masters|doctorate|other)$"),  # noqa: B008
+    education_level: str | None = Form(None, pattern=_EDUCATION_PATTERN),  # noqa: B008
+    education_other: str | None = Form(None, max_length=120),  # noqa: B008
     occupation: str | None = Form(None, max_length=120),  # noqa: B008
     marital_status: str | None = Form(None, pattern="^(never_married|divorced|widowed|awaiting_divorce)$"),  # noqa: B008
     relocation_willingness: str | None = Form(None, pattern="^(yes|no|open_to_discussion|open_to_relocate)$"),  # noqa: B008
@@ -220,7 +232,7 @@ async def create_profile_for_child(
             photo=photo,
             looking_for=looking_for,
             first_details=_first_details(
-                education_level, occupation, marital_status, relocation_willingness
+                education_level, occupation, marital_status, relocation_willingness, education_other
             ),
         )
     except profile.TooYoung as exc:
@@ -692,6 +704,187 @@ async def get_all_attribute_values(
     }
 
 
+# --- D13 / Q3 (2026-10-06): start from a biodata; attached files ---------------
+# Registered ahead of `GET /{category}` so "/documents" is not taken as a category.
+
+
+class BiodataReaderResponse(BaseModel):
+    available: bool
+
+
+@router.get("/biodata/reader", response_model=BiodataReaderResponse)
+async def biodata_reader(account_id: AuthenticatedAccount) -> BiodataReaderResponse:
+    """Whether Mangalya can read a biodata here (an AI key is configured).
+    Without it the family attaches the file and types."""
+    from app.components.profile import biodata
+
+    return BiodataReaderResponse(available=biodata.reader_available())
+
+
+class BiodataReadResponse(BaseModel):
+    read: bool
+    fields: dict[str, str | int]
+
+
+@router.post("/biodata/read", response_model=BiodataReadResponse)
+async def biodata_read(
+    account_id: AuthenticatedAccount,
+    lang: Locale,
+    file: UploadFile = File(...),  # noqa: B008
+    consent: bool = Form(False),  # noqa: B008
+) -> BiodataReadResponse:
+    """[Q3] Read a biodata into the closed field list, after the family's
+    consent. The file is read from memory and never stored here; nothing is
+    saved — the family checks every line on the next screen."""
+    from app.components.profile import biodata
+
+    if not consent:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=translate("profile.error.biodataConsent", lang),
+        )
+    data = await file.read()
+    try:
+        content_type = biodata.check(data)
+    except biodata.UnsupportedDocument as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=translate("profile.error.unsupportedDocument", lang),
+        ) from exc
+    fields = await biodata.read(data, content_type)
+    del data
+    return BiodataReadResponse(read=fields is not None, fields=fields or {})
+
+
+class DocumentResponse(BaseModel):
+    id: str
+    kind: str
+    content_type: str
+
+
+async def _own_profile_id(session: DbSession, account_id: UUID, lang: str) -> UUID:
+    from sqlalchemy import text
+
+    pid = (
+        await session.execute(
+            text("SELECT id FROM mangaly_profile.profile WHERE account_id = :me"), {"me": account_id}
+        )
+    ).scalar_one_or_none()
+    if pid is None:
+        raise _profile_not_found(lang)
+    return cast(UUID, pid)
+
+
+@router.get("/documents", response_model=list[DocumentResponse])
+async def list_documents(
+    session: DbSession, account_id: AuthenticatedAccount, lang: Locale
+) -> list[DocumentResponse]:
+    """The profile's attached biodata and horoscope files (owner, or the
+    parent managing it)."""
+    from sqlalchemy import text
+
+    pid = await _own_profile_id(session, account_id, lang)
+    rows = await session.execute(
+        text(
+            "SELECT id, kind, content_type FROM mangaly_profile.profile_document "
+            "WHERE profile_id = :pid ORDER BY created_at"
+        ),
+        {"pid": pid},
+    )
+    return [
+        DocumentResponse(id=str(r["id"]), kind=r["kind"], content_type=r["content_type"])
+        for r in rows.mappings()
+    ]
+
+
+@router.post("/documents", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
+async def attach_document(
+    session: DbSession,
+    account_id: AuthenticatedAccount,
+    lang: Locale,
+    kind: str = Form(..., pattern="^(biodata|horoscope)$"),  # noqa: B008
+    file: UploadFile = File(...),  # noqa: B008
+) -> DocumentResponse:
+    """Attach a biodata or horoscope (jathakam) file the family chose to keep."""
+    from sqlalchemy import text
+
+    from app.components.profile import biodata
+
+    pid = await _own_profile_id(session, account_id, lang)
+    data = await file.read()
+    try:
+        ref, content_type = biodata.save_document(pid, data)
+    except biodata.UnsupportedDocument as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=translate("profile.error.unsupportedDocument", lang),
+        ) from exc
+    try:
+        doc_id = (
+            await session.execute(
+                text(
+                    "INSERT INTO mangaly_profile.profile_document (profile_id, kind, storage_ref, content_type) "
+                    "VALUES (:pid, :kind, :ref, :ct) RETURNING id"
+                ),
+                {"pid": pid, "kind": kind, "ref": ref, "ct": content_type},
+            )
+        ).scalar_one()
+    except Exception:
+        biodata.delete_document_file(ref)
+        raise
+    return DocumentResponse(id=str(doc_id), kind=kind, content_type=content_type)
+
+
+@router.get("/documents/{document_id}/file")
+async def get_document_file(
+    document_id: UUID, session: DbSession, account_id: AuthenticatedAccount
+) -> FileResponse:
+    from sqlalchemy import text
+
+    from app.components.profile import biodata
+
+    row = (
+        await session.execute(
+            text(
+                "SELECT d.storage_ref, d.content_type FROM mangaly_profile.profile_document d "
+                "JOIN mangaly_profile.profile p ON p.id = d.profile_id "
+                "WHERE d.id = :id AND p.account_id = :me"
+            ),
+            {"id": document_id, "me": account_id},
+        )
+    ).mappings().first()
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    try:
+        path = biodata.document_path(row["storage_ref"])
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from exc
+    if not path.is_file():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return FileResponse(path, media_type=row["content_type"], headers={"Cache-Control": "private, no-store"})
+
+
+@router.delete("/documents/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_document(
+    document_id: UUID, session: DbSession, account_id: AuthenticatedAccount
+) -> None:
+    from sqlalchemy import text
+
+    from app.components.profile import biodata
+
+    ref = (
+        await session.execute(
+            text(
+                "DELETE FROM mangaly_profile.profile_document d USING mangaly_profile.profile p "
+                "WHERE d.id = :id AND p.id = d.profile_id AND p.account_id = :me RETURNING d.storage_ref"
+            ),
+            {"id": document_id, "me": account_id},
+        )
+    ).scalar_one_or_none()
+    if ref:
+        biodata.delete_document_file(ref)
+
+
 @router.get("/{category}", response_model=dict[str, AttributeInput])
 async def get_category(
     category: str,
@@ -897,6 +1090,9 @@ class MatchmakerBriefResponse(MatchmakerBrief):
     # The candidate's own values each theme would compare with, so the page
     # can say "Same roots — Telugu, Khatri" instead of asking for them.
     theme_facts: dict[str, list[str]] = {}
+    # [D14, 2026-10-06] The candidate has a horoscope chart: until then the
+    # "Horoscope match" theme is not offered (Guna Milan needs their chart).
+    has_chart: bool = False
 
 
 def _clean_priorities(raw: dict[str, object] | None) -> dict[str, int]:
@@ -1014,12 +1210,16 @@ async def matchmaker_get(
     theme_facts = {
         theme: [v for f in fields if (v := shown(f))] for theme, fields in PRIORITY_THEMES.items() if fields
     }
+    from app.components.horoscope import interface as horoscope
+
+    has_chart = await horoscope.has_chart(session, account_id=account_id)
 
     return MatchmakerBriefResponse(
         text=str(brief.get("text") or ""),
         items=items,
         suggested=suggested,
         theme_facts=theme_facts,
+        has_chart=has_chart,
         priorities=_clean_priorities(saved_priorities),
         partner_scales={k: ScaleWish(**v) for k, v in compatibility.clean_scales(scales).items()},
         # A parent managing the profile never reads the candidate's own ratings.

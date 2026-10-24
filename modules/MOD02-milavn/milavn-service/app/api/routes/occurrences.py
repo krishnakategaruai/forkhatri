@@ -229,6 +229,8 @@ async def add_series_occurrence(
         raise HTTPException(status_code=403, detail=translate("occurrence.notOrganizer", lang)) from exc
     if parent.activity_id is None:
         raise HTTPException(status_code=409, detail="not a recurring activity")
+    # The exact venue and join link carry over from the first date unless this date sets its own.
+    parent_venue = await activity.get_venue(session, occurrence_id=occurrence_id, member_id=member.member_id) or {}
     occ = await activity.create(
         session,
         creator_member_id=member.member_id,
@@ -244,6 +246,9 @@ async def add_series_occurrence(
         locality_lat=body.locality_lat if body.locality_lat is not None else parent.locality_lat,
         locality_lng=body.locality_lng if body.locality_lng is not None else parent.locality_lng,
         attendance_mode=body.attendance_mode or parent.attendance_mode,
+        venue_address=body.venue_address or parent_venue.get("venue_address"),
+        venue_notes=body.venue_notes or parent_venue.get("venue_notes"),
+        join_link=body.join_link or parent_venue.get("join_link"),
         description=body.description or parent.description,
         capacity=body.capacity if body.capacity is not None else parent.capacity,
         visibility_scope=body.visibility_scope or parent.visibility_scope,

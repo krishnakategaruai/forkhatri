@@ -25,7 +25,11 @@ from typing import Final
 
 CATEGORY_KEYS: Final[dict[str, frozenset[str]]] = {
     # Existing categories (the current editor writes these).
-    "education": frozenset({"highest_education_level", "education_level", "field_of_study"}),
+    # [D10, 2026-10-06] `education_other`: the family's own words when the
+    # level is "other" (e.g. "ITI", "CA Inter").
+    "education": frozenset(
+        {"highest_education_level", "education_level", "field_of_study", "education_other"}
+    ),
     "profession": frozenset({"occupation", "profession", "employer"}),
     "marital_history": frozenset({"marital_status", "marital_history", "have_children"}),
     "relocation": frozenset({"relocation_willingness"}),
@@ -150,6 +154,7 @@ FACT_SOURCES: Final[dict[str, tuple[tuple[str, str], ...]]] = {
         ("education", "highest_education_level"),
         ("education_career", "highest_education_level"),
     ),
+    "education_other": (("education", "education_other"),),
     "college": (("education_career", "college"),),
     "occupation": (("profession", "occupation"), ("education_career", "occupation")),
     "employer": (("education_career", "employer"), ("profession", "employer")),

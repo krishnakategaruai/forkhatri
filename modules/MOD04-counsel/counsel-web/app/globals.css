@@ -37,7 +37,7 @@
 
 /* next/font sets its variables on <body>, so the font stacks are resolved there too. */
 body {
-  --font-body: var(--font-anek-latin), var(--font-anek-devanagari), var(--font-anek-telugu), system-ui, sans-serif;
+  --font-body: var(--font-anek-latin), var(--font-anek-devanagari), var(--font-anek-telugu), var(--font-anek-kannada), system-ui, sans-serif;
   --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
 }
 * { box-sizing: border-box; }
@@ -462,3 +462,13 @@ p { margin: 0; }
 .bcard.nobadge { grid-template-columns: minmax(0, 1fr); }
 .bhint-stack { display: grid; gap: 2px; font-size: .85rem; color: var(--ink-2); }
 .cap { display: inline-block; } .cap::first-letter { text-transform: uppercase; }
+
+/* Marathi and Kannada (added 2026-10-06; Hindi and Telugu keep their existing
+ * look): no capitals to transform and no wide tracking, which breaks up joined
+ * letters. Kannada letters are tall with marks below the line, so its text gets
+ * a little more line height. */
+:lang(mr) .eyebrow, :lang(kn) .eyebrow, :lang(mr) .brand small, :lang(kn) .brand small { text-transform: none; letter-spacing: normal; }
+:lang(mr) h1, :lang(mr) h2, :lang(mr) h3, :lang(mr) h4, :lang(kn) h1, :lang(kn) h2, :lang(kn) h3, :lang(kn) h4 { letter-spacing: normal; }
+:lang(kn) body { line-height: 1.6; }
+:lang(kn) h1, :lang(kn) h2, :lang(kn) h3, :lang(kn) h4 { line-height: 1.35; }
+:lang(kn) .btn { line-height: 1.3; }

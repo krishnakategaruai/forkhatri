@@ -56,6 +56,8 @@ export interface DiscoverViewProps {
   /** The current list failed to load and has nothing to show. */
   failed?: boolean;
   onRetry?: () => void;
+  /** [Start flow 2026-10] cards between the chips and the rows: the outcome line, the completion card. */
+  aside?: React.ReactNode;
   /** [Critique N2] rows API: rows built from the viewer's skills exist (undefined: infer from the rows). */
   hasPersonalRows?: boolean;
   /** [Critique N2] rows API: the viewer's own work categories, strongest first. */
@@ -174,6 +176,8 @@ export default function DiscoverView(p: DiscoverViewProps) {
       <TradeRail skills={f.skills ?? []} viewerCategories={p.viewerCategories} onSkills={(skills) => p.onFiltersChange({ ...f, skills })} />
 
       <DiscoverFilterBar filters={f} onChange={p.onFiltersChange} place={p.place} defaultRadiusKm={p.defaultRadiusKm} />
+
+      {p.aside && <div className="vy-stack vy-discover-aside" style={{ gap: 10 }}>{p.aside}</div>}
 
 
       {p.curated ? (

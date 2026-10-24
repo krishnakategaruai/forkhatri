@@ -38,6 +38,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { TFunction } from "i18next";
+import { numberLocale } from "@/lib/i18n/languages";
 import type { VoiceAnswers, VoiceApi, VoiceDone, VoiceFlow, VoiceInterpretation, VoiceQuestion } from "@/lib/sdk";
 import { useSdk } from "@/lib/sdk/react";
 import {
@@ -109,7 +110,7 @@ interface EngineContext {
  * anything without an obvious short form falls back to the read-back words.
  */
 function answerLabel(q: VoiceQuestion, value: unknown, readback: string | undefined, language: string): string {
-  const locale = `${language}-IN`;
+  const locale = numberLocale(language);
   const rupees = (paise: unknown) => `₹${Math.round(Number(paise) / 100).toLocaleString(locale)}`;
   const optionLabel = (v: unknown) => q.options?.find((o) => o.value === String(v))?.label ?? String(v);
   if (q.kind === "choice" && !Array.isArray(value) && (typeof value === "string" || typeof value === "number")) return optionLabel(value);

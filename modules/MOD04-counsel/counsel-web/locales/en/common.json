@@ -33,7 +33,9 @@
  "lang": {
   "en": "English",
   "hi": "Hindi",
-  "te": "Telugu"
+  "te": "Telugu",
+  "mr": "Marathi",
+  "kn": "Kannada"
  },
  "day": {
   "mon": "Mon",

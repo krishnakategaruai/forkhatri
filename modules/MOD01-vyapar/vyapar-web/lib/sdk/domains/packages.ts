@@ -27,6 +27,10 @@ export interface ServicePackage {
   name_te?: string | null;
   description_hi?: string | null;
   description_te?: string | null;
+  name_mr?: string | null;
+  name_kn?: string | null;
+  description_mr?: string | null;
+  description_kn?: string | null;
 }
 
 export interface ServicePackageInput {
@@ -37,6 +41,10 @@ export interface ServicePackageInput {
   description?: string | null;
   description_hi?: string | null;
   description_te?: string | null;
+  name_mr?: string | null;
+  name_kn?: string | null;
+  description_mr?: string | null;
+  description_kn?: string | null;
   price_paise: number;
   delivery_days?: number | null;
   revisions?: number | null;

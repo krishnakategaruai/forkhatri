@@ -18,7 +18,7 @@ export default function MessageText({ content }: { content: string }) {
   // The sender wrote the kind of place in their own language; find it in any.
   const label = place.detail.split(" · ")[0];
   let category: string | null = null;
-  for (const lang of ["en", "hi", "te"]) {
+  for (const lang of ["en", "hi", "te", "mr", "kn"]) {
     const labels = (i18n.getResource(lang, "wedding", "category") ?? {}) as Record<string, string>;
     const hit = Object.entries(labels).find(([, v]) => v === label);
     if (hit) {

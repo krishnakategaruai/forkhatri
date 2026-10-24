@@ -1,0 +1,267 @@
+{
+  "view": {
+    "moderation": "तक्रार आलेला मजकूर",
+    "verification": "बिझनेस व्हेरिफिकेशन",
+    "opportunities": "पोस्टची तपासणी",
+    "appeals": "अपील",
+    "disputes": "वाद",
+    "commercial": "ऑर्डर आणि रिफंड"
+  },
+  "error": {
+    "permissionRequired": "ॲडमिन कन्सोलच्या या भागाचा ॲक्सेस तुम्हाला नाही.",
+    "itemNotFound": "हा आयटम आता उपलब्ध नाही.",
+    "actionNotAvailable": "या आयटमवर आता ही कृती करता येणार नाही.",
+    "reasonRequired": "ही कृती करण्याआधी कारण निवडा.",
+    "reasonNotAllowed": "हे कारण या कृतीसाठी वापरता येणार नाही."
+  },
+  "itemType": {
+    "moderation_case": "तक्रार आलेला मजकूर",
+    "verification_record": "व्हेरिफिकेशन विनंती",
+    "opportunity_review": "तपासणीच्या प्रतीक्षेतील पोस्ट",
+    "stale_opportunity": "अलीकडे अपडेट न झालेली पोस्ट",
+    "appeal": "अपील",
+    "contract_dispute": "कॉन्ट्रॅक्टचा वाद",
+    "review_dispute": "रिव्ह्यूवरील आक्षेप",
+    "promotion_order": "प्रमोशन ऑर्डर",
+    "plan_order": "बिझनेस वर्कस्पेस प्लॅन",
+    "campaign_order": "कॅम्पेन ऑर्डर"
+  },
+  "status": {
+    "open": "सुरू",
+    "in_review": "तपासणी सुरू",
+    "escalated": "वरिष्ठांकडे पाठवले",
+    "actioned": "कारवाई केली",
+    "dismissed": "फेटाळले",
+    "pending": "निर्णयाच्या प्रतीक्षेत",
+    "verified": "व्हेरिफाइड",
+    "rejected": "नाकारले",
+    "needs_clearer_copy": "स्पष्ट प्रत मागितली",
+    "expired": "मुदत संपली",
+    "revoked": "रद्द केले",
+    "pending_review": "तपासणीच्या प्रतीक्षेत",
+    "draft": "पोस्ट करणाऱ्यांकडे परत पाठवले",
+    "active": "लाइव्ह",
+    "paused": "थांबवले",
+    "stale": "अलीकडे अपडेट नाही",
+    "removed": "काढून टाकले",
+    "closed": "बंद",
+    "delayed": "उशीर झाला",
+    "upheld": "निर्णय कायम",
+    "overturned": "निर्णय बदलला",
+    "resolved_client": "क्लायंटच्या बाजूने निकाल",
+    "resolved_provider": "प्रोफेशनलच्या बाजूने निकाल",
+    "awaiting_payment": "पेमेंटच्या प्रतीक्षेत",
+    "scheduled": "वेळ ठरलेली",
+    "completed": "पूर्ण झाले",
+    "cancelled": "रद्द केले",
+    "refunded": "रिफंड केले",
+    "succeeded": "पेमेंट झाले",
+    "failed": "पेमेंट अयशस्वी",
+    "cancelling": "या कालावधीच्या शेवटी संपेल"
+  },
+  "objectKind": {
+    "listing": "बिझनेस प्रोफाइल",
+    "opportunity": "पोस्ट",
+    "enquiry": "रिक्वेस्टमधील संभाषण",
+    "partnership": "पार्टनरशिप रिक्वेस्ट",
+    "review": "रिव्ह्यू"
+  },
+  "subject": {
+    "untitled": "{kind} — {name} कडून",
+    "contract": "कॉन्ट्रॅक्ट: {title}"
+  },
+  "summary": {
+    "reported": "{kind} “{title}” बद्दल {count} वेळा तक्रार आली: {reason}.",
+    "autoFlagged": "{kind} “{title}” आपोआप तपासणीसाठी चिन्हांकित झाले: {reason}.",
+    "verification": "{owner} यांनी “{listing}” साठी {document} पाठवले.",
+    "opportunityReview": "{poster} यांनी पोस्ट केलेली “{title}” तपासणीच्या प्रतीक्षेत आहे.",
+    "opportunityFlagged": "{poster} यांनी पोस्ट केलेली “{title}” तपासणे आवश्यक आहे: {flags}.",
+    "stale": "{poster} यांनी पोस्ट केलेल्या “{title}” मध्ये {days} दिवसांपासून काहीही अपडेट झालेले नाही.",
+    "staleNeverPublished": "{poster} यांनी पोस्ट केलेली “{title}” कधीच प्रकाशित झाली नाही.",
+    "appeal": "{member} यांनी {kind} “{title}” वर घेतलेल्या “{action}” या निर्णयाविरुद्ध अपील केले आहे.",
+    "contractDispute": "{opener} यांनी {other} यांच्यासोबतच्या “{title}” कॉन्ट्रॅक्टवर वाद नोंदवला आहे.",
+    "reviewDispute": "{subject} यांनी {author} यांनी लिहिलेल्या रिव्ह्यूवर आक्षेप घेतला आहे: {reason}.",
+    "promotionOrder": "{owner} यांनी “{target}” साठी {product} विकत घेतले — {amount}.",
+    "planOrder": "{owner} यांनी “{listing}” साठी {product} विकत घेतले — {amount}.",
+    "campaignOrder": "{owner} यांनी {product} “{name}” विकत घेतले — {amount}.",
+    "unpaidOrder": "{owner} यांनी {product} सुरू केले — अजून पेमेंट झालेले नाही.",
+    "refundedPart": "आतापर्यंत {amount} रिफंड केले."
+  },
+  "flag": {
+    "source_unreachable": "स्रोताची लिंक उघडता आली नाही",
+    "unconfirmed_fields": "काही माहितीची पोस्ट करणाऱ्यांनी पुष्टी केलेली नाही"
+  },
+  "document": {
+    "gst": "GST प्रमाणपत्र",
+    "udyam": "उद्यम नोंदणी",
+    "pan": "PAN कार्ड",
+    "shops_est": "शॉप्स अँड एस्टॅब्लिशमेंट परवाना",
+    "credential": "{issuer} यांनी दिलेले “{name}” प्रमाणपत्र"
+  },
+  "primaryReason": {
+    "scam": "फसवणूक किंवा आगाऊ पैसे",
+    "fake": "खोटे किंवा दिशाभूल करणारे",
+    "impersonation": "तोतयागिरी",
+    "harassment": "छळ",
+    "discrimination": "भेदभाव",
+    "spam": "स्पॅम",
+    "stale": "जुने झालेले",
+    "privacy": "गोपनीयता",
+    "other": "इतर",
+    "advance_payment": "आगाऊ पैसे किंवा फीचा उल्लेख",
+    "prohibited_content": "मनाई असलेले शब्द",
+    "spam_pattern": "स्पॅमसारखे दिसते",
+    "retaliation": "बदला घेण्यासाठी लिहिलेला रिव्ह्यू",
+    "manipulation": "रिव्ह्यूमध्ये फेरफार",
+    "not_the_interaction": "या व्यवहाराशी संबंधित नाही",
+    "abusive": "अपमानास्पद रिव्ह्यू",
+    "asked_for_money": "अर्जदाराकडे पैसे मागितले"
+  },
+  "reasonCode": {
+    "scam_confirmed": "खात्रीशीर फसवणूक किंवा आगाऊ पैशांची मागणी",
+    "fake_listing": "खोटी किंवा दिशाभूल करणारी माहिती",
+    "impersonation": "तोतयागिरी (दुसऱ्याची ओळख वापरणे)",
+    "harassment": "छळ किंवा गैरवर्तन",
+    "discrimination": "भेदभाव",
+    "spam": "स्पॅम",
+    "stale_info": "जुनी झालेली माहिती",
+    "privacy_violation": "गोपनीयतेचे उल्लंघन",
+    "policy_other": "नियमांचे इतर उल्लंघन",
+    "no_violation": "कोणतेही उल्लंघन आढळले नाही",
+    "appeal_evidence_accepted": "अपीलमधील पुरावा स्वीकारला",
+    "asked_for_money": "अर्जदारांकडे पैसे मागितले",
+    "document_illegible": "कागदपत्र वाचता येत नाही / खूप धूसर आहे",
+    "document_expired": "कागदपत्राची मुदत संपली आहे",
+    "name_mismatch": "बिझनेसचे नाव कागदपत्राशी जुळत नाही",
+    "document_type_mismatch": "चुकीच्या प्रकारचे कागदपत्र पाठवले",
+    "suspected_fraud": "कागदपत्र बनावट असल्याचा संशय",
+    "other": "इतर",
+    "missing_details": "महत्त्वाची माहिती दिलेली नाही",
+    "unclear_pay": "पगार किंवा अटी स्पष्ट नाहीत",
+    "source_unreachable": "स्रोत तपासता येत नाही",
+    "duplicate": "दुसऱ्या पोस्टची नक्कल",
+    "prohibited_content": "मनाई असलेला मजकूर",
+    "seeker_charge": "अर्जदारांकडे फी किंवा डिपॉझिट मागते"
+  },
+  "action": {
+    "moderation": {
+      "dismiss": "उल्लंघन नाही, तक्रार बंद करा",
+      "limit": "कोणाला दिसेल ते मर्यादित करा",
+      "remove": "काढून टाका",
+      "request_verification": "पुन्हा व्हेरिफिकेशन मागा",
+      "suspend": "सदस्याच्या पोस्ट निलंबित करा"
+    },
+    "verification": {
+      "verify": "व्हेरिफाय करा",
+      "reject": "नाकारा",
+      "needs_clearer_copy": "स्पष्ट प्रत मागा"
+    },
+    "opportunity": {
+      "approve": "मंजूर करून प्रकाशित करा",
+      "return": "बदलांसाठी पोस्ट करणाऱ्यांकडे परत पाठवा",
+      "remove": "काढून टाका"
+    },
+    "stale": {
+      "remind": "पोस्ट करणाऱ्यांना आठवण करून द्या",
+      "expire": "मुदत संपली म्हणून खूण करा"
+    },
+    "appeal": {
+      "upheld": "निर्णय कायम ठेवा",
+      "overturned": "निर्णय बदलून पुन्हा सुरू करा"
+    },
+    "contract": {
+      "resolved_client": "क्लायंटच्या बाजूने निकाल द्या (ॲडव्हान्स जमा केलेले पैसे परत करा)",
+      "resolved_provider": "प्रोफेशनलच्या बाजूने निकाल द्या (ॲडव्हान्स जमा केलेले पैसे प्रोफेशनलला द्या)",
+      "closed": "कोणताही बदल न करता बंद करा"
+    },
+    "review": {
+      "keep": "रिव्ह्यू प्रकाशित ठेवा",
+      "hide": "रिव्ह्यू लपवा",
+      "remove": "रिव्ह्यू काढून टाका"
+    },
+    "commercial": {
+      "reject": "हे प्रमोशन थांबवून नाकारा (पैसे भरले असल्यास रिफंड करा)",
+      "refund": "उरलेली रक्कम रिफंड करा"
+    }
+  },
+  "history": {
+    "caseOpened": "प्रकरण सुरू झाले",
+    "reported": "तक्रार आली: {reason}",
+    "autoFlagged": "आपोआप चिन्हांकित: {reason}",
+    "decided": "निर्णय: {action}",
+    "submitted": "कागदपत्र पाठवले",
+    "verificationDecided": "व्हेरिफिकेशनचा निर्णय: {state}",
+    "posted": "पोस्ट केले",
+    "published": "प्रकाशित केले",
+    "appealFiled": "अपील पाठवले",
+    "appealDecided": "अपीलवरील निर्णय: {state}",
+    "disputeOpened": "वाद नोंदवला",
+    "disputeResolved": "वाद मिटला: {state}",
+    "reviewWritten": "रिव्ह्यू लिहिला",
+    "consoleAction": "ॲडमिन कन्सोल: {action}",
+    "auditAction": "नोंदवलेली कृती: {action}",
+    "orderPlaced": "ऑर्डर दिली",
+    "orderState": "स्थिती बदलली: {state}",
+    "refundProcessed": "{amount} चा रिफंड",
+    "refundFailed": "रिफंड पूर्ण होऊ शकला नाही",
+    "refundRejected": "रिफंड नाकारला: उरलेल्या रकमेपेक्षा जास्त"
+  },
+  "actor": {
+    "reporter": "एक सदस्य (ओळख गोपनीय)",
+    "system": "व्यापार (आपोआप)",
+    "unknown": "अज्ञात सदस्य"
+  },
+  "label": {
+    "none": "काहीही नाही"
+  },
+  "product": {
+    "boost_3d": "प्रमोशन · 3 दिवस",
+    "boost_7d": "प्रमोशन · 7 दिवस",
+    "boost_14d": "प्रमोशन · 14 दिवस",
+    "campaign_s": "कॅम्पेन · स्टार्टर",
+    "campaign_m": "कॅम्पेन · सीझन",
+    "workspace_monthly": "बिझनेस वर्कस्पेस · मासिक",
+    "workspace_annual": "बिझनेस वर्कस्पेस · वार्षिक",
+    "custom_boost": "प्रमोशन · हवा तेवढा कालावधी"
+  },
+  "payment": {
+    "pending": "पेमेंट बाकी",
+    "succeeded": "पेमेंट झाले",
+    "failed": "पेमेंट अयशस्वी",
+    "refunded": "रिफंड केले",
+    "none": "अजून पेमेंट नाही",
+    "refundFailed": "मागचा रिफंड पूर्ण होऊ शकला नाही"
+  },
+  "member": {
+    "fact": {
+      "memberSince": "सदस्य केव्हापासून",
+      "listings": "बिझनेस प्रोफाइल",
+      "verification": "व्हेरिफिकेशन",
+      "openOpportunities": "सुरू असलेल्या पोस्ट",
+      "activeBoosts": "सुरू असलेली प्रमोशन",
+      "campaigns": "सुरू असलेली कॅम्पेन",
+      "contracts": "सक्रिय कॉन्ट्रॅक्ट",
+      "openReports": "या सदस्याबद्दलच्या प्रलंबित तक्रारी",
+      "totalPaid": "आतापर्यंत व्यापारला दिलेले पैसे"
+    },
+    "value": {
+      "verification": "{verified} व्हेरिफाइड, {pending} प्रतीक्षेत",
+      "noListing": "बिझनेस प्रोफाइल नाही"
+    },
+    "flag": {
+      "open_reports": "प्रलंबित तक्रारी आहेत",
+      "content_suspended": "पोस्ट निलंबित आहेत",
+      "appeal_open": "एक अपील प्रतीक्षेत आहे",
+      "verification_pending": "व्हेरिफिकेशन निर्णयाच्या प्रतीक्षेत",
+      "verification_rejected": "एक व्हेरिफिकेशन नाकारले गेले",
+      "plan_paused": "बिझनेस वर्कस्पेस प्लॅन थांबवलेला आहे",
+      "plan_ending": "बिझनेस वर्कस्पेस प्लॅन या कालावधीत संपेल",
+      "payment_failed": "अलीकडचे एक पेमेंट अयशस्वी झाले",
+      "contract_disputed": "एका कॉन्ट्रॅक्टवर वाद सुरू आहे",
+      "operator": "व्यापार ऑपरेटर"
+    }
+  },
+  "orderStatus": {
+    "draft": "ड्राफ्ट, अजून पुष्टी झालेली नाही"
+  }
+}

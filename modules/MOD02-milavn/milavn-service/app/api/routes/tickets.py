@@ -9,7 +9,7 @@ present what these endpoints already decided.
 from __future__ import annotations
 
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 from urllib.parse import quote as urlquote
 from uuid import UUID
 
@@ -122,9 +122,13 @@ async def event_ticketing(occurrence_id: UUID, session: DbSession, member: Curre
     contact = await activity.get_contact(session, occurrence_id=occurrence_id, member_id=member.member_id)
     shared = await activity.contact_visibility(session, occurrence_id)
     counsel = _counsel_url(settings, occ.creator_member_id) if await activity.offers_counsel(session, occurrence_id) else None
+    # [Event page 2026-10, D11] The discount-code field shows only when the host made at least one usable code. Only the
+    # fact that codes exist leaves the server here, never the codes themselves (they stay organizer-only).
+    has_codes = any(c["active"] for c in await ticketing.discount_codes(session, occurrence_id=occurrence_id, actor=occ.creator_member_id))
     return {
         "tiered": bool(types),
         "types": out_types,
+        "has_codes": has_codes,
         "contact": {"phone": contact["phone"], "email": contact["email"]} if contact else None,
         "contact_after_booking": bool(shared == "confirmed" and not contact),
         "counsel_url": counsel,
@@ -198,6 +202,8 @@ async def add_discount_code(occurrence_id: UUID, body: DiscountCodeBody, session
         raise HTTPException(status_code=422, detail=translate("tix.err.invalid", lang))
     if (body.kind == "percent" and not 1 <= body.value <= 90) or (body.kind == "fixed" and not 100 <= body.value <= 10_000_000):
         raise HTTPException(status_code=422, detail=translate("tix.err.invalid", lang))
+    if body.expires_at is not None and body.expires_at.tzinfo is not None and body.expires_at <= datetime.now(UTC):
+        raise HTTPException(status_code=422, detail=translate("tix.err.invalid", lang))  # a code that already expired helps nobody
     try:
         await ticketing.save_discount_code(
             session, occurrence_id=occurrence_id, actor=member.member_id, code=body.code, kind=body.kind, value=body.value, max_uses=body.max_uses, expires_at=body.expires_at

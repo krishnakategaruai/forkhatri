@@ -135,19 +135,25 @@ function NewListingInner() {
     ...(phoneKnown ? [] : (["contact"] as StepId[])),
   ];
   const step = steps[Math.min(stepIndex, steps.length - 1)];
-  const requiredOk = name.trim().length > 0 && locality.trim().length > 0;
+  // [Start flow 2026-10, decision 10] a business name is optional and
+  // suggested ("Kamala's pickles"); only the area is required.
+  const suggestedBusinessName = business ? t("listings:new.businessNameSuggested", { name: (me.name || "").split(" ")[0] || t("listings:new.businessNameYou"), trade: pickedLabelFirst() }) : "";
+  const requiredOk = (business || name.trim().length > 0) && locality.trim().length > 0;
   const stepTitle: Record<StepId, string> = {
     who: business ? t("listings:new.step.whoBusiness") : t("listings:new.step.who"),
     what: business ? t("listings:new.step.whatBusiness") : t("listings:new.step.what"),
     contact: t("listings:new.step.contact"),
   };
-  const blockedReason = !name.trim()
-    ? business
-      ? t("listings:new.reasonNameBusiness")
-      : t("listings:new.reasonName")
+  const blockedReason = !name.trim() && !business
+    ? t("listings:new.reasonName")
     : !locality.trim()
       ? t("listings:new.reasonLocality")
       : null;
+
+  function pickedLabelFirst(): string {
+    const first = capabilities[0] ? skillLabel.get(capabilities[0]) : splitList(capabilitiesOther)[0];
+    return first ?? (categoryOptions.find((c) => categories.includes(c.slug))?.label ?? t("listings:new.businessNameTrade"));
+  }
 
   function toggleCategory(slug: string) {
     setCategories((c) => (c.includes(slug) ? c.filter((x) => x !== slug) : [...c, slug]));
@@ -166,7 +172,9 @@ function NewListingInner() {
         const skills = [...capabilities, ...splitList(capabilitiesOther)];
         const body: Record<string, unknown> = business
           ? {
-              business: { name: name.trim() },
+              business: { name: name.trim() || suggestedBusinessName },
+              // [Decision 8] save means live when the server rules allow
+              publish: true,
               ...(categories.length ? { categories } : {}),
               ...(skills.length ? { capabilities: Array.from(new Set([...(me.skills ?? []), ...skills])) } : {}),
               ...(me.exists ? {} : { locality: locality.trim(), lat: coords?.lat ?? me.lat ?? undefined, lng: coords?.lng ?? me.lng ?? undefined }),
@@ -181,6 +189,7 @@ function NewListingInner() {
               service_mode: serviceMode,
               ...(tel ? { primary_phone: tel } : {}),
               ...voiceExtra,
+              publish: true,
             };
         const r = await api.patch<{ profile?: { id?: string } | null }>("/v1/me/profile", body);
         router.push(r?.profile?.id ? `/listings/${r.profile.id}` : "/profile");
@@ -323,8 +332,9 @@ function NewListingInner() {
                     value={name}
                     autoComplete={business ? "organization" : "name"}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder={business ? t("listings:new.namePlaceholderBusiness") : t("listings:new.namePlaceholderProfessional")}
+                    placeholder={business ? suggestedBusinessName || t("listings:new.namePlaceholderBusiness") : t("listings:new.namePlaceholderProfessional")}
                   />
+                  {business && <span className="vy-acct-hint">{t("listings:new.businessNameOptionalHint")}</span>}
                 </div>
                 <LocalityField
                   id="np-locality"

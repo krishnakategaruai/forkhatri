@@ -381,10 +381,12 @@ export function validate(d: ComposerDraft): Partial<Record<FieldCode, string>> {
   if (!d.title.trim()) e.title = "titleRequired";
   if ((d.type === "employment" || d.type === "local_service") && !d.location.trim()) e.location = "locationRequired";
   if (d.type === "employment") {
+    // [Start flow 2026-10, decision 11] fixed pay is one amount: one side
+    // filled is "₹10,000 a month" (the server mirrors it), never an error.
     const lo = rupeesToPaise(d.salaryMin);
     const hi = rupeesToPaise(d.salaryMax);
-    if (lo === null || hi === null) e.salary = "salaryRequired";
-    else if (lo > hi) e.salary = "salaryRange";
+    if (lo === null && hi === null) e.salary = "salaryRequired";
+    else if (lo !== null && hi !== null && lo > hi) e.salary = "salaryRange";
   }
   if (d.type === "freelance") {
     const lo = rupeesToPaise(d.budgetMin);
@@ -522,7 +524,7 @@ export function isSatisfied(key: FixKey, d: ComposerDraft): boolean {
     case "add_incentives":
       return d.incentiveType !== "none";
     case "add_salary":
-      return !!d.salaryMin && !!d.salaryMax;
+      return !!d.salaryMin || !!d.salaryMax;
     case "add_budget":
       return !!d.budgetMin || !!d.budgetMax;
     case "add_duration":

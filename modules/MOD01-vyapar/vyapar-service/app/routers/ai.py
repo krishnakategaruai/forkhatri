@@ -51,7 +51,7 @@ async def read_opportunity_image(
 async def get_ai_shortlist(
     opportunity_id: str,
     lang: Locale,
-    language: Literal["en", "hi", "te"] | None = Query(default=None, description="Answer language; defaults to the request locale"),
+    language: Literal["en", "hi", "te", "mr", "kn"] | None = Query(default=None, description="Answer language; defaults to the request locale"),
     ctx: AuthzContext = Depends(resolve_authz_context),
     conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> ShortlistOut:

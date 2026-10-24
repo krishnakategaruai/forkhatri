@@ -15,12 +15,18 @@ import TabBar from '@/components/TabBar';
 import { api } from '@/lib/api';
 import { appUrl } from '@/lib/base-path';
 import { useIdentity } from '@/lib/identity';
+import { safeNext } from '@/lib/first-run';
 import { goToEntrance } from '@/lib/platform';
 import { followSystemTheme } from '@/lib/theme';
 
 const CHROMELESS_PREFIXES = ['/welcome', '/onboarding', '/a/', '/create', '/organizer/', '/admin', '/chats/', '/pay/'];
 // On a wide screen the rail stays for everything except the launch/onboarding flow, so a person never loses their way.
 const RAILLESS_PREFIXES = ['/welcome', '/onboarding'];
+
+/** Create (not Edit) opened by a member with no Milavn place yet. */
+function isNewOrganiserCreate(pathname: string): boolean {
+  return pathname === '/create' && (typeof window === 'undefined' || !new URLSearchParams(window.location.search).has('edit'));
+}
 
 export default function AppChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -54,8 +60,16 @@ export default function AppChrome({ children }: { children: React.ReactNode }) {
     // /welcome is the old launch screen: come back to Milavn's home, not to it.
     if (!identity) goToEntrance(pathname === '/welcome' ? appUrl('/') : undefined);
     // A moderator works the console without a participant profile (UX20 is operations-facing).
-    else if (profile === null && pathname !== '/onboarding' && !pathname.startsWith('/admin')) router.replace('/onboarding');
-    else if (profile && (pathname === '/welcome' || pathname === '/onboarding')) router.replace('/');
+    // [2026-10-06 first-run redesign] The first run remembers where the member was going (a shared circle
+    // link, a search, a hub request) and returns them there. A new organiser opening Create goes straight
+    // to it: the event's own place can become their home area, but only when they confirm it (Q3).
+    else if (profile === null && pathname !== '/onboarding' && !pathname.startsWith('/admin') && !isNewOrganiserCreate(pathname)) {
+      const here = `${pathname}${typeof window !== 'undefined' ? window.location.search : ''}`;
+      router.replace(here === '/' ? '/onboarding' : `/onboarding?next=${encodeURIComponent(here)}`);
+    } else if (profile && (pathname === '/welcome' || pathname === '/onboarding')) {
+      const next = pathname === '/onboarding' && typeof window !== 'undefined' ? safeNext(new URLSearchParams(window.location.search).get('next')) : null;
+      router.replace(next ?? '/');
+    }
   }, [ready, identity, profile, pathname, router, isPublic, unavailable]);
 
   if (ready && unavailable && !isPublic) {

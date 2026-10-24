@@ -14,6 +14,7 @@ import {
   SCALES,
   THEMES,
   getBrief,
+  mergeUnderstood,
   saveBrief,
   understand,
   type Brief,
@@ -42,7 +43,14 @@ import './matchmaker.css';
  * around the candidate's age, their city) and asks "what matters to you"
  * for each theme, compared with the candidate's own facts — nothing asked
  * twice. It can be skipped; without it the profile page still rates every
- * match on what the two have in common. */
+ * match on what the two have in common.
+ *
+ * [D14, 2026-10-06] In setup that is now ONE short card: the family's own
+ * words (typed or spoken), what is already set from the profile, and "See
+ * matches". The "what matters" themes and the 1–10 scales stay on this page
+ * when it is opened from My profile. "Read my words" adds points and never
+ * removes the ones already set; "Horoscope match" is offered only once the
+ * candidate has a chart. */
 
 const OPTION_KEY: Record<string, string> = {
   relocation: 'relocation_willingness',
@@ -180,9 +188,11 @@ export default function MatchmakerPage() {
       });
       return;
     }
-    // The latest words describe the partner; scales they speak to are
-    // filled in, the rest keep what was set by hand.
-    setItems(res.data.items);
+    // The words add to what is already set (the profile's age and place,
+    // points added by hand) and never remove it; on a field the words speak
+    // to, the words win. Scales they speak to are filled in, the rest keep
+    // what was set by hand.
+    setItems((list) => mergeUnderstood(list, res.data.items));
     setWanted((w) => ({ ...w, ...res.data.scales }));
     setSource(res.data.source);
   }
@@ -222,6 +232,118 @@ export default function MatchmakerPage() {
   }
 
   const unused = ITEM_FIELDS.filter((f) => !items.some((it) => it.field === f));
+  // [D14] "Horoscope match" (Guna Milan with the candidate's chart) only once
+  // there is a chart; a level saved earlier is kept, just not shown.
+  const themes = THEMES.filter((theme) => theme !== 'horoscope' || brief.has_chart);
+
+  /** One point as a short line: "29–34 years", "Hyderabad, Bengaluru". */
+  function summary(item: UnderstoodItem): string {
+    if (item.field in RANGE_BOUNDS) {
+      const unit = t(`discover:matchmaker.range.${item.field === 'age' ? 'years' : 'cm'}`);
+      if (item.min && item.max) return `${item.min}–${item.max} ${unit}`;
+      if (item.min) return t('discover:fit.atLeast', { value: `${item.min} ${unit}` });
+      if (item.max) return t('discover:fit.upTo', { value: `${item.max} ${unit}` });
+      return '';
+    }
+    const values = item.values ?? [];
+    return (ITEM_OPTIONS[item.field] ? values.map((v) => optionLabel(item.field, v)) : values).join(', ');
+  }
+
+  function renderFact(item: UnderstoodItem) {
+    const index = items.indexOf(item);
+    return (
+      <li key={item.field} className="mm-fact">
+        <span className="mm-fact__name">{fieldLabel(item.field)}</span>
+        <span className="mm-fact__value">{summary(item)}</span>
+        <button
+          type="button"
+          className="mm-x"
+          aria-label={t('discover:matchmaker.remove', { what: fieldLabel(item.field) })}
+          onClick={() => setItems((list) => list.filter((_, i) => i !== index))}
+        >
+          ×
+        </button>
+        {item.quote && <p className="mm-quote mm-fact__quote">{t('discover:matchmaker.from', { quote: item.quote })}</p>}
+      </li>
+    );
+  }
+
+  if (setup) {
+    // [D14] Setup: one short card. Points with the words they came from were
+    // understood; the rest were already set from the profile.
+    const shown = items.filter(hasValue);
+    const fromProfile = shown.filter((it) => !it.quote);
+    const fromWords = shown.filter((it) => it.quote);
+    return (
+      <>
+        <header className="topbar">
+          <span style={{ width: 44 }} aria-hidden="true" />
+          <h1>{forSubject('discover:matchmaker.setup.hoping')}</h1>
+          <span style={{ width: 44 }} aria-hidden="true" />
+        </header>
+
+        <main className="screen mm mm--setup">
+          <section className="mm-setup" aria-busy={reading}>
+            <p className="mm-intro">{t('discover:matchmaker.setup.hint')}</p>
+            <label className="label" htmlFor="mm-words">
+              {t('discover:matchmaker.wordsLabel')}
+            </label>
+            <textarea
+              id="mm-words"
+              className="mm-textarea"
+              rows={4}
+              maxLength={1500}
+              placeholder={t('discover:matchmaker.placeholder')}
+              value={words}
+              onChange={(e) => setWords(e.target.value)}
+            />
+            <div className="mm-words__actions">
+              <VoiceInput onText={(said) => setWords((w) => (w.trim() ? `${w.trim()} ${said}` : said))} />
+              <button
+                type="button"
+                className="btn btn--secondary"
+                disabled={!words.trim() || reading}
+                onClick={read}
+              >
+                {reading ? t('discover:matchmaker.understanding') : t('discover:matchmaker.understand')}
+              </button>
+            </div>
+            <p className="caption">
+              {t(brief.ai_available ? 'discover:matchmaker.aiNote' : 'discover:matchmaker.privacy')}
+            </p>
+
+            {fromProfile.length > 0 && (
+              <div className="mm-facts-block">
+                <p className="label">{forSubject('discover:matchmaker.setup.fromProfile')}</p>
+                <ul className="mm-facts">{fromProfile.map(renderFact)}</ul>
+              </div>
+            )}
+            {fromWords.length > 0 && (
+              <div className="mm-facts-block">
+                <p className="label">{t('discover:matchmaker.understood')}</p>
+                <ul className="mm-facts">{fromWords.map(renderFact)}</ul>
+              </div>
+            )}
+            <p className="caption">{t('discover:matchmaker.setup.later')}</p>
+
+            {note && (
+              <p className={`mm-note mm-note--${note.kind}`} role={note.kind === 'error' ? 'alert' : 'status'}>
+                {note.text}
+              </p>
+            )}
+            <div className="mm-setup__actions">
+              <button type="button" className="btn btn--primary btn--block" disabled={saving} onClick={save}>
+                {saving ? t('discover:matchmaker.saving') : t('discover:matchmaker.setup.seeMatches')}
+              </button>
+              <button type="button" className="mm-link" onClick={() => router.push(done)}>
+                {t('discover:matchmaker.setup.skipForNow')}
+              </button>
+            </div>
+          </section>
+        </main>
+      </>
+    );
+  }
 
   function renderValue(item: UnderstoodItem, index: number) {
     if (item.field in RANGE_BOUNDS) {
@@ -302,7 +424,8 @@ export default function MatchmakerPage() {
       )
       .join(', ');
     // A theme compared with the candidate's own facts needs those facts;
-    // horoscope needs a chart, which Discover checks on its own.
+    // horoscope needs a chart: the theme is only listed once there is one
+    // (`themes` below), and Discover checks the other person's on its own.
     const usable = theme === 'horoscope' || facts.length > 0;
     const set = (n: number | null) =>
       setMatters((m) => {
@@ -429,28 +552,17 @@ export default function MatchmakerPage() {
   return (
     <>
       <header className="topbar">
-        {setup ? (
-          <span style={{ width: 44 }} aria-hidden="true" />
-        ) : (
-          <button className="icon-btn" onClick={() => router.push(back)} aria-label={t('common:action.back')}>
-            ←
-          </button>
-        )}
-        <h1>{forSubject(setup ? 'discover:matchmaker.setup.title' : 'discover:matchmaker.title')}</h1>
-        {setup ? (
-          <button type="button" className="mm-link" onClick={() => router.push(done)}>
-            {t('discover:matchmaker.setup.skip')}
-          </button>
-        ) : (
-          <span style={{ width: 44 }} aria-hidden="true" />
-        )}
+        <button className="icon-btn" onClick={() => router.push(back)} aria-label={t('common:action.back')}>
+          ←
+        </button>
+        <h1>{forSubject('discover:matchmaker.title')}</h1>
+        <span style={{ width: 44 }} aria-hidden="true" />
       </header>
 
       <main className="screen mm">
         <div className="mm-grid">
           <div className="mm-col">
             <section className="mm-words" aria-labelledby="mm-words-label">
-              {setup && <p className="label">{t('discover:matchmaker.setup.step')}</p>}
               <p className="mm-intro">{forSubject('discover:matchmaker.intro')}</p>
               <label id="mm-words-label" className="label" htmlFor="mm-words">
                 {t('discover:matchmaker.wordsLabel')}
@@ -562,7 +674,7 @@ export default function MatchmakerPage() {
                 {forSubject('discover:matchmaker.matters.title')}
               </h2>
               <p className="caption">{forSubject('discover:matchmaker.matters.hint')}</p>
-              {THEMES.map((theme) => renderTheme(theme))}
+              {themes.map((theme) => renderTheme(theme))}
             </section>
 
             {/* The six 1–10 scales are fine-tuning: folded away so the page
@@ -604,9 +716,7 @@ export default function MatchmakerPage() {
             </p>
           )}
           <button type="button" className="btn btn--primary" disabled={saving} onClick={save}>
-            {saving
-              ? t('discover:matchmaker.saving')
-              : t(setup ? 'discover:matchmaker.setup.continue' : 'discover:matchmaker.save')}
+            {saving ? t('discover:matchmaker.saving') : t('discover:matchmaker.save')}
           </button>
         </div>
       </main>

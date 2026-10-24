@@ -15,6 +15,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect, status
 from pydantic import BaseModel, Field
+from sqlalchemy import text
 
 from app.api.deps import CurrentMember, DbSession, IdempotencyKeyHeader, Locale, origin_allowed, resolve_member_identity
 from app.components.connect import chat
@@ -142,9 +143,38 @@ async def create_group(body: GroupRequest, session: DbSession, member: CurrentMe
 
 @router.get("/activity/{occurrence_id}")
 async def activity_chat(occurrence_id: UUID, session: DbSession, member: CurrentMember) -> dict:
-    """[049] The activity's group chat, for its host and the people going (null otherwise)."""
+    """[049] The activity's group chat, for its host and the people going (null otherwise).
+    [Event page 2026-10] Also the latest message, the unread count and who is in it, so the event page can show the
+    one chat row ("Priya: bringing two extra racquets · 2") and the people going, without a second channel. Everything
+    here is already visible to this member inside the chat itself; nothing is added for anyone outside it."""
     cid = await chat.activity_chat_for(session, occurrence_id=occurrence_id, me=member.member_id)
-    return {"conversation_id": str(cid) if cid else None}
+    if not cid:
+        return {"conversation_id": None, "last_preview": None, "last_by": None, "last_message_at": None, "unread": 0, "members": []}
+    ids = await chat.member_ids(session, cid)
+    names = await identity.display_names_for(ids)
+    prev = (
+        await session.execute(
+            text(
+                "SELECT kind, body, expression, member_id, created_at FROM milavn_connect.chat_message "
+                "WHERE conversation_id = :c AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1"
+            ),
+            {"c": str(cid)},
+        )
+    ).first()
+    preview = last_by = last_at = None
+    if prev:
+        preview = prev[1] if prev[0] == "text" else ("📷" if prev[0] == "photo" else f"· {prev[2]}")
+        last_by = names[prev[3]].display_name if prev[3] in names else None
+        last_at = prev[4].isoformat()
+    unread = int((await session.execute(text("SELECT milavn_connect.unread_count(:c, :m)"), {"c": str(cid), "m": str(member.member_id)})).scalar_one() or 0)
+    return {
+        "conversation_id": str(cid),
+        "last_preview": preview,
+        "last_by": last_by,
+        "last_message_at": last_at,
+        "unread": unread,
+        "members": [{"member_id": str(i), "display_name": names[i].display_name, "avatar": names[i].avatar} for i in ids if i in names],
+    }
 
 
 @router.get("/{conversation_id}")

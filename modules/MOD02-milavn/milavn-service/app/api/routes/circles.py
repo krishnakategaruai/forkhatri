@@ -433,7 +433,7 @@ async def delete(circle_id: UUID, session: DbSession, member: CurrentMember, lan
 
 
 @router.post("/{circle_id}/join")
-async def join(circle_id: UUID, body: JoinRequest | None, session: DbSession, member: CurrentMember, lang: Locale) -> dict:
+async def join(circle_id: UUID, session: DbSession, member: CurrentMember, lang: Locale, body: JoinRequest | None = None) -> dict:
     """[FR020/FR115] Join an open circle, or ask to join one that screens first."""
     try:
         result = await circle.request_join(session, circle_id=circle_id, member_id=member.member_id, answers=body.answers if body else None)
@@ -558,12 +558,14 @@ async def create_fundraiser(circle_id: UUID, body: FundraiserRequest, session: D
 
 
 @router.post("/{circle_id}/fundraisers/{fundraiser_id}/pledge", status_code=204)
-async def pledge(circle_id: UUID, fundraiser_id: UUID, body: PledgeRequest, session: DbSession, member: CurrentMember) -> None:
+async def pledge(circle_id: UUID, fundraiser_id: UUID, body: PledgeRequest, session: DbSession, member: CurrentMember, lang: Locale) -> None:
     """[FR124] Promise an amount (or take the promise back). No money moves — blocker B1."""
     try:
         await circle.pledge(session, fundraiser_id=fundraiser_id, member_id=member.member_id, amount_paise=body.amount_paise, note=body.note)
     except circle.InvalidFundraiser as exc:
         raise HTTPException(status_code=422, detail={"fields": exc.fields}) from exc
+    except circle.FundraiserClosed as exc:
+        raise HTTPException(status_code=409, detail=translate("circle.fundraiserClosed", lang)) from exc
 
 
 @router.get("/{circle_id}/fundraisers/{fundraiser_id}/pledges")
@@ -582,9 +584,10 @@ async def mark_paid(circle_id: UUID, fundraiser_id: UUID, body: MarkPaidRequest,
 
 
 @router.post("/{circle_id}/fundraisers/{fundraiser_id}/close", status_code=204)
-async def close_fundraiser(circle_id: UUID, fundraiser_id: UUID, session: DbSession, member: CurrentMember) -> None:
-    """[FR124] The drive is over."""
-    await circle.close_fundraiser(session, fundraiser_id=fundraiser_id, actor_member_id=member.member_id)
+async def close_fundraiser(circle_id: UUID, fundraiser_id: UUID, session: DbSession, member: CurrentMember, lang: Locale) -> None:
+    """[FR124] The drive is over. Only the circle's organizers and assistants may say so."""
+    if not await circle.close_fundraiser(session, fundraiser_id=fundraiser_id, actor_member_id=member.member_id):
+        raise HTTPException(status_code=403, detail=translate("circle.organizersOnly", lang))
 
 
 @router.get("/{circle_id}/polls")

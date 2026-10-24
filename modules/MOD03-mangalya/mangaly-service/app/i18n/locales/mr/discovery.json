@@ -1,0 +1,170 @@
+{
+  "reason": {
+    "relocation": "स्थलांतराबद्दल दोघांचाही विचार सारखाच आहे ({value}).",
+    "diet": "दोघांचीही जीवनशैली {value} आहे.",
+    "education": "दोघांचेही शिक्षण {value} स्तराचे आहे.",
+    "locality": "{locality} येथे राहतात, पसंतीच्या भागाशी जुळते."
+  },
+  "value": {
+    "relocation_willingness": {
+      "open_to_discussion": "चर्चेस तयार",
+      "willing": "स्थलांतरास तयार",
+      "not_willing": "स्थलांतर न करणे पसंत",
+      "depends": "स्थळावर अवलंबून"
+    },
+    "diet": {
+      "vegetarian": "शाकाहारी",
+      "non_vegetarian": "मांसाहारी",
+      "vegan": "व्हेगन",
+      "eggetarian": "अंडी खाणारे शाकाहारी",
+      "jain": "जैन"
+    },
+    "education_level": {
+      "high_school": "उच्च माध्यमिक",
+      "diploma": "डिप्लोमा",
+      "bachelors": "पदवी",
+      "masters": "पदव्युत्तर",
+      "doctorate": "डॉक्टरेट",
+      "professional": "व्यावसायिक"
+    },
+    "mother_tongue": {
+      "telugu": "तेलुगू",
+      "tamil": "तमिळ",
+      "kannada": "कन्नड",
+      "hindi": "हिंदी",
+      "punjabi": "पंजाबी",
+      "marathi": "मराठी",
+      "gujarati": "गुजराती",
+      "english": "इंग्रजी"
+    },
+    "sub_community": {
+      "khatri": "खत्री",
+      "arora": "अरोरा",
+      "sood": "सूद",
+      "bhatia": "भाटिया"
+    },
+    "family_involvement": {
+      "close_knit": "जवळून सहभागी",
+      "moderate": "मोठ्या निर्णयांत सहभागी",
+      "independent": "जवळचे पण स्वतंत्र"
+    },
+    "relationship": {
+      "parent": "आई/वडील",
+      "guardian": "पालक",
+      "sibling": "भाऊ/बहीण",
+      "relative": "नातेवाईक"
+    },
+    "relation": {
+      "mother": "आई",
+      "father": "वडील",
+      "brother": "भाऊ",
+      "sister": "बहीण",
+      "guardian": "पालक",
+      "grandmother": "आजी",
+      "grandfather": "आजोबा",
+      "paternal_uncle": "काका",
+      "maternal_uncle": "मामा",
+      "paternal_aunt": "आत्या",
+      "maternal_aunt": "मावशी",
+      "cousin": "चुलत/मावस भावंड",
+      "brother_in_law": "मेहुणा",
+      "sister_in_law": "वहिनी/नणंद",
+      "family_friend": "कौटुंबिक मित्र"
+    },
+    "family_values": {
+      "traditional": "पारंपरिक",
+      "moderate": "मध्यम विचारांचे",
+      "liberal": "मोकळ्या विचारांचे"
+    },
+    "family_type": {
+      "joint": "एकत्र",
+      "nuclear": "विभक्त",
+      "extended": "विस्तारित"
+    },
+    "hobby": {
+      "cooking": "स्वयंपाक",
+      "street_food": "स्ट्रीट फूड",
+      "trekking": "ट्रेकिंग",
+      "road_trips": "रोड ट्रिप",
+      "pilgrimages": "तीर्थयात्रा",
+      "beaches": "समुद्रकिनारे",
+      "cricket": "क्रिकेट",
+      "badminton": "बॅडमिंटन",
+      "yoga": "योग",
+      "fitness": "फिटनेस",
+      "music": "संगीत",
+      "classical_dance": "शास्त्रीय नृत्य",
+      "movies": "चित्रपट",
+      "reading": "वाचन",
+      "photography": "फोटोग्राफी",
+      "gardening": "बागकाम",
+      "volunteering": "स्वयंसेवा",
+      "spirituality": "अध्यात्म",
+      "board_games": "बोर्ड गेम्स",
+      "art": "कला व हस्तकला"
+    }
+  },
+  "shelf": {
+    "reason": {
+      "sharedHobbies": "तुम्हा दोघांनाही {list} आवडते",
+      "sameTongue": "हेही {value} बोलतात",
+      "sameCommunity": "हेही {value}",
+      "sameNative": "कुटुंबही {place} येथील",
+      "sameDiet": "हेही {value}",
+      "sameCity": "तुमच्यासारखेच {city} मध्ये",
+      "openToMove": "{city} मध्ये · स्थलांतरास तयार",
+      "suggestedBy": "तुमच्या {relation} यांनी सुचवले",
+      "sameFamilyView": "यांनाही कुटुंब {value} हवे",
+      "joined": "{days} दिवसांपूर्वी सामील झाले",
+      "joinedToday": "आज सामील झाले",
+      "joinedYesterday": "काल सामील झाले",
+      "suggestedByYou": "तुम्ही हे सुचवले",
+      "mutualFit": "तुम्ही एकमेकांच्या अपेक्षांमध्ये बसता",
+      "wantsYourCity": "यांनाही {city} मधील जोडीदार हवा",
+      "wantsYourAge": "तुमच्या वयाचा जोडीदार शोधत आहेत",
+      "nearby": "{city} मध्ये · सुमारे {km} किमी दूर",
+      "sameFamilyValues": "हेही {value} कुटुंब",
+      "sameFamilyType": "हेही {value} कुटुंब",
+      "sameEducation": "यांचेही शिक्षण {value} स्तरापर्यंत",
+      "horoscopeGuna": "{max} पैकी {n} गुण जुळतात"
+    },
+    "reasonFor": {
+      "sharedHobbies": "{name} प्रमाणेच यांनाही {list} आवडते",
+      "sameTongue": "{name} प्रमाणेच {value} बोलतात",
+      "sameCommunity": "{name} प्रमाणेच {value}",
+      "sameNative": "कुटुंबही {place} येथील",
+      "sameDiet": "{name} प्रमाणेच {value}",
+      "sameCity": "{name} प्रमाणेच {city} मध्ये",
+      "suggestedBy": "{name} यांच्या {relation} यांनी सुचवले",
+      "suggestedByYou": "तुम्ही हे सुचवले",
+      "sameFamilyView": "यांनाही कुटुंब {value} हवे",
+      "mutualFit": "{name} यांच्या अपेक्षांमध्ये हे बसतात, आणि यांच्या अपेक्षांमध्ये {name} बसतात",
+      "wantsYourCity": "{city} मधील जोडीदार हवा, जिथे {name} आहेत",
+      "wantsYourAge": "{name} यांच्या वयाचा जोडीदार शोधत आहेत",
+      "nearby": "{city} मध्ये · {name} पासून सुमारे {km} किमी",
+      "sameFamilyValues": "{name} यांच्यासारखेच {value} कुटुंब",
+      "sameFamilyType": "{name} यांच्यासारखेच {value} कुटुंब",
+      "sameEducation": "{name} प्रमाणेच शिक्षण {value} स्तरापर्यंत",
+      "horoscopeGuna": "{name} यांच्याशी {max} पैकी {n} गुण जुळतात",
+      "openToMove": "{city} मध्ये · स्थलांतरास तयार"
+    }
+  },
+  "error": {
+    "lookingForMissing": "स्थळे पाहण्यासाठी तुम्ही वधू शोधत आहात की वर, ते आम्हाला सांगा."
+  },
+  "because": {
+    "title": "{name} सारखी आणखी स्थळे",
+    "like": "हेही {facts}",
+    "anon": "या {age} वर्षांच्या व्यक्ती",
+    "anonWork": "या {age} वर्षांच्या {work}",
+    "anonNone": "या प्रोफाइल",
+    "sub": {
+      "request": "कारण तुम्ही त्यांना विनंती पाठवली",
+      "requestFor": "कारण {name} यांच्यासाठी त्यांना विनंती गेली",
+      "suggested": "कारण तुमच्या कुटुंबाने त्यांना सुचवले",
+      "suggestedBy": "कारण {name} यांनी त्यांना सुचवले",
+      "suggestedByYou": "कारण तुम्ही त्यांना सुचवले",
+      "saved": "कारण तुम्ही त्यांना सेव्ह केले"
+    }
+  }
+}

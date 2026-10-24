@@ -1,7 +1,7 @@
 // [IMP38 — Refactor C] The caller's own account: identity, first run,
 // privacy, preferences, workspace (team) membership, development tools.
 import { seg, type VyaparClient } from "../client";
-import type { DevMember, FirstRunState, Me, WorkspaceInvite, WorkspaceRow } from "../types";
+import type { DevMember, FirstRunState, LocateResult, Me, ProfileCompletion, StartInput, StartOut, TradeTile, WorkspaceInvite, WorkspaceRow } from "../types";
 
 export function membersApi(c: VyaparClient) {
   return {
@@ -20,6 +20,22 @@ export function firstRunApi(c: VyaparClient) {
     capabilityOptions: <T = unknown[]>() => c.get<T>("/v1/first-run/capability-options"),
     scopedCapabilityOptions: <T = unknown[]>(categories?: readonly string[]) =>
       c.get<T>("/v1/first-run/scoped-capability-options", { categories }),
+    /** [Start flow 2026-10] listTradeTiles — picture-tile trades for a goal */
+    tradeTiles: (goal: "find_work" | "get_customers") => c.get<TradeTile[]>("/v1/first-run/trade-tiles", { goal }),
+    /** completeStart — goal, trades and area in one call; goes live where the rules allow */
+    start: (body: StartInput) => c.post<StartOut>("/v1/first-run/start", body),
+  };
+}
+
+/** [Start flow 2026-10] The member's one profile: completion card and place lookup. */
+export function myProfileApi(c: VyaparClient) {
+  return {
+    /** getMyProfileCompletion — percent done and the one next question (never blocking) */
+    completion: () => c.get<ProfileCompletion>("/v1/me/profile/completion"),
+    /** locateMyProfile — nearest known area for a position, with nearby areas for chips */
+    locate: (lat: number, lng: number) => c.post<LocateResult>("/v1/me/profile/locate", { lat, lng }),
+    /** updateMyProfile — any profile field; `publish: true` submits it so it goes live when allowed */
+    update: <T = Record<string, unknown>>(patch: Record<string, unknown>) => c.patch<T>("/v1/me/profile", patch),
   };
 }
 

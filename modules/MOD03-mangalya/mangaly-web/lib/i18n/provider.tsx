@@ -1,7 +1,7 @@
 'use client';
 
 import { I18nextProvider } from 'react-i18next';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 
 import {
   DEFAULT_LANGUAGE,
@@ -13,6 +13,30 @@ import { IDENTITY_API } from '../platform';
 
 const STORAGE_KEY = 'mangaly.language';
 
+/** Set on <html> by the inline script in app/layout.tsx when the saved (or
+ * device) language is not English: the page stays hidden until that language
+ * is applied, then this attribute is removed. */
+export const LANGUAGE_PENDING_ATTR = 'data-i18n-pending';
+
+/** The language to show first: the person's saved choice, then the device
+ * locale, then English. Mirrors the inline script in app/layout.tsx. */
+function initialLanguage(): Language {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (isSupported(saved)) return saved;
+    const device = navigator.language?.split('-')[0];
+    if (isSupported(device)) return device;
+  } catch {
+    // Private mode or blocked storage: fall through to English rather than
+    // failing to render.
+  }
+  return DEFAULT_LANGUAGE;
+}
+
+function revealPage() {
+  document.documentElement.removeAttribute(LANGUAGE_PENDING_ATTR);
+}
+
 /** Wraps the app so every component can reach `useTranslation()`.
  *
  * Language resolution order: the person's saved choice, then the device
@@ -23,23 +47,38 @@ const STORAGE_KEY = 'mangaly.language';
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [i18n] = useState(() => getI18n(DEFAULT_LANGUAGE));
 
-  useEffect(() => {
-    let next: Language = DEFAULT_LANGUAGE;
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (isSupported(saved)) {
-        next = saved;
-      } else {
-        const device = navigator.language?.split('-')[0];
-        if (isSupported(device)) next = device;
-      }
-    } catch {
-      // Private mode or blocked storage: fall through to English rather than
-      // failing to render.
-    }
-    if (i18n.language !== next) void i18n.changeLanguage(next);
+  /* [D17, 2026-10-06] "The Telugu screen showed English for a moment."
+     Cause: the server always renders English (it cannot read the browser's
+     saved choice), the client hydrates in English to match, and the saved
+     language used to be applied in a useEffect, i.e. AFTER the browser had
+     already painted the English page. Any full load (a reload, a dev-mode
+     refresh after a resize) therefore flashed English.
+     Fix: the inline script in app/layout.tsx hides the page before the first
+     paint when the saved language is not English; here the language is
+     applied in a layout effect (before the hydrated page is painted) and the
+     page is revealed only once the chosen language is in place. Hydration
+     itself still happens in English, so there is no hydration mismatch. */
+  useLayoutEffect(() => {
+    const next = initialLanguage();
     document.documentElement.lang = next;
+    if (i18n.language === next) {
+      revealPage();
+      return;
+    }
+    let done = false;
+    const reveal = () => {
+      if (done) return;
+      done = true;
+      // One frame later, so React has committed the re-render in the new language.
+      requestAnimationFrame(revealPage);
+    };
+    void i18n.changeLanguage(next).then(reveal, reveal);
+    // Never leave the page hidden if a language file is slow to arrive.
+    const safety = window.setTimeout(reveal, 2000);
+    return () => window.clearTimeout(safety);
+  }, [i18n]);
 
+  useEffect(() => {
     // [Owner, 2026-09-27] The language chosen in ForKhatri is the person's
     // language everywhere: read it from their ForKhatri account (identity
     // service) when Mangalya opens, and again whenever the tab comes back into

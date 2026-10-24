@@ -410,3 +410,11 @@
   color: var(--ink-2);
   font-size: 20px;
 }
+
+/* [D15] The optional check offers a plain "Start", not a pushed step. */
+.photo-check__start {
+  color: var(--accent-ink);
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+}

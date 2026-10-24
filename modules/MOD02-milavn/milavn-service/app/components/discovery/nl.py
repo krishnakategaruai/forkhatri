@@ -4,7 +4,7 @@ around permissions").
 
 Deterministic on purpose: a small grammar over the module's own vocabulary
 (interest taxonomy, intent categories, locality names, day/time words in
-English, Hindi and Telugu). It never invents an activity, never touches
+English, Hindi, Telugu, Marathi and Kannada). It never invents an activity, never touches
 permissions, and every interpretation is echoed back to the person as chips
 so they can correct it — "AI" that stays legible.
 
@@ -26,7 +26,7 @@ IST = ZoneInfo("Asia/Kolkata")
 
 CATEGORIES = ("play", "meet", "eat", "learn", "work", "explore", "celebrate", "help", "professional")
 
-# Category synonyms (en/hi/te + common Hinglish) -> intent category.
+# Category synonyms (en/hi/te/mr/kn + common Hinglish) -> intent category.
 _CATEGORY_WORDS: dict[str, str] = {
     "play": "play",
     "sport": "play",
@@ -37,6 +37,10 @@ _CATEGORY_WORDS: dict[str, str] = {
     "खेल": "play",
     "ఆట": "play",
     "ఆటలు": "play",
+    "खेळ": "play",
+    "ಆಟ": "play",
+    "ಆಟಗಳು": "play",
+    "ಕ್ರೀಡೆ": "play",
     "meet": "meet",
     "meetup": "meet",
     "hangout": "meet",
@@ -45,6 +49,9 @@ _CATEGORY_WORDS: dict[str, str] = {
     "catch up": "meet",
     "मिलना": "meet",
     "కలవడం": "meet",
+    "भेटणे": "meet",
+    "भेटीगाठी": "meet",
+    "ಭೇಟಿ": "meet",
     "eat": "eat",
     "food": "eat",
     "dinner": "eat",
@@ -54,6 +61,9 @@ _CATEGORY_WORDS: dict[str, str] = {
     "brunch": "eat",
     "खाना": "eat",
     "భోజనం": "eat",
+    "जेवण": "eat",
+    "ಊಟ": "eat",
+    "ತಿಂಡಿ": "eat",
     "learn": "learn",
     "class": "learn",
     "workshop": "learn",
@@ -61,6 +71,8 @@ _CATEGORY_WORDS: dict[str, str] = {
     "talk": "learn",
     "सीखना": "learn",
     "నేర్చుకోవడం": "learn",
+    "शिकणे": "learn",
+    "ಕಲಿಕೆ": "learn",
     "work": "work",
     "cowork": "work",
     "networking": "work",
@@ -68,6 +80,7 @@ _CATEGORY_WORDS: dict[str, str] = {
     "career": "work",
     "काम": "work",
     "పని": "work",
+    "ಕೆಲಸ": "work",
     "professional": "professional",
     "professionals": "professional",
     "consulting": "professional",
@@ -81,6 +94,10 @@ _CATEGORY_WORDS: dict[str, str] = {
     "विशेषज्ञ": "professional",
     "నిపుణులు": "professional",
     "వృత్తిపరమైన": "professional",
+    "व्यावसायिक": "professional",
+    "तज्ज्ञ": "professional",
+    "ವೃತ್ತಿಪರ": "professional",
+    "ತಜ್ಞರು": "professional",
     "explore": "explore",
     "trek": "explore",
     "hike": "explore",
@@ -89,6 +106,9 @@ _CATEGORY_WORDS: dict[str, str] = {
     "trip": "explore",
     "घूमना": "explore",
     "అన్వేషణ": "explore",
+    "भटकंती": "explore",
+    "फिरणे": "explore",
+    "ಸುತ್ತಾಟ": "explore",
     "celebrate": "celebrate",
     "festival": "celebrate",
     "party": "celebrate",
@@ -96,6 +116,8 @@ _CATEGORY_WORDS: dict[str, str] = {
     "bathukamma": "celebrate",
     "त्योहार": "celebrate",
     "పండుగ": "celebrate",
+    "सण": "celebrate",
+    "ಹಬ್ಬ": "celebrate",
     "help": "help",
     "volunteer": "help",
     "cleanup": "help",
@@ -103,32 +125,42 @@ _CATEGORY_WORDS: dict[str, str] = {
     "drive": "help",
     "मदद": "help",
     "సహాయం": "help",
+    "मदत": "help",
+    "ಸಹಾಯ": "help",
 }
 
-# [054] Event format words (en/hi/te) -> event format. Checked before the category words, so "book club" or
+# [054] Event format words (en/hi/te/mr/kn) -> event format. Checked before the category words, so "book club" or
 # "tournament" filters by what kind of event it is rather than guessing a category from the same word.
 _FORMAT_WORDS: dict[str, str] = {
     "workshop": "workshop",
     "workshops": "workshop",
     "कार्यशाला": "workshop",
     "వర్క్‌షాప్": "workshop",
+    "कार्यशाळा": "workshop",
+    "ಕಾರ್ಯಾಗಾರ": "workshop",
     "webinar": "webinar",
     "webinars": "webinar",
     "वेबिनार": "webinar",
     "వెబినార్": "webinar",
+    "ವೆಬಿನಾರ್": "webinar",
     "talk": "talk",
     "lecture": "talk",
     "व्याख्यान": "talk",
     "ఉపన్యాసం": "talk",
+    "ಉಪನ್ಯಾಸ": "talk",
     "panel": "panel",
     "panel discussion": "panel",
     "परिचर्चा": "panel",
+    "चर्चासत्र": "panel",
+    "ಚರ್ಚಾಗೋಷ್ಠಿ": "panel",
     "masterclass": "masterclass",
     "master class": "masterclass",
     "book club": "book_club",
     "reading circle": "book_club",
     "पुस्तक क्लब": "book_club",
     "బుక్ క్లబ్": "book_club",
+    "ಪುಸ್ತಕ ಕ್ಲಬ್": "book_club",
+    "ಬುಕ್ ಕ್ಲಬ್": "book_club",
     "skill share": "skill_share",
     "skill-share": "skill_share",
     "skillshare": "skill_share",
@@ -141,10 +173,13 @@ _FORMAT_WORDS: dict[str, str] = {
     "summit": "conference",
     "सम्मेलन": "conference",
     "సదస్సు": "conference",
+    "संमेलन": "conference",
+    "ಸಮ್ಮೇಳನ": "conference",
     "expo": "expo",
     "exhibition": "expo",
     "प्रदर्शनी": "expo",
     "ప్రదర్శన": "expo",
+    "ಪ್ರದರ್ಶನ": "expo",
     "cultural night": "cultural_night",
     "concert": "cultural_night",
     "music night": "cultural_night",
@@ -152,15 +187,25 @@ _FORMAT_WORDS: dict[str, str] = {
     "संगीत संध्या": "cultural_night",
     "సాంస్కృతిక కార్యక్రమం": "cultural_night",
     "సంగీత కచేరీ": "cultural_night",
+    "सांस्कृतिक कार्यक्रम": "cultural_night",
+    "संगीत मैफल": "cultural_night",
+    "ಸಾಂಸ್ಕೃತಿಕ ಕಾರ್ಯಕ್ರಮ": "cultural_night",
+    "ಸಂಗೀತ ಕಛೇರಿ": "cultural_night",
     "tournament": "tournament",
     "league": "tournament",
     "टूर्नामेंट": "tournament",
     "టోర్నమెంట్": "tournament",
+    "स्पर्धा": "tournament",
+    "ಪಂದ್ಯಾವಳಿ": "tournament",
+    "ಟೂರ್ನಮೆಂಟ್": "tournament",
     "festival": "festival",
     "mela": "festival",
     "उत्सव": "festival",
     "मेला": "festival",
     "ఉత్సవం": "festival",
+    "जत्रा": "festival",
+    "ಉತ್ಸವ": "festival",
+    "ಜಾತ್ರೆ": "festival",
     "satsang": "satsang",
     "bhajan": "satsang",
     "bhajan sandhya": "satsang",
@@ -172,27 +217,37 @@ _FORMAT_WORDS: dict[str, str] = {
     "సత్సంగం": "satsang",
     "భజన": "satsang",
     "కీర్తన": "satsang",
+    "ಸತ್ಸಂಗ": "satsang",
+    "ಭಜನೆ": "satsang",
+    "ಕೀರ್ತನೆ": "satsang",
     "live darshan": "darshan_stream",
     "darshan": "darshan_stream",
     "दर्शन": "darshan_stream",
     "దర్శనం": "darshan_stream",
+    "ದರ್ಶನ": "darshan_stream",
     "town hall": "town_hall",
     "townhall": "town_hall",
     "टाउन हॉल": "town_hall",
     "టౌన్ హాల్": "town_hall",
+    "ಟೌನ್ ಹಾಲ್": "town_hall",
     "volunteering": "volunteering",
     "volunteer drive": "volunteering",
     "seva": "volunteering",
     "सेवा": "volunteering",
     "సేవ": "volunteering",
+    "ಸೇವೆ": "volunteering",
     "trip": "trip",
     "yatra": "trip",
     "यात्रा": "trip",
     "యాత్ర": "trip",
+    "सहल": "trip",
+    "ಯಾತ್ರೆ": "trip",
+    "ಪ್ರವಾಸ": "trip",
     "meetup": "meetup",
     "meet-up": "meetup",
     "मीटअप": "meetup",
     "మీటప్": "meetup",
+    "ಮೀಟಪ್": "meetup",
 }
 
 _WHEN_WORDS: dict[str, str] = {
@@ -202,20 +257,59 @@ _WHEN_WORDS: dict[str, str] = {
     "आज": "today",
     "ఈరోజు": "today",
     "ఈ రోజు": "today",
+    "आज संध्याकाळी": "today",
+    "आज रात्री": "today",
+    "ಇಂದು": "today",
+    "ಇವತ್ತು": "today",
+    "ಇಂದು ಸಂಜೆ": "today",
+    "ಇಂದು ರಾತ್ರಿ": "today",
+    "उद्या संध्याकाळी": "tomorrow",
+    "उद्या सकाळी": "tomorrow",
+    "ನಾಳೆ ಸಂಜೆ": "tomorrow",
+    "ನಾಳೆ ಬೆಳಿಗ್ಗೆ": "tomorrow",
     "tomorrow": "tomorrow",
     "कल": "tomorrow",
     "రేపు": "tomorrow",
+    "उद्या": "tomorrow",
+    "ನಾಳೆ": "tomorrow",
     "weekend": "weekend",
     "this weekend": "weekend",
     "saturday": "weekend",
     "sunday": "weekend",
     "वीकेंड": "weekend",
     "వీకెండ్": "weekend",
+    "आठवड्याच्या शेवटी": "weekend",
+    "शनिवार": "weekend",
+    "रविवार": "weekend",
+    "ವೀಕೆಂಡ್": "weekend",
+    "ವಾರಾಂತ್ಯ": "weekend",
+    "ಶನಿವಾರ": "weekend",
+    "ಭಾನುವಾರ": "weekend",
     "this week": "week",
     "week": "week",
     "इस हफ्ते": "week",
     "ఈ వారం": "week",
+    "या आठवड्यात": "week",
+    "ಈ ವಾರ": "week",
 }
+
+# Who it is for (English only for now; Hindi and Telugu wording needs native review before it is added).
+_AUDIENCE_WORDS: dict[str, str] = {
+    "beginner friendly": "beginner_friendly",
+    "beginner-friendly": "beginner_friendly",
+    "beginners": "beginner_friendly",
+    "family friendly": "family_friendly",
+    "family-friendly": "family_friendly",
+    "family and kids": "family_friendly",
+    "kids": "family_friendly",
+    "elder friendly": "elder_friendly",
+    "elder-friendly": "elder_friendly",
+    "seniors": "elder_friendly",
+}
+
+# A festival name is a topic, not a kind of event: "diwali cooking" is a cooking event, not a celebration. When more
+# words follow, the festival stays in the search words instead of narrowing to the Celebrate category.
+_SOFT_CATEGORY_WORDS = {"diwali", "bathukamma", "festival", "party"}
 
 _DISTANCE_WORDS: dict[str, str] = {
     "near me": "zone",
@@ -226,6 +320,10 @@ _DISTANCE_WORDS: dict[str, str] = {
     "नज़दीक": "zone",
     "నా దగ్గర": "zone",
     "దగ్గరలో": "zone",
+    "माझ्या जवळ": "zone",
+    "जवळपास": "zone",
+    "ನನ್ನ ಹತ್ತಿರ": "zone",
+    "ಹತ್ತಿರದಲ್ಲಿ": "zone",
     "my area": "locality",
     "my locality": "locality",
     "in my locality": "locality",
@@ -250,8 +348,36 @@ _WEEKDAYS = {
     "sat": 5,
     "sunday": 6,
     "sun": 6,
+    # [2026-10-06] Day names in Hindi, Telugu, Marathi and Kannada. Without them "रविवार शाम 6 बजे" read only the
+    # time and, that time being past today, landed on tomorrow (ONBOARDING-REDESIGN §2.10).
+    "सोमवार": 0,
+    "मंगलवार": 1,
+    "मंगळवार": 1,
+    "बुधवार": 2,
+    "गुरुवार": 3,
+    "बृहस्पतिवार": 3,
+    "शुक्रवार": 4,
+    "शनिवार": 5,
+    "रविवार": 6,
+    "इतवार": 6,
+    "సోమవారం": 0,
+    "మంగళవారం": 1,
+    "బుధవారం": 2,
+    "గురువారం": 3,
+    "శుక్రవారం": 4,
+    "శనివారం": 5,
+    "ఆదివారం": 6,
+    "ಸೋಮವಾರ": 0,
+    "ಮಂಗಳವಾರ": 1,
+    "ಬುಧವಾರ": 2,
+    "ಗುರುವಾರ": 3,
+    "ಶುಕ್ರವಾರ": 4,
+    "ಶನಿವಾರ": 5,
+    "ಭಾನುವಾರ": 6,
 }
-_DAYPART = {"morning": 8, "noon": 12, "afternoon": 15, "evening": 18, "tonight": 19, "night": 20, "सुबह": 8, "शाम": 18, "रात": 20, "ఉదయం": 8, "సాయంత్రం": 18, "రాత్రి": 20}
+# Marathi/Kannada day words that leave a Create title (en/hi/te titles are left exactly as before).
+_MR_KN_DAY_WORDS = {"उद्या", "ನಾಳೆ", "ಇಂದು", "ಇವತ್ತು"}
+_DAYPART = {"morning": 8, "noon": 12, "afternoon": 15, "evening": 18, "tonight": 19, "night": 20, "सुबह": 8, "शाम": 18, "रात": 20, "ఉదయం": 8, "సాయంత్రం": 18, "రాత్రి": 20, "सकाळी": 8, "दुपारी": 15, "संध्याकाळी": 18, "रात्री": 20, "ಬೆಳಿಗ್ಗೆ": 8, "ಮಧ್ಯಾಹ್ನ": 15, "ಸಂಜೆ": 18, "ರಾತ್ರಿ": 20}
 
 
 @dataclass(slots=True)
@@ -261,6 +387,7 @@ class Understanding:
     when: str | None = None
     distance: str | None = None
     query: str | None = None
+    audience: str | None = None  # family_friendly | elder_friendly | beginner_friendly
     chips: list[str] = field(default_factory=list)  # what we understood, in the person's words
 
 
@@ -308,6 +435,12 @@ def understand(text: str) -> Understanding:
         u.distance = dist
         u.chips.append(phrase or dist)
         remainder = remainder.replace(phrase or "", " ")
+    aud, aphrase = _find_phrase(t, _AUDIENCE_WORDS)
+    if aud:
+        u.audience = aud
+        u.chips.append(aphrase or aud)
+        remainder = re.sub(rf"(?<!\w){re.escape(aphrase or '')}(?!\w)", " ", remainder)
+        t = re.sub(rf"(?<!\w){re.escape(aphrase or '')}(?!\w)", " ", t)
     tag, label, cat = _find_interest(t)
     if tag:
         u.category = cat
@@ -316,12 +449,16 @@ def understand(text: str) -> Understanding:
         remainder = re.sub(rf"(?<!\w){re.escape((label or '').lower())}(?!\w)", " ", remainder)
     else:
         cat2, phrase = _find_phrase(t, _CATEGORY_WORDS)
-        if cat2:
+        rest = re.sub(rf"(?<!\w){re.escape(phrase or '')}(?!\w)", " ", remainder) if phrase else ""
+        rest = re.sub(r"\b(in|at|on|for|the|a|an|me|some|something|find|show|any|to|do|go|and|with|near)\b", " ", rest)
+        if cat2 and phrase in _SOFT_CATEGORY_WORDS and re.search(r"[\wऀ-ॿఀ-౿ಀ-೿]{3,}", rest):
+            pass  # keep the festival word in the search words
+        elif cat2:
             u.category = cat2
             u.chips.append(phrase or cat2)
             remainder = remainder.replace(phrase or "", " ")
     leftover = re.sub(r"\b(in|at|on|for|the|a|an|me|some|something|find|show|any|to|do|go|and|with|near)\b", " ", remainder)
-    leftover = re.sub(r"[^\wऀ-ॿఀ-౿ ]+", " ", leftover)
+    leftover = re.sub(r"[^\wऀ-ॿఀ-౿ಀ-೿ ]+", " ", leftover)
     leftover = re.sub(r"\s+", " ", leftover).strip()
     if leftover and not u.query:
         u.query = leftover
@@ -354,7 +491,7 @@ def _parse_time(t: str) -> tuple[int | None, int, str | None]:
     m = re.search(r"(?<!\d)(\d{1,2}):(\d{2})(?!\d)", t)
     if m:
         return int(m.group(1)), int(m.group(2)), m.group(0)
-    m = re.search(r"(?<!\d)(\d{1,2})\s*(baje|बजे|గంటలకు)", t)
+    m = re.search(r"(?<!\d)(\d{1,2})\s*(baje|बजे|గంటలకు|वाजता|ಗಂಟೆಗೆ)", t)
     if m:
         h = int(m.group(1))
         return (h + 12 if 1 <= h <= 6 else h), 0, m.group(0)
@@ -382,7 +519,8 @@ def smart_fill(text: str, *, now: datetime | None = None, default_city: str | No
     tag, label, cat = _find_interest(t)
     if tag:
         d.category = cat
-        d.matched.append(label or tag)
+        if (label or tag).lower() not in {m.lower() for m in d.matched}:  # "satsang" is both a format and an interest: one chip
+            d.matched.append(label or tag)
     else:
         cat2, phrase = _find_phrase(t, _CATEGORY_WORDS)
         if cat2:
@@ -393,11 +531,12 @@ def smart_fill(text: str, *, now: datetime | None = None, default_city: str | No
     # Day.
     day = now.date()
     day_phrase = None
-    if re.search(r"(?<!\w)(tomorrow|कल|రేపు)(?!\w)", t):
+    day_word = None  # the Marathi/Kannada day word as written ("उद्या", "ನಾಳೆ"), so it leaves the title too
+    if m_day := re.search(r"(?<!\w)(tomorrow|कल|రేపు|उद्या|ನಾಳೆ)(?!\w)", t):
         day = day + timedelta(days=1)
-        day_phrase = "tomorrow"
-    elif re.search(r"(?<!\w)(today|tonight|आज|ఈరోజు)(?!\w)", t):
-        day_phrase = "today"
+        day_phrase, day_word = "tomorrow", m_day.group(1)
+    elif m_day := re.search(r"(?<!\w)(today|tonight|आज|ఈరోజు|ಇಂದು|ಇವತ್ತು)(?!\w)", t):
+        day_phrase, day_word = "today", m_day.group(1)
     else:
         for name, wd in sorted(_WEEKDAYS.items(), key=lambda kv: -len(kv[0])):
             if re.search(rf"(?<!\w){name}(?!\w)", t):
@@ -407,7 +546,7 @@ def smart_fill(text: str, *, now: datetime | None = None, default_city: str | No
                 break
     if day_phrase:
         d.matched.append(day_phrase)
-        remainder = re.sub(rf"(?<!\w){re.escape(day_phrase)}(?!\w)", " ", remainder)
+        remainder = re.sub(rf"(?<!\w){re.escape(day_word if day_word in _MR_KN_DAY_WORDS else day_phrase)}(?!\w)", " ", remainder)
 
     # Time.
     hour, minute, tphrase = _parse_time(t)
@@ -433,8 +572,8 @@ def smart_fill(text: str, *, now: datetime | None = None, default_city: str | No
         d.locality_city = default_city
 
     # How many.
-    m = re.search(r"(?<!\w)(?:for|max|upto|up to)\s*(\d{1,3})(?:\s*(?:people|ppl|persons|players|folks|लोग|మంది))?(?!\w)", t) or re.search(
-        r"(?<!\d)(\d{1,3})\s*(?:people|ppl|persons|players|folks|लोग|మంది)(?!\w)", t
+    m = re.search(r"(?<!\w)(?:for|max|upto|up to)\s*(\d{1,3})(?:\s*(?:people|ppl|persons|players|folks|लोग|మంది|लोक|जण|ಜನ|ಮಂದಿ))?(?!\w)", t) or re.search(
+        r"(?<!\d)(\d{1,3})\s*(?:people|ppl|persons|players|folks|लोग|మంది|लोक|जण|ಜನ|ಮಂದಿ)(?!\w)", t
     )
     if m:
         d.capacity = max(2, min(500, int(m.group(1))))
@@ -443,7 +582,7 @@ def smart_fill(text: str, *, now: datetime | None = None, default_city: str | No
 
     # Title: what is left, tidied. Keep the interest label if the rest is empty.
     leftover = re.sub(r"\b(at|on|for|the|a|an|to|with|near|by|from|lets|let's|let us|plan|planning|organise|organize|host|hosting|create)\b", " ", remainder)
-    leftover = re.sub(r"[^\wऀ-ॿఀ-౿' ]+", " ", leftover)
+    leftover = re.sub(r"[^\wऀ-ॿఀ-౿ಀ-೿' ]+", " ", leftover)
     leftover = re.sub(r"\s+", " ", leftover).strip()
     if not leftover and label:
         leftover = label

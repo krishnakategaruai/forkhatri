@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Anek_Devanagari, Anek_Latin, Anek_Telugu, Fraunces } from "next/font/google";
+import { Anek_Devanagari, Anek_Kannada, Anek_Latin, Anek_Telugu, Fraunces } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Shell } from "@/components/Shell";
@@ -8,6 +8,8 @@ const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-fraunces", axe
 const anekLatin = Anek_Latin({ subsets: ["latin"], variable: "--font-anek-latin", weight: ["400", "500", "600", "700"] });
 const anekDevanagari = Anek_Devanagari({ subsets: ["devanagari"], variable: "--font-anek-devanagari", weight: ["400", "500", "600"] });
 const anekTelugu = Anek_Telugu({ subsets: ["telugu"], variable: "--font-anek-telugu", weight: ["400", "500", "600"] });
+// Marathi is written in Devanagari and uses Anek Devanagari above.
+const anekKannada = Anek_Kannada({ subsets: ["kannada"], variable: "--font-anek-kannada", weight: ["400", "500", "600"] });
 
 export const metadata: Metadata = {
   title: "Counsel · ForKhatri",
@@ -18,7 +20,7 @@ export const viewport: Viewport = { themeColor: "#f5f0e8", width: "device-width"
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${fraunces.variable} ${anekLatin.variable} ${anekDevanagari.variable} ${anekTelugu.variable}`}>
+      <body className={`${fraunces.variable} ${anekLatin.variable} ${anekDevanagari.variable} ${anekTelugu.variable} ${anekKannada.variable}`}>
         <Providers>
           <Shell>{children}</Shell>
         </Providers>

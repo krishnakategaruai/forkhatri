@@ -40,33 +40,36 @@ const RULES: Record<ModuleKey, Term[]> = {
   mangaly: [
     ...t("matrimony", 3, "marriage", "matrimony", "matrimonial", "alliance", "rishta", "bride", "groom", "family introduction"),
     ...t("matrimony", 3, "शादी", "रिश्ता", "रिश्ते", "పెళ్లి", "సంబంధం"),
+    // Marathi, Kannada
+    ...t("matrimony", 3, "लग्न", "विवाह", "वधू", "ಮದುವೆ", "ವಿವಾಹ", "ಸಂಬಂಧ", "ವಧು"),
     ...t("matrimony", 1, "match"),
   ],
   milavn: [
     ...t("activity", 3, "meetup", "meet up", "activity", "activities", "cricket", "yoga", "volunteer", "कार्यक्रम", "కార్యక్రమం", "క్రికెట్", "యోగా", "क्रिकेट", "योग"),
-    ...t("activity", 2, "event", "walk", "मिलना"),
+    ...t("activity", 3, "उपक्रम", "ಕಾರ್ಯಕ್ರಮ", "ಚಟುವಟಿಕೆ", "ಕ್ರಿಕೆಟ್", "ಯೋಗ"),
+    ...t("activity", 2, "event", "walk", "मिलना", "भेटू", "भेटायला", "ಭೇಟಿ"),
     ...t("activity", 1, "join", "circle", "weekend", "near me"),
   ],
   vyapar: [
-    ...t("business", 3, "business", "shop", "व्यापार", "व्यवसाय", "వ్యాపారం"),
-    ...t("service", 3, "plumber", "electrician", "प्लंबर", "इलेक्ट्रीशियन", "ప్లంబర్", "ఎలక్ట్రీషియన్"),
+    ...t("business", 3, "business", "shop", "व्यापार", "व्यवसाय", "వ్యాపారం", "दुकान", "ವ್ಯಾಪಾರ", "ವ್ಯವಹಾರ", "ಅಂಗಡಿ"),
+    ...t("service", 3, "plumber", "electrician", "प्लंबर", "इलेक्ट्रीशियन", "ప్లంబర్", "ఎలక్ట్రీషియన్", "इलेक्ट्रिशियन", "ಪ್ಲಂಬರ್", "ಎಲೆಕ್ಟ್ರಿಷಿಯನ್"),
     ...t("service", 2, "hire", "professional"),
     ...t("service", 1, "service"),
     ...t("opportunity", 3, "opportunity", "opportunities", "job"),
   ],
-  counsel: [...t("advice", 3, "lawyer", "advice", "consult", "ca", "सलाह", "సలహా")],
+  counsel: [...t("advice", 3, "lawyer", "advice", "consult", "ca", "सलाह", "సలహా", "सल्ला", "ಸಲಹೆ")],
   payments: [...t("payment", 3, "bill", "recharge", "coupon"), ...t("payment", 2, "pay")],
-  finance: [...t("loan", 3, "loan", "emi", "credit", "लोन", "ऋण", "రుణం")],
+  finance: [...t("loan", 3, "loan", "emi", "credit", "लोन", "ऋण", "రుణం", "कर्ज", "ಸಾಲ", "ಲೋನ್")],
 };
 
 const TIME_PATTERNS: [TimeKey, string[]][] = [
-  ["tonight", ["tonight", "आज रात", "ఈ రాత్రి"]],
-  ["weekend", ["this weekend", "weekend", "saturday", "sunday", "वीकेंड", "सप्ताहांत", "వారాంతం"]],
-  ["tomorrow", ["tomorrow", "कल", "రేపు"]],
-  ["today", ["today", "आज", "ఈ రోజు", "ఈరోజు"]],
+  ["tonight", ["tonight", "आज रात", "ఈ రాత్రి", "ಇಂದು ರಾತ್ರಿ", "ಇವತ್ತು ರಾತ್ರಿ", "ಈ ರಾತ್ರಿ"]],
+  ["weekend", ["this weekend", "weekend", "saturday", "sunday", "वीकेंड", "सप्ताहांत", "వారాంతం", "आठवड्याच्या शेवटी", "शनिवार", "रविवार", "ವಾರಾಂತ್ಯ", "ವೀಕೆಂಡ್", "ಶನಿವಾರ", "ಭಾನುವಾರ"]],
+  ["tomorrow", ["tomorrow", "कल", "రేపు", "उद्या", "ನಾಳೆ"]],
+  ["today", ["today", "आज", "ఈ రోజు", "ఈరోజు", "ಇಂದು", "ಇವತ್ತು"]],
 ];
 
-const NEAR_PATTERNS = ["near me", "nearby", "around me", "close to me", "पास", "नज़दीक", "नजदीक", "దగ్గర", "సమీపంలో"];
+const NEAR_PATTERNS = ["near me", "nearby", "around me", "close to me", "पास", "नज़दीक", "नजदीक", "దగ్గర", "సమీపంలో", "जवळ", "ಹತ್ತಿರ", "ಸಮೀಪ"];
 
 const IN_STOPWORDS = new Set(["the", "a", "an", "my", "this", "next", "morning", "evening", "afternoon", "night", "person", "future"]);
 

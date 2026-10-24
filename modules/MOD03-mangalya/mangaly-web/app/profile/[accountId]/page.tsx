@@ -188,6 +188,7 @@ export default function MemberProfilePage() {
     | { kind: "incoming"; id: string }
     | { kind: "connected"; id: string }
   >({ kind: "none" });
+  const [noProfile, setNoProfile] = useState(false);
   const [linkBusy, setLinkBusy] = useState(false);
   const [suggested, setSuggested] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
@@ -202,6 +203,8 @@ export default function MemberProfilePage() {
     (async () => {
       const session = await requireSession();
       if (!active || !session) return;
+      // [D1, 2026-10-06] Looking around before making a profile: no requests yet.
+      setNoProfile(!session.own_profile && session.circles.length === 0);
       const result = await viewProfileFull(accountId);
       if (!active) return;
 
@@ -394,6 +397,10 @@ export default function MemberProfilePage() {
               {t("profile:view.link.accept")}
             </button>
           </>
+        ) : noProfile && !family ? (
+          <Link className="btn btn--primary" href="/profile/create">
+            {t("profile:view.link.makeProfileFirst")}
+          </Link>
         ) : (
           <button
             type="button"

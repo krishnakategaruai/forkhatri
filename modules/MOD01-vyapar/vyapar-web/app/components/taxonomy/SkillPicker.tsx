@@ -58,6 +58,13 @@ export interface SkillPickerProps {
    * existing always-open behaviour.
    */
   startOpen?: boolean;
+  /**
+   * [Start flow 2026-10, decision 5] Trades added "as written" (free text)
+   * shown as removable chips beside the picked ones, so "borewell motor" is
+   * no longer an "Added: …" line the person cannot take back.
+   */
+  others?: readonly string[];
+  onRemoveOther?: (text: string) => void;
 }
 
 interface Flat {
@@ -71,11 +78,15 @@ function norm(s: string): string {
   return s.toLocaleLowerCase().normalize("NFKC");
 }
 
-export default function SkillPicker({ tree, selected, onChange, max = 10, searchLabel, aliases, onFreeText, collapsible = false, startOpen = false }: SkillPickerProps) {
+export default function SkillPicker({ tree, selected, onChange, max = 10, searchLabel, aliases, onFreeText, collapsible = false, startOpen = false, others = [], onRemoveOther }: SkillPickerProps) {
   const { t } = useTranslation("hiring");
   const [expanded, setExpanded] = useState(startOpen);
   const [active, setActive] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  // "Other — add your own": a visible way to add what is not in the list, in
+  // every category, not only after a search finds nothing.
+  const [otherOpen, setOtherOpen] = useState(false);
+  const [otherText, setOtherText] = useState("");
 
   const categories = useMemo(() => tree?.categories ?? [], [tree]);
   const flat = useMemo<Flat[]>(
@@ -112,6 +123,15 @@ export default function SkillPicker({ tree, selected, onChange, max = 10, search
     if (onFreeText) onFreeText(freeText);
     else if (!selected.includes(freeText) && selected.length < max) onChange([...selected, freeText]);
     setQuery("");
+  }
+
+  function addOther() {
+    const text = otherText.trim();
+    if (text.length < 2 || onFreeText === false) return;
+    if (onFreeText) onFreeText(text);
+    else if (!selected.includes(text) && selected.length < max) onChange([...selected, text]);
+    setOtherText("");
+    setOtherOpen(false);
   }
 
   function toggle(slug: string) {
@@ -182,11 +202,16 @@ export default function SkillPicker({ tree, selected, onChange, max = 10, search
 
   return (
     <div className="vy-picker" data-drilled={active ? "true" : "false"}>
-      {selected.length > 0 && (
+      {(selected.length > 0 || others.length > 0) && (
         <div className="vy-options" aria-label={t("picker.selected")}>
           {selected.map((slug) => (
             <button key={slug} type="button" className="vy-chip vy-chip-selected" onClick={() => toggle(slug)} aria-label={t("picker.remove", { skill: labelOf.get(slug) ?? slug })}>
               {labelOf.get(slug) ?? slug} <span aria-hidden="true">×</span>
+            </button>
+          ))}
+          {others.map((text) => (
+            <button key={`other:${text}`} type="button" className="vy-chip vy-chip-selected" onClick={() => onRemoveOther?.(text)} aria-label={t("picker.remove", { skill: text })}>
+              {text} <span aria-hidden="true">×</span>
             </button>
           ))}
         </div>
@@ -209,7 +234,7 @@ export default function SkillPicker({ tree, selected, onChange, max = 10, search
           ) : (
             <div className="vy-picker-spec-list">{matches.slice(0, 24).map((f) => specButton(f, f.category.label))}</div>
           )}
-          {matches.length === 0 && onFreeText !== false && freeText.length >= 2 && (
+          {onFreeText !== false && freeText.length >= 2 && !flat.some((f) => norm(f.label) === q) && (
             <button type="button" className="vy-btn vy-btn-secondary" style={{ alignSelf: "flex-start", padding: "9px 16px", fontSize: 14 }} disabled={atMax} onClick={addAsWritten}>
               {t("picker.useAsWritten", { query: freeText })}
             </button>
@@ -249,6 +274,38 @@ export default function SkillPicker({ tree, selected, onChange, max = 10, search
                 {shown.description && <span className="vy-field-hint">{shown.description}</span>}
               </div>
               <div className="vy-picker-spec-list">{(shown.children ?? []).map((s) => specButton({ slug: s.slug, label: s.label, description: s.description ?? null }))}</div>
+              {onFreeText !== false && (
+                otherOpen ? (
+                  <div className="vy-stack" style={{ gap: 8 }}>
+                    <input
+                      className="vy-input"
+                      value={otherText}
+                      autoFocus
+                      maxLength={60}
+                      onChange={(e) => setOtherText(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addOther(); } }}
+                      placeholder={t("picker.otherPlaceholder", { category: shown.label })}
+                      aria-label={t("picker.other")}
+                    />
+                    <div className="vy-row" style={{ gap: 10, flexWrap: "wrap" }}>
+                      <button type="button" className="vy-btn vy-btn-secondary" style={{ padding: "9px 16px", fontSize: 14 }} disabled={atMax || otherText.trim().length < 2} onClick={addOther}>
+                        {t("picker.otherAdd")}
+                      </button>
+                      <button type="button" className="vy-btn vy-btn-ghost" style={{ padding: "9px 16px", fontSize: 14 }} onClick={() => { setOtherOpen(false); setOtherText(""); }}>
+                        {t("picker.otherCancel")}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button type="button" className="vy-picker-spec" disabled={atMax} onClick={() => setOtherOpen(true)}>
+                    <span className="vy-picker-spec-mark" aria-hidden="true">+</span>
+                    <span className="vy-picker-spec-text">
+                      <strong>{t("picker.other")}</strong>
+                      <span>{t("picker.otherHint")}</span>
+                    </span>
+                  </button>
+                )
+              )}
             </div>
           )}
         </div>

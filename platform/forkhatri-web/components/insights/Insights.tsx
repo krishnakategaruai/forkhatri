@@ -11,7 +11,7 @@
  */
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ApiError, identity, type Insights as Data, type Lang } from "@/lib/api";
+import { ApiError, identity, INTL_LOCALE, type Insights as Data, type Lang } from "@/lib/api";
 import { langFromNavigator } from "@/lib/i18n";
 import { insightsTranslator, valueLabel, type InsightsKey, type InsightsT } from "@/lib/insights-i18n";
 import { AgePyramid, GrowthChart, MeterList, ShareBar, type MeterItem, type Segment } from "./charts";
@@ -25,7 +25,7 @@ type Phase =
 
 type Range = "30" | "90" | "all";
 
-const LOCALES: Record<Lang, string> = { en: "en-IN", hi: "hi-IN", te: "te-IN" };
+const LOCALES: Record<Lang, string> = INTL_LOCALE;
 
 function entries(record: Record<string, number>, t: InsightsT): MeterItem[] {
   return Object.entries(record)

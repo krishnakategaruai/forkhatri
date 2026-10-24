@@ -1,0 +1,49 @@
+{
+  "title": "पॅकेज",
+  "subtitle": "नेहमीच्या कामांसाठी ठरलेले दर. एक निवडा आणि रिक्वेस्ट पाठवा.",
+  "tier": "पॅकेज",
+  "price": "दर",
+  "whatYouGet": "तुम्हाला काय मिळेल",
+  "delivery": "तयार होण्यास",
+  "revisions": "बदल",
+  "days_one": "{{count}} दिवस",
+  "days_other": "{{count}} दिवस",
+  "revisionsCount_one": "{{count}} बदल",
+  "revisionsCount_other": "{{count}} बदल",
+  "included": "समाविष्ट",
+  "notIncluded": "समाविष्ट नाही",
+  "request": "हे पॅकेज मागा",
+  "requestPrefill": "नमस्कार {{name}}, मला {{tier}} पॅकेज हवे आहे: {{pkg}} ({{price}}).",
+  "messageLabel": "तुमचा मेसेज",
+  "send": "रिक्वेस्ट पाठवा",
+  "sending": "पाठवत आहे…",
+  "sent": "रिक्वेस्ट पाठवली.",
+  "openConversation": "संवाद उघडा",
+  "tierName": {
+    "basic": "बेसिक",
+    "standard": "स्टँडर्ड",
+    "premium": "प्रीमियम"
+  },
+  "editor": {
+    "title": "तुमची पॅकेज",
+    "subtitle": "ठरलेल्या दराची जास्तीत जास्त तीन पॅकेज द्या. जो स्तर द्यायचा नाही तो रिकामा ठेवा.",
+    "name": "पॅकेजचे नाव",
+    "namePlaceholder": {
+      "basic": "उदा.: मासिक GST रिटर्न भरणे",
+      "standard": "उदा.: TDS सह GST भरणे",
+      "premium": "उदा.: संपूर्ण मासिक हिशेब"
+    },
+    "price": "दर (₹)",
+    "delivery": "तयार होण्यास (दिवस)",
+    "revisions": "समाविष्ट बदल",
+    "includes": "काय समाविष्ट आहे",
+    "includeN": "समाविष्ट गोष्ट {{n}}",
+    "addInclude": "एक ओळ जोडा",
+    "description": "थोडक्यात वर्णन (ऐच्छिक)",
+    "remove": "हा स्तर देणे थांबवा",
+    "save": "पॅकेज सेव्ह करा",
+    "saved": "पॅकेज सेव्ह झाली",
+    "errTier": "{{tier}} साठी नाव आणि दर हवा.",
+    "errNone": "नाव आणि दर असलेले किमान एक पॅकेज जोडा."
+  }
+}

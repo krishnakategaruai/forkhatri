@@ -23,7 +23,7 @@ export function storedLanguage(): string {
     // The cookie is the language the page was rendered in (and the provider
     // keeps it in step), so API labels match the screen from the first call.
     const cookie = document.cookie.match(/(?:^|; )vyapar_lang=([^;]*)/)?.[1];
-    if (cookie === "en" || cookie === "hi" || cookie === "te") return cookie;
+    if (cookie === "en" || cookie === "hi" || cookie === "te" || cookie === "mr" || cookie === "kn") return cookie;
     return window.localStorage.getItem(LANGUAGE_STORAGE_KEY) ?? "en";
   } catch {
     return "en";

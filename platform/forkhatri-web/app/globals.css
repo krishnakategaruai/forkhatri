@@ -28,8 +28,8 @@
   --radius-sm: 12px;
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --header-h: 60px;
-  --font-ui: var(--font-geist), var(--font-deva), var(--font-telugu), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-sora), var(--font-deva), var(--font-telugu), ui-sans-serif, system-ui, sans-serif;
+  --font-ui: var(--font-geist), var(--font-deva), var(--font-telugu), var(--font-kannada), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-sora), var(--font-deva), var(--font-telugu), var(--font-kannada), ui-sans-serif, system-ui, sans-serif;
 }
 
 :root[data-theme="dark"] {

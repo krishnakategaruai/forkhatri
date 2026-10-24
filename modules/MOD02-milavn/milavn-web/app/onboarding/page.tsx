@@ -1,155 +1,160 @@
 'use client';
 
-/* First-run onboarding (FR001, FR002, FR003, FR081 · UX02 · UI02):
- * Locality (soft-ask -> native prompt -> nearest approximate locality, manual
- * picker fallback, denial is a normal path) -> Interests (springy chips,
- * >=1 required) -> Language (native-script options) -> Home. */
+/* First run (FR001, FR081 · redesigned 2026-10-06, ONBOARDING-REDESIGN-2026-10.md §9 · mockup A/A2).
+ *
+ * One screen, one answer: where should Milavn look. Before, three forced screens (place → at least
+ * one interest → language) stood between the hub and Home, and the language step had English
+ * pre-ticked, which silently switched Telugu and Hindi members to English.
+ *   - Language is never asked here and never overwritten: Milavn already speaks the member's ForKhatri
+ *     language, and that is what the new profile records.
+ *   - Interests are optional and asked later, on Home (FR001 relaxed to "place only").
+ *   - The place takes one tap: "Use where I am" then "Yes", a big-city chip (city only), or typing straight
+ *     into the search on this screen (no sheet). Picking a result saves it; there is no Continue.
+ *   - If the location cannot be read, the screen says so and the city chips and search are right there.
+ *   - Afterwards the member goes where they were going (`?next=`, e.g. a shared circle link), else Home. */
 
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import PlacePicker, { type PickedPlace } from '@/components/PlacePicker';
+import { usePlaceSearch, type PickedPlace } from '@/components/PlacePicker';
 import { api, ApiError, type Profile } from '@/lib/api';
-import { chooseLanguage } from '@/lib/i18n/provider';
-import { LANGUAGE_NATIVE, SUPPORTED_LANGUAGES, type Language } from '@/lib/i18n/config';
+import { CITIES, citiesFor, safeNext } from '@/lib/first-run';
+import { isSupported } from '@/lib/i18n/config';
 import { useIdentity } from '@/lib/identity';
 
-type Taxonomy = { group: string; interests: { tag: string; label: string; intent_category: string }[] }[];
+function placeName(p: PickedPlace): string {
+  return p.locality_locality || p.locality_city;
+}
+function placeContext(p: PickedPlace): string {
+  return [p.locality_locality ? p.locality_city : null, p.locality_state].filter((v, i, a) => v && a.indexOf(v) === i).join(', ');
+}
 
-export default function OnboardingPage() {
-  const { t } = useTranslation();
+function FirstRun() {
+  const { t, i18n } = useTranslation();
   const router = useRouter();
-  const { setProfile } = useIdentity();
-  const [step, setStep] = useState(1);
-  const [taxonomy, setTaxonomy] = useState<Taxonomy>([]);
-  const [city, setCity] = useState('');
-  const [locality, setLocality] = useState('');
-  const [place, setPlace] = useState<PickedPlace | null>(null);
+  const params = useSearchParams();
+  const next = safeNext(params.get('next'));
+  const { identity, setProfile } = useIdentity();
+  const firstName = (identity?.display_name ?? '').split(' ')[0];
+
+  const [q, setQ] = useState('');
+  const { hits, busy, failed, needleOk } = usePlaceSearch(q);
+  const [found, setFound] = useState<PickedPlace | null>(null); // what "Use where I am" found, waiting for "Yes"
   const [locating, setLocating] = useState(false);
-  const [interests, setInterests] = useState<string[]>([]);
-  const [lang, setLang] = useState<Language>('en');
+  const [gpsProblem, setGpsProblem] = useState<'denied' | 'notFound' | null>(null);
+  const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [popTag, setPopTag] = useState<string | null>(null);
 
-  useEffect(() => {
-    api<Taxonomy>('/profile/interests/taxonomy').then(setTaxonomy).catch(() => undefined);
-  }, []);
-
-
-  const pick = (p: PickedPlace) => { setPlace(p); setCity(p.locality_city); setLocality(p.locality_locality ?? ''); };
+  const save = async (p: PickedPlace, key: string) => {
+    if (saving) return;
+    setSaving(key); setError(null);
+    const lang = i18n.language;
+    try {
+      const prof = await api<Profile>('/profile', {
+        body: {
+          locality_city: p.locality_city, locality_zone: p.locality_zone ?? null, locality_locality: p.locality_locality ?? null,
+          locality_state: p.locality_state ?? null, locality_lat: p.lat ?? null, locality_lng: p.lon ?? null,
+          // The member's ForKhatri language, recorded as it is (never a default English).
+          language_preference: isSupported(lang) ? lang : null,
+        },
+      });
+      setProfile(prof);
+      router.replace(next ?? '/');
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : t('state.error'));
+      setSaving(null);
+    }
+  };
 
   const useLocation = () => {
-    if (!navigator.geolocation) return;
+    setGpsProblem(null);
+    if (!navigator.geolocation) { setGpsProblem('denied'); return; }
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
-          const near = await api<PickedPlace>(`/profile/places/nearest?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`);
-          pick(near);
-        } catch { /* no place found for this position: the manual picker below stays available */ } finally { setLocating(false); }
+          setFound(await api<PickedPlace>(`/profile/places/nearest?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`));
+        } catch { setGpsProblem('notFound'); } finally { setLocating(false); }
       },
-      () => setLocating(false), // denial is a normal path: the manual picker is already visible
+      () => { setLocating(false); setGpsProblem('denied'); }, // denied or timed out: say so, the chips and search are right here
       { timeout: 8000 },
     );
   };
 
-  const toggle = (tag: string) => {
-    setInterests((cur) => (cur.includes(tag) ? cur.filter((x) => x !== tag) : [...cur, tag]));
-    setPopTag(tag);
-    setTimeout(() => setPopTag(null), 350);
-  };
-
-  const finish = async () => {
-    setBusy(true); setError(null);
-    try {
-      const p = await api<Profile>('/profile', { body: { locality_city: city, locality_zone: place?.locality_zone ?? null, locality_locality: locality || null, locality_state: place?.locality_state ?? null, locality_lat: place?.lat ?? null, locality_lng: place?.lon ?? null, interests, language_preference: lang } });
-      chooseLanguage(lang);
-      setProfile(p);
-      router.replace('/');
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : t('state.error'));
-      setBusy(false);
-    }
-  };
+  if (found) {
+    return (
+      <main className="screen firstrun" style={{ minHeight: '100vh' }}>
+        <section className="stack fade-in" style={{ gap: 16 }}>
+          <h1 className="display firstrun__title">{t('firstRun.nearTitle', { place: placeName(found) })}</h1>
+          <p className="muted" style={{ margin: 0 }}>{t('firstRun.keepAreaOnly')}</p>
+          <div className="picker" aria-hidden="true">
+            <span className="picker__icon">📍</span>
+            <span className="grow"><b>{placeName(found)}</b><span className="caption" style={{ display: 'block' }}>{placeContext(found)}</span></span>
+          </div>
+          {error && <p className="field__error" role="alert" style={{ margin: 0 }}>{error}</p>}
+          <button className="btn btn--primary btn--block" disabled={!!saving} onClick={() => save(found, 'gps')}>{saving ? t('firstRun.saving') : t('firstRun.yesThis')}</button>
+          <button className="btn btn--ghost btn--block" disabled={!!saving} onClick={() => setFound(null)}>{t('firstRun.chooseAnother')}</button>
+        </section>
+      </main>
+    );
+  }
 
   return (
-    <main className="screen" style={{ minHeight: '100vh' }}>
-      <div className="progress" aria-label={t('onboarding.step', { n: step })} role="progressbar" aria-valuenow={step} aria-valuemin={1} aria-valuemax={3}>
-        {[1, 2, 3].map((n) => <span key={n} className={n <= step ? 'on' : ''} />)}
-      </div>
+    <main className="screen firstrun" style={{ minHeight: '100vh' }}>
+      <section className="stack fade-in" style={{ gap: 16 }}>
+        <div>
+          {firstName && <p className="firstrun__hello">{t('firstRun.hello', { name: firstName })}</p>}
+          <h1 className="display firstrun__title">{t('firstRun.title')}</h1>
+          <p className="muted" style={{ margin: '8px 0 0' }}>{t('firstRun.body')}</p>
+        </div>
 
-      {step === 1 && (
-        <section className="stack fade-in" style={{ gap: 20 }}>
-          <div>
-            <h1 className="display">{t('onboarding.whereTitle')}</h1>
-            <p className="muted">{t('onboarding.whereBody')}</p>
-          </div>
-          <div className="motif" style={{ padding: 20, borderRadius: 24 }}>
-            <button className="btn btn--primary btn--block" onClick={useLocation} disabled={locating}>
-              {locating ? t('onboarding.locating') : t('onboarding.useLocation')}
-            </button>
-          </div>
-          <div className="row" style={{ gap: 12 }}><span className="divider grow" /><span className="caption">{t('onboarding.or')}</span><span className="divider grow" /></div>
-          {locating ? (
-            <div className="stack"><div className="sk" style={{ height: 48 }} /><div className="sk" style={{ height: 48 }} /></div>
-          ) : (
-            <PlacePicker city={city} locality={locality} state={place?.locality_state} onChange={pick} label={t('onboarding.whereTitle')} />
-          )}
-          <button className="btn btn--primary btn--block" disabled={!city} onClick={() => setStep(2)}>{t('onboarding.continue')}</button>
-        </section>
-      )}
+        <button className="btn btn--primary btn--block" onClick={useLocation} disabled={locating || !!saving}>
+          📍 {locating ? t('onboarding.locating') : t('firstRun.useWhereIAm')}
+        </button>
+        {gpsProblem && <p className="firstrun__note" role="alert">{t(gpsProblem === 'denied' ? 'firstRun.gpsDenied' : 'firstRun.gpsNotFound')}</p>}
 
-      {step === 2 && (
-        <section className="stack fade-in" style={{ gap: 20 }}>
-          <div>
-            <h1 className="display">{t('onboarding.interestsTitle')}</h1>
-            <p className="muted">{t('onboarding.interestsBody')}</p>
-          </div>
-          {taxonomy.map((g) => (
-            <div key={g.group} className="stack" style={{ gap: 8 }}>
-              <span className="label">{g.group}</span>
-              <div className="chips">
-                {g.interests.map((i) => {
-                  const on = interests.includes(i.tag);
-                  return (
-                    <button key={i.tag} type="button" className={`chip${popTag === i.tag ? ' pop' : ''}`} aria-pressed={on} onClick={() => toggle(i.tag)}>
-                      {on && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden="true"><path d="M5 12l5 5L19 7" /></svg>}
-                      {i.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-          <div className="row">
-            <button className="btn btn--ghost" onClick={() => setStep(1)}>{t('common.back')}</button>
-            <button className="btn btn--primary grow" disabled={interests.length === 0} onClick={() => setStep(3)}>{t('onboarding.continue')}</button>
-          </div>
-        </section>
-      )}
-
-      {step === 3 && (
-        <section className="stack fade-in" style={{ gap: 20 }}>
-          <div>
-            <h1 className="display">{t('onboarding.languageTitle')}</h1>
-            <p className="muted">{t('onboarding.languageBody')}</p>
-          </div>
-          <div className="stack" role="radiogroup">
-            {SUPPORTED_LANGUAGES.map((l) => (
-              <button key={l} type="button" role="radio" aria-checked={lang === l} className="radio" onClick={() => { setLang(l); chooseLanguage(l); }}>
-                <span className="radio__dot" />{LANGUAGE_NATIVE[l]}
+        <label className="field" style={{ margin: 0 }}>
+          <input
+            className="field__input" type="search" value={q} onChange={(e) => setQ(e.target.value)} autoComplete="off"
+            placeholder={t('firstRun.searchPlaceholder')} aria-label={t('firstRun.searchPlaceholder')}
+          />
+        </label>
+        {q.trim() !== '' && (
+          <div className="stack" style={{ gap: 6 }} aria-live="polite">
+            {!needleOk && <p className="caption" style={{ margin: 0 }}>{t('place.hint')}</p>}
+            {needleOk && busy && <p className="caption" style={{ margin: 0 }}>{t('place.searching')}</p>}
+            {needleOk && !busy && failed && <p className="field__error" role="alert" style={{ margin: 0 }}>{t('place.unavailable')}</p>}
+            {needleOk && !busy && !failed && hits.length === 0 && <p className="caption" style={{ margin: 0 }}>{t('place.none')}</p>}
+            {hits.map((p, i) => (
+              <button key={`${p.label}-${i}`} type="button" className="picker" disabled={!!saving} onClick={() => save(p, `hit-${i}`)}>
+                <span className="grow" style={{ textAlign: 'left' }}>
+                  <b>{placeName(p)}</b>
+                  <span className="caption" style={{ display: 'block' }}>{(p.label ?? '').split(', ').slice(1).join(', ')}</span>
+                </span>
+                {saving === `hit-${i}` ? <span className="caption">{t('firstRun.saving')}</span> : p.kind && <span className="pill pill--neutral">{t(`place.kind.${p.kind}`)}</span>}
               </button>
             ))}
           </div>
-          {error && <p className="field__error">{error}</p>}
-          <div className="row">
-            <button className="btn btn--ghost" onClick={() => setStep(2)}>{t('common.back')}</button>
-            <button className="btn btn--primary grow" disabled={busy} onClick={finish}>{t('onboarding.finish')}</button>
+        )}
+
+        <div className="stack" style={{ gap: 8 }}>
+          <span className="label">{t('firstRun.orTapCity')}</span>
+          <div className="chips">
+            {citiesFor(i18n.language).map((key) => (
+              <button key={key} type="button" className="chip" disabled={!!saving} aria-busy={saving === key} onClick={() => save(CITIES[key], key)}>
+                {saving === key ? t('firstRun.saving') : t(`firstRun.city.${key}`)}
+              </button>
+            ))}
           </div>
-        </section>
-      )}
+          <p className="caption" style={{ margin: 0 }}>{t('firstRun.cityOnlyNote')}</p>
+        </div>
+        {error && <p className="field__error" role="alert" style={{ margin: 0 }}>{error}</p>}
+      </section>
     </main>
   );
+}
+
+export default function OnboardingPage() {
+  return <Suspense fallback={<main className="screen" />}><FirstRun /></Suspense>;
 }

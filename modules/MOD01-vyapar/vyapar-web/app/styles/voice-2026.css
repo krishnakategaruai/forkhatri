@@ -661,6 +661,15 @@ button.vy-talk-line:hover {
   line-height: var(--leading-title);
 }
 
+/* Marathi and Kannada: same rule */
+:lang(mr) .vy-talk-question,
+:lang(kn) .vy-talk-question,
+:lang(mr) .vy-talk-readback,
+:lang(kn) .vy-talk-readback {
+  letter-spacing: 0;
+  line-height: var(--leading-title);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .vy-talk-entry,
   .vy-talk-option,

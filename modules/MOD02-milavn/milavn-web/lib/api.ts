@@ -93,7 +93,11 @@ export type Circle = {
   faces?: { member_id: string; display_name: string; avatar: string | null }[]; // your circles only: a few members' faces
 };
 
-export type AroundYou = { today: Card[]; tomorrow: Card[]; weekend: Card[]; later: Card[]; circles: { id: string; name: string; circle_type: string; member_count: number }[]; viewer_locality: string };
+export type AroundYou = {
+  today: Card[]; tomorrow: Card[]; weekend: Card[]; later: Card[]; circles: { id: string; name: string; circle_type: string; member_count: number }[]; viewer_locality: string;
+  // [Q5 2026-10-06] Only when the member's own city is quiet: labelled nearby-city and online events.
+  viewer_city?: string | null; quiet?: boolean; nearby?: Card[]; online?: Card[];
+};
 
 export const getProfile = () => api<Profile | null>('/profile/me');
 export const getAroundYou = () => api<AroundYou>('/discovery/around-you');

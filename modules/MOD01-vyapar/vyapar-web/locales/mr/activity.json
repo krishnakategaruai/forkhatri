@@ -1,0 +1,61 @@
+{
+  "title": "ॲक्टिव्हिटी",
+  "empty": "इथे अजून काही नाही — तुम्ही व्यापार वापरू लागलात की सेव्ह केलेल्या आणि पोस्ट केलेल्या गोष्टी इथे दिसतील.",
+  "groupSaved": "सेव्ह केलेले",
+  "groupPosted": "पोस्ट केलेले",
+  "groupRecentlyViewed": "नुकतेच पाहिलेले",
+  "groupShared": "शेअर केलेले",
+  "groupCompleted": "पूर्ण झालेले",
+  "groupResponded": "उत्तर दिलेले",
+  "groupToReview": "पाहायचे बाकी",
+  "groupPartnerships": "बिझनेस पार्टनरशिप",
+  "untitled": "संवाद",
+  "status": {
+    "listing": {
+      "draft": "ड्राफ्ट",
+      "submitted": "पाठवले",
+      "active_unverified": "सुरू",
+      "active_verified": "सुरू, व्हेरिफाइड",
+      "suspended": "स्थगित",
+      "archived": "संग्रहित"
+    },
+    "opportunity": {
+      "draft": "ड्राफ्ट",
+      "pending_review": "तपासणीत",
+      "active": "सुरू आहे",
+      "paused": "थांबवली आहे",
+      "stale": "अलीकडे अपडेट नाही",
+      "expired": "मुदत संपली",
+      "closed": "बंद",
+      "removed": "काढून टाकली"
+    },
+    "enquiry": {
+      "open": "खुली",
+      "awaiting_response": "उत्तराची वाट",
+      "in_progress": "सुरू आहे",
+      "resolved": "सुटली",
+      "closed": "बंद",
+      "withdrawn": "मागे घेतली",
+      "restricted": "मर्यादित"
+    },
+    "partnership": {
+      "draft": "ड्राफ्ट",
+      "pending": "प्रलंबित",
+      "accepted": "स्वीकारली",
+      "declined": "नकार दिला",
+      "withdrawn": "मागे घेतली",
+      "restricted": "मर्यादित",
+      "closed": "बंद",
+      "open": "खुली"
+    }
+  },
+  "emptyBody": "तुम्ही जे सेव्ह करता, पोस्ट करता, ज्याला उत्तर देता किंवा जे पूर्ण करता, ते इथे जमा होईल.",
+  "purpose": "तुम्ही जे सेव्ह केले, पोस्ट केले, ज्याला उत्तर दिले आणि जे पूर्ण केले.",
+  "all": "सर्व",
+  "kind": {
+    "listing": "प्रोफाइल",
+    "opportunity": "पोस्ट",
+    "enquiry": "रिक्वेस्ट",
+    "partnership": "बिझनेस पार्टनरशिप"
+  }
+}

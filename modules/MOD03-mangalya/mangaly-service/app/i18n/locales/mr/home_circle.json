@@ -1,0 +1,36 @@
+{
+  "error": {
+    "inviteSelf": "तुम्ही स्वतःलाच आमंत्रित करू शकत नाही.",
+    "alreadyInvited": "त्या फोन नंबर किंवा ईमेलसाठी एक आमंत्रण आधीच प्रलंबित आहे.",
+    "invitationNotFound": "ते आमंत्रण आता उपलब्ध नाही — त्याची मुदत संपली असेल किंवा ते आधीच वापरले गेले असेल.",
+    "notFound": "ते सापडले नाही.",
+    "rateLimited": "खूप जास्त आमंत्रणे पाठवली गेली. कृपया नंतर पुन्हा प्रयत्न करा.",
+    "contactRequestNotFound": "ती विनंती आता तुमच्या उत्तराची वाट पाहत नाही.",
+    "noteEmpty": "नोंद सेव्ह करण्यापूर्वी काहीतरी लिहा.",
+    "noteSubject": "नोंद एखाद्या स्थळाबद्दलच असावी.",
+    "candidateNotFound": "ही व्यक्ती अजून ForKhatri वर नाही. आधी त्यांना सामील व्हायला सांगा, मग आमंत्रित करा."
+  },
+  "relationship": {
+    "parent": "आई/वडील",
+    "guardian": "पालक",
+    "sibling": "भाऊ/बहीण",
+    "relative": "नातेवाईक"
+  },
+  "relation": {
+    "mother": "आई",
+    "father": "वडील",
+    "brother": "भाऊ",
+    "sister": "बहीण",
+    "guardian": "पालक",
+    "grandmother": "आजी",
+    "grandfather": "आजोबा",
+    "paternal_uncle": "काका",
+    "maternal_uncle": "मामा",
+    "paternal_aunt": "आत्या",
+    "maternal_aunt": "मावशी",
+    "cousin": "चुलत/मावस भावंड",
+    "brother_in_law": "मेहुणा",
+    "sister_in_law": "वहिनी/नणंद",
+    "family_friend": "कौटुंबिक मित्र"
+  }
+}

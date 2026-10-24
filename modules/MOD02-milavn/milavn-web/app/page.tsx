@@ -3,7 +3,11 @@
 /* Home / Around You (FR004, FR006, FR007, FR008, FR038 · UX04 · UI04):
  * active-circles strip, mode switcher, Today / Tomorrow / This Weekend /
  * Coming up, skeleton -> content cross-fade, specific empty copy per group,
- * "+" Make something happen. */
+ * "+" Make something happen.
+ * [2026-10-06 first-run redesign, §9 Q2/Q5] Home is never just "quiet": when the member's own city has
+ * little on, it also shows events in nearby cities and online events (each labelled as such), open
+ * groups in their city, and ready-made ideas to start something. After the member has seen Home once,
+ * an optional "What do you enjoy?" card asks for interests (Skip is always there). */
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -12,19 +16,21 @@ import { useTranslation } from 'react-i18next';
 
 import ActivityCard from '@/components/ActivityCard';
 import AskBar from '@/components/AskBar';
+import InterestPicker from '@/components/InterestPicker';
+import { TEMPLATES, TEMPLATE_FILL } from '@/lib/first-run';
 import TopActions from '@/components/TopActions';
 import { ChevronLeft } from 'lucide-react';
 import { FORKHATRI_ENTRANCE_URL } from '@/lib/platform';
 import ModeSwitcher, { type Mode } from '@/components/ModeSwitcher';
 import { CardSkeleton, EmptyState, ErrorState } from '@/components/States';
-import { api, type AroundYou } from '@/lib/api';
+import { api, ApiError, type AroundYou, type Circle, type Profile } from '@/lib/api';
 import { initials } from '@/lib/format';
 import { useIdentity } from '@/lib/identity';
 
 export default function HomePage() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { identity, profile } = useIdentity();
+  const { identity, profile, setProfile } = useIdentity();
   const hour = new Date().getHours();
   const greetKey = hour < 12 ? 'home.greetMorning' : hour < 17 ? 'home.greetAfternoon' : 'home.greetEvening';
   const firstName = (identity?.display_name ?? '').split(' ')[0];
@@ -35,14 +41,50 @@ export default function HomePage() {
   // "Here, right now": a one-shot device position that changes what you *see*, not your profile (FR038/FR041). No background tracking.
   const [here, setHere] = useState<{ lat: number; lng: number } | null>(() => { try { const v = sessionStorage.getItem('milavn.here'); return v ? JSON.parse(v) : null; } catch { return null; } });
   const [locating, setLocating] = useState(false);
+  const [hereFailed, setHereFailed] = useState(false);
   const locateHere = () => {
-    if (!navigator.geolocation) return;
+    setHereFailed(false);
+    if (!navigator.geolocation) { setHereFailed(true); return; }
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => { const h = { lat: pos.coords.latitude, lng: pos.coords.longitude }; try { sessionStorage.setItem('milavn.here', JSON.stringify(h)); } catch { /* ignore */ } setHere(h); setLocating(false); },
-      () => setLocating(false), { timeout: 8000 },
+      // Denied or timed out: say so instead of quietly doing nothing (the home place stays in use).
+      () => { setLocating(false); setHereFailed(true); }, { timeout: 8000 },
     );
   };
+
+  // [Q2] The optional interests card: shown from the member's second look at Home onwards, while they
+  // have no interests and have not skipped it. A per-device convenience; the interests themselves are saved on the server.
+  const memberKey = identity?.member_id ?? '';
+  const [nudge, setNudge] = useState(false);
+  const [picks, setPicks] = useState<string[]>([]);
+  const [savingPicks, setSavingPicks] = useState(false);
+  const [nudgeNote, setNudgeNote] = useState<string | null>(null);
+  const noInterests = !!profile && profile.interests.length === 0;
+  // "Seen before" means a Home view that started before this one (an effect may run twice for one view).
+  const [mountedAt] = useState(() => Date.now());
+  useEffect(() => {
+    if (!memberKey || !noInterests) return;
+    try {
+      const key = `milavn.homeSeen.${memberKey}`;
+      const seenAt = Number(localStorage.getItem(key) ?? '0');
+      const skipped = localStorage.getItem(`milavn.interestsSkipped.${memberKey}`) === '1';
+      if (seenAt > 0 && seenAt < mountedAt && !skipped) setNudge(true);
+      if (!seenAt) localStorage.setItem(key, String(Date.now()));
+    } catch { /* storage blocked: the card simply never shows; interests stay on Profile */ }
+  }, [memberKey, noInterests, mountedAt]);
+  const skipNudge = () => { try { localStorage.setItem(`milavn.interestsSkipped.${memberKey}`, '1'); } catch { /* ignore */ } setNudge(false); };
+  const savePicks = async () => {
+    setSavingPicks(true); setNudgeNote(null);
+    try {
+      setProfile(await api<Profile>('/profile/interests', { method: 'PUT', body: { interests: picks } }));
+      setNudge(false);
+    } catch (e) { setNudgeNote(e instanceof ApiError ? e.message : t('state.error')); }
+    finally { setSavingPicks(false); }
+  };
+
+  // "Groups near you": open groups in the member's city they are not in yet, while they have none of their own.
+  const [nearGroups, setNearGroups] = useState<Circle[] | null>(null);
   const clearHere = () => { try { sessionStorage.removeItem('milavn.here'); } catch { /* ignore */ } setHere(null); };
 
   // "Make something happen" (thesis §71) is a principle, so the button says
@@ -64,10 +106,18 @@ export default function HomePage() {
   const signedIn = Boolean(identity && profile);
   const homeKey = profile ? `${profile.member_id}|${profile.locality_city}|${profile.locality_zone ?? ''}|${profile.locality_locality ?? ''}` : '';
   useEffect(() => { if (signedIn) load(); }, [signedIn, homeKey, load]);
+  const hasOwnCircles = data ? data.circles.length > 0 : true;
+  const homeCity = (profile?.locality_city ?? '').toLowerCase();
+  useEffect(() => {
+    if (!signedIn || hasOwnCircles || !homeCity) return;
+    api<Circle[]>('/circles/discover')
+      .then((list) => setNearGroups(list.filter((c) => !c.viewer_role && (c.locality_city ?? '').toLowerCase() === homeCity).slice(0, 3)))
+      .catch(() => setNearGroups([]));
+  }, [signedIn, hasOwnCircles, homeCity]);
 
   const onMode = (m: Mode) => { if (m !== 'feed') router.push(`/discover?mode=${m}`); };
 
-  const groups: { key: keyof Omit<AroundYou, 'circles' | 'viewer_locality'>; title: string; empty: string }[] = [
+  const groups: { key: 'today' | 'tomorrow' | 'weekend' | 'later'; title: string; empty: string }[] = [
     { key: 'today', title: t('home.today'), empty: t('home.emptyToday') },
     { key: 'tomorrow', title: t('home.tomorrow'), empty: t('home.emptyTomorrow') },
     { key: 'weekend', title: t('home.weekend'), empty: t('home.emptyWeekend') },
@@ -103,12 +153,29 @@ export default function HomePage() {
         <div className="fade-in">
           <h2 className="greeting">{t(greetKey)}{firstName ? <>, <em>{firstName}</em></> : ''}.</h2>
           {data && <p className="greeting__sub">{t('home.greetSub', { locality: data.viewer_locality })}</p>}
+          {hereFailed && data && <p className="caption" role="status" style={{ margin: '4px 0 0' }}>{t('homeMore.hereFailed', { locality: data.viewer_locality })}</p>}
         </div>
         <AskBar prompts={[t('ask.prompt1'), t('ask.prompt2'), t('ask.prompt3'), t('ask.prompt4')]} />
         {digest && digest.length > 0 && (
           <div className="digest fade-in" aria-label={t('digest.label')}>
             {digest.map((l) => <div key={l} className="digest__line"><span aria-hidden="true">✦</span><span>{l}</span></div>)}
           </div>
+        )}
+        {nudge && (
+          <section className="card nudge fade-in" aria-labelledby="nudge-title">
+            <div className="stack" style={{ gap: 12, padding: 16 }}>
+              <div>
+                <h2 id="nudge-title" className="h2" style={{ margin: 0 }}>{t('homeMore.enjoyTitle')}</h2>
+                <p className="caption" style={{ margin: '4px 0 0' }}>{t('homeMore.enjoyBody')}</p>
+              </div>
+              <InterestPicker value={picks} onChange={setPicks} />
+              {nudgeNote && <p className="field__error" role="alert" style={{ margin: 0 }}>{nudgeNote}</p>}
+              <div className="row" style={{ gap: 8 }}>
+                <button type="button" className="btn btn--ghost" onClick={skipNudge}>{t('homeMore.skip')}</button>
+                <button type="button" className="btn btn--primary grow" disabled={picks.length === 0 || savingPicks} onClick={savePicks}>{savingPicks ? t('firstRun.saving') : t('common.done')}</button>
+              </div>
+            </div>
+          </section>
         )}
         {data && data.circles.length > 0 && (
           <section className="stack" style={{ gap: 6 }}>
@@ -132,9 +199,10 @@ export default function HomePage() {
             <CardSkeleton count={2} />
           </>
         )}
-        {data && total === 0 && (
+        {data && total === 0 && !data.quiet && (
           <EmptyState message={t('home.emptyAll', { locality: data.viewer_locality })} action={t('home.makeSomething')} onAction={() => router.push('/create')} />
         )}
+        {data && total === 0 && data.quiet && !digest && <p className="caption" role="status" style={{ margin: 0 }}>{t('homeMore.nothingYet', { locality: data.viewer_locality })}</p>}
         {data && liveNow.length > 0 && (
           <section className="stack fade-in" style={{ gap: 10 }}>
             <div className="section__head"><h2><span className="live-dot" aria-hidden="true" /> {t('home.happeningNow')}</h2><span className="count-chip">{liveNow.length}</span></div>
@@ -154,6 +222,50 @@ export default function HomePage() {
             </section>
           );
         })}
+
+        {/* [Q5] A quiet Home widens, and says plainly where each thing is. */}
+        {data && (data.nearby?.length ?? 0) > 0 && (
+          <section className="stack fade-in" style={{ gap: 10 }}>
+            <div className="section__head"><h2>{t('homeMore.nearbyTitle', { city: data.viewer_city ?? data.viewer_locality })}</h2><span className="count-chip">{data.nearby?.length}</span></div>
+            <p className="caption" style={{ margin: 0 }}>{t('homeMore.nearbyNote')}</p>
+            <div className="rail">{data.nearby?.map((c) => <ActivityCard key={c.id} card={c} />)}</div>
+          </section>
+        )}
+        {data && (data.online?.length ?? 0) > 0 && (
+          <section className="stack fade-in" style={{ gap: 10 }}>
+            <div className="section__head"><h2>{t('homeMore.onlineTitle')}</h2><span className="count-chip">{data.online?.length}</span></div>
+            <p className="caption" style={{ margin: 0 }}>{t('homeMore.onlineNote')}</p>
+            <div className="rail">{data.online?.map((c) => <ActivityCard key={c.id} card={c} />)}</div>
+          </section>
+        )}
+        {data && nearGroups && nearGroups.length > 0 && (
+          <section className="stack fade-in" style={{ gap: 8 }}>
+            <div className="row row--between"><span className="label">{t('homeMore.groupsNear')}</span><Link href="/circles" className="link caption">{t('home.seeAll')} ›</Link></div>
+            <div className="list">
+              {nearGroups.map((c) => (
+                <Link key={c.id} href={`/circles/${c.id}`} className="lrow lrow--tap">
+                  <span className="grow" style={{ minWidth: 0 }}>
+                    <b className="truncate" style={{ display: 'block' }}>{c.name}</b>
+                    <span className="caption">{[c.locality_label, t('chapter.members', { count: c.member_count }), c.women_only ? t('group.womenOnly') : null].filter(Boolean).join(' · ')}</span>
+                  </span>
+                  <span className="muted" aria-hidden="true">›</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+        {data && data.quiet && (
+          <section className="stack fade-in" style={{ gap: 8 }}>
+            <span className="label">{t('homeMore.startOne')}</span>
+            <div className="chips">
+              {TEMPLATES.map((k) => (
+                <Link key={k} href={`/create?template=${k}`} className="chip">
+                  <span aria-hidden="true">{TEMPLATE_FILL[k].icon}</span> {t(`homeMore.tpl.${k}`)}
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
       </main>
       <Link href="/create" className={`fab fab--extended${compactFab ? ' fab--compact' : ''}`} aria-label={t('home.makeSomething')}>
         <span className="fab__plus" aria-hidden="true">+</span>

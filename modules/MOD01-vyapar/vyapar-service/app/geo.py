@@ -103,3 +103,21 @@ def nearest_place(lat: float, lng: float, max_km: float = 15.0) -> tuple[Place, 
         if d <= max_km and (best is None or d < best[1]):
             best = (Place(name, plat, plng), d)
     return best
+
+
+def nearby_places(lat: float, lng: float, max_km: float = 25.0, limit: int = 6) -> list[tuple[Place, float]]:
+    """[Start flow 2026-10, decision 6] The known localities within `max_km`
+    of a position, nearest first. Empty outside every city the gazetteer
+    knows, so a screen offers area chips only when they really are nearby
+    (never a Hyderabad list to someone in Kakinada or Delhi)."""
+    import math
+
+    found: list[tuple[Place, float]] = []
+    for name, plat, plng, _alts in _PLACES:
+        x = math.radians(plng - lng) * math.cos(math.radians((plat + lat) / 2))
+        y = math.radians(plat - lat)
+        d = 6371.0 * math.hypot(x, y)
+        if d <= max_km:
+            found.append((Place(name, plat, plng), d))
+    found.sort(key=lambda pd: pd[1])
+    return found[:limit]

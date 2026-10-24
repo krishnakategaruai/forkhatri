@@ -52,7 +52,8 @@ async def refresh_taxonomy_cache(pool: asyncpg.Pool) -> None:
     async with pool.acquire() as conn:
         rows = await conn.fetch(
             """SELECT t.id, t.kind, t.slug, t.status, t.icon, t.name_en, t.name_hi, t.name_te,
-                      t.description_en, t.description_hi, t.description_te, t.aliases, p.slug AS parent_slug
+                      t.description_en, t.description_hi, t.description_te, t.aliases,
+                      t.name_mr, t.name_kn, t.description_mr, t.description_kn, p.slug AS parent_slug
                  FROM vyapar_listings.taxonomy_terms t
                  LEFT JOIN vyapar_listings.taxonomy_terms p ON p.id = t.parent_id
                 WHERE t.status != 'merged'
@@ -63,7 +64,10 @@ async def refresh_taxonomy_cache(pool: asyncpg.Pool) -> None:
     children: dict[str, list[str]] = {}
     for r in rows:
         names = {"en": r["name_en"], "hi": r["name_hi"] or r["name_en"], "te": r["name_te"] or r["name_en"]}
+        # Marathi and Kannada (migration 031), same fallback to English.
+        names.update({"mr": r["name_mr"] or r["name_en"], "kn": r["name_kn"] or r["name_en"]})
         descriptions = {k: v for k, v in (("en", r["description_en"]), ("hi", r["description_hi"]), ("te", r["description_te"])) if v}
+        descriptions.update({k: v for k, v in (("mr", r["description_mr"]), ("kn", r["description_kn"])) if v})
         term = TaxonomyTerm(
             id=r["id"], kind=r["kind"], slug=r["slug"], status=r["status"], icon=r["icon"],
             parent_slug=r["parent_slug"], names=names, descriptions=descriptions, aliases=list(r["aliases"] or []),

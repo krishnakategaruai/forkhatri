@@ -7,11 +7,12 @@
 // voice. pickVoice() returns a voice only when one exists for the member's
 // language; otherwise the question is shown as text with a small note.
 
-export type SpeechLang = "en" | "hi" | "te";
-export const SPEECH_LOCALE: Record<SpeechLang, string> = { en: "en-IN", hi: "hi-IN", te: "te-IN" };
+// Marathi and Kannada (2026-10-06): mr-IN / kn-IN, the same never-fall-back rule.
+export type SpeechLang = "en" | "hi" | "te" | "mr" | "kn";
+export const SPEECH_LOCALE: Record<SpeechLang, string> = { en: "en-IN", hi: "hi-IN", te: "te-IN", mr: "mr-IN", kn: "kn-IN" };
 
 export function speechLang(language: string | undefined): SpeechLang {
-  return language === "hi" || language === "te" ? language : "en";
+  return language === "hi" || language === "te" || language === "mr" || language === "kn" ? language : "en";
 }
 
 // Minimal typings: SpeechRecognition is not in every TS DOM lib.

@@ -36,7 +36,7 @@ import MoodAvatar from '@/components/MoodAvatar';
 import { ErrorState, Toast } from '@/components/States';
 import { API_BASE, api, ApiError, resolveMediaUrl } from '@/lib/api';
 import { EXPRESSIONS, startExpressions, type Expression, type ExpressionSession } from '@/lib/expressions';
-import { formatWhen } from '@/lib/format';
+import { formatWhen, intlLocale } from '@/lib/format';
 import { useIdentity } from '@/lib/identity';
 
 type Person = { member_id: string; display_name: string; avatar: string | null; active: boolean; here?: boolean; expression: string | null; last_seen_at: string | null };
@@ -53,7 +53,7 @@ const BREAK_MS = 45 * 60000; // a longer pause opens a new timestamped block; no
 const DOUBLE_TAP_MS = 280;
 const QUICK = { activity: ['onMyWay', 'seeYouThere', 'late'], plain: ['soundsGood', 'countMeIn', 'thanks'] } as const;
 
-const intl = (lang: string) => `${lang}-IN`;
+const intl = (lang: string) => (lang === 'mr' ? intlLocale(lang) : `${lang}-IN`); // Marathi keeps Latin digits
 const dayKey = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: IST }).format(d);
 const clock = (iso: string, lang: string) => new Intl.DateTimeFormat(intl(lang), { timeZone: IST, hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
 

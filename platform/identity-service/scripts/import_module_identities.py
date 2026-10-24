@@ -32,7 +32,7 @@ DEFAULT_IDENTITY_OWNER_DSN = (
     "postgresql://identity_owner:identity_owner_dev_password@localhost:5433/forkhatri_identity"
 )
 DEFAULT_MILAVN_IDENTITIES = REPO_DIR / "modules/MOD02-milavn/milavn-service/app/config/dev_identities.json"
-LANGUAGES = {"en", "hi", "te"}
+LANGUAGES = {"en", "hi", "te", "mr", "kn"}
 
 
 async def read_mangaly(dsn: str) -> dict[str, dict[str, Any]]:

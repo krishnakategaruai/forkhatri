@@ -150,6 +150,8 @@ class ExpertiseDecision(BaseModel):
     name_en: str | None = None
     name_hi: str | None = None
     name_te: str | None = None
+    name_mr: str | None = None
+    name_kn: str | None = None
     regulated: bool = False
 
 
@@ -165,9 +167,12 @@ async def decide_expertise(request_id: UUID, body: ExpertiseDecision, actor: Act
             slug = "".join(c if c.isalnum() else "-" for c in slug).strip("-")[:40]
             if not slug:
                 raise DomainError("invalid_slug", "Give the area an identifier.", 422)
-            await conn.execute("INSERT INTO expertise_area (id, parent_id, name_en, name_hi, name_te, regulated, sort_order) VALUES ($1,$2,$3,$4,$5,$6,500) "
-                               "ON CONFLICT (id) DO UPDATE SET status='active', name_en=EXCLUDED.name_en, name_hi=EXCLUDED.name_hi, name_te=EXCLUDED.name_te",
-                               slug, req["parent_id"], body.name_en or req["name"], body.name_hi or body.name_en or req["name"], body.name_te or body.name_en or req["name"], body.regulated)
+            # Marathi and Kannada stay empty when not given; readers then see the English name.
+            await conn.execute("INSERT INTO expertise_area (id, parent_id, name_en, name_hi, name_te, name_mr, name_kn, regulated, sort_order) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,500) "
+                               "ON CONFLICT (id) DO UPDATE SET status='active', name_en=EXCLUDED.name_en, name_hi=EXCLUDED.name_hi, name_te=EXCLUDED.name_te, "
+                               "name_mr=EXCLUDED.name_mr, name_kn=EXCLUDED.name_kn",
+                               slug, req["parent_id"], body.name_en or req["name"], body.name_hi or body.name_en or req["name"], body.name_te or body.name_en or req["name"],
+                               body.name_mr or None, body.name_kn or None, body.regulated)
             created = slug
             await conn.execute("INSERT INTO provider_expertise (provider_id, area_id) SELECT member_id, $2 FROM provider WHERE member_id=$1 ON CONFLICT DO NOTHING", req["proposed_by"], slug)
         await conn.execute("UPDATE expertise_request SET status=$2, decided_by=$3, decided_at=now(), created_area=$4 WHERE id=$1",
@@ -181,6 +186,8 @@ class AreaIn(BaseModel):
     name_en: str
     name_hi: str
     name_te: str
+    name_mr: str | None = None
+    name_kn: str | None = None
     regulated: bool = False
     status: Literal["active", "disabled"] = "active"
     parent_id: str | None = None
@@ -188,9 +195,10 @@ class AreaIn(BaseModel):
 
 @router.put("/expertise/{area_id}")
 async def upsert_area(area_id: str, body: AreaIn, actor: Actor = Depends(admin_actor)):
-    await db.execute("INSERT INTO expertise_area (id, parent_id, name_en, name_hi, name_te, regulated, status, sort_order) VALUES ($1,$2,$3,$4,$5,$6,$7,500) "
-                     "ON CONFLICT (id) DO UPDATE SET parent_id=$2, name_en=$3, name_hi=$4, name_te=$5, regulated=$6, status=$7",
-                     area_id, body.parent_id, body.name_en, body.name_hi, body.name_te, body.regulated, body.status)
+    await db.execute("INSERT INTO expertise_area (id, parent_id, name_en, name_hi, name_te, name_mr, name_kn, regulated, status, sort_order) "
+                     "VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,500) "
+                     "ON CONFLICT (id) DO UPDATE SET parent_id=$2, name_en=$3, name_hi=$4, name_te=$5, name_mr=coalesce($6, expertise_area.name_mr), name_kn=coalesce($7, expertise_area.name_kn), regulated=$8, status=$9",
+                     area_id, body.parent_id, body.name_en, body.name_hi, body.name_te, body.name_mr or None, body.name_kn or None, body.regulated, body.status)
     return {"ok": True}
 
 

@@ -161,7 +161,7 @@ export function useMyProfile() {
  * is not live, returns the coordinates alone so the screen can offer the
  * known areas as one-tap choices and still send lat/lng with the profile.
  */
-export function locateMe(): Promise<{ lat: number; lng: number; locality: string | null }> {
+export function locateMe(): Promise<{ lat: number; lng: number; locality: string | null; nearby: string[]; matched: boolean }> {
   return new Promise((resolve, reject) => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       reject(new Error("unavailable"));
@@ -180,9 +180,9 @@ export function locateMe(): Promise<{ lat: number; lng: number; locality: string
         const lat = Math.round(pos.coords.latitude * 1e5) / 1e5;
         const lng = Math.round(pos.coords.longitude * 1e5) / 1e5;
         api
-          .post<{ locality?: string | null }>("/v1/me/profile/locate", { lat, lng })
-          .then((r) => resolve({ lat, lng, locality: r?.locality ?? null }))
-          .catch(() => resolve({ lat, lng, locality: null }));
+          .post<{ locality?: string | null; nearby?: string[]; matched?: boolean }>("/v1/me/profile/locate", { lat, lng })
+          .then((r) => resolve({ lat, lng, locality: r?.locality ?? null, nearby: r?.nearby ?? [], matched: !!r?.matched }))
+          .catch(() => resolve({ lat, lng, locality: null, nearby: [], matched: false }));
       },
       (err) => {
         done = true;

@@ -10,6 +10,7 @@
 // all" and shared links keep working. Sort lives on the results heading.
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { numberLocale } from "@/lib/i18n/languages";
 import type { FeedFilterValues } from "@/lib/sdk";
 import FilterDropdown, { ChoiceList } from "@/app/components/filters/FilterDropdown";
 import TradePicker, { tradeValue, useTaxonomy } from "@/app/components/filters/TradePicker";
@@ -33,7 +34,7 @@ export default function DiscoverFilterBar({
 }) {
   const { t, i18n } = useTranslation(["explore"]);
   const { categories, labelOf } = useTaxonomy();
-  const rupees = (n: number) => n.toLocaleString(i18n.language === "en" ? "en-IN" : `${i18n.language}-IN`);
+  const rupees = (n: number) => n.toLocaleString(numberLocale(i18n.language));
 
   // Drafts, reset each time a panel opens.
   const [skills, setSkills] = useState<string[]>([]);

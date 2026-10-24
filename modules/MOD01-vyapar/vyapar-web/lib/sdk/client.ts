@@ -18,7 +18,7 @@ export interface VyaparClientConfig {
   baseUrl: string | (() => string);
   /** Who the caller is. Defaults to no credentials. */
   auth?: AuthStrategy;
-  /** Current UI language ("en" | "hi" | "te"). Read on every request. */
+  /** Current UI language ("en" | "hi" | "te" | "mr" | "kn"). Read on every request. */
   language?: () => string | null | undefined;
   /** Custom fetch (tests, server runtimes). Defaults to the global fetch. */
   fetch?: typeof fetch;

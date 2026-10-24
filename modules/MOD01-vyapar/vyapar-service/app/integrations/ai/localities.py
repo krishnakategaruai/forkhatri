@@ -2,6 +2,7 @@
 # in what a person wrote, in any script.
 #
 # "हिमायतनगर की बेकरी…" and "హిమాయత్‌నగర్‌లో…" must both mean Himayatnagar,
+# and (2026-10-06) Kannada "ಜಯನಗರದಲ್ಲಿ" / Marathi "कोथरूडमध्ये" their places,
 # the locality Vyapar already knows. No locality is stored in Hindi or Telugu,
 # so every form is reduced to a CONSONANT SKELETON: Devanagari and Telugu are
 # transliterated letter by letter, vowels, vowel signs and spacing are dropped,
@@ -35,10 +36,27 @@ _TELUGU = {
     "ప": "p", "ఫ": "ph", "బ": "b", "భ": "bh", "మ": "m", "య": "y", "ర": "r", "ఱ": "r", "ల": "l", "ళ": "l",
     "వ": "v", "శ": "sh", "ష": "sh", "స": "s", "హ": "h", "ం": "n", "ః": "", "ఋ": "r", "ృ": "r",
 }
+# [Kannada, 2026-10-06] Same letter values as Telugu (the scripts are siblings).
+_KANNADA = {
+    "ಕ": "k", "ಖ": "kh", "ಗ": "g", "ಘ": "gh", "ಙ": "n", "ಚ": "ch", "ಛ": "chh", "ಜ": "j", "ಝ": "jh", "ಞ": "n",
+    "ಟ": "t", "ಠ": "th", "ಡ": "d", "ಢ": "dh", "ಣ": "n", "ತ": "t", "ಥ": "th", "ದ": "d", "ಧ": "dh", "ನ": "n",
+    "ಪ": "p", "ಫ": "ph", "ಬ": "b", "ಭ": "bh", "ಮ": "m", "ಯ": "y", "ರ": "r", "ಱ": "r", "ಲ": "l", "ಳ": "l", "ೞ": "l",
+    "ವ": "v", "ಶ": "sh", "ಷ": "sh", "ಸ": "s", "ಹ": "h", "ಂ": "n", "ಃ": "", "ಋ": "r", "ೃ": "r",
+}
+_KANNADA_NUKTA = {"ಜ": "z", "ಫ": "f"}  # ಜ಼, ಫ಼ in loanwords
 _NUKTA_SIGN = "़"
 # Telugu case endings glued to a place name: హిమాయత్‌నగర్‌లో ("in Himayatnagar").
 _TELUGU_SUFFIXES = ("లోని", "లో", "నుండి", "నుంచి", "దగ్గర", "వద్ద", "కి", "కు")
-_INDIC_TOKEN = re.compile(r"[ऀ-ॿఀ-౿‌‍]+")
+# [Marathi + Kannada, 2026-10-06] Case endings glued to a place name: Kannada
+# ಜಯನಗರದಲ್ಲಿ ("in Jayanagar"), ಮೈಸೂರಿನಿಂದ ("from Mysuru"); Marathi कोथरूडमध्ये,
+# बाणेरजवळ, पुण्यात, कोथरूडला. Tried only when the word as written (with a
+# Telugu ending taken off) names no known place, so no Hindi or Telugu
+# reading changes.
+_MR_KN_SUFFIXES = (
+    "ದಲ್ಲಿರುವ", "ನಲ್ಲಿರುವ", "ಯಲ್ಲಿರುವ", "ದಲ್ಲಿ", "ನಲ್ಲಿ", "ಯಲ್ಲಿ", "ಲ್ಲಿ", "ದಿಂದ", "ನಿಂದ", "ಯಿಂದ", "ಕ್ಕೆ", "ಹತ್ತಿರ", "ಬಳಿ", "ಗೆ",
+    "मधील", "मध्ये", "मधे", "जवळ", "पासून", "हून", "च्या", "चा", "ची", "चे", "ात", "ला",
+)
+_INDIC_TOKEN = re.compile(r"[ऀ-ॿఀ-౿ಀ-೿‌‍]+")
 _LATIN_TOKEN = re.compile(r"[A-Za-z]+")
 # A city name is less specific than a locality: in "हैदराबाद के कुकटपल्ली में"
 # the answer is Kukatpally.
@@ -46,7 +64,7 @@ _CITIES = frozenset({"hyderabad", "secunderabad", "warangal", "kurnool", "vijaya
                      "chennai", "mumbai", "delhi", "new delhi", "pune", "kolkata"})
 
 
-_VIRAMA = {"्", "్"}
+_VIRAMA = {"्", "్", "್"}
 # Independent vowels and vowel signs → a vowel letter. Vowels are dropped from
 # the skeleton, but they must be present until then: without them हिल्स
 # ("hills") would read h-l-s as "lh" and lose its h to the aspiration fold.
@@ -56,11 +74,17 @@ _VOWELS = {
     **{c: "u" for c in "उऊुूఉఊుూ"},
     **{c: "e" for c in "एेఎఏెే"},
     **{c: "o" for c in "ओोఒఓొో"},
+    # Kannada
+    **{c: "a" for c in "ಅಆಐಔಾೈೌ"},
+    **{c: "i" for c in "ಇಈಿೀ"},
+    **{c: "u" for c in "ಉಊುೂ"},
+    **{c: "e" for c in "ಎಏೆೇ"},
+    **{c: "o" for c in "ಒಓೊೋ"},
 }
 
 
 def transliterate(text: str) -> str:
-    """Devanagari/Telugu → rough Latin, keeping a vowel after each syllable."""
+    """Devanagari/Telugu/Kannada → rough Latin, keeping a vowel after each syllable."""
     out: list[str] = []
     chars = unicodedata.normalize("NFC", text)
     i = 0
@@ -73,6 +97,10 @@ def transliterate(text: str) -> str:
             consonant = _DEVANAGARI[ch]
         elif ch in _TELUGU and ch not in "ంఃఋృ":
             consonant = _TELUGU[ch]
+        elif i + 1 < len(chars) and chars[i + 1] == "಼" and ch in _KANNADA_NUKTA:
+            consonant, i = _KANNADA_NUKTA[ch], i + 1
+        elif ch in _KANNADA and ch not in "ಂಃಋೃ":
+            consonant = _KANNADA[ch]
         if consonant is not None:
             out.append(consonant)
             nxt = chars[i + 1] if i + 1 < len(chars) else ""
@@ -82,6 +110,8 @@ def transliterate(text: str) -> str:
             out.append(_DEVANAGARI[ch])  # anusvara n, vocalic r
         elif ch in _TELUGU:
             out.append(_TELUGU[ch])
+        elif ch in _KANNADA:
+            out.append(_KANNADA[ch])
         elif ch in _VOWELS:
             out.append(_VOWELS[ch])
         elif "a" <= ch.lower() <= "z":
@@ -107,6 +137,14 @@ def skeleton(text: str) -> str:
 def _strip_telugu_suffix(token: str) -> str:
     token = token.replace("‌", "").replace("‍", "")
     for suffix in _TELUGU_SUFFIXES:
+        if token.endswith(suffix) and len(token) > len(suffix) + 2:
+            return token[: -len(suffix)]
+    return token
+
+
+def _strip_mr_kn_suffix(token: str) -> str:
+    token = token.replace("‌", "").replace("‍", "")
+    for suffix in _MR_KN_SUFFIXES:
         if token.endswith(suffix) and len(token) > len(suffix) + 2:
             return token[: -len(suffix)]
     return token
@@ -141,8 +179,15 @@ def find_known_locality(text: str, known: Iterable[str]) -> str | None:
                 if len(window) < width:
                     continue
                 words = [w for _, w in window]
-                words[-1] = _strip_telugu_suffix(words[-1])
+                last = words[-1]
+                words[-1] = _strip_telugu_suffix(last)
                 key = skeleton("".join(words))
+                if not (len(key) >= min_len and key in by_key):
+                    words[-1] = _strip_mr_kn_suffix(last)  # Marathi/Kannada ending, only as a second try
+                    key = skeleton("".join(words))
+                    # Kannada writes a final "m" as anusvara: ಮಲ್ಲೇಶ್ವರಂ = Malleshwaram.
+                    if key not in by_key and key.endswith("n") and any("ಀ" <= ch <= "೿" for ch in words[-1]):
+                        key = key[:-1] + "m" if key[:-1] + "m" in by_key else key
                 if len(key) >= min_len and key in by_key:
                     name = by_key[key]
                     hits.append((name.lower() in _CITIES, window[0][0], name))

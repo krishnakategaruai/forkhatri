@@ -6,6 +6,7 @@ import { Camera, FileCheck, Paperclip, Plus, ShieldCheck, Trash2 } from "lucide-
 import { API_BASE, api, type Evidence, type Expertise } from "@/lib/api";
 import { Avatar, Dialog, Skeleton, useToast } from "@/components/ui";
 import { usePlaces } from "@/lib/places";
+import { SUPPORTED_LANGUAGES } from "@/lib/i18n/config";
 
 type Mine = {
   headline: string; intro: string; city: string | null; country: string; timezone: string; languages: string[]; links: Record<string, string>;
@@ -108,7 +109,7 @@ export default function ProfileSetup() {
                 {["Asia/Kolkata", "Asia/Dubai", "Asia/Singapore", "Europe/London", "America/New_York", "America/Los_Angeles", "Australia/Sydney"].map((z) => <option key={z} value={z}>{z}</option>)}
               </select></label>
             <div className="field"><span className="label">{t("profile.languages")}</span>
-              <div className="row">{["en", "hi", "te"].map((l) => <button key={l} type="button" className="chip" aria-pressed={form.languages.includes(l)} onClick={() => setForm({ ...form, languages: form.languages.includes(l) ? form.languages.filter((x) => x !== l) : [...form.languages, l] })}>{t(`lang.${l}`)}</button>)}</div>
+              <div className="row">{SUPPORTED_LANGUAGES.map((l) => <button key={l} type="button" className="chip" aria-pressed={form.languages.includes(l)} onClick={() => setForm({ ...form, languages: form.languages.includes(l) ? form.languages.filter((x) => x !== l) : [...form.languages, l] })}>{t(`lang.${l}`)}</button>)}</div>
             </div>
           </div>
           <div className="row" style={{ gap: 14 }}>

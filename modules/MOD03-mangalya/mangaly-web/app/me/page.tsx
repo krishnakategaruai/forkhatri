@@ -31,6 +31,7 @@ import { SUPPORTED_LANGUAGES, type Language } from "@/lib/i18n/config";
 import { setPreferredLanguage } from "@/lib/i18n/provider";
 import {
   findCategory,
+  findField,
   type CategoryDef,
   type FieldDef,
 } from "@/lib/profileCategoryConfig";
@@ -198,6 +199,25 @@ const PREVIEW_LAYOUT: PreviewBlock[] = [
 ];
 
 const ALL_CATEGORIES_IN_ORDER = PROFILE_SECTIONS.flatMap((s) => s.categories);
+
+/* [D15, onboarding redesign 2026-10] "Next up" suggests the EASIEST missing
+   answer first: one-tap choices, then a short number, in this order. Only
+   when all of these are answered (or hidden) does it fall back to the first
+   empty category in section order. The camera face check is never "Next
+   up": it is its own optional card (owner, 2026-10-06: an optional trust
+   step, never a gate). */
+const EASY_NEXT: [category: string, key: string][] = [
+  ["marital_history", "marital_status"],
+  ["relocation", "relocation_willingness"],
+  ["lifestyle", "diet"],
+  ["education", "highest_education_level"],
+  ["basics", "mother_tongue"],
+  ["basics", "height_cm"],
+  ["family", "family_type"],
+  ["lifestyle", "smoking"],
+  ["lifestyle", "drinking"],
+  ["career_children_living_financial", "wants_children"],
+];
 
 function ageFromDob(dob: string): number {
   const birth = new Date(dob);
@@ -897,6 +917,15 @@ export default function ProfileHubPage() {
   const nextEmpty = ALL_CATEGORIES_IN_ORDER.find(
     (c) => statusOf(values, c) === "empty",
   );
+  // [D15] The easiest unanswered question; a declined (hidden) one counts as answered.
+  const nextEasy = EASY_NEXT.map(([c, k]) => findField(c, k)).find(
+    (f): f is FieldDef => {
+      if (!f) return false;
+      const row = values[f.category]?.[f.key];
+      return !row || (row.state !== "value" && row.state !== "declined");
+    },
+  );
+  const nextCategory = nextEasy?.category ?? nextEmpty;
 
   const sheetDefs = sheet?.kind === "section" ? sectionDefs(sheet.id) : [];
   const sheetItems = sheetDefs.flatMap((def) =>
@@ -1459,25 +1488,29 @@ export default function ProfileHubPage() {
             )}
             {/* One next step. While there is no photo, the large photo slot
                 above is that step, so nothing else competes with it. */}
-            {photos.length > 0 && nextEmpty && (
+            {photos.length > 0 && nextCategory && (
               <button
                 type="button"
                 className="me-row me-next"
                 onClick={() => {
-                  const sid = sectionOf(nextEmpty);
+                  const sid = sectionOf(nextCategory);
                   if (sid) openSection(sid);
                 }}
               >
                 <span className="me-row__body">
                   <span className="me-row__label">{t("profile:hub.nextUp")}</span>
                   <span className="me-row__title">
-                    {hubText(`section.${sectionOf(nextEmpty) ?? "basics"}`)}
+                    {/* [D15] The one question itself ("Marital status"), else the section. */}
+                    {nextEasy
+                      ? fieldLabel(nextEasy.labelKey)
+                      : hubText(`section.${sectionOf(nextCategory) ?? "basics"}`)}
                   </span>
                 </span>
                 {chevronRight}
               </button>
             )}
-            {/* [DEC-V1-016] Photo check: the invitation, or the fact. */}
+            {/* [DEC-V1-016, D15] Photo check: its own optional card — an
+                invitation, never the "Next up" step — or the fact once done. */}
             {!managing && (
               // Re-checks once the first photo is added (it hides at 0).
               <PhotoCheckCard key={photos.length > 0 ? "photos" : "none"} />
@@ -1737,23 +1770,27 @@ export default function ProfileHubPage() {
 
             {sheet.kind === "settings" && (
               <>
-                <div className="label">{t("common:settings.language")}</div>
-                <div className="segmented segmented--3" role="radiogroup">
-                  {SUPPORTED_LANGUAGES.map((lang) => (
-                    <button
-                      key={lang}
-                      type="button"
-                      className={`segmented__opt${i18n.language === lang ? " is-active" : ""}`}
-                      aria-pressed={i18n.language === lang}
-                      onClick={() => {
-                        void i18n.changeLanguage(lang as Language);
-                        setPreferredLanguage(lang as Language);
-                      }}
-                    >
-                      {t(`common:language.${lang}`)}
-                    </button>
-                  ))}
-                </div>
+                {/* [Owner rule: collapse option fields] Five languages no longer
+                    fit a three-column row, so the choice is one dropdown, each
+                    language written in its own script. */}
+                <label className="date-field">
+                  <span className="label">{t("common:settings.language")}</span>
+                  <select
+                    className="field__input select"
+                    value={SUPPORTED_LANGUAGES.includes(i18n.language as Language) ? i18n.language : "en"}
+                    onChange={(e) => {
+                      const lang = e.target.value as Language;
+                      void i18n.changeLanguage(lang);
+                      setPreferredLanguage(lang);
+                    }}
+                  >
+                    {SUPPORTED_LANGUAGES.map((lang) => (
+                      <option key={lang} value={lang}>
+                        {t(`common:language.${lang}`)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <div className="label" style={{ marginTop: 16 }}>
                   {t("common:settings.theme")}
                 </div>
@@ -1915,8 +1952,10 @@ export default function ProfileHubPage() {
                       {sheetItems.length > 1 && (
                         <div className="label">{fieldLabel(f.labelKey)}</div>
                       )}
-                      {f.kind === "select" && (f.options?.length ?? 0) > 12 ? (
-                        // A long list (the 27 nakshatras) reads better as one dropdown than as chips.
+                      {f.kind === "select" && (f.options?.length ?? 0) >= 12 ? (
+                        // A long list (the 27 nakshatras, the 12 rashis) reads better as one
+                        // dropdown than as chips. [D16] Rashi was 12 open chips; the collapse
+                        // rule puts it in a dropdown like the other long single choices.
                         <select
                           className="field__input"
                           name={f.key}

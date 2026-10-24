@@ -21,6 +21,7 @@
 
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { dateLocale, numberLocale } from "@/lib/i18n/languages";
 import type { TaxonomyTree } from "@/lib/sdk";
 import VoiceInput, { appendSpoken } from "@/app/components/VoiceInput";
 import SkillPicker from "@/app/components/taxonomy/SkillPicker";
@@ -115,11 +116,13 @@ function UseMyLocation({ onPlace }: { onPlace: (place: string) => void }) {
 }
 
 export function useComposerControls({ draft, onChange, tree, errors, aliases }: Omit<ComposerFormProps, "flagged" | "onLooksRight">) {
+  // [Decision 11] "Fixed amount" vs "Range" for the salary; null = decided from the draft.
+  const [salaryMode, setSalaryMode] = useState<"fixed" | "range" | null>(null);
   const { t, i18n } = useTranslation(["hiring", "opportunities"]);
   const lang = i18n.language;
   const d = draft;
   const set = onChange;
-  const rupee = (n: number) => new Intl.NumberFormat(`${lang}-IN`, { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
+  const rupee = (n: number) => new Intl.NumberFormat(numberLocale(lang), { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
 
   function renderControl(code: FieldCode): React.ReactNode {
     switch (code) {
@@ -151,36 +154,63 @@ export function useComposerControls({ draft, onChange, tree, errors, aliases }: 
         );
       case "required_capabilities":
         return <SkillPicker tree={tree} selected={d.skills} onChange={(skills) => set({ skills })} max={10} aliases={aliases} collapsible />;
-      case "salary":
+      case "salary": {
+        // [Start flow 2026-10, decision 11] Fixed pay is allowed as one
+        // amount; "up to" (a range) is the option, not the rule. Kirana
+        // owners say "10,000 a month", not a minimum and a maximum.
+        const isRange = salaryMode === "range" || (salaryMode === null && !!d.salaryMin && !!d.salaryMax && d.salaryMin !== d.salaryMax);
         return (
           <div className="vy-stack" style={{ gap: 8 }}>
-            <MoneyRange
-              min={d.salaryMin}
-              max={d.salaryMax}
-              onMin={(v) => set({ salaryMin: v })}
-              onMax={(v) => set({ salaryMax: v })}
-              minLabel={t("hiring:fields.min")}
-              maxLabel={t("hiring:fields.max")}
-              invalid={!!errors.salary}
+            <Segmented
+              options={["fixed", "range"] as const}
+              value={isRange ? "range" : "fixed"}
+              onChange={(m) => {
+                setSalaryMode(m);
+                if (m === "fixed" && d.salaryMin) set({ salaryMax: d.salaryMin });
+              }}
+              label={(v) => (v === "fixed" ? t("hiring:fields.payFixed") : t("hiring:fields.payRange"))}
+              ariaLabel={t("hiring:fields.salary")}
             />
-            <div className="vy-options">
-              {SALARY_PRESETS.map(([lo, hi]) => (
-                <button
-                  key={lo}
-                  type="button"
-                  className="vy-chip"
-                  aria-pressed={rupeesToPaise(d.salaryMin) === lo * 100 && rupeesToPaise(d.salaryMax) === hi * 100}
-                  onClick={() => set({ salaryMin: String(lo), salaryMax: String(hi) })}
-                >
-                  {rupee(lo)} – {rupee(hi)}
-                </button>
-              ))}
-            </div>
+            {isRange ? (
+              <>
+                <MoneyRange
+                  min={d.salaryMin}
+                  max={d.salaryMax}
+                  onMin={(v) => set({ salaryMin: v })}
+                  onMax={(v) => set({ salaryMax: v })}
+                  minLabel={t("hiring:fields.min")}
+                  maxLabel={t("hiring:fields.max")}
+                  invalid={!!errors.salary}
+                />
+                <div className="vy-options">
+                  {SALARY_PRESETS.map(([lo, hi]) => (
+                    <button
+                      key={lo}
+                      type="button"
+                      className="vy-chip"
+                      aria-pressed={rupeesToPaise(d.salaryMin) === lo * 100 && rupeesToPaise(d.salaryMax) === hi * 100}
+                      onClick={() => set({ salaryMin: String(lo), salaryMax: String(hi) })}
+                    >
+                      {rupee(lo)} – {rupee(hi)}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <MoneyInput
+                value={d.salaryMin || d.salaryMax}
+                onChange={(v) => set({ salaryMin: v, salaryMax: v })}
+                placeholder={t("hiring:fields.payFixedPlaceholder")}
+                ariaLabel={t("hiring:fields.salary")}
+                invalid={!!errors.salary}
+              />
+            )}
             {readbackRange(d.salaryMin, d.salaryMax, lang) && (
               <span className="vy-readback">{t("hiring:preview.perMonth", { range: readbackRange(d.salaryMin, d.salaryMax, lang) })}</span>
             )}
           </div>
         );
+      }
       case "incentive_type":
         return (
           <div className="vy-stack" style={{ gap: 8 }}>
@@ -683,7 +713,7 @@ function summarizeGroup(g: ComposerGroup, d: ComposerDraft, t: (k: string, opts?
         if (d.urgency !== null) parts.push(t(`hiring:options.urgency.${d.urgency}`));
         break;
       case "preferred_date":
-        if (d.preferredDate) parts.push(new Date(d.preferredDate).toLocaleDateString(lang, { day: "numeric", month: "short" }));
+        if (d.preferredDate) parts.push(new Date(d.preferredDate).toLocaleDateString(lang === "mr" ? dateLocale(lang) : lang, { day: "numeric", month: "short" }));
         break;
     }
   }

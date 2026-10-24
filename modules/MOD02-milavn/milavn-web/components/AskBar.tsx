@@ -1,7 +1,7 @@
 'use client';
 
 /* "Ask Milavn" — ask-first discovery (thesis §31–§32, §40; Brand §13–§14).
- * Type or speak in English, Hindi or Telugu; the API returns what it understood
+ * Type or speak in English, Hindi, Telugu, Marathi or Kannada; the API returns what it understood
  * as filters, echoed back as chips before anything runs, so the interpretation
  * is always visible and correctable (Understand → Recommend → Authorize).
  * Voice uses the browser's own speech recognition when present; when absent
@@ -13,10 +13,10 @@ import { useTranslation } from 'react-i18next';
 
 import { api } from '@/lib/api';
 
-export type Understood = { category: string | null; format?: string | null; when: string | null; distance: string | null; q: string | null; chips: string[] };
+export type Understood = { category: string | null; format?: string | null; when: string | null; distance: string | null; audience?: string | null; q: string | null; chips: string[] };
 
 type SpeechRecognitionLike = { lang: string; interimResults: boolean; maxAlternatives: number; onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null; onend: (() => void) | null; onerror: (() => void) | null; start: () => void; stop: () => void };
-const SPEECH_LANG: Record<string, string> = { en: 'en-IN', hi: 'hi-IN', te: 'te-IN' };
+const SPEECH_LANG: Record<string, string> = { en: 'en-IN', hi: 'hi-IN', te: 'te-IN', mr: 'mr-IN', kn: 'kn-IN' };
 
 function speechCtor(): (new () => SpeechRecognitionLike) | null {
   if (typeof window === 'undefined') return null;

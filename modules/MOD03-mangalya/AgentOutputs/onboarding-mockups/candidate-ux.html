@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mangalya candidate mode</title>
+<meta name="description" content="Static mockup, 2026-10-07: four candidate-to-candidate screens for Mangalya (request anchored to an answer, the match moment, incognito chat with a meeting proposal, inbox by turn). Kumkum + turmeric, light and dark. No app code.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f6d44f;          /* turmeric canvas (light) */
+    --surface: #fffbee;        /* cream tile */
+    --surface-2: #fff4d2;
+    --ink: #2a0707;
+    --muted: #6b4a2b;
+    --line: #efd98a;
+    --accent: #b3261e;         /* deep sindoor */
+    --accent-hover: #951c15;
+    --on-accent: #fff6dc;
+    --accent-tint: #fde1d3;
+    --gold: #e8b50b;
+    --gold-tint: #fff1ad;
+    --night: #1f1311;          /* incognito chat mood */
+    --night-ink: #fff0d2;
+    --night-line: #3b1816;
+    --ok: #17784a;
+    --shadow: 0 10px 28px rgba(120, 70, 0, 0.18);
+    --radius: 22px;
+    --serif: "Cormorant Garamond", "Noto Serif", Georgia, serif;
+    --sans: "Manrope", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #150c0b;
+      --surface: #1f1311;
+      --surface-2: #271716;
+      --ink: #fff0d2;
+      --muted: #c9a98a;
+      --line: #3b1816;
+      --accent: #c43a2e;
+      --accent-hover: #d84a3d;
+      --on-accent: #fff6dc;
+      --accent-tint: #3d1a0e;
+      --gold: #f2b43c;
+      --gold-tint: #3a3522;
+      --night: #120a0a;
+      --night-ink: #fff0d2;
+      --night-line: #3b1816;
+      --shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #150c0b;
+    --surface: #1f1311;
+    --surface-2: #271716;
+    --ink: #fff0d2;
+    --muted: #c9a98a;
+    --line: #3b1816;
+    --accent: #c43a2e;
+    --accent-hover: #d84a3d;
+    --on-accent: #fff6dc;
+    --accent-tint: #3d1a0e;
+    --gold: #f2b43c;
+    --gold-tint: #3a3522;
+    --night: #120a0a;
+    --night-ink: #fff0d2;
+    --night-line: #3b1816;
+    --shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.45;
+    padding: 24px 16px 48px;
+    background-image: radial-gradient(60% 40% at 50% 0%, rgba(179, 38, 30, 0.10), transparent 70%);
+  }
+  header.page {
+    max-width: 1320px; margin: 0 auto 20px; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: baseline; justify-content: space-between;
+  }
+  header.page h1 { font-family: var(--serif); font-weight: 500; font-size: 34px; margin: 0; letter-spacing: -0.01em; }
+  header.page h1 em { font-style: italic; font-weight: 400; }
+  header.page p { margin: 0; color: var(--muted); max-width: 60ch; }
+  .theme { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 8px 14px; font: 500 13px var(--sans); cursor: pointer; }
+
+  .screens { max-width: 1320px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+  .screen { display: flex; flex-direction: column; gap: 10px; }
+  .screen > .label { font-size: 13px; color: var(--muted); padding: 0 4px; }
+  .screen > .label strong { color: var(--ink); font-weight: 600; }
+  .phone {
+    width: 100%; max-width: 390px; margin: 0 auto; height: 780px; overflow: hidden;
+    background: var(--surface); border-radius: 36px; box-shadow: var(--shadow); border: 1px solid var(--line);
+    display: flex; flex-direction: column; position: relative;
+  }
+  .phone .body { overflow-y: auto; flex: 1; scrollbar-width: thin; }
+
+  /* type */
+  .serif { font-family: var(--serif); }
+  .name { font-family: var(--serif); font-weight: 500; font-size: 30px; line-height: 1.05; letter-spacing: -0.01em; }
+  .name em { font-style: italic; font-weight: 400; font-size: 0.85em; margin-left: 4px; }
+  .eyebrow { font-size: 12px; color: var(--muted); letter-spacing: 0.02em; }
+  .h2 { font-family: var(--serif); font-weight: 500; font-size: 20px; margin: 0 0 6px; }
+  .quote { font-family: var(--serif); font-size: 19px; line-height: 1.3; font-style: italic; }
+  .small { font-size: 12.5px; color: var(--muted); }
+  .dots { color: var(--gold); letter-spacing: 6px; font-size: 10px; text-align: center; }
+
+  /* bits */
+  .chip { display: inline-block; border: 1px solid var(--line); background: var(--surface-2); border-radius: 999px; padding: 4px 10px; font-size: 12.5px; margin: 0 6px 6px 0; }
+  .tile { background: var(--surface-2); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 999px; padding: 12px 18px; font: 600 14px var(--sans); border: 1px solid transparent; cursor: pointer; }
+  .btn-primary { background: var(--accent); color: var(--on-accent); width: 100%; }
+  .btn-gold { background: transparent; color: var(--ink); border-color: var(--gold); }
+  .btn-quiet { background: transparent; color: var(--ink); border-color: var(--line); font-weight: 500; }
+  .link { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--gold); font-weight: 500; font-size: 13px; }
+  .field { border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: 10px 12px; font-size: 14px; color: var(--muted); display: flex; align-items: center; justify-content: space-between; }
+  .field .mic { color: var(--muted); font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 8px; }
+  .lock { display: inline-block; width: 10px; height: 12px; border: 1.5px solid currentColor; border-radius: 3px; position: relative; top: 1px; margin-right: 6px; }
+  .badge-ok { color: var(--ok); font-size: 12.5px; }
+  .toggle { display: inline-block; width: 34px; height: 20px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); position: relative; vertical-align: middle; }
+  .toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--muted); }
+  .toggle.on { background: var(--gold-tint); border-color: var(--gold); }
+  .toggle.on::after { left: 16px; background: var(--gold); }
+
+  /* portraits: no stock photos in a mockup; a warm placeholder */
+  .portrait { background: linear-gradient(180deg, #d9a26a 0%, #a9683b 70%, #4a2a16 100%); position: relative; }
+  .portrait::after { content: ""; position: absolute; inset: auto 0 0 0; height: 45%; background: linear-gradient(180deg, transparent, rgba(42, 7, 7, 0.78)); }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(180deg, #d9a26a, #7a4524); flex: none; }
+
+  /* screen 1: profile */
+  .hero { height: 330px; border-radius: 36px 36px 0 0; }
+  .hero .cap { position: absolute; left: 18px; right: 18px; bottom: 14px; z-index: 1; color: #fff6dc; }
+  .hero .cap .chip { background: rgba(255, 246, 220, 0.14); border-color: rgba(255, 246, 220, 0.35); color: #fff6dc; }
+  .hero .back { position: absolute; top: 16px; left: 18px; color: #fff6dc; z-index: 1; font-size: 20px; }
+  .sec { padding: 14px 18px; border-top: 1px solid var(--line); }
+  .reqbox { margin-top: 10px; border: 1px solid var(--gold); background: var(--surface); border-radius: 18px; padding: 12px; display: grid; gap: 8px; }
+  .reqbox .eyebrow { color: var(--ink); }
+
+  /* screen 2: match moment */
+  .match { padding: 26px 20px; display: grid; gap: 14px; align-content: start; height: 100%; background: radial-gradient(70% 35% at 50% 0%, var(--gold-tint), transparent 70%); }
+  .match .title { font-family: var(--serif); font-size: 32px; font-weight: 500; text-align: center; line-height: 1.1; margin: 0; }
+  .match .pair { display: flex; justify-content: center; gap: 0; }
+  .match .pair .avatar { width: 56px; height: 56px; border: 3px solid var(--surface); }
+  .match .pair .avatar + .avatar { margin-left: -14px; }
+  .note { border-left: 3px solid var(--gold); padding: 8px 12px; font-family: var(--serif); font-size: 18px; line-height: 1.35; }
+  .opened { display: grid; gap: 6px; }
+  .opened div { display: flex; justify-content: space-between; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2); font-size: 14px; }
+
+  /* screen 3: chat */
+  .chat { background: var(--night); color: var(--night-ink); height: 100%; display: flex; flex-direction: column; border-radius: 36px; }
+  .chat .top { padding: 18px 18px 10px; border-bottom: 1px solid var(--night-line); display: grid; gap: 4px; }
+  .chat .top .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .chat .top .name { font-size: 24px; }
+  .chat .top .rule { font-size: 12px; color: #c9a98a; }
+  .chat .btn-gold { color: var(--night-ink); padding: 8px 12px; font-size: 12.5px; }
+  .chat .stream { flex: 1; overflow: auto; padding: 14px 16px; display: grid; gap: 10px; align-content: start; }
+  .msg { max-width: 82%; padding: 10px 13px; border-radius: 18px; font-size: 14.5px; line-height: 1.4; }
+  .msg.them { background: #2a1715; border-bottom-left-radius: 6px; }
+  .msg.me { background: #3a2a14; justify-self: end; border-bottom-right-radius: 6px; }
+  .msg .t { display: block; font-size: 11px; color: #c9a98a; margin-top: 4px; }
+  .proposal { border: 1px solid var(--gold); border-radius: 18px; padding: 12px; display: grid; gap: 8px; background: #1b1210; }
+  .proposal .eyebrow { color: var(--gold); }
+  .proposal .when { font-family: var(--serif); font-size: 22px; font-weight: 500; line-height: 1.1; }
+  .proposal .where { font-size: 14px; }
+  .proposal .where small { display: block; color: #c9a98a; font-size: 12px; }
+  .proposal .actions { display: flex; gap: 8px; }
+  .proposal .actions .btn { padding: 9px 12px; font-size: 13px; }
+  .proposal .share { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #c9a98a; }
+  .nudge { margin: 0 16px 8px; border: 1px solid var(--gold); background: #231512; border-radius: 14px; padding: 10px 12px; font-size: 13px; display: flex; gap: 10px; align-items: flex-start; }
+  .nudge b { color: var(--gold); }
+  .nudge .link { color: var(--night-ink); }
+  .compose { margin: 0 16px 18px; border: 1px solid var(--night-line); border-radius: 999px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; color: #c9a98a; font-size: 14px; }
+  .compose .send { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font-size: 14px; }
+
+  /* screen 4: inbox + settings */
+  .inbox { padding: 20px 18px; display: grid; gap: 10px; align-content: start; }
+  .inbox h1 { font-family: var(--serif); font-size: 32px; font-weight: 500; margin: 0 0 4px; }
+  .group { font-family: var(--serif); font-size: 17px; font-weight: 500; margin: 10px 0 0; display: flex; justify-content: space-between; align-items: baseline; }
+  .group span { font: 500 12px var(--sans); color: var(--muted); }
+  .thread { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface-2); }
+  .thread .who { font-family: var(--serif); font-size: 17px; font-weight: 500; line-height: 1.1; }
+  .thread .last { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .thread .when { font-size: 11.5px; color: var(--muted); margin-left: auto; flex: none; }
+  .thread .body { min-width: 0; }
+  .settings { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 12px; display: grid; gap: 10px; }
+  .setting { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .setting .t { font-weight: 600; font-size: 14px; }
+  .setting .d { font-size: 12.5px; color: var(--muted); }
+
+  /* in my words rows (screen 4 lower half) */
+  .mywords { display: grid; gap: 8px; }
+  .mywords .tile .eyebrow { margin-bottom: 4px; }
+  .mywords .tile .q { font-family: var(--serif); font-size: 18px; font-style: italic; }
+  .mywords .tile .meta { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
+
+  footer.notes { max-width: 1320px; margin: 32px auto 0; color: var(--muted); font-size: 13px; display: grid; gap: 6px; }
+  footer.notes b { color: var(--ink); }
+</style>
+</head>
+<body>
+<header class="page">
+  <div>
+    <h1>Mangalya, <em>candidate to candidate</em></h1>
+    <p>Four screens where borrowed patterns land: a request that replies to one answer (Hinge, Aisle), an opening question (Bumble), a before-we-talk note at the match moment (Hinge Match Note), a meeting proposed inside the chat (Breeze), a scam nudge (Pure), and an inbox grouped by turn (Hinge). Parents keep their biodata lens; nothing here reaches them except the inbox grouping and the meeting card.</p>
+  </div>
+  <button class="theme" type="button" onclick="toggleTheme()">Light / dark</button>
+</header>
+
+<section class="screens">
+
+  <!-- 1. Profile with in-place request -->
+  <div class="screen">
+    <div class="label"><strong>1 · Profile, before a connection.</strong> "Reply to this" opens the request in place; Aditya's opening question sits inside it. Red only on Send.</div>
+    <div class="phone">
+      <div class="body">
+        <div class="portrait hero">
+          <div class="back">←</div>
+          <div class="cap">
+            <div class="name">Aditya<em>29</em></div>
+            <div><span class="chip">Hyderabad</span><span class="chip">Product Designer</span><span class="chip">B.Des</span></div>
+          </div>
+        </div>
+        <div class="sec">
+          <div class="small"><span class="lock"></span>Contact details are shared only once you connect.</div>
+          <div style="margin-top:8px" class="eyebrow">Why you may fit</div>
+          <div style="font-size:14px">Same view on moving cities (open to discuss) · <span class="badge-ok">✓ photos matched by a selfie · Sept 2026</span></div>
+        </div>
+        <div class="sec">
+          <div class="eyebrow">What is usually on my plate</div>
+          <div class="quote">My dad runs a Punjabi restaurant in Secunderabad, so there is always too much butter. I also make a very respectable pesarattu.</div>
+          <div style="text-align:right;margin-top:6px"><span class="link">Reply to this</span></div>
+          <div class="reqbox">
+            <div class="eyebrow">Replying to "What is usually on my plate"</div>
+            <div class="field"><span>Then you have to try my mother's pesarattu. Mine is only respectable.</span><span class="mic">Speak</span></div>
+            <div class="eyebrow">Aditya asks everyone first</div>
+            <div class="quote" style="font-size:17px">"Tea or filter coffee, honestly?"</div>
+            <div class="field"><span>Filter coffee, no contest.</span><span class="mic">Speak</span></div>
+            <button class="btn btn-primary" type="button">Send request</button>
+            <div class="small" style="text-align:center">A request is only a question. No is a normal answer.</div>
+          </div>
+        </div>
+        <div class="sec">
+          <div class="h2">Closed until you both say yes</div>
+          <div class="small">His other answers · his ten choices beside yours · his voice introduction</div>
+        </div>
+        <div class="sec small">Report or block this profile</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Match moment -->
+  <div class="screen">
+    <div class="label"><strong>2 · You both said yes.</strong> Shown once. The before-we-talk note must be read before the chat opens. Parents never see this card; their popup stays the biodata one.</div>
+    <div class="phone">
+      <div class="match">
+        <div class="dots">● ● ●</div>
+        <div class="pair"><div class="avatar"></div><div class="avatar" style="background:linear-gradient(180deg,#c48a5a,#5a3016)"></div></div>
+        <h2 class="title">You both said yes</h2>
+        <div class="small" style="text-align:center">Asha and Aditya · 7 October</div>
+        <div class="eyebrow">Before we talk, Aditya wrote</div>
+        <div class="note">I was married before, for two years. No children. I would rather you know this first than find it awkward later.</div>
+        <button class="btn btn-gold" type="button" style="width:100%">I have read this</button>
+        <div class="eyebrow">Now open to you</div>
+        <div class="opened">
+          <div><span>His voice introduction</span><span class="small">0:41 ▶</span></div>
+          <div><span>His other answers</span><span class="small">2 more</span></div>
+          <div><span>His ten choices, beside yours</span><span class="small">7 same</span></div>
+        </div>
+        <button class="btn btn-primary" type="button">Start the conversation</button>
+        <div class="small" style="text-align:center">Ends when either of you leaves, or after 30 quiet minutes. Not stored.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Incognito chat -->
+  <div class="screen">
+    <div class="label"><strong>3 · The candidates' chat.</strong> Night mood with a lock (as built). The rule is stated plainly. A meeting is proposed inside the thread from the first-meeting places Mangalya already has. The money nudge appears only when a phrase is detected.</div>
+    <div class="phone">
+      <div class="chat">
+        <div class="top">
+          <div class="row">
+            <div class="name"><span class="lock"></span>Aditya</div>
+            <button class="btn btn-gold" type="button">Propose a meeting</button>
+          </div>
+          <div class="rule">Ends when either of you leaves, or after 30 quiet minutes · not stored</div>
+        </div>
+        <div class="stream">
+          <div class="msg them">Namaskaram Asha. Your reply about pesarattu made my mother laugh.<span class="t">4:02 pm</span></div>
+          <div class="msg me">Then she has to try mine. Mine is only respectable.<span class="t">4:03 pm</span></div>
+          <div class="msg them">Saturday? There is a quiet place near Jubilee Hills.<span class="t">4:05 pm</span></div>
+          <div class="proposal">
+            <div class="eyebrow">Meeting proposed by Aditya</div>
+            <div class="when">Sat 11 Oct · 4 pm</div>
+            <div class="where">Chutneys, Jubilee Hills<small>café · 2.1 km from you · open till 10 pm</small></div>
+            <div class="actions"><button class="btn btn-primary" type="button" style="width:auto">Accept</button><button class="btn btn-quiet" type="button" style="color:var(--night-ink)">Suggest another</button></div>
+            <div class="share"><span>Share with my family</span><span class="toggle"></span></div>
+          </div>
+          <div class="msg them">Also, could you send ₹2,000 to my UPI for the booking?<span class="t">4:09 pm</span></div>
+        </div>
+        <div class="nudge"><b>!</b><div>This message asks for money. Mangalya never asks for money, and nor should a match. <span class="link">Report</span></div></div>
+        <div class="compose"><span>Write…</span><span style="display:flex;gap:10px;align-items:center"><span class="small" style="color:#c9a98a">Speak</span><span class="send">›</span></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Inbox by turn + In my words rows -->
+  <div class="screen">
+    <div class="label"><strong>4 · Messages by turn, and the two new rows in Me → In my words.</strong> No red counts. Quiet browsing lives in settings, free.</div>
+    <div class="phone">
+      <div class="body">
+        <div class="inbox">
+          <h1>Messages</h1>
+          <div class="group">Waiting on you <span>2</span></div>
+          <div class="thread"><div class="avatar"></div><div class="body"><div class="who"><span class="lock"></span>Aditya</div><div class="last">Then she has to try mine…</div></div><div class="when">2 m</div></div>
+          <div class="thread"><div class="avatar" style="background:linear-gradient(180deg,#b98a7a,#5a3a30)"></div><div class="body"><div class="who">Rekha Tandon</div><div class="last">Namaste Asha, my husband would like to…</div></div><div class="when">1 d</div></div>
+          <div class="group">Waiting on them <span>1</span></div>
+          <div class="thread"><div class="avatar" style="background:linear-gradient(180deg,#c48a5a,#5a3016)"></div><div class="body"><div class="who"><span class="lock"></span>Varun</div><div class="last">You: see you on Sunday then.</div></div><div class="when">3 d</div></div>
+          <div class="group">Families <span>1</span></div>
+          <div class="thread"><div class="avatar" style="background:var(--gold-tint)"></div><div class="body"><div class="who">Varun's family, your family</div><div class="last">You: Namaste Aunty. Thank you for starting this.</div></div><div class="when">24 Sep</div></div>
+          <div class="small" style="padding:4px 2px">Quiet for 14 days · 1 ›</div>
+
+          <div class="settings">
+            <div class="eyebrow">Me · In my words</div>
+            <div class="mywords">
+              <div class="tile"><div class="eyebrow">A question for everyone who writes to me</div><div class="q">"Tea or filter coffee, honestly?"</div><div class="meta"><span class="small">Shown inside the request box. Optional.</span><span class="link">Edit</span></div></div>
+              <div class="tile"><div class="eyebrow">Before we talk · private</div><div class="q">"I will keep working after marriage. I can move cities."</div><div class="meta"><span class="small">Only a candidate you both said yes to reads this, once. Never families.</span><span class="link">Edit</span></div></div>
+            </div>
+            <div class="eyebrow" style="margin-top:6px">Settings</div>
+            <div class="setting"><div><div class="t">Quiet browsing</div><div class="d">You do not appear in Discover. People you send a request to can still see you. Free.</div></div><span class="toggle on"></span></div>
+            <div class="setting"><div><div class="t">Online status</div><div class="d">Mangalya never shows when you were last here.</div></div><span class="small">Always off</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<footer class="notes">
+  <div><b>Kept from the owner's rules:</b> kumkum only on the one primary action, gold as a mark, serif names, no grey, no score, no visitor list, no swipe, no timers, parents see biodata and never the candidate-only note.</div>
+  <div><b>Family mode on the same screens:</b> the request box has one plain note and shows "Aditya would like to know: …, he will ask when you connect"; the match popup is unchanged; the meeting card appears in the parent and family chats as "Family meeting" with sharing on.</div>
+  <div><b>Not promised:</b> screenshot detection (a web page cannot), "only the two of you can read this" (reports keep a snapshot).</div>
+</footer>
+
+<script>
+  function toggleTheme() {
+    var r = document.documentElement;
+    var dark = r.getAttribute('data-theme') === 'dark' || (!r.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
+    r.setAttribute('data-theme', dark ? 'light' : 'dark');
+  }
+</script>
+</body>
+</html>

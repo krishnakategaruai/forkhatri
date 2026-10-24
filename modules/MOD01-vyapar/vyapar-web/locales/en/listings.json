@@ -22,9 +22,9 @@
     "localityLabel": "Locality",
     "localityPlaceholder": "e.g. Ameerpet",
     "serviceModeLabel": "How do you work?",
-    "serviceModeOnSite": "On site",
-    "serviceModeRemote": "Remote",
-    "serviceModeBoth": "Both",
+    "serviceModeOnSite": "In person, at a place",
+    "serviceModeRemote": "Online, from anywhere",
+    "serviceModeBoth": "In person or online",
     "phoneLabel": "Phone number",
     "phonePlaceholder": "98765 43210",
     "saveDraft": "Save as Draft",
@@ -62,7 +62,12 @@
     "locating": "Finding your area…",
     "pickArea": "Which of these is your area?",
     "locationDenied": "Location is off. Type your area below.",
-    "change": "Change"
+    "change": "Change",
+    "locationUnnamed": "We couldn't name your area from here. Please type it.",
+    "businessNameSuggested": "{{name}}'s {{trade}}",
+    "businessNameYou": "My",
+    "businessNameTrade": "business",
+    "businessNameOptionalHint": "Optional. Leave it empty and we'll use the suggestion."
   },
   "mine": {
     "title": "My profiles",

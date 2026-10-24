@@ -21,7 +21,7 @@ import {
   reviewsApi,
   trustSafetyApi,
 } from "./domains/engagement";
-import { devApi, eventsApi, firstRunApi, membersApi, preferencesApi, privacyApi, uploadsApi, workspaceApi } from "./domains/account";
+import { devApi, eventsApi, firstRunApi, membersApi, myProfileApi, preferencesApi, privacyApi, uploadsApi, workspaceApi } from "./domains/account";
 import { adminApi, commercialApi } from "./domains/commercial";
 import { integrationsApi } from "./domains/integrations";
 // [FE2] contact control, packages, saved searches, badges, seeker protection, contracts
@@ -56,6 +56,8 @@ export function createVyaparSdk(config: VyaparClientConfig | VyaparClient) {
     trustSafety: trustSafetyApi(client),
     members: membersApi(client),
     firstRun: firstRunApi(client),
+    /** [Start flow 2026-10] the one profile's completion card and place lookup */
+    myProfile: myProfileApi(client),
     privacy: privacyApi(client),
     preferences: preferencesApi(client),
     workspace: workspaceApi(client),

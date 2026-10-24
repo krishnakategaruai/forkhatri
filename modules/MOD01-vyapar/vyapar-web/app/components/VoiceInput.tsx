@@ -29,7 +29,7 @@ import { recognitionCtor, SPEECH_LOCALE, type Recognition, type SpeechLang } fro
 // live in ./voice/speech, shared with the guided VoiceInterview.
 type VoiceLang = SpeechLang;
 const LOCALE = SPEECH_LOCALE;
-const ORDER: VoiceLang[] = ["en", "hi", "te"];
+const ORDER: VoiceLang[] = ["en", "hi", "te", "mr", "kn"];
 
 const noopSubscribe = () => () => {};
 

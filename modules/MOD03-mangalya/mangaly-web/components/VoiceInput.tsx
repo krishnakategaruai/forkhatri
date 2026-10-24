@@ -61,8 +61,8 @@ export default function VoiceInput({ onText, label }: Props) {
     const Recognition = w.SpeechRecognition ?? w.webkitSpeechRecognition;
     if (!Recognition) return;
     const engine = new Recognition();
-    // Hindi and Telugu speakers dictate in their own language, not in English.
-    engine.lang = { hi: 'hi-IN', te: 'te-IN' }[i18n.language] ?? 'en-IN';
+    // Hindi, Telugu, Marathi and Kannada speakers dictate in their own language, not in English.
+    engine.lang = ({ hi: 'hi-IN', te: 'te-IN', mr: 'mr-IN', kn: 'kn-IN' } as Record<string, string>)[i18n.language] ?? 'en-IN';
     engine.continuous = false;
     engine.interimResults = false;
     engine.onresult = (event) => {

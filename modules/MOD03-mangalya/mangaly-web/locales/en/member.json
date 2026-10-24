@@ -5,7 +5,8 @@
     "add": "Add your photo",
     "change": "Change your photo",
     "why": "Add a clear photo of yourself. It is how the families you talk to know who they are speaking with, and it is needed before you can make a profile for your child.",
-    "whyShort": "Add a clear photo so families know who they are talking to."
+    "whyShort": "Add a clear photo so families know who they are talking to.",
+    "error": "That photo could not be added. Please try another one, or take a new picture."
   },
   "about": {
     "title": "About you",

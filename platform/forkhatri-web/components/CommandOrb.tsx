@@ -13,7 +13,7 @@
  */
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type RefObject } from "react";
-import type { Lang, ModuleEntry } from "@/lib/api";
+import { INTL_LOCALE, type Lang, type ModuleEntry } from "@/lib/api";
 import { speechRecognitionCtor, useSpeechSupported, type SpeechRecognitionLike } from "@/lib/hooks";
 import type { MessageKey, Translate } from "@/lib/i18n";
 import type { Intent } from "@/lib/intent";
@@ -32,7 +32,7 @@ type IntentFieldProps = {
   onSubmit: () => void;
 };
 
-const SPEECH_LANG: Record<Lang, string> = { en: "en-IN", hi: "hi-IN", te: "te-IN" };
+const SPEECH_LANG: Record<Lang, string> = INTL_LOCALE;
 
 export default function IntentField({ t, lang, modules, query, onQueryChange: setQuery, intent, inputRef, onSubmit }: IntentFieldProps) {
   const [listening, setListening] = useState(false);

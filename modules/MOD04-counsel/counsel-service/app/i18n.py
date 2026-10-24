@@ -6,7 +6,9 @@ from __future__ import annotations
 
 from fastapi import Request
 
-SUPPORTED = ("en", "hi", "te")
+SUPPORTED = ("en", "hi", "te", "mr", "kn")
+# Every expertise-name column, for queries that pick the reader's language.
+AREA_NAME_COLUMNS = ", ".join(f"a.name_{lang}" for lang in SUPPORTED)
 
 
 def request_language(request: Request) -> str:

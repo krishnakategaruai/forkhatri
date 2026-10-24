@@ -901,7 +901,7 @@
   text-transform: uppercase;
   color: var(--gold-ink);
 }
-html:is([lang='hi'], [lang='te']) .home-head__date {
+html:is([lang='hi'], [lang='te'], [lang='mr'], [lang='kn']) .home-head__date {
   letter-spacing: 0;
   text-transform: none;
 }
@@ -1177,6 +1177,8 @@ html:is([lang='hi'], [lang='te']) .home-head__date {
 .hmatch__head { display: flex; flex-direction: column; gap: 2px; }
 .hmatch__title { margin: 0; font-family: var(--font-display-stack, serif); font-size: 1.5rem; font-weight: 600; color: var(--ink); }
 .hmatch__layer { margin: 0; font-size: 0.8125rem; color: var(--ink-3); }
+/* [D16] Unknown birth time: the result is provisional, said plainly and calmly. */
+.hmatch__provisional { align-self: flex-start; margin: 0; padding: 4px 12px; border-radius: 999px; font-size: 0.8125rem; font-weight: 600; color: var(--ink-2, var(--ink)); border: 1px solid var(--line); background: var(--surface); }
 .hmatch__score { display: flex; align-items: baseline; gap: 8px; }
 .hmatch__total { font-family: var(--font-display-stack, serif); font-size: 3rem; line-height: 1; font-weight: 600; color: var(--ink); font-variant-numeric: lining-nums tabular-nums; }
 .hmatch__max { font-size: 0.9375rem; color: var(--ink-3); }

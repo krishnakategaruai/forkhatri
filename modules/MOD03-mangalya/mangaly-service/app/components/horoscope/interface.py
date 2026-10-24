@@ -39,7 +39,15 @@ from app.config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["HoroscopeFilterUnavailable", "HoroscopeUnavailable", "MatchOutcome", "filter_ids", "match_for", "refresh_chart"]
+__all__ = [
+    "HoroscopeFilterUnavailable",
+    "HoroscopeUnavailable",
+    "MatchOutcome",
+    "filter_ids",
+    "has_chart",
+    "match_for",
+    "refresh_chart",
+]
 
 
 class HoroscopeUnavailable(Exception):
@@ -164,6 +172,12 @@ async def _current_with_gender(session: AsyncSession, account_id: UUID) -> tuple
 async def _current(session: AsyncSession, account_id: UUID) -> dict[str, Any] | None:
     found = await _current_with_gender(session, account_id)
     return found[0] if found else None
+
+
+async def has_chart(session: AsyncSession, *, account_id: UUID) -> bool:
+    """[D14, 2026-10-06] Whether the person has a calculated chart the caller
+    may read — the matchmaker offers "Horoscope match" only then."""
+    return await _current_with_gender(session, account_id) is not None
 
 
 async def match_for(

@@ -25,6 +25,12 @@ import { useFirstRunState } from "@/app/hooks/opportunities";
 import { useResource } from "@/app/hooks/useResource";
 import { useRoutes } from "@/app/host/HostProvider";
 import { FEED_CHANGED_EVENT } from "@/app/components/reco/feedbackStore";
+// [Start flow 2026-10, decision 12] results first: the outcome line and the
+// one-question completion card sit on Discover, never on a screen of their own.
+import StartOutcomeCard from "@/app/components/start/StartOutcomeCard";
+import CompletionCard from "@/app/components/start/CompletionCard";
+import { useMyProfile } from "@/app/components/account/useMyProfile";
+import "@/app/styles/start-2026.css";
 
 /** The filter the empty state offers to drop: the narrowest-looking one still set. */
 function withoutLastFilter(f: FeedFilterValues): FeedFilterValues | null {
@@ -53,7 +59,13 @@ export default function HomePage({ searchParams }: { searchParams: Promise<FeedQ
   const curated = isCurated(filters);
   const firstRun = useFirstRunState();
   const state = firstRun.data;
-  const ready = !!state?.done;
+  // [Start flow 2026-10, decision 1] a member with a trade or a post is never
+  // sent to the start; the server says so through `needs_start`.
+  const needsStart = !!state && (state.needs_start ?? !state.done);
+  const ready = !!state && !needsStart;
+  const welcome = (query as Record<string, string | undefined>).welcome;
+  const draftReason = (query as Record<string, string | undefined>).draft ?? null;
+  const me = useMyProfile();
   const rows = useResource<RowsResponse>(() => sdk.feed.rows(), [sdk], { enabled: ready && curated });
   const results = useResource<ResultsResponse>(() => sdk.feed.results(toFeedParams(filters)), [queryKey, sdk], { enabled: ready });
 
@@ -67,10 +79,12 @@ export default function HomePage({ searchParams }: { searchParams: Promise<FeedQ
     return () => window.removeEventListener(FEED_CHANGED_EVENT, onChanged);
   }, [curated, refreshRows, refreshResults]);
 
-  // [TR044] A member who has not finished first run goes there first.
+  // [TR044 → start flow 2026-10] A member who has not done the 3-question
+  // start goes there first — unless the hub sent a search (?q=), which is
+  // honoured straight away (decision 1).
   useEffect(() => {
-    if (state && !state.done) router.replace("/first-run");
-  }, [state, router]);
+    if (needsStart && !filters.q) router.replace("/first-run");
+  }, [needsStart, filters.q, router]);
 
   function setFilters(next: FeedFilterValues) {
     const qs = filtersToQuery(next);
@@ -121,6 +135,16 @@ export default function HomePage({ searchParams }: { searchParams: Promise<FeedQ
         viewerCategories={rows.data?.viewer_categories}
         failed={!!((firstRun.error && !state) || (curated ? rows.error && !rows.data : results.error && !results.data))}
         onRetry={() => void (!state ? firstRun.refresh() : curated ? rows.refresh() : results.refresh())}
+        aside={
+          ready ? (
+            <>
+              {(welcome === "work" || welcome === "visible") && (
+                <StartOutcomeCard kind={welcome} me={me.data} live={!draftReason} blocked={draftReason} skillLabel={skillLabel} />
+              )}
+              <CompletionCard />
+            </>
+          ) : null
+        }
       />
     </Screen>
   );

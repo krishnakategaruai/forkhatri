@@ -308,6 +308,12 @@
   letter-spacing: 0;
 }
 
+:lang(mr) .vy-fdd-seg legend,
+:lang(kn) .vy-fdd-seg legend {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 .vy-fdd-seg .vy-segmented {
   display: flex;
   flex-wrap: wrap;
@@ -418,6 +424,12 @@
 
 :lang(hi) .vy-trpick-cat,
 :lang(te) .vy-trpick-cat {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+:lang(mr) .vy-trpick-cat,
+:lang(kn) .vy-trpick-cat {
   text-transform: none;
   letter-spacing: 0;
 }

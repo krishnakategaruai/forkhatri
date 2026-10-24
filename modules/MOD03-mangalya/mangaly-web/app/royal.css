@@ -495,7 +495,7 @@ body::-webkit-scrollbar,
   text-transform: uppercase;
   color: var(--ink-3);
 }
-html:is([lang='hi'], [lang='te']) .convo__kind {
+html:is([lang='hi'], [lang='te'], [lang='mr'], [lang='kn']) .convo__kind {
   letter-spacing: 0;
   text-transform: none;
 }

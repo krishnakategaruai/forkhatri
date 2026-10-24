@@ -5,6 +5,8 @@ import { useTranslation } from "react-i18next";
 import Vignette from "@/components/Vignette";
 
 const ART = ["family", "basics", "community", "partner", "lifestyle", "photos", "future"];
+// [D2, 2026-10-06] The first-launch story is three cards; the full seven stay on Help.
+const SHORT_ART = ["family", "partner", "community"];
 
 type Card = { title: string; body: string };
 
@@ -15,9 +17,11 @@ export function useStoryCards(): Card[] {
   return t("help:story", { returnObjects: true }) as Card[];
 }
 
-export default function MangalyaStory({ onDone }: { onDone: () => void }) {
+export default function MangalyaStory({ onDone, short }: { onDone: () => void; short?: boolean }) {
   const { t } = useTranslation("help");
-  const cards = useStoryCards();
+  const full = useStoryCards();
+  const cards = short ? (t("help:storyShort", { returnObjects: true }) as Card[]) : full;
+  const art = short ? SHORT_ART : ART;
   const [i, setI] = useState(0);
   const card = cards[i];
   const last = i === cards.length - 1;
@@ -35,10 +39,11 @@ export default function MangalyaStory({ onDone }: { onDone: () => void }) {
         ))}
       </div>
       <div className="form wizard-step" key={i}>
-        <Vignette id={ART[i] ?? "family"} className="wizard-step__art" />
+        <Vignette id={art[i] ?? "family"} className="wizard-step__art" />
         <div className="wizard-step__head">
           <h1 className="h2">{card.title}</h1>
           <p className="story__body">{card.body}</p>
+          {short && last && <p className="caption">{t("help:storyMore")}</p>}
         </div>
         <div className="form__actions story__actions">
           {i > 0 && (

@@ -9,7 +9,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const HOURS: [string, number, number][] = [['6 am', 6, 0], ['7 am', 7, 0], ['8 am', 8, 0], ['10 am', 10, 0], ['12 pm', 12, 0], ['4 pm', 16, 0], ['6 pm', 18, 0], ['7 pm', 19, 0], ['8 pm', 20, 0], ['9 pm', 21, 0]];
-const LOCALE: Record<string, string> = { en: 'en-IN', hi: 'hi-IN', te: 'te-IN' };
+const LOCALE: Record<string, string> = { en: 'en-IN', hi: 'hi-IN', te: 'te-IN', mr: 'mr-IN-u-nu-latn', kn: 'kn-IN' };
 
 function pad(n: number) { return String(n).padStart(2, '0'); }
 function toValue(d: Date) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; }

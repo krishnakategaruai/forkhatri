@@ -3,12 +3,15 @@
 // money "₹1,49,900" with Indian digit grouping and no ".00" on whole rupees.
 // lib/money.ts's formatPaise stays as it is for the commercial screens.
 
-const locale = (language: string) => `${(language || "en").slice(0, 2)}-IN`;
+import { dateLocale, numberLocale } from "@/lib/i18n/languages";
+
+const locale = (language: string) => dateLocale(language);
+const moneyLocale = (language: string) => numberLocale(language);
 
 /** "₹3,000" — whole rupees without decimals, paise shown only when present. */
 export function formatRupees(paise: number, language: string): string {
   const whole = paise % 100 === 0;
-  return new Intl.NumberFormat(locale(language), {
+  return new Intl.NumberFormat(moneyLocale(language), {
     style: "currency",
     currency: "INR",
     minimumFractionDigits: whole ? 0 : 2,

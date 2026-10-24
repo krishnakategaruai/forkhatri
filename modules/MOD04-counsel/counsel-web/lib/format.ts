@@ -1,6 +1,6 @@
 /* Formatting in the reader's language and time zone. Indian date order. */
 
-const LOCALE: Record<string, string> = { en: "en-IN", hi: "hi-IN", te: "te-IN" };
+const LOCALE: Record<string, string> = { en: "en-IN", hi: "hi-IN", te: "te-IN", mr: "mr-IN", kn: "kn-IN" };
 
 export function money(minor: number | null | undefined, currency = "INR", lang = "en"): string {
   if (minor === null || minor === undefined) return "";

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 
 import DetailClient, { type PublicPage } from '@/components/DetailClient';
 import { resolveMediaUrl } from '@/lib/api';
@@ -29,7 +30,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const page = await fetchPublic(slug);
   if (!page) return { title: 'Milavn', robots: { index: false } };
   const image = resolveMediaUrl(page.seo.image);
+  // A WhatsApp or social preview needs absolute URLs on the host the link was
+  // shared from (a tunnel or the real domain), not the dev server's own address.
+  const h = await headers();
+  const host = h.get('x-forwarded-host') ?? h.get('host');
+  const proto = h.get('x-forwarded-proto') ?? (host?.startsWith('localhost') ? 'http' : 'https');
   return {
+    metadataBase: host ? new URL(`${proto}://${host}`) : undefined,
     title: page.seo.title,
     description: page.seo.description,
     openGraph: { title: page.seo.title, description: page.seo.description, images: image ? [image] : [], type: 'website' },

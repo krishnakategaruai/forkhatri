@@ -1,0 +1,100 @@
+{
+  "home": {
+    "greeting": "ನಮಸ್ತೆ, {{name}}",
+    "postOpportunity": "+ ಪೋಸ್ಟ್",
+    "openDirectory": "ಬಿಸಿನೆಸ್ ಮತ್ತು ಪ್ರೊಫೆಷನಲ್‌ಗಳು",
+    "loadingFeed": "ನಿಮ್ಮ ಫೀಡ್ ಲೋಡ್ ಆಗುತ್ತಿದೆ…",
+    "addCapabilities": "ನನ್ನ ಕೌಶಲ್ಯಗಳನ್ನು ಸೇರಿಸಿ",
+    "noOpportunities": "ತೋರಿಸಲು ಇನ್ನೂ ಪೋಸ್ಟ್‌ಗಳಿಲ್ಲ — ಬದಲಿಗೆ ಪ್ರೊಫೈಲ್‌ಗಳನ್ನು ನೋಡಲು ಬಿಸಿನೆಸ್ ಮತ್ತು ಪ್ರೊಫೆಷನಲ್‌ಗಳು ತೆರೆಯಿರಿ.",
+    "sectionForYou": "ನಿಮಗಾಗಿ",
+    "sectionExplore": "ಇನ್ನಷ್ಟು ನೋಡಿ",
+    "sectionNearYou": "ನಿಮ್ಮ ಹತ್ತಿರ",
+    "sectionCommunity": "ನಿಮ್ಮ ಸಮಾಜದಿಂದ",
+    "sectionPublic": "ಹೊರಗಿನಿಂದ ಹಂಚಿಕೊಂಡವು",
+    "seeAll": "ಎಲ್ಲಾ {{count}} ನೋಡಿ",
+    "emptyBody": "ನಿಮಗೆ ಹೊಂದುವಂಥದ್ದು ಇನ್ನೂ ಯಾರೂ ಪೋಸ್ಟ್ ಮಾಡಿಲ್ಲ. ನಿಮಗೆ ಬೇಕಾದ್ದನ್ನು ಪೋಸ್ಟ್ ಮಾಡಿ, ನಿಮ್ಮ ಸಮಾಜದವರು ಅದನ್ನು ನೋಡುತ್ತಾರೆ.",
+    "emptyAction": "ಏನಾದರೂ ಪೋಸ್ಟ್ ಮಾಡಿ"
+  },
+  "enrichment": {
+    "sparseProfile": "ಇನ್ನೂ ಸರಿಯಾದ ಹೊಂದಾಣಿಕೆಗಳಿಗಾಗಿ ನಿಮ್ಮ ಕೌಶಲ್ಯಗಳನ್ನು ಸೇರಿಸಿ — ಈಗ ನಿಮ್ಮ ಫೀಡ್ ಅನ್ನು ಹೆಚ್ಚು ನಿಮಗೆ ತಕ್ಕಂತೆ ಮಾಡಲು ಆಗುತ್ತಿಲ್ಲ."
+  },
+  "card": {
+    "postedToday": "ಇಂದು ಪೋಸ್ಟ್ ಮಾಡಲಾಗಿದೆ",
+    "postedYesterday": "ನಿನ್ನೆ ಪೋಸ್ಟ್ ಮಾಡಲಾಗಿದೆ",
+    "postedDaysAgo": "{{days}} ದಿನಗಳ ಹಿಂದೆ ಪೋಸ್ಟ್ ಮಾಡಲಾಗಿದೆ"
+  },
+  "businesses": {
+    "title": "ಬಿಸಿನೆಸ್ ಮತ್ತು ಪ್ರೊಫೆಷನಲ್‌ಗಳು",
+    "searchPlaceholder": "ಉದಾ. \"ಅಮೀರ್‌ಪೇಟ್ ಹತ್ತಿರ ಪ್ಲಂಬರ್\"",
+    "search": "ಹುಡುಕಿ",
+    "chipCategory": "ವರ್ಗ: {{category}}",
+    "chipNear": "ಹತ್ತಿರ: {{locality}}",
+    "verifiedLabel": "ಬಿಸಿನೆಸ್ ವೆರಿಫೈಡ್",
+    "noExactMatch": "ಸರಿಯಾಗಿ ಹೊಂದುವುದು ಸಿಗಲಿಲ್ಲ.",
+    "postWhatYouNeed": "ನಿಮಗೆ ಬೇಕಾದ್ದನ್ನು ಪೋಸ್ಟ್ ಮಾಡಿ",
+    "hint": "ಹೆಸರು, ವರ್ಗ ಅಥವಾ ಏರಿಯಾದಿಂದ ಹುಡುಕಿ — ಅಥವಾ ಹುಡುಕಿ ಒತ್ತಿ ಸುಮ್ಮನೆ ನೋಡಿ.",
+    "broadenRadius": "{{km}} km ವರೆಗೆ ಹೆಚ್ಚಿಸಿ",
+    "broadenAdjacentCategories": "ಹತ್ತಿರದ ವರ್ಗಗಳನ್ನೂ ಸೇರಿಸಿ",
+    "broadenRemoveFilter": "ಒಂದು ಫಿಲ್ಟರ್ ತೆಗೆಯಿರಿ",
+    "broadenIncludeUnverified": "ವೆರಿಫೈ ಆಗದ ಪ್ರೊಫೈಲ್‌ಗಳನ್ನೂ ಸೇರಿಸಿ",
+    "tooManySearches": "ತುಂಬಾ ಹುಡುಕಾಟಗಳಾಗಿವೆ — ದಯವಿಟ್ಟು ಸ್ವಲ್ಪ ನಿಧಾನಿಸಿ.",
+    "searchUnavailable": "ಹುಡುಕಾಟ ಸದ್ಯಕ್ಕೆ ಲಭ್ಯವಿಲ್ಲ — ಬದಲಿಗೆ ಇತ್ತೀಚೆಗೆ ಸೇರಿಸಿದ ಪ್ರೊಫೈಲ್‌ಗಳನ್ನು ತೋರಿಸಲಾಗುತ್ತಿದೆ.",
+    "recentlyAdded": "ಇತ್ತೀಚೆಗೆ ಸೇರಿಸಿದ್ದು",
+    "filters": "ಫಿಲ್ಟರ್‌ಗಳು",
+    "filtersActive": "ಫಿಲ್ಟರ್‌ಗಳು ({{count}})",
+    "radius": "ದೂರ",
+    "radiusAny": "ಎಷ್ಟು ದೂರವಾದರೂ",
+    "radiusKm": "{{km}} km ಒಳಗೆ",
+    "serviceMode": "ಸೇವೆಯ ವಿಧಾನ",
+    "serviceModeAny": "ಯಾವುದಾದರೂ",
+    "serviceModeOnSite": "ಸ್ಥಳಕ್ಕೆ ಬಂದು",
+    "serviceModeRemote": "ಆನ್‌ಲೈನ್",
+    "serviceModeBoth": "ಸ್ಥಳಕ್ಕೆ ಬಂದು ಅಥವಾ ಆನ್‌ಲೈನ್",
+    "availability": "ಲಭ್ಯತೆ",
+    "availabilityAny": "ಯಾವಾಗಲಾದರೂ",
+    "availabilityNow": "ಈಗ ಲಭ್ಯ",
+    "availabilityThisWeek": "ಈ ವಾರ",
+    "availabilityLater": "ನಂತರ",
+    "verifiedOnly": "ವೆರಿಫೈಡ್ ಮಾತ್ರ",
+    "sortBy": "ಕ್ರಮ",
+    "sortRelevance": "ಹೆಚ್ಚು ಹೊಂದುವವು",
+    "sortDistance": "ದೂರ",
+    "sortFreshness": "ಹೊಸದು",
+    "sortVerifiedFirst": "ವೆರಿಫೈಡ್ ಮೊದಲು",
+    "skills": "ಕೌಶಲ್ಯಗಳು",
+    "skillsSearchPlaceholder": "ಕೌಶಲ್ಯಗಳನ್ನು ಹುಡುಕಿ",
+    "clearFilters": "ಫಿಲ್ಟರ್‌ಗಳನ್ನು ತೆರವುಗೊಳಿಸಿ",
+    "applyFilters": "ಅನ್ವಯಿಸಿ",
+    "distanceAway": "{{km}} km ದೂರ",
+    "resultsCount": "{{count}} ಫಲಿತಾಂಶಗಳು",
+    "resultsCount_one": "1 ಫಲಿತಾಂಶ",
+    "resultsCount_other": "{{count}} ಫಲಿತಾಂಶಗಳು"
+  },
+  "post": {
+    "title": "ನೀವು ಏನು ಪೋಸ್ಟ್ ಮಾಡಬೇಕು?",
+    "listingTitle": "ನಿಮ್ಮ ಪ್ರೊಫೈಲ್",
+    "listingDesc": "ಜನರು ನಿಮ್ಮನ್ನು ಹುಡುಕುವಂತೆ ನಿಮ್ಮ ಕೆಲಸದ ಪ್ರೊಫೈಲ್ ಮತ್ತು ಬಿಸಿನೆಸ್ ಅನ್ನು ಸಿದ್ಧಮಾಡಿ ಅಥವಾ ಅಪ್‌ಡೇಟ್ ಮಾಡಿ.",
+    "opportunityTitle": "ಒಂದು ಪೋಸ್ಟ್",
+    "opportunityDesc": "ಉದ್ಯೋಗ, ಪ್ರಾಜೆಕ್ಟ್, ಲೋಕಲ್ ಸರ್ವಿಸ್ ಅಗತ್ಯ, ತರಬೇತಿ ಅಥವಾ ಕಾರ್ಯಕ್ರಮ.",
+    "subtitle": "ಪೋಸ್ಟ್ ಈಗಲೇ ಜನರನ್ನು ತಲುಪುತ್ತದೆ. ನಿಮ್ಮ ಪ್ರೊಫೈಲ್ ಮೂಲಕ ಜನರು ಯಾವಾಗ ಬೇಕಾದರೂ ನಿಮ್ಮನ್ನು ಹುಡುಕಬಹುದು."
+  },
+  "profiles": {
+    "similarTitle": "ಇದೇ ರೀತಿಯ ಪ್ರೊಫೈಲ್‌ಗಳು",
+    "matchingTitle": "ಇದಕ್ಕೆ ಹೊಂದುವ ಪ್ರೊಫೈಲ್‌ಗಳು",
+    "matchingHelp": "ನೀವು ಕೇಳಿದ ಕೌಶಲ್ಯಗಳು ಈಗಾಗಲೇ ಇರುವ ವ್ಯಾಪಾರ್‌ನ ಜನರು ಮತ್ತು ಬಿಸಿನೆಸ್‌ಗಳು.",
+    "hasSkills": "{{skills}} ಗೊತ್ತಿದೆ",
+    "availableNow": "ಈಗ ಲಭ್ಯ",
+    "experience_one": "{{count}} ವರ್ಷದ ಅನುಭವ",
+    "experience_other": "{{count}} ವರ್ಷಗಳ ಅನುಭವ",
+    "kind": {
+      "business": "ಬಿಸಿನೆಸ್",
+      "professional": "ಪ್ರೊಫೆಷನಲ್"
+    }
+  },
+  "broaden": {
+    "radius": "{{km}} km ವರೆಗೆ ಹೆಚ್ಚಿಸಿ",
+    "adjacent_categories": "ಸಂಬಂಧಿತ ವರ್ಗಗಳನ್ನೂ ಸೇರಿಸಿ",
+    "remove_filter": "ಒಂದು ಫಿಲ್ಟರ್ ತೆಗೆಯಿರಿ",
+    "include_unverified": "ವೆರಿಫೈ ಆಗದ ಪ್ರೊಫೈಲ್‌ಗಳನ್ನೂ ಸೇರಿಸಿ"
+  }
+}

@@ -116,6 +116,7 @@ Missing required fields block the save; the specific missing fields are listed.
 Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ~ (exact existence-tier field list is implementation-stage per BR01) · Singular ✓ · Feasible ✓ · Verifiable ~ (same reason) · Correct ✓ · Conforming ✓
 
 **Decisions** — none beyond BR01.
+**Decisions added 2026-10-06 (DEC-V1-035, `ONBOARDING-REDESIGN-2026-10.md`):** the existence tier is unchanged (name, date of birth, gender, city, one photo), but how it is collected changed. The wizard checks the marriageable-age rule at the date-of-birth step (the server still enforces it); the city comes from the place search; several photos may be chosen at once; with no photo the answers are kept as a draft on the device and never sent. The discoverability answers (education, occupation, marital status, relocation) may be skipped at creation; the profile then exists but is not shown in search until they are added, and the screen says so. Education gains `diploma` and `professional`, and `other` carries the family's words in `education.education_other`. A profile may also start from a family's biodata (PDF or image) read into these same fields after one consent line, each line checked by the family. A parent making a child's profile is asked the child's number and the maker's check on the last step, never before the work; by the owner's decision of 2026-10-06 the number becomes optional and the check optional (see DEC-V1-035 for what is applied).
 **Assumptions** — none.
 
 **Handoff readiness**
@@ -126,7 +127,7 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ~ (exact existen
 | Success + failure outcomes | Yes |
 
 **Review history**
-- (none yet)
+- 2026-10-06 — onboarding redesign built (DEC-V1-035); acceptance criteria unchanged.
 
 **Approval:** Product Manager / BA — [x] Approved — krishna kategaru, 2026-09-11
 

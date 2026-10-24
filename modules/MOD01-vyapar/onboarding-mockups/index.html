@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vyapar start flow</title>
+<!-- Static design proposal only (2026-10-06). Not app code. Companion to
+     ../ONBOARDING-REDESIGN-2026-10.md. Uses Vyapar's own light tokens
+     (globals.css) and the Anek family, so it reads like the real app. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anek+Latin:wght@400;500;600;700&family=Anek+Telugu:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--surface:#f6f5f1;--raised:#fff;--nested:#f2f1ec;--hair:#e3e1da;--border:#cfccc3;--text:#1a1c24;--muted:#4b505c;--brand:#2b4acb;--brand-soft:#ebeffd;--ok:#1d7a4f;--ok-soft:#e6f4ec}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--surface:#151821;--raised:#1d212b;--nested:#282e3a;--hair:#313745;--border:#414858;--text:#eceef2;--muted:#b2b8c4;--brand:#8b9dff;--brand-soft:#232b4a;--ok:#6fd3a0;--ok-soft:#1d3a2c}}
+:root[data-theme="dark"]{--surface:#151821;--raised:#1d212b;--nested:#282e3a;--hair:#313745;--border:#414858;--text:#eceef2;--muted:#b2b8c4;--brand:#8b9dff;--brand-soft:#232b4a;--ok:#6fd3a0;--ok-soft:#1d3a2c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface);color:var(--text);font-family:"Anek Latin","Anek Telugu",system-ui,sans-serif;line-height:1.45}
+header{padding:28px 16px 8px;max-width:1200px;margin:0 auto}
+header h1{font-size:1.6rem;margin:0 0 6px}
+header p{margin:0;color:var(--muted);max-width:70ch}
+.row{display:flex;gap:20px;flex-wrap:wrap;padding:20px 16px 40px;max-width:1200px;margin:0 auto}
+.phone{width:320px;max-width:100%;background:var(--raised);border:1px solid var(--hair);border-radius:28px;padding:18px 16px 20px;display:flex;flex-direction:column;gap:14px}
+.cap{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.phone h2{font-size:1.45rem;line-height:1.2;margin:0}
+.sub{color:var(--muted);font-size:.95rem;margin:-6px 0 0}
+.big{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--border);border-radius:18px;background:var(--raised);font-weight:600;font-size:1.05rem}
+.big small{display:block;font-weight:400;color:var(--muted);font-size:.85rem}
+.ic{width:40px;height:40px;border-radius:12px;background:var(--brand-soft);color:var(--brand);display:grid;place-items:center;flex:0 0 40px}
+.ic svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tile{border:1px solid var(--border);border-radius:16px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:.85rem;text-align:center}
+.tile[aria-pressed="true"]{border-color:var(--brand);background:var(--brand-soft)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--brand);background:var(--brand-soft);color:var(--text);border-radius:999px;padding:6px 12px;font-size:.9rem}
+.chip.ghost{border-color:var(--border);background:none;color:var(--muted)}
+.field{border:1px solid var(--border);border-radius:14px;padding:12px 14px;color:var(--muted)}
+.field.filled{color:var(--text)}
+.btn{background:var(--brand);color:#fff;border-radius:999px;padding:13px;text-align:center;font-weight:600}
+:root[data-theme="dark"] .btn{color:#10131a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn{color:#10131a}}
+.quiet{color:var(--brand);text-align:center;font-size:.95rem}
+.mic{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:16px;background:var(--nested);font-size:.95rem}
+.card{border:1px solid var(--hair);border-radius:16px;padding:12px;background:var(--raised)}
+.card strong{display:block}
+.meta{color:var(--muted);font-size:.85rem}
+.live{background:var(--ok-soft);color:var(--ok);border-radius:14px;padding:10px 12px;font-size:.92rem}
+.meter{height:6px;border-radius:6px;background:var(--nested);overflow:hidden}
+.meter i{display:block;height:100%;width:40%;background:var(--brand)}
+.note{font-size:.8rem;color:var(--muted);border-top:1px dashed var(--hair);padding-top:10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Vyapar start: proposed screens</h1>
+  <p>A static mockup of the proposed start flow (3 screens, then results). The worker path is shown across the row, with the hirer branch last. Each screen notes where the idea comes from. This is a proposal only; nothing here is wired into the app.</p>
+</header>
+<div class="row">
+
+  <section class="phone" aria-label="Screen 1">
+    <span class="cap">Screen 1 of 3</span>
+    <h2>Namaste Venkatesh, what do you want to do today?</h2>
+    <p class="sub">Pick one. You can do the others any time.</p>
+    <div class="big"><span class="ic"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg></span><span>Find work<small>Jobs and local work near you</small></span></div>
+    <div class="big"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M17 8v6M14 11h6"/></svg></span><span>Hire someone<small>Post a job or a one-time task</small></span></div>
+    <div class="big"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 9l1.5-5h15L21 9M4 9v11h16V9M9 20v-6h6v6"/></svg></span><span>Get customers<small>For my shop, service or home business</small></span></div>
+    <div class="mic"><span class="ic"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>Or just say it, in Telugu, Hindi or English</div>
+    <p class="note">Replaces 5 steps (name, language, locality, skills, why). Name and language already known from ForKhatri; consent line sits under the tiles (“By continuing you accept…”, one tap). Sources: WorkIndia “30-sec registration”; Apna reviews about a disabled Next on preferences.</p>
+  </section>
+
+  <section class="phone" aria-label="Screen 2">
+    <span class="cap">Screen 2 of 3</span>
+    <h2>What work do you do?</h2>
+    <p class="sub">Tap all that fit. Pictures, not long lists.</p>
+    <div class="tiles">
+      <div class="tile" aria-pressed="true"><span class="ic"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg></span>Plumber</div>
+      <div class="tile" aria-pressed="true"><span class="ic"><svg viewBox="0 0 24 24"><path d="M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0zM12 18v4"/></svg></span>Electrician</div>
+      <div class="tile"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 21l7-7M14 3l7 7-4 4-7-7z"/></svg></span>Carpenter</div>
+      <div class="tile"><span class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="12" height="7" rx="1"/><path d="M16 6h4v5h-8v3M12 14v7"/></svg></span>Painter</div>
+      <div class="tile"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M6 17l4-8h5l3 8M10 9h-3"/></svg></span>Delivery</div>
+      <div class="tile"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 11h16M6 11V7a6 6 0 0 1 12 0v4M5 11l1 9h12l1-9"/></svg></span>Cook</div>
+    </div>
+    <div class="chips"><span class="chip">Plumber ×</span><span class="chip">Electrician ×</span><span class="chip">Borewell motor repair ×</span><span class="chip ghost">+ Other, add your own</span></div>
+    <div class="field">Search or say it: “bathroom fitting”…</div>
+    <div class="btn">Continue</div>
+    <p class="quiet">More trades</p>
+    <p class="note">Trade icons already exist in Discover's TradeRail. “Other” entries become removable chips. Several trades allowed. Sources: Medhi et al. text-free UI (pictures + voice preferred); IFMR-LEAD (women register for more job types).</p>
+  </section>
+
+  <section class="phone" aria-label="Screen 3">
+    <span class="cap">Screen 3 of 3</span>
+    <h2>మీరు ఏ ఏరియాలో ఉంటారు?</h2>
+    <p class="sub">Where do you live or work from?</p>
+    <div class="big"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg></span><span>Use where I am now<small>Found: Kukatpally</small></span></div>
+    <div class="field filled">Kukatpally</div>
+    <div class="chips"><span class="chip ghost">Miyapur</span><span class="chip ghost">KPHB Colony</span><span class="chip ghost">Moosapet</span></div>
+    <div class="btn">Show me work</div>
+    <p class="note">One field, any town accepted. Nearby chips only when they really are nearby (no Hyderabad list for Kakinada or Delhi). Radius and on-site/remote are not asked: defaults from the trade, changeable in filters. Sources: WorkIndia/Apna reviews on forced or rejected locations; IFMR-LEAD 3–5 km search radius for women.</p>
+  </section>
+
+  <section class="phone" aria-label="Result">
+    <span class="cap">Result, first visit</span>
+    <div class="live">You're on Vyapar. Hirers near Kukatpally can now find you as a plumber and electrician.</div>
+    <h2>12 jobs near you</h2>
+    <div class="card"><strong>Plumber needed today, bathroom leak</strong><span class="meta">Banjara Hills · ₹1,200 · posted today</span></div>
+    <div class="card"><strong>Site electrician</strong><span class="meta">Kondapur · ₹18,000–26,000 a month</span></div>
+    <div class="card"><strong>Your profile: 40% done</strong><div class="meter"><i></i></div><span class="meta">Next: how many years have you done this work?</span><div class="chips" style="margin-top:8px"><span class="chip ghost">1–2</span><span class="chip ghost">3–5</span><span class="chip ghost">6–10</span><span class="chip ghost">10+</span></div></div>
+    <p class="note">No “You're ready” screen; results first. One question per visit in a small card. Sources: LinkedIn profile strength meter that never blocks; Naukri reviews (“100% profile, no calls”).</p>
+  </section>
+
+  <section class="phone" aria-label="Hirer path">
+    <span class="cap">Hirer, after “Hire someone”</span>
+    <h2>Who do you need?</h2>
+    <div class="mic"><span class="ic"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>Say it: “Shop helper, ₹10,000 a month, 10 to 8”</div>
+    <div class="field filled">दुकान के लिए हेल्पर चाहिए, सामान रखने और डिलीवरी के लिए। 10000 महीना। सुबह 10 से रात 8। चांदनी चौक</div>
+    <div class="card"><strong>Shop helper · Chandni Chowk</strong><span class="meta">₹10,000 a month (fixed) · Day shift, 10 am–8 pm</span><span class="meta">Let people call me before I accept: off</span></div>
+    <div class="btn">Post now</div>
+    <p class="note">No “create a profile first” wall: the one profile already exists from ForKhatri. Fixed salary allowed. Business name and documents asked later, never before the first post. Sources: Apna Recruiter “post a job in under 2 minutes”; Apna review (garage owner asked for shop documents after paying).</p>
+  </section>
+
+</div>
+</body>
+</html>

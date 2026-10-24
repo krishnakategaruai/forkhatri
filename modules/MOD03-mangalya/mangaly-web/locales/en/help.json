@@ -71,5 +71,20 @@
       "q": "How do marriage agents work?",
       "a": "Open Marriage agents, read their record, and choose one. They see your search and share profiles with you; you decide on every proposal."
     }
-  ]
+  ],
+  "storyShort": [
+    {
+      "title": "Mangalya is for the whole family",
+      "body": "One search, done together. You can make the profile yourself, or a parent, brother, sister or guardian can make it for you."
+    },
+    {
+      "title": "Both sides agree",
+      "body": "Mangalya shows people whose wishes you fit and who fit yours. Names, contact details and the full profile are shared only after both families accept a request."
+    },
+    {
+      "title": "Help when you want it",
+      "body": "Your family helps from their own phones. A trusted marriage agent can search for you too, only if you choose one."
+    }
+  ],
+  "storyMore": "The full story is in Help, anytime."
 }

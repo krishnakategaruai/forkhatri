@@ -37,6 +37,15 @@ class Settings(BaseSettings):
     identity_resolve_cache_seconds: int = 30
     identity_resolve_negative_cache_seconds: int = 5
 
+    # [Start flow 2026-10, decision 6] Place lookup outside the cities the
+    # built-in gazetteer (app/geo.py) knows, through the shared places
+    # adapter (shared/forkhatri-integrations: "none" = off, "nominatim" =
+    # free OpenStreetMap data). Off by default; Vyapar never names a vendor.
+    places_provider: str = "none"
+    places_base_url: str = ""
+    places_user_agent: str = "ForKhatri-Vyapar/1.0 (development)"
+    places_contact_email: str = ""
+
     verification_identifier_encryption_key: str = "CHANGE_ME_dev_only_32_byte_key_000000"
     object_storage_signed_url_ttl_seconds: int = 300
 

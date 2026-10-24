@@ -68,9 +68,18 @@ async def recommend_profiles(
     require_opportunity_participation: bool,
     lang: str,
     taste: Taste | None = None,
+    within: tuple[float | None, float | None, float] | None = None,
 ) -> list[ProfileCard]:
+    """`within` = (lat, lng, km) limits the pool to profiles within `km` of
+    that point; with no point (lat/lng None) only profiles whose locality
+    text matches `viewer_locality` qualify (decision 14, start flow 2026-10).
+    None (the default) keeps the unlimited behaviour every other caller has."""
     if not skills and not categories:
         return []
+    w_lat = within[0] if within else None
+    w_lng = within[1] if within else None
+    w_km = within[2] if within else None
+    limit_by_text = bool(within) and (w_lat is None or w_lng is None)
     rows = await conn.fetch(
         """SELECT l.*,
                   CASE WHEN l.capability_visible
@@ -85,6 +94,11 @@ async def recommend_profiles(
               AND ($4::uuid IS NULL OR l.id <> $4::uuid)
               AND (NOT $6 OR l.opportunity_participation)
               AND ((l.capability_visible AND l.capabilities && $1::text[]) OR l.categories && $2::text[])
+              AND ($8::double precision IS NULL OR l.lat IS NULL OR l.lng IS NULL
+                   OR vyapar_platform.distance_km($8::double precision, $9::double precision, l.lat, l.lng) <= $10::double precision)
+              AND (NOT $11::boolean OR ($5::text IS NOT NULL AND l.locality ILIKE '%' || $5 || '%'))
+              AND (NOT ($8::double precision IS NOT NULL AND (l.lat IS NULL OR l.lng IS NULL))
+                   OR ($5::text IS NOT NULL AND l.locality ILIKE '%' || $5 || '%'))
             ORDER BY skill_overlap DESC,
                      category_overlap DESC,
                      (l.state = 'active_verified') DESC,
@@ -93,7 +107,7 @@ async def recommend_profiles(
                      l.updated_at DESC
             LIMIT $7""",
         skills, categories, exclude_owner_ids, exclude_listing_id, viewer_locality,
-        require_opportunity_participation, CARD_POOL,
+        require_opportunity_participation, CARD_POOL, w_lat, w_lng, w_km, limit_by_text,
     )
     # [Trust pack] A profile whose council forbids advertising (advocates,
     # architects) gets no verified-first or "available now" boost: among

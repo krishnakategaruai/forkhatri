@@ -27,6 +27,8 @@
     "en": "English",
     "hi": "हिन्दी",
     "te": "తెలుగు",
+    "mr": "मराठी",
+    "kn": "ಕನ್ನಡ",
     "change": "Change language"
   },
   "settings": {
@@ -144,5 +146,10 @@
   },
   "screenGuard": {
     "message": "Screenshots are not allowed in Mangalya, to keep every family's photos and details private."
+  },
+  "photoChoice": {
+    "choose": "Choose a photo",
+    "take": "Take a photo",
+    "chooseMany": "Choose photos"
   }
 }

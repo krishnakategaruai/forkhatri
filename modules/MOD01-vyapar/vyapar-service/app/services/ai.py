@@ -70,7 +70,7 @@ from app.taxonomy_cache import labels_for
 
 logger = logging.getLogger(__name__)
 
-Language = Literal["en", "hi", "te"]
+Language = Literal["en", "hi", "te", "mr", "kn"]
 DAY_SECONDS = 86_400
 _IMAGE_MEDIA = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".pdf": "application/pdf"}
 _MAX_IMAGE_BYTES = 5 * 1024 * 1024
@@ -296,9 +296,9 @@ async def _audit(ctx: AuthzContext, kind: str, input_hash: str, result: AiResult
 
 async def _capability_terms(conn: asyncpg.Connection) -> list[dict[str, Any]]:
     rows = await conn.fetch(
-        "SELECT slug, name_en, name_hi, name_te, aliases FROM vyapar_listings.taxonomy_terms WHERE kind = 'capability' AND status <> 'merged' ORDER BY slug"
+        "SELECT slug, name_en, name_hi, name_te, name_mr, name_kn, aliases FROM vyapar_listings.taxonomy_terms WHERE kind = 'capability' AND status <> 'merged' ORDER BY slug"
     )
-    return [{"slug": r["slug"], "name_en": r["name_en"], "name_hi": r["name_hi"], "name_te": r["name_te"], "aliases": list(r["aliases"] or [])} for r in rows]
+    return [{"slug": r["slug"], "name_en": r["name_en"], "name_hi": r["name_hi"], "name_te": r["name_te"], "name_mr": r["name_mr"], "name_kn": r["name_kn"], "aliases": list(r["aliases"] or [])} for r in rows]
 
 
 async def _known_localities(conn: asyncpg.Connection) -> list[str]:

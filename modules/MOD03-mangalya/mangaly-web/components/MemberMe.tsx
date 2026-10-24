@@ -9,6 +9,7 @@ import { Avatar } from "@/components/Avatar";
 import Icon from "@/components/Icon";
 import ForKhatriHubLink from "@/components/ForKhatriHubLink";
 import PhotoCheckCard from "@/components/PhotoCheckCard";
+import PhotoChoice from "@/components/PhotoChoice";
 import { resolveMediaUrl } from "@/lib/api";
 import { logOut, type Session } from "@/lib/auth";
 import { relationKey } from "@/lib/homeCircle";
@@ -37,6 +38,7 @@ export default function MemberMe({ session }: { session: Session }) {
   const [draft, setDraft] = useState({ about: "", city: "", occupation: "" });
   const [saved, setSaved] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [uploading, setUploading] = useState(false);
+  const [photoError, setPhotoError] = useState(false);
   const [photoKey, setPhotoKey] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -71,10 +73,12 @@ export default function MemberMe({ session }: { session: Session }) {
   async function onPhoto(file: File | undefined) {
     if (!file) return;
     setUploading(true);
+    setPhotoError(false);
     const m = await uploadMemberPhoto(file);
     setUploading(false);
     setPhotoKey((k) => k + 1);
     if (m) setMember(m);
+    else setPhotoError(true);
   }
 
   const first = (name: string) => name.split(" ")[0];
@@ -123,6 +127,8 @@ export default function MemberMe({ session }: { session: Session }) {
             />
             <h2 className="member__name">{session.display_name}</h2>
             <p className="caption member__role">{t("member:role")}</p>
+            <PhotoChoice disabled={uploading} onFile={(f) => onPhoto(f)} />
+            {photoError && <p className="member__nudge" role="alert">{t("member:photo.error")}</p>}
             {!member?.photo_url && <p className="member__nudge">{t("member:photo.whyShort")}</p>}
             <PhotoCheckCard />
           </section>

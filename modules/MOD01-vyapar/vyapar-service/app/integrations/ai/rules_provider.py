@@ -3,7 +3,8 @@
 # configured, and what the service falls back to when Claude is unreachable —
 # so every screen keeps working with a usable answer. It grows the keyword
 # approach services/opportunities.py's `_extract_fields` started (English,
-# Hindi, Telugu and Hinglish words) and reuses app/ranking.py's allow-listed
+# Hindi, Telugu and Hinglish words; Marathi and Kannada added alongside on
+# 2026-10-06, never replacing a word) and reuses app/ranking.py's allow-listed
 # signals for the shortlist, scaled to 1–10, so the rules shortlist can never
 # disagree with the feed's own notion of fit.
 from __future__ import annotations
@@ -29,7 +30,7 @@ _WORD = r"(?<![a-z0-9])(?:{})(?![a-z0-9])"
 
 
 def _kw(*words: str) -> re.Pattern[str]:
-    """Latin words match on word boundaries; Devanagari/Telugu match as substrings."""
+    """Latin words match on word boundaries; Devanagari/Telugu/Kannada match as substrings."""
     latin = [re.escape(w) for w in words if re.match(r"^[a-z0-9 .'/+-]+$", w)]
     other = [re.escape(w) for w in words if not re.match(r"^[a-z0-9 .'/+-]+$", w)]
     parts = []
@@ -82,6 +83,28 @@ _TYPE_HINTS: dict[str, list[tuple[re.Pattern[str], int]]] = {
 }
 
 
+# [Marathi + Kannada, 2026-10-06] Extra hints with the same weights. Words a
+# Hindi notice also uses (ट्रेनिंग, समाज, कार्यक्रम, पार्टनरशिप) are left out,
+# so no Hindi reading changes.
+_TYPE_HINTS["employment"] += [
+    (_kw("pagar", "pagaar", "sambala", "sambla", "नोकरी", "नोकऱ्या", "नोकर्‍या", "भरती", "पगार", "रिक्त जागा", "चालेल",
+         "ಉದ್ಯೋಗ", "ನೌಕರಿ", "ನೇಮಕಾತಿ", "ಬೇಕಾಗಿದ್ದಾರೆ", "ಸಂಬಳ", "ವೇತನ", "ಸಿಬ್ಬಂದಿ", "ಸ್ಟಾಫ್", "ಹೆಲ್ಪರ್", "ಬಾಯ್ಸ್", "ಪಾಸ್"), 3),
+    (_kw("दरमहा", "महिना", "महिन्याला", "मुलाखत", "इंटरव्ह्यू", "ತಿಂಗಳಿಗೆ", "ತಿಂಗಳು", "ಸಂದರ್ಶನ", "ಇಂಟರ್ವ್ಯೂ"), 1),
+]
+_TYPE_HINTS["freelance"] += [
+    (_kw("फ्रीलान्स", "ಫ್ರೀಲಾನ್ಸ್", "ಪ್ರಾಜೆಕ್ಟ್"), 3),
+    (_kw("वेबसाईट", "ॲप", "अ‍ॅप", "ಡ್ಯಾಶ್‌ಬೋರ್ಡ್", "ಡ್ಯಾಶ್ಬೋರ್ಡ್", "ವೆಬ್‌ಸೈಟ್", "ವೆಬ್ಸೈಟ್", "ಆ್ಯಪ್", "ಮೊಬೈಲ್ ಆಪ್"), 3),
+    (_kw("बजेट", "ಬಜೆಟ್"), 1),
+]
+_TYPE_HINTS["local_service"] += [
+    (_kw("इलेक्ट्रिशियन", "दुरुस्ती", "रिपेअर", "ಪ್ಲಂಬರ್", "ಎಲೆಕ್ಟ್ರಿಷಿಯನ್", "ರಿಪೇರಿ", "ದುರಸ್ತಿ"), 3),
+    (_kw("pahije", "beku", "पाहिजे", "हवा आहे", "हवी आहे", "हवे आहे", "घरी", "ಬೇಕು", "ಮನೆ"), 1),
+]
+_TYPE_HINTS["partnership"] += [(_kw("भागीदार", "भागीदारी", "ಪಾಲುದಾರ", "ಪಾಲುದಾರಿಕೆ", "ಪಾರ್ಟ್ನರ್"), 3)]
+_TYPE_HINTS["training"] += [(_kw("ತರಬೇತಿ", "ಕೋರ್ಸ್", "ಕ್ಲಾಸ್", "ಟ್ರೈನಿಂಗ್"), 3)]
+_TYPE_HINTS["community"] += [(_kw("देणगी", "शिबिर", "ಸ್ವಯಂಸೇವಕ", "ಸಮಾಜ", "ಸೇವೆ", "ದೇಣಿಗೆ", "ಶಿಬಿರ"), 3)]
+
+
 def detect_type(text: str) -> tuple[str, float]:
     low = text.lower()
     scores: dict[str, int] = {}
@@ -102,22 +125,35 @@ def detect_type(text: str) -> tuple[str, float]:
 
 _AMOUNT = re.compile(
     r"(?:₹|rs\.?|inr|rupees?|रु\.?|रुपये|రూ\.?|రూపాయలు)?\s*(\d{1,3}(?:,\d{2,3})+|\d+(?:\.\d+)?)\s*"
-    r"(k|thousand|lakhs?|lacs?|lakh|l|cr|crores?|hazaar|hazar|हज़ार|हजार|लाख|వేలు|వేల|లక్ష|లక్షలు)?",
+    r"(k|thousand|lakhs?|lacs?|lakh|l|cr|crores?|hazaar|hazar|हज़ार|हजार|लाख|వేలు|వేల|లక్ష|లక్షలు"
+    r"|hajar|savira|saavira|कोटी|ಸಾವಿರ|ಲಕ್ಷ|ಕೋಟಿ)?",  # Marathi + Kannada
     re.I,
 )
 # "12 se 15 tak" (Hindi), "12 nundi 15 varaku" (Telugu), in either script.
-_RANGE_SEP = r"\s*(?:-|–|—|to|se|से|nundi|nunchi|నుండి|నుంచి|and|/)\s*"
-_RANGE_END = r"(?:\s*(?:tak|तक|varaku|వరకు))?"
+_RANGE_SEP = r"\s*(?:-|–|—|to|se|से|nundi|nunchi|నుండి|నుంచి|and|/|ते|पासून|ರಿಂದ)\s*"  # + Marathi "15 ते 18", Kannada "15ರಿಂದ 18"
+_RANGE_END = r"(?:\s*(?:tak|तक|varaku|వరకు|पर्यंत|ರವರೆಗೆ|ವರೆಗೆ))?"
 _UNIT_MULT = {
     "k": 1_000, "thousand": 1_000, "hazaar": 1_000, "hazar": 1_000, "हज़ार": 1_000, "हजार": 1_000, "వేలు": 1_000, "వేల": 1_000,
     "lakh": 100_000, "lakhs": 100_000, "lac": 100_000, "lacs": 100_000, "l": 100_000, "लाख": 100_000, "లక్ష": 100_000, "లక్షలు": 100_000,
     "cr": 10_000_000, "crore": 10_000_000, "crores": 10_000_000,
+    "hajar": 1_000, "savira": 1_000, "saavira": 1_000, "ಸಾವಿರ": 1_000, "ಲಕ್ಷ": 100_000, "कोटी": 10_000_000, "ಕೋಟಿ": 10_000_000,
 }
 _MONTHLY = _kw("per month", "a month", "monthly", "pm", "p.m.", "/month", "/ month", "month", "mahina", "mahine", "महीना", "महीने", "प्रति माह", "నెల", "నెలకు")
 _DAILY = _kw("per day", "a day", "daily", "/day", "roz", "रोज़", "रोज", "प्रति दिन", "రోజు", "రోజుకు")
 _HOURLY = _kw("per hour", "an hour", "hourly", "/hr", "/hour", "per hr", "ghanta", "घंटा", "प्रति घंटा", "గంట", "గంటకు")
 _MONEY_CONTEXT = _kw("salary", "ctc", "pay", "paying", "stipend", "budget", "rate", "charges", "charge", "fee", "fees", "package",
-                     "₹", "rs", "rs.", "inr", "rupees", "rupee", "वेतन", "सैलरी", "बजट", "रु", "रुपये", "जీతం", "జీతం", "బడ్జెట్", "రూ")
+                     "₹", "rs", "rs.", "inr", "rupees", "rupee", "वेतन", "सैलरी", "बजट", "रु", "रुपये", "जీతం", "జీతం", "బడ్జెట్", "రూ",
+                     # Marathi + Kannada
+                     "pagar", "pagaar", "sambala", "sambla", "पगार", "बजेट", "मानधन", "दरमहा", "ಸಂಬಳ", "ವೇತನ", "ಬಜೆಟ್", "ರೂ",
+                     "ರೂಪಾಯಿ", "ಶುಲ್ಕ")
+# [Marathi + Kannada, 2026-10-06] Pay periods. Kannada ಗಂಟೆಗೆ alone is also
+# "at (9) o'clock", so only the forms that can only mean "per hour" are here.
+_MONTHLY = re.compile(_MONTHLY.pattern + "|" + _kw("darmaha", "mahinyala", "tingalige", "दरमहा", "महिना", "महिन्याला",
+                                                    "प्रति महिना", "महिन्याचा", "ತಿಂಗಳಿಗೆ", "ತಿಂಗಳು", "ಪ್ರತಿ ತಿಂಗಳು").pattern, re.I)
+_DAILY = re.compile(_DAILY.pattern + "|" + _kw("divasala", "dinakke", "दररोज", "दिवसाला", "प्रतिदिन", "रोजचे", "ದಿನಕ್ಕೆ",
+                                                "ಪ್ರತಿದಿನ", "ಪ್ರತಿ ದಿನ").pattern, re.I)
+_HOURLY = re.compile(_HOURLY.pattern + "|" + _kw("tasala", "तासाला", "प्रति तास", "ಪ್ರತಿ ಗಂಟೆಗೆ", "ಪ್ರತಿ ಗಂಟೆ", "ಒಂದು ಗಂಟೆಗೆ",
+                                                  "ಗಂಟೆಗೆ ₹", "ಗಂಟೆಗೆ ರೂ").pattern, re.I)
 
 
 def _to_rupees(number: str, unit: str | None) -> int:
@@ -131,17 +167,33 @@ def find_money(text: str) -> tuple[int | None, int | None, str | None]:
     """(min, max, period) in rupees. Picks the first amount that sits next to
     a money word, so a phone number or a pincode is never read as pay."""
     low = text.lower()
+    # The stated hours ("10 pm to 6 am") are clock times, never money: they
+    # are blanked out (same length, so positions stay) before scanning.
+    stated = find_timings(text)
+    if stated:
+        at = low.find(stated.lower())
+        if at >= 0:
+            low = low[:at] + " " * len(stated) + low[at + len(stated):]
     range_re = re.compile(
         r"(?:₹|rs\.?|inr|rupees?|रु\.?|రూ\.?)?\s*(\d{1,3}(?:,\d{2,3})+|\d+(?:\.\d+)?)\s*"
-        r"(k|thousand|lakhs?|lacs?|l|hazaar|hazar|हज़ार|हजार|लाख|వేలు|వేల|లక్ష|లక్షలు)?" + _RANGE_SEP +
+        r"(k|thousand|lakhs?|lacs?|l|hazaar|hazar|हज़ार|हजार|लाख|వేలు|వేల|లక్ష|లక్షలు|hajar|savira|saavira|कोटी|ಸಾವಿರ|ಲಕ್ಷ|ಕೋಟಿ)?"
+        + _RANGE_SEP +
         r"(?:₹|rs\.?|inr|रु\.?|రూ\.?)?\s*(\d{1,3}(?:,\d{2,3})+|\d+(?:\.\d+)?)\s*"
-        r"(k|thousand|lakhs?|lacs?|l|hazaar|hazar|हज़ार|हजार|लाख|వేలు|వేల|లక్ష|లక్షలు)?" + _RANGE_END,
+        r"(k|thousand|lakhs?|lacs?|l|hazaar|hazar|हज़ार|हजार|लाख|వేలు|వేల|లక్ష|లక్షలు|hajar|savira|saavira|कोटी|ಸಾವಿರ|ಲಕ್ಷ|ಕೋಟಿ)?"
+        + _RANGE_END,
         re.I,
     )
     candidates: list[tuple[int, int | None, int]] = []  # (pos, min, max)
+
+    # [Audit 2026-10-06, Mohan] "10000 महीना" and "10000 a month" carry no
+    # money word, only the pay period; a period word next to a number is
+    # money context too (a phone number or pincode never has one).
+    def money_context(window: str) -> bool:
+        return bool(_MONEY_CONTEXT.search(window) or _MONTHLY.search(window) or _DAILY.search(window) or _HOURLY.search(window))
+
     for m in range_re.finditer(low):
         window = low[max(0, m.start() - 40): m.end() + 40]
-        if not _MONEY_CONTEXT.search(window):
+        if not money_context(window):
             continue
         unit2 = m.group(4) or m.group(2)
         unit1 = m.group(2) or unit2
@@ -152,7 +204,7 @@ def find_money(text: str) -> tuple[int | None, int | None, str | None]:
     if not candidates:
         for m in _AMOUNT.finditer(low):
             window = low[max(0, m.start() - 40): m.end() + 40]
-            if not _MONEY_CONTEXT.search(window):
+            if not money_context(window):
                 continue
             digits = m.group(1).replace(",", "")
             if re.fullmatch(r"[6-9]\d{9}", digits) or re.fullmatch(r"\d{6}", digits):
@@ -170,20 +222,22 @@ def find_money(text: str) -> tuple[int | None, int | None, str | None]:
 
 
 _YEARS = re.compile(
-    r"(\d{1,2})\s*(?:\+|plus)?\s*(?:-|–|to|se|से|nundi|నుండి|నుంచి)?\s*(\d{1,2})?\s*\+?\s*(?:years?|yrs?|yr|saal|साल|वर्ष|సంవత్సరాలు|సంవత్సరాల|సం\.?)\s*(?:of\s+)?(?:experience|exp\b|अनुभव|అనుభవం)?",
+    r"(\d{1,2})\s*(?:\+|plus)?\s*(?:-|–|to|se|से|nundi|నుండి|నుంచి|ते|ರಿಂದ)?\s*(\d{1,2})?\s*\+?\s*(?:years?|yrs?|yr|saal|साल|वर्ष|సంవత్సరాలు|సంవత్సరాల|సం\.?|ವರ್ಷ)\s*(?:of\s+)?(?:experience|exp\b|अनुभव|అనుభవం|ಅನುಭವ)?",
     re.I,
 )
-_FRESHER = _kw("fresher", "freshers", "no experience", "without experience", "beginner", "beginners", "फ्रेशर", "अनुभव नहीं", "ఫ్రెషర్", "అనుభవం అవసరం లేదు")
+_FRESHER = _kw("fresher", "freshers", "no experience", "without experience", "beginner", "beginners", "फ्रेशर", "अनुभव नहीं", "ఫ్రెషర్", "అనుభవం అవసరం లేదు",
+               "अनुभव नाही", "अनुभवाची गरज नाही", "अनुभव आवश्यक नाही", "ಫ್ರೆಶರ್", "ಅನುಭವ ಇಲ್ಲ", "ಅನುಭವ ಬೇಕಿಲ್ಲ", "ಅನುಭವದ ಅಗತ್ಯವಿಲ್ಲ",
+               "ಅನುಭವ ಅಗತ್ಯವಿಲ್ಲ", "ಹೊಸಬರು")
 
 
 def find_experience_months(text: str) -> tuple[int | None, int | None]:
     low = text.lower()
-    exp_words = re.search(r"experience|exp\b|अनुभव|అనుభవం|saal|साल|years?|yrs?", low)
+    exp_words = re.search(r"experience|exp\b|अनुभव|అనుభవం|saal|साल|years?|yrs?|ಅನುಭವ|ವರ್ಷ", low)
     if _FRESHER.search(low) and not exp_words:
         return 0, None
     for m in _YEARS.finditer(low):
         window = low[max(0, m.start() - 30): m.end() + 30]
-        if not re.search(r"experience|exp\b|अनुभव|అనుభవం|experienced|worked", window):
+        if not re.search(r"experience|exp\b|अनुभव|అనుభవం|experienced|worked|ಅನುಭವ", window):
             continue
         lo = int(m.group(1)) * 12
         hi = int(m.group(2)) * 12 if m.group(2) else None
@@ -229,36 +283,84 @@ _INCENTIVE = (
     ("incentive_only", _kw("incentive only", "commission only", "only incentive", "only commission", "सिर्फ कमीशन", "కమీషన్ మాత్రమే")),
     ("fixed_plus_incentive", _kw("incentive", "incentives", "commission", "plus incentives", "fixed + incentive", "इंसेंटिव", "कमीशन", "ఇన్సెంటివ్", "కమీషన్")),
 )
-_CLOCK = r"\d{1,2}(?::\d{2})?\s*(?:am|pm|a\.m\.|p\.m\.|बजे|గంటలు)"
+
+
+def _extend(pairs: tuple[tuple[str, re.Pattern[str]], ...], extra: dict[str, tuple[str, ...]]) -> tuple[tuple[str, re.Pattern[str]], ...]:
+    """The same (value, pattern) pairs, in the same order, each also matching its `extra` words."""
+    return tuple((v, re.compile(p.pattern + "|" + _kw(*extra[v]).pattern, re.I) if extra.get(v) else p) for v, p in pairs)
+
+
+# [Marathi + Kannada, 2026-10-06]
+_SHIFT = _extend(_SHIFT, {
+    "night": ("रात्रपाळी", "नाईट", "ರಾತ್ರಿ", "ನೈಟ್"),
+    "rotational": ("ರೊಟೇಷನಲ್",),
+    "flexible": ("लवचिक", "ಫ್ಲೆಕ್ಸಿಬಲ್"),
+    "day": ("दिवसपाळी", "ಡೇ ಶಿಫ್ಟ್", "ಹಗಲು ಶಿಫ್ಟ್"),
+})
+_QUALIFICATION = _extend(_QUALIFICATION, {
+    "postgraduate": ("पदव्युत्तर", "ಸ್ನಾತಕೋತ್ತರ", "ಪೋಸ್ಟ್ ಗ್ರಾಜುಯೇಟ್"),
+    "graduate": ("पदवीधर", "पदवी", "ग्रॅज्युएट", "ಪದವೀಧರ", "ಪದವಿ", "ಡಿಗ್ರಿ", "ಗ್ರಾಜುಯೇಟ್"),
+    "iti": ("आयटीआय", "ಐಟಿಐ"),
+    "diploma": ("ಡಿಪ್ಲೊಮಾ", "ಡಿಪ್ಲೋಮಾ"),
+    "12th": ("बारावी", "12वी", "ಪಿಯುಸಿ", "ದ್ವಿತೀಯ ಪಿಯುಸಿ"),
+    "10th": ("दहावी", "10वी", "एसएससी", "ಎಸ್ಎಸ್ಎಲ್‌ಸಿ", "ಎಸ್ಎಸ್ಎಲ್ಸಿ", "ಹತ್ತನೇ ತರಗತಿ"),
+    "below_10th": ("शिक्षणाची अट नाही", "ವಿದ್ಯಾರ್ಹತೆ ಬೇಕಿಲ್ಲ"),
+    "any": ("कोणतीही पात्रता", "ಯಾವುದೇ ವಿದ್ಯಾರ್ಹತೆ"),
+})
+_ENGLISH = _extend(_ENGLISH, {
+    "fluent": ("उत्तम इंग्रजी", "चांगली इंग्रजी", "ಉತ್ತಮ ಇಂಗ್ಲಿಷ್", "ಒಳ್ಳೆಯ ಇಂಗ್ಲಿಷ್", "ನಿರರ್ಗಳ ಇಂಗ್ಲಿಷ್"),
+    "good": ("इंग्रजी बोलता", "ಇಂಗ್ಲಿಷ್ ಮಾತನಾಡ"),
+    "basic": ("थोडी इंग्रजी", "बेसिक इंग्रजी", "ಸ್ವಲ್ಪ ಇಂಗ್ಲಿಷ್", "ಬೇಸಿಕ್ ಇಂಗ್ಲಿಷ್"),
+    "none": ("इंग्रजी आवश्यक नाही", "इंग्रजीची गरज नाही", "ಇಂಗ್ಲಿಷ್ ಅಗತ್ಯವಿಲ್ಲ", "ಇಂಗ್ಲಿಷ್ ಬೇಕಿಲ್ಲ"),
+})
+_ASSETS = _extend(_ASSETS, {
+    "two_wheeler": ("बाईक", "दुचाकी", "ಬೈಕ್", "ಸ್ಕೂಟಿ", "ಸ್ಕೂಟರ್", "ದ್ವಿಚಕ್ರ ವಾಹನ", "ಟೂ ವೀಲರ್"),
+    "four_wheeler": ("चारचाकी", "स्वतःची कार", "ಸ್ವಂತ ಕಾರು", "ನಾಲ್ಕು ಚಕ್ರದ ವಾಹನ"),
+    "driving_licence": ("ड्रायव्हिंग लायसन्स", "लायसन्स", "वाहन परवाना", "ಡ್ರೈವಿಂಗ್ ಲೈಸೆನ್ಸ್", "ಲೈಸೆನ್ಸ್", "ಚಾಲನಾ ಪರವಾನಗಿ"),
+    "smartphone": ("ಸ್ಮಾರ್ಟ್‌ಫೋನ್", "ಸ್ಮಾರ್ಟ್ಫೋನ್", "ಸ್ಮಾರ್ಟ್ ಫೋನ್"),
+    "laptop": ("लॅपटॉप", "ಲ್ಯಾಪ್‌ಟಾಪ್", "ಲ್ಯಾಪ್ಟಾಪ್", "ಲ್ಯಾಪ್ ಟಾಪ್"),
+    "own_tools": ("स्वतःची हत्यारे", "स्वतःची अवजारे", "ಸ್ವಂತ ಉಪಕರಣ", "ಸ್ವಂತ ಸಲಕರಣೆ"),
+})
+_INCENTIVE = _extend(_INCENTIVE, {
+    "incentive_only": ("फक्त कमिशन", "फक्त इन्सेंटिव्ह", "ಕಮಿಷನ್ ಮಾತ್ರ", "ಇನ್ಸೆಂಟಿವ್ ಮಾತ್ರ"),
+    "fixed_plus_incentive": ("इन्सेंटिव्ह", "कमिशन", "ಇನ್ಸೆಂಟಿವ್", "ಕಮಿಷನ್"),
+})
+_CLOCK = r"\d{1,2}(?::\d{2})?\s*(?:am|pm|a\.m\.|p\.m\.|बजे|గంటలు|वाजता|ಗಂಟೆಗೆ|ಗಂಟೆ)"
 _TIMINGS = re.compile(
-    rf"((?:{_CLOCK}|\d{{1,2}}:\d{{2}}|\d{{1,2}})\s*(?:-|–|to|se|से|నుండి)\s*(?:{_CLOCK}|\d{{1,2}}:\d{{2}}(?:\s*(?:am|pm))?)(?:\s*వరకు)?)",
+    rf"((?:{_CLOCK}|\d{{1,2}}:\d{{2}}|\d{{1,2}})\s*(?:-|–|to|se|से|నుండి|ते|ರಿಂದ)\s*(?:{_CLOCK}|\d{{1,2}}:\d{{2}}(?:\s*(?:am|pm))?)(?:\s*(?:వరకు|पर्यंत|ರವರೆಗೆ|ವರೆಗೆ))?)",
     re.I,
 )
 # "सुबह 6 से दोपहर 2 बजे तक", "ఉదయం 6 నుండి సాయంత్రం 7 వరకు", "morning 9 to evening 6":
 # a time of day on either side makes a bare number a clock time (N7 critique).
 _DAYPART = (r"(?:सुबह|सवेरे|दोपहर|शाम|रात|subah|subha|dopahar|dopehar|shaam|sham|raat|morning|afternoon|evening|night|"
-            r"ఉదయం|మధ్యాహ్నం|సాయంత్రం|రాత్రి|udayam|madhyahnam|sayantram|ratri)")
-_CLOCK_NUM = r"\d{1,2}(?:[:.]\d{2})?\s*(?:बजे|గంటల(?:కు)?|గంటలు|am|pm|a\.m\.|p\.m\.)?"
+            r"ఉదయం|మధ్యాహ్నం|సాయంత్రం|రాత్రి|udayam|madhyahnam|sayantram|ratri|"
+            r"सकाळी|सकाळ|दुपारी|दुपार|संध्याकाळी|संध्याकाळ|ಬೆಳಿಗ್ಗೆ|ಬೆಳಗ್ಗೆ|ಮಧ್ಯಾಹ್ನ|ಸಂಜೆ|ರಾತ್ರಿ)")
+_CLOCK_NUM = r"\d{1,2}(?:[:.]\d{2})?\s*(?:बजे|గంటల(?:కు)?|గంటలు|am|pm|a\.m\.|p\.m\.|वाजता|वाजेपर्यंत|ಗಂಟೆಗೆ|ಗಂಟೆ)?"
 _TIMINGS_DAYPART = re.compile(
-    rf"((?:{_DAYPART}\s*{_CLOCK_NUM}\s*(?:-|–|to|se|से|nundi|nunchi|నుండి|నుంచి)\s*(?:{_DAYPART}\s*)?{_CLOCK_NUM}"
-    rf"|{_CLOCK_NUM}\s*(?:-|–|to|se|से|nundi|nunchi|నుండి|నుంచి)\s*{_DAYPART}\s*{_CLOCK_NUM})"
-    rf"(?:\s*(?:तक|tak|వరకు|varaku))?)",
+    rf"((?:{_DAYPART}\s*{_CLOCK_NUM}\s*(?:-|–|to|se|से|nundi|nunchi|నుండి|నుంచి|ते|पासून|ರಿಂದ)\s*(?:{_DAYPART}\s*)?{_CLOCK_NUM}"
+    rf"|{_CLOCK_NUM}\s*(?:-|–|to|se|से|nundi|nunchi|నుండి|నుంచి|ते|पासून|ರಿಂದ)\s*{_DAYPART}\s*{_CLOCK_NUM})"
+    rf"(?:\s*(?:तक|tak|వరకు|varaku|पर्यंत|ರವರೆಗೆ|ವರೆಗೆ))?)",
     re.I,
 )
-_TIMINGS_LABEL = re.compile(r"(?:timings?|hours|shift timing|समय|టైమింగ్స్|సమయం)\s*[:\-–]?\s*([^\n.]{3,60})", re.I)
-_INTERVIEW = re.compile(r"(?:interview|walk-?in|इंटरव्यू|ఇంటర్వ్యూ)[^\n.]{0,120}", re.I)
+_TIMINGS_LABEL = re.compile(r"(?:timings?|hours|shift timing|समय|టైమింగ్స్|సమయం|वेळ|ಸಮಯ|ಟೈಮಿಂಗ್ಸ್)\s*[:\-–]?\s*([^\n.]{3,60})", re.I)
+_INTERVIEW = re.compile(r"(?:interview|walk-?in|इंटरव्यू|ఇంటర్వ్యూ|मुलाखत|इंटरव्ह्यू|ಸಂದರ್ಶನ|ಇಂಟರ್ವ್ಯೂ)[^\n.]{0,120}", re.I)
 _HEADCOUNT_NOUN = (r"(?:openings?|vacanc(?:y|ies)|posts?|positions?|people|persons?|staff|workers?|helpers?|boys|girls|candidates?|nos\.?|"
-                   r"लोग|पद|स्टाफ|हेल्पर(?:्स)?|सहायक|कर्मचारी|लड़के|लड़कियाँ|बॉय(?:ज़)?|వ్యక్తులు|పోస్టులు|మంది|ఖాళీలు|హెల్పర్లు|హెల్పర్|సిబ్బంది|బాయ్స్)")
+                   r"लोग|पद|स्टाफ|हेल्पर(?:्स)?|सहायक|कर्मचारी|लड़के|लड़कियाँ|बॉय(?:ज़)?|వ్యక్తులు|పోస్టులు|మంది|ఖాళీలు|హెల్పర్లు|హెల్పర్|సిబ్బంది|బాయ్స్|"
+                   r"लोक|जण|जागा|मुले|मुली|ಜನರು|ಜನ|ಹುದ್ದೆಗಳು|ಹುದ್ದೆ|ಸಿಬ್ಬಂದಿ|ಹೆಲ್ಪರ್|ಬಾಯ್ಸ್|ಕೆಲಸಗಾರರು)")
 # "2 हेल्पर", "3 सेल्स स्टाफ", "5 delivery boys": a number, at most one word, then who is wanted.
 _OPENINGS = re.compile(rf"(\d{{1,3}})\s*(?:\+\s*)?(?:[^\s\d,.।]+\s+)?{_HEADCOUNT_NOUN}(?![a-z])", re.I)
 _NUMBER_WORDS = {
     "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
     "एक": 1, "दो": 2, "तीन": 3, "चार": 4, "पांच": 5, "पाँच": 5, "छह": 6, "सात": 7, "आठ": 8, "नौ": 9, "दस": 10,
     "ఒక": 1, "ఒకరు": 1, "ఇద్దరు": 2, "ముగ్గురు": 3, "నలుగురు": 4, "ఐదుగురు": 5, "ఆరుగురు": 6, "పదిమంది": 10,
+    # Marathi + Kannada
+    "दोन": 2, "पाच": 5, "सहा": 6, "नऊ": 9, "दहा": 10, "दोघे": 2, "तिघे": 3, "चौघे": 4,
+    "ಒಂದು": 1, "ಎರಡು": 2, "ಮೂರು": 3, "ನಾಲ್ಕು": 4, "ಐದು": 5, "ಆರು": 6, "ಏಳು": 7, "ಎಂಟು": 8, "ಒಂಬತ್ತು": 9, "ಹತ್ತು": 10,
+    "ಒಬ್ಬರು": 1, "ಇಬ್ಬರು": 2, "ಮೂವರು": 3, "ನಾಲ್ವರು": 4, "ಐವರು": 5,
 }
 _OPENINGS_WORD = re.compile(
     rf"(?<![\w])({'|'.join(sorted(map(re.escape, _NUMBER_WORDS), key=len, reverse=True))})\s+(?:[^\s\d,.।]+\s+)?{_HEADCOUNT_NOUN}"
-    rf"|(?<![\w])(ఒకరు|ఇద్దరు|ముగ్గురు|నలుగురు|ఐదుగురు|ఆరుగురు|పదిమంది)(?![\w])",
+    rf"|(?<![\w])(ఒకరు|ఇద్దరు|ముగ్గురు|నలుగురు|ఐదుగురు|ఆరుగురు|పదిమంది|ಒಬ್ಬರು|ಇಬ್ಬರು|ಮೂವರು|ನಾಲ್ವರು|ಐವರು|दोघे|तिघे|चौघे)(?![\w])",
     re.I,
 )
 
@@ -277,7 +379,9 @@ def find_openings(text: str) -> int | None:
 # stands for (8th → below_10th). Needs a pass/class word, so "9th floor" is not a qualification.
 _QUAL_NUMBER = re.compile(
     r"(\d{1,2})\s*(?:वीं|वी|th|st|nd|rd|వ|వది)?\s*(?:कक्षा\s*|class\s*|std\.?\s*)?(?:पास|pass(?:ed)?|class|std|standard|తరగతి|పాస్|ఉత్తీర్ణత)"
-    r"|(?:class|std\.?|standard|कक्षा|తరగతి)\s*(\d{1,2})\s*(?:पास|pass(?:ed)?|పాస్)?",
+    r"|(?:class|std\.?|standard|कक्षा|తరగతి|इयत्ता|ತರಗತಿ)\s*(\d{1,2})\s*(?:पास|pass(?:ed)?|పాస్|ಪಾಸ್)?"
+    # Kannada "10ನೇ ತರಗತಿ ಪಾಸ್", "10ನೇ ಪಾಸ್"
+    r"|(\d{1,2})\s*ನೇ\s*(?:ತರಗತಿ\s*)?(?:ಪಾಸ್|ಉತ್ತೀರ್ಣ|ತರಗತಿ)",
     re.I,
 )
 
@@ -285,7 +389,7 @@ _QUAL_NUMBER = re.compile(
 def find_qualification(text: str) -> str | None:
     m = _QUAL_NUMBER.search(text)
     if m:
-        n = int(m.group(1) or m.group(2))
+        n = int(m.group(1) or m.group(2) or m.group(3))
         if 1 <= n <= 9:
             return "below_10th"
         if n in (10, 11):
@@ -298,6 +402,27 @@ def find_qualification(text: str) -> str | None:
 def find_timings(text: str) -> str | None:
     m = _TIMINGS_DAYPART.search(text) or _TIMINGS.search(text) or _TIMINGS_LABEL.search(text)
     return m.group(1).strip(" ,.;।") if m else None
+
+
+def find_shift(text: str, timings: str | None) -> str | None:
+    """[Audit 2026-10-06, Mohan: "सुबह 10 से रात 8" was read as a night shift]
+    When the text states the hours, the shift follows from the clock (10 am
+    to 8 pm is a day shift even though "रात" appears in it); only a text
+    without hours is read by its shift words, and then with the hours phrase
+    taken out so its "night"/"रात" is not counted."""
+    low = text.lower()
+    if timings:
+        from app.integrations.ai.spoken import parse_hours
+
+        hours = parse_hours(timings)
+        if hours and "start" in hours:
+            rest = low.replace(timings.lower(), " ")
+            explicit = _first(_SHIFT, rest)
+            if explicit in ("rotational", "flexible"):
+                return explicit
+            return hours["shift"]
+        low = low.replace(timings.lower(), " ")
+    return _first(_SHIFT, low)
 _OPENINGS_LEAD = re.compile(r"(?:need|hiring|require|looking for|want|चाहिए|కావాలి)\s*(\d{1,3})\b", re.I)
 
 _DURATION = (
@@ -322,10 +447,31 @@ _WORK_MODE = (
     ("both", _kw("hybrid", "remote or office", "on-site or remote", "हाइब्रिड", "హైబ్రిడ్")),
     ("on_site", _kw("on site", "on-site", "onsite", "at our office", "at the shop", "in office", "site visit", "at home", "at my", "ऑफिस में", "ఆఫీసులో", "సైట్")),
 )
-_INDIC_WORD = r"[ऀ-ॿఀ-౿‌‍]{2,}"
+_DURATION = _extend(_DURATION, {  # [Marathi + Kannada, 2026-10-06]
+    "ongoing": ("दीर्घकाळ", "ದೀರ್ಘಕಾಲ"),
+    "over_6_months": ("एक वर्ष", "वर्षभर", "ಒಂದು ವರ್ಷ"),
+    "1_3_months": ("एक महिना", "दोन महिने", "ಒಂದು ತಿಂಗಳು", "ಎರಡು ತಿಂಗಳು"),
+    "1_4_weeks": ("दोन आठवडे", "काही आठवडे", "ಎರಡು ವಾರ", "ಕೆಲವು ವಾರ"),
+    "under_1_week": ("एक आठवडा", "काही दिवस", "ಒಂದು ವಾರ", "ಕೆಲವು ದಿನ"),
+})
+_LEVEL = _extend(_LEVEL, {
+    "expert": ("तज्ज्ञ", "ಪರಿಣಿತ", "ತಜ್ಞ", "ಅನುಭವಿ"),
+    "intermediate": ("ಮಧ್ಯಮ",),
+    "entry": ("नवशिका", "ಆರಂಭಿಕ", "ಫ್ರೆಶರ್"),
+})
+_URGENT_TODAY = re.compile(_URGENT_TODAY.pattern + "|" + _kw("आत्ता", "लगेच", "ताबडतोब", "तातडीने", "ಇಂದು", "ಈಗಲೇ", "ತಕ್ಷಣ",
+                                                              "ತುರ್ತು", "ಅರ್ಜೆಂಟ್").pattern, re.I)
+_THIS_WEEK = re.compile(_THIS_WEEK.pattern + "|" + _kw("उद्या", "या आठवड्यात", "ನಾಳೆ", "ಈ ವಾರ").pattern, re.I)
+_WORK_MODE = _extend(_WORK_MODE, {
+    "remote": ("घरून", "वर्क फ्रॉम होम", "ಮನೆಯಿಂದ", "ರಿಮೋಟ್"),
+    "both": ("ಹೈಬ್ರಿಡ್",),
+    "on_site": ("ऑफिसमध्ये", "ಆಫೀಸಿನಲ್ಲಿ", "ಕಚೇರಿಯಲ್ಲಿ"),
+})
+_INDIC_WORD = r"[ऀ-ॿఀ-౿ಀ-೿‌‍]{2,}"
 _LOCATION = [
     # An explicit label wins, in any script: "Location: Kukatpally", "स्थान: कुकटपल्ली", "ప్రాంతం: కూకట్‌పల్లి".
-    re.compile(r"(?:location|area|address|place|venue|स्थान|जगह|पता|इलाका|इलाक़ा|లొకేషన్|స్థలం|ప్రాంతం|చిరునామా|ఏరియా)\s*[:\-–]\s*([^\n,.;।]{3,40})", re.I),
+    re.compile(r"(?:location|area|address|place|venue|स्थान|जगह|पता|इलाका|इलाक़ा|లొకేషన్|స్థలం|ప్రాంతం|చిరునామా|ఏరియా"
+               r"|ठिकाण|पत्ता|परिसर|ಸ್ಥಳ|ವಿಳಾಸ|ಪ್ರದೇಶ|ಏರಿಯಾ)\s*[:\-–]\s*([^\n,.;।]{3,40})", re.I),
     re.compile(r"(?:\bin|\bat|\bnear|\baround|\bfrom)\s+((?:[A-Z][A-Za-z'-]+)(?:[ ]+[A-Z][A-Za-z'-]+){0,2})"),
     # A place heading the notice: "Kukatpally: delivery boys needed" (label words are in _LOCATION_STOP).
     re.compile(r"^\s*([A-Z][A-Za-z'-]{3,}(?:[ ][A-Z][A-Za-z'-]{3,})?)\s*[:\-–]\s", re.M),
@@ -336,6 +482,13 @@ _LOCATION = [
     re.compile(r"\b([A-Z][A-Za-z'-]{2,}(?:[ ][A-Z][A-Za-z'-]{2,})?)\s*(?:में|के पास|లో|దగ్గర|వద్ద|mein|me|mei|ke paas|lo)(?![A-Za-z])"),  # Latin place + Hindi/Telugu/Hinglish postposition
     re.compile(r"([ऀ-ॿ]{2,}(?:\s[ऀ-ॿ]{2,})?)\s*(?:में|के पास)"),
     re.compile(r"([ఀ-౿]{2,}(?:\s[ఀ-౿]{2,})?)\s*(?:లో|దగ్గర|వద్ద)"),
+    # [Marathi + Kannada, 2026-10-06] Tried only after every pattern above.
+    # Latin place + Marathi/Kannada postposition: "Kothrud मध्ये", "Jayanagar ಹತ್ತಿರ".
+    re.compile(r"\b([A-Z][A-Za-z'-]{2,}(?:[ ][A-Z][A-Za-z'-]{2,})?)\s*(?:मध्ये|जवळ|ಅಲ್ಲಿ|ನಲ್ಲಿ|ದಲ್ಲಿ|ಹತ್ತಿರ|ಬಳಿ|madhye|javal|nalli|dalli|hattira)(?![A-Za-z])"),
+    # Marathi: "कोथरूडमध्ये", "बाणेर जवळ" (not glued ला/त: Hindi words end that way too).
+    re.compile(r"([ऀ-ॿ]{2,}?(?:\s[ऀ-ॿ]{2,}?)?)\s*(?:मध्ये|मधे|जवळ)"),
+    # Kannada case endings glued to the name: "ಜಯನಗರದಲ್ಲಿ", "ಬನಶಂಕರಿಯಲ್ಲಿ", "ಜಯನಗರ ಹತ್ತಿರ".
+    re.compile(r"((?:[ಀ-೿]{2,}\s)?[ಀ-೿]{2,}?)(?:ದಲ್ಲಿ|ನಲ್ಲಿ|ಯಲ್ಲಿ|ಲ್ಲಿ|\s*ಹತ್ತಿರ|\s*ಬಳಿ)(?![ಀ-೿])"),
 ]
 _LOCATION_STOP = {"need", "urgent", "hiring", "looking", "we", "our", "the", "a", "an", "office", "home", "salary", "shift", "day", "night",
                   "morning", "evening", "monday", "friday", "saturday", "sunday", "week", "month", "year", "react", "python", "english",
@@ -345,7 +498,11 @@ _LOCATION_STOP = {"need", "urgent", "hiring", "looking", "we", "our", "the", "a"
                   "location", "address", "area", "attention", "alert", "update", "details", "important",
                   # Devanagari / Telugu words that take में / లో but are not places
                   "घर", "ऑफिस", "दफ्तर", "दुकान", "शहर", "काम", "इस", "उस", "हमारे", "हमारी", "मेरे", "मेरी", "समय", "महीने", "हफ्ते",
-                  "ఇంట్", "ఇంటి", "ఆఫీస్", "ఆఫీసు", "షాప్", "నగరం", "ఈ", "ఆ", "మా", "నెల", "వారం", "సమయం"}
+                  "ఇంట్", "ఇంటి", "ఆఫీస్", "ఆఫీసు", "షాప్", "నగరం", "ఈ", "ఆ", "మా", "నెల", "వారం", "సమయం",
+                  # Marathi / Kannada words that take मध्ये / -ಲ್ಲಿ but are not places
+                  "आमच्या", "माझ्या", "तुमच्या", "दुकाना", "दुकान", "घरा", "शहरा", "कामा", "महिन्या", "आठवड्या", "वेळे",
+                  "ಮನೆ", "ಮನೆಯ", "ಆಫೀಸ್", "ಆಫೀಸಿ", "ಅಂಗಡಿ", "ನಗರ", "ನಮ್ಮ", "ನನ್ನ", "ನಿಮ್ಮ", "ತಿಂಗಳ", "ವಾರ", "ಸಮಯ", "ಕೆಲಸ",
+                  "ಕಚೇರಿ"}
 
 
 def _first(pairs: tuple[tuple[str, re.Pattern[str]], ...], text: str) -> str | None:
@@ -361,6 +518,7 @@ def _all(pairs: tuple[tuple[str, re.Pattern[str]], ...], text: str) -> list[str]
 
 # Hindi/Telugu grammar words: a "place" containing one is a phrase, not a name.
 _PARTICLES = frozenset({"की", "का", "के", "को", "से", "पर", "और", "है", "हैं", "एक", "यह", "वह", "ని", "కి", "కు", "మరియు", "ఒక"})
+_PARTICLES = _PARTICLES | frozenset({"आणि", "चा", "ची", "चे", "च्या", "आहे", "आहेत", "ಮತ್ತು", "ಒಂದು", "ಈ", "ಆ", "ಇದೆ"})
 
 
 def find_location(text: str) -> str | None:
@@ -438,6 +596,46 @@ _CAPABILITY_SYNONYMS: dict[str, tuple[str, ...]] = {
     "product_management": ("product manager", "product management"),
     "startup": ("startup", "co-founder", "cofounder", "स्टार्टअप", "స్టార్టప్"),
 }
+# [Marathi + Kannada, 2026-10-06] Appended to each slug's words. Devanagari
+# words a Hindi notice uses with another sense, and Kannada ನಲ್ಲಿ (also the
+# "in" ending), are left out.
+for _slug, _extra in {
+    "plumbing": ("नळ", "पाईप", "ಪ್ಲಂಬರ್", "ಪೈಪ್"),
+    "electrical": ("इलेक्ट्रिशियन", "ಎಲೆಕ್ಟ್ರಿಷಿಯನ್", "ವೈರಿಂಗ್", "ಕರೆಂಟ್", "ವಿದ್ಯುತ್"),
+    "home_repair": ("सुतार", "रंगारी", "दुरुस्ती", "ಬಡಗಿ", "ಪೇಂಟರ್", "ದುರಸ್ತಿ", "ರಿಪೇರಿ"),
+    "car_repair": ("मेकॅनिक", "गॅरेज", "ಮೆಕ್ಯಾನಿಕ್", "ಗ್ಯಾರೇಜ್"),
+    "catering": ("स्वयंपाक", "आचारी", "केटरिंग", "ಅಡುಗೆ", "ಕ್ಯಾಟರಿಂಗ್"),
+    "events": ("लग्न", "ಮದುವೆ", "ಕಾರ್ಯಕ್ರಮ", "ಸಮಾರಂಭ"),
+    "photography": ("ಫೋಟೋಗ್ರಾಫರ್", "ಛಾಯಾಗ್ರಾಹಕ"),
+    "video_editing": ("व्हिडिओ", "ವಿಡಿಯೋ", "ವೀಡಿಯೊ"),
+    "software": ("डेव्हलपर", "सॉफ्टवेअर", "ಡೆವಲಪರ್", "ಸಾಫ್ಟ್‌ವೇರ್", "ಸಾಫ್ಟ್ವೇರ್"),
+    "accounting": ("अकाउंटंट", "हिशेब", "ಅಕೌಂಟೆಂಟ್", "ಲೆಕ್ಕಪತ್ರ"),
+    "gst_filing": ("ಜಿಎಸ್‌ಟಿ", "ಜಿಎಸ್ಟಿ"),
+    "tax": ("टॅक्स", "ತೆರಿಗೆ", "ಟ್ಯಾಕ್ಸ್"),
+    "legal": ("ವಕೀಲ", "ಲಾಯರ್"),
+    "property_law": ("मालमत्ता", "ಆಸ್ತಿ"),
+    "tutoring": ("शिकवणी", "ಟ್ಯೂಷನ್", "ಶಿಕ್ಷಕ", "ಮನೆಪಾಠ"),
+    "mathematics": ("ಗಣಿತ",),
+    "tailoring": ("शिंपी", "शिलाई", "ಟೈಲರ್", "ದರ್ಜಿ", "ಹೊಲಿಗೆ"),
+    "textiles": ("साडी", "कापड", "ಸೀರೆ", "ಬಟ್ಟೆ"),
+    "wholesale": ("घाऊक", "ಸಗಟು", "ಹೋಲ್‌ಸೇಲ್", "ಹೋಲ್ಸೇಲ್"),
+    "sales": ("विक्री", "ಸೇಲ್ಸ್", "ಮಾರಾಟ"),
+    "marketing": ("ಮಾರ್ಕೆಟಿಂಗ್",),
+    "social_media": ("ಸೋಶಿಯಲ್ ಮೀಡಿಯಾ",),
+    "content_writing": ("ಕಂಟೆಂಟ್ ರೈಟರ್", "ಬರಹಗಾರ"),
+    "delivery": ("डिलिव्हरी", "ಡೆಲಿವರಿ"),
+    "logistics": ("ड्रायव्हर", "ಡ್ರೈವರ್", "ಚಾಲಕ", "ಸಾರಿಗೆ"),
+    "bakery": ("ಬೇಕರಿ", "ಕೇಕ್"),
+    "interior_design": ("इंटिरियर", "ಇಂಟೀರಿಯರ್"),
+    "architecture": ("ಆರ್ಕಿಟೆಕ್ಟ್", "ವಾಸ್ತುಶಿಲ್ಪಿ"),
+    "printing": ("ಪ್ರಿಂಟಿಂಗ್", "ಮುದ್ರಣ"),
+    "yoga": ("ಯೋಗ",),
+    "health_wellness": ("ನರ್ಸ್", "ದಾದಿ"),
+    "handicraft": ("ಕರಕುಶಲ",),
+    "education": ("शाळा", "ಶಾಲೆ"),
+    "startup": ("ಸ್ಟಾರ್ಟಪ್",),
+}.items():
+    _CAPABILITY_SYNONYMS[_slug] = _CAPABILITY_SYNONYMS.get(_slug, ()) + _extra
 
 
 # Nouns that turn a skill word into a description of data or a screen:
@@ -447,7 +645,7 @@ _DATA_NOUN_AFTER = re.compile(
     # React and the dashboard is what gets built.
     r"^[\s-]*(?:and\s+\w+\s+)?(?:charts?|graphs?|reports?|data|figures|numbers|analytics|stats|statistics|trends?|"
     r"forecasts?|summary|summaries|kpis?|metrics|records?|entries|history|status|tracking|tracker|totals?|"
-    r"चार्ट|रिपोर्ट|डेटा|आंकड़े|చార్ట్|రిపోర్ట్|డేటా)(?![a-z])",
+    r"चार्ट|रिपोर्ट|डेटा|आंकड़े|చార్ట్|రిపోర్ట్|డేటా|अहवाल|ಚಾರ್ಟ್|ವರದಿ|ಡೇಟಾ|ರಿಪೋರ್ಟ್)(?![a-z])",
     re.I,
 )
 # Verbs that make what follows data, not a trade: "show daily sales", "track deliveries".
@@ -468,7 +666,7 @@ def capability_mentioned_only_as_data(text: str, term: dict[str, Any]) -> bool:
     low = text.lower()
     slug = term["slug"]
     words = {slug.replace("_", " "), slug.replace("-", " ")}
-    for key in ("name_en", "name_hi", "name_te"):
+    for key in ("name_en", "name_hi", "name_te", "name_mr", "name_kn"):
         if term.get(key):
             words.add(str(term[key]).lower())
     words.update(str(a).lower() for a in (term.get("aliases") or []) if a)
@@ -488,7 +686,7 @@ def find_capabilities(text: str, terms: list[dict[str, Any]]) -> list[str]:
     for term in terms:
         slug = term["slug"]
         words = {slug.replace("_", " "), slug.replace("-", " ")}
-        for key in ("name_en", "name_hi", "name_te"):
+        for key in ("name_en", "name_hi", "name_te", "name_mr", "name_kn"):
             if term.get(key):
                 words.add(str(term[key]).lower())
         words.update(str(a).lower() for a in (term.get("aliases") or []) if a)
@@ -515,9 +713,9 @@ def find_capabilities(text: str, terms: list[dict[str, Any]]) -> list[str]:
 def _local_date(text: str) -> str | None:
     low = text.lower()
     today = date.today()
-    if re.search(r"\b(today|aaj)\b|आज|ఈరోజు", low):
+    if re.search(r"\b(today|aaj)\b|आज|ఈరోజు|ಇಂದು|ಇವತ್ತು", low):
         return today.isoformat()
-    if re.search(r"\b(tomorrow|kal)\b|कल|రేపు", low):
+    if re.search(r"\b(tomorrow|kal)\b|कल|రేపు|उद्या|ನಾಳೆ", low):
         return (today + timedelta(days=1)).isoformat()
     m = re.search(r"\b(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?\b", low)
     if m:
@@ -532,7 +730,7 @@ def _local_date(text: str) -> str | None:
 
 
 _CONTACT_LEAD = re.compile(
-    r"(?:\b(?:or|and)\s+|या\s+|లేదా\s+)?(?:\b(?:call|contact|whatsapp|wa|ph|phone|mob|mobile|email|e-mail|mail)\b|संपर्क|कॉल|ఫోన్|కాల్)?(?:\s*\b(?:us|me|on|at|to|now|directly)\b)*\s*[:\-]?\s*\[(?:phone|email)\](?:\s+for\s+(?:more\s+)?(?:details|info\w*|enquir\w*))?",
+    r"(?:\b(?:or|and)\s+|या\s+|లేదా\s+|किंवा\s+|ಅಥವಾ\s+)?(?:\b(?:call|contact|whatsapp|wa|ph|phone|mob|mobile|email|e-mail|mail)\b|संपर्क|कॉल|ఫోన్|కాల్|ಫೋನ್|ಸಂಪರ್ಕ|ಕಾಲ್)?(?:\s*\b(?:us|me|on|at|to|now|directly)\b)*\s*[:\-]?\s*\[(?:phone|email)\](?:\s+for\s+(?:more\s+)?(?:details|info\w*|enquir\w*))?",
     re.I,
 )
 
@@ -543,7 +741,7 @@ def strip_contacts(text: str) -> str:
     cleaned = _CONTACT_LEAD.sub("", redact_contacts(text))
     cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
     cleaned = re.sub(r"\s+([.,;!?।])", r"\1", cleaned)
-    cleaned = re.sub(r"([.,;।])\s*(?:or|and|या|లేదా)?\s*([.,;।])", r"\1", cleaned)
+    cleaned = re.sub(r"([.,;।])\s*(?:or|and|या|లేదా|किंवा|ಅಥವಾ)?\s*([.,;।])", r"\1", cleaned)
     return cleaned.strip(" ,;\n")
 
 
@@ -593,7 +791,7 @@ def draft_from_text(text: str, terms: list[dict[str, Any]], force_type: str | No
             "salary_max_rupees": monthly_hi,
             "incentive_type": _first(_INCENTIVE, low) or ("none" if (monthly_lo or monthly_hi) else None),
             "openings": openings,
-            "shift": _first(_SHIFT, low),
+            "shift": find_shift(text, timings),
             "job_timings": timings,
             "interview_details": interview.group(0).strip() if interview else None,
             "min_qualification": qualification,
@@ -800,11 +998,11 @@ def proposal_improvements(opportunity: dict[str, Any], text: str, applicant: dic
     matched = set(opportunity.get("required_capabilities") or []) & set(applicant.get("capabilities") or [])
     if matched and not any(m.replace("_", " ") in low for m in matched):
         out.append("mention_matching_skills")
-    if applicant.get("experience_years") and (matched or not opportunity.get("required_capabilities")) and not re.search(r"\byears?\b|\byrs?\b|साल|సంవత్సర", low):
+    if applicant.get("experience_years") and (matched or not opportunity.get("required_capabilities")) and not re.search(r"\byears?\b|\byrs?\b|साल|సంవత్సర|वर्षे|वर्षां|वर्षं|ವರ್ಷ", low):
         out.append("mention_experience")
-    if not re.search(r"available|start|from|join|तुरंत|available|అందుబాటు|వెంటనే", low):
+    if not re.search(r"available|start|from|join|तुरंत|available|అందుబాటు|వెంటనే|लगेच|ताबडतोब|रुजू|ಲಭ್ಯ|ತಕ್ಷಣ|ಕೂಡಲೇ", low):
         out.append("state_availability")
-    if opportunity.get("type") in ("freelance", "local_service") and not re.search(r"₹|rs\b|rupee|price|rate|charge|quote|बजट|రూ", low):
+    if opportunity.get("type") in ("freelance", "local_service") and not re.search(r"₹|rs\b|rupee|price|rate|charge|quote|बजट|రూ|बजेट|ರೂ|ಬಜೆಟ್|ರೇಟ್", low):
         out.append("state_price")
     questions = [str(q.get("text") if isinstance(q, dict) else q) for q in opportunity.get("screening_questions") or [] if q]
     if questions and not any(q[:20].lower() in low for q in questions):

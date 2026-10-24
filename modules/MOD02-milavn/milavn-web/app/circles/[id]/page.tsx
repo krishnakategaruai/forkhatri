@@ -26,7 +26,7 @@ import InvitePeopleSheet from '@/components/InvitePeopleSheet';
 import { Sheet } from '@/components/Sheet';
 import { CardSkeleton, ErrorState, Toast } from '@/components/States';
 import { api, ApiError, resolveMediaUrl, type Card, type Circle } from '@/lib/api';
-import { formatDateLong, formatRelative, formatWhen, initials } from '@/lib/format';
+import { formatDateLong, formatRelative, formatWhen, initials, intlLocale } from '@/lib/format';
 import { useIdentity } from '@/lib/identity';
 
 type Post = {
@@ -85,7 +85,7 @@ const docsOf = (p: Post) => p.docs ?? (p.doc_url ? [{ url: p.doc_url, name: p.do
 type FeedItem = { at: string } & ({ kind: 'post'; post: Post } | { kind: 'poll'; poll: Poll });
 
 // A plain calendar day (no clock): trip dates are dates, not moments.
-const dayOnly = (iso: string, lang: string) => new Date(`${iso}T00:00:00`).toLocaleDateString(lang, { weekday: 'short', day: 'numeric', month: 'short' });
+const dayOnly = (iso: string, lang: string) => new Date(`${iso}T00:00:00`).toLocaleDateString(lang === 'mr' ? intlLocale(lang) : lang, { weekday: 'short', day: 'numeric', month: 'short' });
 const MEMBER_PREVIEW = 8;
 const MAX_JOIN_QUESTIONS = 3;
 const FEED_PREVIEW = 20;
@@ -318,6 +318,27 @@ export default function CircleDetailPage() {
       if (e instanceof ApiError && (e.detail as { code?: string })?.code === 'women_only') load();
     }
   };
+
+  // [2026-10-06] The join bar (the woman/man question, "Join", the organiser's questions and "Send request")
+  // must never sit behind the floating bottom bar at phone width: on a short page it painted at the very
+  // bottom of the first screen, under the bar, so a tap on "I am a woman" landed on the bar instead. When
+  // the bar covers it on load, the page is nudged just enough to clear it; while answering, the questions
+  // are brought to the centre.
+  const joinBarKey = d ? `${d.id}|${d.viewer_role ?? ''}|${d.entry_state ?? ''}|${d.my_request_status ?? ''}` : '';
+  useEffect(() => {
+    if (!joinBarKey || d?.viewer_role) return;
+    const block = Array.from(document.querySelectorAll<HTMLElement>('.cx-only-narrow .cx-actions')).find((el) => el.offsetParent !== null);
+    const bar = document.querySelector<HTMLElement>('nav.nav');
+    if (!block || !bar) return;
+    const r = block.getBoundingClientRect();
+    const b = bar.getBoundingClientRect();
+    if (r.top < window.innerHeight && r.bottom > b.top) window.scrollBy({ top: r.bottom - b.top + 12, behavior: 'smooth' });
+  }, [joinBarKey, d?.viewer_role]);
+  useEffect(() => {
+    if (!answering) return;
+    const shown = Array.from(document.querySelectorAll<HTMLElement>('.cx-answering')).find((el) => el.offsetParent !== null);
+    shown?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [answering]);
 
   const openPlan = () => { setStops(d?.trip_plan?.length ? d.trip_plan.map((x) => ({ ...x })) : [{ place: '', on_day: null, note: null }]); setPlanning(true); };
   const savePlan = async () => {
@@ -625,14 +646,15 @@ export default function CircleDetailPage() {
           </button>
                   </>
       ) : d.is_open && d.entry_state === 'ask' ? (
-        <div className="stack grow" style={{ gap: 10 }}><GenderAsk onAnswered={() => load()} /></div>
+        // Answering "I am a woman" goes straight on with the join (no second "Ask to join" tap).
+        <div className="stack grow" style={{ gap: 10 }}><GenderAsk onAnswered={(g) => { load(); if (g === 'woman') void join(); }} /></div>
       ) : d.is_open && d.entry_state === 'not_eligible' ? (
         <span className="cx-caption grow" role="note">{t('group.notEligible')}</span>
       ) : d.is_open ? (
         d.my_request_status === 'pending' ? (
           <button className="cx-btn cx-btn--quiet cx-btn--lg grow" disabled>{t('join.waiting')}</button>
         ) : answering ? (
-          <div className="stack grow" style={{ gap: 10 }}>
+          <div className="stack grow cx-answering" style={{ gap: 10 }}>
             <span className="cx-caption">{t('join.answerHint')}</span>
             {(d.join_questions ?? []).map((q, i) => (
               <label key={i} className="stack" style={{ gap: 6 }}>

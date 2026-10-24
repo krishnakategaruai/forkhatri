@@ -96,7 +96,7 @@ async def notify_member(
 # rendered here in all three launch languages and the SECURITY DEFINER
 # function picks the recipient's — after checking both are parties and that
 # the recipient hasn't blocked the caller.
-LAUNCH_LANGUAGES = ("en", "hi", "te")
+LAUNCH_LANGUAGES = ("en", "hi", "te", "mr", "kn")
 
 
 async def notify_interaction_party(

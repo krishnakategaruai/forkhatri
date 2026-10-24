@@ -23,7 +23,9 @@ async def list_modules(
     lang = language if language in LANGUAGES else "en"
     rows = await db.execute(
         text(
-            f"SELECT m.key, m.name, m.tagline_{lang} AS tagline, m.availability, m.accent, e.last_entered_at "
+            # tagline_mr / tagline_kn (007) are nullable; English stands in until translated.
+            f"SELECT m.key, m.name, COALESCE(m.tagline_{lang}, m.tagline_en) AS tagline, "
+            "m.availability, m.accent, e.last_entered_at "
             "FROM registry.module m "
             "LEFT JOIN registry.member_module_entry e "
             "  ON e.module_key = m.key AND e.member_id = CAST(:member_id AS uuid) "

@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 // [IMP38 — Refactor C] Mounted only by the ForKhatri host (app/host/
 // forkhatri.tsx) as its account control; the standalone host has none.
 import { getDevMemberId, setDevMemberId, type DevMember } from "@/lib/sdk";
+import { configuredAuthMode } from "@/lib/sdk/default";
 import { useSdk } from "@/lib/sdk/react";
 import { FlaskConical, House } from "lucide-react";
 import { useHost } from "@/app/host/HostProvider";
@@ -36,12 +37,23 @@ export default function DevMemberSwitcher() {
   const host = useHost();
   const ref = usePopoverDismiss(open, () => setOpen(false));
 
+  // In cookie mode (e.g. tunnelled) the API acts as the member signed in to
+  // the host, so the avatar shows that member and offers no switching.
+  const sessionMode = configuredAuthMode() === "cookie";
+  const [sessionName, setSessionName] = useState<string | null>(null);
+
   useEffect(() => {
+    if (sessionMode) {
+      sdk.members.me().then((m) => setSessionName(m.display_name)).catch(() => setSessionName(null));
+      return;
+    }
     queueMicrotask(() => setCurrent(getDevMemberId()));
     sdk.dev.members().then(setMembers).catch(() => setMembers([]));
-  }, [sdk]);
+  }, [sdk, sessionMode]);
 
-  const currentMember = members.find((m) => m.id === current);
+  const currentMember = sessionMode
+    ? (sessionName ? { id: current, display_name: sessionName } as DevMember : undefined)
+    : members.find((m) => m.id === current);
 
   // [Real bug found live by the product owner — "Alerts and name is being
   // missed up in UI"] this pill used to `position: fixed; right: 14`
@@ -65,10 +77,10 @@ export default function DevMemberSwitcher() {
         title={currentMember?.display_name ?? current}
       >
         <span className="vy-avatar" aria-hidden="true">
-          {initials(currentMember?.display_name ?? current)}
-          <span className="vy-avatar-dev"><FlaskConical size={10} strokeWidth={2.25} /></span>
+          {initials(currentMember?.display_name ?? (sessionMode ? "" : current))}
+          {!sessionMode && <span className="vy-avatar-dev"><FlaskConical size={10} strokeWidth={2.25} /></span>}
         </span>
-        <span className="vy-avatar-name">{(currentMember?.display_name ?? current).split(" ")[0]}</span>
+        <span className="vy-avatar-name">{(currentMember?.display_name ?? (sessionMode ? "" : current)).split(" ")[0]}</span>
       </button>
       <AnimatePresence>
         {open && (
@@ -91,6 +103,7 @@ export default function DevMemberSwitcher() {
                 </span>
               </a>
             )}
+            {!sessionMode && (<>
             <p className="vy-muted" style={{ margin: "8px 0" }}>
               {t("devTools.notSignIn")}
             </p>
@@ -118,6 +131,7 @@ export default function DevMemberSwitcher() {
                 </button>
               ))}
             </div>
+            </>)}
           </motion.div>
         )}
       </AnimatePresence>

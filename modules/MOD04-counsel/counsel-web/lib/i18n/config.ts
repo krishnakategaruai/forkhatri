@@ -4,11 +4,13 @@ import { initReactI18next } from "react-i18next";
 import en from "@/locales/en/common.json";
 import hi from "@/locales/hi/common.json";
 import te from "@/locales/te/common.json";
+import mr from "@/locales/mr/common.json";
+import kn from "@/locales/kn/common.json";
 
-export const SUPPORTED_LANGUAGES = ["en", "hi", "te"] as const;
+export const SUPPORTED_LANGUAGES = ["en", "hi", "te", "mr", "kn"] as const;
 export type Language = (typeof SUPPORTED_LANGUAGES)[number];
 export const DEFAULT_LANGUAGE: Language = "en";
-export const LANGUAGE_NATIVE: Record<Language, string> = { en: "English", hi: "हिंदी", te: "తెలుగు" };
+export const LANGUAGE_NATIVE: Record<Language, string> = { en: "English", hi: "हिंदी", te: "తెలుగు", mr: "मराठी", kn: "ಕನ್ನಡ" };
 
 export function isSupported(v: string | null | undefined): v is Language {
   return !!v && (SUPPORTED_LANGUAGES as readonly string[]).includes(v);
@@ -19,7 +21,7 @@ export function getI18n(lng: Language = DEFAULT_LANGUAGE): I18nInstance {
   if (instance) return instance;
   const i18n = i18next.createInstance();
   void i18n.use(initReactI18next).init({
-    resources: { en: { common: en }, hi: { common: hi }, te: { common: te } },
+    resources: { en: { common: en }, hi: { common: hi }, te: { common: te }, mr: { common: mr }, kn: { common: kn } },
     lng, fallbackLng: DEFAULT_LANGUAGE, ns: ["common"], defaultNS: "common",
     interpolation: { escapeValue: false }, returnEmptyString: false,
   });

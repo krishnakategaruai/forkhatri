@@ -96,12 +96,15 @@
     "title": "Confirm your photos are you",
     "hint": "A one-minute camera check. Nothing from the camera is kept.",
     "confirmed": "Photos confirmed as you",
-    "since": "Since {{date}}"
+    "since": "Since {{date}}",
+    "optionalTitle": "A one-minute check that it’s you",
+    "optionalHint": "Earns the “Photos confirmed as you” mark. Optional.",
+    "start": "Start"
   },
   "gate": {
     "title": "A quick check that it is you",
-    "body": "You are setting up a profile for someone else, so Mangalya first confirms you are a real person. Take a selfie in your camera; it takes about a minute and the picture is not kept. After that you continue straight to your son or daughter’s profile.",
-    "cta": "Take the selfie check",
+    "body": "You are setting up a profile for someone else, so Mangalya first confirms you are a real person. You will add a clear photo of yourself, from your gallery or camera, and then start a one-minute camera check when you are ready. The check picture is not kept. After that you continue straight to your son or daughter’s profile.",
+    "cta": "Continue",
     "later": "Back"
   },
   "error": {
@@ -109,8 +112,9 @@
   },
   "addSelf": {
     "title": "First, a clear photo of you",
-    "body": "Anyone who makes a profile for someone else is checked to be a real person. Take a selfie or pick a clear photo of your face; then a one-minute camera check confirms it is you.",
-    "cta": "Take or choose a photo",
+    "body": "Anyone who makes a profile for someone else is checked to be a real person. Add a clear photo of your face from your gallery or camera. Then, when you choose to start it, a one-minute camera check confirms it is you.",
+    "cta": "Add a photo",
     "saving": "Saving your photo…"
-  }
+  },
+  "titleMember": "A one-minute check that it’s you"
 }

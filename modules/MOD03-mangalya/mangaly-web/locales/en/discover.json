@@ -365,7 +365,15 @@
       "continue": "Save and see matches",
       "started": "We started from your profile. Change or remove anything.",
       "titleFor": "Who is right for {{name}}?",
-      "startedFor": "We started from {{name}}'s profile. Change or remove anything."
+      "startedFor": "We started from {{name}}'s profile. Change or remove anything.",
+      "hoping": "Who are you hoping to find?",
+      "hopingFor": "Who are you hoping to find for {{name}}?",
+      "hint": "Say it the way you would tell an elder. Or skip, and we match on the basics.",
+      "fromProfile": "Already set from your profile",
+      "fromProfileFor": "Already set from {{name}}'s profile",
+      "seeMatches": "See matches",
+      "skipForNow": "Skip for now",
+      "later": "You can fine-tune what matters, and how much, any time from My profile."
     },
     "matters": {
       "title": "What matters to you",
@@ -455,5 +463,8 @@
     "common_one": "{{count}} thing in common",
     "common_other": "{{count}} things in common",
     "birth": "Born"
+  },
+  "lookAround": {
+    "makeProfile": "Make a profile"
   }
 }

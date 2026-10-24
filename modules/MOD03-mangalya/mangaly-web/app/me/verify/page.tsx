@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import PhotoChoice from "@/components/PhotoChoice";
+
 import { resolveMediaUrl, setManaging } from "@/lib/api";
 import { requireSession } from "@/lib/auth";
 import {
@@ -79,6 +81,9 @@ function VerifyFlow() {
   const next = safeNext(useSearchParams().get("next"));
 
   const [phase, setPhase] = useState<Phase>({ k: "loading" });
+  // [D17] A family member (no candidate profile of their own) has no profile
+  // photos to "confirm": the page is a check that it is them. Null until known.
+  const [isCandidate, setIsCandidate] = useState<boolean | null>(null);
   const [status, setStatus] = useState<VerificationStatus | null>(null);
   const [consent, setConsent] = useState(false);
   const [moves, setMoves] = useState<Move[]>([]);
@@ -121,6 +126,7 @@ function VerifyFlow() {
     (async () => {
       const session = await requireSession();
       if (!active || !session) return;
+      setIsCandidate(!!session.own_profile);
       await load();
     })();
     return () => {
@@ -317,7 +323,11 @@ function VerifyFlow() {
         >
           ←
         </button>
-        <h1>{t("verify:title")}</h1>
+        <h1>
+          {isCandidate === null
+            ? null
+            : t(isCandidate ? "verify:title" : "verify:titleMember")}
+        </h1>
         <span style={{ width: 44 }} aria-hidden="true" />
       </header>
 
@@ -564,25 +574,17 @@ function VerifyFlow() {
             continues from this screen. */}
         {(phase.k === "noPhotos" || phase.k === "noProfile") && (
           <Outcome title={t("verify:addSelf.title")} body={t("verify:addSelf.body")}>
-            <label className="btn btn--primary verify-addself">
-              {addingPhoto ? t("verify:addSelf.saving") : t("verify:addSelf.cta")}
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                capture="user"
-                hidden
-                disabled={addingPhoto}
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  setAddingPhoto(true);
-                  const saved = await uploadMemberPhoto(file);
-                  setAddingPhoto(false);
-                  if (saved) await load();
-                  else setPhase({ k: "network" });
-                }}
-              />
-            </label>
+            <PhotoChoice
+              disabled={addingPhoto}
+              busyLabel={t("verify:addSelf.saving")}
+              onFile={async (file) => {
+                setAddingPhoto(true);
+                const saved = await uploadMemberPhoto(file);
+                setAddingPhoto(false);
+                if (saved) await load();
+                else setPhase({ k: "network" });
+              }}
+            />
           </Outcome>
         )}
 

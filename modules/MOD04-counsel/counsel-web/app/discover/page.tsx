@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowDownUp, MapPin, Search, SlidersHorizontal, Sparkles } from "lucide-react";
 import { api, type Card, type Expertise } from "@/lib/api";
 import { locate, saveNear, savedNear, usePlaces } from "@/lib/places";
+import { SUPPORTED_LANGUAGES } from "@/lib/i18n/config";
 import { ProviderCard } from "@/components/ProviderCard";
 import { Empty, Skeleton, useToast } from "@/components/ui";
 
@@ -193,7 +194,7 @@ function Discover() {
           <label className="field"><span className="label">{t("discover.language")}</span>
             <select className="select" value={v.lang} onChange={(e) => set({ lang: e.target.value })}>
               <option value="">{t("discover.any")}</option>
-              <option value="en">{t("lang.en")}</option><option value="hi">{t("lang.hi")}</option><option value="te">{t("lang.te")}</option>
+              {SUPPORTED_LANGUAGES.map((l) => <option key={l} value={l}>{t(`lang.${l}`)}</option>)}
             </select></label>
           <label className="field"><span className="label">{t("discover.rating")}</span>
             <select className="select" value={v.rating} onChange={(e) => set({ rating: e.target.value })}>

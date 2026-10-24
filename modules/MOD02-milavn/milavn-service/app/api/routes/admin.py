@@ -7,7 +7,7 @@ shapes, so nothing here is Milavn-specific UI logic.
 
 [047] The queue shows ONE item per reported thing (with how many people
 reported it), acting on it settles every open report about that thing, and
-all human text follows the moderator's language (Accept-Language en/hi/te).
+all human text follows the moderator's language (Accept-Language en/hi/te/mr/kn).
 """
 
 from __future__ import annotations

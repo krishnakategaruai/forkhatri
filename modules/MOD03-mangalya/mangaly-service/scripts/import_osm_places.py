@@ -118,7 +118,9 @@ def _row(e: dict, city: str) -> tuple | None:
         tags.get("website") or tags.get("contact:website"),
         tags.get("opening_hours"),
         # The same place's name in each app language, when mappers gave it.
-        json.dumps({k: tags[f"name:{k}"] for k in ("en", "hi", "te") if tags.get(f"name:{k}")})
+        json.dumps(
+            {k: tags[f"name:{k}"] for k in ("en", "hi", "te", "mr", "kn") if tags.get(f"name:{k}")}
+        )
         or None,
         _photo(tags),
     )

@@ -2,7 +2,7 @@
 """i18n key checker for vyapar-web (CI).
 
 Finds every literal t("namespace:key") in app/**/*.ts(x) and fails when the
-key is missing from locales/en, hi or te (plural keys _one/_other count).
+key is missing from locales/en, hi, te, mr or kn (plural keys _one/_other count).
 Keys built from template strings (${...}) are skipped: they cannot be read
 statically. Usage (from vyapar-web): python scripts/check-i18n-keys.py [web-dir] [files...]
 Exit code 0 = no missing keys, 1 = missing keys (listed).
@@ -12,7 +12,8 @@ web = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path
 files = sys.argv[2:] if len(sys.argv) > 2 else None
 loc = os.path.join(web, "locales")
 cat = {}
-for lang in ("en", "hi", "te"):
+LANGS = ("en", "hi", "te", "mr", "kn")  # Marathi and Kannada added 2026-10-06
+for lang in LANGS:
     for f in os.listdir(os.path.join(loc, lang)):
         try: cat[(lang, f[:-5])] = json.load(open(os.path.join(loc, lang, f), encoding="utf-8"))
         except Exception as e: print("BAD JSON", lang, f, e)
@@ -33,7 +34,7 @@ for path in files:
     for m in pat.finditer(src):
         ns, key = m.group(1), m.group(2)
         if "${" in key or key.endswith("."): continue
-        for lang in ("en", "hi", "te"):
+        for lang in LANGS:
             if not has(lang, ns, key):
                 missing.setdefault((os.path.relpath(path, web), ns, key), []).append(lang)
 for (p, ns, key), langs in sorted(missing.items()):

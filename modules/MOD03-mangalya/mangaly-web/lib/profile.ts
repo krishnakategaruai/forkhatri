@@ -5,6 +5,7 @@
  * file. `credentials: 'include'` for the same HttpOnly-cookie reason every
  * other authenticated call in this app uses. */
 
+import { preparePhoto } from './image';
 import { API_BASE, apiFetch, currentLanguageHeader, getJson, query, sendJson, type Outcome } from './api';
 
 export type Profile = {
@@ -24,6 +25,8 @@ export type CreateProfileInput = {
   cityLocality: string;
   photo: File;
   educationLevel?: string;
+  /** [D10] The family's own words when the level is "other". */
+  educationOther?: string;
   occupation?: string;
   maritalStatus?: string;
   relocationWillingness?: string;
@@ -31,6 +34,8 @@ export type CreateProfileInput = {
 
 function setFirstDetails(form: FormData, input: CreateProfileInput) {
   if (input.educationLevel) form.set('education_level', input.educationLevel);
+  if (input.educationLevel === 'other' && input.educationOther?.trim())
+    form.set('education_other', input.educationOther.trim());
   if (input.occupation?.trim()) form.set('occupation', input.occupation.trim());
   if (input.maritalStatus) form.set('marital_status', input.maritalStatus);
   if (input.relocationWillingness) form.set('relocation_willingness', input.relocationWillingness);
@@ -48,7 +53,7 @@ export async function createProfile(input: CreateProfileInput): Promise<CreatePr
   form.set('gender', input.gender);
   form.set('city_locality', input.cityLocality);
   form.set('looking_for', input.lookingFor);
-  form.set('photo', input.photo);
+  form.set('photo', await preparePhoto(input.photo));
   setFirstDetails(form, input);
 
   let res: Response;
@@ -79,7 +84,10 @@ export async function createProfile(input: CreateProfileInput): Promise<CreatePr
 /** [DEC-V1-019] A parent creates their son's or daughter's profile. */
 export async function createProfileForChild(
   input: CreateProfileInput & { childPhone: string; relation: string },
-): Promise<{ ok: true; accountId: string } | { ok: false; kind: 'rejected' | 'network'; message?: string }> {
+): Promise<
+  | { ok: true; accountId: string }
+  | { ok: false; kind: 'rejected' | 'network' | 'alreadyJoined' | 'verificationRequired'; message?: string }
+> {
   const form = new FormData();
   form.set('child_phone', input.childPhone);
   form.set('relation', input.relation);
@@ -88,7 +96,7 @@ export async function createProfileForChild(
   form.set('gender', input.gender);
   form.set('city_locality', input.cityLocality);
   form.set('looking_for', input.lookingFor);
-  form.set('photo', input.photo);
+  form.set('photo', await preparePhoto(input.photo));
   setFirstDetails(form, input);
   let res: Response;
   try {
@@ -106,7 +114,14 @@ export async function createProfileForChild(
   const detail = body?.detail;
   return {
     ok: false,
-    kind: 'rejected',
+    // [D5] 409: the number already belongs to a ForKhatri member — the screen
+    // offers "invite her to add you to her Home Circle" instead of a dead end.
+    kind:
+      res.status === 409
+        ? 'alreadyJoined'
+        : detail?.code === 'verification_required'
+          ? 'verificationRequired'
+          : 'rejected',
     message:
       typeof detail === 'string'
         ? detail
@@ -201,9 +216,9 @@ export async function listPhotos(): Promise<Photo[]> {
   }
 }
 
-export function uploadPhoto(file: File): Promise<PhotoOutcome> {
+export async function uploadPhoto(file: File): Promise<PhotoOutcome> {
   const form = new FormData();
-  form.set('photo', file);
+  form.set('photo', await preparePhoto(file));
   return photoRequest('/profile/photos', { method: 'POST', body: form });
 }
 
@@ -604,7 +619,7 @@ export async function saveMemberProfile(
 
 export async function uploadMemberPhoto(file: File): Promise<MemberProfile | null> {
   const form = new FormData();
-  form.set('photo', file);
+  form.set('photo', await preparePhoto(file));
   try {
     const res = await apiFetch(`${API_BASE}/profile/member/photo`, {
       method: 'POST',
@@ -615,5 +630,107 @@ export async function uploadMemberPhoto(file: File): Promise<MemberProfile | nul
     return res.ok ? ((await res.json()) as MemberProfile) : null;
   } catch {
     return null;
+  }
+}
+
+
+/* [D13 / Q3, 2026-10-06] Start from a biodata. Reading needs the family's
+ * consent and an AI key on the server; without either they attach and type.
+ * The reader never stores the file. An attached file is kept only after the
+ * profile is published (`attachDocument`). */
+export type BiodataFields = Partial<{
+  name: string;
+  date_of_birth: string;
+  gender: 'female' | 'male';
+  city: string;
+  native_place: string;
+  education_level: string;
+  education_other: string;
+  occupation: string;
+  marital_status: string;
+  height_cm: number;
+  birth_time: string;
+  rashi: string;
+  nakshatra: string;
+  gotra: string;
+}>;
+
+export async function biodataReaderAvailable(): Promise<boolean> {
+  try {
+    const res = await apiFetch(`${API_BASE}/profile/biodata/reader`, { cache: 'no-store' });
+    if (!res.ok) return false;
+    return Boolean((await res.json())?.available);
+  } catch {
+    return false;
+  }
+}
+
+export async function readBiodata(
+  file: Blob,
+  filename: string,
+): Promise<{ ok: true; read: boolean; fields: BiodataFields } | { ok: false; message?: string }> {
+  const form = new FormData();
+  form.set('file', file, filename);
+  form.set('consent', 'true');
+  try {
+    const res = await apiFetch(`${API_BASE}/profile/biodata/read`, {
+      method: 'POST',
+      headers: currentLanguageHeader(),
+      body: form,
+    });
+    const body = await res.json().catch(() => null);
+    if (res.ok) return { ok: true, read: Boolean(body?.read), fields: (body?.fields ?? {}) as BiodataFields };
+    return { ok: false, message: typeof body?.detail === 'string' ? body.detail : undefined };
+  } catch {
+    return { ok: false };
+  }
+}
+
+export type ProfileDocument = { id: string; kind: 'biodata' | 'horoscope'; content_type: string };
+
+export async function listDocuments(): Promise<ProfileDocument[]> {
+  try {
+    const res = await apiFetch(`${API_BASE}/profile/documents`, { cache: 'no-store' });
+    return res.ok ? ((await res.json()) as ProfileDocument[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function attachDocument(
+  kind: 'biodata' | 'horoscope',
+  file: Blob,
+  filename: string,
+): Promise<ProfileDocument | null> {
+  const form = new FormData();
+  form.set('kind', kind);
+  form.set('file', file, filename);
+  try {
+    const res = await apiFetch(`${API_BASE}/profile/documents`, {
+      method: 'POST',
+      headers: currentLanguageHeader(),
+      body: form,
+    });
+    return res.ok ? ((await res.json()) as ProfileDocument) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function documentBlob(id: string): Promise<Blob | null> {
+  try {
+    const res = await apiFetch(`${API_BASE}/profile/documents/${id}/file`, { cache: 'no-store' });
+    return res.ok ? await res.blob() : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteDocument(id: string): Promise<boolean> {
+  try {
+    const res = await apiFetch(`${API_BASE}/profile/documents/${id}`, { method: 'DELETE' });
+    return res.ok;
+  } catch {
+    return false;
   }
 }

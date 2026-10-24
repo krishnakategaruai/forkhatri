@@ -96,10 +96,10 @@
   --motif: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cg fill='none' stroke='%23b10005' stroke-width='0.9'%3E%3Cpath d='M24 6c10 0 18 8 18 18s-8 18-18 18S6 34 6 24 14 6 24 6z' stroke-dasharray='2 4'/%3E%3Cpath d='M24 14l10 10-10 10-10-10z'/%3E%3C/g%3E%3Cg fill='%23b10005'%3E%3Ccircle cx='24' cy='24' r='1.6'/%3E%3Ccircle cx='0' cy='0' r='1.4'/%3E%3Ccircle cx='48' cy='0' r='1.4'/%3E%3Ccircle cx='0' cy='48' r='1.4'/%3E%3Ccircle cx='48' cy='48' r='1.4'/%3E%3C/g%3E%3C/svg%3E");
   --motif-opacity: 0.06;
 
-  --font-display-stack: var(--font-display), var(--font-display-devanagari), var(--font-display-telugu),
+  --font-display-stack: var(--font-display), var(--font-display-devanagari), var(--font-display-telugu), var(--font-display-kannada),
     system-ui, sans-serif;
   --font-serif: var(--font-display-stack);
-  --font-ui: var(--font-body), var(--font-display-devanagari), var(--font-display-telugu), system-ui,
+  --font-ui: var(--font-body), var(--font-display-devanagari), var(--font-display-telugu), var(--font-display-kannada), system-ui,
     -apple-system, 'Segoe UI', Roboto, sans-serif;
   --serif-display: 'wdth' 108;
   --serif-name: 'wdth' 100;
@@ -1458,9 +1458,9 @@ body {
   --gold-ink: #94700f;
   --ambient-a: rgba(251, 217, 70, 0.34);
   --ambient-b: rgba(204, 1, 6, 0.07);
-  --font-ui: var(--font-body), var(--font-body-devanagari), var(--font-body-telugu), system-ui,
+  --font-ui: var(--font-body), var(--font-body-devanagari), var(--font-body-telugu), var(--font-body-kannada), system-ui,
     -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-display-stack: var(--font-display), var(--font-display-devanagari), var(--font-display-telugu),
+  --font-display-stack: var(--font-display), var(--font-display-devanagari), var(--font-display-telugu), var(--font-display-kannada),
     'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
   --font-serif: var(--font-display-stack);
   --shadow-accent: 0 8px 22px rgba(204, 1, 6, 0.2);
@@ -1598,7 +1598,9 @@ body {
   color: var(--gold-ink);
 }
 html[lang='hi'] :is(.label, .bento__label, .duo__label, .dhead__for, .pview__prompt-q, .relpick__group-title),
-html[lang='te'] :is(.label, .bento__label, .duo__label, .dhead__for, .pview__prompt-q, .relpick__group-title) {
+html[lang='te'] :is(.label, .bento__label, .duo__label, .dhead__for, .pview__prompt-q, .relpick__group-title),
+html[lang='mr'] :is(.label, .bento__label, .duo__label, .dhead__for, .pview__prompt-q, .relpick__group-title),
+html[lang='kn'] :is(.label, .bento__label, .duo__label, .dhead__for, .pview__prompt-q, .relpick__group-title) {
   letter-spacing: 0;
 }
 

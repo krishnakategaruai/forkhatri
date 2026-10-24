@@ -15,7 +15,7 @@ from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 SERVICE_DIR = Path(__file__).resolve().parents[2]
-LANGUAGES = ("en", "hi", "te")
+LANGUAGES = ("en", "hi", "te", "mr", "kn")
 
 
 class Settings(BaseSettings):

@@ -1,11 +1,14 @@
 """Member Profile — public interface (architecture.md §2.1, `milavn_profile`).
 
-# [FR001, FR002, FR003, TR01] A usable profile exists once locality + at
-# least one interest are saved; language is a person-level field; optional
-# enrichment (photo/bio) never gates anything.
-# Approach: `save_onboarding()` validates the two required inputs and names
-# each missing one (FR001's failure outcome), upserting `member_profile` and
-# replacing `member_interest` rows in the caller's transaction. Language and
+# [FR001, FR002, FR003, TR01] A usable profile exists once a place is saved
+# (2026-10-06 owner decision, ONBOARDING-REDESIGN §9: FR001 relaxed to "place
+# only"; interests are optional and asked later); language is a person-level
+# field; optional enrichment (photo/bio/interests) never gates anything.
+# Approach: `save_onboarding()` validates the one required input and names it
+# when missing (FR001's failure outcome), upserting `member_profile` and
+# replacing `member_interest` rows in the caller's transaction. A brand-new
+# profile starts sharing its place at Zone precision (Q4); an existing
+# member's own choice is never changed. Language and
 # enrichment are separate writes so an unset language or a failed photo upload
 # can never block the profile itself (TR01's two-transaction rule: the media
 # reference is nullable and written after the profile row).
@@ -24,7 +27,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.components.places.interface import approximate_centre
-from app.config.interests import TAG_LABELS
+from app.config.interests import InvalidInterests, interest_label, normalise_interests
 
 __all__ = [
     "MissingRequiredFields",
@@ -33,11 +36,18 @@ __all__ = [
     "get_own_profile",
     "get_public_profile",
     "save_onboarding",
+    "set_interests",
     "set_language",
     "update_enrichment",
 ]
 
-SUPPORTED_LANGUAGES = ("en", "hi", "te")
+SUPPORTED_LANGUAGES = ("en", "hi", "te", "mr", "kn")
+
+
+# [FR041, Q4 2026-10-06] Where a brand-new profile's location sharing starts.
+NEW_PROFILE_PRECISION = "zone"
+
+__all__ += ["InvalidInterests", "NEW_PROFILE_PRECISION", "validate_onboarding"]
 
 
 class MissingRequiredFields(Exception):
@@ -98,7 +108,7 @@ async def get_own_profile(session: AsyncSession, *, member_id: UUID) -> ProfileS
         locality_lng=row.locality_lng,
         language_preference=row.language_preference,
         interests=tags,
-        interest_labels=[TAG_LABELS.get(t, t) for t in tags],
+        interest_labels=[interest_label(t) for t in tags],
         bio=row.bio,
         photo_url=f"/media/{row.storage_ref}" if row.storage_ref else None,
     )
@@ -137,6 +147,16 @@ async def save_place(
     return await get_own_profile(session, member_id=member_id)
 
 
+def validate_onboarding(locality_city: str | None, interests: list[str] | None) -> tuple[str, list[str]]:
+    """[FR001] The first run needs a place and nothing else. Interests, if a caller still sends
+    them (older clients did), are kept as before: trimmed, lower-cased, de-duplicated."""
+    city = (locality_city or "").strip()
+    if not city:
+        raise MissingRequiredFields(["locality_city"])
+    tags = sorted({t.strip().lower() for t in (interests or []) if t and t.strip()})
+    return city, tags
+
+
 async def save_onboarding(
     session: AsyncSession,
     *,
@@ -150,15 +170,7 @@ async def save_onboarding(
     locality_lat: float | None = None,
     locality_lng: float | None = None,
 ) -> ProfileSummary:
-    missing: list[str] = []
-    city = (locality_city or "").strip()
-    if not city:
-        missing.append("locality_city")
-    tags = sorted({t.strip().lower() for t in interests if t and t.strip()})
-    if not tags:
-        missing.append("interests")
-    if missing:
-        raise MissingRequiredFields(missing)
+    city, tags = validate_onboarding(locality_city, interests)
 
     zone = locality_zone or None
     lat, lng = approximate_centre(locality_lat, locality_lng)
@@ -192,21 +204,48 @@ async def save_onboarding(
             "lang": lang,
         },
     )
-    await session.execute(
-        text("DELETE FROM milavn_profile.member_interest WHERE member_id = :member_id"),
-        {"member_id": str(member_id)},
-    )
+    # Interests are replaced only when the caller sent some: a place-only first run never
+    # touches interests (and so can never wipe an existing member's).
+    if tags:
+        await session.execute(
+            text("DELETE FROM milavn_profile.member_interest WHERE member_id = :member_id"),
+            {"member_id": str(member_id)},
+        )
     for tag in tags:
         await session.execute(
             text("INSERT INTO milavn_profile.member_interest (member_id, interest_tag) VALUES (:member_id, :tag) ON CONFLICT DO NOTHING"),
             {"member_id": str(member_id), "tag": tag},
         )
-    # [FR041] Default precision setting is created alongside the profile so the
-    # shared helper (Location & Privacy) always has a row to read.
+    # [FR041] The precision setting is created alongside the profile so the
+    # shared helper (Location & Privacy) always has a row to read. A new member
+    # starts at Zone, the less precise level (owner decision Q4, 2026-10-06);
+    # an existing row (an existing member's own choice) is left exactly as it is.
     await session.execute(
-        text("INSERT INTO milavn_locationprivacy.location_precision_setting (member_id) VALUES (:member_id) ON CONFLICT (member_id) DO NOTHING"),
-        {"member_id": str(member_id)},
+        text(
+            "INSERT INTO milavn_locationprivacy.location_precision_setting (member_id, precision_level) "
+            "VALUES (:member_id, CAST(:lvl AS milavn_locationprivacy.precision_level)) ON CONFLICT (member_id) DO NOTHING"
+        ),
+        {"member_id": str(member_id), "lvl": NEW_PROFILE_PRECISION},
     )
+    summary = await get_own_profile(session, member_id=member_id)
+    assert summary is not None
+    return summary
+
+
+async def set_interests(session: AsyncSession, *, member_id: UUID, interests: list[str]) -> ProfileSummary:
+    """[FR003] Replace the member's interests with exactly these (add and remove). Optional: an
+    empty list is a valid answer. Raises InvalidInterests for anything outside the taxonomy that is
+    not the member's own `other:` words, and ProfileNotFound before a place is saved."""
+    existing = await get_own_profile(session, member_id=member_id)
+    if existing is None:
+        raise ProfileNotFound
+    tags = normalise_interests(interests, already_saved=frozenset(existing.interests))
+    await session.execute(text("DELETE FROM milavn_profile.member_interest WHERE member_id = :member_id"), {"member_id": str(member_id)})
+    for tag in tags:
+        await session.execute(
+            text("INSERT INTO milavn_profile.member_interest (member_id, interest_tag) VALUES (:member_id, :tag) ON CONFLICT DO NOTHING"),
+            {"member_id": str(member_id), "tag": tag},
+        )
     summary = await get_own_profile(session, member_id=member_id)
     assert summary is not None
     return summary

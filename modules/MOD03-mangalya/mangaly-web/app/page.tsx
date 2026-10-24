@@ -11,8 +11,8 @@ import { useTranslation } from "react-i18next";
 
 import { getJson, query, resolveMediaUrl } from "@/lib/api";
 import ContextChip from "@/components/ContextChip";
-import { useActiveContext, contextKey, firstName as firstOf } from "@/lib/activeContext";
-import type { HoroscopeMatchResponse } from "@/components/HoroscopeMatch";
+import { useActiveContext, contextKey, firstName as firstOf, readBrowseLookingFor } from "@/lib/activeContext";
+import { isProvisional, type HoroscopeMatchResponse } from "@/components/HoroscopeMatch";
 import HowYouFit, { type Fit } from "@/components/HowYouFit";
 import { getBrief, type Brief } from "@/lib/matchmaker";
 import { listConversations, type ConversationSummary } from "@/lib/messages";
@@ -110,7 +110,7 @@ type Hero = {
   person: Picked;
   /** "Sub" line of the row: why the engine chose them. */
   common: string[];
-  gunas: { n: number; max: number } | null;
+  gunas: { n: number; max: number; provisional?: boolean } | null;
   /** From the nightly pairing (true), or the engine's top match (false). */
   daily: boolean;
 };
@@ -218,7 +218,9 @@ export default function HomePage() {
         // No candidate profile of their own and no circle to belong to: the
         // wizard is the only useful next step. A parent or relative who is in
         // someone's circle is a full member and keeps Home.
-        router.replace("/profile/create");
+        // [D1, 2026-10-06] Someone who chose "Just look around first" (and
+        // picked brides or grooms) goes on looking; the wizard waits.
+        router.replace(readBrowseLookingFor() ? "/discover" : "/profile/create");
         return;
       }
       // Home shows people, so it loads people. Each call is optional: a
@@ -297,7 +299,8 @@ export default function HomePage() {
         hero = {
           person: { ...daily, match_label: daily.match_label ?? fit?.label ?? null },
           common: (fit?.common ?? []).slice(0, 3),
-          gunas: ak && ak.status === "CALCULATED" && ak.totalScore != null ? { n: ak.totalScore, max: ak.maxScore } : null,
+          // [D16] Unknown birth time on either side: the gunas are provisional.
+          gunas: ak && ak.status === "CALCULATED" && ak.totalScore != null ? { n: ak.totalScore, max: ak.maxScore, provisional: isProvisional(horo?.match) } : null,
           daily: !!pairing,
         };
       }
@@ -670,6 +673,7 @@ export default function HomePage() {
                   {hero.gunas && (
                     <li className="hintro__chip">
                       {t("discover:compat.gunas", { n: fmtGunas(hero.gunas.n), max: hero.gunas.max })}
+                      {hero.gunas.provisional && ` · ${t("horoscope:provisional.short")}`}
                     </li>
                   )}
                 </ul>

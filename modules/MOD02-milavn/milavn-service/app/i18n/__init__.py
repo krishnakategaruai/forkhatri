@@ -2,9 +2,9 @@
 
 # [FR002, ADR-010] Every API error/status message resolves through the
 # caller's language (`X-Milavn-Language` header, then `Accept-Language`) so a
-# Hindi- or Telugu-preferring member never receives English-only error prose
+# Hindi-, Telugu-, Marathi- or Kannada-preferring member never receives English-only error prose
 # the frontend cannot translate after the fact.
-# Approach: `app/i18n/locales/<lang>/common.json`, English complete, hi/te
+# Approach: `app/i18n/locales/<lang>/common.json`, English complete, hi/te/mr/kn
 # partial with English fallback per key — a partial translation is never a bug.
 # Traces to: FR002, TR01, ADR-010.
 """
@@ -17,7 +17,7 @@ from functools import cache
 from pathlib import Path
 from typing import Final
 
-SUPPORTED_LANGUAGES: Final = ("en", "hi", "te")
+SUPPORTED_LANGUAGES: Final = ("en", "hi", "te", "mr", "kn")
 DEFAULT_LANGUAGE: Final = "en"
 _LOCALES_DIR = Path(__file__).parent / "locales"
 

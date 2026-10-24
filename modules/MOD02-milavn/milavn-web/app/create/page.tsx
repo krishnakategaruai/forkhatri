@@ -14,11 +14,12 @@ import QrCode from '@/components/QrCode';
 import WhenPicker from '@/components/WhenPicker';
 import { Modal } from '@/components/Sheet';
 import { Toast } from '@/components/States';
-import { api, ApiError, type Card, type Circle } from '@/lib/api';
+import { api, ApiError, type Card, type Circle, type Profile } from '@/lib/api';
 import { appUrl } from '@/lib/base-path';
 import { toLocalInputValue } from '@/lib/format';
 import { useIdentity } from '@/lib/identity';
 import { EVENT_FORMATS, MULTI_DAY_FORMATS, ONLINE_FORMATS, daySpan } from '@/lib/event-formats';
+import { TEMPLATE_FILL, TEMPLATES, type TemplateKey } from '@/lib/first-run';
 
 const CATEGORIES: [string, string][] = [['play', '🏸'], ['meet', '☕'], ['eat', '🍛'], ['learn', '📚'], ['work', '💼'], ['explore', '🥾'], ['celebrate', '🎉'], ['help', '🤝'], ['professional', '🎤']];
 // One-tap "when" (thesis §40: one-tap actions over forms). Each returns a local Date.
@@ -34,12 +35,13 @@ const AUDIENCE = ['family_friendly', 'elder_friendly', 'beginner_friendly'];
 const FOOD = ['veg', 'jain_options', 'non_veg', 'alcohol_free'];
 
 function CreateInner() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const params = useSearchParams();
   const editId = params.get('edit');
   const presetCircle = params.get('circle');
-  const { profile } = useIdentity();
+  const template = params.get('template');
+  const { profile, setProfile } = useIdentity();
 
   const [category, setCategory] = useState<string | null>(null);
   const [title, setTitle] = useState('');
@@ -136,6 +138,32 @@ function CreateInner() {
     }
   }, [profile, editId]);
 
+  // Home's "start one in a minute" ideas open Create already filled in; everything stays editable.
+  useEffect(() => {
+    if (editId || !template || !(TEMPLATES as readonly string[]).includes(template)) return;
+    const fill = TEMPLATE_FILL[template as TemplateKey];
+    setCategory(fill.category);
+    if (fill.format) setFormat(fill.format);
+    setTitle(t(`homeMore.tplTitle.${template}`));
+  }, [template, editId, t]);
+
+  // [Q3, 2026-10-06] A new organiser who has no Milavn home area yet: after publishing, they may make the
+  // event's place their home area, but only by tapping to confirm it here. Never silently.
+  const [areaState, setAreaState] = useState<'ask' | 'saving' | 'done'>('ask');
+  const [areaErr, setAreaErr] = useState<string | null>(null);
+  const eventPlaceName = locality || city;
+  const adoptEventPlace = async () => {
+    setAreaState('saving'); setAreaErr(null);
+    try {
+      setProfile(await api<Profile>('/profile', { body: {
+        locality_city: city, locality_zone: place?.locality_zone ?? null, locality_locality: locality || null,
+        locality_state: place?.locality_state ?? null, locality_lat: place?.lat ?? null, locality_lng: place?.lon ?? null,
+        language_preference: i18n.language,
+      } }));
+      setAreaState('done');
+    } catch (e) { setAreaErr(e instanceof ApiError ? e.message : t('state.error')); setAreaState('ask'); }
+  };
+
   // FR110: community food defaults — vegetarian and alcohol-free unless the host changes it (81% of Indians limit meat, Pew 2021).
   const pickCategory = (c: string) => {
     setCategory(c);
@@ -229,6 +257,23 @@ function CreateInner() {
         <code className="caption" style={{ wordBreak: 'break-all' }}>{url}</code>
         <button className="btn btn--primary btn--block" onClick={shareNow}>{t('create.shareNow')}</button>
         <button className="btn btn--ghost" onClick={() => router.push(`/a/${created.slug}`)}>{t('create.view')}</button>
+        {(profile === null || areaState === 'done') && city && (
+          <section className="card stack" style={{ padding: 16, gap: 10, textAlign: 'left', width: '100%' }} aria-live="polite">
+            {areaState === 'done' ? (
+              <p style={{ margin: 0 }}>✓ {t('homeMore.areaSaved', { place: eventPlaceName })}</p>
+            ) : (
+              <>
+                <b>{t('homeMore.areaAsk', { place: eventPlaceName })}</b>
+                <span className="caption">{t('homeMore.areaBody')}</span>
+                {areaErr && <span className="field__error" role="alert">{areaErr}</span>}
+                <button className="btn btn--primary btn--block" disabled={areaState === 'saving'} onClick={adoptEventPlace}>
+                  {areaState === 'saving' ? t('firstRun.saving') : t('homeMore.areaYes', { place: eventPlaceName })}
+                </button>
+                <button className="btn btn--ghost btn--block" onClick={() => router.push(`/onboarding?next=${encodeURIComponent(`/a/${created.slug}`)}`)}>{t('homeMore.areaOther')}</button>
+              </>
+            )}
+          </section>
+        )}
         <Toast text={toast} />
       </main>
     );

@@ -109,7 +109,7 @@ def _template_regex(text: str) -> re.Pattern:
 
 
 def reverse_parse(key: str, title: str | None, body: str | None) -> dict | None:
-    for lang in ("en", "hi", "te"):
+    for lang in ("en", "hi", "te", "mr", "kn"):
         node = _catalog(lang, "notifications").get(key) or {}
         values: dict = {}
         ok = True

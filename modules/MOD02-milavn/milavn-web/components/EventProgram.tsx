@@ -24,7 +24,7 @@ export type Program = {
   followup: { recording_url: string | null; recording_provider: Provider | null; notes_url: string | null } | null;
 };
 
-const LOCALE: Record<string, string> = { en: 'en-IN', hi: 'hi-IN', te: 'te-IN' };
+const LOCALE: Record<string, string> = { en: 'en-IN', hi: 'hi-IN', te: 'te-IN', mr: 'mr-IN-u-nu-latn', kn: 'kn-IN' };
 const IST = 'Asia/Kolkata';
 const time = (iso: string, lang: string) => new Intl.DateTimeFormat(LOCALE[lang] ?? 'en-IN', { timeZone: IST, hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
 const dayLabel = (iso: string, lang: string) => new Intl.DateTimeFormat(LOCALE[lang] ?? 'en-IN', { timeZone: IST, weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(iso));

@@ -24,6 +24,7 @@ import { Check, Keyboard, Mic, Pencil, Volume2, X } from "lucide-react";
 import type { VoiceAnswers, VoiceDone, VoiceFlow } from "@/lib/sdk";
 import { useVoiceSupported } from "@/app/components/VoiceInput";
 import { useInterview, type InterviewState } from "./useInterview";
+import { speechLang } from "./speech";
 
 export interface VoiceInterviewProps {
   /** null while posting and the kind isn't chosen: the first question asks it. */
@@ -85,7 +86,7 @@ export default function VoiceInterview(p: VoiceInterviewProps) {
   const q = step.type === "ask" || step.type === "confirm" ? step.q : null;
   const inTurn = q !== null;
   const busy = s.activity === "thinking" || s.activity === "loading";
-  const langName = t(`voice:langName.${i18n.language === "hi" || i18n.language === "te" ? i18n.language : "en"}`);
+  const langName = t(`voice:langName.${speechLang(i18n.language)}`);
   // progress.asked is the current question's number (1-based); total counts
   // only what this interview asks (known things are not counted).
   const progress = q && q.progress.total > 0 ? q.progress : null;

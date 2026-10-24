@@ -34,7 +34,7 @@ from app.components.identity_bridge import interface as identity
 from app.components.locationprivacy import interface as locpriv
 from app.components.places.interface import distance_km
 from app.components.trust import interface as trust
-from app.config.interests import TAG_LABELS, TAG_TO_CATEGORY
+from app.config.interests import TAG_TO_CATEGORY, interest_label
 from app.i18n import current_language, translate
 
 IST = ZoneInfo("Asia/Kolkata")
@@ -176,11 +176,11 @@ def _interest_factor(occ: Occurrence, viewer: ViewerProfile) -> tuple[float, Rea
     best = 0.0
     reason: Reason = None
     for tag in viewer.interests:
-        words = TAG_LABELS.get(tag, tag).lower()
+        words = interest_label(tag).lower()  # a taxonomy label, or the member's own words for "other:" interests
         if tag.replace("-", " ") in haystack or words in haystack or tag in haystack:
-            return 1.0, ("reason.interest", {"interest": TAG_LABELS.get(tag, tag).lower()})
+            return 1.0, ("reason.interest", {"interest": words})
         if TAG_TO_CATEGORY.get(tag) == occ.intent_category and best < 0.5:
-            best, reason = 0.5, ("reason.interest_category", {"interest": TAG_LABELS.get(tag, tag).lower()})
+            best, reason = 0.5, ("reason.interest_category", {"interest": words})
     return best, reason
 
 
@@ -529,6 +529,62 @@ async def around_you(session: AsyncSession, viewer: ViewerProfile) -> dict:
         else:
             groups["later"].append(c)
     return groups
+
+
+# [FR004, Q5 2026-10-06] A quiet Home widens instead of saying "it's quiet": when the member's own city has fewer
+# than QUIET_BELOW things coming up, Home also shows events in nearby cities (within NEARBY_KM of the member's
+# area, by the approximate area centres both sides already store) and online events from anywhere. Each card
+# says plainly which it is ("In Secunderabad, about 12 km from you" / "Online — join from anywhere"), and the
+# member's own city always comes first. Nothing here changes what is visible: the same RLS-scoped listing.
+QUIET_BELOW = 3
+NEARBY_KM = 200.0
+WIDER_LIMIT = 6
+
+
+def pick_wider(occs: list[Occurrence], viewer: ViewerProfile, *, exclude_ids: set[UUID] | None = None) -> tuple[list[tuple[Occurrence, float]], list[Occurrence]]:
+    """Split a listing into (nearby-city events with their distance, online events elsewhere), soonest first."""
+    exclude_ids = exclude_ids or set()
+    home = (viewer.city or "").lower()
+    nearby: list[tuple[Occurrence, float]] = []
+    online: list[Occurrence] = []
+    for o in occs:
+        if o.id in exclude_ids or (o.locality_city or "").lower() == home:
+            continue
+        if o.attendance_mode in ("online", "hybrid"):
+            online.append(o)
+            continue
+        if None in (viewer.lat, viewer.lng, o.locality_lat, o.locality_lng):
+            continue
+        km = distance_km(viewer.lat, viewer.lng, o.locality_lat, o.locality_lng)  # type: ignore[arg-type]
+        if km <= NEARBY_KM:
+            nearby.append((o, km))
+    nearby.sort(key=lambda x: x[0].time_start)
+    online.sort(key=lambda o: o.time_start)
+    return nearby[:WIDER_LIMIT], online[:WIDER_LIMIT]
+
+
+async def around_you_wider(session: AsyncSession, viewer: ViewerProfile, *, exclude_ids: set[UUID], lang: str | None = None) -> dict[str, list[Card]]:
+    """[Q5] Nearby-city and online events for a quiet Home, each labelled as such."""
+    lang = lang or current_language.get()
+    now_ist = datetime.now(IST)
+    horizon = _day_bounds(now_ist)["today"][0] + timedelta(days=21)
+    occs = await activity.list_visible(session, city=None, start=now_ist - timedelta(hours=3), end=horizon, limit=400)
+    nearby, online = pick_wider(occs, viewer, exclude_ids=exclude_ids)
+    out: dict[str, list[Card]] = {"nearby": [], "online": []}
+    if nearby:
+        km_by_id = {o.id: km for o, km in nearby}
+        cards = await build_cards(session, [o for o, _ in nearby], viewer, rank=False, lang=lang, exclude_hidden=True)
+        for c in cards:
+            c.why_factor = "nearby_city"
+            c.why_reason = translate("reason.nearbyCity", lang, city=c.location_label if c.location_label else "", km=f"{round(km_by_id[c.id]):g}")
+        out["nearby"] = cards
+    if online:
+        cards = await build_cards(session, online, viewer, rank=False, lang=lang, exclude_hidden=True)
+        for c in cards:
+            c.why_factor = "online"
+            c.why_reason = translate("reason.online", lang)
+        out["online"] = cards
+    return out
 
 
 async def calendar_day(session: AsyncSession, viewer: ViewerProfile, day: datetime) -> list[Card]:

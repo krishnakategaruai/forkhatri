@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mangalya Onboarding Proposal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Static proposal mockups only (2026-10-06). Not app code. Tokens follow
+   Mangalya's dark night theme: maroon-hint paper, sindoor for the one primary
+   action, turmeric as a small mark. English copy only here; the build will
+   use en/hi/te keys. */
+:root{
+  --paper:#150c0b; --surface:#1f1311; --line:#3a2622; --ink:#f6e7d6; --muted:#c9ab95;
+  --sindoor:#c43a2e; --turmeric:#fbd946; --chip:#2a1a17;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.45 Inter,system-ui,sans-serif;padding:24px 16px}
+h1.page{font:600 30px/1.1 "Cormorant Garamond",serif;margin:0 0 4px}
+p.lede{color:var(--muted);margin:0 0 24px;max-width:70ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px}
+figure{margin:0}
+figcaption{color:var(--muted);font-size:13px;margin-top:8px}
+.phone{background:var(--surface);border:1px solid var(--line);border-radius:28px;padding:20px 18px;min-height:600px;display:flex;flex-direction:column;gap:12px}
+.top{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
+.bar{height:4px;background:var(--chip);border-radius:4px;overflow:hidden}.bar i{display:block;height:100%;background:var(--turmeric)}
+h2{font:600 26px/1.15 "Cormorant Garamond",serif;margin:6px 0 0}
+.hint{color:var(--muted);font-size:14px;margin:0}
+.opt{display:block;width:100%;text-align:left;background:var(--chip);border:1px solid var(--line);color:var(--ink);border-radius:16px;padding:14px 16px;font:500 16px Inter,sans-serif}
+.opt small{display:block;color:var(--muted);font-weight:400;font-size:13px}
+.row{display:flex;gap:8px}
+.sel{flex:1;background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:12px;color:var(--ink);font-size:15px;display:flex;justify-content:space-between}
+.sel::after{content:"▾";color:var(--muted)}
+.label{font-size:13px;color:var(--muted)}
+.seg{display:flex;background:var(--chip);border-radius:999px;padding:4px}
+.seg span{flex:1;text-align:center;padding:10px;border-radius:999px}
+.seg .on{background:var(--ink);color:var(--paper);font-weight:600}
+.ok{font-size:13px;color:var(--turmeric)}
+.btn{margin-top:auto;background:var(--sindoor);color:#fff;border:0;border-radius:999px;padding:15px;font:600 16px Inter,sans-serif;text-align:center}
+.link{color:var(--ink);text-align:center;font-size:14px;text-decoration:underline;text-underline-offset:3px}
+.thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.thumbs div{aspect-ratio:3/4;border-radius:12px;background:linear-gradient(#f6d98a,#c8803c)}
+.thumbs .add{background:var(--chip);border:1px dashed var(--line);display:grid;place-items:center;color:var(--muted)}
+.card{background:var(--chip);border:1px solid var(--line);border-radius:16px;padding:14px}
+.fact{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:8px 0;font-size:14px}
+.fact b{font-weight:500}.fact em{color:var(--turmeric);font-style:normal;font-size:12px}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:14px}
+.dot{width:20px;height:20px;border-radius:50%;border:2px solid var(--muted);flex:none;margin-top:1px}
+.dot.done{background:var(--turmeric);border-color:var(--turmeric)}
+</style>
+</head>
+<body>
+<h1 class="page">Mangalya onboarding proposal</h1>
+<p class="lede">Static mockups that go with ONBOARDING-REDESIGN-2026-10.md. Each frame names the competitor or study the idea comes from. These are proposals only; the app is unchanged.</p>
+<div class="grid">
+
+<figure>
+<div class="phone">
+  <h2>Who is this profile for?</h2>
+  <p class="hint">Most families make it together. You can change who helps later.</p>
+  <button class="opt">Myself</button>
+  <button class="opt">My daughter</button>
+  <button class="opt">My son</button>
+  <button class="opt">My sister or brother</button>
+  <button class="opt">Someone else in my family</button>
+  <button class="opt">Start from a biodata<small>A PDF or photo from WhatsApp. We fill in what we can; you check it.</small></button>
+  <span class="link">Just look around first</span>
+</div>
+<figcaption>S1. Relation list as on BharatMatrimony (self, son, daughter, brother, sister, relative). Biodata start from family practice (NBC, Open magazine) and Mangalya's own broker form. "Look around first" answers the forced-profile dead end.</figcaption>
+</figure>
+
+<figure>
+<div class="phone">
+  <div class="top">← <span>About her · 1 of 4</span></div>
+  <div class="bar"><i style="width:25%"></i></div>
+  <h2>About your daughter</h2>
+  <span class="label">Her name</span>
+  <div class="sel" style="justify-content:flex-start">Kavya Reddy</div>
+  <span class="label">Date of birth</span>
+  <div class="row"><div class="sel">14</div><div class="sel">March</div><div class="sel">1998</div></div>
+  <span class="ok">28 years old</span>
+  <p class="hint">She will see groom profiles.</p>
+  <div class="btn">Next</div>
+  <span class="link">Save and finish later</span>
+</div>
+<figcaption>S2. Name, date of birth and gender on one card. The age rule is checked here, not after the photo. The year list starts 18 years back, and progress is saved on every step (Shaadi's "progressive fields").</figcaption>
+</figure>
+
+<figure>
+<div class="phone">
+  <div class="top">← <span>Photos · 3 of 4</span></div>
+  <div class="bar"><i style="width:75%"></i></div>
+  <h2>Add her photos</h2>
+  <p class="hint">Choose several at once, for example from WhatsApp. One is enough to begin.</p>
+  <div class="thumbs"><div></div><div></div><div class="add">+</div></div>
+  <div class="row"><div class="opt" style="text-align:center">Choose photos</div><div class="opt" style="text-align:center">Take a photo</div></div>
+  <div class="btn">Next</div>
+  <span class="link">Add photos later (saved as a draft)</span>
+</div>
+<figcaption>S4. Several photos can be picked at once; the camera opens only when chosen. With no photo the work is kept as a draft and never published. DEC-V1-001 still needs one photo to publish. Photo-less family profiles are common in the market (Ferry &amp; Subtil 2023).</figcaption>
+</figure>
+
+<figure>
+<div class="phone">
+  <div class="top">← <span>Check and publish</span></div>
+  <h2>Ready to show Kavya's profile</h2>
+  <div class="card">
+    <div class="fact"><b>Name, age, city</b><span>Done</span></div>
+    <div class="fact"><b>Photo</b><span>2 added</span></div>
+    <div class="fact"><b>Work and studies</b><em>Add to appear in search</em></div>
+  </div>
+  <div class="check"><span class="dot"></span><span><b>Her mobile number</b><br><span class="hint">When she signs in with it, the profile becomes hers.</span></span></div>
+  <div class="check"><span class="dot"></span><span><b>A one-minute check that it's you</b><br><span class="hint">Needed once before you publish a profile for someone else. The camera opens only when you tap Start.</span></span></div>
+  <div class="btn">Publish profile</div>
+  <span class="link">Not now: keep my draft</span>
+</div>
+<figcaption>S6. The owner's rule (DEC-V1-025: whoever makes a profile for someone else must be verified) still holds, but the check moves to just before publishing, after the parent has done the work. Verification as a clear, predictable step, not a surprise hold (Shaadi and Jeevansathi review complaints).</figcaption>
+</figure>
+
+<figure>
+<div class="phone">
+  <div class="top">← <span>From her biodata</span></div>
+  <h2>We read this from the biodata</h2>
+  <p class="hint">Check each line. Anything wrong, tap to change. Nothing is shown to anyone until you publish.</p>
+  <div class="card">
+    <div class="fact"><b>Name</b><span>Kavya Reddy</span></div>
+    <div class="fact"><b>Born</b><span>14 Mar 1998 · 6:40 am</span></div>
+    <div class="fact"><b>Place of birth</b><span>Warangal</span></div>
+    <div class="fact"><b>Studies</b><span>M.Tech</span></div>
+    <div class="fact"><b>Work</b><span>Engineer, Hyderabad</span></div>
+    <div class="fact"><b>Star</b><span>Rohini</span></div>
+    <div class="fact"><b>Gotra</b><em>Not found, add later</em></div>
+  </div>
+  <div class="btn">Looks right, continue</div>
+</div>
+<figcaption>Biodata import: Mangalya reads the file and fills the fields, and the family checks them. No major app documents this (gap). Mangalya's broker form already accepts a biodata PDF.</figcaption>
+</figure>
+
+<figure>
+<div class="phone">
+  <h2>Who are you hoping to find?</h2>
+  <p class="hint">Say it the way you would tell an elder. Or skip, and we match on the basics.</p>
+  <div class="card" style="min-height:96px;color:var(--muted)">A good family, vegetarian, in Hyderabad or Bengaluru…</div>
+  <div class="row"><div class="opt" style="text-align:center">Speak</div><div class="opt" style="text-align:center">Read my words</div></div>
+  <span class="label">Already set from her profile</span>
+  <div class="card">
+    <div class="fact"><b>Age</b><span>28–33</span></div>
+    <div class="fact"><b>Lives</b><span>Near Hyderabad</span></div>
+  </div>
+  <div class="btn">See matches</div>
+  <span class="link">Skip for now</span>
+</div>
+<figcaption>S7. A short setup matchmaker that keeps the owner's AI-first wording, with themes and 1–10 scales moved to the profile later (Hinge's "nudge later" pattern). Reading the family's own words adds points and never removes the age or place already set.</figcaption>
+</figure>
+
+</div>
+</body>
+</html>

@@ -18,6 +18,7 @@ import {
   PaintRoller, Palette, PartyPopper, PenTool, Printer, Receipt, Rocket, Scale, Scissors, Shield, Shirt, ShoppingBag,
   Sigma, Sparkles, SprayCan, Sprout, Stethoscope, Store, Syringe, Truck, UserRound, UtensilsCrossed, Wrench, Zap,
   Plug, Layers, Boxes, Presentation, PhoneCall, ConciergeBell, Leaf,
+  CookingPot, Droplets, ShoppingBasket,
 } from "lucide-react";
 
 export type Family = "amber" | "sky" | "green" | "indigo" | "plum" | "teal";
@@ -74,6 +75,11 @@ const SPECIALTY: Record<string, [LucideIcon, string]> = {
   bakery: [Cake, "food_catering"],
   catering: [UtensilsCrossed, "food_catering"],
   cakes: [Cake, "food_catering"],
+  // [Start flow 2026-10, migration 032] trades real people named in the audit
+  home_food: [CookingPot, "food_catering"],
+  kirana_store: [Store, "textiles_retail"],
+  borewell_motor: [Droplets, "home_repair"],
+  shop_helper: [ShoppingBasket, "sales_telecalling"],
   handicraft: [Palette, "handicraft"],
   yoga: [Flower2, "health_wellness"],
   lab_technician: [FlaskConical, "healthcare"],

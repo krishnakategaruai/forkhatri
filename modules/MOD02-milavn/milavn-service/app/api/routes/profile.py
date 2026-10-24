@@ -57,6 +57,11 @@ class LanguageRequest(BaseModel):
     language_preference: str
 
 
+class InterestsRequest(BaseModel):
+    # Taxonomy tags, plus the member's own words as "other:<words>". An empty list is a valid answer.
+    interests: list[str] = Field(default_factory=list, max_length=60)
+
+
 def _to_response(p: profile.ProfileSummary) -> ProfileResponse:
     return ProfileResponse(
         member_id=str(p.member_id),
@@ -82,7 +87,7 @@ async def get_me(session: DbSession, member: CurrentMember) -> ProfileResponse |
 
 @router.post("", response_model=ProfileResponse, status_code=status.HTTP_201_CREATED)
 async def save_onboarding(body: OnboardingRequest, session: DbSession, member: CurrentMember, lang: Locale) -> ProfileResponse:
-    """[FR001] Persist a usable profile once locality + >=1 interest exist; name any missing field."""
+    """[FR001] Persist a usable profile once a place exists (2026-10-06: interests are optional and asked later)."""
     try:
         result = await profile.save_onboarding(
             session,
@@ -114,6 +119,20 @@ async def set_place(body: PlaceRequest, session: DbSession, member: CurrentMembe
         raise HTTPException(status_code=422, detail={"fields": exc.fields, "message": translate("profile.missingFields", lang, fields=", ".join(exc.fields))}) from exc
     if result is None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={"code": "profile_required", "message": translate("profile.notFound", lang)})
+    return _to_response(result)
+
+
+@router.put("/interests", response_model=ProfileResponse)
+async def set_interests(body: InterestsRequest, session: DbSession, member: CurrentMember, lang: Locale) -> ProfileResponse:
+    """[FR003] Set my interests exactly (add and remove), any time; optional, never a gate."""
+    try:
+        result = await profile.set_interests(session, member_id=member.member_id, interests=body.interests)
+    except profile.InvalidInterests as exc:
+        raise HTTPException(
+            status_code=422, detail={"code": "invalid_interests", "values": exc.bad, "message": translate("profile.invalidInterests", lang)}
+        ) from exc
+    except profile.ProfileNotFound as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={"code": "profile_required", "message": translate("profile.notFound", lang)}) from exc
     return _to_response(result)
 
 

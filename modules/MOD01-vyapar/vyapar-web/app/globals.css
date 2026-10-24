@@ -436,8 +436,8 @@ html[data-contrast="more"]:root {
      Latin / Devanagari / Telugu (Ek Type), loaded in layout.tsx. Display
      and body share the family; the roles differ in weight, tracking and
      leading (tokens above). --font-sans stays as the legacy alias. */
-  --font-display: var(--font-anek-latin), var(--font-anek-deva), var(--font-anek-telugu), system-ui, sans-serif;
-  --font-body: var(--font-anek-latin), var(--font-anek-deva), var(--font-anek-telugu), system-ui, sans-serif;
+  --font-display: var(--font-anek-latin), var(--font-anek-deva), var(--font-anek-telugu), var(--font-anek-kannada), system-ui, sans-serif;
+  --font-body: var(--font-anek-latin), var(--font-anek-deva), var(--font-anek-telugu), var(--font-anek-kannada), system-ui, sans-serif;
   --font-sans: var(--font-body);
 
   /* Card padding steps with the viewport (language-2026.css applies it). */

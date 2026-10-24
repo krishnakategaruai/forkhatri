@@ -6498,3 +6498,49 @@ img {
   justify-self: start; margin-top: 6px; padding: 6px 12px; border-radius: 999px;
   border: 1px solid currentColor; color: inherit; text-decoration: none; font-size: 0.8125rem; font-weight: 600;
 }
+
+.photo-choice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+/* [D17] While the saved language is being applied (see app/layout.tsx and
+   lib/i18n/provider.tsx) nothing is painted, so English never flashes before
+   Telugu, Hindi, Marathi or Kannada. */
+html[data-i18n-pending] body {
+  visibility: hidden;
+}
+
+/* ---- Onboarding redesign (2026-10-06, D1–D13) ---- */
+.forwhom__opt--biodata { display: flex; flex-direction: column; gap: 2px; }
+.forwhom__sub { color: var(--ink-2); font-size: 0.8125rem; line-height: 1.35; }
+.forwhom__look { display: flex; justify-content: center; margin-top: var(--space-3); }
+.forwhom__lookask { display: flex; flex-direction: column; gap: 8px; width: 100%; align-items: stretch; text-align: center; }
+.wizard-top__again { margin-left: auto; font-size: 0.8125rem; }
+.dob { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.dob__row { display: grid; grid-template-columns: 1fr 1.6fr 1.2fr; gap: 8px; }
+.dob__row .select { min-width: 0; padding-left: 10px; padding-right: 6px; }
+.dob__age { margin: 0; font-size: 0.875rem; color: var(--ok); }
+.onb-photos { display: flex; flex-direction: column; gap: var(--space-3); }
+.onb-photos__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.onb-photos__grid:empty { display: none; }
+.onb-photos__item { position: relative; aspect-ratio: 3 / 4; border-radius: var(--radius-md); overflow: hidden; background: var(--surface-2); }
+.onb-photos__item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.onb-photos__main { position: absolute; left: 6px; bottom: 6px; padding: 2px 8px; border-radius: 999px; font-size: 0.6875rem; background: rgba(0, 0, 0, 0.55); color: #fff; }
+.onb-photos__remove { position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; border-radius: 50%; border: 0; background: rgba(0, 0, 0, 0.55); color: #fff; font-size: 1.1rem; line-height: 1; cursor: pointer; }
+.onb-facts { margin: 0; padding: 4px 14px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); }
+.onb-facts__row { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 0.9375rem; }
+.onb-facts__row:last-child { border-bottom: 0; }
+.onb-facts__row dt { color: var(--ink-2); }
+.onb-facts__row dd { margin: 0; text-align: right; color: var(--ink); }
+.onb-facts__missing { color: var(--warn) !important; font-size: 0.8125rem; }
+.onb-check { display: flex; gap: 10px; align-items: flex-start; font-size: 0.9375rem; }
+.onb-check__dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--ink-3); flex: none; margin-top: 2px; }
+.onb-check__dot.is-done { background: var(--gold, #d4a62a); border-color: var(--gold, #d4a62a); }
+.onb-publish__hint { margin-top: -6px; }
+.onb-skipnote { text-align: center; margin: 0; }
+.check-line { display: flex; gap: 10px; align-items: flex-start; font-size: 0.9375rem; line-height: 1.4; }
+.check-line input { margin-top: 3px; width: 18px; height: 18px; flex: none; }
+.biodata__pick { justify-content: center; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

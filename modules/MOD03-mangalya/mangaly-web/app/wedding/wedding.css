@@ -6,7 +6,7 @@
   font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
   color: var(--ink-3);
 }
-:root:lang(te) .wedding__label, :root:lang(hi) .wedding__label { text-transform: none; letter-spacing: 0; font-size: 0.8125rem; }
+:root:lang(te) .wedding__label, :root:lang(hi) .wedding__label, :root:lang(mr) .wedding__label, :root:lang(kn) .wedding__label { text-transform: none; letter-spacing: 0; font-size: 0.8125rem; }
 
 .wedding__empty { display: grid; justify-items: center; gap: var(--space-2); text-align: center; padding: 48px 8px; color: var(--ink-2); }
 .wedding__empty .h3 { margin: 0; color: var(--ink); }
@@ -107,7 +107,7 @@
 }
 .wcard__body { display: grid; align-content: start; gap: 4px; padding: 12px 44px 10px 14px; min-width: 0; }
 .wcard__name { font-family: var(--font-serif); font-size: 1.1875rem; line-height: 1.2; color: var(--ink); overflow-wrap: anywhere; }
-:root:lang(te) .wcard__name, :root:lang(hi) .wcard__name { font-size: 1.0625rem; }
+:root:lang(te) .wcard__name, :root:lang(hi) .wcard__name, :root:lang(mr) .wcard__name, :root:lang(kn) .wcard__name { font-size: 1.0625rem; }
 .wcard__offer { font-weight: 600; color: var(--gold-ink, var(--ink)); }
 .wcard__meta {
   font-size: 0.8125rem; color: var(--ink-3); overflow-wrap: anywhere;

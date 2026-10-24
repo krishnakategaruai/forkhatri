@@ -364,7 +364,7 @@ export default function Entrance({ initialSheet }: { initialSheet?: SheetKind })
                     aria-label={option.native}
                     onClick={() => changeLang(option.code)}
                   >
-                    {option.code === "en" ? "EN" : option.native.slice(0, option.code === "hi" ? 2 : 2)}
+                    {option.short}
                   </button>
                 ))}
               </div>

@@ -239,7 +239,7 @@ async def public_profile(session: AsyncSession, *, viewer_member_id: UUID, membe
         )
     ).all()
     hosted = [r[0] for r in (await session.execute(text("SELECT milavn_activity.hosted_public_ids(:m)"), {"m": str(member_id)})).all()]
-    from app.config.interests import TAG_LABELS
+    from app.config.interests import interest_label
 
     tags = list(card[2] or []) if card else []
     return {
@@ -248,7 +248,8 @@ async def public_profile(session: AsyncSession, *, viewer_member_id: UUID, membe
         "handle": ident.handle,
         "avatar": (f"/media/{card[1]}" if card and card[1] else ident.avatar),
         "bio": card[0] if card else None,
-        "interests": [TAG_LABELS.get(t, t) for t in tags],
+        "interests": [interest_label(t) for t in tags],
+        "interest_tags": tags,  # so the page can show taxonomy interests in the viewer's language
         "location_label": location,
         "reputation": trust.label_text(await trust.reputation_labels(session, member_id=member_id)),
         # [FR116] "You have both been to N activities" — counted only for the viewer, only from

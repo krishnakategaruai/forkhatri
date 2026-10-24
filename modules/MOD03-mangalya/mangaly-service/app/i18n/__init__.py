@@ -35,7 +35,9 @@ from typing import Final
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_LANGUAGES: Final = ("en", "hi", "te")
+# [Owner, 2026-10-06] Marathi and Kannada added; a catalog not yet written
+# (or a missing language folder) resolves to English through `_catalog`.
+SUPPORTED_LANGUAGES: Final = ("en", "hi", "te", "mr", "kn")
 DEFAULT_LANGUAGE: Final = "en"
 _LOCALES_DIR = Path(__file__).parent / "locales"
 

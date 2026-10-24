@@ -71,6 +71,10 @@ class Account(Base):
         default=AccountStatus.PENDING_VERIFICATION,
     )
     identifier_verified_at: Mapped[datetime | None] = mapped_column(default=None)
+    # [Migration 065, owner 2026-10-06] Set on an account a parent made for a
+    # child who has no ForKhatri member yet; such a row may have no identifier.
+    # Cleared when the child takes the profile over.
+    managed_by_account_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True), default=None)
     created_at: Mapped[datetime] = mapped_column(server_default=text("now()"))
     updated_at: Mapped[datetime] = mapped_column(server_default=text("now()"))
 

@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Sheet } from '@/components/Sheet';
 import { api, ApiError } from '@/lib/api';
-import { formatInr } from '@/lib/format';
+import { formatInr, intlLocale } from '@/lib/format';
 
 type TypeRow = { id: string; name: string; price_paise: number; quota: number; active: boolean; sold: number; held: number; checked_in: number; revenue_paise: number };
 type CodeRow = { id: string; code: string; kind: 'percent' | 'fixed'; value: number; max_uses: number | null; expires_at: string | null; active: boolean; uses: number };
@@ -136,7 +136,7 @@ export default function TicketsManager({ eventId, onChanged, say }: { eventId: s
                 </div>
                 <span className="caption">
                   {c.max_uses ? t('tix.manage.usedOf', { count: c.uses, max: c.max_uses }) : t('tix.manage.used', { count: c.uses })}
-                  {c.expires_at ? ` · ${expired ? t('tix.manage.expired') : new Date(c.expires_at).toLocaleDateString(i18n.language)}` : ''}
+                  {c.expires_at ? ` · ${expired ? t('tix.manage.expired') : new Date(c.expires_at).toLocaleDateString(i18n.language === 'mr' ? intlLocale(i18n.language) : i18n.language)}` : ''}
                   {!c.active ? ` · ${t('tix.manage.off')}` : ''}
                 </span>
                 <button className="btn btn--ghost btn--sm" style={{ alignSelf: 'flex-start' }} onClick={() => toggleCode(c)}>{c.active ? t('tix.manage.turnOff') : t('tix.manage.turnOn')}</button>

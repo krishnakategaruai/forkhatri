@@ -6,7 +6,7 @@
  * and the small visual primitives every section uses.
  */
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { ApiError, NetworkError, type Lang } from "@/lib/api";
+import { ApiError, INTL_LOCALE, NetworkError, type Lang } from "@/lib/api";
 import type { AdminMe, Person, RoleKey } from "@/lib/admin-api";
 import { adminLabel, type AdminKey, type AdminT } from "@/lib/admin-i18n";
 
@@ -28,7 +28,7 @@ export function useConsole(): Console {
   return value;
 }
 
-const LOCALES: Record<Lang, string> = { en: "en-IN", hi: "hi-IN", te: "te-IN" };
+const LOCALES: Record<Lang, string> = INTL_LOCALE;
 
 /** 29 Sep 2026: day first, as Indian readers expect. */
 export function formatDate(iso: string | null | undefined, lang: Lang): string {

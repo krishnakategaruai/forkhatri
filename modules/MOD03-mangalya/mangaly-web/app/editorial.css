@@ -10,7 +10,7 @@
    after the shared ones.
    =================================================================== */
 :root {
-  --font-display-stack: var(--font-display), var(--font-display-devanagari), var(--font-display-telugu),
+  --font-display-stack: var(--font-display), var(--font-display-devanagari), var(--font-display-telugu), var(--font-display-kannada),
     Georgia, serif;
   --font-serif: var(--font-display-stack);
 }
@@ -34,7 +34,7 @@
   font-style: italic;
   font-synthesis: none;
 }
-html:is([lang='hi'], [lang='te']) :is(.h1, .h2, .h3, .topbar h1, .home-head__title, .royal-title,
+html:is([lang='hi'], [lang='te'], [lang='mr'], [lang='kn']) :is(.h1, .h2, .h3, .topbar h1, .home-head__title, .royal-title,
     .profile-hero__name, .hcard__name, .dtile__title, .pview__bigname, .part-head__title,
     .section-card__title, .me-tile__title, .convo__name) {
   font-weight: 500;
@@ -68,7 +68,7 @@ html:is([lang='hi'], [lang='te']) :is(.h1, .h2, .h3, .topbar h1, .home-head__tit
 
 /* Body: Instrument Sans, calm weights. */
 body {
-  font-family: var(--font-body), var(--font-body-devanagari), var(--font-body-telugu), system-ui, sans-serif;
+  font-family: var(--font-body), var(--font-body-devanagari), var(--font-body-telugu), var(--font-body-kannada), system-ui, sans-serif;
 }
 :root :is(.btn, .cta, .dlens, .relchip, .chip, .fchip, .quick-pick__chip, .sidebar__item, .bottombar__item) {
   font-weight: 500;
@@ -238,44 +238,44 @@ body {
   :root .hsearch__n { font-size: 1.5rem; }
   :root .pview__prompt--lead .pview__prompt-a { font-size: 1.5rem; }
   :root .pview__prompt-a { font-size: 1.25rem; }
-  :root:lang(te) :is(.topbar h1), :root:lang(hi) :is(.topbar h1),
-  :root:lang(te) .page__title, :root:lang(hi) .page__title,
-  :root:lang(te) .h1, :root:lang(hi) .h1,
-  :root:lang(te) .inbox__title, :root:lang(hi) .inbox__title { font-size: clamp(1.15rem, 5.4vw, 1.375rem); line-height: 1.3; }
-  :root:lang(te) .home-head__title, :root:lang(hi) .home-head__title { font-size: clamp(1.5rem, 7.4vw, 1.875rem); line-height: 1.2; }
-  :root:lang(te) .wizard-step__head .h2, :root:lang(hi) .wizard-step__head .h2 { font-size: 1.35rem; line-height: 1.3; }
-  :root:lang(te) .h2, :root:lang(hi) .h2 { line-height: 1.35; }
+  :root:lang(te) :is(.topbar h1), :root:lang(hi) :is(.topbar h1), :root:lang(mr) :is(.topbar h1), :root:lang(kn) :is(.topbar h1),
+  :root:lang(te) .page__title, :root:lang(hi) .page__title, :root:lang(mr) .page__title, :root:lang(kn) .page__title,
+  :root:lang(te) .h1, :root:lang(hi) .h1, :root:lang(mr) .h1, :root:lang(kn) .h1,
+  :root:lang(te) .inbox__title, :root:lang(hi) .inbox__title, :root:lang(mr) .inbox__title, :root:lang(kn) .inbox__title { font-size: clamp(1.15rem, 5.4vw, 1.375rem); line-height: 1.3; }
+  :root:lang(te) .home-head__title, :root:lang(hi) .home-head__title, :root:lang(mr) .home-head__title, :root:lang(kn) .home-head__title { font-size: clamp(1.5rem, 7.4vw, 1.875rem); line-height: 1.2; }
+  :root:lang(te) .wizard-step__head .h2, :root:lang(hi) .wizard-step__head .h2, :root:lang(mr) .wizard-step__head .h2, :root:lang(kn) .wizard-step__head .h2 { font-size: 1.35rem; line-height: 1.3; }
+  :root:lang(te) .h2, :root:lang(hi) .h2, :root:lang(mr) .h2, :root:lang(kn) .h2 { line-height: 1.35; }
 }
 /* Hindi and Telugu have no capitals: the uppercase, letter-spaced eyebrow
    treatment only distorts them (and shouts any Latin name inside). Plain,
    slightly larger, in the same soft ink. */
-:root:lang(te) .label, :root:lang(hi) .label,
-:root:lang(te) .home-head__date, :root:lang(hi) .home-head__date,
-:root:lang(te) .duo__label, :root:lang(hi) .duo__label,
-:root:lang(te) .hintro__eyebrow, :root:lang(hi) .hintro__eyebrow,
-:root:lang(te) .hintro__overlay-eyebrow, :root:lang(hi) .hintro__overlay-eyebrow,
-:root:lang(te) .hintro__fact dt, :root:lang(hi) .hintro__fact dt,
-:root:lang(te) .hturn__title, :root:lang(hi) .hturn__title,
-:root:lang(te) .keyfact__label, :root:lang(hi) .keyfact__label,
-:root:lang(te) .prompt-card__q, :root:lang(hi) .prompt-card__q,
-:root:lang(te) .prompt-group__title, :root:lang(hi) .prompt-group__title,
-:root:lang(te) .vital__label, :root:lang(hi) .vital__label,
-:root:lang(te) .pview__prompt-q, :root:lang(hi) .pview__prompt-q,
-:root:lang(te) .factgroup__title, :root:lang(hi) .factgroup__title,
-:root:lang(te) .insight__title, :root:lang(hi) .insight__title,
-:root:lang(te) .pview__mine-label, :root:lang(hi) .pview__mine-label,
-:root:lang(te) .sealed__eyebrow, :root:lang(hi) .sealed__eyebrow,
-:root:lang(te) .part-head__eyebrow, :root:lang(hi) .part-head__eyebrow,
-:root:lang(te) .account__label, :root:lang(hi) .account__label,
-:root:lang(te) .member-group__title, :root:lang(hi) .member-group__title,
-:root:lang(te) .relpick__group-title, :root:lang(hi) .relpick__group-title,
-:root:lang(te) .facts__row dt, :root:lang(hi) .facts__row dt,
-:root:lang(te) .reqpop__eyebrow, :root:lang(hi) .reqpop__eyebrow,
-:root:lang(te) .fgroup__label, :root:lang(hi) .fgroup__label,
-:root:lang(te) .picker__title, :root:lang(hi) .picker__title,
-:root:lang(te) .hmatch__table thead th, :root:lang(hi) .hmatch__table thead th,
-:root:lang(te) .hmatch__mangal-who, :root:lang(hi) .hmatch__mangal-who,
-:root:lang(te) .pview__openname, :root:lang(hi) .pview__openname {
+:root:lang(te) .label, :root:lang(hi) .label, :root:lang(mr) .label, :root:lang(kn) .label,
+:root:lang(te) .home-head__date, :root:lang(hi) .home-head__date, :root:lang(mr) .home-head__date, :root:lang(kn) .home-head__date,
+:root:lang(te) .duo__label, :root:lang(hi) .duo__label, :root:lang(mr) .duo__label, :root:lang(kn) .duo__label,
+:root:lang(te) .hintro__eyebrow, :root:lang(hi) .hintro__eyebrow, :root:lang(mr) .hintro__eyebrow, :root:lang(kn) .hintro__eyebrow,
+:root:lang(te) .hintro__overlay-eyebrow, :root:lang(hi) .hintro__overlay-eyebrow, :root:lang(mr) .hintro__overlay-eyebrow, :root:lang(kn) .hintro__overlay-eyebrow,
+:root:lang(te) .hintro__fact dt, :root:lang(hi) .hintro__fact dt, :root:lang(mr) .hintro__fact dt, :root:lang(kn) .hintro__fact dt,
+:root:lang(te) .hturn__title, :root:lang(hi) .hturn__title, :root:lang(mr) .hturn__title, :root:lang(kn) .hturn__title,
+:root:lang(te) .keyfact__label, :root:lang(hi) .keyfact__label, :root:lang(mr) .keyfact__label, :root:lang(kn) .keyfact__label,
+:root:lang(te) .prompt-card__q, :root:lang(hi) .prompt-card__q, :root:lang(mr) .prompt-card__q, :root:lang(kn) .prompt-card__q,
+:root:lang(te) .prompt-group__title, :root:lang(hi) .prompt-group__title, :root:lang(mr) .prompt-group__title, :root:lang(kn) .prompt-group__title,
+:root:lang(te) .vital__label, :root:lang(hi) .vital__label, :root:lang(mr) .vital__label, :root:lang(kn) .vital__label,
+:root:lang(te) .pview__prompt-q, :root:lang(hi) .pview__prompt-q, :root:lang(mr) .pview__prompt-q, :root:lang(kn) .pview__prompt-q,
+:root:lang(te) .factgroup__title, :root:lang(hi) .factgroup__title, :root:lang(mr) .factgroup__title, :root:lang(kn) .factgroup__title,
+:root:lang(te) .insight__title, :root:lang(hi) .insight__title, :root:lang(mr) .insight__title, :root:lang(kn) .insight__title,
+:root:lang(te) .pview__mine-label, :root:lang(hi) .pview__mine-label, :root:lang(mr) .pview__mine-label, :root:lang(kn) .pview__mine-label,
+:root:lang(te) .sealed__eyebrow, :root:lang(hi) .sealed__eyebrow, :root:lang(mr) .sealed__eyebrow, :root:lang(kn) .sealed__eyebrow,
+:root:lang(te) .part-head__eyebrow, :root:lang(hi) .part-head__eyebrow, :root:lang(mr) .part-head__eyebrow, :root:lang(kn) .part-head__eyebrow,
+:root:lang(te) .account__label, :root:lang(hi) .account__label, :root:lang(mr) .account__label, :root:lang(kn) .account__label,
+:root:lang(te) .member-group__title, :root:lang(hi) .member-group__title, :root:lang(mr) .member-group__title, :root:lang(kn) .member-group__title,
+:root:lang(te) .relpick__group-title, :root:lang(hi) .relpick__group-title, :root:lang(mr) .relpick__group-title, :root:lang(kn) .relpick__group-title,
+:root:lang(te) .facts__row dt, :root:lang(hi) .facts__row dt, :root:lang(mr) .facts__row dt, :root:lang(kn) .facts__row dt,
+:root:lang(te) .reqpop__eyebrow, :root:lang(hi) .reqpop__eyebrow, :root:lang(mr) .reqpop__eyebrow, :root:lang(kn) .reqpop__eyebrow,
+:root:lang(te) .fgroup__label, :root:lang(hi) .fgroup__label, :root:lang(mr) .fgroup__label, :root:lang(kn) .fgroup__label,
+:root:lang(te) .picker__title, :root:lang(hi) .picker__title, :root:lang(mr) .picker__title, :root:lang(kn) .picker__title,
+:root:lang(te) .hmatch__table thead th, :root:lang(hi) .hmatch__table thead th, :root:lang(mr) .hmatch__table thead th, :root:lang(kn) .hmatch__table thead th,
+:root:lang(te) .hmatch__mangal-who, :root:lang(hi) .hmatch__mangal-who, :root:lang(mr) .hmatch__mangal-who, :root:lang(kn) .hmatch__mangal-who,
+:root:lang(te) .pview__openname, :root:lang(hi) .pview__openname, :root:lang(mr) .pview__openname, :root:lang(kn) .pview__openname {
   text-transform: none;
   letter-spacing: 0;
   font-size: max(0.8125rem, 1em);
@@ -283,5 +283,5 @@ body {
 }
 @media (max-width: 480px) {
   :root .royal-title { font-size: clamp(1.5rem, 7vw, 1.75rem); line-height: 1.15; }
-  :root:lang(te) .royal-title, :root:lang(hi) .royal-title { font-size: clamp(1.3rem, 6vw, 1.5rem); line-height: 1.3; }
+  :root:lang(te) .royal-title, :root:lang(hi) .royal-title, :root:lang(mr) .royal-title, :root:lang(kn) .royal-title { font-size: clamp(1.3rem, 6vw, 1.5rem); line-height: 1.3; }
 }

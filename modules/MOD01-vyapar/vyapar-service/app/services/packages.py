@@ -9,8 +9,9 @@
 # inbox shows exactly which offer was asked for.
 #
 # Text is stored as given (the provider's own language) with optional
-# Hindi/Telugu variants; the read picks the viewer's language when present
-# and falls back to the original — no machine translation is pretended.
+# Hindi/Telugu variants (and, since 2026-10-06, Marathi/Kannada); the read
+# picks the viewer's language when present and falls back to the original —
+# no machine translation is pretended.
 # Traces to: FR01, FR04, FR22, TR001, TR022
 from __future__ import annotations
 
@@ -38,6 +39,10 @@ class PackageIn(BaseModel):
     description: str | None = Field(default=None, max_length=600)
     description_hi: str | None = Field(default=None, max_length=600)
     description_te: str | None = Field(default=None, max_length=600)
+    name_mr: str | None = Field(default=None, max_length=80)
+    name_kn: str | None = Field(default=None, max_length=80)
+    description_mr: str | None = Field(default=None, max_length=600)
+    description_kn: str | None = Field(default=None, max_length=600)
     price_paise: int = Field(ge=0)
     delivery_days: int | None = Field(default=None, ge=0, le=365)
     revisions: int | None = Field(default=None, ge=0, le=99)
@@ -67,6 +72,10 @@ class PackageOut(BaseModel):
     name_te: str | None = None
     description_hi: str | None = None
     description_te: str | None = None
+    name_mr: str | None = None
+    name_kn: str | None = None
+    description_mr: str | None = None
+    description_kn: str | None = None
 
 
 class PackageRequestIn(BaseModel):
@@ -98,7 +107,7 @@ def _rupees(paise: int) -> str:
 def _row_to_out(row: asyncpg.Record, lang: str) -> PackageOut:
     name = row["name"]
     description = row["description"]
-    if lang in ("hi", "te"):
+    if lang in ("hi", "te", "mr", "kn"):
         name = row[f"name_{lang}"] or name
         description = row[f"description_{lang}"] or description
     return PackageOut(
@@ -107,6 +116,7 @@ def _row_to_out(row: asyncpg.Record, lang: str) -> PackageOut:
         name=name, description=description, price_paise=int(row["price_paise"]), price_label=_rupees(row["price_paise"]),
         delivery_days=row["delivery_days"], revisions=row["revisions"], includes=list(row["includes"] or []), sort=row["sort"],
         name_hi=row["name_hi"], name_te=row["name_te"], description_hi=row["description_hi"], description_te=row["description_te"],
+        name_mr=row["name_mr"], name_kn=row["name_kn"], description_mr=row["description_mr"], description_kn=row["description_kn"],
     )
 
 
@@ -157,7 +167,8 @@ async def upsert_listing_packages(conn: asyncpg.Connection, ctx: AuthzContext, l
         ctx.member_id,
         {f"packages[{i}].{name}": value for i, p in enumerate(body.packages)
          for name, value in (("name", p.name), ("description", p.description), ("description_hi", p.description_hi),
-                             ("description_te", p.description_te), ("includes", " ".join(p.includes)))},
+                             ("description_te", p.description_te), ("description_mr", p.description_mr),
+                             ("description_kn", p.description_kn), ("includes", " ".join(p.includes)))},
         lang, tier="offer", surface="package", object_kind="listing", object_id=listing_id,
     )
     tiers = [p.tier for p in body.packages]
@@ -170,16 +181,20 @@ async def upsert_listing_packages(conn: asyncpg.Connection, ctx: AuthzContext, l
         await conn.execute(
             """INSERT INTO vyapar_listings.listing_packages
                  (listing_id, tier, name, name_hi, name_te, description, description_hi, description_te,
-                  price_paise, delivery_days, revisions, includes, sort)
-               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+                  price_paise, delivery_days, revisions, includes, sort,
+                  name_mr, name_kn, description_mr, description_kn)
+               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
                ON CONFLICT (listing_id, tier) DO UPDATE SET
                  name = EXCLUDED.name, name_hi = EXCLUDED.name_hi, name_te = EXCLUDED.name_te,
                  description = EXCLUDED.description, description_hi = EXCLUDED.description_hi, description_te = EXCLUDED.description_te,
+                 name_mr = EXCLUDED.name_mr, name_kn = EXCLUDED.name_kn,
+                 description_mr = EXCLUDED.description_mr, description_kn = EXCLUDED.description_kn,
                  price_paise = EXCLUDED.price_paise, delivery_days = EXCLUDED.delivery_days, revisions = EXCLUDED.revisions,
                  includes = EXCLUDED.includes, sort = EXCLUDED.sort, updated_at = now()""",
             listing_id, p.tier, p.name, p.name_hi, p.name_te, p.description, p.description_hi, p.description_te,
             p.price_paise, p.delivery_days, p.revisions, [s.strip() for s in p.includes if s.strip()],
             p.sort if p.sort is not None else TIER_ORDER[p.tier],
+            p.name_mr, p.name_kn, p.description_mr, p.description_kn,
         )
     return await list_listing_packages(conn, ctx, lang, listing_id)
 

@@ -51,7 +51,7 @@ export async function withdrawFaceMatch(): Promise<boolean> {
 /** "Sep 2026" in the reader's language — the provenance DEC-V1-016 shows. */
 export function monthYear(iso: string | null, lang: string): string {
   if (!iso) return '';
-  const locale = lang === 'hi' ? 'hi-IN' : lang === 'te' ? 'te-IN' : 'en-IN';
+  const locale = ['hi', 'te', 'mr', 'kn'].includes(lang) ? `${lang}-IN` : 'en-IN';
   return new Intl.DateTimeFormat(locale, { month: 'short', year: 'numeric' }).format(new Date(iso));
 }
 

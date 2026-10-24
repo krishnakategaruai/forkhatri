@@ -107,7 +107,10 @@ _EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 _TITLE_LABEL = re.compile(
     r"^\s*(?:(?:we\s+are\s+|we're\s+)?hiring(?:\s+now)?|urgent(?:ly)?(?:\s+(?:requirement|required|hiring))?|job\s+(?:opening|alert|vacancy|post)s?|"
     r"(?:new\s+)?openings?|vacanc(?:y|ies)|requirement|required|wanted|notice|announcement|attention|alert|update|job|jobs|"
-    r"ज़रूरत\s+है|जरूरत\s+है|आवश्यकता(?:\s+है)?|भर्ती|नौकरी|तुरंत|అవసరం|ఖాళీలు|ఉద్యోగం|ఉద్యోగాలు|అత్యవసరం)\s*[:\-–—|!]+\s*",
+    r"ज़रूरत\s+है|जरूरत\s+है|आवश्यकता(?:\s+है)?|भर्ती|नौकरी|तुरंत|అవసరం|ఖాళీలు|ఉద్యోగం|ఉద్యోగాలు|అత్యవసరం"
+    # [Marathi + Kannada, 2026-10-06]
+    r"|आवश्यकता\s+आहे|पाहिजेत|पाहिजे|हवे\s+आहेत|भरती|नोकरी|तातडीने|रिक्त\s+जागा|जागा\s+रिक्त|"
+    r"ಬೇಕಾಗಿದ್ದಾರೆ|ಉದ್ಯೋಗಾವಕಾಶ|ಉದ್ಯೋಗ|ತುರ್ತು|ಖಾಲಿ\s+ಹುದ್ದೆಗಳು|ನೇಮಕಾತಿ)\s*[:\-–—|!]+\s*",
     re.I,
 )
 

@@ -129,10 +129,16 @@ class ForKhatriSessionProvider:
         raw_scopes = body.get("admin_scopes")
         permissions = permissions_for_scopes(raw_scopes if isinstance(raw_scopes, list) else None)
         _resolve_cache[cookie] = (now, member_id, permissions)
+        # [Start flow 2026-10, decision 2] ForKhatri signs members in by a
+        # code sent to this very number (or lets them use a password only on
+        # a number verified before), so a phone the host returns in its
+        # session claims is a verified phone. Dev-header identities never
+        # claim this.
         await ensure_member_row(
             member_id,
             body.get("display_name") or member_id,
             body.get("phone_e164") or body.get("phone"),
             body.get("preferred_language") or body.get("language") or "en",
+            phone_verified=bool(body.get("phone_e164") or body.get("phone")),
         )
         return ResolvedIdentity(member_id=member_id, auth_method=AUTH_MEMBER_SESSION, operator_permissions=permissions)

@@ -16,6 +16,7 @@ import { formatInr } from '@/lib/format';
 export type Tix = {
   tiered: boolean;
   types: { id: string; name: string; price_paise: number; left: number; sold_out: boolean }[];
+  has_codes?: boolean; // the host made at least one usable discount code (event page D11: the code field shows only then)
   contact: { phone: string | null; email: string | null } | null;
   contact_after_booking: boolean;
   counsel_url: string | null;
@@ -66,6 +67,7 @@ export function TicketPicker({ eventId, tix, basePaise, onChange }: { eventId: s
     if (applied) void check(applied.code, id);
   };
 
+  if (!tix.tiered && !tix.has_codes) return null;
   return (
     <section className="stack fade-in" style={{ gap: 10 }} aria-label={t('tix.title')}>
       {tix.tiered && (
@@ -94,7 +96,8 @@ export function TicketPicker({ eventId, tix, basePaise, onChange }: { eventId: s
         </>
       )}
       {!codeOpen && !applied ? (
-        <button type="button" className="link" style={{ alignSelf: 'flex-start' }} onClick={() => setCodeOpen(true)}>{t('tix.haveCode')}</button>
+        // Only when the host actually created codes; otherwise the line is noise on a court-sharing game.
+        tix.has_codes ? <button type="button" className="link" style={{ alignSelf: 'flex-start', minHeight: 44 }} onClick={() => setCodeOpen(true)}>{t('tix.haveCode')}</button> : null
       ) : (
         <div className="stack" style={{ gap: 6 }}>
           <div className="row" style={{ gap: 8 }}>
@@ -121,7 +124,7 @@ export function TicketPicker({ eventId, tix, basePaise, onChange }: { eventId: s
           {applied && <span className="caption" aria-live="polite">✓ {t('tix.codeApplied', { amount: formatInr(applied.quote.discount_paise, i18n.language) })}</span>}
         </div>
       )}
-      {amount != null && <b aria-live="polite">{t('tix.youPay', { amount: formatInr(amount, i18n.language) })}</b>}
+      {amount != null && (applied || tix.tiered) && <b aria-live="polite">{t('tix.youPay', { amount: formatInr(amount, i18n.language) })}</b>}
     </section>
   );
 }

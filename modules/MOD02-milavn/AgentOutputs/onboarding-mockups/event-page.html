@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Milavn event page (proposal)</title>
+<!-- Static design proposal for AgentOutputs/EVENT-PAGE-LEARNING-2026-10.md. Not product code.
+     Copy is English sample text only; the build uses en/hi/te i18n keys. Colours and fonts follow
+     milavn-web app/globals.css (dark theme: navy-950 base, warm accent, Fraunces titles, Anek body). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anek+Latin:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b1220; --raised: #16213a; --sunken: #111a2e; --line: #202a40; --line-2: #2b3956;
+    --ink: #f4f1ea; --muted: #b7bcc6; --faint: #8b93a5;
+    --accent: #f0a94a; --accent-2: #e8912b; --accent-tint: #4a3a1c;
+    --ok: #3fae82; --ok-tint: #163226;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: #070c16; color: var(--ink); font-family: 'Anek Latin', system-ui, -apple-system, 'Segoe UI', sans-serif; padding: 24px 16px 56px; line-height: 1.35; }
+  h1.page { font-family: 'Fraunces', serif; font-weight: 600; margin: 0 0 6px; font-size: 1.6rem; }
+  p.lede { color: var(--muted); margin: 0 0 22px; max-width: 72ch; }
+  .wall { display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; }
+  .shot { width: 390px; max-width: 100%; }
+  .shot > h2 { font-size: 1rem; margin: 0 0 4px; color: var(--accent); }
+  .shot > p.why { font-size: .85rem; color: var(--muted); margin: 0 0 12px; min-height: 2.6em; }
+
+  /* Each phone is one 390x844 screen: what shows before scrolling is the real first screen; scroll inside for the rest. */
+  .phone { background: var(--bg); border: 1px solid var(--line-2); border-radius: 30px; overflow: hidden; position: relative; height: 844px; max-height: 92vh; }
+  .scroll { padding: 0 16px 120px; height: 100%; overflow-y: auto; }
+
+  /* Hero: host photo or a calm category illustration, never a stock tournament photo */
+  .hero { position: relative; height: 196px; margin: 0 -16px; background: #12324a; overflow: hidden; }
+  .hero svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .hero__top { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; }
+  .icon { width: 44px; height: 44px; border-radius: 999px; background: rgba(11,18,32,.62); display: grid; place-items: center; color: var(--ink); border: 0; }
+  .hero__credit { position: absolute; right: 12px; bottom: 10px; font-size: .7rem; color: rgba(244,241,234,.7); background: rgba(11,18,32,.5); padding: 2px 8px; border-radius: 99px; }
+
+  .kicker { margin: 16px 0 4px; font-size: .82rem; color: var(--muted); display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .tag { border: 1px solid var(--line-2); border-radius: 99px; padding: 2px 9px; font-size: .78rem; color: var(--muted); }
+  .tag--ok { border-color: #2d5a45; color: var(--ok); }
+  h3.title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.75rem; line-height: 1.08; margin: 2px 0 8px; letter-spacing: -.01em; }
+
+  .host { display: flex; align-items: center; gap: 10px; margin: 6px 0 4px; }
+  .av { width: 36px; height: 36px; border-radius: 999px; display: grid; place-items: center; font-weight: 600; font-size: .9rem; color: #0b1220; flex: none; border: 2px solid var(--bg); }
+  .av--a { background: #f2c48d; } .av--v { background: #9fc7e8; } .av--p { background: #e8a7b8; } .av--k { background: #b6dfb0; } .av--y { background: var(--accent); }
+  .host b { font-weight: 600; }
+  .small { font-size: .85rem; color: var(--muted); }
+  .faint { font-size: .8rem; color: var(--faint); }
+
+  /* Key facts: one list, each fact once */
+  .facts { margin: 14px 0 0; border-top: 1px solid var(--line); }
+  .fact { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); align-items: flex-start; }
+  .fact__i { width: 36px; height: 36px; border-radius: 12px; background: var(--sunken); display: grid; place-items: center; flex: none; font-size: 1.05rem; }
+  .fact__t { flex: 1; min-width: 0; }
+  .fact__t b { display: block; font-weight: 600; font-size: 1rem; }
+  .fact__a { align-self: center; color: var(--accent); font-weight: 600; font-size: .9rem; padding: 10px 2px; white-space: nowrap; }
+
+  .going { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+  .stack { display: flex; }
+  .stack .av { margin-left: -8px; } .stack .av:first-child { margin-left: 0; }
+
+  .label { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 22px 0 8px; font-weight: 600; }
+  .card { background: var(--raised); border: 1px solid var(--line); border-radius: 18px; padding: 14px; }
+  .card + .card { margin-top: 10px; }
+  .bring { margin: 0; padding-left: 18px; } .bring li { margin: 3px 0; }
+  .about { margin: 0; }
+
+  .update { border-left: 3px solid var(--accent); }
+  .update p { margin: 2px 0 6px; font-size: 1.02rem; }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .grow { flex: 1; min-width: 0; }
+  .link { color: var(--accent); font-weight: 600; text-decoration: none; }
+
+  .status { margin: 14px -16px 0; padding: 12px 16px; background: var(--ok-tint); color: #bfe8d4; display: flex; gap: 10px; align-items: center; font-size: .95rem; }
+  .status b { color: var(--ink); }
+  .venue b { display: block; font-size: 1.02rem; }
+  .btnrow { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; border-radius: 999px; padding: 0 18px; font: 600 .98rem 'Anek Latin', sans-serif; border: 1px solid var(--line-2); background: transparent; color: var(--ink); }
+  .btn--primary { background: linear-gradient(135deg, #f2b04e, var(--accent-2)); color: #0b1220; border: 0; }
+  .btn--grow { flex: 1; }
+
+  .mini-map { height: 112px; border-radius: 14px; margin-top: 10px; position: relative; overflow: hidden; background:
+    repeating-linear-gradient(28deg, transparent 0 22px, rgba(255,255,255,.05) 22px 24px),
+    repeating-linear-gradient(-62deg, transparent 0 30px, rgba(255,255,255,.05) 30px 32px), #142033; }
+  .mini-map .area { position: absolute; left: 50%; top: 50%; width: 88px; height: 88px; margin: -44px 0 0 -44px; border-radius: 50%; background: rgba(240,169,74,.16); border: 2px dashed rgba(240,169,74,.7); }
+  .mini-map .pin { position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: var(--accent); box-shadow: 0 0 0 4px rgba(240,169,74,.25); }
+  .mini-map span { position: absolute; left: 10px; bottom: 8px; font-size: .74rem; color: var(--muted); background: rgba(11,18,32,.7); padding: 2px 8px; border-radius: 99px; }
+
+  .chat { display: flex; gap: 10px; align-items: center; }
+  .dot { min-width: 22px; height: 22px; border-radius: 99px; background: var(--accent); color: #0b1220; font-size: .75rem; font-weight: 700; display: grid; place-items: center; padding: 0 6px; }
+
+  /* Sticky decision bar: one primary action, price inside it */
+  .bar { position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 16px 16px; background: var(--bg); box-shadow: 0 -12px 24px rgba(11,18,32,.9); border-top: 1px solid var(--line); z-index: 10; }
+  .bar__meta { font-size: .82rem; color: var(--muted); margin: 0 2px 8px; display: flex; justify-content: space-between; }
+  .bar__row { display: flex; gap: 10px; align-items: center; }
+  .bar .btn--primary { flex: 1; min-height: 50px; font-size: 1.05rem; }
+  .save { width: 50px; height: 50px; border-radius: 999px; border: 1px solid var(--line-2); background: transparent; color: var(--ink); display: grid; place-items: center; flex: none; }
+
+  .note { margin-top: 10px; font-size: .78rem; color: var(--faint); border-top: 1px dashed var(--line-2); padding-top: 8px; }
+  .callouts { margin: 30px 0 0; max-width: 1240px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+  .callouts .card h4 { margin: 0 0 6px; font-size: .95rem; color: var(--accent); }
+  .callouts .card ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: .9rem; }
+  @media (max-width: 420px) { body { padding: 16px 12px 40px; } .shot { width: 100%; } }
+</style>
+</head>
+<body>
+<h1 class="page">Milavn event page — proposal</h1>
+<p class="lede">One page, three moments. Left: a member deciding whether to go. Middle: the same member once going, on the day. Right: the organiser. Everything a person needs to decide sits above the fold, each fact appears once, and the bottom bar carries one action with its price. Sample event: a neighbourhood badminton doubles in Madhapur.</p>
+
+<div class="wall">
+
+  <!-- 1. Deciding -->
+  <section class="shot" aria-label="Deciding">
+    <h2>1 · Deciding (signed in or from a WhatsApp link)</h2>
+    <p class="why">What, when, where, who hosts, who's going, price, what to bring. The exact place stays hidden until you join.</p>
+    <div class="phone">
+      <div class="scroll">
+        <div class="hero" role="img" aria-label="Illustration: badminton court">
+          <svg viewBox="0 0 390 196" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1b4a5e"/><stop offset="1" stop-color="#0f2a3d"/></linearGradient></defs>
+            <rect width="390" height="196" fill="url(#g1)"/>
+            <g fill="none" stroke="rgba(244,241,234,.28)" stroke-width="2"><path d="M60 170 L120 40 L270 40 L330 170 Z"/><path d="M195 40 L195 170"/><path d="M90 105 L300 105"/></g>
+            <path d="M70 108 L320 102" stroke="rgba(244,241,234,.55)" stroke-width="3"/>
+            <g transform="translate(250 62) rotate(-25)"><circle r="6" fill="#f4f1ea"/><path d="M-4 6 L-10 26 L10 26 L4 6 Z" fill="rgba(244,241,234,.85)"/></g>
+          </svg>
+          <div class="hero__top"><span class="icon" aria-label="Back">&#8249;</span><span class="icon" aria-label="More">&#8943;</span></div>
+          <span class="hero__credit">Illustration</span>
+        </div>
+
+        <div class="kicker"><span>🏸 Play · Badminton</span><span class="tag">Beginners welcome</span></div>
+        <h3 class="title">Evening badminton doubles</h3>
+        <div class="host"><span class="av av--a">A</span><div class="grow"><b>Hosted by Asha Reddy</b><div class="small"><span style="color:var(--ok)">✓ ForKhatri verified</span> · hosted 6 games</div></div></div>
+
+        <div class="facts">
+          <div class="fact"><span class="fact__i">📅</span><div class="fact__t"><b>Sat 11 Oct, 6:30–8:30 pm</b><span class="small">In 5 days</span></div><a class="fact__a" href="#">Add to calendar</a></div>
+          <div class="fact"><span class="fact__i">📍</span><div class="fact__t"><b>Madhapur, Hyderabad</b><span class="small">Indoor court · about 2 km from you<br>Exact place shown after you join</span></div></div>
+          <div class="fact"><span class="fact__i">₹</span><div class="fact__t"><b>Free</b><span class="small">Court is already booked by Asha</span></div></div>
+        </div>
+
+        <div class="going">
+          <div class="stack"><span class="av av--v">V</span><span class="av av--p">P</span></div>
+          <div class="grow"><b>Vikram and Priya are going</b><div class="small">From your circles · 2 of 4 spots left</div></div>
+        </div>
+
+        <div class="label">Good to know</div>
+        <div class="card">
+          <ul class="bring">
+            <li>Bring your own racquet; shuttles provided</li>
+            <li>Non-marking sports shoes</li>
+            <li>Casual doubles, all levels</li>
+          </ul>
+        </div>
+
+        <div class="label">About</div>
+        <p class="about">Friendly doubles after work. We rotate partners every game so everyone plays with everyone.</p>
+
+        <div class="label">Where</div>
+        <div class="mini-map" aria-label="Approximate area, Madhapur"><div class="area"></div><span>Approximate area</span></div>
+
+        <div class="label">Latest from Asha</div>
+        <div class="card update"><p>Courts 3 and 4 are booked. Bring water!</p><span class="faint">2 days ago</span></div>
+
+        <div class="note">Removed here: "Why this", the repeated "Play" and date tile, the privacy sentence, the trust badge repeated twice, the discount-code link (shown only when the host made codes).</div>
+      </div>
+      <div class="bar">
+        <div class="bar__row"><button class="btn btn--primary" type="button">Join · Free</button><button class="save" type="button" aria-label="Save for later">☆</button><button class="save" type="button" aria-label="Share">⤴</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Going, day of -->
+  <section class="shot" aria-label="Going, on the day">
+    <h2>2 · Going, on the day</h2>
+    <p class="why">The page turns into a ticket: status, the exact place with directions, the host's latest update and one group chat, all above the fold.</p>
+    <div class="phone">
+      <div class="scroll">
+        <div class="hero" style="height:132px" role="img" aria-label="Illustration: badminton court">
+          <svg viewBox="0 0 390 132" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="390" height="132" fill="#163c50"/><g fill="none" stroke="rgba(244,241,234,.25)" stroke-width="2"><path d="M60 125 L120 20 L270 20 L330 125 Z"/><path d="M195 20 L195 125"/></g></svg>
+          <div class="hero__top"><span class="icon" aria-label="Back">&#8249;</span><span class="icon" aria-label="More">&#8943;</span></div>
+        </div>
+        <div class="status"><span>✓</span><span><b>You're going</b> · today at 6:30 pm · starts in 2 h</span></div>
+
+        <h3 class="title" style="margin-top:14px">Evening badminton doubles</h3>
+
+        <div class="label" style="margin-top:12px">Latest from Asha</div>
+        <div class="card update"><p>Gate B is open from 6:15. Courts 3 and 4.</p><span class="faint">20 min ago</span></div>
+
+        <div class="label">Where to go</div>
+        <div class="card venue">
+          <b>Sri Sai Badminton Arena, Courts 3–4</b>
+          <span class="small">Road No. 2, Ayyappa Society, Madhapur</span>
+          <div class="small" style="margin-top:6px">Arrival: use Gate B, parking behind the building</div>
+          <div class="mini-map" style="height:96px" aria-label="Exact venue"><div class="pin"></div><span>Exact place</span></div>
+          <div class="btnrow"><a class="btn btn--primary btn--grow" href="#">Directions</a><a class="btn btn--grow" href="#">Call Asha</a></div>
+        </div>
+
+        <div class="label">Group chat</div>
+        <div class="card chat"><span class="av av--p">P</span><div class="grow"><b>Priya</b><div class="small">Bringing two extra racquets</div></div><span class="dot">2</span></div>
+
+        <div class="label">Who's going</div>
+        <div class="card row"><div class="stack"><span class="av av--a">A</span><span class="av av--v">V</span><span class="av av--p">P</span><span class="av av--y">You</span></div><div class="grow small">Asha (host), Vikram, Priya and you · full</div></div>
+
+        <div class="label">Your plan</div>
+        <div class="card row"><div class="grow">Just me · two-wheeler</div><a class="link" href="#">Change</a></div>
+
+        <div class="label">Good to know</div>
+        <div class="card"><ul class="bring"><li>Bring your own racquet; shuttles provided</li><li>Non-marking sports shoes</li></ul></div>
+
+        <div class="note">Moved down: About, host card, safety tips. Hidden on the day: "Add to calendar", "Interested", the approximate map.</div>
+      </div>
+      <div class="bar">
+        <div class="bar__row"><a class="btn btn--primary" href="#">Directions</a><button class="save" type="button" aria-label="Group chat">💬</button><button class="save" type="button" aria-label="More: can't make it, share">⋯</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Organiser -->
+  <section class="shot" aria-label="Organiser">
+    <h2>3 · Organiser (Asha, her own event)</h2>
+    <p class="why">No "Join" or "Interested" on your own event. What is missing comes first, then the people who are coming, then one bar to manage.</p>
+    <div class="phone">
+      <div class="scroll">
+        <div class="hero" style="height:132px" role="img" aria-label="Illustration: badminton court">
+          <svg viewBox="0 0 390 132" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="390" height="132" fill="#163c50"/><g fill="none" stroke="rgba(244,241,234,.25)" stroke-width="2"><path d="M60 125 L120 20 L270 20 L330 125 Z"/><path d="M195 20 L195 125"/></g></svg>
+          <div class="hero__top"><span class="icon" aria-label="Back">&#8249;</span><span class="icon" aria-label="Edit">✎</span></div>
+          <span class="hero__credit">Add your own photo</span>
+        </div>
+        <div class="status" style="background:var(--accent-tint);color:#f3d9b0"><span>★</span><span><b>You're hosting</b> · Sat 11 Oct, 6:30 pm</span></div>
+        <h3 class="title" style="margin-top:14px">Evening badminton doubles</h3>
+
+        <div class="label" style="margin-top:12px">Before Saturday</div>
+        <div class="card"><div class="row"><div class="grow"><b>Add the exact place</b><div class="small">People who join see it with directions. Right now they only see "Madhapur".</div></div><a class="link" href="#">Add</a></div></div>
+
+        <div class="label">Coming · 2 of 4</div>
+        <div class="card">
+          <div class="row" style="padding:4px 0"><span class="av av--v">V</span><div class="grow">Vikram Rao<div class="faint">Joined 3 days ago</div></div></div>
+          <div class="row" style="padding:4px 0"><span class="av av--p">P</span><div class="grow">Priya Sharma<div class="faint">+1 guest · first time</div></div></div>
+        </div>
+
+        <div class="label">Your updates</div>
+        <div class="card update"><p>Courts 3 and 4 are booked. Bring water!</p><span class="faint">Sent to 2 people · 2 days ago</span></div>
+
+        <div class="label">Group chat</div>
+        <div class="card chat"><span class="av av--p">P</span><div class="grow"><b>Priya</b><div class="small">Bringing two extra racquets</div></div><span class="dot">1</span></div>
+
+        <div class="note">Removed for the host: Interested/Going, "Why this", "The full address is shown once you are going", "Who's going is private". Check-in, edit, co-host and cancel live under Manage.</div>
+      </div>
+      <div class="bar">
+        <div class="bar__row"><button class="btn btn--primary" type="button">Send an update</button><button class="btn" type="button" style="min-height:50px">Manage</button><button class="save" type="button" aria-label="Share">⤴</button></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="callouts">
+  <div class="card"><h4>Order when deciding</h4><ul><li>Title, host, then three facts: when, where, price</li><li>Who's going (faces from your circles)</li><li>Good to know, About, approximate map</li><li>Latest update from the host</li></ul></div>
+  <div class="card"><h4>Order once going</h4><ul><li>Status strip with a countdown</li><li>Latest host update, exact place, directions</li><li>One group chat (the one in Chats), who's going, your plan</li><li>Ticket QR here for paid events</li></ul></div>
+  <div class="card"><h4>After it ends</h4><ul><li>"Happened on 11 Oct" at the top</li><li>Photos first, then thanks and "meet again"</li><li>Next date in the series or more from Asha</li><li>No calendar, join or plan buttons</li></ul></div>
+</div>
+</body>
+</html>

@@ -25,6 +25,11 @@ class AroundYouResponse(BaseModel):
     later: list[CardOut]
     circles: list[dict]
     viewer_locality: str
+    # [Q5 2026-10-06] Only when the member's own city is quiet: labelled nearby-city and online events.
+    viewer_city: str | None = None
+    quiet: bool = False
+    nearby: list[CardOut] = []
+    online: list[CardOut] = []
 
 
 async def _viewer(session, member, lang, lat: float | None = None, lng: float | None = None):  # noqa: ANN001
@@ -53,6 +58,9 @@ async def around_you(session: DbSession, member: CurrentMember, lang: Locale, la
     v = await _viewer(session, member, lang, lat, lng)
     groups = await discovery.around_you(session, v)
     mine = await circle.mine(session, member_id=member.member_id)
+    own = [c for k in ("today", "tomorrow", "weekend", "later") for c in groups[k]]
+    quiet = len(own) < discovery.QUIET_BELOW
+    wider = await discovery.around_you_wider(session, v, exclude_ids={c.id for c in own}, lang=lang) if quiet else {"nearby": [], "online": []}
     return AroundYouResponse(
         today=[CardOut.from_card(c) for c in groups["today"]],
         tomorrow=[CardOut.from_card(c) for c in groups["tomorrow"]],
@@ -60,6 +68,10 @@ async def around_you(session: DbSession, member: CurrentMember, lang: Locale, la
         later=[CardOut.from_card(c) for c in groups["later"]],
         circles=[{"id": str(c.id), "name": c.name, "circle_type": c.circle_type, "member_count": c.member_count} for c in mine],
         viewer_locality=v.locality or v.zone or v.city,
+        viewer_city=v.city,
+        quiet=quiet,
+        nearby=[CardOut.from_card(c) for c in wider["nearby"]],
+        online=[CardOut.from_card(c) for c in wider["online"]],
     )
 
 
@@ -124,7 +136,7 @@ async def understand(q: str, member: CurrentMember) -> dict:
     from app.components.discovery import nl
 
     u = nl.understand(q)
-    return {"category": u.category, "format": u.event_format, "when": u.when, "distance": u.distance, "q": u.query, "chips": u.chips}
+    return {"category": u.category, "format": u.event_format, "when": u.when, "distance": u.distance, "audience": u.audience, "q": u.query, "chips": u.chips}
 
 
 @router.get("/smart-fill")
@@ -168,7 +180,11 @@ async def digest(session: DbSession, member: CurrentMember, lang: Locale, lat: f
     if with_peers:
         lines.append(translate("digest.peers", lang, n=len(with_peers)))
     if not lines:
-        lines.append(translate("digest.quiet", lang, locality=v.locality or v.zone or v.city))
+        place = v.locality or v.zone or v.city
+        own_ids = {c.id for c in cards}
+        wider = await discovery.around_you_wider(session, v, exclude_ids=own_ids, lang=lang) if len(cards) < discovery.QUIET_BELOW else {"nearby": [], "online": []}
+        # [Q5] Never just "quiet": when Home is showing nearby or online events, say so plainly.
+        lines.append(translate("digest.quietWider", lang, locality=place) if (wider["nearby"] or wider["online"]) else translate("digest.quiet", lang, locality=place))
     return {"lines": lines[:3], "locality": v.locality or v.zone or v.city}
 
 

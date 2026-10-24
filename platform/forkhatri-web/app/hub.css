@@ -378,7 +378,9 @@
     letter-spacing: -0.03em;
   }
   .greeting:lang(hi),
-  .greeting:lang(te) {
+  .greeting:lang(te),
+  .greeting:lang(mr),
+  .greeting:lang(kn) {
     font-size: 1.45rem;
     line-height: 1.45;
   }
@@ -623,7 +625,9 @@
     /* Taglines are short registry text; show them whole rather than clamping with an ellipsis. */
   }
   .module-tagline:lang(hi),
-  .module-tagline:lang(te) {
+  .module-tagline:lang(te),
+  .module-tagline:lang(mr),
+  .module-tagline:lang(kn) {
     line-height: 1.5;
   }
   .module-go {
@@ -750,7 +754,9 @@
       font-size: 2.2rem;
     }
     .greeting:lang(hi),
-    .greeting:lang(te) {
+    .greeting:lang(te),
+    .greeting:lang(mr),
+    .greeting:lang(kn) {
       font-size: 1.9rem;
     }
     .deity-emblem {
@@ -795,7 +801,9 @@
       white-space: normal;
     }
     .greeting:lang(hi),
-    .greeting:lang(te) {
+    .greeting:lang(te),
+    .greeting:lang(mr),
+    .greeting:lang(kn) {
       font-size: 2.3rem;
       line-height: 1.35;
     }

@@ -41,6 +41,7 @@ from app.api.deps import AppSettings, DbSession, RequiredSession, client_ip
 from app.components.governance import gateway
 from app.components.governance import interface as gov
 from app.components.governance import roles as R
+from app.config.settings import LANGUAGES
 from app.errors import DomainError
 
 router = APIRouter(prefix="/v1/admin", tags=["admin"])
@@ -58,7 +59,7 @@ CurrentAdmin = Annotated[gov.Admin, Depends(_admin)]
 
 def _lang(request: Request, session: RequiredSession) -> str:
     code = request.headers.get("accept-language", "")[:2].lower()
-    return code if code in ("en", "hi", "te") else session.member.preferred_language
+    return code if code in LANGUAGES else session.member.preferred_language
 
 
 class Note(BaseModel):

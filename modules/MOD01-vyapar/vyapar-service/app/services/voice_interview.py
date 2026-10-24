@@ -82,7 +82,7 @@ from app.services.profile import profile_row
 from app.taxonomy_cache import labels_for, term_for
 
 Flow = Literal["post_job", "post_local", "post_project", "profile"]
-Language = Literal["en", "hi", "te"]
+Language = Literal["en", "hi", "te", "mr", "kn"]
 Kind = Literal["text", "choice", "number", "yesno"]
 Intent = Literal["answer", "skip", "yes", "no", "repeat", "unclear"]
 
@@ -308,7 +308,7 @@ def _cap(s: str) -> str:
 
 
 def _lang(requested: str | None, locale: str) -> str:
-    return requested or (locale if locale in ("en", "hi", "te") else "en")
+    return requested or (locale if locale in ("en", "hi", "te", "mr", "kn") else "en")
 
 
 # ---- validating what the client sends back -----------------------------------

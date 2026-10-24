@@ -11,16 +11,16 @@ import re
 from app.settings import get_settings
 
 AREA_HINTS = {
-    "business": ["startup", "business", "founder", "entrepreneur", "saas", "product strategy", "pricing", "go to market", "pitch", "व्यवसाय", "వ్యాపారం"],
-    "career": ["career", "job", "interview", "resume", "cv", "promotion", "switch", "करियर", "కెరీర్"],
+    "business": ["startup", "business", "founder", "entrepreneur", "saas", "product strategy", "pricing", "go to market", "pitch", "व्यवसाय", "వ్యాపారం", "उद्योजक", "ವ್ಯಾಪಾರ", "ಉದ್ಯಮ"],
+    "career": ["career", "job", "interview", "resume", "cv", "promotion", "switch", "करियर", "కెరీర్", "करिअर", "नोकरी", "ವೃತ್ತಿ", "ಉದ್ಯೋಗ"],
     "freelancing": ["freelanc", "upwork", "client", "creator", "youtube channel", "portfolio"],
     "technology": ["software", "code", "app", "website", "cloud", "developer", "engineer", "architecture review", "ai", "data"],
-    "agriculture": ["farm", "crop", "soil", "seed", "irrigation", "खेती", "వ్యవసాయ"],
+    "agriculture": ["farm", "crop", "soil", "seed", "irrigation", "खेती", "వ్యవసాయ", "शेती", "पीक", "ಕೃಷಿ", "ಬೆಳೆ"],
     "education": ["exam", "study", "college", "admission", "phd", "university", "study abroad"],
-    "legal": ["lawyer", "legal", "court", "contract", "notice", "property dispute", "divorce", "कानून", "వకీలు", "advocate"],
-    "finance": ["tax", "gst", "itr", "ca ", "chartered", "accounting", "audit", "income tax", "tds", "lut", "invoice", "टैक्स", "పన్ను"],
-    "investment": ["invest", "mutual fund", "insurance", "sip", "portfolio review", "retire", "बीमा", "पेट్టుబడి"],
-    "health": ["doctor", "medical", "diagnosis", "symptom", "second opinion", "डॉक्टर", "వైద్యు"],
+    "legal": ["lawyer", "legal", "court", "contract", "notice", "property dispute", "divorce", "कानून", "వకీలు", "advocate", "कायद", "वकील", "ಕಾನೂನು", "ವಕೀಲ"],
+    "finance": ["tax", "gst", "itr", "ca ", "chartered", "accounting", "audit", "income tax", "tds", "lut", "invoice", "टैक्स", "పన్ను", "टॅक्स", "आयकर", "ತೆರಿಗೆ"],
+    "investment": ["invest", "mutual fund", "insurance", "sip", "portfolio review", "retire", "बीमा", "पेट్టుబడి", "పెట్టుబడి", "विमा", "गुंतवणूक", "ವಿಮೆ", "ಹೂಡಿಕೆ"],
+    "health": ["doctor", "medical", "diagnosis", "symptom", "second opinion", "डॉक्टर", "వైద్యు", "वैद्यकीय", "ವೈದ್ಯ", "ಡಾಕ್ಟರ್"],
     "mental-health": ["anxiety", "stress", "therapy", "counsell", "depress", "burnout"],
     "nutrition": ["diet", "nutrition", "weight", "meal plan"],
     "fitness": ["fitness", "gym", "marathon", "training plan", "sport"],
@@ -52,7 +52,7 @@ def rules_parse(text: str) -> dict:
     duration = int(m.group(1)) if m else (60 if "hour" in t else None)
     b = re.search(r"(?:under|below|upto|up to|max|budget|₹|rs\.?|inr)\s*₹?\s*(\d[\d,]{2,})", t)
     budget = int(b.group(1).replace(",", "")) if b else None
-    keywords = [w for w in re.findall(r"[a-zऀ-ॿఀ-౿]{3,}", t) if w not in STOP][:6]
+    keywords = [w for w in re.findall(r"[a-zऀ-ॿఀ-౿ಀ-೿]{3,}", t) if w not in STOP][:6]
     return {"areas": areas[:2], "duration_max": duration, "max_price": budget, "keywords": keywords, "source": "rules"}
 
 

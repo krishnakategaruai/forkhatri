@@ -10,6 +10,8 @@
     "photoOrder": "Your photos changed while you were reordering. Refresh and try again.",
     "unsupportedRecording": "That recording is not a supported audio file, or it is too long.",
     "childAlreadyJoined": "That number is already on ForKhatri. Ask to join their Home Circle instead — the profile is theirs to make.",
-    "childPhone": "Enter their 10-digit mobile number."
+    "childPhone": "Enter their 10-digit mobile number.",
+    "biodataConsent": "Please agree to Mangalya reading the file first, or attach it and type the details yourself.",
+    "unsupportedDocument": "That file could not be used. Please choose a PDF or a photo (JPEG, PNG or WebP) under 10 MB."
   }
 }

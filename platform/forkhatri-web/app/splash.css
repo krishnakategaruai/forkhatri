@@ -120,6 +120,12 @@ html[data-splash="seen"] .splash {
   opacity: 0;
 }
 
+/* Tracking breaks the joins of Marathi (Devanagari) and Kannada letters. */
+.splash-blessing:lang(mr),
+.splash-blessing:lang(kn) {
+  letter-spacing: normal;
+}
+
 .splash-blessing[data-ready="true"] {
   animation: splash-fade 700ms ease-out 250ms both;
 }

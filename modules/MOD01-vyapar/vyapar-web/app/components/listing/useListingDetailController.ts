@@ -22,11 +22,16 @@ export function useListingDetailController(id: string) {
   const [otpRequested, setOtpRequested] = useState(false);
   const [devCode, setDevCode] = useState<string | null>(null);
 
-  const error = resource.error
-    ? resource.error instanceof ApiError
-      ? String(resource.error.detail)
-      : t("common:state.notFound")
-    : null;
+  // [Audit 2026-10-06] a coded refusal's `detail` is an object
+  // ({message, code, kind}); String() on it read "[object Object]" to the
+  // member who tapped "Send for review". The message is what is shown.
+  const detailText = (e: unknown, fallback: string): string => {
+    if (!(e instanceof ApiError)) return fallback;
+    if (typeof e.detail === "string" && e.detail) return e.detail;
+    const d = e.detail as { message?: unknown } | null;
+    return d && typeof d.message === "string" && d.message ? d.message : fallback;
+  };
+  const error = resource.error ? detailText(resource.error, t("common:state.notFound")) : null;
 
   async function act(fn: () => Promise<unknown>) {
     setBusy(true);
@@ -35,7 +40,7 @@ export function useListingDetailController(id: string) {
       await fn();
       await resource.refresh();
     } catch (e) {
-      setNotice(e instanceof ApiError ? String(e.detail) : t("common:state.actionFailed"));
+      setNotice(detailText(e, t("common:state.actionFailed")));
     } finally {
       setBusy(false);
     }

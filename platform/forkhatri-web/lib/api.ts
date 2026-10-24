@@ -9,7 +9,17 @@
  *   screens can tell "you typed a wrong code" apart from "we are offline".
  */
 
-export type Lang = "en" | "hi" | "te";
+export type Lang = "en" | "hi" | "te" | "mr" | "kn";
+
+/** Every language ForKhatri speaks, in picker order (identity `LANGUAGES`, ADR-010). */
+export const LANG_CODES: readonly Lang[] = ["en", "hi", "te", "mr", "kn"];
+
+/** BCP 47 locale for Intl date, number and relative-time formatting and for speech (mr-IN, kn-IN). */
+export const INTL_LOCALE: Record<Lang, string> = { en: "en-IN", hi: "hi-IN", te: "te-IN", mr: "mr-IN", kn: "kn-IN" };
+
+export function isLang(value: unknown): value is Lang {
+  return typeof value === "string" && (LANG_CODES as readonly string[]).includes(value);
+}
 
 /**
  * The platform keeps only basic member information. Every other profile detail

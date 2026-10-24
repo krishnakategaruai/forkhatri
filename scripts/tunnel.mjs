@@ -134,11 +134,16 @@ const MANAGED_FILES = [
   },
   {
     path: "modules/MOD01-vyapar/vyapar-web/.env.local",
-    keys: ["NEXT_PUBLIC_API_URL", "NEXT_PUBLIC_PLATFORM_URL", "NEXT_PUBLIC_HOST_IDENTITY_API"],
+    // NEXT_PUBLIC_VYAPAR_AUTH: tunnelled, Vyapar must act as the member who
+    // signed in to ForKhatri (fk_session), not the development switcher's
+    // default member — otherwise everyone opening a shared link is Krishna.
+    // Locally it stays on the development switcher.
+    keys: ["NEXT_PUBLIC_API_URL", "NEXT_PUBLIC_PLATFORM_URL", "NEXT_PUBLIC_HOST_IDENTITY_API", "NEXT_PUBLIC_VYAPAR_AUTH"],
     build: (u, tunneling) => [
       `NEXT_PUBLIC_API_URL=${tunneling ? "/tunnel-proxy/api" : u.vyaparApi}`,
       `NEXT_PUBLIC_PLATFORM_URL=${u.entrance}`,
       `NEXT_PUBLIC_HOST_IDENTITY_API=${tunneling ? "/tunnel-proxy/identity" : u.identity}`,
+      `NEXT_PUBLIC_VYAPAR_AUTH=${tunneling ? "cookie" : "dev"}`,
     ],
   },
   {
@@ -392,7 +397,7 @@ async function main() {
     // tunnel hostname to that config, since it's random every run.
     const extraEnv =
       svc.kind === "web"
-        ? { TUNNEL_DEV_ORIGIN: new URL(tunnelUrls[svc.key]).host, FORKHATRI_IDENTITY_INTERNAL_URL: LOCAL_URLS.identity, COUNSEL_API_INTERNAL_URL: LOCAL_URLS.counselApi }
+        ? { TUNNEL_DEV_ORIGIN: new URL(tunnelUrls[svc.key]).host, FORKHATRI_IDENTITY_INTERNAL_URL: LOCAL_URLS.identity, COUNSEL_API_INTERNAL_URL: LOCAL_URLS.counselApi, MILAVN_API_INTERNAL_URL: LOCAL_URLS.milavnApi }
         : {};
     serviceChildren.push(spawnService(svc, extraEnv));
     note(`${paint(32, "start")}  ${svc.key.padEnd(LABEL_WIDTH)} :${svc.port}  ${dim(svc.describe)}`);

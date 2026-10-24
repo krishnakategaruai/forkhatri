@@ -134,6 +134,52 @@ time,
   line-height: 1.3;
 }
 
+/* [2026-10-06] Marathi (Devanagari) and Kannada get the same Indic spacing.
+   Kannada glyphs sit taller and wider than Telugu (stacked consonants hang
+   well below the line), so Kannada body and headings get one more step. */
+:lang(mr),
+:lang(kn) {
+  --leading-body: 1.7;
+  --leading-heading: 1.4;
+  --leading-title: 1.3;
+  --leading-display: 1.25;
+  --leading-ui: 1.4;
+  --tracking-hero: 0;
+  --tracking-display: 0;
+  --tracking-title: 0;
+  --tracking-heading: 0;
+  --tracking-label: 0;
+}
+
+:lang(kn) {
+  --leading-body: 1.75;
+  --leading-heading: 1.45;
+  --leading-title: 1.35;
+  --leading-display: 1.3;
+  --leading-ui: 1.45;
+}
+
+:lang(mr) :is(p, li, .vy-ocard-line, .vy-muted, .vy-hero-sub),
+:lang(kn) :is(p, li, .vy-ocard-line, .vy-muted, .vy-hero-sub) {
+  line-height: var(--leading-body);
+}
+
+:lang(mr) :is(h1, h2, h3, .vy-hero-title, .vy-row-title2, .vy-card-title, .vy-ocard-title, .vy-ocard-pay, .vy-topbar-word),
+:lang(kn) :is(h1, h2, h3, .vy-hero-title, .vy-row-title2, .vy-card-title, .vy-ocard-title, .vy-ocard-pay, .vy-topbar-word) {
+  letter-spacing: 0;
+  line-height: var(--leading-heading);
+}
+
+:lang(mr) :is(.vy-btn, .vy-chip, .vy-hero-tab, .vy-segmented > button, .vy-menu-item, .vy-badge, .vy-trade-label, .vy-hub-label, .vy-rail-link),
+:lang(kn) :is(.vy-btn, .vy-chip, .vy-hero-tab, .vy-segmented > button, .vy-menu-item, .vy-badge, .vy-trade-label, .vy-hub-label, .vy-rail-link) {
+  line-height: var(--leading-ui);
+  letter-spacing: 0;
+}
+
+:lang(kn) .vy-hero-title {
+  line-height: 1.35;
+}
+
 /* ---- Control edges: WCAG 1.4.11 (critique P1/D2) ----------------------- */
 /* The edge of an interactive control must reach 3:1: --border-control
    (globals.css) aliases --border-strong, proven ≥3:1 on every surface in

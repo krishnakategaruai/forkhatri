@@ -11,6 +11,7 @@
 // Traces to: FR32, TR032, SP032, UX20
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { numberLocale } from "@/lib/i18n/languages";
 import { BarChart3 } from "lucide-react";
 import { useSdk } from "@/lib/sdk/react";
 import { formatDate } from "@/lib/format";
@@ -46,7 +47,7 @@ export default function PerformanceReport({ targetKind, targetId, promotionId }:
 
   if (!report) return null;
   const fmt = (d: string) => formatDate(d, i18n.language);
-  const number = (n: number) => new Intl.NumberFormat(`${(i18n.language || "en").slice(0, 2)}-IN`).format(n);
+  const number = (n: number) => new Intl.NumberFormat(numberLocale(i18n.language)).format(n);
 
   return (
     <section className="vy-dl-sec" aria-labelledby={`perf-${targetId}`}>

@@ -18,7 +18,7 @@ class MemberPatch(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     display_name: str | None = Field(default=None, max_length=80)
-    preferred_language: Literal["en", "hi", "te"] | None = None
+    preferred_language: Literal["en", "hi", "te", "mr", "kn"] | None = None
 
 
 @router.get("/session")

@@ -14,7 +14,7 @@
   },
   "step2cat": {
     "title": "What kind of work do you do?",
-    "help": "Pick one or more — we'll suggest specific skills next based on what you choose.",
+    "help": "Pick one or more. You can add more later.",
     "searchPlaceholder": "Search categories"
   },
   "step2cap": {
@@ -32,7 +32,7 @@
     "label": "Step {{step}} of {{total}}"
   },
   "step2": {
-    "title": "What brings you here?",
+    "title": "What do you want to do?",
     "help": "Pick as many as apply — this only shapes what we show first.",
     "options": {
       "findCustomers": "Find customers",
@@ -45,5 +45,81 @@
     "title": "You're set, {{name}}.",
     "help": "Add your work profile or business profile next, or explore what others have shared.",
     "cta": "Go to Vyapar"
+  },
+  "start": {
+    "goal": {
+      "step": "What you want",
+      "title": "Namaste {{name}}, what do you want to do today?",
+      "titleNoName": "Namaste, what do you want to do today?",
+      "help": "Pick one. You can do the others any time.",
+      "options": {
+        "find_work": {
+          "title": "Find work",
+          "hint": "Jobs and local work near you"
+        },
+        "hire": {
+          "title": "Hire someone",
+          "hint": "Post a job or a one-time task"
+        },
+        "get_customers": {
+          "title": "Get customers",
+          "hint": "For my shop, service or home business"
+        }
+      },
+      "reason": "Pick what you want to do to continue",
+      "reasonDob": "Add your date of birth to continue",
+      "dobLabel": "Your date of birth",
+      "dobHint": "Asked once. Vyapar is for members 18 and over."
+    },
+    "consent": {
+      "line": "By continuing you agree to the",
+      "and": "and",
+      "agreeContinue": "Agree and continue"
+    },
+    "trades": {
+      "titleWork": "What work do you do?",
+      "titleSell": "What do you sell or offer?",
+      "help": "Tap all that fit. Search or say it if it isn't here.",
+      "groupLabel": "Trades",
+      "otherLabel": "Your work, in your words",
+      "otherPlaceholder": "e.g. borewell motor repair",
+      "moreTrades": "More trades",
+      "fewerTrades": "Fewer trades",
+      "businessPlaceholder": "e.g. {{name}}'s pickles",
+      "businessHint": "Leave it empty and we'll suggest one from your name and trade."
+    },
+    "where": {
+      "step": "Where",
+      "titleWork": "Where do you live or work from?",
+      "titleSell": "Where is your shop or home business?",
+      "help": "Any town or area. Nearby posts come first; you can widen it later.",
+      "label": "Your area",
+      "placeholder": "Area or town, e.g. Kukatpally or Kakinada",
+      "useLocation": "Use where I am now",
+      "ctaWork": "Show me work",
+      "ctaSell": "Make me visible"
+    },
+    "under18": {
+      "title": "Thank you, {{name}}.",
+      "body": "Vyapar is for members who are 18 and over, because it is about paid work and business. We have kept your answer, so you won't be asked again.",
+      "later": "The rest of ForKhatri is open to you. Vyapar will be here when you turn 18."
+    }
+  },
+  "completion": {
+    "label": "Your profile",
+    "percent": "Your profile: {{percent}}% done",
+    "next": "Next: {{question}}",
+    "saved": "Saved. Thanks!"
+  },
+  "outcome": {
+    "work": "You're on Vyapar. Hirers near {{place}} can now find you for {{trades}}.",
+    "visible": "You're visible. Customers near {{place}} can now find you.",
+    "draft": {
+      "verifyContact": "Your profile is saved. Confirm your phone number on your profile and it goes live.",
+      "acceptance": "Your profile is saved. Accept the terms once on your profile and it goes live.",
+      "review": "Your profile is saved and will be live after a quick check."
+    },
+    "shareWhatsApp": "Share on WhatsApp",
+    "shareText": "{{name}} is now on Vyapar (ForKhatri): {{trades}} near {{place}}. {{url}}"
   }
 }

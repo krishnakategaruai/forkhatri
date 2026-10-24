@@ -121,6 +121,10 @@ def _photo(url: str, position: int) -> dict[str, Any]:
 
 def build_lens(data: ProfileLensData, *, lens: str, lang: str) -> dict[str, Any]:
     facts = _facts(data)
+    # [D10, 2026-10-06] "Other" education reads as the family's own words.
+    other_words = facts.pop("education_other", None)
+    if facts.get("highest_education_level") == "other" and isinstance(other_words, str) and other_words.strip():
+        facts["highest_education_level"] = other_words.strip()
     prompts = _prompts(data, lang)
     base: dict[str, Any] = {
         "account_id": str(data.account_id),

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import HoroscopeMatch, { type HoroscopeMatchResponse } from '@/components/HoroscopeMatch';
+import HoroscopeMatch, { isProvisional, type HoroscopeMatchResponse } from '@/components/HoroscopeMatch';
 import HowYouFit, { type Fit } from '@/components/HowYouFit';
 import { getJson, query, resolveMediaUrl } from '@/lib/api';
 import { formatClockTime } from '@/lib/profileFormat';
@@ -78,6 +78,8 @@ export default function CompatibilityPanel({ candidateId, forCandidate, birth }:
   const porutham = match?.porutham;
   const usePorutham = horo?.preferred_system === 'porutham' && porutham?.status === 'CALCULATED';
   const gunas = match?.ashtakoota.status === 'CALCULATED' ? match.ashtakoota.totalScore : null;
+  // [D16] Either birth time unknown: the number is provisional, and the pill says so.
+  const provisional = isProvisional(match);
   const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
   const commons = fit?.common?.length ?? 0;
 
@@ -110,12 +112,14 @@ export default function CompatibilityPanel({ candidateId, forCandidate, birth }:
               <li>
                 <button type="button" className="compat__pill" onClick={() => setTab('horoscope')}>
                   {t('discover:compat.poruthams', { n: porutham.agreed, max: porutham.outOf })}
+                  {provisional && ` · ${t('horoscope:provisional.short')}`}
                 </button>
               </li>
             ) : gunas != null ? (
               <li>
                 <button type="button" className="compat__pill" onClick={() => setTab('horoscope')}>
                   {t('discover:compat.gunas', { n: fmt(gunas), max: match!.ashtakoota.maxScore })}
+                  {provisional && ` · ${t('horoscope:provisional.short')}`}
                 </button>
               </li>
             ) : null}

@@ -173,5 +173,9 @@
     "link": "Match any two kundlis",
     "homeBody": "Guna Milan and Porutham for any two people"
   },
-  "details": "How each one is worked out"
+  "details": "How each one is worked out",
+  "provisional": {
+    "label": "Provisional — birth time not known",
+    "short": "provisional"
+  }
 }

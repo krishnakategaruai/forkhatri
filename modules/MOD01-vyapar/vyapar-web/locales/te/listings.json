@@ -22,9 +22,9 @@
     "localityLabel": "ప్రాంతం",
     "localityPlaceholder": "ఉదా. అమీర్‌పేట్",
     "serviceModeLabel": "మీరు ఎలా పని చేస్తారు?",
-    "serviceModeOnSite": "సైట్‌లో",
-    "serviceModeRemote": "రిమోట్",
-    "serviceModeBoth": "రెండూ",
+    "serviceModeOnSite": "నేరుగా, ఆ చోటుకు వచ్చి",
+    "serviceModeRemote": "ఆన్‌లైన్‌లో, ఎక్కడి నుంచైనా",
+    "serviceModeBoth": "నేరుగా లేదా ఆన్‌లైన్‌లో",
     "phoneLabel": "ఫోన్ నంబర్",
     "phonePlaceholder": "98765 43210",
     "saveDraft": "డ్రాఫ్ట్‌గా సేవ్ చేయండి",
@@ -62,7 +62,12 @@
     "locating": "మీ ప్రాంతం వెతుకుతున్నాం…",
     "pickArea": "వీటిలో మీ ప్రాంతం ఏది?",
     "locationDenied": "లొకేషన్ ఆఫ్‌లో ఉంది. కింద మీ ప్రాంతం రాయండి.",
-    "change": "మార్చండి"
+    "change": "మార్చండి",
+    "locationUnnamed": "ఇక్కడి నుంచి మీ ఏరియా పేరు తెలియలేదు. దయచేసి టైప్ చేయండి.",
+    "businessNameSuggested": "{{name}} {{trade}}",
+    "businessNameYou": "నా",
+    "businessNameTrade": "వ్యాపారం",
+    "businessNameOptionalHint": "తప్పనిసరి కాదు. ఖాళీగా వదిలితే సూచించిన పేరు వాడతాం."
   },
   "mine": {
     "title": "నా ప్రొఫైల్‌లు",

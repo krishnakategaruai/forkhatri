@@ -36,7 +36,8 @@
     "profileFieldsMissing": "To set up your profile we still need: {fields}.",
     "profileSuspended": "Your profile is suspended while it is reviewed, so it can't be changed right now.",
     "businessVerifiedCannotRemove": "Your business is verified, so it can't be removed from your profile. Contact support if it has closed.",
-    "packagesNotPermittedForProfession": "Your profession's council does not allow advertised fees or discounts, so this profile can't have price packages."
+    "packagesNotPermittedForProfession": "Your profession's council does not allow advertised fees or discounts, so this profile can't have price packages.",
+    "dateOfBirthRequired": "Please tell us your date of birth once, so we know you are 18 or over."
   },
   "success": {
     "otpSent": "OTP sent",
@@ -61,5 +62,38 @@
       "architect": "Information only. The Council of Architecture does not allow architects to advertise or offer discounts, so this profile shows only factual details, with no reviews, prices or promotion.",
       "charteredAccountant": "If you are a chartered accountant (ICAI member), describe only non-assurance services here, such as tax, GST and accounting. ICAI does not allow advertising audit or attestation work."
     }
+  },
+  "start": {
+    "businessNameSuggested": "{name}'s {trade}",
+    "businessNameFallback": "{name}'s business"
+  },
+  "completion": {
+    "q": {
+      "experience_years": "How many years have you done this work?",
+      "own_assets": "Do you have your own tools or a vehicle?",
+      "headline": "In one line, what do you do best?",
+      "headline_business": "In one line, what do you sell or offer?",
+      "service_radius_km": "How far will you go for work?"
+    },
+    "experience": {
+      "0_2": "1–2 years",
+      "3_5": "3–5 years",
+      "6_10": "6–10 years",
+      "10_plus": "10+ years"
+    },
+    "assets": {
+      "two_wheeler": "Bike or scooter",
+      "four_wheeler": "Car",
+      "driving_licence": "Driving licence",
+      "smartphone": "Smartphone",
+      "laptop": "Laptop",
+      "own_tools": "Own tools",
+      "none": "None of these"
+    },
+    "placeholder": {
+      "headline": "e.g. Bathroom leaks fixed the same day",
+      "headline_business": "e.g. Fresh mango and lemon pickles, made at home"
+    },
+    "radius": "{km} km"
   }
 }

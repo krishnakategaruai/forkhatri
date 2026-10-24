@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 
 import { setApiLanguage } from '@/lib/api';
 import { IDENTITY_API } from '@/lib/platform';
-import { DEFAULT_LANGUAGE, getI18n, isSupported, type Language } from './config';
+import { DEFAULT_LANGUAGE, getI18n, isSupported, loadLanguage, needsLoad, type Language } from './config';
 
 const STORAGE_KEY = 'milavn.language';
 
@@ -40,9 +40,16 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   return <I18nextProvider i18n={i18n}>{children}</I18nextProvider>;
 }
 
+let wanted: Language = DEFAULT_LANGUAGE;
+
 export function applyLanguage(lang: Language): void {
   const i18n = getI18n();
-  if (i18n.language !== lang) void i18n.changeLanguage(lang);
+  wanted = lang;
+  if (i18n.language !== lang) {
+    // Marathi/Kannada text arrives on first use; switch once it is here, unless the person picked another language meanwhile.
+    if (needsLoad(lang)) void loadLanguage(lang).then(() => { if (wanted === lang) void i18n.changeLanguage(lang); });
+    else void i18n.changeLanguage(lang);
+  }
   setApiLanguage(lang);
   if (typeof document !== 'undefined') document.documentElement.lang = lang;
   try { localStorage.setItem(STORAGE_KEY, lang); } catch { /* ignore */ }

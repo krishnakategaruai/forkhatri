@@ -90,6 +90,8 @@ class TaxonomyTermOut(BaseModel):
     name_te: str | None
     aliases: list[str]
     status: str
+    name_mr: str | None = None
+    name_kn: str | None = None
     merged_into: int | None
     version: int
 
@@ -110,6 +112,8 @@ class TaxonomyRenamedOut(BaseModel):
     name_en: str | None = None
     name_hi: str | None = None
     name_te: str | None = None
+    name_mr: str | None = None
+    name_kn: str | None = None
 
 
 class DeadLetterOut(BaseModel):
@@ -367,7 +371,8 @@ async def list_taxonomy_terms(
     )
     return [
         TaxonomyTermOut(id=r["id"], kind=r["kind"], slug=r["slug"], name_en=r["name_en"], name_hi=r["name_hi"], name_te=r["name_te"],
-                        aliases=list(r["aliases"]), status=r["status"], merged_into=r["merged_into"], version=r["version"])
+                        aliases=list(r["aliases"]), status=r["status"], merged_into=r["merged_into"], version=r["version"],
+                        name_mr=r["name_mr"], name_kn=r["name_kn"])
         for r in rows
     ]
 
@@ -378,6 +383,8 @@ class TaxonomyAddIn(BaseModel):
     name_en: str = Field(min_length=2, max_length=80)
     name_hi: str | None = None
     name_te: str | None = None
+    name_mr: str | None = None
+    name_kn: str | None = None
 
 
 async def create_taxonomy_term(
@@ -389,8 +396,8 @@ async def create_taxonomy_term(
     await _require(conn, ctx, "content", lang)
     try:
         row = await conn.fetchrow(
-            "INSERT INTO vyapar_listings.taxonomy_terms (kind, slug, name_en, name_hi, name_te) VALUES ($1,$2,$3,$4,$5) RETURNING id",
-            body.kind, body.slug, body.name_en, body.name_hi, body.name_te,
+            "INSERT INTO vyapar_listings.taxonomy_terms (kind, slug, name_en, name_hi, name_te, name_mr, name_kn) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id",
+            body.kind, body.slug, body.name_en, body.name_hi, body.name_te, body.name_mr, body.name_kn,
         )
     except asyncpg.UniqueViolationError:
         raise ApiError(409, "adminOps.error.taxonomySlugExists", lang)
@@ -437,6 +444,8 @@ class TaxonomyRenameIn(BaseModel):
     name_en: str | None = None
     name_hi: str | None = None
     name_te: str | None = None
+    name_mr: str | None = None
+    name_kn: str | None = None
 
 
 async def rename_taxonomy_term(

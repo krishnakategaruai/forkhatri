@@ -305,7 +305,7 @@ const scenarios = {
         // Asha has entered both open modules, so both rows carry a "Visited" line (tallest case).
         await passwordSignIn(page, DATA_MEMBER);
         await page.locator(".greeting").waitFor({ timeout: 10000 });
-        for (const lang of ["en", "hi", "te"]) {
+        for (const lang of ["en", "hi", "te", "mr", "kn"]) {
           if (scheme === "light" && lang !== "en") continue;
           await page.evaluate(async ([api, l]) => {
             await fetch(`${api}/v1/me`, { method: "PATCH", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ preferred_language: l }) });
@@ -360,6 +360,8 @@ const scenarios = {
       en: "Bhagwan Kartavirya Sahasrarjun",
       hi: "भगवान कार्तवीर्य सहस्रार्जुन",
       te: "భగవాన్ కార్తవీర్య సహస్రార్జున",
+      mr: "भगवान कार्तवीर्य सहस्रार्जुन",
+      kn: "ಭಗವಾನ್ ಕಾರ್ತವೀರ್ಯ ಸಹಸ್ರಾರ್ಜುನ",
     };
     for (const [label, viewport, scheme] of [["phone", PHONE, "dark"], ["desktop", DESKTOP, "dark"], ["phone", PHONE, "light"]]) {
       const { context, page, errors } = await newPage(browser, { viewport, colorScheme: scheme });

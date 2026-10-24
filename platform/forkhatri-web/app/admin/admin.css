@@ -1348,3 +1348,15 @@ textarea.adm-input {
     animation: none;
   }
 }
+
+/* Tracking breaks the joins of Marathi (Devanagari) and Kannada letters. */
+:root:lang(mr) .adm-side-kicker,
+:root:lang(kn) .adm-side-kicker,
+:root:lang(mr) .adm-section-head h2,
+:root:lang(kn) .adm-section-head h2,
+:root:lang(mr) .adm-queue-tab-module,
+:root:lang(kn) .adm-queue-tab-module,
+:root:lang(mr) .adm-detail-section h3,
+:root:lang(kn) .adm-detail-section h3 {
+  letter-spacing: normal;
+}

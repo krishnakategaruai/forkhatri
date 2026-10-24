@@ -21,10 +21,9 @@ export type PickedPlace = {
 const MIN_CHARS = 2;
 const DEBOUNCE_MS = 450;
 
-export default function PlacePicker({ city, locality, state, onChange, label }: { city: string; locality: string; state?: string | null; onChange: (p: PickedPlace) => void; label?: string }) {
-  const { t, i18n } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const [q, setQ] = useState('');
+/** Debounced live place search (shared by the picker sheet and the first-run screen, which searches in place). */
+export function usePlaceSearch(q: string, enabled = true): { hits: PickedPlace[]; busy: boolean; failed: boolean; needleOk: boolean } {
+  const { i18n } = useTranslation();
   const [hits, setHits] = useState<PickedPlace[]>([]);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -32,7 +31,7 @@ export default function PlacePicker({ city, locality, state, onChange, label }: 
 
   useEffect(() => {
     const needle = q.trim();
-    if (!open || needle.length < MIN_CHARS) { setHits([]); setBusy(false); setFailed(false); return; }
+    if (!enabled || needle.length < MIN_CHARS) { setHits([]); setBusy(false); setFailed(false); return; }
     const mine = ++seq.current;
     setBusy(true);
     const timer = setTimeout(() => {
@@ -42,11 +41,18 @@ export default function PlacePicker({ city, locality, state, onChange, label }: 
         .finally(() => { if (mine === seq.current) setBusy(false); });
     }, DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [q, open, i18n.language]);
+  }, [q, enabled, i18n.language]);
+  return { hits, busy, failed, needleOk: q.trim().length >= MIN_CHARS };
+}
+
+export default function PlacePicker({ city, locality, state, onChange, label }: { city: string; locality: string; state?: string | null; onChange: (p: PickedPlace) => void; label?: string }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState('');
+  const { hits, busy, failed, needleOk } = usePlaceSearch(q, open);
 
   const choose = (p: PickedPlace) => { onChange(p); setOpen(false); setQ(''); };
   const context = [locality ? city : null, state].filter(Boolean).join(', ');
-  const needleOk = q.trim().length >= MIN_CHARS;
 
   return (
     <>

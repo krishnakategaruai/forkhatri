@@ -10,12 +10,16 @@ from fastapi import APIRouter, Depends
 from app.db import get_conn
 from app.deps import Locale
 from app.errors import ERROR_RESPONSES
+from app.identity import AuthzContext, resolve_authz_context
 from app.services import first_run as svc
 from app.services.first_run import (  # noqa: F401  schemas used below; background passes re-exported for main.py
     CategoryOptionOut,
     FirstRunState,
     FirstRunStepInput,
+    StartInput,
+    StartOut,
     TaxonomyOptionOut,
+    TradeTileOut,
 )
 
 router = APIRouter(prefix="/v1/first-run", tags=["first-run"], responses=ERROR_RESPONSES)
@@ -46,3 +50,16 @@ async def save_first_run_step(
     body: FirstRunStepInput, conn: asyncpg.Connection = Depends(get_conn, scope="function")
 ) -> FirstRunState:
     return await svc.save_first_run_step(conn, body=body)
+
+
+# [Start flow 2026-10] The 3-question start (ONBOARDING-REDESIGN-2026-10.md).
+@router.get("/trade-tiles", response_model=list[TradeTileOut], operation_id="listTradeTiles", summary="Picture-tile trades for the start, by goal (find_work | get_customers)")
+async def trade_tiles(lang: Locale, goal: str = "find_work") -> list[TradeTileOut]:
+    return svc.list_trade_tiles(goal, lang)
+
+
+@router.post("/start", response_model=StartOut, operation_id="completeStart", summary="Save the 3-question start (goal, trades, area) in one call and go live where the rules allow")
+async def complete_start(
+    body: StartInput, lang: Locale, ctx: AuthzContext = Depends(resolve_authz_context), conn: asyncpg.Connection = Depends(get_conn, scope="function")
+) -> StartOut:
+    return await svc.start(conn, ctx, lang, body)

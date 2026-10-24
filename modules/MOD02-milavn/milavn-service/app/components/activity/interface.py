@@ -276,9 +276,10 @@ async def list_visible(
     if creator_member_id:
         clauses.append("o.creator_member_id = :creator")
         params["creator"] = str(creator_member_id)
-    if query:
-        clauses.append("(o.title ILIKE '%' || :q || '%' OR coalesce(o.description,'') ILIKE '%' || :q || '%' OR o.locality_locality ILIKE '%' || :q || '%')")
-        params["q"] = query.strip()
+    # Every word must appear somewhere in the title, description or place, in any order ("cooking diwali" finds "Diwali cooking").
+    for i, word in enumerate((query or "").split()[:6]):
+        clauses.append(f"(o.title ILIKE '%' || :q{i} || '%' OR coalesce(o.description,'') ILIKE '%' || :q{i} || '%' OR coalesce(o.locality_locality,'') ILIKE '%' || :q{i} || '%')")
+        params[f"q{i}"] = word
     sql = f"SELECT {_OCC_COLS} {_FROM} WHERE {' AND '.join(clauses)} ORDER BY o.time_start ASC LIMIT :limit"
     rows = (await session.execute(text(sql), params)).all()
     return [_row_to_occurrence(r) for r in rows]

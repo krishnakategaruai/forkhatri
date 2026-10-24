@@ -182,7 +182,7 @@ export function assignMember(memberAccountId: string, note: string): Promise<Out
 
 /* ---------- formatting ---------- */
 
-const LOCALE: Record<string, string> = { en: 'en-IN', hi: 'hi-IN', te: 'te-IN' };
+const LOCALE: Record<string, string> = { en: 'en-IN', hi: 'hi-IN', te: 'te-IN', mr: 'mr-IN', kn: 'kn-IN' };
 
 /** "23 Sept, 6:30 pm" in the reader's language, Indian order. */
 export function formatWhen(iso: string | null | undefined, language: string): string {

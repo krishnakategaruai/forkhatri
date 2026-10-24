@@ -22,9 +22,9 @@
     "localityLabel": "इलाका",
     "localityPlaceholder": "जैसे अमीरपेट",
     "serviceModeLabel": "आप कैसे काम करते हैं?",
-    "serviceModeOnSite": "साइट पर",
-    "serviceModeRemote": "रिमोट",
-    "serviceModeBoth": "दोनों",
+    "serviceModeOnSite": "आमने-सामने, जगह पर",
+    "serviceModeRemote": "ऑनलाइन, कहीं से भी",
+    "serviceModeBoth": "आमने-सामने या ऑनलाइन",
     "phoneLabel": "फ़ोन नंबर",
     "phonePlaceholder": "98765 43210",
     "saveDraft": "ड्राफ़्ट के रूप में सहेजें",
@@ -62,7 +62,12 @@
     "locating": "आपका इलाका ढूँढ रहे हैं…",
     "pickArea": "इनमें से आपका इलाका कौन-सा है?",
     "locationDenied": "लोकेशन बंद है। नीचे अपना इलाका लिखें।",
-    "change": "बदलें"
+    "change": "बदलें",
+    "locationUnnamed": "यहाँ से आपका इलाका पता नहीं चल पाया। कृपया टाइप करें।",
+    "businessNameSuggested": "{{name}} का {{trade}}",
+    "businessNameYou": "मेरा",
+    "businessNameTrade": "बिज़नेस",
+    "businessNameOptionalHint": "ज़रूरी नहीं। खाली छोड़ेंगे तो सुझाया गया नाम रखेंगे।"
   },
   "mine": {
     "title": "मेरी प्रोफ़ाइल",

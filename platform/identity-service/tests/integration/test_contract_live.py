@@ -126,6 +126,13 @@ def test_new_member_code_flow_entry_and_sign_out(client: httpx.Client) -> None:
 
     patched = client.patch("/v1/me", json={"preferred_language": "te"}, headers=cookie)
     assert patched.status_code == 200 and patched.json()["preferred_language"] == "te"
+    # Marathi and Kannada (migration 007): accepted, and they drive the registry taglines.
+    for lang, low, high in (("kn", "ಀ", "೿"), ("mr", "ऀ", "ॿ")):
+        switched = client.patch("/v1/me", json={"preferred_language": lang}, headers=cookie)
+        assert switched.status_code == 200 and switched.json()["preferred_language"] == lang
+        tagline = client.get("/v1/modules", headers=cookie).json()[0]["tagline"]
+        assert any(low <= ch <= high for ch in tagline), f"{lang} taglines come from the registry"
+    assert client.patch("/v1/me", json={"preferred_language": "ta"}, headers=cookie).status_code == 422
     assert "home_locality" not in patched.json(), "the platform holds basic identity only"
     profile_field = client.patch("/v1/me", json={"home_locality": "Kukatpally"}, headers=cookie)
     assert profile_field.status_code == 422, "profile details belong to modules, not the platform"

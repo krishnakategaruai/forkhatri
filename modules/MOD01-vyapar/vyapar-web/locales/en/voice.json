@@ -2,7 +2,9 @@
   "langName": {
     "en": "English",
     "hi": "Hindi",
-    "te": "Telugu"
+    "te": "Telugu",
+    "mr": "Marathi",
+    "kn": "Kannada"
   },
   "entry": {
     "postTitle": "Talk instead — answer a few questions",
@@ -16,7 +18,8 @@
   },
   "doneLabel": {
     "post": "Continue to check",
-    "profile": "Continue to check"
+    "profile": "Continue to check",
+    "start": "Save and show me work"
   },
   "intro": {
     "title": "Answer a few questions",

@@ -11,7 +11,7 @@ from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.components.identity import interface as identity
-from app.config.settings import Settings, get_settings
+from app.config.settings import LANGUAGES, Settings, get_settings
 from app.errors import DomainError
 
 AppSettings = Annotated[Settings, Depends(get_settings)]
@@ -78,6 +78,6 @@ def preferred_language(request: Request, session: CurrentSession | None) -> str:
     header = request.headers.get("accept-language", "")
     for part in header.split(","):
         code = part.split(";")[0].strip().lower()[:2]
-        if code in ("en", "hi", "te"):
+        if code in LANGUAGES:
             return code
     return "en"

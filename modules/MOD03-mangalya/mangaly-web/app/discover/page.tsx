@@ -525,6 +525,16 @@ export default function DiscoverPage() {
               {t("discover:lookingForLine", {
                 value: t(`profile:option.looking_for.${lookingFor}`),
               })}
+              {/* [D1, 2026-10-06] Looking around first: the way back to
+                  making a profile stays one tap away, never pushed. */}
+              {browseMode && (
+                <>
+                  {" · "}
+                  <Link className="link" href="/profile/create?start=1">
+                    {t("discover:lookAround.makeProfile")}
+                  </Link>
+                </>
+              )}
             </p>
           )}
           <MotionTitle as="h1" className="royal-title" text={t("discover:title")} />
