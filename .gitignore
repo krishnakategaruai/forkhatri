@@ -48,3 +48,6 @@ Thumbs.db
 *.bak
 *.tmp
 *.orig
+
+# tunnel launcher log (scripts/start-tunnels.ps1)
+scripts/.tunnel.log*
