@@ -51,3 +51,31 @@ Each of these is shown to the member in plain words on the confirmation page. Th
 - Never delete other members' data. Never touch another module from a module's endpoint.
 - Test with throwaway members only (never the built-in personas, never krishna).
 - Idempotent and resumable: safe to run twice.
+
+## As built (identity and hub, 2026-11-22)
+
+**Identity inventory** (every identity store holding the member, and its fate):
+
+| Store | Fate |
+|---|---|
+| `identity.member` (name, phone, email, language, level) | Closed (status `deleted`) at once; hard-deleted when every module confirmed |
+| `identity.session` | All revoked at the start; rows deleted at the end |
+| `identity.password_credential` | Hard delete |
+| `identity.otp_challenge` (by phone/email) and `platform.rate_limit_counter` keys for them | Hard delete |
+| `registry.member_module_entry` (module visits) | Hard delete |
+| `governance.role_assignment`, `approval_request` (about or by the member), `suspension` | Hard delete; deletion is refused while the member holds a live admin role (409 `admin_role_held`). A ban is kept only as a flag in the receipt |
+| `governance.audit_event` | Member id replaced by a one-way tombstone (`actor_tombstone` / `target_tombstone`, HMAC-SHA256 of the id with `DELETION_TOMBSTONE_PEPPER`); notes, subject, details and ip about the member cleared |
+| Sign-in hand-off codes | In memory, 60 s life, hold no member data |
+| Notification preferences / inbox | None exist in identity (the hub bell is an empty state) |
+
+**Endpoints** (identity, migration `db/migrations/008-account-deletion.sql`, applied as `identity_owner`):
+`GET /v1/account/delete/preview`, `POST /v1/account/delete/code` (one-time code to the member's own phone/email), `POST /v1/account/delete` with `{confirm:"DELETE", password | challenge_id+code}`, `GET /v1/account/deletion/{job_id}` (public progress and receipt; the job id is the capability because the member is already signed out), admin `GET /v1/admin/deletions/stuck` and `POST /v1/admin/deletions/{job_id}/retry`.
+Re-authentication is a new step-up (none existed): password, or a fresh code sent only to the member's own identifier. Every attempt counts toward 3 per hour.
+
+**Flow.** Start closes the member and revokes all sessions, writes `identity.deletion_job` plus one `deletion_job_module` row per module in `SERVICE_KEYS`, clears the cookie, then runs in the background. Identity calls `POST {base}/internal/v1/members/{id}/erase` on all modules in parallel with headers `X-ForKhatri-Service: identity` (Counsel requires exactly this name) and the module's own service key. Base URLs: `ERASE_MODULE_API_URLS`, falling back to `ADMIN_MODULE_API_URLS` and `MODULE_API_URLS`; a registered module with no URL stays `failed: not_configured` (never skipped). A 404, other non-200, timeout or `partial` is retried with backoff 30 s doubling to 6 h by a loop every 30 s, for 7 days; after that, or after 3 failed attempts, the job is on the admin "stuck deletions" list (Modules page) with a Retry button. Identity rows are removed only when all modules are `done` or `nothing_to_delete`, by the SECURITY DEFINER function `identity.finalize_member_deletion` (the runtime role still has no DELETE grant). The job then keeps only the receipt (tombstone, per-module counts, retained list with reasons) and its `member_id` is nulled.
+
+**Hub.** Account sheet, "Delete my ForKhatri account" opens a sheet: what is deleted, what is kept and why, password or code, type DELETE, red button, per-module progress, final receipt page, then "Return to ForKhatri" shows the entrance. The sheet cannot be dismissed once deletion has started. English strings were added to all five locale dictionaries.
+
+**Proof (throwaway member #30).** Data in all four modules, then deletion via the API: all four modules `done` on attempt 1; zero identity rows left (member, sessions, password, entries, codes); old session 401; second erase on Vyapar and Mangalya answers `nothing_to_delete`; the Mangalya photo is gone. Orchestrator tests with a stub module server (`tests/integration/test_account_deletion.py`) cover a failing then recovering module, backoff, partial answers, audit tombstone rewrite, idempotence and the admin-role block.
+
+**Left / notes.** Retained across the system: security log (tombstone only) and deletion receipts; a banned member is recorded only as a flag in the receipt (no sign-up block is enforced yet). Browser rendering of the hub sheet was type-checked but not screenshot-verified.

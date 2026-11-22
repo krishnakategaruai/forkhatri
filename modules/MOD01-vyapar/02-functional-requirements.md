@@ -1667,3 +1667,13 @@ Common to all: actor is a signed-in ForKhatri member (FR50; nobody signs in insi
 
 ## FR70 — Notification texts in five languages
 - **Status:** built (migration 027, scripts/backfill_notification_i18n.py). Notifications store a template id and parameters and render in the reader language. Kinds in code: opportunity_match (strong_match, saved_search_match), digest, enquiry, partnership, promotion, campaign, entitlement, verification_reminder, payment_order, contract_dispute. Delivery is the in-app inbox plus webhooks; push/SMS/WhatsApp blocked on vendors (B5).
+
+
+# Addendum 2026-11-22: Account deletion
+
+## FR71 (added 2026-11-22): Erase a member (internal, kind A)
+**Satisfies:** BR24. **Flow:** the identity service calls POST /internal/v1/members/{member_id}/erase with X-ForKhatri-Service: identity and the service key. Vyapar runs vyapar_identity.erase_member(member, pseudonym) in one transaction, then removes files after commit. **Rules:** idempotent (second call returns nothing_to_delete); an operator mirror is refused with 409 operator_role_must_be_removed; other members' rows that pointed at the member now point at tombstone member del_<hash> ("Deleted member"). **Response:** {module, status, deleted{}, retained[], files_removed}. **Tables:** 63 inspected (see ACCOUNT-DELETION.md). **Notifications to others:** none sent; the other party sees "Deleted member". **Status:** built. **Acceptance:** after the call no member rows remain except the retained list, files named in deleted rows are gone, a second call is a no-op.
+## FR72 (added 2026-11-22): Delete my data in Vyapar (kind B)
+**Satisfies:** BR24. **Flow:** POST /v1/privacy/delete-account-data body {"confirm":"DELETE"}, then the web app goes to the entrance after 2.5 s. **Rules:** member session only (a personal access token is refused); typed word must equal DELETE (else 422 confirm_required); 3 attempts per hour per member (429); same erase function as FR71; the ForKhatri session stays valid. **Screen:** Profile, Privacy (app/privacy/page.tsx). **Status:** built. **Acceptance:** wrong word 422, fourth attempt in an hour 429, data gone after success.
+## FR73 (added 2026-11-22): Old delete path now erases fully
+POST /v1/privacy/delete (FR38) previously only anonymised the name. It now performs the full erase and returns state completed. The old "blocked while a paid order is active" behaviour and its locale text (delete.blocked) are superseded.

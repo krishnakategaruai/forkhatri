@@ -195,3 +195,22 @@ Status key: open = no fix found in code at this date; verified = read in code; u
 ## C12. Privacy and architecture lens summary
 
 Privacy lens (CRITIQUE-lens-privacy-law-safety): minimise by keeping the platform thin (done), hold sensitive data in modules under RLS (done in modules), add consent, notice, rights and breach handling (not done). Architecture lens: the platform design (isolated database, non-owning role, digests, strong production guard, four-eyes) is sound and should not change; the risks are defaults that fail open, no automated RLS proof, one-VM operations, and copied cross-cutting code. Keep list from the critique ("Do not change"): opaque HttpOnly cookie with digest storage, anti-enumeration, database rate limits, Origin and `return_to` allow-lists, basic identity only, admin console design, honest empty states, dev tools refused in production.
+
+
+## C13. Account deletion: privacy and security (added 2026-11-22)
+
+DPDP erasure mapping: the right to erasure is met by kind A (everything, everywhere) and kind B (one module), immediately, with the member told what stays and why. This supersedes the "erasure not built" findings in C8 and C11.
+
+- Retained, no name, contact or free text: payment and tax records where money moved; safety and moderation records (tombstone only); security log and audit rows (tombstone only); the deletion receipt. Every legal basis is marked "needs lawyer" (see `docs/DATA-RIGHTS.md`). Retention period for the audit log is still not decided.
+- Tombstones: HMAC-SHA256 with `DELETION_TOMBSTONE_PEPPER`; the pepper must be a long secret kept stable, otherwise a returning member's tombstone cannot be matched.
+- Rate limit: 3 attempts per hour per member, every attempt counts. Re-authentication by password or fresh code to the member's own identifier; typed DELETE.
+- Auth between services: service key plus service name; internal endpoints refuse requests that came through the edge.
+- Receipt endpoint is public by job id (unguessable id as the capability); it holds no name or contact.
+
+Risks and open findings:
+- SEC-20: a banned member is only flagged in the receipt; sign-up is not blocked (owner decision).
+- SEC-21: Counsel unpaid earnings are lost on deletion; payout-retention path untested.
+- SEC-22: Vyapar erase returned 500 once for a member it had never seen (to be fixed or confirmed).
+- SEC-23: one identity governance test fails; not confirmed unrelated.
+- SEC-24: no browser check of any deletion screen; Vyapar `check_taste.py` 27 of 35 (not compared to before).
+- SEC-25: grievance officer, consent notice and age gate are not built.

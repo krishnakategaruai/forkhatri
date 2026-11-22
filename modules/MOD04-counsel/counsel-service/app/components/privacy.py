@@ -329,6 +329,18 @@ async def erase_member(member_id: UUID, reason: str) -> dict:
                 removed += 1
         except Exception:
             pass
+    # Replaced or orphaned uploads: everything under the member's own folders goes too.
+    for prefix in (f"public/photos/{member_id}", f"private/evidence/{member_id}"):
+        try:
+            d = storage.path_for(prefix)
+            if d.is_dir():
+                for f in [x for x in d.rglob("*") if x.is_file()]:
+                    f.unlink()
+                    removed += 1
+                for sub in sorted([x for x in d.rglob("*") if x.is_dir()], reverse=True) + [d]:
+                    sub.rmdir()
+        except Exception:
+            pass
     result["files_removed"] = removed
     identity.forget(member_id)
     return result

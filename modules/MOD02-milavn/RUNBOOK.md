@@ -20,7 +20,7 @@ Stop the two processes you started (by port). Never kill Chrome processes you di
 - Identity down: API answers 503 on authenticated calls (fails closed).
 
 ## Database
-Migrate: as `milavn_owner`, `psql -f 07a-db-implementation/migrations/NNN-name.sql` in file order; migrations are safe to run twice. From scratch: `07a-db-implementation/init.sh` then migrations and `seeds-dev.sql`. Pending owner action (2026-11-22): run `GRANT DELETE ON milavn_notification.notification_inbox_entry TO milavn_app;` (in migration 055) or dismissing a notification fails with 500.
+Migrate: as `milavn_owner`, `psql -f 07a-db-implementation/migrations/NNN-name.sql` in file order; migrations are safe to run twice. From scratch: `07a-db-implementation/init.sh` then migrations and `seeds-dev.sql`. (Superseded 2026-11-22: 055 recorded as applied; the rest of this sentence is history.) Earlier pending action: run `GRANT DELETE ON milavn_notification.notification_inbox_entry TO milavn_app;` (in migration 055) or dismissing a notification fails with 500.
 Backup (shared database, unverified procedure): `pg_dump -h localhost -p 5433 -U <owner> -n 'milavn_*' forkhatridb > milavn.sql`. Restore: recreate roles, `psql -f milavn.sql`. Media files are in `milavn-service/.local-media/` and must be backed up with the dump or photos vanish.
 
 ## QA data
@@ -40,3 +40,10 @@ Seed 20 QA members: `platform/identity-service/.venv/Scripts/python modules/MOD0
 | Join link missing on next weekly date | fixed 2026-10-06 | restart API |
 | "Next dev badge", build fails on missing locale | another session editing `locales` | wait and retry |
 | Jobs run twice | two API instances | run one instance |
+
+
+## Account deletion (2026-11-22)
+- Apply `056-erase-member.sql` as `milavn_owner` (safe to run twice). Restart the API without `--reload`.
+- Verify with a throwaway member only (never personas or krishna): create the member and data through the product, count rows with the member id in the inventory tables, call `POST /internal/v1/members/{id}/erase` with the service key (or the member route with `{"confirm":"DELETE"}`), count again (only retained kinds remain), look at `milavn_platform.erasure_receipt`, call again and expect `nothing_to_delete`.
+- Failure: `partial` or 503 means a refund could not be requested and nothing was deleted; fix the payment path and retry. For kind A the hub retries by itself (30 s doubling to 6 h, for 7 days); an admin sees the job under Modules, stuck deletions, with a Retry button. Erase is idempotent, so retrying is safe. Orphan files: compare `.local-media` folders with referenced names (no tool yet).
+- Do not edit retained rows by hand.

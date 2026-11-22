@@ -1,4 +1,4 @@
-> **Document status (2026-11-22):** as-built scope. Component list, ports and API: see `07-tech-reqs.md` addendum, `API-REFERENCE.md`, `RUNBOOK.md`. Decisions DEC-V1-001 to DEC-V1-035 apply; DEC-V1-035 (onboarding) is built on the web, with its `POST /profile/managed` server change still pending. Folder is now MOD03-mangalya.
+> **Document status (2026-11-22):** as-built scope. Component list, ports and API: see `07-tech-reqs.md` addendum, `API-REFERENCE.md`, `RUNBOOK.md`. Decisions DEC-V1-001 to DEC-V1-036 apply (036: account deletion); DEC-V1-035 (onboarding) is built on the web, with its `POST /profile/managed` server change still pending. Folder is now MOD03-mangalya.
 
 ---
 module: MOD03
@@ -892,3 +892,10 @@ Owner: "they need to sign up properly in ForKhatri and log into Mangaly, then on
 
 Product Manager — [x] Approved — krishna kategaru (autonomous), 2026-09-12
 Chief Architect — [x] Approved — krishna kategaru (autonomous), 2026-09-12
+
+
+### DEC-V1-036 — Account deletion: immediate, two kinds, safety records retained (2026-11-22)
+
+Owner, 2026-11-22 (words in `docs/ParentApp/ACCOUNT-DELETION.md`; build verification waived: "No need to check, update the documents."): a member can delete their data at once. Kind A deletes all of ForKhatri; kind B deletes one module data and the member may return later as a brand-new member. What the law or safety of others needs is kept without name, phone or free text (tombstone). Built in Mangalya as migration 067, `POST /privacy/delete-account-data`, `POST /internal/v1/members/{id}/erase`, `DeleteMyData.tsx`. Detail: `ACCOUNT-DELETION.md`.
+
+**Known deviation:** the contract says other parties see a "Deleted member" in shared chats. In Mangalya, one-to-one chats with the deleted member are removed for both sides (there is no second person to show it to); group threads keep the messages of others. Needs the owner confirmation. Open: a retained suspension does not re-block a returning member (lawyer to confirm).

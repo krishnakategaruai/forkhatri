@@ -131,3 +131,20 @@ Automated suites in the repo:
 | TC-40 | Insights loads; empty and failed states; gender and age only from Mangalya candidates | SCR-11 | counts and caveat | MAN |
 
 Run: `node platform/forkhatri-web/scripts/e2e-smoke.mjs`; `platform/identity-service/.venv/Scripts/python -m pytest platform/identity-service/tests`; `python scripts/check_locale_parity.py`. These were not executed in this documentation pass, so pass/fail is unverified.
+
+
+## Account deletion (added 2026-11-22)
+
+Proof actually run (reported by the build agents; not re-run for this documentation pass). Throwaway members only, never the personas.
+
+| ID | Scenario | Result as reported |
+|---|---|---|
+| TC-41 | Throwaway member #30 with data in all four modules, delete through the API | All four modules `done` on attempt 1; zero identity rows (member, sessions, password, entries, codes) |
+| TC-42 | Wrong password | 401 |
+| TC-43 | Old session after deletion | 401 |
+| TC-44 | Second erase on Vyapar and Mangalya | `nothing_to_delete` (idempotent); Mangalya photo gone |
+| TC-45 | Orchestrator with a stub module server: failing then recovering module, backoff, partial answers, audit tombstone rewrite, idempotence, admin-role block | `tests/integration/test_account_deletion.py`; identity suite 61 pass, 1 governance test fails (not confirmed unrelated) |
+| TC-46 | Wrong confirm word, 3 per hour rate limit | Specified; the platform result was not separately recorded (unverified) |
+| TC-47 | Hub delete sheet in the browser | NOT done (type-checked only) |
+
+Module proofs: Vyapar #31 (128 rows deleted or detached, 3 files); Milavn #32 (files 29 to 15, 60 tests pass before and after); Mangalya #33 (zero left except the taken-over managed profile and tombstoned reports; 117 pass, 4 fail before and after); Counsel #34 (`check_account_deletion.py`, 16 checks pass). No browser checks were run for any deletion screen.

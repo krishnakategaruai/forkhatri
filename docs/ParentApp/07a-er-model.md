@@ -149,3 +149,19 @@ Count: 8 files (bootstrap plus 7 migrations). Applying: `psql -h localhost -p 54
 | Counsel | own tables; verify the link table in `modules/MOD04-counsel` docs | `member_id` |
 
 The platform never reads or writes these tables (TR11). Table names above are from the 2026-09-14 record; re-verify in each module's own `07a-er-model.md`.
+
+
+## 11. Account deletion (added 2026-11-22)
+
+Supersedes the "Never deleted by any working path" row in section 7 (member rows are now hard-deleted at the end of a deletion job).
+
+New migration `db/migrations/008-account-deletion.sql` (applied as `identity_owner`): job tables, tombstone columns on the audit table, function `identity.finalize_member_deletion`. Migrations now 8 (001-008) plus bootstrap.
+
+| Object | Purpose |
+|---|---|
+| `identity.deletion_job` | One row per deletion: status, tombstone, receipt; `member_id` nulled when finished |
+| `identity.deletion_job_module` | One row per module: status (`pending`, `done`, `nothing_to_delete`, `partial`, `failed`), attempts, next retry, counts, retained list |
+| `governance.audit_event.actor_tombstone`, `target_tombstone` | One-way HMAC-SHA256 of the member id; the original ids are cleared |
+| `identity.finalize_member_deletion(member_id, job_id)` | SECURITY DEFINER: deletes member, sessions, password credential, entries, codes, roles, approvals, suspensions |
+
+Tables: 14 (was 12). Per-table fate for identity is in the "As built" section of `ACCOUNT-DELETION.md`; per-module tables are in each module's `ACCOUNT-DELETION.md` (Vyapar 63 tables inspected, Milavn 70, Mangalya 26 store groups, Counsel 40 tables). Module migrations: Vyapar 033-erase-member.sql, Milavn 056-erase-member.sql, Mangalya 067-erase-member-data.sql; Counsel has none (service code). The live table list was not re-checked against the database in this pass (unverified).

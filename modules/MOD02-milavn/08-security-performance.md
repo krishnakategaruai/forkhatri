@@ -143,7 +143,7 @@ Environment names (values never recorded here) are listed in `07-tech-reqs.md` s
 
 | Data | Purpose | Stored where | Retention | Deletion / export |
 |---|---|---|---|---|
-| Profile (name via platform, place area, language, bio, photo, interests) | discovery, trust | `member_profile`, `member_interest`, `member_profile_media` | while account exists | delete-account screen exists (FR088); backend purge across all `milavn_*` tables: *unverified*; **export: not built** |
+| Profile (name via platform, place area, language, bio, photo, interests) | discovery, trust | `member_profile`, `member_interest`, `member_profile_media` | while account exists | delete-account screen exists (FR088); **purge built 2026-11-22 (migration 056, FR161-FR166; section 14)**; **export: not built** |
 | Woman/man answer | women-only circles only | `member_gender` | account life | same as above |
 | Participation, check-in, attendance history | RSVP, reputation, reminders | `participation`, `participation_status_history` | unlimited today | no retention rule written |
 | Photos of identifiable people (Moments, albums, chat) | memories | files in `.local-media` | unlimited | photo-removal "Remove photo of me" exists for Moments; children/minors rule not built (H5) |
@@ -191,8 +191,17 @@ Known performance risks: Home loads digest + around-you + circles (three calls);
 | S-09 | Medium | Browser fetches map tiles from a public tile host (leaks viewer IP and area); QR image earlier used a third-party site (now on-device) | critique C3 | self-host or commercial tiles | ops |
 | S-10 | Low | Upload size constants and settings disagree (doc 10 MB constant vs 15 MB setting) | code | single source | engineering |
 | S-11 | High | Public Nominatim use with search-as-you-type breaks the OSM usage policy | critique H4 | self-host Photon/Nominatim or commercial provider | ops |
-| S-12 | High | Migration 055's `GRANT DELETE` on `notification_inbox_entry` is **not applied** in the dev database (verified 2026-11-22: privileges are INSERT, SELECT, UPDATE); dismissing a notification returns 500 | live DB vs file | owner role runs the GRANT; add a migration-tracking table | DB owner |
+| S-12 | High (superseded 2026-11-22: 055 recorded as applied; GRANT not re-verified) | Migration 055's `GRANT DELETE` on `notification_inbox_entry` is **not applied** in the dev database (verified 2026-11-22: privileges are INSERT, SELECT, UPDATE); dismissing a notification returns 500 | live DB vs file | owner role runs the GRANT; add a migration-tracking table | DB owner |
 | S-13 | Medium | No migration ledger table: applied state of 001-055 can only be inferred | live DB | add `schema_migrations` | engineering |
 | S-14 | Medium | Test (QA) rows remain visible in dev data and could be visible to real members on a shared tunnel | critique M7 | clean demo tenant; owner-run cleanup | owner |
 | S-15 | Medium | DPDP: no retention schedule, export, under-18 rule, grievance contact | critique H5 | lawyer-led | owner |
 | S-16 | Low | Moderator capacity: one persona, no response-time promise | critique H6 | named safety lead | owner |
+
+
+
+## 14. Account deletion (added 2026-11-22)
+- DPDP mapping: erasure met by immediate deletion (kind A via the hub, kind B in Milavn). Kept only where law or safety requires: payment records (tax), reports, blocks and moderation (safety), deletion receipt. Retained rows hold a one-way tombstone id, no name, contact, photo or free text. Retention periods need a lawyer or CA (open, with S-15).
+- Re-authentication: kind A at the hub (password or one-time code, typed DELETE). Kind B: typed DELETE plus the existing ForKhatri session only; a stolen live session could erase a member's Milavn data (new finding S-17, Medium).
+- Rate limit: 3 per hour per member (kind B). The internal route needs the service key (401 without; 404 on the public edge; hidden from OpenAPI).
+- Safety: the function acts only for the calling member or the internal service; SECURITY DEFINER, no RLS loosened; a refund failure rolls back everything.
+- Risks and open findings: a removed person can re-enter as a new member (only the report record remains; the hub does not block sign-up, a ban is only a flag in the receipt); orphan files after a crash between commit and removal; refund-pending paid ticket retained; no audit of who asked beyond the receipt; the hub identity suite had 1 governance test failing (not confirmed unrelated).

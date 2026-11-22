@@ -187,3 +187,29 @@ Validate Caddy: `caddy validate --config deploy/Caddyfile` (needs the env upstre
 | VM unreachable, backups gone | Always Free VM reclaimed | restore from R2 onto a new VM (section 5); convert the account to Pay As You Go; set R2 backups |
 | Chat or reminders duplicated | more than one Milavn process | run exactly one Milavn API process |
 | Rate limit blocks a whole event hall | many members share one mobile IP | raise the per-IP limits (known risk C15 in `docs/Critique/CRITIQUE-platform.md`) |
+
+
+## 9. Account deletion and tunnels (added 2026-11-22)
+
+### Run and verify a deletion
+1. Use a throwaway member only (never the built-in personas or krishna). Create data in the modules through the normal product flows.
+2. Start the member's deletion from the hub account sheet ("Delete my ForKhatri account"), or through the API: `POST /v1/account/delete` with `confirm: "DELETE"` and the password. The member is signed out everywhere at once.
+3. Check the receipt at `GET /v1/account/deletion/{job_id}`: each module should be `done`. Asking a module again returns `nothing_to_delete`.
+4. Check identity: no member, session, password or entry rows remain; the old session answers 401.
+
+### Stuck or failed deletions
+- The member is already signed out and cannot sign in. Identity retries failed modules every 30 s with backoff (30 s doubling to 6 h) for 7 days.
+- The admin console Modules page lists stuck deletions with a Retry button (`GET /v1/admin/deletions/stuck`, `POST /v1/admin/deletions/{job_id}/retry`).
+- A module shown as `failed: not_configured` has no URL: set `ERASE_MODULE_API_URLS` (falls back to `ADMIN_MODULE_API_URLS`, then `MODULE_API_URLS`) and retry. A 404 means the module lacks the erase endpoint (restart it on the current code).
+- A deletion is refused with 409 `admin_role_held` while the member holds an admin role: remove the role first.
+- Keep `DELETION_TOMBSTONE_PEPPER` secret and stable.
+
+### Tunnel launcher (`scripts/start-tunnels.ps1`)
+- `powershell -ExecutionPolicy Bypass -File scripts\start-tunnels.ps1` starts every server and a public cloudflared tunnel, hidden in the background, and prints the links.
+- `-Status` shows what is running and the public links (also in `scripts\.tunnel.log`).
+- `-Stop` stops tunnels and servers and puts the env files back to localhost.
+- `-Foreground` runs in the current window; Ctrl+C stops everything cleanly.
+- It first stops anything listening on ForKhatri's ports and deletes each web app's `.next` cache.
+
+### Mangalya web in development
+Mangalya web runs `next dev --webpack` (set in `modules/MOD03-mangalya/mangaly-web/package.json`) because Turbopack's `next/font` bug caused 500 errors. Do not switch it back to Turbopack.

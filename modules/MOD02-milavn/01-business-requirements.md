@@ -1570,3 +1570,21 @@ Next: legal decision on paid events; woman steward approval; request-based first
 ## J. Risks
 `docs/Critique/CRITIQUE-mod02-milavn.md` (C1-C3, H1-H7, M1-M8). Biggest: money rules, women-only trust, empty communities, unsolicited messages, unreviewed security.
 
+
+
+
+---
+# Addendum 2026-11-22: Account deletion (BR25)
+Source: `docs/ParentApp/ACCOUNT-DELETION.md`; module inventory `ACCOUNT-DELETION.md`. Sealed text above is unchanged.
+
+| ID | Business requirement | Status |
+|---|---|---|
+| BR25 | A member can erase their Milavn data immediately, in two ways: **kind A** (they delete their whole ForKhatri account; the platform calls Milavn) and **kind B** (they delete only their Milavn data from Me, settings gear, "Delete my data in Milavn"; their ForKhatri account and other modules stay, and they can come back later as a brand-new member). | Built, API proven on one throwaway member; screens not browser-checked |
+
+Owner decisions (quoted from the contract, 2026-11-22): "A user should be deleted if he needs to delete his account, immediately. If he is doing it from ForKhatri, all the accounts in sub modules and traces should be deleted. If he is doing it in an independent module, that module's data related to him, all the stuff, should be deleted." Both kinds are immediate (no waiting period); the member confirms by typing DELETE (kind A also re-authenticates at the hub).
+
+What happens to what the member made: future hosted events are cancelled, attendees told, paid spots refunded; circles pass to the longest-standing other organiser or assistant, or are deleted with their posts and files if nobody is left; past events stay for those who attended, host shown as "Deleted member" with no contact details; the member's chats and posts are deleted (one-to-one chats stay for the other person showing "Deleted member").
+
+Retained, and why (no name, contact, photo or free text; tombstone id only): payment records for paid tickets and pledges (legal, tax); reports, blocks and moderation actions about or by the member (safety, so a removed person cannot simply return); a one-line deletion receipt (proof of deletion). Stated to the member in plain words on the confirmation sheet.
+
+Open business questions (owner or lawyer): how long payment records must be kept (CA advice); whether a refund-pending paid ticket at deletion time is paid out or written off; whether the safety record may be kept without a time limit; whether the kind B member should be told how to re-join; DPDP grievance-officer wording on the sheet.

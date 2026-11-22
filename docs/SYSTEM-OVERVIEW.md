@@ -158,3 +158,8 @@ From [docs/Critique/MASTER-CRITIQUE-2026-10.md](Critique/MASTER-CRITIQUE-2026-10
 ## 11. Where to read more
 
 Start at [docs/README.md](README.md). Platform requirements are in `docs/ParentApp/`; each module has its own numbered document set 01 to 09 in its folder.
+
+
+## 12. Deleting your account (added 2026-11-22)
+
+A member can now delete themselves, immediately. "Delete my ForKhatri account" (hub) removes the member everywhere; "Delete my data in <module>" removes only that module's data. The member confirms with their password or a fresh code and types DELETE. Only what law or safety requires stays, with no name or contact. What stays, for how long and what is still open is in plain words in [DATA-RIGHTS.md](DATA-RIGHTS.md). The screens have not yet been checked in a browser.

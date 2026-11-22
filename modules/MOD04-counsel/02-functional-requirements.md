@@ -88,11 +88,23 @@ Common rules: every request carries the ForKhatri session cookie; the member is 
 
 ## K. Privacy
 **FR-100 Export (built).** Download JSON of profile, services, bookings, messages sent, private notes, reviews written, purchases, questions, badges, saved, payout method (masked); audited.
-**FR-101 Delete Counsel data (built).** Blocked while upcoming bookings, active purchases, open disputes or unpaid earnings exist. Otherwise deletes files from disk, blanks messages and review text and brief, deletes private notes, saved, notifications, deliveries, blocks, time requests, provider evidence/verification/availability/payout method/expertise/counters; services archived, provider suspended; name becomes "Deleted member"; ledger, payment and audit rows stay. Requires typing DELETE.
+**FR-101 Delete Counsel data (built; SUPERSEDED 2026-11-22 by FR-130..136, it no longer blocks).** Blocked while upcoming bookings, active purchases, open disputes or unpaid earnings exist. Otherwise deletes files from disk, blanks messages and review text and brief, deletes private notes, saved, notifications, deliveries, blocks, time requests, provider evidence/verification/availability/payout method/expertise/counters; services archived, provider suspended; name becomes "Deleted member"; ledger, payment and audit rows stay. Requires typing DELETE.
 **FR-102 Retention (built).** Hourly: recordings older than 90 days and other files older than 365 days removed, audited.
-**FR-103 Platform internal (built).** `GET .../deletion-check`, `POST .../erase`, `GET .../export` with the platform service key. The platform does not yet call them (T1).
+**FR-103 Platform internal (built).** `GET .../deletion-check`, `POST .../erase`, `GET .../export` with the platform service key. As of 2026-11-22 identity calls the erase route (FR-131).
 
 ## L. Language, theme, identity
 **FR-110 Languages (built).** en, hi, te, mr, kn; 1029 keys each; API strings are codes translated on the client; expertise names in 5 languages; language chosen on You page and sent as `X-Counsel-Language`.
 **FR-111 Theme (built).** Auto/light/dark stored in `localStorage` key `counsel.theme`.
 **FR-120 Sign-in (built, platform-owned).** Signed-out visitors can see public pages; protected pages show a sign-in card linking to the hub with `return_to`; session resolved server-to-server and cached 30 s (positive) / 5 s (negative); optional tunnel handoff code in `proxy.ts`.
+
+## M. Account deletion (added 2026-11-22, built, not browser-checked)
+Proven by `counsel-service/scripts/check_account_deletion.py` (16 checks pass). All 40 tables reviewed (37 acted on, 3 catalogue tables hold no member data). No new tables or settings.
+
+**FR-130 Delete my data in Counsel (kind B).** Flow: You page, "Your data", "Delete my data in Counsel", dialog lists warnings (`GET /me/deletion-check`), member types DELETE, `POST /me/delete-account-data` `{"confirm":"DELETE"}`, member is sent to the ForKhatri entrance. Rules: typed DELETE; re-authentication is the existing ForKhatri session; 3 attempts per hour per member; idempotent; the ForKhatri account is untouched. The older `POST /me/delete` is kept and does the same. Acceptance: member rows gone or tombstoned, files removed, other parties notified, second call returns `nothing_to_delete`.
+**FR-131 Erase on behalf of the platform (kind A).** `POST /internal/v1/members/{member_id}/erase`, service key plus header `X-ForKhatri-Service: identity` (exactly that name). Returns `{module, status: done | nothing_to_delete, deleted{}, retained[], files_removed}`. Called by identity with hub-side retry (30 s doubling to 6 h, 7 days, admin "stuck deletions" list).
+**FR-132 One transaction.** `privacy.erase_member` runs everything in one transaction as `counsel_app`; files are removed after commit; session, name and call-ticket caches dropped. Idempotent through the `erased_member` receipt.
+**FR-133 Close open work first.** Future bookings (consumer or expert) cancelled by the normal cancel routine with refund row and ledger entry where a payment exists; expert side full refund; under-way consultations refunded (expert) or counted as held (consumer); open packages and written questions refunded and closed; pending time requests deleted. Notices: `booking.cancelled_deleted`, `purchase.closed_deleted`.
+**FR-134 Stand-in member.** Retained rows point at `sha256("counsel-erased:" + member_id + service key)`, shown as "Deleted member". Completed consultations survive for the other party; reviews about a deleted expert are deleted; ratings the member gave stay without name or text.
+**FR-135 Warnings, not blockers.** `GET /me/deletion-check` and the internal deletion-check no longer refuse; `blockers` are shown as "This will also happen right now". Supersedes the blocking in FR-101.
+**FR-136 Export extended.** `GET /me/export` covers the full inventory (profile, services, packages, availability, file metadata, notifications, blocks, disputes, reports and more).
+Hub-side requirements for kind A are in `docs/ParentApp/ACCOUNT-DELETION.md`.

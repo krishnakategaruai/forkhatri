@@ -63,3 +63,14 @@ QA and persona sign-in per root CLAUDE.md (dev_session.py; personas asha, new-me
 - **`POST /profile/managed` change:** `child_phone` is still a required form field (`profile.py` line ~150) and the `is_face_verified` refusal (line ~191) is still active, so the parent still has to give the child's number and pass the maker check at publish. Migration 065 and its functions exist; the two-line API change was refused by the build session's permissions as a security weakening and needs the owner's hand. The same face-check gate exists in `agents.py`.
 - Human review screen for failed face checks; email verification (platform); guided voice path for the wizard (D18); refunds, invoices; wedding partner offers (table empty, no partners); learning from clicks; dowry report reason and detector; bias audit of the engine; narrowing public birth time; automated web tests; production backup job; payment vendor (sandbox only); real AI key (placeholders: unverified in this environment).
 - `scripts/dev.mjs` points at inner folders named `mangalya-*` that do not exist; `deploy/` still names `MOD03-mangaly`.
+
+
+---
+
+# 2026-11-22 Account deletion: implementation
+
+Files: `07a-db-implementation/migrations/067-erase-member-data.sql`; `mangaly-service/app/api/routes/account_data.py` (registered in `main.py`); `app/components/lifecycle/erasure.py`; `app/profile/storage.py` (file removal helper); `app/rate_limiting/limiter.py`; web `components/DeleteMyData.tsx`, `app/me/page.tsx`, `components/MemberMe.tsx`, `locales/{en,hi,te,mr,kn}/common.json` (`deleteData.*`), `package.json` (`next dev --webpack`). Docs: `ACCOUNT-DELETION.md`.
+
+Change log: 2026-11-22 | Account deletion (kinds A and B) | owner, DEC-V1-036. 2026-11-22 | dev server on webpack (Turbopack next/font 500s) | build session.
+
+Not built: browser check of the UI; step-up re-auth for kind B; "Deleted member" display in 1:1 chats; notification to other parties; backup purge; fixing the 4 pre-existing failing tests.

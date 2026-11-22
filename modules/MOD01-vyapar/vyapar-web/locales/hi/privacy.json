@@ -37,7 +37,7 @@
     "blocked": "किसी सक्रिय भुगतान वाले ऑर्डर के पूरा होने तक हटाना रुका हुआ है।",
     "done": "आपका खाता गुमनाम कर दिया गया है।",
     "exportHint": "Vyapar के पास आपकी जो भी जानकारी है, उसकी कॉपी।",
-    "deleteHint": "आपका नाम हर जगह से हट जाता है; आपकी पोस्ट और रिक्वेस्ट बिना नाम के रहती हैं।",
+    "deleteHint": "Permanently deletes everything Vyapar holds about you. Your ForKhatri account stays.",
     "historyTitle": "डेटा रिक्वेस्ट"
   },
   "requestKind": {

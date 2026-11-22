@@ -177,3 +177,21 @@ All fixed window `RATE_LIMIT_WINDOW_SECONDS` (900), stored in `platform.rate_lim
 | resend interval (not a bucket) | 30 s | `OTP_RESEND_SECONDS` |
 
 The client IP is `request.client.host`; in the production image uvicorn runs with `--proxy-headers --forwarded-allow-ips ${FORWARDED_ALLOW_IPS:-127.0.0.1}`, so the real client IP is used only when the proxy address is listed in `FORWARDED_ALLOW_IPS` (verify the value in the deployed compose file; if it is wrong every member shares one IP bucket).
+
+
+## 9. Account deletion endpoints (added 2026-11-22)
+
+Identity (migration 008). Contract: `ACCOUNT-DELETION.md`. Each counts toward 3 attempts per hour per member where it checks credentials.
+
+| Method path | Auth | Request | Response and errors | Side effects |
+|---|---|---|---|---|
+| `GET /v1/account/delete/preview` | session | none | what is deleted, what is kept and why | none |
+| `POST /v1/account/delete/code` | session | none | sends a one-time code to the member's own phone or email; 429 on rate limit | `identity.otp_challenge` |
+| `POST /v1/account/delete` | session | `{confirm:"DELETE", password}` or `{confirm:"DELETE", challenge_id, code}` | `202` with job id; wrong password 401; wrong confirm word 4xx; 409 `admin_role_held`; 429 | closes member, revokes all sessions, creates `deletion_job` rows, clears cookie, starts background run |
+| `GET /v1/account/deletion/{job_id}` | public (job id is the capability) | none | per-module progress and receipt | read only |
+| `GET /v1/admin/deletions/stuck` | admin | none | list of stuck jobs | read only |
+| `POST /v1/admin/deletions/{job_id}/retry` | admin | none | job re-queued | resets retry timers; audit event |
+
+Internal (service key, hidden from OpenAPI), implemented by each module: `POST /internal/v1/members/{member_id}/erase` returns `{module, status: done | nothing_to_delete | partial, deleted:{kind:count}, retained:[{kind,reason}], files_removed}`. Member-facing module endpoints: Vyapar `POST /v1/privacy/delete-account-data` (the older `/v1/privacy/delete` now does the full erase), Milavn and Mangalya `POST /privacy/delete-account-data`, Counsel `POST /me/delete-account-data` (`/me/delete` kept). All take `{confirm:"DELETE"}` and are limited to 3 per hour.
+
+Exact status codes and schemas for the six identity endpoints were not re-checked against the running OpenAPI (unverified). Rate-limit bucket for deletion attempts: 3 per hour per member (config name not recorded here, unverified). Counts: public identity operations 39 to 45; internal 4 (the module-side erase endpoint is implemented by modules, not by identity).

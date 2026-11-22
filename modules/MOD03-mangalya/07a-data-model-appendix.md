@@ -327,3 +327,13 @@ SECURITY DEFINER functions are the only way the app role touches some tables (se
 | FN-148 | `mangaly_identity.alias_of` | 065 |
 
 RLS: enabled on tables per migration (policies named in each migration file). Column-level detail: read the migration named in 'Created in' plus later ALTERs; full column listing not regenerated here (unverified beyond migration text).
+
+## 2026-11-22 Account deletion (migration 067)
+
+| No. | File | Purpose |
+|---|---|---|
+| 067 | `067-erase-member-data.sql` | Erase everything Mangalya holds about a member; applied (two bugs found, fixed, re-applied) |
+
+New table: TBL-94 `mangaly_platform.deletion_receipt` (tombstone, date, counts; RLS on; retained as proof).
+New functions: FN-149 `mangaly_identity.member_tombstone`, FN-150 `mangaly_identity._bump`, FN-151 `mangaly_identity.erase_account_data` (worker, owner role), FN-152 `mangaly_identity.erase_my_data` (app role), FN-153 `mangaly_identity.erase_member_data` (app role).
+Per-table deletion action reference (26 store groups): `ACCOUNT-DELETION.md` in this folder. Totals now: 67 migrations, 94 tables, 153 functions (counted by hand from the migration, unverified against the live DB).

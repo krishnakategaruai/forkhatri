@@ -720,7 +720,9 @@
   "question.new": "New paid question on {{title}} — answer it in time",
   "question.answered": "Your question on {{title}} was answered",
   "question.refunded": "Your question was not answered in time — refunded {{refund}}",
-  "booking.recap": "The recap for {{title}} is ready"
+  "booking.recap": "The recap for {{title}} is ready",
+  "booking.cancelled_deleted": "{{title}} was cancelled because the other person deleted their account. Refund: {{refund}}",
+  "purchase.closed_deleted": "A package, question or request with a member who deleted their account was closed and refunded."
  },
  "report": {
   "report": "Report",
@@ -1045,21 +1047,22 @@
   "title": "Your data",
   "body": "Download everything Counsel holds about you, or delete your Counsel data. Your ForKhatri account is not affected.",
   "download": "Download my data",
-  "delete": "Delete my Counsel data",
-  "delete_title": "Delete your Counsel data?",
+  "delete": "Delete my data in Counsel",
+  "delete_title": "Delete my data in Counsel?",
   "blocked": "First finish or cancel what is still open:",
   "blocker": {
-   "upcoming_bookings": "Upcoming consultations",
-   "open_packages_or_questions": "Active follow-up sessions or unanswered questions",
-   "open_disputes": "Open disputes",
-   "unpaid_earnings": "Earnings not yet paid out to you"
+   "upcoming_bookings": "Upcoming consultations are cancelled and the other person is told (refunds follow the cancellation rules)",
+   "open_packages_or_questions": "Open follow-up packages and written questions are closed and refunded",
+   "open_disputes": "Open disputes stay with Counsel staff, without your name",
+   "unpaid_earnings": "Earnings not yet paid out cannot be paid after your payout details are deleted; contact support first if this matters"
   },
-  "removes": "Removed: your consultant profile, evidence and documents, payout details, private notes, files you uploaded, messages you wrote, saved people and notifications.",
-  "keeps": "Kept, without your name: payment and tax records, and ratings you gave (without text), as the law requires.",
-  "account_stays": "Your ForKhatri account stays. You can use Counsel again later, starting fresh.",
+  "removes": "Deleted for good: your consultant profile, photo, evidence and documents, availability, payout details, private notes, files you uploaded, messages you wrote, saved people, blocks and notifications.",
+  "keeps": "Kept without your name (shown as Deleted member): consultations other people took part in, payment and tax records where money moved, star ratings you gave (no text), and a safety record of reports.",
+  "account_stays": "Your ForKhatri account and other modules stay. You can use Counsel again later as a new member. This cannot be undone.",
   "type_delete": "Type DELETE to confirm",
   "delete_confirm": "Delete permanently",
-  "deleted": "Your Counsel data was deleted"
+  "deleted": "Your Counsel data was deleted",
+  "warn": "This will also happen right now:"
  },
  "payout_method": {
   "title": "Where you get paid",

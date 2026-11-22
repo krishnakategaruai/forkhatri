@@ -23,3 +23,9 @@
 | BR21 | FR60 | SCR-05 | tag ai | AI counters | check_ai.py |
 
 Table-to-feature detail: unverified at column level; verify by reading the router and service named after the tag (vyapar-service/app/routers/<tag>.py).
+
+
+## Account deletion (added 2026-11-22)
+| BR | FR | Screens | Endpoints | Tables | Tests |
+|---|---|---|---|---|---|
+| BR24 | FR71-FR73 | SCR-21 (Privacy) | API-269, API-270, API-175 | all 63 (see ACCOUNT-DELETION.md), function vyapar_identity.erase_member | manual proof on throwaway member #31 (TC-701 to TC-707); browser not checked |

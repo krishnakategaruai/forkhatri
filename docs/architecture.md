@@ -346,3 +346,14 @@ total). Operations: `docs/RUNBOOK.md`.
 6. Vyapar and Counsel are in the identity `SERVICE_KEYS` development defaults but `SERVICES_RECEIVING_IDENTIFIERS` has only `mangaly`.
 7. MOD05, MOD06, MOD07 do not exist yet; Payment Services is the planned target of the `payment_services` adapter (contract at the top of `shared/forkhatri-integrations/forkhatri_integrations/payments/adapters.py`).
 8. Counsel's and Vyapar's database ownership roles were not verified from running databases in this pass (unverified: check each `07a-db-implementation/.env.example`).
+
+
+## 16. Account deletion (added 2026-11-22)
+
+Design: `docs/ParentApp/ACCOUNT-DELETION.md`; data rights summary: `docs/DATA-RIGHTS.md`.
+
+Sequence for kind A: the member confirms in the hub (`DeleteAccount.tsx`; password or one-time code, typed DELETE) -> identity closes the member, revokes all sessions, writes a `deletion_job` with one row per module -> in parallel, identity calls `POST /internal/v1/members/{id}/erase` on Vyapar, Milavn, Mangalya and Counsel (header `X-ForKhatri-Service: identity` plus each module's service key; base URLs from `ERASE_MODULE_API_URLS`) -> each module erases its data in one database transaction, removes files from disk, and answers `done`, `nothing_to_delete` or `partial` with counts and what it retained -> when all are done, the SECURITY DEFINER function `identity.finalize_member_deletion` removes the identity rows and audit ids are already replaced by a tombstone (`DELETION_TOMBSTONE_PEPPER`). Failures are retried by a loop in the identity process (30 s, backoff to 6 h, 7 days) and shown on the admin stuck-deletions list.
+
+Kind B: the module's own `POST /privacy/delete-account-data` (Counsel `/me/delete-account-data`) runs the same erase for the signed-in member only and signs them out of that module.
+
+Production note: Vyapar and Counsel are not in the production compose, so deletion of those modules has only been proven in development. The identity retry loop runs inside the single identity process (unverified under restart).

@@ -65,3 +65,18 @@ Every FR group A-L has at least one TC except FR-002, FR-003, FR-009, FR-016, FR
 
 ## 4. Suggested automation first
 API tests (pytest + httpx against a throwaway DB) for refund tiers, slot engine, EXCLUDE double booking, ledger totals, purchase expiry, privacy erase blockers, admin gating; then Playwright for book-and-pay using `dev_session.py` storage state.
+
+## 5. Account deletion scenarios (added 2026-11-22)
+Run by `counsel-service/scripts/check_account_deletion.py` (Counsel has no pytest suite): throwaway member #34 as consumer and expert, plus QA members #1 and #2; the script cleans up after itself. Result as reported: all 16 checks passed. Browser checks: NOT done. Wrong confirm word, the 3/hour limit and the repeated erase were not separately evidenced for Counsel.
+| ID | Layer | Scenario | Expected | Result |
+|---|---|---|---|---|
+| TC-060 | I | Erase #34 as consumer with a future booking | booking cancelled, refund row, expert notified | pass |
+| TC-061 | I | Erase #34 as expert with future bookings | consumer notified, full refund row | pass |
+| TC-062 | I | Completed consultation survives for other party | shows "Deleted member", brief blanked | pass |
+| TC-063 | I | Files removed from disk | evidence, photo folder, consultation files gone | pass |
+| TC-064 | I | Retained rows hold only the stand-in id | payments, ledger, ratings without text, report, dispute, audit, receipt | pass |
+| TC-065 | I | Second erase | `nothing_to_delete` | not separately reported |
+| TC-066 | I | Wrong confirm word | 4xx, nothing deleted | not run |
+| TC-067 | I | 4th attempt in an hour | 429 | not run |
+| TC-068 | I | Unpaid eligible earnings, payout-retention path | decision pending | untested |
+| TC-069 | U | Delete dialog in the browser, five languages | as 03-ux section 6 | NOT done |

@@ -129,3 +129,6 @@ Applied by `db/init.sh` in filename order (idempotent, `IF NOT EXISTS` style). T
 
 ## 9. Known drift and gaps
 No RLS (authorisation only in code); no FK on member references; `session_event.kind` unconstrained; `delivery.status` unconstrained; `payout.status` 'requested'/'failed' never used; ledger kinds processing_fee/tax/adjustment unused; setting review_window_days unused; `report.target_id` is text without integrity; seed text claims 7 consultants but the live table has 8 providers.
+
+## 10. Account deletion (added 2026-11-22)
+No migration, new table, function or grant: migration count stays 11. The existing `erased_member` table (007) is the deletion receipt (stand-in id, date, reason). Erase is application code (`privacy.erase_member`); the per-table action reference for all 40 tables is in `ACCOUNT-DELETION.md` (37 acted on; `expertise_area`, `compliance_rule`, `platform_setting` hold no member data). Stand-in rows: `member` ("Deleted member") and, where bookings, purchases or payouts point at it, a stripped `provider` row (suspended, no text). There are still no foreign keys on member references, which is why re-pointing to the stand-in id needs no constraint change.

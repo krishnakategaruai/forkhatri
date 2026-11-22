@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import AccountButton from "@/components/AccountButton";
+import DeleteMyData from "@/components/DeleteMyData";
 import { Avatar } from "@/components/Avatar";
 import Icon from "@/components/Icon";
 import ForKhatriHubLink from "@/components/ForKhatriHubLink";
@@ -249,6 +250,7 @@ export default function MemberMe({ session }: { session: Session }) {
             <button type="button" className="btn member__signout" onClick={() => void logOut()}>
               {t("member:signOut")}
             </button>
+            <DeleteMyData />
           </div>
         </div>
       </main>

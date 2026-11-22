@@ -328,3 +328,13 @@ Requires header `Authorization` service token (env `HOROSCOPE_SERVICE_TOKEN`, 24
 | HAPI-06 | POST | `/horoscope/calculate/scores` | stateless koota scores |
 
 Mangalya-facing wrappers: `POST /horoscope/check` (API: horoscope tag, used by `/horoscope/check` screen) and `GET /horoscope/match/{other_account_id}`.
+
+
+## 2026-11-22 Account deletion endpoints
+
+| ID | Method | Path | Notes |
+|---|---|---|---|
+| API-D01 | POST | `/privacy/delete-account-data` | Member session; body `{"confirm":"DELETE"}`; 3 per hour (429 `rate_limited`); 409 `role_must_be_removed_first` for operators; idempotent |
+| API-D02 | POST | `/internal/v1/members/{member_id}/erase` | Service key (`X-ForKhatri-Service` plus key); 404 on the public edge; returns `{module,status,deleted,retained,files_removed}` |
+
+The hub endpoints (`/v1/account/delete/*`, `/v1/admin/deletions/*`) are in `docs/ParentApp/`. Operation count 204 (202 + 2, from code, not re-read from `/openapi.json`, unverified).

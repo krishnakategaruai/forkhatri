@@ -59,3 +59,8 @@ Console actions show success or a localised error code; there are no outbound no
 
 ## Acceptance traceability
 BR-12: FR-031, FR-035 to FR-038. BR-13: FR-034. BR-14: FR-033, FR-039. BR-15: FR-031a, FR-047.
+
+
+## Account deletion (added 2026-11-22)
+
+FR-065: the Modules page lists stuck deletions with a Retry button (`GET /v1/admin/deletions/stuck`, `POST /v1/admin/deletions/{job_id}/retry`). Deletion is refused while a member holds a live admin role (409 `admin_role_held`): remove the role first. Full list: `02-functional-requirements.md`, FR-061 to FR-070.

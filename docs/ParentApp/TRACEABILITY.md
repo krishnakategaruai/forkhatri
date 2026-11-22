@@ -37,3 +37,11 @@ Pass or fail results were not re-run for this documentation pass (unverified).
 
 ## Module traceability
 Each module keeps its own matrix: MOD01 `modules/MOD01-vyapar/TRACEABILITY.md`, MOD03 `modules/MOD03-mangalya/TRACEABILITY.md`. MOD02 and MOD04: see their `02`/`API-REFERENCE.md` files (no separate matrix at time of writing).
+
+
+## Account deletion (added 2026-11-22)
+
+| Requirement | Code | Tests |
+|---|---|---|
+| BR-25 to BR-30, FR-061 to FR-070 | `platform/identity-service/db/migrations/008-account-deletion.sql`; identity account and admin routers; retry loop in `app/main.py`; `platform/forkhatri-web/components/DeleteAccount.tsx` | `platform/identity-service/tests/integration/test_account_deletion.py` (stub module server); throwaway member #30 proof; browser not checked |
+| FR-068, FR-069 per module | Vyapar `services/privacy.py`, `routers/privacy.py`; Milavn `components/erasure/interface.py`, `routes/erasure.py`; Mangalya `routes/account_data.py`, `components/lifecycle/erasure.py`; Counsel `components/privacy.py`, `routes/me.py`, `routes/internal.py` | see each module's TRACEABILITY and `ACCOUNT-DELETION.md`; Counsel `scripts/check_account_deletion.py` |

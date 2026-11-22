@@ -66,3 +66,8 @@ Plain-word terms as used in the product and the documents. Use one word per idea
 | Samaj | the community body; Samaj heads run ForKhatri |
 | Khatri | the community ForKhatri serves |
 | DPDP | India's Digital Personal Data Protection Act 2023 |
+
+| Tombstone | one-way stand-in id (`dead0000-...`) that replaces a deleted member's id in rows that must stay; shown to others as "Deleted member" |
+| Erase | permanently delete a member's data, rows and files; the verb in code (`erase_member`) |
+| Deletion receipt | line in `erasure_receipt`: tombstone, date, counts; proof of deletion, no personal data |
+| Kind A / Kind B | A: the whole ForKhatri account is deleted and every module called. B: one module's data is deleted, the account stays |

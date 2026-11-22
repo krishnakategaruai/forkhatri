@@ -1593,3 +1593,8 @@ Step 7 (Tech Requirements) and Step 7a (ER Model) should treat the following as 
 | Tunnel proxy.ts and next.config rewrites | cookie sessions behind tunnels only; no effect locally | low |
 | Mangalya/Milavn/Counsel | boundary: events belong to Milavn, regulated professional advice to Counsel (vyapar-counsel-boundary memory); Vyapar uses the shared credential reference (FR06) | medium |
 
+
+
+# Addendum 2026-11-22: IA056 Account deletion
+**Touches.** Cross-module: called by the identity service (hub) after the member confirms; Vyapar calls no other module. Shared records: contracts and enquiries the other party owns are kept with the member replaced by tombstone del_<hash>; partnership requests are removed for both sides; reviews written or received are deleted (the other party loses them); open contracts are cancelled. Notifications: other people's notifications may still mention ids of deleted listings or posts (ids only). Files: uploaded photos, ID images and attachments under vyapar-service/uploads/ are deleted, including anything named <member>-*; a git cleanup once removed some tracked uploads (see git status), so uploads are not reliably tracked. Caches: none known. Events: outbox rows mentioning the member are deleted, so undelivered webhooks for them are lost. Mirror: next sign-in creates a blank mirror.
+**Risks.** R1 irreversible by design (typed DELETE; re-authentication done by the hub). R2 a 500 for a never-seen member makes the hub retry (retry loop mitigates; defect open). R3 sandbox has no refund; real money needs a refund step first. R4 kind B leaves the hub session valid. R5 deleted reviews may change other members' reputation figures (not analysed, unverified).

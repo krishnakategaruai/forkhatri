@@ -11,6 +11,7 @@ import OutlookGame from "@/components/OutlookGame";
 import OutlookScene from "@/components/OutlookScene";
 import PhotoCheckCard from "@/components/PhotoCheckCard";
 import MemberMe from "@/components/MemberMe";
+import DeleteMyData from "@/components/DeleteMyData";
 import {
   OUTLOOK,
   OUTLOOK_CATEGORY,
@@ -1880,6 +1881,7 @@ export default function ProfileHubPage() {
                     </button>
                   )}
                 </div>
+                <DeleteMyData />
               </>
             )}
 

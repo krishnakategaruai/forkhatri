@@ -156,3 +156,20 @@ The platform shall hold only foundational trust (a verified phone or email, late
 - A module card or route must not imply that a second account is required.
 - No credential is readable by page scripts.
 - The hub never shows sensitive module data without an explicit contract.
+
+## Account deletion (added 2026-11-22)
+
+Owner requirement (2026-11-22, quoted in `ACCOUNT-DELETION.md`): "A user should be deleted if he needs to delete his account, immediately. If he is doing it from ForKhatri, all the accounts in sub modules and traces should be deleted. If he is doing it in an independent module, that module's data related to him, all the stuff, should be deleted." This supersedes the earlier "account deletion and data export: not built" entries in this set (deletion is now built; export is still not built at platform level).
+
+| ID | Business requirement | Why | Status |
+|---|---|---|---|
+| BR-25 | A member can erase their own data at any time, immediately, with no waiting period. | DPDP right to erasure; owner decision. | Built (not browser-checked) |
+| BR-26 | Two kinds of deletion. Kind A (hub, "Delete my ForKhatri account"): the identity and the member's data in every module, all sessions, credentials, uploads. Kind B (inside one module, "Delete my data in the module"): everything that module holds; the ForKhatri identity and other modules stay and the member may re-enter later as a new member. | Members must control scope. | Built |
+| BR-27 | Deletion needs re-authentication (password or a fresh one-time code) and typing the word DELETE, because it cannot be undone. | Shared phones, accidents. | Built |
+| BR-28 | Only what law or other people's safety forces may be kept, with no name, phone, email, photo or free text, and the member is told in plain words what stays and why. | Minimisation and transparency. | Built; legal basis needs a lawyer |
+| BR-29 | Other members' views stay coherent: where a deleted member's name was shown, others see "Deleted member". | Do not break other people's records. | Built in Vyapar, Milavn, Counsel; Mangalya one-to-one chats removed for both sides (known deviation) |
+| BR-30 | The owner can prove a deletion happened (one-line receipt with a one-way tombstone, date, modules, counts) and sees deletions that are stuck. | Accountability. | Built |
+
+Retained, in short: payment and tax records where real money moved; safety and moderation records (tombstone only); security log (tombstone only); the deletion receipt. Per-module detail is in each module's `ACCOUNT-DELETION.md` and in `docs/DATA-RIGHTS.md`.
+
+Open business questions (owner): what happens to an expert's unpaid Counsel earnings on deletion; whether a banned member may sign up again (not enforced); whether one-to-one chats in Mangalya should show "Deleted member" to the other side instead of vanishing; the retention period of the audit log and the legal basis for each retained record ("needs lawyer").

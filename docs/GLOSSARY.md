@@ -204,3 +204,15 @@ Source: `modules/MOD04-counsel/BACKLOG.md`, owner rule 2026-09-30 (module doc; n
 Storage and internal words must not reach a screen: opportunity, listing, capabilities, enquiry, segment, stale, enum names.
 Use "member" not "user". Never "LPA" for job seekers. Do not call Vyapar features mentoring or counselling.
 Hindi and Telugu use common spoken loanwords (job, salary, online), not stiff Sanskritised forms.
+
+
+## 11. Account deletion words (added 2026-11-22)
+
+- **Kind A deletion**: "Delete my ForKhatri account" in the hub. Removes the identity and the member's data in every module.
+- **Kind B deletion**: "Delete my data in <module>" in one module's settings. Removes only that module's data; the ForKhatri identity stays and the member can come back as a new member.
+- **Erase**: the module routine that removes one member's data (internal endpoint `POST /internal/v1/members/{id}/erase`). Safe to run twice.
+- **Tombstone**: a one-way hash (HMAC-SHA256) that replaces a deleted member's id in records that must stay. It cannot be turned back into the member.
+- **Deletion receipt**: the one-line record of a finished deletion (tombstone, date, modules, counts, what was retained and why).
+- **Deleted member**: the label other people see where the deleted member's name used to be.
+- **Retained**: data that must stay for law or safety, stripped of name, contact and free text.
+- **Stuck deletion**: a deletion where a module could not finish; the admin console lists it and can retry.

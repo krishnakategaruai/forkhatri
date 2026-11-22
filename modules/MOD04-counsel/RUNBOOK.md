@@ -38,3 +38,8 @@ No backup job exists. Back up two things together: the `counsel` database (`pg_d
 
 ## 6. Safe operations
 Settings (fee, policy, hold, retention) change in Admin -> Settings and are audited; they never change existing bookings. To suspend a consultant use Admin -> Provider -> Suspend (pauses services). To erase a member use the member's own You page or the platform's internal erase route. Never edit ledger or booking money columns by hand.
+
+## 7. Account deletion (added 2026-11-22)
+Verify: with the API and database up, run `counsel-service/scripts/check_account_deletion.py` with the service's Python (throwaway member #34 and QA members #1, #2; it cleans up); expect 16 passes. Real call: `POST /internal/v1/members/{id}/erase` with the service key and `X-ForKhatri-Service: identity`; expect `done`, then `nothing_to_delete` on repeat.
+Resume stuck deletions: in the hub, admin, Modules page, "stuck deletions", Retry (`POST /v1/admin/deletions/{job_id}/retry`). Counsel is safe to call again.
+On failure: read the API log. Erase is one transaction, so a failure leaves the data untouched; fix the cause and retry. If files remain after a crash (`STORAGE_ROOT` `private/evidence/<member>/`, `public/photos/<member>/`) and the member is in `erased_member`, the folder can be removed by hand. Open owner question: unpaid earnings (01 section 13).

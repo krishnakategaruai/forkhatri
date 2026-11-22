@@ -270,3 +270,11 @@ below comes from search-result extracts of the named pages.
   ಒಪ್ಪಂದ, ಮುಂಗಡ are the words used in Maharashtra and Karnataka government job and rent
   notices and in regional job portals; the Bhashini and e-Shram multilingual lists above cover
   both languages.
+
+
+## Account deletion terms (added 2026-11-22)
+- **Erase**: remove everything Vyapar holds about a member (rows and files), keeping only the retained list.
+- **Tombstone**: a one-way hash of the member id (member row del_<hash>) that replaces the member in rows that must stay, shown as "Deleted member"; it cannot be turned back into a person.
+- **Deletion receipt**: a one-line record (tombstone, date, counts) proving deletion was done.
+- **Kind A**: deleting the whole ForKhatri account from the hub; all modules erase. **Kind B**: deleting only one module's data from that module's settings; the ForKhatri identity stays.
+- **Retained**: only what law or other people's safety requires (payment orders, safety records, audit log, receipt).

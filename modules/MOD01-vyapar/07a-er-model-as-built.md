@@ -2237,3 +2237,7 @@ erDiagram
 - RLS is enabled on 57 of the 63 tables (exceptions: commercial.products, integration.config, listings.profession_rules, listings.taxonomy_terms, platform.rate_limit_counter, privacy.legal_documents, all reference or counter tables). Policies are written for role `vyapar_app`; write paths run through SECURITY DEFINER functions. Weak points are recorded in docs/Critique/CRITIQUE-mod01-vyapar.md.
 - Migration 032 adds members.date_of_birth and members.phone_verified (start flow); migration 031 adds mr/kn columns and widens every language CHECK to en, hi, te, mr, kn.
 
+
+
+## Account deletion (added 2026-11-22)
+The new migration is `033-erase-member.sql` (migration count 33). It adds function vyapar_identity.erase_member(member, analytics_pseudonym) (SECURITY DEFINER, owner vyapar_owner, guarded to the member's own context or the service/dispatcher context), a tombstone member row type `del_<hash>` in identity.members, and a deletion receipt row in the privacy schema (tombstone, counts). No new table was verified (63 tables unchanged; unverified for the receipt storage location). Per-table action (delete, detach to tombstone, retain minimal, not member data): see ACCOUNT-DELETION.md in this folder (63 tables, 13 schemas).

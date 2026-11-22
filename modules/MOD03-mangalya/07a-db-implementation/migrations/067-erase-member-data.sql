@@ -148,7 +148,9 @@ BEGIN
     END LOOP;
     UPDATE mangaly_profile.profile SET created_by_account_id = NULL, updated_at = now()
      WHERE created_by_account_id = p_account;
-    UPDATE mangaly_identity.account SET managed_by_account_id = NULL
+    -- (the tombstone, not NULL: a taken-over managed account has no phone or
+    -- email of its own and 065's CHECK needs one of the three)
+    UPDATE mangaly_identity.account SET managed_by_account_id = v_tomb
      WHERE managed_by_account_id = p_account;
 
     -- 2. Files (collected now, removed from disk by the caller after commit).
@@ -356,11 +358,12 @@ BEGIN
     GET DIAGNOSTICS n = ROW_COUNT; r := mangaly_identity._bump(r, 'idempotency_keys', n);
     -- keys are '<scope>:<sha256 of the lower-cased subject>' (see rate_limiting/limiter.py)
     DELETE FROM mangaly_platform.rate_limit_counter
-     WHERE rate_limit_key ~* v_re
+     WHERE rate_limit_key NOT LIKE 'delete_account_data:%'   -- keeps the 3-an-hour limit meaningful
+       AND (rate_limit_key ~* v_re
         OR split_part(rate_limit_key, ':', 2) IN (
              SELECT encode(sha256(convert_to(lower(btrim(x)), 'UTF8')), 'hex')
                FROM unnest(ARRAY(SELECT i::text FROM unnest(v_ids) i) || ARRAY[v_phone, v_email]) x
-              WHERE x IS NOT NULL);
+              WHERE x IS NOT NULL));
     GET DIAGNOSTICS n = ROW_COUNT; r := mangaly_identity._bump(r, 'rate_limit_counters', n);
     FOR t IN SELECT format('%I.outbox_event', schemaname)
                FROM (SELECT DISTINCT table_schema AS schemaname FROM information_schema.tables

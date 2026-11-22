@@ -50,3 +50,8 @@
 | Hub | ForKhatri entrance web app (3100) |
 | MOD06 / MOD07 | Payment Services / Loans & Finance modules (Welfare Trust lives in MOD07) |
 | BR / FR / SCR / API / TBL / TC | Business requirement / functional requirement / screen / endpoint / table / test case IDs |
+| Erase | Delete or detach every row and file about a member in one transaction (`privacy.erase_member`); added 2026-11-22 |
+| Tombstone / stand-in id | One-way id `sha256("counsel-erased:" + member + service key)` that retained rows point at instead of the real id; shown as "Deleted member" |
+| Deletion receipt | Row in `erased_member` plus an audit line with counts; proof that erasure was done |
+| Kind A / kind B | A: ForKhatri account deleted, identity erases in all modules. B: "Delete my data in Counsel" only; the ForKhatri account stays |
+| nothing_to_delete | Answer of a repeated erase: idempotent, nothing left |

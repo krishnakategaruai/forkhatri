@@ -1971,3 +1971,7 @@ Security Lead — [x] Approved — autonomous execution, 2026-09-14
 - **Open findings from the critique:** text-only scam defence (C2); aggregator status (C3); thin "Verified" (H2); sandbox ledger (H5); false-match notifications (M1); verification-document retention not independently checked (unverified).
 - **Performance:** no load test exists; budgets in the sections above are targets, not measurements.
 
+
+
+# Addendum 2026-11-22: Account deletion security and privacy
+**DPDP mapping.** Right to erasure: met by immediate erase of personal data. Retention exceptions (to be confirmed by a lawyer): payment orders (tombstone id, amount, date); security and audit log (id hashed, details cleared; the contract cites 1 year for logs, a retention job is not built: unverified); safety reports, cases and appeals (tombstone only, no text or evidence); deletion receipt (hash, date, counts). **Controls.** Service-key authentication on the internal endpoint; function guarded to own or service context; typed DELETE; 3 per hour; access tokens cannot erase; operators refused until the role is removed; rate-limit key stores a hash. **Risks and open findings.** (1) 500 on a never-seen member. (2) Retained safety rows and others' notifications may carry ids of deleted listings or posts. (3) The SQL tombstone is a plain SHA-256 of the id (the hub uses a pepper; Vyapar pepper use unverified). (4) check_taste.py 27/35 not compared. (5) Kind B does not end the hub session.

@@ -4773,3 +4773,24 @@ Details, bugs fixed and left open: `AgentOutputs/QA-RUN-*.md`.
 | TC-215 | public event page while signed out | FR150 | UI | to re-verify |
 Not covered anywhere: load, WebSocket abuse, upload malware, DPDP flows.
 
+
+
+
+---
+# Addendum 2026-11-22: Account deletion proof runs (as reported by the build agent; not re-run in this documentation pass)
+Run once against the live dev service and database with one throwaway member (#32) created through the product.
+
+| ID | Scenario | Result as reported |
+|---|---|---|
+| TC-216 | Count rows before and after on 37 columns across the tables that held the member | held rows, then zero except the retained kinds (payments, reports and blocks, receipt) |
+| TC-217 | 70 tables with member uuids and 7 file folders inspected | all handled |
+| TC-218 | Files on disk before and after | 29 before, 15 after (the rest belong to others or to events) |
+| TC-219 | Circle the member organised, with another organiser | handed to Rohan |
+| TC-220 | Participation on an event with a waitlist | next person promoted |
+| TC-221 | Retained rows | paid tickets, pledges, one refund-pending ticket, reports and blocks, receipt; all under tombstone |
+| TC-222 | Second erase | `nothing_to_delete` reported for the internal call; kind B repeat: unverified |
+| TC-223 | Wrong confirm word | 422 by code; run not separately reported: unverified |
+| TC-224 | Rate limit 3 per hour | in code (scope ACCOUNT_DATA_DELETE); fourth-attempt run not reported: unverified |
+| TC-225 | Existing suite before and after | 60 tests pass before and after; no erase-specific test added |
+| TC-226 | Full hub flow (kind A), hub throwaway #30 | Milavn `done` on first attempt (hub's proof) |
+| TC-227 | Browser check of the Me control and modal | **NOT DONE** |

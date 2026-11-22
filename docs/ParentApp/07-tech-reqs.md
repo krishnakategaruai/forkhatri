@@ -400,3 +400,16 @@ Python logging at INFO (`identity`, `identity.delivery`); codes and full destina
 ## A10. Run, test and migrate
 
 Run: `platform/identity-service/.venv/Scripts/python -m uvicorn app.main:app --port 8100` (no `--reload`), or the one start-all command. Migrate: `db/000-bootstrap.sql` as superuser, then `db/migrations/*.sql` in order as `identity_owner`; production uses `deploy/migrate`. Tests in `platform/identity-service/tests`: test_delivery, test_dev_tools, test_identifiers, test_origin_guard, test_secrets (unit); `integration/test_contract_live.py`, `integration/test_governance_db.py`. Scripts in `scripts/`: `dev_session.py`, `seed_dev_members.py`, `seed_dev_governance.py`, `import_module_identities.py`, `build_insight_places.py`.
+
+
+## A11. Account deletion (added 2026-11-22)
+
+Design and contract: `ACCOUNT-DELETION.md`. Traces to FR-061 to FR-070.
+
+- Erase function: each module owns one idempotent erase routine (Vyapar `services/privacy.py`, Milavn `milavn_platform.erase_member()`, Mangalya `components/lifecycle/erasure.py`, Counsel `privacy.erase_member`), run in one database transaction, followed by removal of the member's files from disk. A second run answers `nothing_to_delete`.
+- Internal endpoint: `POST /internal/v1/members/{member_id}/erase`, authenticated by the service key headers (`X-ForKhatri-Service`, `X-ForKhatri-Service-Key`). Identity calls it with service name `identity` (Counsel requires exactly this name).
+- Hub orchestration: `identity.deletion_job` plus one `deletion_job_module` row per module in `SERVICE_KEYS`; parallel calls; a retry loop in `app/main.py` every 30 s with backoff 30 s doubling to 6 h for 7 days; stuck after 3 failed attempts or 7 days; the SECURITY DEFINER function `identity.finalize_member_deletion` removes identity rows only when all modules are done (the runtime role still has no DELETE grant).
+- Re-authentication: password, or a one-time code to the member's own identifier; typed DELETE; 3 attempts per hour.
+- Audit tombstone: HMAC-SHA256 of the member id with a secret pepper.
+- Config names (names only): `ERASE_MODULE_API_URLS` (falls back to `ADMIN_MODULE_API_URLS`, then `MODULE_API_URLS`), `DELETION_TOMBSTONE_PEPPER` (S). Module-side settings are in each module's `07`.
+- Not built: export of data at platform level, consent record, grievance officer, age gate.

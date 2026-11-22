@@ -38,7 +38,7 @@
     "blocked": "ಚಾಲ್ತಿಯಲ್ಲಿರುವ ಪಾವತಿಸಿದ ಆರ್ಡರ್ ಮುಗಿಯುವವರೆಗೆ ಅಳಿಸುವಿಕೆ ತಡೆಹಿಡಿಯಲಾಗಿದೆ.",
     "done": "ನಿಮ್ಮ ಖಾತೆಯನ್ನು ಅನಾಮಧೇಯಗೊಳಿಸಲಾಗಿದೆ.",
     "exportHint": "ವ್ಯಾಪಾರ್ ನಿಮ್ಮ ಬಗ್ಗೆ ಇಟ್ಟುಕೊಂಡಿರುವ ಎಲ್ಲದರ ಪ್ರತಿ.",
-    "deleteHint": "ನಿಮ್ಮ ಹೆಸರು ಎಲ್ಲೆಡೆಯಿಂದ ತೆಗೆಯಲಾಗುತ್ತದೆ; ನಿಮ್ಮ ಪೋಸ್ಟ್‌ಗಳು ಮತ್ತು ರಿಕ್ವೆಸ್ಟ್‌ಗಳು ಹೆಸರಿಲ್ಲದೆ ಉಳಿಯುತ್ತವೆ.",
+    "deleteHint": "Permanently deletes everything Vyapar holds about you. Your ForKhatri account stays.",
     "historyTitle": "ಡೇಟಾ ರಿಕ್ವೆಸ್ಟ್‌ಗಳು"
   },
   "requestKind": {

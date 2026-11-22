@@ -2378,3 +2378,15 @@ Built (sandbox payments): Boost purchase and promotion lifecycle (BR10), Busines
 ## Known gaps / risks (from docs/Critique/CRITIQUE-mod01-vyapar.md and MASTER-CRITIQUE-2026-10.md)
 C1 supply and demand may not meet (wedge undecided); C2 scam defence is text-only; C3 probable "aggregator" status under gig-worker law (needs lawyer); H1 Hindi/Telugu shell with English content; H2 "Verified" is thin; H3 job page misses worker questions; H4 no path when a monthly worker is unpaid; H5 ledger without licensed rail (needs lawyer/CA); H6 operator capacity; H7 screens ask riders to think like managers; M4 revenue plan can break trust; M5 DPDP duties from 13 May 2027 (needs lawyer); M7 "event" in the composer overlaps Milavn. Operating model: Samaj heads run ForKhatri (owner direction 2026-10-02); no legal entity or paid operations yet (master finding 9).
 
+
+
+# Addendum 2026-11-22: Account deletion
+
+## BR24 (added 2026-11-22): Member right to erase, immediately
+**Need.** A member can erase what Vyapar holds about them at any time, at once, with no waiting period. Source: docs/ParentApp/ACCOUNT-DELETION.md. Inventory: ACCOUNT-DELETION.md in this folder.
+**Owner decision (2026-11-22, quoted):** "A user should be deleted if he needs to delete his account, immediately. If he is doing it from ForKhatri, all the accounts in sub modules and traces should be deleted. If he is doing it in an independent module, that module's data related to him, all the stuff, should be deleted."
+**Two kinds.** A: the member deletes the whole ForKhatri account in the hub; the hub asks Vyapar to erase through an internal call. B: the member opens Vyapar, Privacy, "Delete my data in Vyapar"; Vyapar data goes, the ForKhatri identity and other modules stay, and the member can enter Vyapar again as a brand-new member.
+**What goes.** Profile, work or business listings, photos, ID images, posts, saved items and searches, enquiries and quotes, messages, reviews, boosts and team access, privacy settings and learned taste, notifications, tokens, webhooks, analytics by pseudonym, and uploaded files on disk.
+**What stays, and why.** Payment orders where money moved (legal and tax retention; tombstone id, amount, date only); trust and safety reports, cases and appeals (so a deleted member cannot simply return to harm others; tombstone id only, no text or evidence); the security audit log (member id replaced by a one-way hash, details cleared); contracts for the other party (member shown as "Deleted member"); a one-line deletion receipt (hash, date, counts). The legal retention periods need a lawyer's confirmation (open).
+**Open business questions.** (1) Retention period for payment records and security logs once a real gateway exists. (2) With a real gateway, retained paid orders must be refunded first; no refund call exists in the sandbox. (3) Operators (admins) must have the role removed before deletion (refused with 409).
+**Status:** built 2026-11-22; not browser-checked.

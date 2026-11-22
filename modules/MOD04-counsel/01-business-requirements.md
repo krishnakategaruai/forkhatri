@@ -62,7 +62,7 @@ Verified, specifically-labelled expertise (each badge says what was checked), cl
 | BR-09 | Offer follow-ups (1-3 check-ins) and paid written questions, one-to-one only | Continuity without becoming tuition | Built |
 | BR-10 | Keep both sides informed: in-app notifications, two reminders, queued outbound channels | No-shows kill marketplaces | In-app built; outbound queued but undeliverable |
 | BR-11 | Protect people: reports, blocks, disputes with admin decision, audit, compliance gating of regulated areas | Safety and legal exposure | Built |
-| BR-12 | Respect privacy: export, delete (with safeguards), encryption, retention, audited document views | DPDP readiness | Counsel side built; platform-wide deletion not |
+| BR-12 | Respect privacy: export, delete (with safeguards), encryption, retention, audited document views | DPDP readiness | Counsel side built; platform-wide deletion built 2026-11-22 (section 13) |
 | BR-13 | Serve members in English, Hindi, Telugu, Marathi, Kannada | Community languages | Built (UI); AI parser keywords partly multilingual |
 | BR-14 | Respect module boundaries: no group formats, no platform video, nothing that is Vyapar's ordinary discovery | Owner decisions | Built (by omission) |
 | BR-15 | Show consultants how they are found and how to improve | Supply retention | Built |
@@ -118,3 +118,22 @@ Who runs Counsel operations (review desk, dispute desk, support, who is the grie
 | G-12 | `review_window_days` setting unused | code |
 | G-13 | `/understand` unauthenticated and unlimited once AI is on | master critique 11 |
 | G-14 | Payment and refund idempotency/reconciliation absent | C5 |
+
+## 13. Account deletion (added 2026-11-22)
+Contract: `docs/ParentApp/ACCOUNT-DELETION.md`. Inventory: `ACCOUNT-DELETION.md` in this folder. Supersedes the old "delete is blocked while bookings, purchases, disputes or unpaid earnings exist" rule (BR-12).
+
+**Owner requirement (2026-11-22), in the owner's words:** "A user should be deleted if he needs to delete his account, immediately. If he is doing it from ForKhatri, all the accounts in sub modules and traces should be deleted. If he is doing it in an independent module, that module's data related to him, all the stuff, should be deleted."
+
+| ID | Business requirement | Status |
+|---|---|---|
+| BR-16 | A member can erase their data at once (no waiting period, no refusal because of open work). | Built, not browser-checked |
+| BR-16A | Kind A: deleting the ForKhatri account erases Counsel data too (identity calls Counsel's internal erase). | Built; Counsel side proven by the Counsel script (member #34) |
+| BR-16B | Kind B: "Delete my data in Counsel" erases only Counsel data; the ForKhatri account stays and the member can re-enter Counsel as a new member. | Built |
+| BR-16C | Other people are protected: future bookings are cancelled and refunded, parties are told, completed consultations survive for the other party as "Deleted member". | Built |
+
+**Retained, and why** (all need a lawyer's confirmation): consultations other people took part in (stand-in id, brief blanked); payments and ledger rows where money moved (tax and dispute law); star ratings without text; report, dispute and audit records (safety, security); one deletion receipt (proof of erasure).
+
+**Open business questions / owner decisions needed**
+1. **Unpaid earnings (OWNER DECISION NEEDED).** An expert's earnings with `payout_status = eligible` that are not yet paid out are lost on deletion, because payout details are deleted and there is no way to pay them afterwards. The member is warned before confirming. Options: pay out first, hold earnings for a period and pay to a re-supplied account, or route to the Welfare Trust (MOD07). The payout-retention path is untested.
+2. **Fee model G-01 (still open).** Built fee is carved out of the consultant's price; owner definition is an additional platform fee. Deletion refunds use the snapshotted `gross` and `platform_fee`; whichever way G-01 is resolved, refund rows on deletion must follow the same rule, and old and new bookings will mean different things by `gross`.
+3. Lawyer review of the retained list and the "Deleted member" stand-in approach (DPDP).

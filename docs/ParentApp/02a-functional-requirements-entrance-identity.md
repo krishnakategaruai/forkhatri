@@ -122,3 +122,8 @@ FR-040 password set and reset; FR-041 identifier change and second identifier; F
 
 ## Acceptance traceability
 BR-01: FR01-FR04, FR14, FR-019. BR-02: FR01, FR10, FR15, FR17, FR-020. BR-09/10: FR11-FR13, FR-028. BR-11: FR16. BR-19: FR-020 to FR-022. BR-23: FR-023.
+
+
+## Account deletion (added 2026-11-22)
+
+Account deletion requirements are FR-061 to FR-070 in `02-functional-requirements.md`. After deletion the entrance shows the progress and receipt page, and "Return to ForKhatri" shows the entrance.

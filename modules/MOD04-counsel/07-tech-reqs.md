@@ -81,3 +81,16 @@ booking.new, booking.confirmed, booking.cancelled, booking.no_show, booking.reca
 
 ## 13. Service components (`app/components/`)
 ai, `audit` (append-only `audit.record`), availability, badges, bookings, insights, money, notifications, outbound, places, privacy, providers, purchases, storage, workspace.
+
+## 14. Account deletion technical requirements (added 2026-11-22)
+| ID | Requirement | Status |
+|---|---|---|
+| TR-12 | `privacy.erase_member(member_id, reason)` erases member data across the 40 tables in one transaction as `counsel_app` (no migration, no RLS change, no privilege added) | built |
+| TR-13 | `POST /internal/v1/members/{id}/erase` authenticated by service key and `X-ForKhatri-Service: identity` | built |
+| TR-14 | Idempotent: receipt in `erased_member`; second call `nothing_to_delete` | built |
+| TR-15 | One-way stand-in id `sha256("counsel-erased:" + member_id + service key)` via `privacy.tombstone()` | built |
+| TR-16 | Files removed after commit; caches dropped (`identity.forget()`) | built |
+| TR-17 | `POST /me/delete-account-data`, typed DELETE, 3 per hour per member | built |
+| TR-18 | Retry on failure is the hub's job (backoff, 7 days, admin stuck list) | built (hub) |
+| TR-19 | Erase must not return 500 for a never-seen member | NOT verified for Counsel (Vyapar did once) |
+Config names: `STORAGE_ROOT` and the existing service-key settings; no new names. Notification kinds used: `booking.cancelled_deleted` (new in `bookings.py`) and `purchase.closed_deleted` (`privacy.py`).

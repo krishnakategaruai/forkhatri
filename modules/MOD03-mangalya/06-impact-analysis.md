@@ -3328,3 +3328,15 @@ Architect / Director — [x] Approved — krishna kategaru (autonomous), 2026-09
 | Folder rename `mangaly-*` to `mangalya-*` | `scripts/dev.mjs` already expects new inner names; `deploy/*` still expects the old module folder |
 | Payment vendor arrival (MOD06) | `/billing/*`, webhook secret, removal of the sandbox path |
 | Shared platform chat/payments utility (owner direction) | communication and billing components will adapt; keep behaviour |
+
+
+---
+
+# 2026-11-22 Account deletion: impact
+
+- **Cross-module:** called by the identity hub (`POST /internal/v1/members/{id}/erase`, service key, retried by the hub up to 7 days). Mangalya calls nobody. horoscope-service (8013) holds nothing per member.
+- **Other members:** connection requests, shares and 1:1 chats with the member disappear; group chats keep the words of others; agents lose the client link and the member leaves their exports; Home Circle memberships end both ways (a membership carrying a report is kept with a tombstone). Profiles of other Home Circle members are untouched.
+- **Shared records kept:** reports, cases, suspensions, appeals (tombstoned, text removed), paid orders, CSAM packets and decisions, the deletion receipt.
+- **Files:** `mangaly-service/.local-media/<id>/` and `offline-<id>/` removed after commit (`profile/storage.remove_member_files`). Backups are not covered (production backup job not built).
+- **Caches:** idempotency keys and rate-limit counters (incl. hashed phone/email) deleted; the delete limiter itself is kept; browser drafts cleared by the UI.
+- **Risk:** a returning member is not re-blocked by a retained suspension; erase of an operator is refused; failure mid-way rolls the whole transaction back, files are removed only after commit.

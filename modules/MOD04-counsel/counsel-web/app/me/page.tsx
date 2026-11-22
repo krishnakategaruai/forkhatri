@@ -26,7 +26,7 @@ export default function MePage() {
   const [typed, setTyped] = useState("");
   const openDelete = async () => { setDel(true); setTyped(""); setBlockers((await api<{ blockers: string[] }>("/me/deletion-check")).blockers); };
   const doDelete = async () => {
-    try { await api("/me/delete", { body: { confirm: typed } }); toast(t("privacy.deleted")); setDel(false); window.location.assign("/"); }
+    try { await api("/me/delete-account-data", { body: { confirm: typed } }); toast(t("privacy.deleted")); setDel(false); window.location.assign(FORKHATRI_ENTRANCE_URL); }
     catch (e) { toast(t(`errors.${(e as ApiError).code}`, { defaultValue: (e as Error).message })); }
   };
   if (!me) return null;
@@ -58,14 +58,14 @@ export default function MePage() {
       </section>
       <div><button className="btn btn-secondary" onClick={() => void signOut()}>{t("me.sign_out")}</button></div>
       <Dialog open={del} onClose={() => setDel(false)} title={t("privacy.delete_title")}>
-        {blockers === null ? <p className="small muted">…</p> : blockers.length ? (
+        {blockers === null ? <p className="small muted">…</p> : (
           <>
-            <p className="small">{t("privacy.blocked")}</p>
-            <ul className="small" style={{ margin: 0, paddingLeft: 18 }}>{blockers.map((b) => <li key={b}>{t(`privacy.blocker.${b}`)}</li>)}</ul>
-            <div className="row" style={{ justifyContent: "flex-end" }}><button className="btn btn-ghost" onClick={() => setDel(false)}>{t("common.cancel")}</button></div>
-          </>
-        ) : (
-          <>
+            {blockers.length > 0 && (
+              <>
+                <p className="small"><strong>{t("privacy.warn")}</strong></p>
+                <ul className="small" style={{ margin: 0, paddingLeft: 18 }}>{blockers.map((b) => <li key={b}>{t(`privacy.blocker.${b}`)}</li>)}</ul>
+              </>
+            )}
             <ul className="small" style={{ margin: 0, paddingLeft: 18, color: "var(--ink-2)" }}>
               <li>{t("privacy.removes")}</li><li>{t("privacy.keeps")}</li><li>{t("privacy.account_stays")}</li>
             </ul>

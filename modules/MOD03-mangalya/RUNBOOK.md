@@ -8,7 +8,7 @@
 | mangaly-web | `mangaly-web/` | 3000 | Next.js (app router), React, react-i18next, face-api in the browser |
 | mangaly-service | `mangaly-service/` | 8000 | FastAPI, SQLAlchemy async, PostgreSQL with RLS, Python 3.13 |
 | horoscope-service | `horoscope-service/` | 8013 | Node (TypeScript run natively), `@prisri/jyotish` |
-| Database | `07a-db-implementation/` | PostgreSQL | migrations 001-066 |
+| Database | `07a-db-implementation/` | PostgreSQL | migrations 001-067 |
 | Identity (platform) | `platform/identity-service` | 8100 | sign-in; hub on 3100 |
 
 ## 2. Start / stop
@@ -48,3 +48,9 @@ Horoscope: HOROSCOPE_SERVICE_TOKEN, HOROSCOPE_PORT (default 8013).
 | 403 `verification_required` | maker gate still in `profile.py` and `agents.py` | same |
 | Discover shows skeletons for seconds | dev build | known (critique M6) |
 | Port 3000 or 8000 busy | another process | find and stop your own only |
+
+## 7. Account deletion (2026-11-22)
+- **Run it:** member path, `/me` then "Delete my data in Mangalya", type DELETE. Platform path: the hub calls `POST /internal/v1/members/{id}/erase` with the service key. Use a throwaway member, never a shared persona.
+- **Verify:** the response shows `status` (`done` or `nothing_to_delete`) and counts; check no rows remain for the account id and that `.local-media/<id>/` is gone; `mangaly_platform.deletion_receipt` has one row.
+- **Stuck or failed:** the call is one transaction, so a failure leaves the data untouched; call again (idempotent). For kind A, the hub retries automatically and lists stuck jobs on the admin Modules page with a Retry button. 409 `role_must_be_removed_first`: remove the operator role first.
+- **Dev web server:** now `next dev --webpack` (a Turbopack next/font bug gave 500s). Photos were once deleted from disk by a git clean-up and restored; do not run `git clean` over `mangaly-service/.local-media`.

@@ -56,7 +56,7 @@ None in the service (no middleware). Business limits exist: 3 pending time reque
 | Payout method | payouts | until erasure | masked | yes |
 | Ledger, payments, audit | tax/dispute law | kept (no name) | partial | no |
 | Search/profile counters | analytics | indefinite | no | yes (provider) |
-Status: Counsel export and delete work; platform-wide account deletion and consent notice are absent (T1, master critique 2). Notices of consent for AI summarisation of notes: not built. DPDP phase dates: *unverified*. Needs lawyer.
+Status (updated 2026-11-22: identity now calls Counsel erase; the Delete column above is superseded by section 12): Counsel export and delete work; consent notice is absent (T1, master critique 2). Notices of consent for AI summarisation of notes: not built. DPDP phase dates: *unverified*. Needs lawyer.
 
 ## 9. Audit logging
 `audit_log` records: provider created/submitted/decisions, verification granted/revoked, evidence decisions and document uploaded/viewed, service created and price changes, booking created/cancelled/completed/no-show, payment succeeded, dispute opened/decided, payout paid, payout method changed, recording consented/saved, file uploaded/accessed, time request accepted, question answered, package refunded, settings changed, privacy exported/erased, retention removal, expertise request decided. Not audited: report decisions, area upserts, notes, messages, refund inside cancel is within the cancel record.
@@ -66,3 +66,15 @@ No thresholds defined. Known: N+1 card building in search; dashboard rank runs a
 
 ## 11. Open findings (from critiques and this audit)
 C1-C3 regulated-profession exposure; C4 pay without attendance; C5 payments idempotency, async payouts, outbox, reconciliation; C6 fee below cost; C7 no TURN; C9 reminders; C10 reviewer names and AI consent; C11 badge wording; C13 tax and RBI; no RLS; no rate limits; `/understand` open; Next.js 16.3.5 advisory (published 2026-09-22, likely unaffected, master critique 11); no frame-blocking or CSP headers.
+
+## 12. Account deletion: privacy and security (added 2026-11-22)
+**DPDP mapping.** Right to erasure met by immediate erase (no waiting period). Retained and why: consultations (other person's record; stand-in id, brief blanked); payments, ledger, payouts where money moved (tax and dispute law); star ratings without text; reports, disputes, audit trail (safety and security; names replaced by the stand-in id, detail cleared); one receipt. Each retained item is shown to the member in plain words. Lawyer confirmation needed; DPDP dates unverified.
+**Controls.** Internal erase needs the service key and `X-ForKhatri-Service: identity`; member route needs the session (kind A re-authentication is done by the hub; kind B relies on session plus typed DELETE); 3 attempts per hour per member (the first rate limit in Counsel); idempotent; one transaction, no privilege widened.
+**Tombstone.** One-way sha256 of member id plus service key. Anyone holding the service key could test a known member id against stored stand-ins.
+**Risks and open findings.**
+1. Unpaid eligible earnings are lost on deletion: OWNER DECISION NEEDED (see 01 section 13); payout-retention path untested.
+2. Fee model G-01 unresolved; refunds on deletion follow the snapshot.
+3. Erase for a never-seen member: unverified in Counsel.
+4. Orphan files if the process dies between commit and file removal: unverified.
+5. No automated tests (G-10): manual script only; browser UI not checked.
+6. Kind B has no step-up re-authentication inside the module (the contract allows it; owner may want more).

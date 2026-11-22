@@ -68,6 +68,8 @@ export default function PrivacyPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [exportDoc, setExportDoc] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [typed, setTyped] = useState("");
+  const [erased, setErased] = useState(false);
 
   function load() {
     return Promise.all([
@@ -112,18 +114,14 @@ export default function PrivacyPage() {
     }
   }
 
+  // Delete my data in Vyapar: everything Vyapar holds, typed DELETE, then leave the module.
   async function doDelete() {
     setBusy(true);
     setNotice(null);
     try {
-      const res = await api.post<{ state: string; reason?: string }>("/v1/privacy/delete", {});
-      if (res.state === "blocked") {
-        setNotice(res.reason ?? t("privacy:delete.blocked"));
-      } else {
-        setNotice(t("privacy:delete.done"));
-      }
-      setConfirmingDelete(false);
-      await load();
+      await api.post("/v1/privacy/delete-account-data", { confirm: typed });
+      setErased(true);
+      window.setTimeout(() => window.location.assign("/"), 2500);
     } catch (e) {
       setNotice(e instanceof ApiError ? String(e.detail) : t("common:state.actionFailed"));
     } finally {
@@ -259,27 +257,44 @@ export default function PrivacyPage() {
                 {!confirmingDelete && (
                   <button className="vy-btn vy-btn-ghost" style={{ color: "var(--danger-text)" }} disabled={busy} onClick={() => setConfirmingDelete(true)}>
                     <Trash size={18} strokeWidth={2} aria-hidden="true" />
-                    {t("privacy:dataRights.delete")}
+                    {t("privacy:eraseData.button")}
                   </button>
                 )}
               </div>
-              {confirmingDelete && (
-                <div className="vy-acct-note" role="alertdialog" aria-label={t("privacy:dataRights.delete")}>
+              {erased && (
+                <div className="vy-acct-note" role="status">
+                  <div className="vy-stack" style={{ gap: 6 }}>
+                    <strong style={{ color: "var(--text-primary)" }}>{t("privacy:eraseData.doneTitle")}</strong>
+                    <span>{t("privacy:eraseData.doneBody")}</span>
+                  </div>
+                </div>
+              )}
+              {confirmingDelete && !erased && (
+                <div className="vy-acct-note" role="alertdialog" aria-label={t("privacy:eraseData.title")}>
                   <Trash size={18} strokeWidth={2} aria-hidden="true" />
                   <div className="vy-stack" style={{ gap: 10 }}>
-                    <span style={{ color: "var(--text-primary)" }}>{t("privacy:dataRights.deleteWarning")}</span>
+                    <span style={{ color: "var(--text-primary)" }}>{t("privacy:eraseData.intro")}</span>
+                    <strong>{t("privacy:eraseData.deletedHeading")}</strong>
+                    <ul>{(t("privacy:eraseData.deletedList", { returnObjects: true }) as string[]).map((x) => <li key={x}>{x}</li>)}</ul>
+                    <strong>{t("privacy:eraseData.retainedHeading")}</strong>
+                    <ul>{(t("privacy:eraseData.retainedList", { returnObjects: true }) as string[]).map((x) => <li key={x}>{x}</li>)}</ul>
+                    <span>{t("privacy:eraseData.otherPeople")}</span>
+                    <label className="vy-stack" style={{ gap: 4 }}>
+                      <span>{t("privacy:eraseData.typePrompt")}</span>
+                      <input className="vy-input" value={typed} placeholder={t("privacy:eraseData.typePlaceholder")} onChange={(e) => setTyped(e.target.value)} autoComplete="off" />
+                    </label>
                     <div className="vy-row" style={{ flexWrap: "wrap", gap: 8 }}>
-                      <button className="vy-btn vy-btn-secondary" style={{ color: "var(--danger-text)" }} disabled={busy} onClick={doDelete}>
-                        {t("privacy:dataRights.confirmDelete")}
+                      <button className="vy-btn" style={{ background: "var(--danger-text)", color: "#fff" }} disabled={busy || typed.trim() !== "DELETE"} onClick={doDelete}>
+                        {busy ? t("privacy:eraseData.working") : t("privacy:eraseData.button")}
                       </button>
-                      <button className="vy-btn vy-btn-ghost" disabled={busy} onClick={() => setConfirmingDelete(false)}>
+                      <button className="vy-btn vy-btn-ghost" disabled={busy} onClick={() => { setConfirmingDelete(false); setTyped(""); }}>
                         {t("common:action.cancel")}
                       </button>
                     </div>
                   </div>
                 </div>
               )}
-              {!confirmingDelete && <p className="vy-acct-hint">{t("privacy:dataRights.deleteHint")}</p>}
+              {!confirmingDelete && !erased && <p className="vy-acct-hint">{t("privacy:dataRights.deleteHint")}</p>}
               {exportDoc && (
                 <details>
                   <summary style={{ cursor: "pointer", minHeight: 44, display: "flex", alignItems: "center", fontWeight: 650 }}>{t("privacy:dataRights.exportReady")}</summary>

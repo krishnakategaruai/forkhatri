@@ -2362,3 +2362,20 @@ Profiles published, share with a photo, requests accepted per 100 sent, time fro
 
 ## H. Risks
 Small market; badge overclaim; parent-made profiles and DPDP; engine bias without audit; horoscope shown beside "Strong match"; public birth time and place; broker harvesting; misleading plan terms; incognito wording; dowry; screenshot deterrence; Samaj-run operations. Full text: `docs/Critique/CRITIQUE-mod03-mangalya.md`.
+
+
+---
+
+# 2026-11-22 Account deletion (new BR31)
+
+Source: owner direction in `docs/ParentApp/ACCOUNT-DELETION.md` (quoted words there). Inventory: `ACCOUNT-DELETION.md` in this folder.
+
+| BR | Capability | Status |
+|---|---|---|
+| BR31 | A member can erase everything Mangalya holds about them, at once and for good | built; browser not checked |
+
+- **Right to erase.** Deletion is immediate, not a 30-day wait. Two kinds: **A** all of ForKhatri (the platform calls the Mangalya internal erase), **B** Mangalya only (the member keeps the ForKhatri account and other modules and may return later as a brand-new member).
+- **Deleted:** account, profile, photos, voice, documents, horoscope, preferences, Home Circle, requests, messages written, shortlist, notes, sandbox/unpaid orders, broker profile and client lists. A profile made for a child who has not taken it over is deleted with the parent; one the child took over stays (link to the parent cut).
+- **Retained and why:** safety reports, cases, suspensions and appeals (safety of other members, legal duty; id replaced by a tombstone, free text and evidence removed); real paid orders (tax); CSAM packets and case decisions (legal duty); the deletion receipt (proof of erasure, counts only).
+- **Refused** while the member holds an operator role (409 `role_must_be_removed_first`).
+- **Open business questions:** a retained suspension is kept under a tombstone, so a returning member is not re-blocked by it (lawyer to confirm); one-to-one chats are removed for both sides (see DEC-V1-036 deviation); retention periods for reports and paid orders need lawyer/CA confirmation.

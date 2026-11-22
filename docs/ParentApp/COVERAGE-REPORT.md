@@ -22,3 +22,21 @@
 - Counsel and Vyapar health paths, database roles and registry availability: unverified.
 - Test results: suites not run.
 - Mermaid diagrams checked by reading only.
+
+
+## Update after account deletion (2026-11-22)
+
+Counts changed by the deletion feature. These were derived by adding the new items to the table above; they were not re-measured against the running service (unverified).
+
+| Item | Before | After |
+|---|---|---|
+| Public API operations | 39 | 45 (4 account delete endpoints, 2 admin) |
+| Internal API operations | 4 | 4 in identity (each module also exposes `POST /internal/v1/members/{id}/erase`) |
+| Identity migrations | 7 (001-007) | 8 (001-008) |
+| Tables | 12 | 14 (`identity.deletion_job`, `identity.deletion_job_module`) |
+| Env and config names | 85 | 87 (`ERASE_MODULE_API_URLS`, `DELETION_TOMBSTONE_PEPPER`) |
+| Business requirements | 24 | 30 (BR-25 to BR-30) |
+| Functional requirements | up to FR-060 | up to FR-070 |
+| Test cases | TC-01 to TC-40 | TC-01 to TC-47 |
+
+Not verified: browser rendering of the deletion screens; whether the identity governance test failure is unrelated.

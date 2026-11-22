@@ -271,3 +271,8 @@ sequenceDiagram
 Online join: `join-online` is accepted only from 15 minutes before start; it returns the link and marks the person checked in. Venue read: the API selects from `occurrence_venue`; RLS returns a row only for organizer, co-organizer or confirmed attendee.
 
 Component rule unchanged: one schema per component, cross-schema references are plain uuids, writes by other members go through SECURITY DEFINER functions. Added since sealing: places, ticketing, activity.events and cohost, circle.social, connect.chat. Decisions: no in-app video (2026-10-05); the sandbox gate (`payments_sandbox_allowed`) only opens on a local API host and a local web URL; in-process jobs instead of a platform scheduler (single instance). Details: `07-tech-reqs.md` addendum and `08-security-performance.md`.
+
+
+
+## Addendum 2026-11-22: account deletion
+New component `erasure` (`components/erasure/interface.py`) and routes `routes/erasure.py`. Kind A: hub identity -> `POST /internal/v1/members/{id}/erase` (service key) -> component cancels hosted events and withdraws paid tickets -> `milavn_platform.erase_member` (one transaction, SECURITY DEFINER) -> files removed after commit -> contract JSON back to the hub, which retries on failure. Kind B: signed-in member -> `POST /privacy/delete-account-data` (typed DELETE, 3 an hour) -> same component. Detail: `ACCOUNT-DELETION.md`, 07-tech-reqs addendum.

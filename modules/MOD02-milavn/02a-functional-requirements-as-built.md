@@ -144,3 +144,25 @@ DELETE /notifications/{id}. **Partial**: needs the GRANT DELETE of migration 055
 
 ## 3. Not built
 Per-day check-in; recurring events that create later dates by themselves; paid events with guests; real payments and payouts; steward approval for women-only; first contact as a request in chat; host verification for large events; DPDP retention and export; clean demo tenant. Speed networking and breakout rooms need in-app video, which is excluded (owner decision 2026-10-05).
+
+
+
+---
+# 4. Account deletion (added 2026-11-22), FR161 - FR166
+Contract: `docs/ParentApp/ACCOUNT-DELETION.md`. Business requirement: BR25. Inventory of every table: `ACCOUNT-DELETION.md`. Status for all: **built; API behaviour proven on throwaway member #32; web control not browser-checked.**
+
+| FR | Title | Summary |
+|---|---|---|
+| FR161 | Erase a member (kind A, platform call) | `POST /internal/v1/members/{member_id}/erase`, service key (`X-ForKhatri-Service-Key`; the hub also sends `X-ForKhatri-Service: identity`), not in OpenAPI. 401 without the key, 404 through the public edge. Returns `{module:"milavn", status: done / nothing_to_delete / partial, deleted, retained, files_removed}`. Idempotent: a second call returns `nothing_to_delete`. Code: `routes/erasure.py` (`internal_router`), `components/erasure/interface.py`, SQL `milavn_platform.erase_member(uuid, text[])`. |
+| FR162 | Delete my data in Milavn (kind B, member) | `POST /privacy/delete-account-data` body `{"confirm":"DELETE"}`; wrong word gives 422; 3 attempts per hour per member (scope `ACCOUNT_DATA_DELETE`, 429 with Retry-After); refund failure gives 503 and nothing is deleted. Milavn has no sign-in of its own, so the ForKhatri session is the proof here (kind A re-authenticates at the hub). Afterwards the next visit starts onboarding as a new member. |
+| FR163 | Orderly handling of what the member hosts or holds | Order: (1) upcoming hosted events cancelled the normal way (attendees notified, paid spots refunded); (2) paid tickets on other people's upcoming events withdrawn (refund, next person offered; free-event waitlist promoted); (3) one SQL transaction for everything else; (4) files removed from disk after commit. If a refund cannot be requested everything rolls back: `partial` (kind B: 503). Circles: handed to the longest-standing other organiser or assistant, else deleted with posts, photos, covers and files. Teams: member removed, captain handed on. |
+| FR164 | Other people see "Deleted member" | Tombstone id `dead0000-...` (sha256 of the member id, `milavn_platform.tombstone()`). Host of a past event, creator of a poll, fundraiser, album or chapter, one-to-one chat partner, and names inside notices ("A deleted member") show this way through `identity_bridge`. Contact details are never shown. |
+| FR165 | Retention with minimal trace | Retained under tombstone with free text removed: paid or refunded tickets and paid pledges (QR and pay link removed), reports, blocks against the member, moderation actions; the deletion receipt `milavn_platform.erasure_receipt` (tombstone, date, counts). `rate_limit_counter` holds only a hashed key and is left. Queued outbox events carry the tombstone. |
+| FR166 | Delete control on Me | See 03-ux and 04-ui addenda. Gear sheet, red row "Delete my data in Milavn" opens a confirmation modal (what goes, what stays, account unaffected, type DELETE). The older "Delete account" row still sends the member to the ForKhatri hub (FR088) where kind A runs. |
+
+Common rules: idempotent and resumable; acts only for that member or the internal service (gates `milavn.member_id` / `milavn.internal_service`); never touches another member's data or another module; no row-level-security policy loosened (SECURITY DEFINER function owned by `milavn_owner`).
+Notifications to other parties: attendees of cancelled events (existing cancel notice), the next waitlisted person, refunds through the payment path; nothing is sent to the deleted member.
+Acceptance (as proven, see 05): wrong word refused; counts before and after; second call `nothing_to_delete`; files removed; others see "Deleted member".
+
+## 3b. Not built (account deletion)
+Browser verification of the Me control; automated tests specific to erase (the existing 60 pass, none added); export before deletion; confirmation email or SMS; expiry job for retained records; payout rule for a refund-pending paid ticket (owner decision open); the failure path for a never-seen member in Milavn not exercised (Vyapar returned 500 once for that case: unverified here).

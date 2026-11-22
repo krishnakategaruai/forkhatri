@@ -151,5 +151,18 @@
     "choose": "Choose a photo",
     "take": "Take a photo",
     "chooseMany": "Choose photos"
+  },
+  "deleteData": {
+    "open": "Delete my data in Mangalya",
+    "title": "Delete everything Mangalya holds about you",
+    "deleted": "This deletes at once, for good: your profile, photos, voice clip, documents, horoscope details, preferences, Home Circle, requests, messages you wrote, shortlist, notes, plan records, and any agent or client lists. Profiles you made for a child who has not taken them over go too.",
+    "retained": "Kept without your name, phone or any text: safety reports, moderation records and paid-order records the law or other families' safety require.",
+    "kept": "Your ForKhatri account and your other modules stay. You can come back to Mangalya later as a brand-new member. This cannot be undone.",
+    "type": "Type DELETE to confirm",
+    "button": "Delete my Mangalya data",
+    "done": "Your Mangalya data is deleted. Taking you back to ForKhatri.",
+    "error": "Could not delete just now. Please try again.",
+    "limited": "Too many attempts. Please try again in an hour.",
+    "role": "This account holds a moderator role. Ask an owner to remove it first."
   }
 }

@@ -720,7 +720,9 @@
   "question.new": "{{title}} पर नया भुगतान वाला सवाल — समय पर उत्तर दें",
   "question.answered": "{{title}} पर आपके सवाल का उत्तर आया",
   "question.refunded": "समय पर उत्तर नहीं — {{refund}} वापस",
-  "booking.recap": "{{title}} का सारांश तैयार है"
+  "booking.recap": "{{title}} का सारांश तैयार है",
+  "booking.cancelled_deleted": "{{title}} was cancelled because the other person deleted their account. Refund: {{refund}}",
+  "purchase.closed_deleted": "A package, question or request with a member who deleted their account was closed and refunded."
  },
  "report": {
   "report": "रिपोर्ट करें",
@@ -1045,21 +1047,22 @@
   "title": "आपका डेटा",
   "body": "Counsel के पास आपके बारे में जो कुछ है, डाउनलोड करें या अपना Counsel डेटा हटाएँ। आपका ForKhatri खाता प्रभावित नहीं होगा।",
   "download": "मेरा डेटा डाउनलोड करें",
-  "delete": "मेरा Counsel डेटा हटाएँ",
-  "delete_title": "अपना Counsel डेटा हटाएँ?",
+  "delete": "Delete my data in Counsel",
+  "delete_title": "Delete my data in Counsel?",
   "blocked": "पहले खुले काम पूरे या रद्द करें:",
   "blocker": {
-   "upcoming_bookings": "आने वाले परामर्श",
-   "open_packages_or_questions": "सक्रिय फ़ॉलो-अप सत्र या बिना उत्तर के सवाल",
-   "open_disputes": "खुले विवाद",
-   "unpaid_earnings": "कमाई जिसका भुगतान अभी नहीं हुआ"
+   "upcoming_bookings": "Upcoming consultations are cancelled and the other person is told (refunds follow the cancellation rules)",
+   "open_packages_or_questions": "Open follow-up packages and written questions are closed and refunded",
+   "open_disputes": "Open disputes stay with Counsel staff, without your name",
+   "unpaid_earnings": "Earnings not yet paid out cannot be paid after your payout details are deleted; contact support first if this matters"
   },
-  "removes": "हटेगा: आपकी सलाहकार प्रोफ़ाइल, प्रमाण व दस्तावेज़, भुगतान विवरण, निजी नोट्स, आपकी अपलोड फ़ाइलें, आपके संदेश, सहेजे लोग व सूचनाएँ।",
-  "keeps": "बिना नाम के रहेगा: भुगतान व कर रिकॉर्ड, और आपकी दी रेटिंग (बिना टेक्स्ट), जैसा क़ानून माँगता है।",
-  "account_stays": "आपका ForKhatri खाता रहेगा। आप बाद में Counsel नए सिरे से फिर उपयोग कर सकते हैं।",
+  "removes": "Deleted for good: your consultant profile, photo, evidence and documents, availability, payout details, private notes, files you uploaded, messages you wrote, saved people, blocks and notifications.",
+  "keeps": "Kept without your name (shown as Deleted member): consultations other people took part in, payment and tax records where money moved, star ratings you gave (no text), and a safety record of reports.",
+  "account_stays": "Your ForKhatri account and other modules stay. You can use Counsel again later as a new member. This cannot be undone.",
   "type_delete": "पुष्टि के लिए DELETE लिखें",
   "delete_confirm": "स्थायी रूप से हटाएँ",
-  "deleted": "आपका Counsel डेटा हटा दिया गया"
+  "deleted": "Your Counsel data was deleted",
+  "warn": "This will also happen right now:"
  },
  "payout_method": {
   "title": "आपको भुगतान कहाँ मिले",

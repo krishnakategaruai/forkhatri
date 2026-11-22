@@ -29,3 +29,11 @@
 | AI drafts are keyword based | ANTHROPIC_API_KEY placeholder | set key and AI_PROVIDER=anthropic |
 | Second `next dev` refuses to start | build lock | set VYAPAR_WEB_DIST_DIR |
 | Webhook to localhost rejected | WEBHOOK_ALLOW_PRIVATE_TARGETS false | dev only: set true |
+
+
+## Account deletion (added 2026-11-22)
+- Normal path: the member deletes in the hub (kind A) and the hub calls Vyapar; or the member uses Profile, Privacy, "Delete my data in Vyapar" (kind B).
+- Verify by hand (throwaway member only, never personas or krishna): call `POST /internal/v1/members/{id}/erase` with headers X-ForKhatri-Service and X-ForKhatri-Service-Key; expect status done with counts; call again, expect nothing_to_delete. Then check the member's rows are gone except the retained kinds listed in ACCOUNT-DELETION.md, and files named <member>-* are gone from vyapar-service/uploads/.
+- Apply the migration on an older database: `psql -v ON_ERROR_STOP=1 -U vyapar_owner -d vyapar -f 07a-db-implementation/migrations/033-erase-member.sql` (init.sh now covers 001 to 033).
+- Stuck or failed deletion: the hub keeps retrying for 7 days; an admin sees it on the hub Modules page "stuck deletions" and presses Retry (POST /v1/admin/deletions/{job_id}/retry). If Vyapar answers 409 operator_role_must_be_removed, remove the member's operator role first. If it answers 500 for a member Vyapar never saw, that is a known defect; retry after checking the API log vyapar-service/api-err.log.
+- The old uploads folder is not reliably tracked in git; do not rely on git to restore deleted uploads.

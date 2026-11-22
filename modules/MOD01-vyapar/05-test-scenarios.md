@@ -1960,3 +1960,17 @@ New scenarios (TC-6xx; layer API unless noted)
 | TC-613 | FR67 | fk_handoff redeemed once only (security) | manual |
 | TC-614 | FR69 | operator without scope gets 403 | check_admin_console.py |
 
+
+
+# Addendum 2026-11-22: Account deletion, proof scenarios run
+Reported results (from the build agent; run against the live API with throwaway member #31; not re-run in this documentation pass):
+| TC | Scenario | Result as reported |
+|---|---|---|
+| TC-701 | Erase member #31 who has data (63 tables inspected) | 48 tables held rows before; after, 8 tables hold only a one-way id; 128 rows deleted or detached; 3 files removed |
+| TC-702 | Retained records | payment orders, safety cases and reports, audit log, contracts for the other party kept with tombstone id only |
+| TC-703 | Call erase again | nothing_to_delete (idempotent); also confirmed for Vyapar in the hub proof for member #30 |
+| TC-704 | Erase a member Vyapar never saw | returned HTTP 500 once (defect: should answer nothing_to_delete). Open |
+| TC-705 | Wrong confirm word, 3 per hour limit, operator refusal | not recorded as run: unverified |
+| TC-706 | check_taste.py after the change | 27 of 35 passed; not compared with before, so unknown whether related |
+| TC-707 | Browser check of the Privacy screen | NOT done |
+Cleanup of the test leftovers was denied by the environment; leftover test rows or files may exist.

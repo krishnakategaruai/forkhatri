@@ -133,3 +133,12 @@
 ### MOD07-loans-finance
 - Planned, no documents yet (scope in modules.md and Critique/CRITIQUE-planned-money-governance.md)
 
+
+
+## Data rights and account deletion (added 2026-11-22)
+- [DATA-RIGHTS.md](DATA-RIGHTS.md) - plain-words summary for the owner: what a member can delete, what stays and why, what is not yet built
+- [ParentApp/ACCOUNT-DELETION.md](ParentApp/ACCOUNT-DELETION.md) - contract and platform as-built
+- [../modules/MOD01-vyapar/ACCOUNT-DELETION.md](../modules/MOD01-vyapar/ACCOUNT-DELETION.md)
+- [../modules/MOD02-milavn/ACCOUNT-DELETION.md](../modules/MOD02-milavn/ACCOUNT-DELETION.md)
+- [../modules/MOD03-mangalya/ACCOUNT-DELETION.md](../modules/MOD03-mangalya/ACCOUNT-DELETION.md)
+- [../modules/MOD04-counsel/ACCOUNT-DELETION.md](../modules/MOD04-counsel/ACCOUNT-DELETION.md)

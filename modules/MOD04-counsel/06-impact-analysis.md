@@ -45,3 +45,11 @@
 
 ## 4. Cross-module
 Vyapar: "refer to Counsel" and free professional listings overlap (critique C14); one policy for regulated professions is needed. Milavn: groups and online events are Milavn's; Counsel must not add them. MOD06 Payment Services: planned destination of payments (`payment_services` provider, port 8016 default); not started by owner decision until vendors exist. MOD07: Welfare Trust routing of earnings not connected. Platform: account deletion should call Counsel's internal erase (T1); notification service may take over delivery (B2).
+
+## 5. Account deletion impact (added 2026-11-22)
+- Cross-module: identity calls `POST /internal/v1/members/{id}/erase` (service key and `X-ForKhatri-Service: identity`) and retries; Counsel calls no other service. `identity.py forget()` drops the cached session and name.
+- Other members touched: consumer or expert on future bookings (cancelled, refunded, notified `booking.cancelled_deleted`); holders of open packages and questions (`purchase.closed_deleted`); counterparties of time requests; counterparties of completed consultations (see "Deleted member"); reviewers and reviewees; reporters and reported (tombstoned).
+- Money: refund rows and ledger entries on cancellation use the booking's snapshotted money, so a later G-01 change does not alter them; payments and payouts stay where money moved; unpaid eligible earnings are lost (owner decision).
+- Files on disk (`STORAGE_ROOT`): `private/evidence/<member>/`, `public/photos/<member>/` (whole folder), `file.storage_key` files; removed after commit. A crash between commit and removal could leave orphans (unverified).
+- Caches: 30 s session and name cache, call tickets (signed, in memory).
+- Risk: one long transaction for members with a lot of data (not measured); no CI tests, manual script only.

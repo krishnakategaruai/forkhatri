@@ -103,3 +103,23 @@ Every module service resolves `fk_session` through its Identity Bridge (TR15) an
 ## FR18 — Existing identities imported
 
 Active Mangaly accounts and Milavn development identities are imported into the platform with their ids preserved (TR23), so returning members sign in with their existing identifier and, for Mangaly, their existing password.
+
+
+## Account deletion (added 2026-11-22)
+
+Numbering continues the platform set (FR-061 and up). Contract and as-built detail: `ACCOUNT-DELETION.md`. Traces to BR-25 to BR-30.
+
+| ID | Requirement | Rules | Endpoints and tables | Screens | Status |
+|---|---|---|---|---|---|
+| FR-061 | Preview: show what will be deleted and what will be kept. | Signed-in member only. | `GET /v1/account/delete/preview` | Delete sheet | Built |
+| FR-062 | Re-authentication step-up. | Password, or a fresh one-time code sent only to the member's own phone or email. | `POST /v1/account/delete/code` | Delete sheet | Built |
+| FR-063 | Start a kind A deletion. | Body: confirm "DELETE" plus either password or challenge_id and code. Wrong confirm word refused; wrong password 401; 3 attempts per hour per member, every attempt counts; 409 `admin_role_held` while the member holds a live admin role; closes the member and revokes all sessions at once; clears the cookie; idempotent. | `POST /v1/account/delete`; tables `identity.deletion_job`, `deletion_job_module` | Delete sheet | Built |
+| FR-064 | Orchestrate every module. | Call `POST /internal/v1/members/{id}/erase` on all modules in parallel with the service key; a module with no URL is `failed: not_configured`, never skipped; identity rows removed only when all modules are `done` or `nothing_to_delete`. | function `identity.finalize_member_deletion` | none | Built |
+| FR-065 | Retry and escalate. | Backoff 30 s doubling to 6 h, loop every 30 s, up to 7 days; after 3 failed attempts or 7 days the job is stuck; admin can retry. | `GET /v1/admin/deletions/stuck`, `POST /v1/admin/deletions/{job_id}/retry` | Admin Modules page | Built |
+| FR-066 | Progress and receipt. | Public by job id (the job id is the capability because the member is signed out); receipt keeps tombstone, per-module counts, retained list with reasons; member id nulled. | `GET /v1/account/deletion/{job_id}` | Progress and receipt page | Built |
+| FR-067 | Audit tombstone. | Member id in audit rows replaced by an HMAC-SHA256 tombstone; notes, subject, details and ip about the member cleared. | `governance.audit_event` | none | Built |
+| FR-068 | Module erase contract (kind A, internal). | Service-key authenticated, idempotent; answers `done`, `nothing_to_delete` or `partial`; counts, retained list, files removed. | `POST /internal/v1/members/{id}/erase` in each module | none | Built in all four modules |
+| FR-069 | Module-level deletion (kind B). | Session-authenticated, body confirm "DELETE", 3 per hour, then sign the member out of that module. | `POST /privacy/delete-account-data` (Vyapar `/v1/privacy/delete-account-data`; Counsel `/me/delete-account-data`) | Each module's own settings | Built; browser not checked |
+| FR-070 | Notify other parties. | People affected (for example Counsel bookings, Milavn event attendees) are told; the deleted member shows as "Deleted member". | per module | per module | Built (see module docs) |
+
+Acceptance: wrong confirm word refused; wrong password 401; old session 401 afterwards; second erase answers `nothing_to_delete`; zero identity rows left; a failing module is retried and the job reaches done. Evidence in `05-test-scenarios.md`.

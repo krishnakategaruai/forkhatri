@@ -129,9 +129,9 @@ BEGIN
       UNION SELECT id FROM vyapar_commercial.entitlements WHERE owner_id = p_member_id);
   DELETE FROM vyapar_commercial.promotions WHERE owner_id = p_member_id OR campaign_id IN (SELECT id FROM vyapar_commercial.campaigns WHERE owner_id = p_member_id);
   GET DIAGNOSTICS v_n = ROW_COUNT; v_del := v_del || jsonb_build_object('boosts', v_n); v_total := v_total + v_n;
-  DELETE FROM vyapar_commercial.campaigns WHERE owner_id = p_member_id OR listing_id = ANY (v_listings); GET DIAGNOSTICS v_n = ROW_COUNT; v_del := v_del || jsonb_build_object('campaigns', v_n); v_total := v_total + v_n;
-  DELETE FROM vyapar_commercial.entitlements WHERE owner_id = p_member_id OR listing_id = ANY (v_listings); GET DIAGNOSTICS v_n = ROW_COUNT; v_del := v_del || jsonb_build_object('entitlements', v_n); v_total := v_total + v_n;
-  DELETE FROM vyapar_commercial.workspace_members WHERE member_id = p_member_id OR listing_id = ANY (v_listings); GET DIAGNOSTICS v_n = ROW_COUNT; v_del := v_del || jsonb_build_object('workspace_members', v_n); v_total := v_total + v_n;
+  DELETE FROM vyapar_commercial.campaigns WHERE owner_id = p_member_id OR listing_id = ANY (v_listings::text[]); GET DIAGNOSTICS v_n = ROW_COUNT; v_del := v_del || jsonb_build_object('campaigns', v_n); v_total := v_total + v_n;
+  DELETE FROM vyapar_commercial.entitlements WHERE owner_id = p_member_id OR listing_id = ANY (v_listings::text[]); GET DIAGNOSTICS v_n = ROW_COUNT; v_del := v_del || jsonb_build_object('entitlements', v_n); v_total := v_total + v_n;
+  DELETE FROM vyapar_commercial.workspace_members WHERE member_id = p_member_id OR listing_id = ANY (v_listings::text[]); GET DIAGNOSTICS v_n = ROW_COUNT; v_del := v_del || jsonb_build_object('workspace_members', v_n); v_total := v_total + v_n;
   UPDATE vyapar_commercial.workspace_members SET invited_by = v_tomb WHERE invited_by = p_member_id; GET DIAGNOSTICS v_n = ROW_COUNT; v_total := v_total + v_n;
 
   -- ---- Payment orders: RETAINED with tombstone (legal retention) -----------

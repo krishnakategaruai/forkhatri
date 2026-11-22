@@ -38,7 +38,7 @@
     "blocked": "Deletion is on hold until an active paid order finishes.",
     "done": "Your account has been anonymized.",
     "exportHint": "A copy of everything Vyapar holds about you.",
-    "deleteHint": "Your name is removed everywhere; your posts and requests stay without it.",
+    "deleteHint": "Permanently deletes everything Vyapar holds about you. Your ForKhatri account stays.",
     "historyTitle": "Data requests"
   },
   "requestKind": {

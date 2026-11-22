@@ -48,6 +48,9 @@ export default function MePage() {
   const [help, setHelp] = useState(false);
   const [supportText, setSupportText] = useState('');
   const [del, setDel] = useState(false);
+  const [wipe, setWipe] = useState(false); // 056: delete my data in Milavn
+  const [wipeWord, setWipeWord] = useState('');
+  const [wiping, setWiping] = useState(false);
   const [paySheet, setPaySheet] = useState(false);
   const [tickets, setTickets] = useState<MyTicket[] | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -92,6 +95,14 @@ export default function MePage() {
   const setPrec = async (lvl: string) => {
     try { const r = await api<{ precision_level: string }>('/privacy/location', { method: 'PUT', body: { precision_level: lvl } }); setPrecision(r.precision_level); say(t('profile.saved')); }
     catch (e) { say(e instanceof ApiError ? e.message : t('state.error')); }
+  };
+  const wipeMyData = async () => {
+    setWiping(true);
+    try {
+      await api('/privacy/delete-account-data', { method: 'POST', body: { confirm: 'DELETE' } });
+      say(t('profile.deleteDataDone'));
+      setTimeout(() => window.location.assign(`${FORKHATRI_ENTRANCE_URL}/`), 1200);
+    } catch (e) { setWiping(false); say(e instanceof ApiError ? e.message : t('state.error')); }
   };
   const sendSupport = async () => {
     if (!identity) return;
@@ -195,6 +206,7 @@ export default function MePage() {
           <a href={`${FORKHATRI_ENTRANCE_URL}/`} className="setrow setrow--tap"><span className="setrow__icon"><LayoutGrid size={18} aria-hidden="true" /></span><span className="grow">{t('platform.backToHub')}</span><span className="muted">›</span></a>
           <button className="setrow setrow--tap" onClick={() => { setSettings(false); setHelp(true); }}><span className="setrow__icon"><HelpCircle size={18} aria-hidden="true" /></span><span className="grow">{t('profile.help')}</span><span className="muted">›</span></button>
           <button className="setrow setrow--tap" onClick={() => { void signOut(); }}><span className="setrow__icon"><LogOut size={18} aria-hidden="true" /></span><span className="grow">{t('profile.signOut')}</span></button>
+          <button className="setrow setrow--tap" style={{ color: 'var(--danger)' }} onClick={() => { setSettings(false); setWipeWord(''); setWipe(true); }}><span className="setrow__icon"><Trash2 size={18} aria-hidden="true" /></span><span className="grow">{t('profile.deleteData')}</span></button>
           <button className="setrow setrow--tap" style={{ color: 'var(--danger)' }} onClick={() => { setSettings(false); setDel(true); }}><span className="setrow__icon"><Trash2 size={18} aria-hidden="true" /></span><span className="grow">{t('profile.deleteAccount')}</span></button>
         </div>
       </Sheet>
@@ -264,6 +276,16 @@ export default function MePage() {
           <h2 className="h2">{t('profile.deleteAccount')}</h2>
           <p className="muted" style={{ margin: 0 }}>{t('profile.deleteBody')}</p>
           <div className="row"><button className="btn btn--ghost grow" onClick={() => setDel(false)}>{t('common.cancel')}</button><button className="btn btn--danger grow" onClick={() => { setDel(false); window.location.assign(FORKHATRI_ACCOUNT_URL); }}>{t('profile.deleteConfirm')}</button></div>
+        </div>
+      </Modal>
+      <Modal open={wipe} onClose={() => setWipe(false)} label={t('profile.deleteDataTitle')}>
+        <div className="stack">
+          <h2 className="h2">{t('profile.deleteDataTitle')}</h2>
+          <p className="muted" style={{ margin: 0 }}>{t('profile.deleteDataWill')}</p>
+          <p className="muted" style={{ margin: 0 }}>{t('profile.deleteDataKept')}</p>
+          <p className="muted" style={{ margin: 0 }}>{t('profile.deleteDataAccount')}</p>
+          <label className="field"><span className="field__label">{t('profile.deleteDataType')}</span><input value={wipeWord} onChange={(e) => setWipeWord(e.target.value)} autoComplete="off" /></label>
+          <div className="row"><button className="btn btn--ghost grow" onClick={() => setWipe(false)}>{t('common.cancel')}</button><button className="btn btn--danger grow" disabled={wipeWord !== 'DELETE' || wiping} onClick={wipeMyData}>{t('profile.deleteDataButton')}</button></div>
         </div>
       </Modal>
       <Toast text={toast} />

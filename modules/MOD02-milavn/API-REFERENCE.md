@@ -1,6 +1,6 @@
 # Milavn API reference (as built, 2026-11-22)
 
-Generated from the running service `GET http://localhost:8001/openapi.json` (205 operations) and the route files in `milavn-service/app/api/routes/`. Auth column is read from each handler's dependency (`CurrentMember`, `OptionalMember`, `Moderator`). Request bodies are named by their Pydantic schema; `*` marks required query parameters. Error codes beyond those listed: 401 not signed in, 403 not allowed (RLS or business rule), 409 conflict, 422 validation, 429 rate limited, 503 identity service unavailable (fail closed). Internal route `GET /internal/v1/insights/members` (platform service key, hidden from OpenAPI) is listed at the end. All IDs here are `API-nnn` for traceability.
+Generated from the running service `GET http://localhost:8001/openapi.json` (205 operations; plus 1 added 2026-11-22, see end of file) and the route files in `milavn-service/app/api/routes/`. Auth column is read from each handler's dependency (`CurrentMember`, `OptionalMember`, `Moderator`). Request bodies are named by their Pydantic schema; `*` marks required query parameters. Error codes beyond those listed: 401 not signed in, 403 not allowed (RLS or business rule), 409 conflict, 422 validation, 429 rate limited, 503 identity service unavailable (fail closed). Internal route `GET /internal/v1/insights/members` (platform service key, hidden from OpenAPI) is listed at the end. All IDs here are `API-nnn` for traceability.
 
 Common headers: `X-Milavn-Language` (en/hi/te/mr/kn), `Idempotency-Key` (mutations that accept it), session cookie `fk_session` (set by the ForKhatri entrance, not by Milavn). Writes from a browser must come from an allowed Origin (CORS list).
 
@@ -346,3 +346,12 @@ Common headers: `X-Milavn-Language` (en/hi/te/mr/kn), `Idempotency-Key` (mutatio
 | API-212 | GET/HEAD | `/media/circle-covers/{name}?invite=` | Circle cover; members, or anyone holding a valid invite token. |
 | API-213 | GET/HEAD | `/media/chat/{name}` | Chat photo; conversation members only. |
 | API-214 | GET/HEAD | `/media/moments/{name}` | Moments photo; people who were at the activity only. |
+
+
+## Added 2026-11-22: account deletion
+| ID | Method | Path | Notes |
+|---|---|---|---|
+| API-215 | POST | `/privacy/delete-account-data` | Kind B. Signed-in member. Body `{"confirm":"DELETE"}`. 200 contract JSON (`status`, `deleted`, `retained`, `files_removed`); 422 wrong word; 429 after 3 per hour (Retry-After); 503 if a refund cannot be requested (nothing deleted). In OpenAPI (206 operations now). |
+| API-216 | POST | `/internal/v1/members/{member_id}/erase` | Kind A. Service key `X-ForKhatri-Service-Key` (hub also sends `X-ForKhatri-Service: identity`); 401 without it; not in OpenAPI. 200 `{module:"milavn", status: done / nothing_to_delete / partial, deleted, retained, files_removed}`; idempotent. |
+
+The hub's own endpoints (`/v1/account/delete/*`, `/v1/admin/deletions/*`) are in the identity service reference, not here.

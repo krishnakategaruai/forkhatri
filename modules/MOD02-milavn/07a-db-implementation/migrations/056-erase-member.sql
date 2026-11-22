@@ -128,7 +128,7 @@ BEGIN
   DELETE FROM ticket WHERE member_id = p_member AND status NOT IN ('paid', 'refund_pending', 'refunded');
   GET DIAGNOSTICS n = ROW_COUNT;
   IF n > 0 THEN del := del || jsonb_build_object('tickets_unpaid', n); END IF;
-  UPDATE ticket SET member_id = T, qr_code = NULL, checkout_url = NULL, updated_at = now() WHERE member_id = p_member;
+  UPDATE ticket SET member_id = T, qr_code = 'erased-' || id::text, checkout_url = NULL, updated_at = now() WHERE member_id = p_member;
   GET DIAGNOSTICS n = ROW_COUNT;
   IF n > 0 THEN
     pse := pse || jsonb_build_object('payment_records', n);
@@ -252,7 +252,7 @@ BEGIN
   GET DIAGNOSTICS guard = ROW_COUNT;
   UPDATE block SET blocked_member_id = T WHERE blocked_member_id = p_member;
   UPDATE moderation_action SET moderator_member_id = T WHERE moderator_member_id = p_member;
-  UPDATE trust_status SET subject_id = T WHERE subject_type = 'organizer' AND subject_id = p_member;
+  DELETE FROM trust_status WHERE subject_type = 'organizer' AND subject_id = p_member;
   IF n + guard > 0 THEN
     pse := pse || jsonb_build_object('reports', n + guard);
     retained := retained || jsonb_build_object('kind', 'safety_records', 'reason', 'A report filed by or about the member, and blocks against the member, stay so that a deleted member cannot simply return and harm others. Only a one-way deletion id, the reason category and the status are kept; no name, contact or text.');
@@ -279,6 +279,10 @@ BEGIN
   UPDATE milavn_circle.outbox_event SET payload = replace(payload::text, p_member::text, T::text)::jsonb WHERE payload::text LIKE '%' || p_member::text || '%';
   UPDATE milavn_safety.outbox_event SET payload = replace(payload::text, p_member::text, T::text)::jsonb WHERE payload::text LIKE '%' || p_member::text || '%';
   UPDATE milavn_trust.outbox_event SET payload = replace(payload::text, p_member::text, T::text)::jsonb WHERE payload::text LIKE '%' || p_member::text || '%';
+  UPDATE milavn_activity.outbox_event SET aggregate_id = T WHERE aggregate_id = p_member;
+  UPDATE milavn_circle.outbox_event SET aggregate_id = T WHERE aggregate_id = p_member;
+  UPDATE milavn_safety.outbox_event SET aggregate_id = T WHERE aggregate_id = p_member;
+  UPDATE milavn_trust.outbox_event SET aggregate_id = T WHERE aggregate_id = p_member;
   DELETE FROM idempotency_key WHERE actor_member_id = p_member;
   DELETE FROM consent_grant WHERE member_id = p_member;
   DELETE FROM location_precision_setting WHERE member_id = p_member;

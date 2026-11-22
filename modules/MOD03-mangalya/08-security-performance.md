@@ -2176,3 +2176,13 @@ C2 badge overclaims; C3 parent-made profiles and child data stored before takeov
 
 ## Performance
 No budgets enforced. Known: Discover skeleton delay on the dev build; photos are a few hundred KB after the shrink.
+
+
+---
+
+# 2026-11-22 Account deletion: security and privacy
+
+- **DPDP erasure mapping:** the right to erasure is met by immediate hard delete of personal data (see `ACCOUNT-DELETION.md`); retained data is limited to what law or the safety of others requires, with the member id replaced by a one-way tombstone and free text and evidence removed.
+- **Controls:** typed DELETE; 3 per hour durable rate limit; service-key auth on the internal route, hidden on the public edge; SECURITY DEFINER worker not granted to the app role; operator roles refused; one transaction; idempotent.
+- **Re-auth:** done by the hub for kind A (password or one-time code). Kind B (Mangalya only) relies on the live session plus typed DELETE (no step-up; unverified decision, owner may want one).
+- **Risks and open findings:** retained suspension does not re-block a returning member; retention periods need a lawyer; backups not covered; UI not browser-checked; data export status unchanged (unverified).

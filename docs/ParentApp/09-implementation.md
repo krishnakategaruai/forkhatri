@@ -234,3 +234,14 @@ Resend sending, and the Oracle VM itself.
 - Test helper `scripts/dev_session.py` writes a Playwright storageState or prints a Cookie header.
 - Identity service unit tests: 49 passed (including 12 for the development tools); ruff clean.
 
+
+
+## Account deletion (added 2026-11-22)
+
+Change log entry, 2026-11-22: account deletion built across the hub and the four modules, following `ACCOUNT-DELETION.md`. Owner reason: members must be able to erase themselves immediately.
+
+Files changed (platform): `platform/identity-service/db/migrations/008-account-deletion.sql`; the identity account and admin routers, the deletion orchestrator and retry loop in `app/main.py`; `tests/integration/test_account_deletion.py`; `platform/forkhatri-web/components/DeleteAccount.tsx`, `AccountSheet`, the entrance, the admin Modules page (stuck deletions); five locale dictionaries. Module files are listed in each module's `09-implementation.md` and `ACCOUNT-DELETION.md`.
+
+Also on 2026-11-22: `scripts/start-tunnels.ps1` and the tunnel launcher (`scripts/tunnel.mjs`) added; `.gitignore` extended (build caches, test media, pycache, keys, tunnel logs; build info untracked); Mangalya web dev server runs `next dev --webpack` (Turbopack next/font bug caused 500s); the repository was pushed to GitHub on 2026-11-16 (see `DEPLOYMENT.md`).
+
+What is NOT built, deletion-related: grievance officer; consent notice and record; age gate; platform-level data export; sign-up block for banned members; "Deleted member" view of Mangalya one-to-one chats (they are removed for both sides); Counsel payout of unpaid earnings after deletion; any browser check of the deletion screens. The "What is NOT built" list above that names "account deletion" is superseded.

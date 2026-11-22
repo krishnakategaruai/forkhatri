@@ -2599,3 +2599,15 @@ Yes, proceed as specified — flagging for Step 7/8 that the actual cross-module
 | in-process jobs (reminders 10 min, suggestions hourly, hold expiry 1 min) | run twice if two API instances start | medium |
 | migration order (two files numbered 050) | independent of each other; renaming risks reapply confusion | low |
 
+
+
+
+---
+# Addendum 2026-11-22: Account deletion, what it touches (FR161-FR166)
+- Cross-module: the hub identity service calls `POST /internal/v1/members/{id}/erase` (kind A; retried for up to 7 days; an unreachable Milavn leaves the job on the admin stuck list). Milavn calls no other module and does not touch Vyapar, Mangalya or Counsel.
+- Other members: upcoming hosted events cancelled (attendees notified, refunds requested), waitlist offers made, circle ownership handed over, one-to-one chats keep a "Deleted member" side, team captains changed, notices naming the member rewritten to "A deleted member". Past events and circles with other members stay.
+- Money: refunds use the existing payment path (sandbox only today); if one cannot be requested everything rolls back (`partial`). Paid tickets and pledges are kept as payment records.
+- Files: 7 folders under `milavn-service/.local-media` (profiles, moments, circle-posts, circle-docs, circle-covers, circle-albums, chat) removed after commit from the list the SQL returns; `covers/` event covers deliberately kept. A crash between commit and file removal could leave orphan files (no sweeper; unverified risk).
+- Caches and queues: queued outbox rows (4 schemas) and `notification_outbox` payloads carry the tombstone; idempotency keys deleted; no other cache known (unverified).
+- Identity bridge: shows "Deleted member" for tombstone ids; no member row remains, so a returning member goes through onboarding.
+- Risks: long single transaction for a very active member (not measured); two simultaneous deletions in one circle (not tested).

@@ -515,3 +515,11 @@ Conventions: every error uses the envelope `{"detail": ..., "error": {"code","me
 | ID | Method | Path | operationId | Summary | Params | Request body | Responses | Auth |
 |---|---|---|---|---|---|---|---|---|
 | API-268 | GET | /health | health_health_get | Health | - | - | 200:object | see source |
+
+
+## Account deletion endpoints (added 2026-11-22)
+| ID | Method | Path | operationId | Summary | Request body | Responses | Auth |
+|---|---|---|---|---|---|---|---|
+| API-269 | POST | /v1/privacy/delete-account-data | deleteMyVyaparData | Delete everything Vyapar holds about the signed-in member (kind B) | {confirm: "DELETE"} | 200: ErasureOut {status, deleted, retained, files_removed}; 422 confirm_required; 429 after 3 per hour | member session only (not an access token) |
+| API-270 | POST | /internal/v1/members/{member_id}/erase | eraseMemberInternal | Erase everything Vyapar holds about a member (kind A, idempotent) | - | 200: ErasureOut (done or nothing_to_delete); 409 operator_role_must_be_removed | service key plus X-ForKhatri-Service |
+Changed: API-175 POST /v1/privacy/delete (requestAccountDeletion) now performs the full erase and returns state completed. Total operations 270 (268 plus these two; the live OpenAPI count was not re-run: unverified).

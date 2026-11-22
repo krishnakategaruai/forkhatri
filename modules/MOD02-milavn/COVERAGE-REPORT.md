@@ -24,3 +24,16 @@ Not covered, with reasons:
 - Full FR text for FR089-FR124 stays in AgentOutputs/02-functional-requirements.md; 02a summarises them.
 - TRACEABILITY.md works at feature-group level, not per FR row.
 - No tests were run in this pass.
+
+
+## Update 2026-11-22 (account deletion; counts adjusted by reading the changes, not regenerated)
+| Inventory | Before | Now |
+|---|---|---|
+| API operations (OpenAPI) | 205 | 206 (+ POST /privacy/delete-account-data) |
+| Non-OpenAPI routes | 8 | 9 (+ internal erase) |
+| Tables | 81 | 82 (+ erasure_receipt) |
+| Functions | 188 | 190 (+ tombstone, erase_member) |
+| Migration files | 56 | 56 (056 now listed in appendix B) |
+| Settings names | 44 | 44 (none new; one new rate-limit scope constant) |
+| Tests | 9 files | 9 files (none added; 60 pass reported) |
+Not covered: browser check of the deletion control; per-table behaviour is documented only in ACCOUNT-DELETION.md.

@@ -36,3 +36,7 @@
 | RLS | Row-level security in PostgreSQL: the database decides which rows a caller sees. |
 | DEC-V1-xxx | Numbered owner or product decision in `v1-decisions.md`. |
 | DPDP | India's Digital Personal Data Protection Act; duties start about May 2027. |
+| Tombstone | A one-way code that replaces a deleted member id in records we must keep; it cannot be turned back into the person. |
+| Erase | Permanent removal of everything held about a member, done at once; retained records are kept only by tombstone. |
+| Deletion receipt | Kept proof that a deletion happened: tombstone, date and counts, no personal data. |
+| Kind A / kind B | A: delete all of ForKhatri (hub-driven). B: delete only one module data (here Mangalya). |

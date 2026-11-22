@@ -128,3 +128,15 @@ Revision row: 2026-11-22, "Impact analysis restated for the platform as built: 4
 ## B4. Cross-cutting concerns not covered by the platform
 
 Notifications (the bell is an empty state; no shared inbox), account deletion and data export (not built), consent record (not built), device list and step-up authentication (not built). Each would touch every module; see 08 for DPDP mapping and CRITIQUE-platform C3, C7, C8.
+
+
+## Account deletion (added 2026-11-22)
+
+Supersedes B4's "account deletion and data export (not built)": deletion is built, export is not.
+
+- Cross-module calls: identity calls `POST /internal/v1/members/{id}/erase` on Vyapar, Milavn, Mangalya and Counsel in parallel (header `X-ForKhatri-Service: identity` plus the module's service key). A module that is down leaves the job open; the member is already signed out and cannot sign in.
+- Identity data touched: member, session, password credential, one-time codes and rate-limit keys, registry entries, role assignments, approvals, suspensions; audit rows are rewritten to a tombstone, not removed.
+- Other members: shared records show "Deleted member" (Vyapar, Milavn, Counsel); Mangalya one-to-one chats are removed for both sides; Milavn circles are handed to another organiser; event attendees and Counsel counterparties are notified.
+- Files on disk: uploads, photos, voice and document folders are removed by each module (Vyapar 3 files, Milavn 7 folders, Mangalya photos, Counsel files).
+- Caches: sessions are revoked at the start. Module caches were not separately verified.
+- Risks: partial deletion if a module is down (retry for 7 days, admin list); an admin cannot be deleted while holding a role; unpaid Counsel earnings are lost (open decision); a banned member can sign up again (not enforced).

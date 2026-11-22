@@ -4527,3 +4527,16 @@ Common to all: actor must hold a ForKhatri session; a parent or guardian acts "f
 | FR134 | Guides | list and read in 5 languages (migrations 063, 064, 066) | `/guides*` | built |
 
 Not built: guided voice path for the wizard (D18); human face review screen; email verification; refunds and invoices; learning from clicks; dowry report reason (critique H6, not seen in code - unverified).
+
+
+---
+
+# 2026-11-22 Account deletion: FR135-FR137 (BR31)
+
+| FR | Feature | Flow and rules | Endpoints | Tables | Screens | Status |
+|---|---|---|---|---|---|---|
+| FR135 | Member deletes own Mangalya data (kind B) | "Delete my data in Mangalya" on `/me` (candidate Me and family-member Me) opens a confirmation panel listing what is deleted and kept. Typed word `DELETE` required; the member must hold a ForKhatri session (re-auth is the hub job for kind A); limit 3 per hour (durable limiter, 429 `rate_limited`); a wrong confirm word is refused; operator roles refused with 409. Success: drafts cleared in the browser, member sent to the ForKhatri entrance after 2.5 s. Idempotent: a second call returns `nothing_to_delete`. | `POST /privacy/delete-account-data` body `{"confirm":"DELETE"}` | all stores in `ACCOUNT-DELETION.md` | `/me`, MemberMe | built; UI not browser-checked |
+| FR136 | Platform erases a member (kind A) | The ForKhatri hub calls each module after the member re-authenticated and typed DELETE. Auth by service key (`X-ForKhatri-Service: identity`); hidden (404) through the public edge. Resolves the ForKhatri member id to the Mangalya account(s) it owns (own and/or taken-over managed account). One transaction; idempotent; returns `{module,status,deleted,retained,files_removed}`; the hub retries on failure. | `POST /internal/v1/members/{member_id}/erase` | same | none (service call) | built |
+| FR137 | Effects on other parties | Messages the member wrote are deleted; one-to-one threads are removed for both sides; group threads keep the words of others; connection requests and shares that only exist with the member go too; an agent client list is detached (client accounts untouched); the member is removed from other agents exports; retained moderation records keep a tombstone only. No notification is sent to other parties (unverified; none found). | as above | as above | none | built; deviation: 1:1 chats do not show "Deleted member" |
+
+Acceptance: after erase, the member id appears in no table except tombstoned moderation rows, the managed profile a child took over, and `platform.deletion_receipt`; files under `.local-media` are gone; a second call answers `nothing_to_delete`.

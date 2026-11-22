@@ -26,3 +26,8 @@ FR-012 -> API-015; FR-013 -> API-016; FR-030 -> API-043, 045; FR-031 -> API-056.
 
 ## Endpoints with no matching screen call (API only)
 API-011, 012 (blocks), API-055 is used by SCR-03 only for providers, API-073 (recap rebuild), API-075 (gateway), API-104 (audit log, no admin screen), API-105 (media), API-106 (banner), API-107..109 (platform).
+
+## Account deletion (added 2026-11-22)
+| BR | FR | SCR | API | TBL | TC |
+|---|---|---|---|---|---|
+| BR-16, 16A..C (BR-12 updated) | FR-130..136 (FR-101 superseded, FR-103 now used) | SCR-10 (dialog) | 005, 107, 108, 109, 110 | all 40 reviewed (see ACCOUNT-DELETION.md) | TC-060..069 (60-64 pass, 65-68 not run or untested, 69 NOT done) |

@@ -2298,3 +2298,21 @@ Locale parity: `scripts/check_locale_parity.py` (repo root) checks translation k
 | TC-SEC-02 | all | horoscope-service call without token | 403 envelope | A (`http.test.ts`) |
 
 QA-RUN results: no Mangalya-specific QA-RUN file exists. Executed evidence is the 2026-10-06 walks (ONBOARDING-REDESIGN section 2) and the critique walk; both are read-only observations, not pass/fail suites.
+
+
+---
+
+# 2026-11-22 Account deletion: scenarios actually run (reported by the build session)
+
+| ID | Scenario | Result as reported |
+|---|---|---|
+| TC-DEL-01 | Throwaway member 33 with data everywhere; erase | 38 id columns / 73 rows / 8 files before; after: zero, except the taken-over managed profile (stays by design) and tombstoned reports |
+| TC-DEL-02 | Unclaimed managed profile | deleted with the parent |
+| TC-DEL-03 | Broker client link | removed; client account untouched |
+| TC-DEL-04 | One-to-one chats | removed for both sides (known deviation, DEC-V1-036) |
+| TC-DEL-05 | Idempotency (second erase) | `nothing_to_delete` (also seen from the hub on throwaway 30) |
+| TC-DEL-06 | Migration 067 applied | two bugs found and fixed, re-applied |
+| TC-DEL-07 | Existing suite before and after | 117 pass / 4 fail both times (the 4 failures pre-existed) |
+| TC-DEL-08 | Wrong confirm word, 3-per-hour limit | implemented in `account_data.py`; run results not separately reported (unverified) |
+| TC-DEL-09 | Browser check of the Delete control | NOT done |
+| TC-DEL-10 | Photos deleted from disk | 8 files removed; a separate git clean-up once deleted photos from disk and they were restored |

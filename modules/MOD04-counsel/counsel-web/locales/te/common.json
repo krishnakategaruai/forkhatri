@@ -720,7 +720,9 @@
   "question.new": "{{title}}పై కొత్త చెల్లింపు ప్రశ్న — సమయానికి సమాధానం ఇవ్వండి",
   "question.answered": "{{title}}పై మీ ప్రశ్నకు సమాధానం వచ్చింది",
   "question.refunded": "సమయానికి సమాధానం రాలేదు — {{refund}} వాపసు",
-  "booking.recap": "{{title}} సారాంశం సిద్ధం"
+  "booking.recap": "{{title}} సారాంశం సిద్ధం",
+  "booking.cancelled_deleted": "{{title}} was cancelled because the other person deleted their account. Refund: {{refund}}",
+  "purchase.closed_deleted": "A package, question or request with a member who deleted their account was closed and refunded."
  },
  "report": {
   "report": "రిపోర్ట్",
@@ -1045,21 +1047,22 @@
   "title": "మీ డేటా",
   "body": "Counsel వద్ద మీ గురించి ఉన్నదంతా డౌన్‌లోడ్ చేయండి, లేదా మీ Counsel డేటాను తొలగించండి. మీ ForKhatri ఖాతాపై ప్రభావం ఉండదు.",
   "download": "నా డేటా డౌన్‌లోడ్",
-  "delete": "నా Counsel డేటా తొలగించు",
-  "delete_title": "మీ Counsel డేటా తొలగించాలా?",
+  "delete": "Delete my data in Counsel",
+  "delete_title": "Delete my data in Counsel?",
   "blocked": "ముందుగా తెరిచి ఉన్నవి పూర్తి చేయండి లేదా రద్దు చేయండి:",
   "blocker": {
-   "upcoming_bookings": "రాబోయే సంప్రదింపులు",
-   "open_packages_or_questions": "సక్రియ ఫాలో-అప్ సెషన్లు లేదా సమాధానం రాని ప్రశ్నలు",
-   "open_disputes": "తెరిచిన వివాదాలు",
-   "unpaid_earnings": "ఇంకా చెల్లించని ఆదాయం"
+   "upcoming_bookings": "Upcoming consultations are cancelled and the other person is told (refunds follow the cancellation rules)",
+   "open_packages_or_questions": "Open follow-up packages and written questions are closed and refunded",
+   "open_disputes": "Open disputes stay with Counsel staff, without your name",
+   "unpaid_earnings": "Earnings not yet paid out cannot be paid after your payout details are deleted; contact support first if this matters"
   },
-  "removes": "తొలగించబడేవి: మీ సలహాదారు ప్రొఫైల్, ఆధారాలు, పత్రాలు, చెల్లింపు వివరాలు, ప్రైవేట్ నోట్స్, మీరు అప్‌లోడ్ చేసిన ఫైళ్లు, మీ సందేశాలు, సేవ్ చేసినవి, నోటిఫికేషన్లు.",
-  "keeps": "మీ పేరు లేకుండా ఉంచబడేవి: చెల్లింపు, పన్ను రికార్డులు, మీరు ఇచ్చిన రేటింగ్‌లు (వ్యాఖ్య లేకుండా) — చట్టం ప్రకారం.",
-  "account_stays": "మీ ForKhatri ఖాతా అలాగే ఉంటుంది. తర్వాత Counsel మళ్ళీ కొత్తగా వాడవచ్చు.",
+  "removes": "Deleted for good: your consultant profile, photo, evidence and documents, availability, payout details, private notes, files you uploaded, messages you wrote, saved people, blocks and notifications.",
+  "keeps": "Kept without your name (shown as Deleted member): consultations other people took part in, payment and tax records where money moved, star ratings you gave (no text), and a safety record of reports.",
+  "account_stays": "Your ForKhatri account and other modules stay. You can use Counsel again later as a new member. This cannot be undone.",
   "type_delete": "నిర్ధారించడానికి DELETE అని టైప్ చేయండి",
   "delete_confirm": "శాశ్వతంగా తొలగించు",
-  "deleted": "మీ Counsel డేటా తొలగించబడింది"
+  "deleted": "Your Counsel data was deleted",
+  "warn": "This will also happen right now:"
  },
  "payout_method": {
   "title": "మీకు చెల్లింపు ఎక్కడ",

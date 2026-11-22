@@ -31,3 +31,5 @@ BR (business requirement, `01-business-requirements.md` plus addendum) to FR (`0
 | (platform) | Messaging, payments | FR096-097, FR102, FR136 | SCR-12, SCR-13, SCR-18 | /chats/*, /payments/* | conversation, chat_message, ticket, payment_event | A test_chat_presence_hub, test_paid_spots |
 
 Rows for BR07/BR08 and FR034-FR037 are taken from the sealed titles (trust and reputation); where the sealed FR numbering is not visible in this pass the grouping is *unverified*; check against `02-functional-requirements.md` headings. FR numbers 125-160 are defined in `02a`.
+
+| BR25 | Account deletion (kinds A and B) | FR161-FR166 | Me (settings gear modal) | POST /privacy/delete-account-data, POST /internal/v1/members/{id}/erase | milavn_platform.erasure_receipt, erase_member(), 70 member-referencing tables | M proof run on member #32 (TC-216..227); browser check NOT done; no automated erase test |

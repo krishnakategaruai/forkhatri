@@ -38,7 +38,7 @@
     "blocked": "पैसे भरलेली एखादी चालू ऑर्डर पूर्ण होईपर्यंत खाते हटवणे थांबवले आहे.",
     "done": "तुमचे खाते निनावी केले आहे.",
     "exportHint": "व्यापारकडे तुमच्याबद्दल असलेल्या सर्व माहितीची प्रत.",
-    "deleteHint": "तुमचे नाव सगळीकडून काढले जाते; तुमच्या पोस्ट आणि रिक्वेस्ट नावाशिवाय राहतात.",
+    "deleteHint": "Permanently deletes everything Vyapar holds about you. Your ForKhatri account stays.",
     "historyTitle": "डेटा रिक्वेस्ट"
   },
   "requestKind": {

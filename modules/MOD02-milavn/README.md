@@ -44,3 +44,6 @@ Public page without login: `http://localhost:3001/a/<slug>` (server-rendered, SE
 - `milavn-service/app/components/<component>/interface.py` — one package per `architecture.md` component.
 - `milavn-web/app/*` — one folder per route; `app/globals.css` is the design system; `locales/` holds every string.
 - `milavn-web/scripts/` — the CDP browser-test harness and scenarios (`node scripts/cdp.mjs scripts/scenarios/golden-path.mjs`), screenshots land in `milavn-web/.logs/`.
+
+
+Account deletion (2026-11-22): see `ACCOUNT-DELETION.md`, BR25 and FR161-FR166.

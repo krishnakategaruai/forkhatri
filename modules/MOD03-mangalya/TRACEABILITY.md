@@ -25,3 +25,8 @@ Covers the as-built FRs (FR103-FR134, see `02-functional-requirements.md`) and t
 | BR25 | FR133-FR134 | SCR-16, SCR-17 | wedding, guides | connection_stage, osm_place, partner, partner_offer, guide | TC-133 (M) |
 
 Older set (kept): BR01-BR20 map to FR001-FR102 inside `02-functional-requirements.md` (each FR lists its BR). Their as-built status by area: auth FR089-FR101 built (legacy interim auth retired into the ForKhatri identity); Home Circle FR007-FR016 built; discovery FR025-FR032 built (ranking replaced by DEC-V1-031); verification FR033-FR044 changed (document verification dropped, face match instead - DEC-V1-016); chat FR049-FR056 built as three chat kinds; safety FR064-FR076 built, thin human review.
+
+## 2026-11-22 Account deletion
+| BR | FR | Screens | Endpoints | Tables | Tests |
+|---|---|---|---|---|---|
+| BR31 | FR135-FR137 | `/me` DeleteMyData | `POST /privacy/delete-account-data`, `POST /internal/v1/members/{id}/erase` | deletion_receipt and all 26 store groups | TC-DEL-01 to TC-DEL-10 (UI not run) |

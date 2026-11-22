@@ -923,3 +923,14 @@ JSON `{detail: <translated message>}`; codes 401, 403 (including `origin_not_all
 
 ## 9. Observability and performance budgets
 stdout logging only (see 08 sections 11 and 12). Design budgets are in 08; none measured.
+
+
+
+---
+# Addendum 2026-11-22: Account deletion technical design (TR-ERASE)
+- Function `milavn_platform.erase_member(p_member uuid, text[]) returns jsonb` (SECURITY DEFINER, owner `milavn_owner`, one transaction, idempotent). Returns `{deleted:{kind:n}, pseudonymised:{kind:n}, files:[refs], retained:[{kind,reason}]}`. `milavn_platform.tombstone(uuid)` is a pure one-way function (sha256 of `forkhatri-erased:<id>`).
+- Service: `components/erasure/interface.py` (`erase_member`, `ErasePartial`) runs the pre-steps through the normal component paths (cancel hosted events, withdraw paid tickets), calls the SQL, deletes the returned files and builds the contract response. `ErasePartial` maps to `partial` (internal) or 503 (kind B).
+- Endpoints in `routes/erasure.py`, registered in `main.py` ("erasure"). Internal route guarded by `platform_caller` (service key from settings; no key value in code), hidden from OpenAPI. Member route uses `CurrentMember`, typed DELETE, rate-limit scope `ACCOUNT_DATA_DELETE` 3 per 3600 s (`rate_limiting/__init__.py`).
+- Retry is owned by the hub (identity retry loop); Milavn has none of its own.
+- Config: no new setting names; the existing platform service-key settings are used (values not recorded).
+- Identity: `identity_bridge` returns "Deleted member" for tombstone ids.

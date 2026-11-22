@@ -40,3 +40,8 @@ references (the registry key and the service name `mangaly` stay). Also decide t
 - Domain name, DNS and Cloudflare account; Resend sender; SMS or WhatsApp provider (needed for phone sign-in, critique C1).
 - Whether to upgrade Oracle to Pay As You Go; whether R2 backups are mandatory (recommended).
 - Data fiduciary and privacy notice before real members (DPDP, `docs/Critique/CRITIQUE-platform.md` C3).
+
+
+## Source repository (added 2026-11-22)
+
+The GitHub repository `github.com/krishnakategaruai/forkhatri` holds `main`. It was pushed on 2026-11-16; local history was rewritten for the commits that had not yet been pushed, and only those. `.gitignore` was extended to exclude build caches, test media, `__pycache__`, keys and tunnel logs, and build info was untracked. Push-to-deploy still needs its secrets and one manual first deploy (see `09-implementation.md`).

@@ -1799,3 +1799,15 @@ Full endpoint list (202 operations, API-001 to API-202): `API-REFERENCE.md`. Env
 - **Rate limits (settings):** login failures, OTP resend, Home Circle invites, connection requests per day, message sends per hour, reports and blocks per day, matchmaker per day; face match 10 per day (durable limiter).
 - **Versioning:** service 0.1.0; plan catalogue 2026-09; duplicate API aliases `/connection` and `/connections`, `/messages` and `/conversations`.
 - **Performance budgets:** none formally set in code; Discover skeleton delay on dev is a known issue (critique M6).
+
+
+---
+
+# 2026-11-22 Account deletion: technical design (TR103-TR105)
+
+- **TR103 worker.** `mangaly_identity.erase_account_data(account uuid)` in migration 067: SECURITY DEFINER (owner role), one statement is one transaction, idempotent, returns counts and the file references to remove; not granted to the app role. Helpers `member_tombstone(uuid)` (one-way id) and `_bump`.
+- **TR104 entry points.** `erase_my_data()` (member, bound to `mangaly.account_id`) and `erase_member_data(member uuid)` (platform), both granted to `mangaly_app`. Code: `app/api/routes/account_data.py` (two routes), `app/components/lifecycle/erasure.py` (`erase_me`, `erase_member`, `remove_files`, `to_contract`), `app/rate_limiting/limiter.py` (scope `DELETE_ACCOUNT_DATA`, 3 per hour, durable).
+- **TR105 auth.** Internal route: platform service key (`X-ForKhatri-Service` plus module key; unknown credentials 401; public edge 404). Setting names used: `PLATFORM_SERVICE_KEY`, `PLATFORM_SERVICE_NAME` (existing; no new setting found, unverified).
+- **Files:** removed after the commit; a failed removal does not undo the erase.
+- **Web dev server:** `mangaly-web` now runs `next dev --webpack` because a Turbopack next/font bug caused 500s.
+- **Retained table:** `mangaly_platform.deletion_receipt` (tombstone, date, counts, RLS enabled).

@@ -37,7 +37,7 @@
     "blocked": "యాక్టివ్ చెల్లింపు ఆర్డర్ పూర్తయ్యే వరకు తొలగింపు నిలిపివేయబడింది.",
     "done": "మీ ఖాతా అనామకం చేయబడింది.",
     "exportHint": "Vyapar వద్ద మీ గురించి ఉన్న ప్రతిదాని కాపీ.",
-    "deleteHint": "మీ పేరు ప్రతిచోటా తొలగించబడుతుంది; మీ పోస్ట్‌లు, రిక్వెస్ట్‌లు పేరు లేకుండా ఉంటాయి.",
+    "deleteHint": "Permanently deletes everything Vyapar holds about you. Your ForKhatri account stays.",
     "historyTitle": "డేటా రిక్వెస్ట్‌లు"
   },
   "requestKind": {

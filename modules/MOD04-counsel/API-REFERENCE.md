@@ -12,7 +12,7 @@ Table of contents is the table itself; IDs API-001..API-110 are stable reference
 | API-002 | `POST /me/ws-ticket` | member | Mint a single-use 60 s ticket for the room WebSocket. |
 | API-003 | `GET /me/export` | member | Download my Counsel data as JSON (counsel-my-data.json). |
 | API-004 | `GET /me/deletion-check` | member | List what blocks deleting my Counsel data (upcoming_bookings, open_packages_or_questions, open_disputes, unpaid_earnings). |
-| API-005 | `POST /me/delete` | member | Erase my Counsel data; body {confirm:'DELETE'}; 409 deletion_blocked with blockers. |
+| API-005 | `POST /me/delete` | member | Erase my Counsel data; body {confirm:'DELETE'}. Updated 2026-11-22: no longer 409 deletion_blocked; same as API-110. |
 | API-006 | `GET /me/saved` | member | My saved consultants as cards. |
 | API-007 | `PUT /me/saved/{provider_id}` | member | Save a consultant (idempotent). |
 | API-008 | `DELETE /me/saved/{provider_id}` | member | Unsave a consultant. |
@@ -118,3 +118,9 @@ Table of contents is the table itself; IDs API-001..API-110 are stable reference
 | API-108 | `POST /internal/v1/members/{member_id}/erase` | service key | Platform erases a member's Counsel data (reason forkhatri_account_deleted). |
 | API-109 | `GET /internal/v1/members/{member_id}/export` | service key | Platform exports a member's Counsel data. |
 | API-110 | `WS /ws/bookings/{booking_id}?ticket=` | ticket or session cookie | Room socket: presence, chat, notes, actions, files, consents, recording state, WebRTC signalling relay (offer, answer, ice, ready, media), sharing, typing, ping. |
+
+## Account deletion (added 2026-11-22)
+| ID | Endpoint | Auth | Purpose |
+|---|---|---|---|
+| API-110 | `POST /me/delete-account-data` | member | Erase my Counsel data; body `{"confirm":"DELETE"}`; 3 per hour per member, 429 beyond; idempotent. Web then sends the member to the ForKhatri entrance. |
+Changed behaviour: API-005 `POST /me/delete` is kept and does the same erase (no longer 409 `deletion_blocked`). `GET /me/deletion-check` and API-107 no longer refuse; they return `blockers` as warnings. API-108 `POST /internal/v1/members/{member_id}/erase` requires `X-ForKhatri-Service: identity`, is called by the identity service and returns `{module, status: done | nothing_to_delete, deleted{}, retained[], files_removed}`. API-109 and `GET /me/export` return the full inventory. Hub endpoints (`/v1/account/delete/*`, admin stuck deletions) are in `docs/ParentApp/ACCOUNT-DELETION.md`.

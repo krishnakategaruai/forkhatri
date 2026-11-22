@@ -62,6 +62,10 @@ One component per package, `interface.py` as its only public face; one request e
 | 2026-10-06 | QA runs with 20 QA members (community, fun, professional, safety); fixes in code listed in the QA-RUN files and 05; migration 055 written (waitlist offer fix applied, GRANT not applied); onboarding study and event page study written; first-run redesign (place only) and event page (deciding, going, hosting, recap) implemented in `onboarding/page.tsx` and `DetailClient.tsx`; Marathi and Kannada catalogs added by another session | owner: "too senseless", first-run findings |
 | 2026-10-24 | Repository push a8f7747 (last change touching this folder) | owner |
 | 2026-11-22 | Documentation brought to as-built state (this set) | owner request |
+| 2026-11-22 | Account deletion: migration 056, `components/erasure/interface.py`, `routes/erasure.py` (registered in `main.py`), `rate_limiting/__init__.py` scope ACCOUNT_DATA_DELETE, `identity_bridge` "Deleted member", web `app/me/page.tsx` and five `locales/*/common.json`. Migration 055 recorded as applied the same day | owner: "A user should be deleted if he needs to delete his account, immediately" |
 
 ## 6. What is NOT built
 Real payment vendor, host payouts, platform fee; verified women-only (steward approval); per-day check-in; automatic recurring dates; guests on paid events; request-based first contact; host verification and large-event checklist; data export and retention schedule (DPDP); malware scan and image re-encode; load and security tests; monitoring and alerting; external scheduler and multi-instance safety; cost split on trips; album tied to an event; in-app video (excluded by decision); migration ledger table; applied GRANT of migration 055; a clean demo tenant.
+
+
+**Not built (account deletion, 2026-11-22):** browser check of the Me control; erase-specific tests; data export before deletion; email or SMS confirmation; retention-expiry job; payout rule for refund-pending paid tickets; orphan-file sweeper; separate re-authentication for kind B.

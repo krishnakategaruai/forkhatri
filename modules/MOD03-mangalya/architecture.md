@@ -218,3 +218,10 @@ Everything below is the concrete Mangaly instance of `/MODULE-ARCHITECTURE-STAND
 ## Approval
 
 Chief Architect — [x] Approved — krishna kategaru (autonomous), 2026-09-12
+
+
+---
+
+# 2026-11-22 Account deletion in the architecture
+
+Hub (identity, 8100) -> `POST /internal/v1/members/{id}/erase` on mangaly-service (8000) -> `erase_member_data` -> `erase_account_data` (one transaction) -> files removed from `.local-media`. Member path: `/me` -> `POST /privacy/delete-account-data`. Retry is the hub job (loop every 30 s, backoff, stuck list in the admin Modules page). Dev web server: `next dev --webpack`. See `ACCOUNT-DELETION.md`.
