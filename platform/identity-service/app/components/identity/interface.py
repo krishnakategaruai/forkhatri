@@ -503,3 +503,70 @@ async def lookup_members(db: AsyncSession, member_ids: list[UUID]) -> list[dict[
         {"member_id": str(r.id), "display_name": r.display_name, "identity_level": r.identity_level}
         for r in rows
     ]
+
+
+# ---------------------------------------------------------------------------
+# Re-authentication for irreversible actions (account deletion): the member proves
+# it is still them with their password or a fresh one-time code sent to their own
+# phone/email. Neither path opens a session.
+# ---------------------------------------------------------------------------
+
+
+async def reauth_options(db: AsyncSession, member_id: UUID) -> dict[str, Any]:
+    row = (
+        await db.execute(
+            text(
+                "SELECT m.phone_e164, m.email, (c.member_id IS NOT NULL) AS has_password FROM identity.member m "
+                "LEFT JOIN identity.password_credential c ON c.member_id = m.id WHERE m.id = :id"
+            ),
+            {"id": member_id},
+        )
+    ).first()
+    if row is None:
+        return {"has_password": False, "destination_hint": None}
+    hint = mask_phone(row.phone_e164) if row.phone_e164 else mask_email(row.email) if row.email else None
+    return {"has_password": bool(row.has_password), "destination_hint": hint}
+
+
+async def start_reauth_code(
+    db: AsyncSession, factory: SessionFactory, settings: Settings, member: Member, client_ip: str
+) -> CodeChallenge:
+    identifier = member.phone_e164 or member.email
+    if not identifier:
+        raise DomainError("no_contact", "No phone or email is on file to send a code to.", 409)
+    return await start_code_challenge(db, factory, settings, identifier, client_ip)
+
+
+async def check_reauth(
+    db: AsyncSession,
+    factory: SessionFactory,
+    settings: Settings,
+    member: Member,
+    *,
+    password: str | None,
+    challenge_id: UUID | None,
+    code: str | None,
+) -> None:
+    """Raise unless the password, or a code sent to this member's own identifier, is right."""
+    bad = DomainError("reauth_failed", "That did not match. Check your password or code and try again.", 401)
+    if password:
+        await rate_limiting.hit(
+            factory, f"reauth:{member.member_id}", limit=settings.rate_limit_password_per_identifier,
+            window_seconds=settings.rate_limit_window_seconds,
+        )
+        stored = await db.scalar(
+            text("SELECT password_hash FROM identity.password_credential WHERE member_id = :m"), {"m": member.member_id}
+        )
+        if not verify_password(stored, password):
+            raise bad
+        return
+    if challenge_id and code:
+        row = await _checked_challenge(db, factory, settings, challenge_id, code)
+        if row.identifier not in (member.phone_e164, member.email):
+            raise bad
+        await db.execute(
+            text("UPDATE identity.otp_challenge SET verified_at = coalesce(verified_at, now()), consumed_at = now() WHERE id = :id"),
+            {"id": row.id},
+        )
+        return
+    raise DomainError("reauth_required", "Enter your password or a one-time code to confirm.", 422)

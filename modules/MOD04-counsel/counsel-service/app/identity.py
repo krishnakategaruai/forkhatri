@@ -113,6 +113,17 @@ async def resolve(token: str | None) -> Actor | None:
     return actor
 
 
+def forget(member_id: UUID) -> None:
+    """Drop everything cached about a member (sessions, names, room tickets) after their data is erased."""
+    for k, (_, actor) in list(_sessions.items()):
+        if actor is not None and actor.member_id == member_id:
+            _sessions.pop(k, None)
+    _names.pop(str(member_id), None)
+    for k, (_, actor) in list(_tickets.items()):
+        if actor.member_id == member_id:
+            _tickets.pop(k, None)
+
+
 async def display_names(ids: list[UUID | str]) -> dict[str, str]:
     """Names for a set of members: Counsel's cache first, the platform for the rest."""
     wanted = list({str(i) for i in ids})

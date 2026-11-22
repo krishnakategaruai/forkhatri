@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
-from app.api.routes import admin, auth, insights, internal, members, modules
+from app.api.routes import account, admin, auth, insights, internal, members, modules
 from app.config.settings import Settings, get_settings
 from app.db.engine import assert_non_owning_role, create_engine, create_session_factory
 from app.errors import DomainError
@@ -38,10 +38,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.session_factory = create_session_factory(engine)
     logger.info("Identity service started against %s:%s/%s", settings.db_host, settings.db_port, settings.db_name)
     expiry = asyncio.create_task(_end_due_suspensions(app.state.session_factory))
+    from app.components.deletion import interface as deletion
+
+    erasure = asyncio.create_task(deletion.retry_loop(app.state.session_factory, settings))
     try:
         yield
     finally:
         expiry.cancel()
+        erasure.cancel()
         await engine.dispose()
 
 
@@ -140,6 +144,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(auth.router)
     app.include_router(members.router)
+    app.include_router(account.router)
     app.include_router(modules.router)
     app.include_router(internal.router)
     app.include_router(insights.router)

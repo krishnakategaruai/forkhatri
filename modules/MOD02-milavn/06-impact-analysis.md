@@ -7,6 +7,8 @@ updated: 2026-09-13
 items: "88 | approved: 88 | blockers: 0"
 ---
 
+> **Document status (2026-11-22, as built).** Sealed analysis (2026-09-13) is kept. The addendum lists dependencies and change risk for the system as built.
+
 # 06 — Impact & Plan Analysis — MOD02 Milavn
 
 ## Revision history
@@ -2573,3 +2575,27 @@ Yes, proceed as specified — flagging for Step 7/8 that the actual cross-module
 - (none yet)
 
 **Approval:** Architect / Director — [x] Approved — krishna kategaru, 2026-09-13
+
+---
+# Addendum 2026-11-22: dependencies and change risk (as built)
+
+| If this changes | What else breaks | Risk |
+|---|---|---|
+| ForKhatri session cookie name or identity service API | every authenticated call and the chat WebSocket; fails closed with 503 | high |
+| `milavn.member_id` session variable convention (`db/session.py`) | all 104 RLS policies and the definer functions | high |
+| shared places adapter or `PLACES_*` | place picker, profile place, event and circle place, first run | medium |
+| `occurrence_venue` RLS or `set_event_venue()` | venue, map pin, link visibility, calendar feed privacy | high (privacy) |
+| `ticket_type`, `create_waitlist_offer`, quota functions | tickets, waitlist, refunds, check-in by ticket, organizer money | high (money) |
+| `circle_membership` women-only trigger | every circle entry path | high (safety) |
+| `can_message` | chat start, DM from person page, activity chat | high (safety) |
+| notification classes and `notify.*` keys | inbox, grouping, push rules; old rows keep their language | medium |
+| `lib/event-formats.ts` and `event_format` text column | create form, filters, labels (no DB enum) | low |
+| `intent_category` enum (`professional` added) | covers need `professional.jpg`, labels, create tiles | low |
+| `COUNSEL_BOOKING_URL` (MOD04) | one button on the event page | low |
+| MOD06 payment service when it exists | `payments` adapter, sandbox gate, webhooks | high |
+| MOD05 dashboard | uses `/internal/v1/insights/members`; shape change breaks the members dashboard | medium |
+| admin console contract | `/milavn/admin/manifest` and queue shape | medium |
+| locale catalogs (5 languages; 1,297 web and 247 service keys each) | a missing key shows a raw key; parity check is manual | medium |
+| in-process jobs (reminders 10 min, suggestions hourly, hold expiry 1 min) | run twice if two API instances start | medium |
+| migration order (two files numbered 050) | independent of each other; renaming risks reapply confusion | low |
+

@@ -88,3 +88,17 @@ Personas for automated tests:
 The seed is `scripts/seed_dev_governance.py`, run by `deploy/migrate/migrate.py --seed-dev`.
 In production, appoint the first owner with a direct, audited insert as the owner database
 role, the same way the seed does.
+
+## Document status 2026-11-22, as built
+
+Checked against code on 2026-11-22. What is built and where:
+
+| Item | Detail |
+|---|---|
+| API (all under `/v1/admin`, in `admin.py`) | GET me, overview, members, members/{id}, members/{id}/modules, approvals, roles, org, audit, modules, queues, queues/{module}/{view_id}/{item_id}; POST members/{id}/contact, suspend, lift, sign-out, ban; approvals/{id}/decide; roles; roles/{id}/revoke; org/chapters; org/chapters/{key}/close; queues/.../actions/{action_id}; PATCH modules/{key}. 25 routes. |
+| Screens | `/admin` (Today), `/admin/members`, `/admin/members/[id]`, `/admin/approvals`, `/admin/team`, `/admin/org`, `/admin/queues`, `/admin/modules`, `/admin/audit`. |
+| Tables | `governance.chapter`, `role_assignment`, `suspension`, `approval_request`, `audit_event` (migration 005). |
+| Functional requirements | `02b-functional-requirements-admin-console.md` (FR-031 to FR-039, FR-031a, FR-047, FR-048). |
+| Languages | Console strings in English, Hindi, Telugu, Marathi, Kannada (`lib/admin-i18n.ts`). |
+
+Open items (from `docs/Critique/CRITIQUE-platform.md`): "last seen" shown to all viewers (C12); no external anchor for audit integrity (C12); owner role can act alone and first owner is a manual insert (C12); no member-facing explanation or appeal after suspension (C6); mixed-script Hindi labels and the "Swami" owner label (C13). Module status in the table above dated 2026-09-29 may have moved: verify each module's `GET /{module}/admin/manifest`.

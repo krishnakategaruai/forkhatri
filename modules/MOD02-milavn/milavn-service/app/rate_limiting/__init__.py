@@ -29,6 +29,7 @@ class RateLimitScope(StrEnum):
     CIRCLE_CREATE = "circle_create"  # TR16
     MESSAGE_POST = "message_post"  # thread / board (beyond-MVP)
     PHOTO_UPLOAD = "photo_upload"  # moments (beyond-MVP)
+    ACCOUNT_DATA_DELETE = "account_data_delete"  # 056: delete my data in Milavn, 3 an hour
 
 
 @dataclass(frozen=True, slots=True)

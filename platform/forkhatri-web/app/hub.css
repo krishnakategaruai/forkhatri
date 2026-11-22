@@ -1202,4 +1202,84 @@
   .toast[data-tone="error"] {
     color: var(--danger);
   }
+  /* ------------------------------------------------ delete my account -- */
+
+  .account-delete {
+    display: grid;
+    gap: 6px;
+    padding-top: 14px;
+    margin-top: 10px;
+    border-top: 1px solid var(--line);
+  }
+  .del {
+    display: grid;
+    gap: 12px;
+  }
+  .del-title,
+  .del-heading {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 650;
+  }
+  .del-note,
+  .del-ref {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+  .del-list {
+    margin: 0;
+    padding-inline-start: 20px;
+    display: grid;
+    gap: 6px;
+    color: var(--ink-2);
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+  .del-modules {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+  }
+  .del-modules li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+  }
+  .del-module-name {
+    font-weight: 600;
+  }
+  .del-module-state {
+    color: var(--ink-2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .del-kept {
+    margin: 4px 0 0;
+    font-weight: 600;
+  }
+  .del-reauth {
+    display: grid;
+    gap: 6px;
+  }
+  .btn-delete {
+    min-height: 52px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: var(--danger);
+    color: #fff;
+    font-weight: 650;
+    cursor: pointer;
+  }
+  .btn-delete:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
 }

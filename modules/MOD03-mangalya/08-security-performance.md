@@ -7,6 +7,8 @@ updated: 2026-09-13
 items: "104 | approved: 0 | blockers: 2"
 ---
 
+> **Document status (2026-11-22):** as-built scope. The original text below is kept as history; the **As-built addendum at the end of this file** records what exists today and wins on conflict. Module folder renamed MOD03-mangaly to MOD03-mangalya (inner service and web folders keep `mangaly-`). Related: `09-implementation.md`, `API-REFERENCE.md`, `TRACEABILITY.md`, `RUNBOOK.md`, `GLOSSARY.md`.
+
 # 08 — Security & Performance Analysis — MOD03 Mangaly
 
 ## Revision history
@@ -2134,3 +2136,43 @@ This file previously treated the vendor/schema gap as a Critical, unresolved blo
 **Approval:** Security Lead — [ ] Approved — name, date
 
 ---
+
+---
+
+
+# As-built addendum (2026-11-22): security and performance, as built
+
+## Auth and sessions
+Sign-in is owned by ForKhatri identity; Mangalya binds the platform member to a Mangalya account (identity bridge; `alias_of` for taken-over profiles) and sets the RLS context (`mangaly.account_id`). The interim Mangalya-only identity is retired (DEC-V1-015; the `INTERIM_IDENTITY_ENABLED` setting remains). `/auth/*` routes still exist in the API (login, OTP, reset); treat as legacy (which are live: unverified). Sessions last `SESSION_TTL_DAYS`. Tests use dev_session.py, never the OTP screens.
+
+## Roles
+| Role | Can |
+|---|---|
+| Candidate | everything on own profile, send requests, chats |
+| Parent / guardian | act for the candidate (`X-Mangaly-Manage`), answer requests, family chat, notes |
+| Sibling / relative | suggest, notes, direct chat; cannot send or answer requests |
+| Agent | clients, offline profiles, share, export, limited contact views |
+| RM | assigned members only |
+| Operator / admin | cases, moderation, agent prices and limits, insights |
+
+RLS and SECURITY DEFINER functions enforce this in the database; the app role has no direct access to some tables (for example `account_alias`; `biometric_consent` is read-only).
+
+## STRIDE highlights
+- Spoofing: face match runs in the browser, so a code edit or replayed request can claim a pass; server threshold 0.45, 10 attempts a day, expiry 2 years. A child's profile can be taken over only by the OTP-proven holder of the pending number who has no existing profile or circle.
+- Tampering: idempotency keys; outbox events.
+- Repudiation: audit bridge; consent timestamps; report snapshots.
+- Information disclosure: public biodata and birth time visible to signed-in members (owner rule; critique H2); photos before connection; screenshot guard is deterrence only; no face data stored.
+- Denial of service: rate limits listed in the 07 addendum.
+- Elevation: maker gate (optional by DEC-V1-035, still enforced by the server); agent face check; operator scopes.
+
+## Uploads
+Photos: server limit 8 MB and a type allow-list; the browser re-encodes and drops EXIF. Documents (biodata, jathakam) through `/profile/documents`; the biodata file is deleted after reading unless "attach" is ticked (owner Q3). Known from the October walk: removing or replacing a photo left the old file on disk (D17 asked for deletion; whether fixed: unverified).
+
+## Privacy and DPDP mapping
+Stored: identity link, profile and photos, horoscope birth details, family details, messages, consent records, face-match pass record (no biometric data). Purpose: matchmaking. Account deletion exists (FR101); data export status unverified. Retention settings are listed in `RUNBOOK.md`. **Needs lawyer:** parent-made profiles of adults before the child consents; the "personal use" exemption; the child's consent at takeover.
+
+## Open security findings (docs/Critique)
+C2 badge overclaims; C3 parent-made profiles and child data stored before takeover (partly mitigated by device drafts and managed accounts); C4 no bias audit of the engine; H2 public birth time and place; H3 broker harvesting caps and non-member consent; H4 plans (viewer list, Assisted deliverables, no refund); H5 incognito wording vs message scanning; H6 no dowry report reason; M1 "required verifications" (salary, ID, medical) possibly unlawful; M4 no human review screen; M5 screenshot guard. The pending `POST /profile/managed` change was refused by the build session's permission system as a security weakening and awaits the owner.
+
+## Performance
+No budgets enforced. Known: Discover skeleton delay on the dev build; photos are a few hundred KB after the shrink.

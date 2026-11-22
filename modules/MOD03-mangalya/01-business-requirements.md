@@ -7,6 +7,8 @@ updated: 2026-09-11
 items: "20 | approved: 20 | blockers: 0"
 ---
 
+> **Document status (2026-11-22):** as-built scope. The original text below is kept as history; the **As-built addendum at the end of this file** records what exists today and wins on conflict. Module folder renamed MOD03-mangaly to MOD03-mangalya (inner service and web folders keep `mangaly-`). Related: `09-implementation.md`, `API-REFERENCE.md`, `TRACEABILITY.md`, `RUNBOOK.md`, `GLOSSARY.md`.
+
 # 01 — Business Requirements — MOD03 Mangaly
 
 ## Revision history
@@ -2300,3 +2302,63 @@ of · Correct: Pass · Conforming: Pass
 - (none yet)
 
 **Approval:** Product Manager — [x] Approved — krishna kategaru, 2026-09-09
+
+
+---
+
+# As-built addendum (2026-11-22): business requirements BR21-BR30
+
+Everything below is what exists in the application today, or is explicitly marked planned. Earlier BR01-BR20 text above is kept as history; where it conflicts with this addendum, this addendum wins (for example the community-language set, the plans, the maker gate).
+
+## A. Vision, problem, value (as built)
+- **Problem.** Khatri / Somavanshiya Sahasrarjun Kshatriya (SSK, Pattegar) families arrange marriages through family networks, WhatsApp biodata and brokers. General matrimony sites are impersonal, push sales calls and show paid visibility. Parents, not candidates, do most of the work (critique cites 22 percent of women's profiles self-managed on one large site; unverified for this community).
+- **Value proposition.** The family is the unit (Home Circle); matching is mutual and AI-assisted from the family's own words; the score is never shown; no plan buys visibility; the family's real format (biodata) is accepted; brokers are brought inside with guardrails; calm, South-Indian visual language (DEC-V1-017/023).
+- **Who runs it.** Samaj heads run ForKhatri (owner direction 2026-10-02); no legal entity or paid operations exists yet (owner must confirm; critique M3/M4, master item 9).
+- **Competitors** (studied, not verified by use): Shaadi.com, Jeevansathi, BharatMatrimony, community sites SSKNA and ssksamaj.org; AI-first entrants Ditto/Known/Palaura. See `research/`, `AgentOutputs/CANDIDATE-UX-LEARNING-2026-10.md`, `ONBOARDING-REDESIGN-2026-10.md` section 3.
+
+## B. Personas and journeys
+| Persona | Journey (built) |
+|---|---|
+| Candidate (e.g. Asha) | hub -> Mangalya -> who-for -> About -> Where -> Photos -> Work -> matchmaker -> Home -> Discover -> request -> accepted -> incognito chat -> wedding stages |
+| Parent (Lakshmi, Vikram, Sujatha, Ramesh) | Who-for "my son/daughter" -> same steps, or biodata -> check and publish -> Home Circle -> answers requests, suggests, notes, family chat |
+| Sibling / relative | Home Circle member: suggests profiles, notes, direct chat; cannot send requests |
+| Broker / agent (Suresh) | apply -> admin review -> clients, offline biodata, share, export, contact views within limits |
+| Relationship manager | Assisted-plan assignments: search, suggest, log interactions |
+| Operator / admin | cases, suspensions, agent prices and limits, moderation queue, member insights |
+| New visitor | "Just look around first" in Discover (no requests until a profile exists) |
+
+## C. Business model (built vs planned)
+- Built: plan catalogue (version 2026-09) FREE, GOLD (3/6/12 months), ASSISTED (6/12, includes Gold), add-ons AGENT and AGENT_CONNECT; GST 18 percent as its own line; admin-settable prices (`plan_price`). Placeholder prices in `config/plans.py` (rupees before GST): Gold 2,499 / 3,999 / 5,999; Assisted 19,999 / 29,999; Agent 2,999 / 4,999 / 8,999; Agent Connect 1,499 / 2,499 / 3,999. **Owner must confirm real prices.**
+- Payments run on a sandbox (`/billing/dev/pay/{order_id}`) until a payment vendor exists (shared payment-services, MOD06; Razorpay settings exist as placeholders).
+- Honest price display: the screen shows the total including GST, not "from X a month" (master critique item 4 fix noted in the critique itself: "Prices are now GST-inclusive").
+- Planned / not built: invoices, pro-rated refunds (`/billing/cancel` refunds nothing), wedding partner discounts, Welfare Trust routing (owner direction: lives in MOD07).
+
+## D. New business requirements
+| ID | Requirement | Rationale | Status |
+|---|---|---|---|
+| BR21 | Plans and billing: capability-only plans, GST shown, versioned catalogue, honest price display | revenue without selling visibility (DEC-V1-031 note, guardrails) | built on sandbox |
+| BR22 | AI matchmaker: family's own words -> closed wish list, 1-10 importance, six 1-10 scales, hidden score, "Strong/Good match" word only | owner 2026-09-27 AI-first; explainable | built (AI needs key; keyword fallback) |
+| BR23 | Horoscope matching as an optional, respectful layer: Guna Milan, Porutham, Mangal dosha, unknown-time marked provisional | tradition without verdict; owner backlog B1 | built (internal service) |
+| BR24 | Marriage brokers inside the product with contact limits, reports and suspension | owner 2026-09-29; broker-harvesting risk (critique H3) | built, guardrails partial |
+| BR25 | Wedding arrangements after a match and Guides | owner 2026-10-01 | built (OpenStreetMap places; partner offers table; no partners yet) |
+| BR26 | Parent-first onboarding: parent never blocked, child's number optional, device drafts, biodata reader | owner 2026-10-06 (DEC-V1-035) | web built; one server change pending |
+| BR27 | Photo trust by optional face match, with its limits stated | DEC-V1-016/025; critique C2 | built; label overclaims (known gap) |
+| BR28 | Five languages: English, Hindi, Telugu, Marathi, Kannada (translation accuracy rule) | owner 2026-09-30; critique C1; migration 066 | built (locales en hi te mr kn) |
+| BR29 | Assisted matching by relationship managers | DEC-V1-032 | built |
+| BR30 | Safety, reports, blocks, operator cases, suspensions, minor-profile sweep | DEC-V1-006/007/009 | built; human review screen thin |
+
+## E. Policies
+- **Trust and safety:** only the candidate, mother, father or guardian may answer a request; blocks; reports store a snapshot of the thread; severity taxonomy DEC-V1-006; report packet and paging vendor placeholders (DEC-V1-009/011).
+- **Privacy:** birth details visible to signed-in members before connection by owner rule (critique H2 recommends narrowing; owner to decide); face data never stored, only a pass record and consent; consent record kept; messages retention per DEC-V1-010.
+- **Moderation:** operator queue and cases; lift suspension, reopen, resolve.
+- **Refunds:** none implemented. Needs lawyer/CA (CCPA dark-pattern guidance, consumer law).
+- **Legal / regulatory (needs lawyer/CA):** DPDP duties from about May 2027 (parent-made profiles of adults, child's consent at takeover, whether the "personal use" exemption covers the platform); GST invoicing; IT Rules takedown windows; whether a face embedding counts as sensitive (DPDP has no such category; decisions file wording is flagged).
+
+## F. Success metrics (proposed; no tracking built)
+Profiles published, share with a photo, requests accepted per 100 sent, time from sign-up to first Discover view, share of profiles made by parents, share completing via biodata, plan conversion, agent contact-view rate vs limits, report resolution time. Dev numbers are test data (hub shows Mangalya used by 12 percent in dev).
+
+## G. Roadmap and backlog
+`BACKLOG.md` B1 (horoscope) and B2 (recommendation engine) are now built in part (B1 built; B2 replaced by the DEC-V1-031 engine, no learning from clicks). Open: real count of marriageable members per city (C1), parity audit of the engine (C4), dowry answer (H6), human review screen (M4), invoices/refunds, wedding partners, guided voice path for the wizard (D18), email verification (platform blocker).
+
+## H. Risks
+Small market; badge overclaim; parent-made profiles and DPDP; engine bias without audit; horoscope shown beside "Strong match"; public birth time and place; broker harvesting; misleading plan terms; incognito wording; dowry; screenshot deterrence; Samaj-run operations. Full text: `docs/Critique/CRITIQUE-mod03-mangalya.md`.

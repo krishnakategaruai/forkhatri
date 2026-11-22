@@ -1955,3 +1955,19 @@ above, restated here as one checklist so it is not lost across 55 items:
 ## Approval
 
 Security Lead — [x] Approved — autonomous execution, 2026-09-14
+
+
+---
+
+# Addendum 2026-11-22 — security record as built
+
+**Document status:** as built, 2026-11-22.
+- **Auth:** identity adapter chain; sessions owned by the platform (30 days); personal tokens vyp_ hashed, scoped, revocable; dev header only when DEV_MODE (must be off in any shared deployment). Admin actions need platform admin scopes; /internal/v1 needs the service key.
+- **RLS:** enabled on 57 of 63 tables; exceptions are reference or counter tables (products, integration config, profession_rules, taxonomy_terms, rate_limit_counter, legal_documents). Writes go through SECURITY DEFINER functions.
+- **Secrets:** all listed with S in architecture.md section 7; placeholders are CHANGE_ME; verification identifiers encrypted with a dedicated key; webhook secrets AES-GCM; analytics uses an HMAC pseudonym.
+- **Webhooks:** private targets allowed only in dev (SSRF control).
+- **Rate limits:** enquiries 20/day, reports 10/day, strong-match notifications 3/day, AI per day, precall taps 3/day, 20 active listings per member.
+- **Privacy (DPDP, in force for core duties from about 13 May 2027):** stored: identity link, phone, profile, location area, posts, messages, reviews, taste signals; export and delete endpoints exist (tag privacy); the wording of delete messages needs legal check (BACKLOG D2); under-18 policy: 18+ only (2026-10-06); breach notice and 48-hour pre-deletion notice not built (needs lawyer).
+- **Open findings from the critique:** text-only scam defence (C2); aggregator status (C3); thin "Verified" (H2); sandbox ledger (H5); false-match notifications (M1); verification-document retention not independently checked (unverified).
+- **Performance:** no load test exists; budgets in the sections above are targets, not measurements.
+

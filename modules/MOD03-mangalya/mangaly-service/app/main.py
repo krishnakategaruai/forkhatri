@@ -25,6 +25,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import (
+    account_data,
     admin,
     agents,
     operations,
@@ -176,6 +177,8 @@ def create_app() -> FastAPI:
     app.include_router(guides.router)
     # [2026-09-27] Facts for the platform's Members dashboard (server to server only).
     app.include_router(insights.router)
+    # [Owner, 2026-11-22] Account deletion: member-facing and platform-facing.
+    app.include_router(account_data.router)
 
     return app
 

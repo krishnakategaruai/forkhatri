@@ -7,6 +7,8 @@ updated: 2026-09-13
 items: "52 | approved: 52 | blockers: 0"
 ---
 
+> **Document status (2026-11-22, as built).** Sealed technical requirements (2026-09-13) are kept; the addendum at the end is the as-built technical reference.
+
 # 07 — Technical Requirements — MOD02 Milavn
 
 ## Revision history
@@ -851,3 +853,73 @@ Any action needing multiple components to react (a cancellation triggering both 
 **Constraints surfaced** none. **Assumptions** none. **Decisions** none.
 **Review history** (none yet)
 **Approval:** Architect — [x] Approved — krishna kategaru, 2026-09-13
+
+---
+# Addendum 2026-11-22: technical reference as built
+
+Complete endpoint list: `API-REFERENCE.md` (205 OpenAPI operations plus WebSocket, internal and media routes). Complete schema: `07a-er-model.md` appendices A-C. Security: `08-security-performance.md`. Operations: `RUNBOOK.md`.
+
+## 1. Stack and versions (from `pyproject.toml`, `package.json`)
+Python 3.12 or newer (runs on 3.13 in the dev venv); FastAPI 0.141.1; SQLAlchemy async with asyncpg 0.31.0; python-dotenv; python-multipart. Web: Next.js 16.3.5, React 19.2.8, i18next 26, Leaflet 1.9, lucide-react, MediaPipe tasks-vision (expressions), `qrcode` on device. PostgreSQL (psql 18 on the dev machine), port 5433, database `forkhatridb`, schemas `milavn_*`.
+
+## 2. Processes and ports
+| Process | Port | Start |
+|---|---|---|
+| milavn-service (FastAPI) | 8001 | `milavn-service/.venv/Scripts/python -m uvicorn app.main:app --host 127.0.0.1 --port 8001` (no `--reload` on Windows) |
+| milavn-web (Next.js) | 3001 | `npm run dev` in `milavn-web` |
+| ForKhatri entrance | 3100 | platform |
+| identity service | 8100 | platform |
+| PostgreSQL | 5433 | local |
+| MOD06 payments (reserved, not built) | 8016 | n/a |
+| Counsel web (optional link) | 3014 | n/a |
+
+## 3. Components (backend, `app/components/<name>/interface.py`)
+identity_bridge, profile, places, discovery (+ `nl.py` natural-language grammar), activity (+ `events.py` program/teams, `cohost.py`), circle (+ `people.py`, `social.py`), connect (+ `chat.py` hub), conversation, notification, payments, ticketing, trust, safety, locationprivacy, authorization. Cross-component events travel through the transactional outbox (`app/events/bus.py`): publish inserts into the owner's `outbox_event`, handlers run after commit (notification and ticketing subscribers).
+
+## 4. Background jobs (in-process, started in `main.py` lifespan)
+| Job | Interval | Function |
+|---|---|---|
+| reminders (24 h, still coming) | 10 min | `notification.send_reminders` |
+| circle suggestions | hourly (every 6th tick) | `circle.run_suggestion_job` under internal service context |
+| payment hold expiry and waitlist offers | 1 min | `ticketing.run_hold_expiry` |
+Failures are logged and retried at the next interval. Single-instance only.
+
+## 5. Configuration reference (names only; `app/config/settings.py`, environment variables are the upper-case names)
+| Name | Purpose | Default (non-secret) | Secret |
+|---|---|---|---|
+| DB_HOST, DB_PORT, DB_NAME | database location | localhost, 5433, forkhatridb | no |
+| DB_APP_USER, DB_APP_PASSWORD | runtime role | milavn_app, dev placeholder | password yes |
+| DB_POOL_MAX_CONNECTIONS | pool size | 20 | no |
+| API_HOST, API_PORT, API_DEBUG | listener | 127.0.0.1, 8001, false | no |
+| CORS_ALLOWED_ORIGINS | allowed web origins, also the Origin check | localhost:3001, 127.0.0.1:3001 | no |
+| WEB_BASE_URL | public web base for links | http://localhost:3001 | no |
+| PLATFORM_IDENTITY_URL, PLATFORM_SERVICE_NAME, PLATFORM_SESSION_COOKIE, FORKHATRI_ENTRANCE_URL | identity bridge | localhost:8100, milavn, fk_session, localhost:3100 | no |
+| PLATFORM_SERVICE_KEY | service key for identity and internal insights | CHANGE_ME | yes |
+| DEV_IDENTITY_ENABLED | legacy header stand-in | false | no (must stay false outside dev) |
+| IDEMPOTENCY_KEY_TTL_DAYS | replay window | 7 | no |
+| RATE_LIMIT_REPORT_MAX/_WINDOW_SECONDS | reports | 10 / 3600 | no |
+| RATE_LIMIT_CREATE_MAX/_WINDOW_SECONDS | event creation | 20 / 3600 | no |
+| RATE_LIMIT_PARTICIPATION_MAX/_WINDOW_SECONDS | RSVP toggles | 60 / 600 | no |
+| PAYMENTS_PROVIDER | none (sandbox when local) or MOD06 | none | no |
+| PAYMENT_SERVICES_URL | MOD06 base | http://localhost:8016 | no |
+| PAYMENT_SERVICES_KEY, PAYMENT_SERVICES_WEBHOOK_KEY | MOD06 auth, webhook auth | CHANGE_ME | yes |
+| COUNSEL_BOOKING_URL | optional "book a one-to-one" link template with {member_id} | empty (hidden) | no |
+| ONLINE_JOIN_OPEN_MINUTES | online link opens before start | 15 | no |
+| CIRCLE_POST_MAX_PHOTOS, CIRCLE_POST_MAX_FILES | per post | 10, 5 | no |
+| CIRCLE_PHOTO_MAX_MB, CIRCLE_FILE_MAX_MB, CIRCLE_FILE_TYPES, CIRCLE_ALBUM_MAX_PHOTOS_PER_UPLOAD | upload caps | 10, 15, pdf/doc/docx/xls/xlsx/ppt/pptx/txt, 20 | no |
+| MAP_TILE_VENDOR, MAP_TILE_API_KEY | map tiles (placeholder) | maptiler, REPLACE_ME | key yes |
+| GEOCODING_VENDOR, GEOCODING_API_KEY | geocoding (placeholder) | opencage, REPLACE_ME | key yes |
+| PLACES_PROVIDER, PLACES_BASE_URL, PLACES_USER_AGENT, PLACES_CONTACT_EMAIL | shared place search | nominatim, public OSM, ForKhatri-Milavn/1.0, empty | no |
+Web (`milavn-web/.env.local`, example in `.env.example`): API_BASE, NEXT_PUBLIC_API_BASE, API_SERVER_BASE, MILAVN_API_INTERNAL_URL, BASE_PATH, NEXT_PUBLIC_BASE_PATH, FORKHATRI_ENTRANCE_URL, NEXT_PUBLIC_FORKHATRI_ENTRANCE_URL, IDENTITY_API, NEXT_PUBLIC_IDENTITY_API, FORKHATRI_IDENTITY_INTERNAL_URL (tunnel hand-off), TUNNEL_DEV_ORIGIN, NEXT_DIST_DIR, NEXT_OUTPUT_STANDALONE. Names found by search of the code; meaning of each follows its name. `npm run dev:tunnel` is mentioned in `proxy.ts` but is not in `package.json` (unverified where it lives).
+
+## 6. Integrations and adapters
+Identity bridge (HTTP to identity service, session resolve, dev identities file `config/dev_identities.json`); shared places adapter (shared library `forkhatri_integrations.places`, throttle 1/s plus cache); payments adapter (sandbox in-process unless MOD06); Counsel link (URL template only); OpenStreetMap tiles (browser direct); browser speech recognition (voice ask) and on-device camera classification (expressions).
+
+## 7. Realtime, storage, i18n, caching
+Realtime: WebSocket `/ws/chat` (in-process hub, presence and typing) and 15 second polling for threads. Files: local folder `milavn-service/.local-media/`, private folders served by gated routes (API-209..214), public folder mounted at `/media`. i18n: server catalogs `app/i18n/locales/{en,hi,te,mr,kn}/common.json` (247 keys each), web catalogs `milavn-web/locales/{en,hi,te,mr,kn}/common.json` (1,297 keys each); language per request from `X-Milavn-Language`; reasons are (key, params) rendered at response time. Caching: place search results cached in the adapter; no HTTP cache layer elsewhere.
+
+## 8. Error model and versioning
+JSON `{detail: <translated message>}`; codes 401, 403 (including `origin_not_allowed`), 404 (also used for RLS-hidden), 409 (conflicts, idempotency replay), 415 (bad file type), 422 (validation), 429, 503 (identity unavailable). Database outcome codes (for example WO001 women-only) are mapped in the API. No API version prefix on public routes (internal route uses `/internal/v1`); OpenAPI version string is `0.1.0`.
+
+## 9. Observability and performance budgets
+stdout logging only (see 08 sections 11 and 12). Design budgets are in 08; none measured.

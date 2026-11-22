@@ -43,7 +43,12 @@
 # Traces to: FR36, FR37, FR38, FR53, TR036, TR037, TR038, TR053
 from __future__ import annotations
 
+import hashlib
+import json
+import re
+import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Literal
 
 import asyncpg
@@ -51,9 +56,10 @@ from fastapi import HTTPException
 from pydantic import BaseModel, Field
 
 from app.errors import ApiError
-from app.events import emit_event
+from app.events import emit_event, pseudonymize
 from app.i18n import translate
 from app.identity import AuthzContext
+from app.integrations.storage import get_storage
 from app.services import taste as taste_svc
 
 SIX_CONTROLS = (
@@ -275,33 +281,83 @@ async def withdraw_consent(conn: asyncpg.Connection, ctx: AuthzContext, field: s
     return WithdrawConsentOut(field=field, withdrawn=True)
 
 
-async def request_account_deletion(conn: asyncpg.Connection, ctx: AuthzContext, lang: str) -> DeletionOut:
-    active_paid = await conn.fetchval(
-        """SELECT (EXISTS (SELECT 1 FROM vyapar_commercial.promotions WHERE owner_id = $1 AND state IN ('awaiting_payment','active'))
-                OR EXISTS (SELECT 1 FROM vyapar_commercial.entitlements WHERE owner_id = $1 AND state IN ('awaiting_payment','active')))""",
-        ctx.member_id,
-    )
-    if active_paid:
-        row = await conn.fetchrow(
-            """INSERT INTO vyapar_privacy.data_requests (member_id, kind, state, detail)
-               VALUES ($1, 'delete', 'blocked', 'active paid order') RETURNING id""",
-            ctx.member_id,
-        )
-        return DeletionOut(id=str(row["id"]), state="blocked", reason=translate("privacy.error.deleteBlockedActiveOrder", lang))
+class ErasureOut(BaseModel):
+    """The ForKhatri account-deletion contract's answer (docs/ParentApp/ACCOUNT-DELETION.md)."""
 
-    retained = ["audit_events (regulatory retention)", "payment_orders (financial record retention)"]
-    await conn.execute(
-        """UPDATE vyapar_identity.members SET anonymized = true, display_name = 'Deleted member',
-             phone = NULL, avatar_url = NULL, deleted_at = now(), updated_at = now() WHERE id = $1""",
-        ctx.member_id,
-    )
-    await taste_svc.delete_taste(conn, ctx.member_id)  # learned taste is the member's own derived data: gone, not anonymized
-    row = await conn.fetchrow(
-        """INSERT INTO vyapar_privacy.data_requests (member_id, kind, state, retained_categories, completed_at)
-           VALUES ($1, 'delete', 'completed', $2, now()) RETURNING id""",
-        ctx.member_id, retained,
-    )
-    return DeletionOut(id=str(row["id"]), state="completed", retained_categories=retained)
+    module: str = "vyapar"
+    status: str
+    deleted: dict[str, int]
+    retained: list[dict]
+    files_removed: int
+
+
+def _tombstone_key(member_id: str) -> str:
+    # same one-way hash the SQL function uses, so the rate-limit key never holds the raw member id
+    return "erase:" + hashlib.sha256(member_id.encode("utf-8")).hexdigest()[:16]
+
+
+def _remove_files(member_id: str, urls: list[str]) -> int:
+    """Removes the uploaded files for the erased rows plus anything this member uploaded
+    (upload names start with the sanitised member id). Local-disk storage; a host with
+    object storage supplies delete() on its adapter."""
+    storage = get_storage()
+    directory = getattr(storage, "directory", None)
+    names = {u.rsplit("/", 1)[-1] for u in urls if u.startswith("/uploads/")}
+    removed = 0
+    if directory is not None and Path(directory).is_dir():
+        safe = re.sub(r"[^a-zA-Z0-9_]", "", member_id)[:32]
+        if safe:
+            names |= {f.name for f in Path(directory).glob(f"{safe}-*")}
+        for name in names:
+            if not name or "/" in name or "\\" in name or name.startswith("."):
+                continue
+            target = Path(directory) / name
+            try:
+                if target.is_file():
+                    target.unlink()
+                    removed += 1
+            except OSError:
+                pass
+    elif hasattr(storage, "delete"):
+        for name in names:
+            try:
+                storage.delete(name)  # type: ignore[attr-defined]
+                removed += 1
+            except Exception:
+                pass
+    return removed
+
+
+async def erase_member(conn: asyncpg.Connection, member_id: str) -> ErasureOut:
+    """Kind A and kind B deletion: everything Vyapar holds about the member, in one
+    database transaction (the caller's), then the uploaded files. Idempotent."""
+    try:
+        res = await conn.fetchval("SELECT vyapar_identity.erase_member($1, $2)", member_id, pseudonymize(member_id))
+    except asyncpg.PostgresError as exc:
+        if "operator_role_must_be_removed" in str(exc):
+            raise ApiError(409, "privacy.error.deleteOperatorBlocked", "en", code="operator_role_must_be_removed")
+        raise
+    out = json.loads(res) if isinstance(res, str) else res
+    files = _remove_files(member_id, list(out.get("file_urls") or []))
+    return ErasureOut(status=out["status"], deleted=out["deleted"], retained=out["retained"], files_removed=files)
+
+
+async def request_account_deletion(conn: asyncpg.Connection, ctx: AuthzContext, lang: str) -> DeletionOut:
+    """Old path, kept working: now removes everything (no longer only anonymising)."""
+    out = await erase_member(conn, ctx.member_id)
+    retained = [r["kind"] for r in out.retained]
+    return DeletionOut(id=uuid.uuid4().hex, state="completed", retained_categories=retained)
+
+
+async def delete_my_data(conn: asyncpg.Connection, ctx: AuthzContext, lang: str, confirm: str | None) -> ErasureOut:
+    """Kind B: the signed-in member's own 'Delete my data in Vyapar' (typed DELETE, 3 per hour)."""
+    if (confirm or "").strip() != "DELETE":
+        raise ApiError(422, "privacy.error.deleteConfirmRequired", lang, code="confirm_required")
+    allowed = await conn.fetchval("SELECT vyapar_platform.check_and_increment($1, 3600, 3)", _tombstone_key(ctx.member_id))
+    if not allowed:
+        raise ApiError(429, "privacy.error.deleteRateLimited", lang)
+    out = await erase_member(conn, ctx.member_id)
+    return out
 
 
 async def list_my_privacy_requests(conn: asyncpg.Connection, ctx: AuthzContext) -> list[PrivacyRequestOut]:

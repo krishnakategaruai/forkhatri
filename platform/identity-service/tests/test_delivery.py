@@ -19,6 +19,7 @@ PRODUCTION = {
     "session_cookie_secure": True,
     "dev_expose_otp": False,
     "otp_pepper": STRONG,
+    "deletion_tombstone_pepper": "t" * 40,
     "service_keys": {"mangaly": STRONG, "milavn": STRONG},
     "sms_provider": "disabled",
     "email_provider": "resend",

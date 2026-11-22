@@ -7,6 +7,8 @@ updated: 2026-09-12
 items: "18 | approved: 18 | blockers: 0"
 ---
 
+> **Document status (2026-11-22, as built).** Sealed text (2026-09-12) is kept. The addendum at the end records business facts, decisions and risks added up to 2026-11-22: BR19-BR24, owner decisions, business model status, legal notes and risks. Functional detail: `02-functional-requirements.md` and `02a-functional-requirements-as-built.md`.
+
 # 01 — Business Requirements — MOD02 Milavn
 
 ## Revision history
@@ -1520,3 +1522,51 @@ Verifiable ✓ · Correct ✓ · Conforming ✓
 - (none yet)
 
 **Approval:** Product Manager — [x] Approved — krishna kategaru, 2026-09-12
+
+---
+# Addendum 2026-11-22: business requirements added since sealing
+
+## A. Where the product stands
+Milavn is ForKhatri's real-world participation module: members find events around them, say Going, form circles (communities with board, albums, polls, trips, fundraisers), host free or ticketed events, and chat. It runs on a development setup with 20 QA members; there is no production launch, no real payment vendor and no recorded user numbers (unverified: no analytics exist). Operating model: Samaj heads are expected to run ForKhatri (owner direction 2026-10-02); who moderates Milavn day to day is **not decided** (owner to confirm).
+
+## B. New business requirements
+| ID | Requirement | Rationale | Status |
+|---|---|---|---|
+| BR19 | A member can find and use Milavn anywhere in India without choosing from a fixed city list | Community is spread across many cities; the fixed list of 33 localities excluded most members | built (FR127) |
+| BR20 | Hosts can run professional and large events: tiered tickets, discount codes, agenda, speakers, stalls, online or hybrid | Samaj professionals want workshops, talks, expos | built on sandbox (FR129-FR138) |
+| BR21 | Exact location and online links reach only people with a confirmed spot | Safety and privacy | built (FR128, FR129) |
+| BR22 | Women-only groups and trips that members can trust | Women's temple trips and travel are a core use; critique C2: current check is self-declared | partial (FR140) |
+| BR23 | Circles are communities: photos, files, albums, notifications that do not overwhelm, co-hosting | Meetup and WhatsApp group behaviour, done calmly | built (FR142-FR145) |
+| BR24 | A new member reaches something useful in one step | Study 2026-10-06: three forced screens, empty Home, English forced on Telugu members | built (FR146-FR148) |
+
+## C. Owner decisions recorded (date, source)
+- 2026-09-30 Counsel (MOD04) is one-to-one advice; group formats belong in Milavn.
+- 2026-09-30 Telugu and Hindi text must be accurate and respectful (Marathi and Kannada added later by another session).
+- 2026-10-05 Plan approved: live places, exact venue, tickets, flexible and women-only groups, event formats, circle social. No in-app video; online events use the organizer's own link.
+- 2026-10-06 First run asks only for place; language is never asked.
+- 2026-10-06 Event page redesigned around four moments (deciding, going, hosting, recap).
+- 2026-10-02 Samaj heads run ForKhatri; Welfare Trust inside Finance (MOD07); AI attaches to premium tiers.
+- 2026-09-28 Payment vendor is a separate backlog item; sandbox until then.
+- Standing rules: protect the base, no dummy functionality, one term per concept, mobile first, no hardcoded strings.
+
+## D. Business model (what exists)
+Free by default for members. Ticketing computes price, discount, refund and organizer totals; no platform fee, subscription or payout is implemented. Fundraisers record pledges; money moves outside the app and the organizer marks a pledge paid. Welfare Trust routing is MOD07's job. Critique M4: nothing funds hosting or moderation; options (small fee on paid events, Samaj funding, sponsorship) are open owner decisions. Pricing: none decided.
+
+## E. Policies in force
+Trust: non-punitive no-show, kind reminders, private thanks, mutual "would meet again", no public ratings. Safety: report, block, moderation queue (dismiss, warn, escalate, restrict), one open report per person per thing. Privacy: area-level location only, exact venue after a confirmed spot, private circle media. Refunds: full before a 24 hour cutoff, none after (default seen in QA; whether organizers can set it: unverified). Moderation response time: none promised.
+
+## F. Legal and regulatory notes (needs lawyer or CA)
+RBI Payment Aggregator Directions 2025 may forbid pooling ticket money for many hosts (critique C1); GST and host KYC unresolved; DPDP Act: retention, export, under-18 photos, grievance contact and breach plan not built (H5); public-assembly risk for large events (H3); OpenStreetMap public server policy (H4); IT Rules grievance officer. None has been reviewed by a lawyer.
+
+## G. Success metrics (proposed, not instrumented)
+Repeat attendance, first-timers who return, mutual "meet again", events per active circle, RSVP to check-in ratio, share of members outside metros, time from first tap to first RSVP. None is measured today.
+
+## H. Competitors
+Meetup, Luma, Partiful, Eventbrite, WhatsApp Events and groups, Facebook Groups. Edge: Samaj trust, private venue, safety, calendar, Indian languages. Research: `AgentOutputs/RESEARCH-BEHAVIOUR-2026.md`, `REVIEW-functional-vs-platforms-2026-10.md`.
+
+## I. Roadmap and backlog
+Next: legal decision on paid events; woman steward approval; request-based first contact; per-day check-in; recurring dates; Samaj-curated calendar for the cold start; WhatsApp share-back; clean demo tenant; self-hosted places and tiles; DPDP package. Full list: "Not built" in `02a-functional-requirements-as-built.md` and `08-security-performance.md` section 13.
+
+## J. Risks
+`docs/Critique/CRITIQUE-mod02-milavn.md` (C1-C3, H1-H7, M1-M8). Biggest: money rules, women-only trust, empty communities, unsolicited messages, unreviewed security.
+

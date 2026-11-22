@@ -2,8 +2,8 @@
 project: ForKhatri
 artifact: Parent Application Implementation
 step: 9
-status: Ready for Review
-updated: 2026-09-14
+status: As built, updated
+updated: 2026-11-22
 ---
 
 # Parent Application Implementation
@@ -17,6 +17,100 @@ Contract: `07-tech-reqs.md`. Decisions and research: `00c-identity-and-entrance-
 | 2026-09-13 | Static demo shell in `web/parent-app/` (demo session, no real identity). |
 | 2026-09-14 | Real implementation: Identity & Trust Service, ForKhatri web entrance, Mangaly and Milavn moved onto the ForKhatri session. `web/parent-app/` kept as the superseded prototype. |
 | 2026-09-14 | Deployment kit for one Oracle Always Free Ampere VM behind a Cloudflare Tunnel (`deploy/`): per-app Dockerfiles, Caddy edge, URL-based migration runner, Resend email delivery and `delivery_unavailable`, env-driven `basePath` in both module web apps, backups to disk and R2, push-to-deploy. Rehearsed natively (no Docker on this machine); nothing deployed. |
+
+## Document status (2026-11-22)
+
+Scope: AS BUILT. This file is the implementation record of the platform (identity service, entrance
+and hub, admin console, shared integrations, deployment kit, launchers). Sections dated 2026-09-14
+below are kept as history; where they drifted, "As built on 2026-11-22", "Known drift" and
+"What is NOT built" say what is true today. Whole-system view: `docs/architecture.md`.
+Operations: `docs/RUNBOOK.md`. Terms: `docs/GLOSSARY.md`. Deployment: `docs/ParentApp/DEPLOYMENT.md`.
+
+## As built on 2026-11-22
+
+### Folder structure and key files
+
+| Area | Path | What is in it |
+|---|---|---|
+| Identity & Trust Service (FastAPI) | `platform/identity-service/` | `app/main.py` (app factory, Origin guard, routers), `app/api/routes/{auth,members,modules,internal,insights,admin}.py`, `app/components/{identity,registry,governance,insights}/`, `app/config/settings.py`, `app/dev_tools/{router,personas}.py`, `app/rate_limiting/`, `db/000-bootstrap.sql`, `db/migrations/001` to `007`, `scripts/{dev_session,seed_dev_members,seed_dev_governance,import_module_identities,build_insight_places}.py`, `tests/` |
+| Entrance, hub, admin console, insights (Next.js) | `platform/forkhatri-web/` | `app/` (`page.tsx` arrival and hub, `account`, `admin/*`, `insights`), `components/` (`Arrival`, `Entrance`, `Hub`, `AccountSheet`, `CommandOrb`, `DevotionalPortrait`, `Offline`, `Sheet`, `Splash`, `admin/`, `insights/`, `dev/DevActAs.tsx`), `lib/` (`api`, `i18n`, `intent`, `return-to` with `fk_handoff`, `admin-api`, `admin-i18n`, `insights-i18n`, `theme`), `next.config.ts` |
+| Shared integrations (Python, standard library only) | `shared/forkhatri-integrations/forkhatri_integrations/` | `payments`, `messaging`, `delivery`, `places` (OpenStreetMap Nominatim adapter added 2026-10-06), tests, `BACKLOG.md` |
+| Launchers | `scripts/dev.mjs`, `scripts/tunnel.mjs`, `scripts/start-tunnels.ps1`, `scripts/check_locale_parity.py` | `npm run dev`, `npm run dev:tunnel`, Windows wrapper for tunnels, locale parity check |
+| Deployment kit | `deploy/` | `docker-compose.yml`, `docker-compose.local-test.yml`, `Caddyfile`, `migrate/{Dockerfile,migrate.py,seeds}`, `scripts/*.sh`, `secrets/owner-inputs.env.example`; CI in `.github/workflows/deploy.yml` |
+
+### Identity service API as built (public edge `/api/identity/*`; interactive docs at `/docs` on port 8100 in development)
+
+| Group | Endpoints |
+|---|---|
+| Sign-in (`/v1/auth`) | `POST /code`, `POST /code/verify`, `POST /welcome`, `POST /password`, `POST /sign-out`, `POST /handoff`, `POST /handoff/redeem` |
+| Member (`/v1`) | `GET /session`, `PATCH /me` (name and language only) |
+| Registry (`/v1/modules`) | `GET ""`, `POST /{key}/enter` |
+| Insights | `GET /v1/insights` (open to every signed-in member) |
+| Admin and governance (`/v1/admin`) | `GET /me`, `/overview`, `/members`, `/members/{id}`, `/members/{id}/modules`, `/approvals`, `/roles`, `/org`, `/audit`, `/modules`, `/queues`, `/queues/{module}/{view_id}/{item_id}`; `POST /members/{id}/contact`, `/suspend`, `/lift`, `/sign-out`, `/ban`; `POST /approvals/{id}/decide`; `POST /roles`; `POST /roles/{id}/revoke`; `POST /org/chapters`; `POST /org/chapters/{key}/close`; `POST /queues/{module}/{view_id}/{item_id}/actions/{action_id}`; `PATCH /modules/{key}` |
+| Internal (`/internal/v1`, hidden from the edge, service key required) | `POST /sessions/resolve`, `POST /members/provision`, `POST /members/{id}/retire-provisioned`, `POST /members/lookup` |
+| Development (`/dev/v1`, development only) | `GET /personas`, `POST /sessions` |
+| Ops | `GET /health` |
+
+### Database (`forkhatri_identity`, port 5433 in development)
+
+Schemas `identity` (member, password_credential, otp_challenge, session), `platform` (rate_limit_counter), `registry` (module, member_module_entry), `governance` (chapter, role_assignment, suspension, approval_request, audit_event). Migrations: 001 initial, 002 module registry (reference data), 003 member holds basic identity only, 004 dev auth method, 005 governance, 006 Mangalya display name, 007 Marathi and Kannada. The registry key for Mangalya is still `mangaly` (migration 006 changed only the display name).
+
+### Languages
+
+English, Hindi, Telugu since 2026-09-14; Marathi and Kannada added on 2026-10-06 (migration 007; `docs/LANGUAGES-MR-KN-PLAN.md`). Locale parity is checked by `scripts/check_locale_parity.py`.
+
+### How to run, test, migrate
+
+- Start everything: `npm run dev` (see `docs/RUNBOOK.md`); subsets `npm run dev:platform`, `dev:mangalya`, `dev:milavn`, `dev:vyapar`, `dev:counsel`; status `npm run dev:status`; public tunnels `npm run dev:tunnel` or `scripts/start-tunnels.ps1`.
+- Identity tests: `platform/identity-service/.venv/Scripts/python -m pytest platform/identity-service/tests` (unit: `test_delivery`, `test_dev_tools`, `test_identifiers`, `test_origin_guard`, `test_secrets`; integration `test_contract_live` needs the service on 8100, `test_governance_db` needs the database).
+- Shared library tests: `shared/forkhatri-integrations/tests`.
+- Migrations in production: `deploy/migrate/migrate.py` (idempotent, SHA-256 ledger). In development: each service's own `db/migrations` and each module's `07a-db-implementation/init.sh`.
+- Development sign-in for tests: `platform/identity-service/scripts/dev_session.py <persona> --storage-state <file>` or `--cookie-header`.
+
+### Conventions
+
+Environment values are never hardcoded (names in `.env.example`, values in git-ignored `.env`; owner rule 2026-09-27). Python APIs run without `--reload` and are restarted after a change. One ForKhatri sign-in; no module builds its own login. Every user-visible string lives in locale files for en, hi, te, mr, kn; one canonical term per concept (`docs/GLOSSARY.md`).
+
+## Change log
+
+Source: `git log --since=2026-09-01 --stat -- platform shared deploy scripts docs/ParentApp .github` plus owner decisions. The history is coarse (14 commits touch these paths and several are large snapshots), so entries are grouped by commit and by what its diff contains.
+
+| Date | Commit | What changed | Why |
+|---|---|---|---|
+| 2026-09-13 | f67991a | Parent-app pipeline documents 00 to 08 (scope, architecture, BR, FR, UX, UI, tests, impact) | Start of the platform step set |
+| 2026-09-16 | 0c09a7f | Consolidation research drafts under `docs/ParentApp/research/` | Research behind the identity and entrance decisions |
+| 2026-09-17 | 639a847 | Deployment kit: `deploy/` (compose, Caddyfile, migrate, scripts, README), `.github/workflows/deploy.yml`, Resend delivery, per-app Dockerfiles; 128 files | One Oracle VM behind a Cloudflare Tunnel; nothing deployed |
+| 2026-09-25 | 4348ea3 | Splash screen and app icons on the entrance; devotional portrait tweaks; Mangaly dev seed fix | Entrance polish |
+| 2026-09-28 | 19955fd | Members dashboard "ForKhatri in numbers" (`app/insights`, `components/insights`, `GET /v1/insights`, `scripts/build_insight_places.py`) | Owner decision 2026-09-27: aggregate dashboard open to all members |
+| 2026-09-29 | 98742b8 | Admin and Governance Console: `app/admin/*`, migration 005, `/v1/admin` API | ADR-012: one console for Samaj heads; Samaj runs ForKhatri (owner direction 2026-10-02) |
+| 2026-09-29 | 782706b | MOD03 renamed Mangaly to Mangalya in docs, `.env.example`, `scripts/dev.mjs`; `admin-console.md` added | Owner naming decision. Folders and the registry key were NOT renamed (see drift) |
+| 2026-09-29 | 268846d | `.gitignore`; build caches and logs untracked | Production-ready repository |
+| 2026-09-29 | fc22700 | `scripts/tunnel.mjs`, `npm run dev:tunnel` | Show the app on phones through Cloudflare Quick Tunnels |
+| 2026-10-01 | 20ae38b | Entrance phone type pass; `return_to` and `fk_handoff` sign-in handoff; tunnel-aware `next.config.ts` | The cookie does not cross unrelated tunnel hostnames |
+| 2026-10-01 | 692b61f | Shared messaging in identity delivery (`SMS_PROVIDER=shared`, `EMAIL_PROVIDER=shared`); persona `mangalya-family`; launcher changes | Owner direction 2026-10-01: one shared integrations utility |
+| 2026-10-06 | 0b65862 | `shared/forkhatri-integrations/places` (Nominatim) | Live India place search for modules |
+| 2026-10-06 | (migration 007) | Marathi and Kannada | Owner request, `docs/LANGUAGES-MR-KN-PLAN.md` |
+| 2026-10-24 | a8f7747 | Entrance and admin CSS pass, layout; 32 files | Visual polish |
+| 2026-11-16 | 9e4e363 | `scripts/start-tunnels.ps1` | One command to start tunnels on Windows |
+
+## Known drift found while documenting (2026-11-22)
+
+1. `scripts/dev.mjs` points MOD03 at `modules/MOD03-mangalya/mangalya-service` and `mangalya-web`, but the folders on disk are `mangaly-service` and `mangaly-web` (only `horoscope-service` matches). `npm run dev` therefore reports Mangalya's API and web as missing and skips them; `scripts/tunnel.mjs` uses the real `mangaly-*` names. Verify with `npm run dev:status`.
+2. The production kit (`deploy/docker-compose.yml`, `deploy/scripts/deploy.sh`, `deploy/migrate/migrate.py`, `deploy/migrate/Dockerfile`, `.github/workflows/deploy.yml`) refers to `modules/MOD03-mangaly/...`, a folder that does not exist (the module folder is `MOD03-mangalya`). A deploy as written would fail for Mangalya, and the push-trigger path never matches.
+3. The production stack contains only identity, Mangalya, Milavn and three web zones. Vyapar (MOD01) and Counsel (MOD04) have no containers, no `Caddyfile` routes, no databases in `migrate.py` and no service keys in compose, although the registry lists Counsel as `available` and development settings carry keys for both.
+4. Identity `services_receiving_identifiers` defaults to `["mangaly"]` only, so provisioning and retiring members is Mangalya-only.
+5. Handoff codes live in identity process memory (60 seconds, single use); with more than one identity process a code would be unknown to the other.
+
+## What is NOT built (as of 2026-11-22)
+
+- MOD05 Dashboard (the hub plays part of this role), MOD06 Payment Services and MOD07 Loans and Finance: folders exist but are empty.
+- Real vendors: no SMS provider (phone codes return `delivery_unavailable` in production), no WhatsApp, no payment gateway (payments are `none` or a development sandbox). The owner chooses vendors later (`shared/forkhatri-integrations/BACKLOG.md`).
+- Password set, reset and change; change of phone or email; second identifier; account deletion and data export; consent records; step-up re-authorisation; device list and new-sign-in alerts; appeal screen for suspensions (`docs/Critique/CRITIQUE-platform.md` C1 to C8).
+- Platform notification inbox (the hub bell is an empty state).
+- Identity level 2 (ID document) has no code path; level 0 to 1 after a verified code is a reported bug (C4).
+- Production has never run: Docker builds, Compose, cloudflared, the VM, and the backup and restore scripts were checked only natively or with `bash -n`.
+- GitHub push-to-deploy needs its secrets and one manual first deploy.
+- Observability beyond container logs and the 5-minute heartbeat (no metrics, alerting or tracing).
 
 ## What runs (development)
 

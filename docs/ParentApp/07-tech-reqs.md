@@ -2,11 +2,13 @@
 project: ForKhatri
 artifact: Parent Application Technical Requirements
 step: 7
-status: Ready for Review
-updated: 2026-09-14
+status: As built (2026-11-22); TR10-TR24 history retained below
+updated: 2026-11-22
 ---
 
 # Parent Application Technical Requirements
+
+> **Document status 2026-11-22, as built.** The TR10-TR24 sections below are the 2026-09-14 contract and remain valid except where the "As-built update" section at the end says otherwise (languages now `en hi te mr kn`; governance, handoff, insights, provisioning endpoints added; `COUNSEL` registered). The complete endpoint list is in [API-REFERENCE.md](API-REFERENCE.md) (43 endpoints); the data model is in [07a-er-model.md](07a-er-model.md); security in [08-security-performance.md](08-security-performance.md).
 
 This file is the single integration contract for the ForKhatri entrance: the
 platform Identity & Trust Service, the ForKhatri web entrance, and every module
@@ -279,3 +281,122 @@ Reddy, Ananya Reddy's mother, not a candidate), `milavn-moderator`.
 - TR06/TR07 — accessibility and responsive rules (TR21).
 - TR08 — no module-specific authentication anywhere (TR15/TR16).
 - TR09 — contracts above are the integration boundary.
+
+---
+
+# As-built update (2026-11-22)
+
+Revision row: 2026-11-22, "As-built reference: full endpoint list moved to API-REFERENCE.md; stack, configuration, integrations, caching, rate limiting, i18n, performance budgets recorded from code", reason: owner request that documents match the application as built.
+
+## A1. Endpoints (summary)
+
+Complete reference with request, response, errors, side effects and tables: [API-REFERENCE.md](API-REFERENCE.md). Counts: 39 public (health 1, auth 7, member 2, modules 2, insights 1, admin 24, development 2) plus 4 internal (`sessions/resolve`, `members/provision`, `members/{id}/retire-provisioned`, `members/lookup`). TR13 and TR14 above list only the original subset. Added since: `POST /v1/auth/handoff` and `/handoff/redeem` (cross-host sign-in for tunnels), `GET /v1/insights` (members dashboard, owner decision 2026-09-27), the 24 `/v1/admin/*` governance endpoints (ADR-012), and the internal provisioning and retirement calls (Mangalya parents creating a child's profile, DEC-V1-019; six-month rule 2026-09-21). `admin_scopes` is added to the resolve response.
+
+## A2. Stack and versions
+
+| Part | Version (source) |
+|---|---|
+| Identity service | Python >=3.12, FastAPI 0.141.1, uvicorn[standard] 0.52.4, Pydantic 2.13.5, pydantic-settings 2.15.0, SQLAlchemy[asyncio] 2.0.52, asyncpg 0.31.0, greenlet 3.5.5, argon2-cffi 25.1.0, httpx 0.28.1, email-validator 2.3.0 (`pyproject.toml`) |
+| Identity dev tools | pytest 9.0.1, pytest-asyncio 1.3.0, ruff 0.15.1 (line length 120) |
+| Web entrance | Next.js 16.3.5, React and react-dom 19.2.8, TypeScript 5, motion ^13.2.0, d3-geo ^3.1.1, topojson-client ^3.1.0, ESLint 9 (`package.json`); dev port 3100 |
+| Database | PostgreSQL 18 (compose image `postgres:18-bookworm`; local psql 18.0), dev port 5433 |
+| Edge | Caddy `caddy:2.11-alpine`, `cloudflare/cloudflared:latest` (to be pinned, noted in `.env.production.example`) |
+| Hosting | One Oracle Always Free Ampere VM, Docker Compose, Cloudflare Tunnel (`deploy/README.md`) |
+| Shared library | `shared/forkhatri-integrations` (standard library only) |
+
+Processes: identity API (uvicorn, default port 8100; production image runs `--proxy-headers --forwarded-allow-ips ${FORWARDED_ALLOW_IPS:-127.0.0.1} --root-path ${ROOT_PATH}`), web entrance (3100), and one background task inside the API process (suspension expiry sweep every 60 s). Run without `--reload` on Windows (an orphaned reloader keeps serving stale code).
+
+## A3. Configuration reference (names only; S marks a secret)
+
+Identity service, `platform/identity-service/app/config/settings.py` (process environment or `.env`; 46 settings fields):
+
+| Name | Default | Purpose |
+|---|---|---|
+| ENVIRONMENT | development | `development` or `production`; production enables the guard below |
+| DB_HOST, DB_PORT, DB_NAME | localhost, 5433, forkhatri_identity | Postgres location |
+| DB_APP_USER | identity_app | runtime role |
+| DB_APP_PASSWORD (S) | dev placeholder | runtime role password |
+| DB_POOL_SIZE | 10 | connection pool |
+| API_HOST, API_PORT | 127.0.0.1, 8100 | bind |
+| CORS_ALLOWED_ORIGINS | localhost 3100, 3000, 3001, 3011, 3014 | CORS and Origin guard allow-list |
+| SESSION_COOKIE_NAME | fk_session | production must start `__Host-` |
+| SESSION_COOKIE_SECURE | false | production must be true |
+| SESSION_TTL_DAYS | 30 | absolute session lifetime |
+| SESSION_COOKIE_DOMAIN | empty | host-only by default; must be unset in production |
+| SESSION_COOKIE_SAMESITE | lax | `lax`, `strict`, `none`; `none` refused in production |
+| OTP_PEPPER (S) | dev placeholder | HMAC key for codes; at least 32 chars in production |
+| OTP_TTL_SECONDS | 300 | code lifetime |
+| OTP_MAX_ATTEMPTS | 5 | wrong tries per code |
+| OTP_RESEND_SECONDS | 30 | resend interval |
+| OTP_VERIFIED_GRACE_SECONDS | 600 | time to finish the name step after verifying a code |
+| DEV_EXPOSE_OTP | true | returns `dev_code`; must be false in production |
+| SMS_PROVIDER | console | `console`, `disabled`, `shared` |
+| EMAIL_PROVIDER | console | `console`, `disabled`, `resend`, `shared` |
+| SHARED_SMS_SENDER, SHARED_EMAIL_SENDER | disabled | adapter names in the shared library |
+| SMS_DLT_TEMPLATE_ID | empty | India DLT template for the sign-in SMS |
+| RESEND_API_KEY (S) | empty | required when EMAIL_PROVIDER=resend |
+| RESEND_API_URL | https://api.resend.com/emails | |
+| EMAIL_FROM | empty | verified sender, required for resend |
+| DELIVERY_TIMEOUT_SECONDS | 10 | provider call timeout |
+| LOCAL_HTTP_TEST | false | local production rehearsal only: allows `fk_session` without Secure |
+| DEV_TOOLS_ENABLED | false | mounts `/dev/v1` (development only; refused in production) |
+| DEV_TOOLS_TOKEN (S) | empty | at least 32 chars; enables test mode |
+| RATE_LIMIT_WINDOW_SECONDS | 900 | window |
+| RATE_LIMIT_CODE_PER_IDENTIFIER, RATE_LIMIT_CODE_PER_IP | 5, 30 | |
+| RATE_LIMIT_VERIFY_PER_CHALLENGE | 10 | |
+| RATE_LIMIT_PASSWORD_PER_IDENTIFIER, RATE_LIMIT_PASSWORD_PER_IP | 10, 30 | |
+| SERVICE_KEYS (S) | dev placeholders for mangaly, milavn, vyapar, counsel | service name to key; at least 32 chars, no CHANGE_ME in production |
+| SERVICES_RECEIVING_IDENTIFIERS | ["mangaly"] | services given phone and email in claims and allowed to provision |
+| MODULE_ENTRY_URLS | localhost 3000, 3001, 3011, 3014 | hub entry URLs |
+| MODULE_API_URLS | {} (environment only) | modules asked for dashboard facts |
+| INSIGHTS_TIMEOUT_SECONDS | 5 | |
+| ADMIN_MODULE_API_URLS | {} (environment only) | extra modules federated into the console |
+| ADMIN_GATEWAY_TIMEOUT_SECONDS | 8 | |
+
+The table groups some names per row; the full count of distinct settings fields is 46 (`Settings.model_fields`). The Docker image adds `PORT`, `ROOT_PATH`, `FORWARDED_ALLOW_IPS`.
+
+Production guard (`Settings._production_guard`): the service refuses to start when dev tools are on, the cookie is not Secure or lacks the `__Host-` prefix, a cookie domain is set, SameSite is none, `DEV_EXPOSE_OTP` is true, the pepper or any service key is a placeholder or under 32 characters, a provider is `console`, or resend lacks a key or from-address (`LOCAL_HTTP_TEST` relaxes only the cookie rules). It also refuses to start if its database role owns objects.
+
+Deployment, `deploy/.env.production.example` (generated by `deploy/scripts/generate-secrets.sh`): owner inputs DOMAIN, CLOUDFLARE_TUNNEL_TOKEN (S), RESEND_API_KEY (S), EMAIL_FROM, optional R2_ACCOUNT_ID, R2_ACCESS_KEY_ID (S), R2_SECRET_ACCESS_KEY (S), R2_BUCKET; derived PUBLIC_ORIGIN, PUBLIC_SCHEME; SESSION_COOKIE_NAME, SESSION_COOKIE_SECURE, LOCAL_HTTP_TEST; SMS_PROVIDER, EMAIL_PROVIDER; generated secrets POSTGRES_PASSWORD, IDENTITY_OWNER_PASSWORD, IDENTITY_APP_PASSWORD, MANGALY_OWNER_PASSWORD, MANGALY_APP_PASSWORD, MILAVN_OWNER_PASSWORD, MILAVN_APP_PASSWORD, OTP_PEPPER, MANGALY_SERVICE_KEY, MILAVN_SERVICE_KEY (all S); operations COMPOSE_PROJECT_NAME, RELEASE_ID, BACKUP_KEEP_DAYS, POSTGRES_IMAGE, CADDY_IMAGE, CLOUDFLARED_IMAGE. That is 31 names. The production example holds service keys for Mangalya and Milavn only; Vyapar and Counsel are not in the deployed kit (CRITIQUE architecture C2).
+
+Web entrance (`platform/forkhatri-web`): `NEXT_PUBLIC_IDENTITY_API` (identity base URL; rewritten by the tunnel script in development), `NEXT_PUBLIC_DEV_TOOLS` (shows "Act as"; development only), `NEXT_PUBLIC_BASE_PATH` (zone base path, build time; unset in development), `TUNNEL_DEV_ORIGIN` (set by `npm run dev:tunnel`), `NEXT_OUTPUT_STANDALONE`, `NEXT_DIST_DIR`, `PORT`, `PLAYWRIGHT_PATH` (e2e script): 8 names. Defaults of the build-time names are unverified (read from code only).
+
+Total names inventoried: 46 identity + 31 deployment + 8 web = 85.
+
+## A4. Integrations
+
+| Integration | Direction | Notes |
+|---|---|---|
+| Resend (email codes) | out, HTTPS | `EMAIL_PROVIDER=resend`; challenge id as `Idempotency-Key`; the production email path today |
+| Shared messaging (`forkhatri_integrations.messaging`) | out | `SMS_PROVIDER=shared` or `EMAIL_PROVIDER=shared`; adapters `console` (dev only) and `disabled` exist; no SMS vendor connected, owner picks later (owner direction 2026-10-01); see `shared/forkhatri-integrations/BACKLOG.md` |
+| Module APIs, dashboard | out, HTTPS | `GET /v1/insights` asks each `MODULE_API_URLS` module for facts with that module's service key |
+| Module APIs, admin federation | out, HTTPS | gateway forwards the admin's session token and language to module admin views (queues, member summaries, actions) |
+| Module services | in | `/internal/v1/*` with service keys |
+| Cloudflare Tunnel and Caddy | edge | strips `/api/identity`, blocks `/internal*` and docs |
+| Postgres backups to Cloudflare R2 | out | optional (`R2_*`); nightly dump (`deploy/scripts/backup.sh`) |
+
+Not built: any real SMS or WhatsApp vendor, push, passkeys, DigiLocker. The platform does no payments.
+
+## A5. Caching
+
+Server responses carry `no-store`. In-process caches: governance gateway manifest cache keyed by module and language (TTL constant `_MANIFEST_TTL_SECONDS` in `gateway.py`); `lru_cache` for settings and the insights place tables; handoff codes in memory (60 s). Module services cache session resolution per token for at most 30 s (negative 5 s) (TR15), the accepted sign-out delay. The hub's cached public registry fallback (TR05) is a design statement; verify in web code.
+
+## A6. Rate limiting
+
+See API-REFERENCE section 8: database-backed fixed window, five buckets plus a resend interval. Not limited: handoff, admin, internal, insights, `PATCH /v1/me`, module enter.
+
+## A7. Internationalisation
+
+Languages `en`, `hi`, `te`, `mr`, `kn` (Marathi and Kannada added 2026-10-06, migration 007). The server returns stable error codes with English fallback messages; the web localises by code. Module taglines are stored per language with English fallback. Owner rules: every Telugu and Hindi string accurate and respectful; no hardcoded user-visible strings. Open: human review of Hindi in the admin console (CRITIQUE-platform C13).
+
+## A8. Performance budgets
+
+Recorded targets (08-security-performance.md): availability 99.9% monthly, RPO <= 5 min, RTO <= 1 h (the critique notes the deployed nightly backup does not yet meet this), at most one internal resolve call per module per 30 s per member. No per-endpoint latency budget is written (gap). Suggested working budgets, unverified and for the owner to adopt: public auth endpoints p95 under 300 ms excluding provider delivery; internal session resolve p95 under 50 ms; `GET /v1/insights` under 2 s (module timeouts are 5 s each).
+
+## A9. Observability and errors
+
+Python logging at INFO (`identity`, `identity.delivery`); codes and full destinations are never logged, only masked hints. No metrics, tracing or error tracker (CRITIQUE architecture M2). Health: `GET /health` (checks the DB). Error model: API-REFERENCE section 1.
+
+## A10. Run, test and migrate
+
+Run: `platform/identity-service/.venv/Scripts/python -m uvicorn app.main:app --port 8100` (no `--reload`), or the one start-all command. Migrate: `db/000-bootstrap.sql` as superuser, then `db/migrations/*.sql` in order as `identity_owner`; production uses `deploy/migrate`. Tests in `platform/identity-service/tests`: test_delivery, test_dev_tools, test_identifiers, test_origin_guard, test_secrets (unit); `integration/test_contract_live.py`, `integration/test_governance_db.py`. Scripts in `scripts/`: `dev_session.py`, `seed_dev_members.py`, `seed_dev_governance.py`, `import_module_identities.py`, `build_insight_places.py`.

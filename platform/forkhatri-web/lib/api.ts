@@ -97,6 +97,31 @@ export type Insights = {
 export type SignedIn = { outcome: "signed_in"; member: Member };
 export type VerifyResult = SignedIn | { outcome: "name_required" };
 
+/** Account deletion (docs/ParentApp/ACCOUNT-DELETION.md, kind A). */
+export type DeletePreview = {
+  modules: { key: string; name: string }[];
+  blocked: "admin_role" | null;
+  has_password: boolean;
+  destination_hint: string | null;
+};
+export type DeletionModule = {
+  module: string;
+  name: string;
+  status: "pending" | "running" | "done" | "nothing_to_delete" | "partial" | "failed";
+  attempts: number;
+  deleted: Record<string, number>;
+  files_removed: number;
+};
+export type DeletionStatus = {
+  status: "closing" | "done";
+  modules: DeletionModule[];
+  receipt: null | {
+    tombstone: string;
+    completed_at: string;
+    retained: { scope: string; kind: string; reason: string }[];
+  };
+};
+
 export const IDENTITY_API = (process.env.NEXT_PUBLIC_IDENTITY_API ?? "http://localhost:8100").replace(/\/+$/, "");
 
 export class ApiError extends Error {
@@ -199,6 +224,12 @@ export const identity = {
 
   /** Members dashboard: totals only, for every signed-in member. */
   insights: (signal?: AbortSignal) => request<Insights>("/v1/insights", { signal }),
+
+  deletePreview: () => request<DeletePreview>("/v1/account/delete/preview"),
+  deleteCode: () => request<CodeChallenge>("/v1/account/delete/code", { method: "POST" }),
+  deleteAccount: (body: { confirm: "DELETE"; password?: string; challenge_id?: string; code?: string }) =>
+    request<{ job_id: string; status: string }>("/v1/account/delete", { method: "POST", body }),
+  deletionStatus: (jobId: string) => request<DeletionStatus>(`/v1/account/deletion/${encodeURIComponent(jobId)}`),
 
   enter: (key: string) =>
     request<{ entry_url: string }>(`/v1/modules/${encodeURIComponent(key)}/enter`, { method: "POST" }),

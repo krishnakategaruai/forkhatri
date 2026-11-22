@@ -260,6 +260,12 @@ export const admin = {
 
   audit: (p: { action?: string; before?: number | null; target?: string }) => call<{ events: AuditEvent[]; next_before: number | null }>(`/audit${q({ ...p, limit: 40 })}`),
 
+  stuckDeletions: () =>
+    call<{ deletions: { job_id: string; reference: string; requested_at: string; gave_up: boolean; modules: { module: string; status: string; attempts: number; error: string | null }[] }[] }>(
+      "/deletions/stuck",
+    ),
+  retryDeletion: (id: string) => call<{ retrying: boolean }>(`/deletions/${id}/retry`, { method: "POST", body: {} }),
+
   modules: () => call<AdminModule[]>("/modules"),
   setModule: (key: string, availability: AdminModule["availability"], note: string) =>
     call<AdminModule[]>(`/modules/${encodeURIComponent(key)}`, { method: "PATCH", body: { availability, note } }),

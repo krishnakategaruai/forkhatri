@@ -1573,3 +1573,23 @@ Step 7 (Tech Requirements) and Step 7a (ER Model) should treat the following as 
 2. **Name one owning component each** for: idempotency/dead-letter handling across FR52's six adjacent contracts (IA052); boost-mechanics reuse across FR30/FR35 (IA035); "Why this?" explanation-signal reuse tied to FR19's actual ranking signals (IA020); and universal "Sponsored" label rendering across every paid surface (IA054) — each was flagged above as a place `/MODULE-ARCHITECTURE-STANDARD.md`'s "same pattern as" divergence risk could otherwise recur.
 3. **The `vyapar.members` identity-bridge table's exact schema and just-in-time-creation idempotency** (IA050) and the **member-deletion anonymization-vs-counterpart-preservation logic** (IA037) are both genuinely ER-Model-shaped decisions, not FR-level details — Step 7a should resolve both explicitly.
 4. **CCR03/CCR04's grounded research findings** (payment-gateway webhook duplication/ordering; India SMS/OTP delivery reliability) should inform Step 8's STRIDE/performance thresholds for FR51 and FR07 directly, rather than Step 8 independently re-researching the same precedent.
+
+
+---
+
+# Addendum 2026-11-22 — dependencies and change risk (as built)
+
+**Document status:** as built, 2026-11-22.
+| If this changes | What else breaks | Risk |
+|---|---|---|
+| Identity service session-resolve contract (/internal/v1/sessions/resolve, headers X-ForKhatri-Service, key, body session_token) | every authenticated Vyapar call (fails closed 503); /internal/v1 bridges use the same key | high |
+| Migration 032 columns members.date_of_birth, phone_verified | start flow, ensure_member 5-argument overload; the 4-argument overload must stay for older callers | high |
+| Taxonomy slugs | saved searches, member skills, trade tiles, matching, aliases; slugs must never be renamed (032 renamed only the display name) | high |
+| Language set en/hi/te/mr/kn | CHECK constraints on members, listings, opportunities, enquiry_messages; web locales; backend catalogues; GLOSSARY | medium |
+| Payment gateway adapter | boosts, workspace entitlement, contracts funding, checkout screen, webhook secret | high |
+| AI provider | composer draft, proposal help, voice parsing, shortlist wording; rules engine is the fallback | medium |
+| Taste/recommendation tables | feed ranking, "For you", /profile/learned, privacy export | medium |
+| Webhook event names (integrations/webhooks/events.py) | host platforms and the MCP server | medium |
+| Tunnel proxy.ts and next.config rewrites | cookie sessions behind tunnels only; no effect locally | low |
+| Mangalya/Milavn/Counsel | boundary: events belong to Milavn, regulated professional advice to Counsel (vyapar-counsel-boundary memory); Vyapar uses the shared credential reference (FR06) | medium |
+

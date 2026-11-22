@@ -3,6 +3,9 @@
     "acceptanceRequired": "Please accept the latest privacy notice and terms to continue.",
     "unknownControl": "This privacy control is not recognised.",
     "deleteBlockedActiveOrder": "Your data can't be deleted while a paid promotion or plan is active. Cancel it or let it end, then try again.",
-    "preferenceNotFound": "This preference was not found."
+    "preferenceNotFound": "This preference was not found.",
+    "deleteConfirmRequired": "Type DELETE to confirm that you want to delete your data in Vyapar.",
+    "deleteRateLimited": "Too many deletion attempts. Please try again in an hour.",
+    "deleteOperatorBlocked": "This account holds an administrator role in Vyapar. Remove the role first, then delete."
   }
 }

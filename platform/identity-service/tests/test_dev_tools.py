@@ -34,6 +34,7 @@ PRODUCTION_READY = {
     "session_cookie_name": "__Host-fk_session",
     "dev_expose_otp": False,
     "otp_pepper": "p" * 40,
+    "deletion_tombstone_pepper": "t" * 40,
     "service_keys": {"mangaly": "m" * 40, "milavn": "v" * 40},
     "sms_provider": "disabled",
     "email_provider": "disabled",

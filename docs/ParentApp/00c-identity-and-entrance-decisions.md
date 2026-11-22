@@ -5,6 +5,7 @@ step: 0c
 status: Ready for Review
 updated: 2026-09-14
 ---
+> **Document status 2026-11-22, as built.** Kept as the record of the 2026-09 decisions; nothing is deleted. Since then the platform gained: Marathi and Kannada (migration 007), the admin and governance console (migration 005, `admin-console.md`), the members dashboard `/insights`, the shared integrations library, the deployment kit in `deploy/`, development persona switching and session handoff. Current truth: `01-business-requirements.md`, `02-functional-requirements.md` (index), `07-tech-reqs.md`, `07a-er-model.md`. Where this file lists three languages, read five (en, hi, te, mr, kn). Open gaps: `docs/Critique/CRITIQUE-platform.md`.
 
 # Identity and Entrance Decisions
 

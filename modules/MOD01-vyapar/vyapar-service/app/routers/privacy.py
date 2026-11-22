@@ -6,13 +6,15 @@ from __future__ import annotations
 
 from typing import Literal
 
+from pydantic import BaseModel
+
 import asyncpg
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from app.db import get_conn
 from app.deps import Locale
 from app.errors import ERROR_RESPONSES
-from app.identity import AuthzContext, resolve_authz_context
+from app.identity import AuthzContext, require_member_session, resolve_authz_context
 from app.services import privacy as svc
 from app.services.privacy import (  # noqa: F401  schemas used below; background passes re-exported for main.py
     DataExportOut,
@@ -77,6 +79,25 @@ async def request_deletion(
     conn: asyncpg.Connection = Depends(get_conn, scope="function"),
 ) -> DeletionOut:
     return await svc.request_account_deletion(conn, ctx, lang)
+
+
+class DeleteMyDataIn(BaseModel):
+    confirm: str | None = None
+
+
+@router.post(
+    "/v1/privacy/delete-account-data", response_model=svc.ErasureOut, operation_id="deleteMyVyaparData",
+    summary="Delete everything Vyapar holds about the member (typed DELETE; 3 per hour)",
+)
+async def delete_my_data(
+    body: DeleteMyDataIn,
+    request: Request,
+    lang: Locale,
+    ctx: AuthzContext = Depends(resolve_authz_context),
+    conn: asyncpg.Connection = Depends(get_conn, scope="function"),
+) -> svc.ErasureOut:
+    require_member_session(request, ctx)  # a personal access token can never erase the account
+    return await svc.delete_my_data(conn, ctx, lang, body.confirm)
 
 
 @router.get("/v1/privacy/requests", response_model=list[PrivacyRequestOut], operation_id="listMyPrivacyRequests", summary="List the member's privacy requests")

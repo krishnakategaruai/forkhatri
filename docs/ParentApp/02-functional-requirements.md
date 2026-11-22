@@ -1,10 +1,27 @@
 ---
 project: ForKhatri
-artifact: Parent Application Functional Requirements
+artifact: Parent Application (Platform) Functional Requirements, index
 step: 2
-status: Ready for Review
-updated: 2026-09-14
+status: Document status 2026-11-22, as built
+updated: 2026-11-22
 ---
+
+# Platform Functional Requirements: index
+
+**Document status 2026-11-22, as built.** Split by feature area. Original FR01-FR18 keep their numbers (detailed in 02a); new ones are FR-019 onward. Original 2026-09 text is preserved in Appendix A.
+
+| File | Covers | FR ids |
+|---|---|---|
+| `02a-functional-requirements-entrance-identity.md` | Entrance, hub, sign-in, session, handoff, internal API, dev tools, theme, intent bar | FR01-FR18, FR-019 to FR-030, planned FR-040 to FR-046 |
+| `02b-functional-requirements-admin-console.md` | Governance console, roles, suspensions, approvals, audit, queues | FR-031 to FR-039, FR-031a, FR-047, FR-048 |
+| `02c-functional-requirements-insights-integrations-ops.md` | Members dashboard, shared integrations, deployment | FR-050 to FR-060 |
+
+Numbering note: FR-031 to FR-039 are console items; FR-031a is "module open or closed" (inserted late, not renumbered). Ids FR-040 to FR-046 are reserved for planned features not built.
+
+## BR to FR map
+BR-01 FR01-04, 14, 019 | BR-02 FR01, 10, 15, 17, 020 | BR-03 FR03, 09, 027 | BR-04 FR02, 05, 06, 025 | BR-05 FR08 | BR-06 FR07, 026 | BR-07 FR18 | BR-08 FR03 | BR-09 FR11-13 | BR-10 FR11, 13, 028 | BR-11 FR16, 048 | BR-12 FR-031, 035-038 | BR-13 FR-034 | BR-14 FR-033, 039 | BR-15 FR-031a, 047 | BR-16 FR-050, 051 | BR-17 FR-042 to 044 (planned) | BR-18 FR-041 (planned) | BR-19 FR-020 to 022 | BR-20 FR-052 to 055 | BR-21 FR-045 (planned) | BR-22 FR-056 to 060 | BR-23 FR-023 | BR-24 FR-030 (planned).
+
+## Appendix A: original functional requirements (history, unchanged)
 
 # Parent Application Functional Requirements
 

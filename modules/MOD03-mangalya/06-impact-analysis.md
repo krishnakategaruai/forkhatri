@@ -7,6 +7,8 @@ updated: 2026-09-12
 items: "102 | approved: 102 | blockers: 0"
 ---
 
+> **Document status (2026-11-22):** as-built scope. The original text below is kept as history; the **As-built addendum at the end of this file** records what exists today and wins on conflict. Module folder renamed MOD03-mangaly to MOD03-mangalya (inner service and web folders keep `mangaly-`). Related: `09-implementation.md`, `API-REFERENCE.md`, `TRACEABILITY.md`, `RUNBOOK.md`, `GLOSSARY.md`.
+
 # 06 — Impact & Plan Analysis — MOD03 Mangaly
 
 **Scope note for this run:** the requesting message asked for "impact and
@@ -3306,3 +3308,23 @@ Three items in particular carry findings this pass surfaced beyond what any prio
 ## Approval
 
 Architect / Director — [x] Approved — krishna kategaru (autonomous), 2026-09-12
+
+
+---
+
+# As-built addendum (2026-11-22): dependencies and change risk
+
+| If this changes | What breaks or needs care |
+|---|---|
+| ForKhatri identity (port 8100, cookie name, `/v1/auth/*`) | every Mangalya request (identity bridge); handoff proxy; dev sessions |
+| `POST /profile/managed` (pending change) | wizard Check-and-publish, `/profile/managed` list, face-match gate copy, the agents gate in `agents.py`, FR111, FR112, take-over functions in 065 |
+| `config/plans.py` and `plan_price` | `/plans` display, entitlements (daily requests, who-viewed, contact unlock, kundli), agent quotas; orders store the catalogue version so history is safe |
+| Matching engine and vocabulary (`config/matching_engine.py`) | Discover order, shelves, "How you fit", matchmaker UI, Strong/Good thresholds (set from the dev spread) |
+| Horoscope service (token, rules v3) | `/horoscope/*` wrappers, Discover horoscope filter, kundli report entitlement, `recalculate_horoscope_charts.py` |
+| Face-match threshold 0.45 or expiry | badge, agents gate, My profile card, the `profile_media` trigger that removes confirmation |
+| Home Circle relation map (`RELATION_ROLE`) | who may answer requests, who sees what (RLS 025, 037, 053, 054), notifications |
+| Migrations | additive; 065 relaxes `account_has_identifier`; 066 adds guide languages |
+| Locale files (`locales/en hi te mr kn`) | `check_locale_parity.py`, every screen, guides |
+| Folder rename `mangaly-*` to `mangalya-*` | `scripts/dev.mjs` already expects new inner names; `deploy/*` still expects the old module folder |
+| Payment vendor arrival (MOD06) | `/billing/*`, webhook secret, removal of the sandbox path |
+| Shared platform chat/payments utility (owner direction) | communication and billing components will adapt; keep behaviour |

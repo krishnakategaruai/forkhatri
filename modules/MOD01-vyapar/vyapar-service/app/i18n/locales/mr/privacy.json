@@ -3,6 +3,9 @@
     "acceptanceRequired": "पुढे जाण्यासाठी कृपया नवीनतम गोपनीयता सूचना आणि अटी स्वीकारा.",
     "unknownControl": "हे गोपनीयता नियंत्रण ओळखता आले नाही.",
     "deleteBlockedActiveOrder": "पैसे भरलेले प्रमोशन किंवा प्लॅन सुरू असताना तुमचा डेटा हटवता येणार नाही. ते रद्द करा किंवा संपू द्या, मग पुन्हा प्रयत्न करा.",
-    "preferenceNotFound": "ही पसंती सापडली नाही."
+    "preferenceNotFound": "ही पसंती सापडली नाही.",
+    "deleteConfirmRequired": "Type DELETE to confirm that you want to delete your data in Vyapar.",
+    "deleteRateLimited": "Too many deletion attempts. Please try again in an hour.",
+    "deleteOperatorBlocked": "This account holds an administrator role in Vyapar. Remove the role first, then delete."
   }
 }

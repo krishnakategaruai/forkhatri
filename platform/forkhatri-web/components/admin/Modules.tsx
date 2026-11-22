@@ -8,6 +8,49 @@ import { Badge, Chips, Dialog, errorMessage, ErrorLine, Field, formatNumber, Loa
 type Availability = AdminModule["availability"];
 const STATES: Availability[] = ["available", "in_development", "planned"];
 
+function StuckDeletions() {
+  const { t } = useConsole();
+  const list = useLoad(() => admin.stuckDeletions(), []);
+  const [error, setError] = useState<string | null>(null);
+  const rows = list.data?.deletions;
+  return (
+    <section className="adm-section">
+      <PageHead title={t("stuckTitle")} sub={t("stuckSub")} />
+      <ErrorLine error={error ?? (list.error ? errorMessage(t, list.error) : null)} />
+      {rows && rows.length === 0 && <p className="adm-row-sub">{t("stuckNone")}</p>}
+      {rows && rows.length > 0 && (
+        <ul className="adm-list adm-card">
+          {rows.map((d) => (
+            <li key={d.job_id} className="adm-row is-static adm-module-row">
+              <span className="adm-row-main">
+                <span className="adm-row-title">{t("stuckRef", { ref: d.reference })}</span>
+                <span className="adm-row-sub">
+                  {d.modules.filter((m) => m.status !== "done" && m.status !== "nothing_to_delete").map((m) => `${m.module}: ${m.error ?? m.status} (${m.attempts})`).join(" · ")}
+                  {d.gave_up ? ` · ${t("stuckGaveUp")}` : ""}
+                </span>
+              </span>
+              <button
+                type="button"
+                className="adm-btn"
+                onClick={async () => {
+                  try {
+                    await admin.retryDeletion(d.job_id);
+                    list.reload();
+                  } catch (e) {
+                    setError(errorMessage(t, e));
+                  }
+                }}
+              >
+                {t("stuckRetry")}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 export default function Modules() {
   const { t, lang, can, changed } = useConsole();
   const list = useLoad(() => admin.modules(), []);
@@ -52,6 +95,7 @@ export default function Modules() {
           ))}
         </ul>
       )}
+      {can("members.view") && <StuckDeletions />}
       <Dialog open={!!change} onClose={() => setChange(null)} title={change ? `${change.module.name}: ${label(change.to)}` : ""}>
         <Field label={t("changeReason")}>
           <textarea className="adm-input" rows={3} value={note} onChange={(e) => setNote(e.target.value)} />

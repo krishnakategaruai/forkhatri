@@ -38,6 +38,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.deps import AppSettings, DbSession, RequiredSession, client_ip
+from app.components.deletion import interface as deletion
 from app.components.governance import gateway
 from app.components.governance import interface as gov
 from app.components.governance import roles as R
@@ -343,3 +344,26 @@ async def queue_action(
         ip=client_ip(request),
     )
     return result
+
+
+# --------------------------------------------------------------------------- stuck account deletions
+
+
+@router.get("/deletions/stuck")
+async def stuck_deletions(admin: CurrentAdmin, db: DbSession) -> dict[str, Any]:
+    """Account deletions that a module keeps refusing (read-only list; no member details)."""
+    admin.require(R.MEMBERS_VIEW)
+    return {"deletions": await deletion.stuck_list(db)}
+
+
+@router.post("/deletions/{job_id}/retry")
+async def retry_deletion(job_id: UUID, request: Request, admin: CurrentAdmin, db: DbSession, settings: AppSettings) -> dict[str, Any]:
+    admin.require(R.MEMBERS_SUSPEND)
+    await deletion.admin_retry(db, settings, job_id)
+    await gov.audit(db, actor=admin.member_id, action="account.deletion_retried", subject=str(job_id)[:8], ip=client_ip(request))
+    await db.commit()
+    from app.components.deletion.interface import launch
+    from app.api.deps import get_session_factory
+
+    launch(get_session_factory(request), settings, job_id)
+    return {"retrying": True}

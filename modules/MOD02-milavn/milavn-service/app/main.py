@@ -227,6 +227,7 @@ def _include_feature_routers(app: FastAPI) -> None:
         "feedback",
         "admin",
         "insights",
+        "erasure",  # [056] delete my data (member) and internal erase (platform)
         "conversation",
         "chat",
         "payments",
@@ -239,7 +240,7 @@ def _include_feature_routers(app: FastAPI) -> None:
         except ImportError:
             continue
         app.include_router(module.router)
-        for extra in ("presence_router", "ws_router"):
+        for extra in ("presence_router", "ws_router", "internal_router"):
             if hasattr(module, extra):
                 app.include_router(getattr(module, extra))
 

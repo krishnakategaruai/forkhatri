@@ -7,6 +7,8 @@ updated: 2026-09-12
 items: "229 | approved: 229 | blockers: 0"
 ---
 
+> **Document status (2026-11-22):** as-built scope. The original text below is kept as history; the **As-built addendum at the end of this file** records what exists today and wins on conflict. Module folder renamed MOD03-mangaly to MOD03-mangalya (inner service and web folders keep `mangaly-`). Related: `09-implementation.md`, `API-REFERENCE.md`, `TRACEABILITY.md`, `RUNBOOK.md`, `GLOSSARY.md`.
+
 # 05 — Test Scenarios — MOD03 Mangaly
 
 ## Revision history
@@ -2245,3 +2247,54 @@ from two lenses before signing off.
 **Approval:** QA & Product Manager reviewer — [x] Approved — krishna kategaru (autonomous), 2026-09-12.
 
 **Note on Step 2 traceability:** `02-functional-requirements.md`'s per-FR "Traced to:" field has since been backfilled (in a follow-up pass, using this file's Coverage check table above as the source mapping, applied programmatically rather than by hand to avoid transcription risk against the ~4,449-line Sealed file) to append each FR's owning TS range alongside its existing UX reference, e.g. `**Traced to:** UX11 (Step 3 UX); TS001–TS002 (Step 5 Test Scenarios)`. All 102 FRs now carry both references. This file's Coverage check table remains the authoritative source for that mapping.
+
+
+---
+
+# As-built addendum (2026-11-22): test scenarios for FR103-FR134 and the real test inventory
+
+## Automated tests that exist
+| Area | File | Covers |
+|---|---|---|
+| API | `mangaly-service/tests/integration/test_foundations.py` | foundations (db, idempotency, rate limit) |
+| API | `.../test_platform_identity_link.py` | ForKhatri identity link |
+| API | `.../test_schema_conformance.py` | schema vs expectations |
+| Unit | `mangaly-service/tests/unit/test_discovery_ranking.py` | FR120 ranking |
+| Unit | `.../test_matching_engine.py` | FR119, FR121 engine |
+| Unit | `.../test_horoscope_fields.py` | FR122 field values |
+| Unit | `.../test_platform_identity_client.py` | identity client |
+| E2E | `mangaly-service/tests/e2e/` | package only; no tests (unverified) |
+| Horoscope | `horoscope-service/test/` unit, integration, golden, differential, reference (13 files: birthTime, domain, engine, prisriAdapter, http, service, golden, differential, astrosageMangal, prokeralaPorutham, referenceSites) | FR122; rules v3 equal AstroSage on 205 pairs / 40 people |
+| Live scripts (manual runs) | `mangaly-service/scripts/check_*.py` (auth, otp, password_reset, profile, profile_categories, home_circle, family_notes, family_contact, family_sends_request, discovery_connection, agents, agent_limits) | FR093, FR001, FR116-FR118, FR124, FR131 |
+| Web | none (no test runner in `mangaly-web/package.json`; lint only) | manual |
+
+Locale parity: `scripts/check_locale_parity.py` (repo root) checks translation keys across languages.
+
+## New scenarios (M = manual, A = automated)
+| TC | FR | Scenario | Expected | Status |
+|---|---|---|---|---|
+| TC-103 | FR103 | choose "Just look around first" | Discover opens; sending a request refused until a profile exists | M |
+| TC-105 | FR105 | enter a 2012 birth date | refused at the About step, not after the photo | M |
+| TC-107 | FR107 | choose a 9 MB phone photo | shrunk to a JPEG of at most 2048 px; upload succeeds; location data absent | M |
+| TC-107b | FR107 | upload an unknown type or over 8 MB directly | 4xx error envelope | M |
+| TC-109 | FR109 | reload mid-wizard | resumes with answers and photos; a second member on the same phone sees only their own draft | M |
+| TC-110 | FR110 | biodata without an AI key | file attachable, typing works, no crash | M |
+| TC-111 | FR111 | parent publishes for a daughter | today needs the child's phone and a maker face check; after the pending change it must not | M (expected to fail against the new behaviour) |
+| TC-112 | FR112 | child with pending number signs in; maker tries to claim | child asked; maker refused; second claim refused | M |
+| TC-115 | FR115 | switch to Marathi and Kannada | first paint in that language; guides exist in 5 languages | M |
+| TC-116 | FR116 | sibling tries to send a request | refused; may suggest | M |
+| TC-119 | FR119 | "read my words" with prefilled points | points added, none removed | M |
+| TC-120 | FR120 | decline then re-request inside 90 days | blocked | M |
+| TC-122 | FR122 | no birth time | result labelled provisional; Mangal not inside the 36 | A (horoscope tests) |
+| TC-125 | FR125 | candidate leaves the incognito chat | session deleted for both | M |
+| TC-125b | FR125 | direct chat to an unlinked person | refused | M |
+| TC-127 | FR127 | face check at distance 0.5; an 11th attempt in a day | refused at 0.45; limit applies | M |
+| TC-127b | FR127 | add a photo after a pass | confirmation removed | M |
+| TC-129 | FR129 | operator suspends then lifts | audit and notification | M |
+| TC-130 | FR130 | create order, sandbox pay, cancel | plan active; cancel refunds nothing (documented gap) | M |
+| TC-131 | FR131 | agent exceeds contact-open quota | refused; reports can pause contact access | M (`check_agent_limits.py`) |
+| TC-133 | FR133 | set stage, view places | places per stage | M |
+| TC-SEC-01 | all | cross-account read of `/profile/view/{id}/full` | RLS refuses | M |
+| TC-SEC-02 | all | horoscope-service call without token | 403 envelope | A (`http.test.ts`) |
+
+QA-RUN results: no Mangalya-specific QA-RUN file exists. Executed evidence is the 2026-10-06 walks (ONBOARDING-REDESIGN section 2) and the critique walk; both are read-only observations, not pass/fail suites.

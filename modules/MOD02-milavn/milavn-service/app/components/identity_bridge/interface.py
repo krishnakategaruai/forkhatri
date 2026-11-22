@@ -247,8 +247,16 @@ _names: dict[UUID, tuple[float, MemberIdentity]] = {}
 _lookup_down_until = 0.0
 
 
+DELETED_DISPLAY_NAME = "Deleted member"
+
+
+def is_tombstone(member_id: UUID) -> bool:
+    """[056] A member who deleted their data is replaced by a one-way id that starts with 'dead0000'."""
+    return member_id.hex.startswith("dead0000")
+
+
 def _fallback(member_id: UUID) -> MemberIdentity:
-    return _compose(member_id, FALLBACK_DISPLAY_NAME, 0)
+    return _compose(member_id, DELETED_DISPLAY_NAME if is_tombstone(member_id) else FALLBACK_DISPLAY_NAME, 0)
 
 
 async def _fetch_names(ids: list[UUID]) -> dict[UUID, MemberIdentity] | None:
@@ -272,6 +280,9 @@ async def display_names_for(member_ids: list[UUID]) -> dict[UUID, MemberIdentity
     result: dict[UUID, MemberIdentity] = {}
     missing: list[UUID] = []
     for mid in dict.fromkeys(member_ids):
+        if is_tombstone(mid):
+            result[mid] = _fallback(mid)
+            continue
         hit = _names.get(mid)
         if hit and hit[0] > now:
             result[mid] = hit[1]

@@ -1,3 +1,5 @@
+> **Document status (2026-11-22):** as-built scope. Component list, ports and API: see `07-tech-reqs.md` addendum, `API-REFERENCE.md`, `RUNBOOK.md`. Decisions DEC-V1-001 to DEC-V1-035 apply; DEC-V1-035 (onboarding) is built on the web, with its `POST /profile/managed` server change still pending. Folder is now MOD03-mangalya.
+
 ---
 module: MOD03
 step: module-architecture

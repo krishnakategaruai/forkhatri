@@ -165,3 +165,40 @@ def delete_stored_file(storage_ref: str | None) -> None:
         path.unlink(missing_ok=True)
     except OSError:
         _log.warning("could not delete stored media file for ref %s", storage_ref)
+
+
+_MEDIA_DIR_RE = __import__("re").compile(r"^(offline-)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+
+
+def remove_member_files(refs: list[str], dirs: list[str]) -> int:
+    """[Account deletion, 2026-11-22] Remove every stored file behind `refs`, then
+    the media folders named after the erased ids (`dirs`), returning how many files
+    were removed. Called only after the database erase has committed. Anything that
+    is not a local ref or a plain id-named folder directly under the media root is
+    ignored; a failure is logged and never surfaces (the rows are already gone)."""
+    import shutil
+
+    removed = 0
+    for ref in refs:
+        if not ref or not ref.startswith("local://"):
+            continue
+        try:
+            path = local_path(ref)
+            if path.is_file():
+                path.unlink()
+                removed += 1
+        except (ValueError, OSError):
+            _log.warning("could not delete stored media file for ref %s", ref)
+    root = _LOCAL_MEDIA_ROOT.resolve()
+    for name in dirs:
+        if not _MEDIA_DIR_RE.match(name or ""):
+            continue
+        folder = (root / name)
+        if not folder.is_dir():
+            continue
+        try:
+            removed += sum(1 for f in folder.rglob("*") if f.is_file())
+            shutil.rmtree(folder)
+        except OSError:
+            _log.warning("could not delete media folder %s", name)
+    return removed

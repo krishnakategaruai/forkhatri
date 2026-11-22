@@ -6,6 +6,8 @@ approver: Architect
 updated: 2026-09-13
 ---
 
+> **Document status (2026-11-22, as built).** Sealed architecture (2026-09-13) is kept; the addendum at the end shows the system as built.
+
 # Architecture — MOD02 Milavn
 
 ## Revision history
@@ -230,3 +232,42 @@ No adjustment to `/ARCHITECTURE.md`'s stated 99.5% Core Platform availability ba
 ## Approval
 
 Architect — [x] Approved — krishna kategaru, 2026-09-13
+
+---
+# Addendum 2026-11-22: architecture as built
+
+```mermaid
+flowchart LR
+  B[Browser: milavn-web :3001] -->|fk_session cookie, X-Milavn-Language| A[milavn-service :8001]
+  B -->|WebSocket /ws/chat| A
+  A -->|resolve session| I[identity service :8100]
+  A -->|SET LOCAL milavn.member_id, RLS| D[(PostgreSQL :5433 milavn_* schemas)]
+  A -->|search places| P[shared places adapter -> OpenStreetMap]
+  A -.->|sandbox now, MOD06 later| M[payment service :8016]
+  A -->|internal insights| H[ForKhatri dashboard MOD05]
+  B -->|tiles| T[map tile host]
+```
+
+Ticket booking sequence:
+
+```mermaid
+sequenceDiagram
+  participant M as Member
+  participant W as Web
+  participant A as API
+  participant D as DB
+  M->>W: choose ticket type, enter code
+  W->>A: POST /occurrences/{id}/ticket/quote
+  A->>D: price, discount (definer function)
+  M->>W: Pay
+  W->>A: POST /occurrences/{id}/ticket (Idempotency-Key)
+  A->>D: advisory lock per event, check capacity and tier quota, create hold
+  A-->>W: checkout reference
+  W->>A: sandbox complete
+  A->>D: ticket paid, participation going, QR issued, outbox event
+  A-->>M: notification (after commit)
+```
+
+Online join: `join-online` is accepted only from 15 minutes before start; it returns the link and marks the person checked in. Venue read: the API selects from `occurrence_venue`; RLS returns a row only for organizer, co-organizer or confirmed attendee.
+
+Component rule unchanged: one schema per component, cross-schema references are plain uuids, writes by other members go through SECURITY DEFINER functions. Added since sealing: places, ticketing, activity.events and cohost, circle.social, connect.chat. Decisions: no in-app video (2026-10-05); the sandbox gate (`payments_sandbox_allowed`) only opens on a local API host and a local web URL; in-process jobs instead of a platform scheduler (single instance). Details: `07-tech-reqs.md` addendum and `08-security-performance.md`.

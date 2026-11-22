@@ -454,3 +454,11 @@ makes, never a foreign key or view spanning two containers' databases.
 ## Approval
 
 Database Architect / Tech Lead — [x] Approved — autonomous execution per continuous-build-mode direction, 2026-09-14
+
+
+---
+
+# Addendum 2026-11-22 — superseded counts
+
+**Document status:** as built, 2026-11-22. The table list above is the September design. The real model is in [07a-er-model-as-built.md](07a-er-model-as-built.md): 63 tables in 13 schemas (vyapar_analytics, commercial, contracts, enquiries, identity, integration, listings, opportunities, payments, platform, privacy, reviews, trust_safety), 811 columns, 139 indexes, 69 policies, 84 functions, 18 triggers, migrations 001 to 032. Where this file and the appendix disagree, the appendix wins.
+

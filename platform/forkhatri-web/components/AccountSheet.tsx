@@ -21,6 +21,7 @@ type AccountSheetProps = {
   onLang: (lang: Lang) => void;
   onUpdate: (patch: Partial<Pick<Member, "display_name">>) => Promise<Member>;
   onSignOut: (everywhere: boolean) => Promise<void>;
+  onDelete: () => void;
 };
 
 const THEME_OPTIONS: { value: ThemeChoice; label: MessageKey }[] = [
@@ -29,7 +30,7 @@ const THEME_OPTIONS: { value: ThemeChoice; label: MessageKey }[] = [
   { value: "dark", label: "themeDark" },
 ];
 
-export default function AccountSheet({ t, lang, member, onLang, onUpdate, onSignOut }: AccountSheetProps) {
+export default function AccountSheet({ t, lang, member, onLang, onUpdate, onSignOut, onDelete }: AccountSheetProps) {
   const [theme, setTheme] = useThemeChoice();
   const [editingName, setEditingName] = useState(false);
   const [draft, setDraft] = useState("");
@@ -211,6 +212,13 @@ export default function AccountSheet({ t, lang, member, onLang, onUpdate, onSign
             </motion.button>
           )}
         </AnimatePresence>
+      </div>
+
+      <div className="account-delete">
+        <button type="button" className="btn-danger btn-wide" onClick={onDelete}>
+          {t("deleteAccount")}
+        </button>
+        <p className="module-note">{t("deleteAccountNote")}</p>
       </div>
     </div>
   );

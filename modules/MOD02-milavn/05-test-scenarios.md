@@ -7,6 +7,8 @@ updated: 2026-09-13
 items: "175 | approved: 175 | blockers: 0"
 ---
 
+> **Document status (2026-11-22, as built).** Sealed scenarios (175, 2026-09-13) are kept. The addendum lists the automated test files, the October 2026 QA runs and scenarios for features built since.
+
 # 05 — Test Scenarios — MOD02 Milavn
 
 ## Revision history
@@ -4724,3 +4726,50 @@ completely unchanged.
 - (none yet)
 
 **Approval:** Principal QA — [x] Approved — krishna kategaru, 2026-09-13
+
+---
+# Addendum 2026-11-22: tests as they are
+
+## A. Automated (pytest, `milavn-service/tests/`, 58 test functions in 9 files)
+| File | Covers |
+|---|---|
+| test_admin_queue_grouping.py | moderation queue grouping (FR160) |
+| test_chat_presence_hub.py | chat presence hub (FR096) |
+| test_circle_posts_and_activity_chat.py | circle post social layer, activity chat (FR157) |
+| test_circle_suggestion_groups.py | suggestions need a real group (migration 040) |
+| test_discovery_fit.py | discovery fit and honesty (FR110-FR111) |
+| test_first_run.py | first run, interests, widening, smart fill (FR146-FR148) |
+| test_identity_bridge.py | session resolution, fail closed |
+| test_paid_spots.py | paid spots, holds, waitlist (FR102, FR134-FR136 partly) |
+| test_showing_up.py | still coming, reminders, plan (FR103-FR105) |
+Browser scenarios (Node, CDP): `milavn-web/scripts/scenarios/` core-loop, detail-debug, edge-flows, golden-path, i18n-and-suggestions, map-debug, org-debug, organizer-moderator, visual-pass. No test was re-run in this documentation pass.
+
+## B. Manual runs executed 2026-10-06 (real API as QA members, plus phone screens)
+| Run | Scenarios | Results |
+|---|---|---|
+| community | 8 women-only temple yatra; 9 live darshan stream; 10 festival co-hosted by two circles; 11 satsang with poll; 12 town hall and fundraiser | NOTES, PASS, PASS, PASS, NOTES |
+| fun | 13 food walk; 14 tournament teams; 15 book club and PDF; 16 photo walk album; 17 paid quiz with codes; 18 skill-share; 19 trek in a new city | NOTES, PASS, NOTES, PASS, NOTES, PASS after fixes, NOTES |
+| professional | 1 paid GST workshop; 2 online webinar; 3 office hours; 4 doctors circle; 5 expo; 6 hybrid panel; 7 Counsel link | NOTES, PASS, NOTES, NOTES, NOTES, PASS, PASS |
+| safety | 20 notification overload; 21 venue privacy attack; 22 refund and cutoff; 23 women-only misuse; 24 Hindi and Telugu | NOTES, PASS, NOTES, NOTES, NOTES |
+Details, bugs fixed and left open: `AgentOutputs/QA-RUN-*.md`.
+
+## C. Scenarios for features built since
+| TC | Scenario | FR | Layer | Status |
+|---|---|---|---|---|
+| TC-201 | place search returns Indian localities; provider off returns empty | FR127 | API | manual |
+| TC-202 | unbooked, interested, cancelled, anonymous callers get no venue, link, contact | FR128, FR129, FR137 | security | manual PASS |
+| TC-203 | online link hidden until 15 minutes before start; Join marks checked in | FR129 | API | manual PASS |
+| TC-204 | last seat of a tier cannot be taken twice | FR134 | API | partly automated |
+| TC-205 | expired and used-up code messages | FR135 | API | manual PASS |
+| TC-206 | refund before and after cutoff; waitlist offer with and without types | FR136 | API | manual; fixed by 055 |
+| TC-207 | man cannot enter women-only circle by join, link, invite acceptance | FR140 | security | manual PASS with notes |
+| TC-208 | team size and one team per person | FR133 | API | manual PASS |
+| TC-209 | private circle media 404 to non-members, signed out, upper-case and `..` paths | FR142, FR154 | security | manual PASS |
+| TC-210 | grouped circle notifications and per-circle setting | FR144 | API | manual PASS |
+| TC-211 | co-host invite, acceptance, one bell entry | FR145 | API | manual PASS |
+| TC-212 | first run: place only, language preserved | FR146 | unit | automated |
+| TC-213 | notification dismiss | FR159 | API | fails until the GRANT is applied (08 S-12) |
+| TC-214 | per-day check-in | FR132 | API | not possible today |
+| TC-215 | public event page while signed out | FR150 | UI | to re-verify |
+Not covered anywhere: load, WebSocket abuse, upload malware, DPDP flows.
+

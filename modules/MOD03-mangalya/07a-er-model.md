@@ -7,6 +7,8 @@ updated: 2026-09-13
 internal_pass: Sign-off ready
 ---
 
+> **Document status (2026-11-22):** as-built scope. The original text below is kept as history; the **As-built addendum at the end of this file** records what exists today and wins on conflict. Module folder renamed MOD03-mangaly to MOD03-mangalya (inner service and web folders keep `mangaly-`). Related: `09-implementation.md`, `API-REFERENCE.md`, `TRACEABILITY.md`, `RUNBOOK.md`, `GLOSSARY.md`.
+
 # 07a — ER Model — MOD03 Mangaly
 
 ## Revision log (append-only, in-place file)
@@ -448,3 +450,30 @@ No orphans found in either direction. No cross-module dependency gaps found.
 ## Approval
 
 Database Architect / Tech Lead — [x] Approved — krishna kategaru, 2026-09-13
+
+
+---
+
+# As-built addendum (2026-11-22): data model status
+
+Authoritative generated lists: `07a-data-model-appendix.md` (66 migrations, 93 tables, 148 functions). New since the earlier version of this file: 045 face match and biometric consent, 046 direct chat, 047 member profile, 048 operations, 049/055/056 horoscope charts and matches, 050 daily pick, 051 plans and payments, 052 relationship managers, 057/058 insights, 059/060 marriage agents and contact limits, 061 client photos for their helper, 062 wedding arrangements, 063/064/066 guides (066 adds Marathi and Kannada), 065 managed accounts.
+
+**Migration 065 (managed accounts):** adds `account.managed_by_account_id`; relaxes `account_has_identifier` so a managed account needs no phone or email; adds `profile.pending_phone` (indexed) and tables `account_alias` (member_id to account_id, `consented_at`; RLS on, no policy, reached only through SECURITY DEFINER functions) and `profile_document` (biodata and jathakam files). Functions: `create_managed_account`, `set_pending_phone`, `made_for_my_number`, `take_over_profile`, `not_my_profile`, `alias_of`. Applied to the development database; the API change that uses it for no-phone creation is **pending**.
+
+```mermaid
+erDiagram
+  ACCOUNT ||--o{ ACCOUNT : "managed_by"
+  ACCOUNT ||--o| PROFILE : owns
+  PROFILE ||--o{ PROFILE_MEDIA : has
+  PROFILE ||--o{ PROFILE_ATTRIBUTE : has
+  PROFILE ||--o{ PROFILE_DOCUMENT : has
+  ACCOUNT ||--o| ACCOUNT_ALIAS : "taken over by"
+  ACCOUNT ||--o{ MEMBERSHIP : joins
+  CONNECTION_REQUEST ||--o{ CONVERSATION : opens
+  CONVERSATION ||--o{ MESSAGE : holds
+  ACCOUNT ||--o{ PLAN_SUBSCRIPTION : buys
+  PLAN_SUBSCRIPTION }o--|| ORDER : from
+```
+
+Known drift: `schema.sql` lags migrations; `AgentOutputs/07a-er-model.md` is older. The appendix parses `CREATE TABLE` statements; the 051 billing table `"order"` is quoted in SQL.
+Retention: `MESSAGE_RETENTION_DAYS`; post-deletion grace, erasure, inactive ceiling, audit minimum and safety-evidence windows are `RETENTION_*` settings; unused made-for profiles are removed after 180 days with notice (`profile_removal_notice`).

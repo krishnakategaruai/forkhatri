@@ -54,13 +54,32 @@ class DeleteIn(BaseModel):
     confirm: str
 
 
+_delete_attempts: dict[str, list[float]] = {}
+
+
+def _rate_limit_delete(member_id: str) -> None:
+    """3 attempts per hour per member (contract: ACCOUNT-DELETION.md)."""
+    import time
+    from app.errors import DomainError
+    now = time.monotonic()
+    hits = [h for h in _delete_attempts.get(member_id, []) if h > now - 3600]
+    if len(hits) >= 3:
+        raise DomainError("rate_limited", "Too many attempts. Try again in an hour.", 429)
+    hits.append(now)
+    _delete_attempts[member_id] = hits
+
+
+@router.post("/me/delete-account-data")
 @router.post("/me/delete")
 async def delete_my_data(body: DeleteIn, actor: Actor = Depends(current_actor)):
+    """Kind B deletion: everything Counsel holds about the signed-in member, immediately.
+    The ForKhatri account and other modules are untouched. (/me/delete is the older path.)"""
+    from app.errors import DomainError
     if body.confirm.strip().upper() != "DELETE":
-        from app.errors import DomainError
         raise DomainError("confirm_required", "Type DELETE to confirm.", 422)
-    async with db.tx() as conn:
-        return await privacy.erase(conn, actor.member_id, "member_request")
+    _rate_limit_delete(actor.id)
+    result = await privacy.erase_member(actor.member_id, "member_request")
+    return {**result, "erased": True, "signed_out": True}
 
 
 @router.get("/me/saved")

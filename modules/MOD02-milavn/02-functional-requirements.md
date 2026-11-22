@@ -7,6 +7,9 @@ updated: 2026-09-13
 items: "88 | approved: 88 | blockers: 0"
 ---
 
+> **Document status (2026-11-22, as built).** Sealed text FR001-FR088 below is kept. FR089 onward (built since) is in `02a-functional-requirements-as-built.md`; API in `API-REFERENCE.md`.
+
+
 # 02 — Functional Requirements — MOD02 Milavn
 
 ## Revision history

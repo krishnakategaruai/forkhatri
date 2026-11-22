@@ -1039,3 +1039,11 @@ This file is Sealed and does not wait on Step 7a's own three-pass process to beg
 4. **Five named, narrow schema fixes**, each already called out at its own TR: a `listings.setup_step` column (TR004); a trigger or app-layer reset of `contact_verified` on phone change (TR007); a partial unique index enforcing "1 open enquiry per target" (TR022); a generalized Promotion/Entitlement history table (TR031); an FK from `promotions.campaign_id` to `campaigns.id` (TR035); a `content_language` column wherever member free text is stored (TR042).
 5. **The member-deletion anonymization-vs-counterpart-preservation schema (TR037)** is explicitly handed to Step 7a as an ER-Model-shaped decision, per IA037's own finding — this file fixes only the behavior contract (anonymize the requester, never cascade-delete a counterpart's record), not the concrete tombstone/anonymization table design.
 6. **The component decomposition and traceability table** under "Component decomposition (Vyapar)" above should graduate into a formal `modules/MOD01-vyapar/architecture.md` (component diagram, placement recap) once that file's actual owner is assigned by the pipeline's Step 0b/Solution Architecture pattern — Step 7a may be the practical place this happens, given it already needs the same component boundaries to design schema ownership; if so, cite this file's table rather than re-deriving it.
+
+
+---
+
+# Addendum 2026-11-22 — as-built technical record
+
+**Document status:** as built, 2026-11-22. See [architecture.md](architecture.md) (components, jobs, configuration, error model), [API-REFERENCE.md](API-REFERENCE.md) (all 268 endpoints) and [07a-er-model-as-built.md](07a-er-model-as-built.md) (63 tables). New technical requirements since TR055: TR056 start flow single transaction endpoint; TR057 identity adapter chain; TR058 personal token and webhook signing; TR059 five-language CHECK constraints; TR060 trust jobs (credential sync, verification cleanup); TR061 AI provider seam. Drift noted: package.json for vyapar-web has no dev:tunnel script (it lives at the repo root); two migrations numbered 026.
+

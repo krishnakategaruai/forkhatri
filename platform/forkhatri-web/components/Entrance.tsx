@@ -20,6 +20,7 @@ import { loadCachedRegistry, loadStoredLang, saveCachedRegistry, saveStoredLang 
 import { useThemeSync } from "@/lib/theme";
 import { withViewTransition } from "@/lib/view-transition";
 import AccountSheet from "./AccountSheet";
+import DeleteAccount from "./DeleteAccount";
 import Arrival from "./Arrival";
 import Hub, { EnteringOverlay, HubSkeleton } from "./Hub";
 import Offline from "./Offline";
@@ -44,7 +45,7 @@ type Phase =
   | { kind: "signedIn"; member: Member }
   | { kind: "redirecting" };
 
-type SheetKind = "account" | "notifications";
+type SheetKind = "account" | "notifications" | "delete";
 type Toast = { id: number; text: string; tone: "info" | "error" };
 
 async function fetchRegistry(lang: Lang): Promise<{ modules: ModuleEntry[]; stale: boolean }> {
@@ -70,6 +71,8 @@ export default function Entrance({ initialSheet }: { initialSheet?: SheetKind })
   const [modules, setModules] = useState<ModuleEntry[]>([]);
   const [stale, setStale] = useState(false);
   const [sheet, setSheet] = useState<SheetKind | null>(null);
+  // Once deletion has started the sheet stays until the member has read the receipt.
+  const [deleteStarted, setDeleteStarted] = useState(false);
   const [entering, setEntering] = useState<ModuleEntry | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -423,8 +426,26 @@ export default function Entrance({ initialSheet }: { initialSheet?: SheetKind })
             </Sheet>
 
             <Sheet open={sheet === "account"} onClose={closeSheet} title={t("accountTitle")} closeLabel={t("close")}>
-              <AccountSheet t={t} lang={lang} member={member} onLang={changeLang} onUpdate={updateMember} onSignOut={signOut} />
+              <AccountSheet t={t} lang={lang} member={member} onLang={changeLang} onUpdate={updateMember} onSignOut={signOut} onDelete={() => openSheet("delete")} />
               {DevActAs && <DevActAs lang={lang} currentMemberId={member.member_id} variant="sheet" />}
+            </Sheet>
+
+            <Sheet
+              open={sheet === "delete"}
+              onClose={() => (deleteStarted ? undefined : closeSheet())}
+              title={t("deleteTitle")}
+              closeLabel={t("close")}
+            >
+              {sheet === "delete" && (
+                <DeleteAccount
+                  t={t}
+                  onStarted={() => setDeleteStarted(true)}
+                  onFinished={() => {
+                    setDeleteStarted(false);
+                    sessionEnded(t("deleteDoneTitle"));
+                  }}
+                />
+              )}
             </Sheet>
           </>
         )}

@@ -7,9 +7,12 @@ from __future__ import annotations
 from typing import Literal
 
 import asyncpg
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+
+import json
 
 from app.db import get_conn, get_internal_conn
+from app.services.privacy import ErasureOut
 from app.deps import Locale
 from app.errors import ERROR_RESPONSES
 from app.identity import AuthzContext, resolve_authz_context
@@ -150,3 +153,26 @@ async def list_dead_letters(
 @internal_router.get("/dashboard-summary/{listing_id}", response_model=DashboardSummaryOut, operation_id="getDashboardSummary", summary="Get a listing's summary for the platform dashboard (internal)")
 async def dashboard_summary(listing_id: str, conn: asyncpg.Connection = Depends(get_internal_conn)) -> DashboardSummaryOut:
     return await svc.get_dashboard_summary(conn, listing_id=listing_id)
+
+
+@internal_router.post("/members/{member_id}/erase", response_model=ErasureOut, operation_id="eraseMemberInternal", summary="Erase everything Vyapar holds about a member (internal, idempotent)")
+async def erase_member_internal(member_id: str) -> ErasureOut:
+    # ForKhatri account deletion (docs/ParentApp/ACCOUNT-DELETION.md): the identity
+    # service calls this with the service key. Own transaction so the files are
+    # removed only after the database work has committed.
+    from app.db import get_pool
+    from app.services import privacy as privacy_svc
+
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            await conn.execute("SELECT set_config('vyapar.service_role', 'dispatcher', true)")
+            try:
+                res = await conn.fetchval("SELECT vyapar_identity.erase_member($1, $2)", member_id, privacy_svc.pseudonymize(member_id))
+            except asyncpg.PostgresError as exc:
+                if "operator_role_must_be_removed" in str(exc):
+                    raise HTTPException(status_code=409, detail="operator_role_must_be_removed")
+                raise
+    out = json.loads(res) if isinstance(res, str) else res
+    files = privacy_svc._remove_files(member_id, list(out.get("file_urls") or []))
+    return ErasureOut(status=out["status"], deleted=out["deleted"], retained=out["retained"], files_removed=files)

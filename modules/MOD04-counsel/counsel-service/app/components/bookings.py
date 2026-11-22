@@ -160,7 +160,11 @@ async def cancel(conn, *, booking_id: UUID, actor_id: UUID, reason: str) -> dict
     )
     await conn.execute("INSERT INTO message (booking_id, sender_id, kind, body) VALUES ($1, NULL, 'system', $2)", booking_id, new_status)
     other = b["provider_id"] if role == "seeker" else b["seeker_id"]
-    await notifications.notify(conn, other, "booking.cancelled", {"title": b["service_title"], "by": role, "refund_minor": refunded}, booking_id)
+    if reason == "member_deleted":
+        # The other person is told plainly that the member left, never who they were.
+        await notifications.notify(conn, other, "booking.cancelled_deleted", {"title": b["service_title"], "refund_minor": refunded}, booking_id)
+    else:
+        await notifications.notify(conn, other, "booking.cancelled", {"title": b["service_title"], "by": role, "refund_minor": refunded}, booking_id)
     await audit.record(conn, actor_id, "booking.cancelled", "booking", booking_id, {"role": role, "refund_percent": percent, "refunded_minor": refunded, "reason": reason})
     return await get(conn, booking_id)
 

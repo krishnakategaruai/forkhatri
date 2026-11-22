@@ -1601,3 +1601,69 @@ Suggested incremental slices so each step yields visible app progress:
 8. FR30-FR32, FR51, FR54 - boost, payments, disclosure.
 9. FR33-FR35, FR49 - workspace and commercial admin.
 10. FR36-FR38, FR42-FR43, FR45-FR46, FR48, FR52, FR53 - privacy, localization, analytics, remaining operations.
+
+
+
+---
+
+# Addendum 2026-11-22 — features built after the original FR set (FR56 to FR70)
+
+**Document status:** as built, 2026-11-22. FR01 to FR55 above are unchanged and remain the base; where this addendum changes behaviour it says "supersedes" and names the FR. These FRs were reconstructed from code (routers, services, migrations, web components) and the Sept/Oct 2026 records. Endpoint IDs (API-nnn) refer to [API-REFERENCE.md](API-REFERENCE.md) (look up by tag); table IDs (TBL-nnn) to [07a-er-model-as-built.md](07a-er-model-as-built.md). Status: built = live in dev with a screen; partial = code exists, part is a stand-in or has no screen.
+
+Common to all: actor is a signed-in ForKhatri member (FR50; nobody signs in inside Vyapar); every error uses the common error envelope; every user-visible string exists in en, hi, te, mr, kn (FR42/FR65); members must be 18 or over (FR56).
+
+## FR56 — The 3-question start (supersedes the 5-step first run of FR44)
+- **Status:** built (backend and web). Owner decisions 1 to 14 accepted 2026-10-06 (ONBOARDING-REDESIGN-2026-10.md). Traces: BR14, BR01, BR02.
+- **Description:** A member answers goal (Find work / Hire someone / Get customers), trade(s) or need, and area, with one consent tap, then lands on results. Name, language and verified phone come from the identity and are never asked. Saving makes the member live as "New on Vyapar" (active_unverified); the content-flag hold stays.
+- **Main flow:** /first-run screen 1 (goal, consent line, "Agree and continue", date of birth only if unknown) -> 2a find work: trade tiles + search/voice; 2b hire: straight to the AI composer; 2c get customers: tiles + optional business name -> 3 Where (one field, any town, nearby chips) -> POST /v1/first-run/start saves everything in one call -> results or "you are visible" card plus completion card.
+- **Alternate/error:** under 18 sees a kind explanation, not an error; place not recognised -> "type it" (place lookup off by default, PLACES_PROVIDER=none); voice path saves the voice interview answers with the same call.
+- **Rules:** one question per later visit (experience, tools, rates, name/photo, call hours, GST/Udyam, other areas); radius and work mode defaulted from the trade; verified identity phone counts as contact_verified, OTP only for a different number; consent asked once (FR53).
+- **Data:** vyapar_identity.members (date_of_birth, phone_verified, first-run state), listings, profile rows, consent rows. Migration 032.
+- **Endpoints:** tag first-run (GET /v1/first-run/trade-tiles, POST /v1/first-run/start, plus older state/step endpoints kept for compatibility). **Screens:** SCR-FIRSTRUN, SCR-DISCOVER. **Permissions:** member.
+- **Acceptance:** new member reaches results in 3 to 4 screens with 0 to 1 typed fields; a member with a trade or post is not shown the start again; no "[object Object]" terms error.
+- **Known gaps:** hub passing ?q= is a platform task (unverified whether landed); the 2026-10-06 audit data (members 27, 28, 29, rows in ONBOARDING section 7) is still in the dev DB.
+
+## FR57 — Trade tiles and "Other — add your own" chips
+- **Status:** built (decision 5). SkillPicker has a visible "Other" entry adding a removable chip shown as written; tiles for top trades with line icons and a label in the member language; full category grid behind "More trades". Migration 032 added trades: kirana / general store, home-made food and pickles, borewell and motor repair, shop helper; "Health & Wellness" renamed to what it holds (slug unchanged).
+- **Endpoints:** tag taxonomy; first-run trade-tiles. **Tables:** vyapar_listings.taxonomy_terms (kind category/capability, names in five languages, aliases). **Rules:** max 10 skills; free text kept as text until an operator adds it (FR48). Open: owner may commission illustrations (Q2).
+
+## FR58 — Structured opportunities (hiring fields)
+- **Status:** built (migration 018). Jobs carry pay (fixed or range, per period), shift, schedule, experience, distance limit and pay floor; applicants appear as a board with stages, compare table, proposal summary. **Endpoints:** tags opportunities, enquiries. **Screens:** /opportunities/new, /opportunities/[id], /opportunities/[id]/applicants. **Rules:** fixed pay is one amount; Hindi/Telugu amounts parsed by the AI draft; "applicants still waiting" nudge after APPLICANTS_WAITING_NUDGE_DAYS (7), at most weekly per post.
+
+## FR59 — Contracts, milestones and the ledger (sandbox money)
+- **Status:** partial. Contracts, milestone stages, funding, release, dispute and 14-day auto-release work against the dev sandbox gateway; no real payout rail (BACKLOG B1; MASTER-CRITIQUE finding 1). **Endpoints:** tags contracts, payments. **Tables:** vyapar_contracts (6), vyapar_payments. **Screens:** /contracts, /contracts/new, /contracts/[id], /payments/checkout/[orderId]. **Rule:** no fee taken from workers (BACKLOG D1 legal review first).
+
+## FR60 — AI assist (drafting, proposals, shortlist wording)
+- **Status:** built with the rules engine; the Claude path is built and tested offline. Settings AI_PROVIDER (rules|anthropic), ANTHROPIC_API_KEY (placeholder keeps rules), VYAPAR_AI_MODEL, AI_DAILY_LIMIT, AI_TIMEOUT_SECONDS, AI_MAX_INPUT_CHARS. Screens say "We fill in the form; you check it". Photo reading returns "not available" (BACKLOG B2). **Endpoints:** tag ai. **Migration:** 020.
+
+## FR61 — Pre-accept calling and call windows
+- **Status:** built (migrations 023, 025). Per-post "let people call before I accept" (default off), call days/hours, daily cap (PRECALL_CALLER_TAPS_PER_DAY=3), matching-skill callers only, WhatsApp-only default, honest disclosure text. **Endpoints:** tag contact. **Screens:** /profile/contact, ContactActions, PrecallActions. Risk: scam exposure (critique C2).
+
+## FR62 — Trust pack: scam shield, "paid on time", close the loop, profession rules, council badges
+- **Status:** built (migration 028, 2026-09-30); council lookups use a dev stub (CREDENTIAL_REGISTRY=dev_stub) so a verified badge needs an operator (BACKLOG B6).
+- **Description:** scam shield on every poster text (fee words, off-platform moves) and pause of employment posts after SEEKER_CHARGE_REPORT_THRESHOLD (2) independent "asked for money" reports; "paid on time" asked PAID_ON_TIME_ASK_AFTER_HIRE_DAYS (30) after a hire and shown after PAID_ON_TIME_MIN_ANSWERS (3) answers; every applicant gets a final status and polite closure; advocates and architects get no promotion, reviews or ranking boost (profession_rules.rules_checked_on records the check date; lawyer review still open); council badge re-check every CREDENTIAL_RECHECK_DAYS (365).
+- **Endpoints:** tags trust, trust-safety. **Screens:** components/trust (ScamShield, PaidOnTime, CloseLoop, Council, Profession, SeekerProtectionNotice), /paid-on-time/[id]. **Known gap:** text-only scam defence; no block on overseas-placement posts (critique C2).
+
+## FR63 — Voice interview (guided spoken conversation)
+- **Status:** built (migration 029). One question at a time, answers read back, Hindi/Telugu number words understood, whole start completed by voice. Browser speech recognition (en-IN, hi-IN, te-IN); weak for Telugu (BACKLOG B3). **Endpoints:** tag voice. **Screens:** VoiceEntry, VoiceInterview. NEXT_PUBLIC_VYAPAR_VOICE_MOCK for tests.
+
+## FR64 — Recommendations that learn (member taste)
+- **Status:** built (migration 030, commits 2026-10-01). "More like this", "Not interested" with reasons, "Why this?" phrase, a page /profile/learned where learned items can be removed. Matching honours distance (decision 14). **Endpoints:** tags recommendations, feed, saved-searches. **Script:** scripts/eval_recommendations.py.
+
+## FR65 — Marathi and Kannada (extends FR42)
+- **Status:** built (migration 031, owner 2026-10-06). Languages en, hi, te, mr, kn everywhere: language CHECKs widened, name_mr/name_kn/description_mr/description_kn columns, privacy notice and terms in mr/kn, locale folders for all five (backend and web). Words follow GLOSSARY.md. Gap: user-written content is not machine translated (TranslateLink hidden until NEXT_PUBLIC_TRANSLATE_URL_TEMPLATE is set; critique H1).
+
+## FR66 — Personal access tokens, webhooks, idempotency, MCP server
+- **Status:** built (migrations 015, 016). Tokens (vyp_..., scopes read, opportunities:write, enquiries:write, listings:write; default 90 days, max 365, max 20 active); signed outbound webhooks with retry (6 attempts, disabled after 25 failures, 10 per member); Idempotency-Key replay for 24 h; vyapar-mcp (about 73 tools) using only the public REST API. **Endpoints:** tags integrations, events. **Tables:** vyapar_integration (10).
+
+## FR67 — Host adapter and tunnel/cookie auth mode
+- **Status:** built. Identity providers are adapters tried in order (IDENTITY_PROVIDERS: bearer, forkhatri, dev). The ForKhatri adapter resolves the fk_session cookie against the identity service and fails closed (503). Web: NEXT_PUBLIC_VYAPAR_AUTH picks dev header or cookie session. Behind Cloudflare Quick Tunnels (npm run dev:tunnel at the repo root, scripts/tunnel.mjs) vyapar-web/proxy.ts redeems a single-use fk_handoff code with the identity service, copies the session cookie onto the Vyapar host and reloads; next.config.ts rewrites /tunnel-proxy/identity and /tunnel-proxy/api to localhost when TUNNEL_DEV_ORIGIN is set. Embeddable components in vyapar-web/embed.
+
+## FR68 — One profile per member
+- **Status:** built (migration 026; owner rule 2026-09-30). The profile exists from the first read of GET /v1/me/profile; optional "My business" section; no "Create your profile first" wall (decision 3).
+
+## FR69 — Admin console
+- **Status:** built (migration 024). Operator scopes verification, content, commercial, analytics, moderation come from the platform session. **Screens:** /admin/verification, /admin/moderation, /admin/commercial, /admin/ops. **Endpoints:** tags admin-verification, admin-moderation, admin-commercial, admin-ops, admin-console, admin-audit. Risk: operator capacity (critique H6).
+
+## FR70 — Notification texts in five languages
+- **Status:** built (migration 027, scripts/backfill_notification_i18n.py). Notifications store a template id and parameters and render in the reader language. Kinds in code: opportunity_match (strong_match, saved_search_match), digest, enquiry, partnership, promotion, campaign, entitlement, verification_reminder, payment_order, contract_dispute. Delivery is the in-app inbox plus webhooks; push/SMS/WhatsApp blocked on vendors (B5).

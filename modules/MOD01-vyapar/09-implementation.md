@@ -3130,3 +3130,20 @@ Checks:
 | `check_ai.py` | 68/68 |
 
 `openapi.json` was regenerated.
+
+
+---
+
+# Addendum 2026-11-22 — change log since 2026-09-17 and what is not built
+
+**Document status:** as built, 2026-11-22. Source: git log for this folder.
+| Date | Commit | What |
+|---|---|---|
+| 2026-09-29 | 782706b, 268846d | Mangaly renamed Mangalya; repo cleaned for production |
+| 2026-09-30 | 158da5d, 5ba5683, 17153c4 | 29-Sep work restored into redesigned screens; real search, trade filters, notifications, seed marketplace |
+| 2026-09-30 | 7a73398, 36c0bfd, 3cbcac0 | Trust pack backend, screens, follow-ups (migration 028) |
+| 2026-09-30 | 3a22f83, f668d5d | Voice interview (029); first-run language chip follows screen language |
+| 2026-10-01 | e30ed84, 627e511, bf87454, 4f73430 | Taste-learning recommendations (030), controls, "Why this?" |
+| 2026-10-06 (in 2026-10-24 push a8f7747) | | Marathi/Kannada (031); onboarding study and the 3-question start (032, first-run endpoints, start components, Other chips); tunnel handoff proxy |
+Key files per feature: start = vyapar-web/app/first-run/page.tsx, components/start/*, services/first_run.py, routers/first_run.py; trust = services/{scam_shield,paid_on_time,close_loop,profession_rules,credentials,trust_jobs}.py; voice = services/voice_interview.py; taste = taste.py, services/taste.py; contracts = services/contracts.py; tokens/webhooks = integrations/. Conventions: router -> service -> SQL function; every file starts with a requirement comment block; locale keys in all five languages.
+**Not built:** real payment rail and payouts; real council/DigiLocker checks; push/SMS/WhatsApp delivery; masked-number calling; real Hindi/Telugu voice engine (Bhashini); personal work agent; photo reading; translation of user content; production deployment and backups; automated test suite beyond check scripts; DPDP breach and pre-deletion notices; place lookup beyond the built-in gazetteer unless PLACES_PROVIDER enabled.

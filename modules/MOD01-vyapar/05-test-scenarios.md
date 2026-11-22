@@ -1932,3 +1932,31 @@ These 15 scenarios exist specifically to guard the standing product invariants n
 ## Closing note for Step 6
 
 This file is Sealed with all 214 scenarios (TS001–TS214) approved under the module's standing autonomous-execution mode (product owner direction, 2026-09-14: "never wait for me ... complete this application developing as continuous chain"). Every FR01–FR55 has scenario coverage tied to its Requirement/Success/Failure/Acceptance-criteria text and its matching UX/UI screen; the 15 standing product invariants named in the brief each have a dedicated INVARIANT-tagged scenario (TS200–TS214) in addition to being exercised implicitly by their owning FR's own scenarios. The test-pyramid distribution (65.4% Unit / 28.0% Integration / 6.5% E2E) is Unit-heavy and examined, not E2E-dominated, per the Set-level quality gate above. No scenario in this file exercises a Vyapar-owned login/signup/OTP-login/session/logout flow — FR50 is tested only as identity *consumption*, and FR07's OTP is tested only as listing-contact verification — consistent with the FR/UX/UI files' own scope correction. Step 6 (Impact Analysis) may now loop over every FR and assess dependencies/risk against this scenario set.
+
+
+---
+
+# Addendum 2026-11-22 — tests that actually exist, and new scenarios
+
+**Document status:** as built, 2026-11-22. The 214 scenarios above are design-time scenarios. Automated coverage that exists is script based (no pytest or jest suite was found), run against a live API: vyapar-service/scripts/check_admin_console.py (FR69), check_ai.py (FR60), check_backend_b.py (FR61, FR62 parts, contact/badges), check_contracts.py (FR59), check_profile.py (FR01, FR04, FR68), check_structured_hiring.py (FR58), check_taste.py and eval_recommendations.py (FR64), check_trust_pack.py (FR62), check_voice_interview.py (FR63); web: scripts/check-contrast.mjs (accessibility contrast), scripts/check-i18n-keys.py and repo scripts/check_locale_parity.py (FR42, FR65). These scripts were not re-run for this documentation pass (unverified current pass state). Everything else is manual only.
+
+Executed manual runs on record: the onboarding audit of 2026-10-06 (members 27, 28, 29, 15; findings in ONBOARDING-REDESIGN-2026-10.md section 1) and the critique walk of 2026-10-06 (docs/Critique/CRITIQUE-mod01-vyapar.md). Screens opened on 2026-11-22 for this pass: /, /first-run, /businesses, /post, /activity, /enquiries/mine, /profile and subpages, /contracts, /privacy, /promotions, /opportunities/new all rendered; Discover showed an error banner for one member.
+
+New scenarios (TC-6xx; layer API unless noted)
+| TC | FR | Scenario | Automation |
+|---|---|---|---|
+| TC-601 | FR56 | POST /v1/first-run/start with goal find_work, two trades, a typed town creates profile and returns results | manual |
+| TC-602 | FR56 | member under 18 gets a kind refusal, no profile | manual |
+| TC-603 | FR56 | member with a trade is not shown the start (UI) | manual |
+| TC-604 | FR57 | "Other" chip adds removable free text (UI) | manual |
+| TC-605 | FR58 | fixed pay single amount accepted; Hindi "10000 mahina" parsed | check_structured_hiring.py (partial) |
+| TC-606 | FR59 | fund, release, dispute, auto-release at 14 days | check_contracts.py |
+| TC-607 | FR61 | 4th caller tap in a day refused | check_backend_b.py (unverified) |
+| TC-608 | FR62 | scam-shield flags fee text; 2 independent reports pause a job | check_trust_pack.py |
+| TC-609 | FR63 | voice answers read back and saved | check_voice_interview.py |
+| TC-610 | FR64 | "Not interested" lowers similar posts; learned item removable | check_taste.py |
+| TC-611 | FR65 | every locale key exists in five languages | check-i18n-keys.py |
+| TC-612 | FR66 | token with read scope cannot write; revoked token refused; replayed Idempotency-Key returns first response | manual |
+| TC-613 | FR67 | fk_handoff redeemed once only (security) | manual |
+| TC-614 | FR69 | operator without scope gets 403 | check_admin_console.py |
+

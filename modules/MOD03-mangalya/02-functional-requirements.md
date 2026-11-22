@@ -7,6 +7,8 @@ updated: 2026-09-11
 items: "102 | approved: 102 | blockers: 0"
 ---
 
+> **Document status (2026-11-22):** as-built scope. The original text below is kept as history; the **As-built addendum at the end of this file** records what exists today and wins on conflict. Module folder renamed MOD03-mangaly to MOD03-mangalya (inner service and web folders keep `mangaly-`). Related: `09-implementation.md`, `API-REFERENCE.md`, `TRACEABILITY.md`, `RUNBOOK.md`, `GLOSSARY.md`.
+
 # 02 — Functional Requirements — MOD03 Mangaly
 
 ## Revision history
@@ -4458,3 +4460,70 @@ Necessary ✓ · Appropriate ✓ · Unambiguous ✓ · Complete ✓ · Singular 
 **Approval:** Product Manager / BA — [x] Approved — krishna kategaru (autonomous), 2026-09-11
 
 ---
+
+
+---
+
+# As-built addendum (2026-11-22): functional requirements FR103-FR134
+
+FR001-FR102 above are kept. The rows below record what was built after them (September-October 2026) and the behaviour that changed. Endpoint IDs refer to `API-REFERENCE.md`; tables to `07a-data-model-appendix.md`; screens to SCR ids in `03-ux.md` addendum. Tests: see `05-test-scenarios.md` addendum (most are manual; automated files are named there).
+
+Common to all: actor must hold a ForKhatri session; a parent or guardian acts "for the candidate" through `X-Mangaly-Manage`; errors use the shared error envelope; user text is in 5 languages through i18n namespaces.
+
+## Onboarding and profile creation (BR26)
+| FR | Feature | Actors | Main flow and rules | Endpoints | Tables | Status |
+|---|---|---|---|---|---|---|
+| FR103 | Who-for chooser incl. "My sister or brother", "Start from a biodata", "Just look around first" | any member | choose who the profile is for; look-around opens Discover with bride/groom chosen; no requests until a profile exists (D1, D3) | `/profile/me`, `/discovery/*` | profile | built |
+| FR104 | Three-card story, skippable, rest in Help | new member | shown once; D2 | none | none | built |
+| FR105 | About step: name prefilled, date of birth as three dropdowns (years from 18 back), gender, age rule checked at the step | maker | server rule unchanged (marriageable age 18, DEC-V1-005) | `POST /profile`, `POST /profile/managed` | profile | built |
+| FR106 | Where step: place search (worldwide, abroad allowed) | maker | uses `/profile/places/search` (OSM-based data) | `GET /profile/places/search` | profile_attribute | built |
+| FR107 | Photos: several at once, choose or take, shrink on device | maker | JPEG, max side 2048, quality 0.86, EXIF dropped (`lib/image.ts`); server refuses over 8 MB or unknown type; "add later" keeps a device draft | `POST /profile/photos`, order, primary, delete | profile_media | built |
+| FR108 | Work and studies skippable; education adds Diploma and Professional, "Other" text; relocation Yes / No / Can discuss | maker | skipped profile saved but not discoverable until filled (DEC-V1-001 tiers) | `PATCH /profile/{category}` | profile_attribute | built |
+| FR109 | Device drafts (IndexedDB `mangalya-drafts`) | maker | saved every step with photos and biodata; one draft per member; fails soft; nothing sent before publish | none (client) | none | built |
+| FR110 | Biodata reader | maker | one consent line; PDF or image read into the closed field list; family confirms each line; file kept only if "attach"; without AI the family attaches and types | `GET /profile/biodata/reader`, `POST /profile/biodata/read`, `/profile/documents*` | profile_document | built (AI needs key) |
+| FR111 | Check and publish for someone else | parent | asks child's number last; ideal: number optional, managed account (065) | `POST /profile/managed`, `GET /profile/managed` | account, profile | **partial: server still requires `child_phone` and face check (pending change)** |
+| FR112 | Managed account and take-over | child | child signs in with pending number, asked "is this you?"; consent time stored; cannot be claimed by maker, anyone with a profile or circle, or twice | `POST /profile/claim`, `POST /profile/disown` | account_alias, profile.pending_phone | DB built; API path for no-phone creation pending |
+| FR113 | Who-for fix and My profile next-up | member | "Next up" picks easiest missing answer; camera check is separate optional card (D15, D17) | `/profile/completeness` | none | built |
+| FR114 | Member's own My profile (non-candidate) | parent, sibling | photo, line, city, work, families and exact relation, profiles made; never searchable | `/profile/member/me`, `/profile/member/photo` | member_profile | built |
+| FR115 | Language picker: en, hi, te, mr, kn | all | cookie `mangaly.language`; person-level language (FR089) | none | none | built |
+
+## Family (BR02, BR03)
+| FR | Feature | Notes | Endpoints | Status |
+|---|---|---|---|---|
+| FR116 | Home Circle roles and exact relation | 15 relations map to roles parent, guardian, sibling, relative (040); siblings/relatives only suggest; family sees the whole circle (025); parents read match sharing (054) | `/home-circle/*` (members, relation, invite, leave, remove, suggest, notes, contexts, people) | built |
+| FR117 | Family notes and forwarding | add, edit, delete, request forward, approve, decline | `/home-circle/notes*` | built |
+| FR118 | Contact requests from the circle | approve/decline | `/home-circle/contact-requests*` | built |
+
+## Matching (BR22, BR23)
+| FR | Feature | Rules | Endpoints | Status |
+|---|---|---|---|---|
+| FR119 | AI matchmaker brief | words read into closed vocabulary; importance 1-10; six self and partner scales; nothing saved until pressed; "read my words" adds, never removes (D14); horoscope theme hidden until a chart exists; limit `RATE_LIMIT_MATCHMAKER_MAX_PER_DAY` | `GET/PATCH /profile/matchmaker/brief`, `POST /profile/matchmaker/understand` | built |
+| FR120 | Discovery shelves, search, "because", snippet, daily pick | mutual looking-for rule; waiting periods 90 / 21 days; score never leaves server; popularity weight 0 | `/discovery/shelves`, `/search`, `/because`, `/snippet/{id}` | built |
+| FR121 | "How you fit each other" and compatibility | wishes met / close / different / not shared; other side's topics only | `/discovery/fit/{id}`, `/discovery/compatibility/{id}` | built |
+| FR122 | Horoscope check and match | Guna Milan 36, Porutham 10, Mangal separate; unknown time marked provisional; no verdict | `POST /horoscope/check`, `GET /horoscope/match/{id}` | built |
+| FR123 | Shortlist | add, remove, list | `/shortlist*` | built |
+
+## Connections and messages (BR11, BR12)
+| FR | Feature | Rules | Endpoints | Status |
+|---|---|---|---|---|
+| FR124 | Connection request lifecycle | send, accept, decline, withdraw; candidate/mother/father/guardian may answer; per-category sharing; family contact share; cooldowns | `/connection*` and `/connections*` (aliases) | built |
+| FR125 | Messages: incognito, direct, families' group | incognito 30 min idle / deleted on leave; direct needs a real link; group opened by candidate or parent; read marks; close; report in thread | `/messages*`, `/conversations*` (aliases) | built |
+| FR126 | Notifications | kinds: request_received, request_accepted, invitation_received, invitation_accepted, suggestion_received, family_conversation_opened, note_forwarded, profile_disowned, profile_removal_notice, rm_assigned, rm_suggested, rm_interaction_scheduled, rm_suggestion_decided, agent_chosen, agent_contact_suspended, agent_suspended; bell left of profile | `/notifications`, `/notifications/read` | built |
+
+## Trust and safety (BR14, BR27, BR30)
+| FR | Feature | Rules | Endpoints | Status |
+|---|---|---|---|---|
+| FR127 | Face-match verification (optional trust step) | liveness (turn left/right random order), distance < 0.45, 10 attempts/day, expires 2 years, new photo removes it, consent own checkbox, nothing biometric stored. **Limits:** runs in the browser, can be bypassed by code edit or replay, a video replay can beat the challenge, relatives may look alike, no human review screen; the badge text overclaims (critique C2) | `/verification/me`, `/face-match`, `/withdraw` | built with stated limits |
+| FR128 | Block, report, reports with thread snapshot | taxonomy DEC-V1-006 | `/safety/*` | built |
+| FR129 | Operator cases and suspensions, moderation queue, member insights, minor-profile sweep | operator roles | `/operations/*`, `/mangaly/admin/*` | built; human photo review screen thin (M4) |
+
+## Money and growth (BR21, BR24, BR25, BR29)
+| FR | Feature | Rules | Endpoints | Status |
+|---|---|---|---|---|
+| FR130 | Plans and billing | catalogue 2026-09; free plan 3 requests/day; Gold unlocks who shortlisted/viewed (critique H4 conflicts with no-visitor-list rule), contact unlock, full kundli report; Assisted includes Gold plus RM; order, confirm, cancel (no refund), webhook, sandbox pay | `/billing/*` | built on sandbox |
+| FR131 | Marriage agents | apply, admin review, clients, CSV import and template, offline profiles with media, share and answer, export biodata/Excel, contact open with limits and reports and suspects, privacy, admin prices and limits; agent's own face check required (agents.py) | `/agents/*` | built |
+| FR132 | Relationship managers | assign, assignments, search, suggest, interactions, member decision | `/rm/*` | built |
+| FR133 | Wedding arrangements | stages first_meeting, families_agreed, wedding_fixed; places by category, share a place with family; partner offers table (no partners) | `/wedding/*` | built |
+| FR134 | Guides | list and read in 5 languages (migrations 063, 064, 066) | `/guides*` | built |
+
+Not built: guided voice path for the wizard (D18); human face review screen; email verification; refunds and invoices; learning from clicks; dowry report reason (critique H6, not seen in code - unverified).

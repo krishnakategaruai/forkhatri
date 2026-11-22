@@ -3,6 +3,9 @@
     "acceptanceRequired": "ಮುಂದುವರಿಯಲು ದಯವಿಟ್ಟು ಇತ್ತೀಚಿನ ಗೌಪ್ಯತಾ ಸೂಚನೆ ಮತ್ತು ನಿಯಮಗಳನ್ನು ಒಪ್ಪಿಕೊಳ್ಳಿ.",
     "unknownControl": "ಈ ಗೌಪ್ಯತಾ ಆಯ್ಕೆ ಗುರುತಿಸಲಾಗಿಲ್ಲ.",
     "deleteBlockedActiveOrder": "ಹಣ ಪಾವತಿಸಿದ ಪ್ರಮೋಷನ್ ಅಥವಾ ಪ್ಲಾನ್ ಚಾಲ್ತಿಯಲ್ಲಿರುವಾಗ ನಿಮ್ಮ ಡೇಟಾವನ್ನು ಅಳಿಸಲು ಆಗುವುದಿಲ್ಲ. ಅದನ್ನು ರದ್ದುಮಾಡಿ ಅಥವಾ ಮುಗಿಯಲು ಬಿಡಿ, ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
-    "preferenceNotFound": "ಈ ಆದ್ಯತೆ ಸಿಗಲಿಲ್ಲ."
+    "preferenceNotFound": "ಈ ಆದ್ಯತೆ ಸಿಗಲಿಲ್ಲ.",
+    "deleteConfirmRequired": "Type DELETE to confirm that you want to delete your data in Vyapar.",
+    "deleteRateLimited": "Too many deletion attempts. Please try again in an hour.",
+    "deleteOperatorBlocked": "This account holds an administrator role in Vyapar. Remove the role first, then delete."
   }
 }

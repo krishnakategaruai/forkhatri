@@ -94,5 +94,30 @@
     "fromApplied": "మీరు అప్లై చేసిన పోస్ట్‌ల నుండి",
     "fromSaved": "మీరు సేవ్ చేసిన లేదా “ఇలాంటివి ఇంకా” అన్న పోస్ట్‌ల నుండి",
     "fromHidden": "ఆసక్తి లేదని చెప్పిన పోస్ట్‌ల నుండి"
+  },
+  "eraseData": {
+    "title": "Delete my data in Vyapar",
+    "intro": "This permanently removes everything Vyapar holds about you. It cannot be undone. Your ForKhatri account and your data in other ForKhatri modules stay.",
+    "deletedHeading": "What will be deleted",
+    "deletedList": [
+      "Your profile, business details, photos and uploaded files",
+      "Your listings, job posts and saved searches",
+      "Your requests, quotes, messages and reviews",
+      "Your campaigns, team access, tokens and webhooks",
+      "Your notifications, preferences and what Vyapar learned about you"
+    ],
+    "retainedHeading": "What is kept, and why",
+    "retainedList": [
+      "Payment and tax records, if you paid anything (the law requires it). Only an anonymous id, amount and date remain.",
+      "A bare record that a report or ban happened, with no name or text, so removed members cannot return and harm others.",
+      "Security logs for the minimum legal period, with your id replaced."
+    ],
+    "otherPeople": "People you dealt with keep their own copies, shown as Deleted member.",
+    "typePrompt": "Type DELETE to confirm",
+    "typePlaceholder": "DELETE",
+    "button": "Delete my data in Vyapar",
+    "working": "Deleting...",
+    "doneTitle": "Your Vyapar data is deleted",
+    "doneBody": "Everything Vyapar held about you has been removed. You can start again later as a new member. Taking you to ForKhatri."
   }
 }

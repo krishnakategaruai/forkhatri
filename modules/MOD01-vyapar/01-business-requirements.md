@@ -2354,3 +2354,27 @@ These are residual, Step-2-or-later-level details, not Step 1 blockers:
    they reference only the parent ForKhatri platform sign-in's entry and
    return points and the `member_id` identity bridge (BR17 DEC-004). Listing
    phone/OTP contact verification (BR03) stays, as business verification.
+
+
+---
+
+# Addendum 2026-11-22 — business position as built
+
+**Document status:** as built, 2026-11-22. BR01 to BR18 above remain the base. This addendum records what is built versus planned, new owner decisions, and honest risks. Facts only the owner knows are marked OWNER TO CONFIRM.
+
+## New and changed business requirements
+- **BR19 — Low-friction start (extends BR14).** A new member must reach a real result (jobs near them, a live post, or a visible profile) in 3 to 4 screens without being asked what the identity already knows. Rationale: 2026-10-06 audit of three real-style members took 22 to 25 taps and 9 to 11 screens, and one never became visible. Built: FR56, FR57. Success metric: median taps to first action under 8 (not yet measured).
+- **BR20 — Five languages (extends BR14).** English, Hindi, Telugu, Marathi, Kannada, in respectful register (owner rule 2026-09-30, Marathi and Kannada added 2026-10-06). Built FR65. Gap: user content untranslated.
+- **BR21 — Trust beyond text (extends BR13).** Scam shield, "paid on time", closure for every applicant, profession-aware rules for regulated professions, council badges. Built FR62; real register checks blocked on vendors.
+- **BR22 — Agent and host access (extends BR17).** Members may let their own AI agent act through scoped tokens; host platforms may consume signed webhooks. Built FR66, FR67.
+- **BR23 — Money through contracts without taking worker fees.** Contract milestones with held funds exist on a sandbox; no real money moves until a licensed route and vendor exist (BACKLOG B1, D1). Built FR59 as partial.
+
+## Business model: built versus planned
+Built (sandbox payments): Boost purchase and promotion lifecycle (BR10), Business Workspace entitlement (BR11), contract funding ledger. Planned: pay-per-response (V1.5), real settlement, cross-border payments, lending via MOD07, ONDC matching. Pricing values: OWNER TO CONFIRM (the pricing lives in the commercial products table and is dev data).
+
+## Owner decisions recorded (dated)
+2026-09-29 premium look, no saffron-on-black; 2026-09-30 one profile per member, voice as guided conversation, real functionality not dummy; 2026-09-28 pre-call calling is per post, off by default; 2026-10-06 the 14 onboarding decisions and "Vyapar is for members 18 and over"; 2026-10-06 Marathi and Kannada added; 2026-10-02 AI belongs to premium tiers described in plain words.
+
+## Known gaps / risks (from docs/Critique/CRITIQUE-mod01-vyapar.md and MASTER-CRITIQUE-2026-10.md)
+C1 supply and demand may not meet (wedge undecided); C2 scam defence is text-only; C3 probable "aggregator" status under gig-worker law (needs lawyer); H1 Hindi/Telugu shell with English content; H2 "Verified" is thin; H3 job page misses worker questions; H4 no path when a monthly worker is unpaid; H5 ledger without licensed rail (needs lawyer/CA); H6 operator capacity; H7 screens ask riders to think like managers; M4 revenue plan can break trust; M5 DPDP duties from 13 May 2027 (needs lawyer); M7 "event" in the composer overlaps Milavn. Operating model: Samaj heads run ForKhatri (owner direction 2026-10-02); no legal entity or paid operations yet (master finding 9).
+

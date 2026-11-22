@@ -3,6 +3,9 @@
     "acceptanceRequired": "కొనసాగడానికి దయచేసి తాజా గోప్యతా నోటీసు మరియు నిబంధనలను అంగీకరించండి.",
     "unknownControl": "ఈ గోప్యతా నియంత్రణ గుర్తించబడలేదు.",
     "deleteBlockedActiveOrder": "చెల్లింపు ప్రమోషన్ లేదా ప్లాన్ యాక్టివ్‌గా ఉన్నప్పుడు మీ డేటాను తొలగించలేము. దాన్ని రద్దు చేయండి లేదా ముగియనివ్వండి, తర్వాత మళ్లీ ప్రయత్నించండి.",
-    "preferenceNotFound": "ఈ ప్రాధాన్యం కనుగొనబడలేదు."
+    "preferenceNotFound": "ఈ ప్రాధాన్యం కనుగొనబడలేదు.",
+    "deleteConfirmRequired": "Type DELETE to confirm that you want to delete your data in Vyapar.",
+    "deleteRateLimited": "Too many deletion attempts. Please try again in an hour.",
+    "deleteOperatorBlocked": "This account holds an administrator role in Vyapar. Remove the role first, then delete."
   }
 }

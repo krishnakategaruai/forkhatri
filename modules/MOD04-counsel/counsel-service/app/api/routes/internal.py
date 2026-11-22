@@ -32,8 +32,7 @@ async def check(member_id: UUID):
 
 @router.post("/members/{member_id}/erase", dependencies=[Depends(platform_only)])
 async def erase(member_id: UUID):
-    async with db.tx() as conn:
-        return await privacy.erase(conn, member_id, "forkhatri_account_deleted")
+    return await privacy.erase_member(member_id, "forkhatri_account_deleted")
 
 
 @router.get("/members/{member_id}/export", dependencies=[Depends(platform_only)])

@@ -7,6 +7,8 @@ updated: 2026-09-13
 items: "102 | approved: 102 | blockers: 0"
 ---
 
+> **Document status (2026-11-22):** as-built scope. The original text below is kept as history; the **As-built addendum at the end of this file** records what exists today and wins on conflict. Module folder renamed MOD03-mangaly to MOD03-mangalya (inner service and web folders keep `mangaly-`). Related: `09-implementation.md`, `API-REFERENCE.md`, `TRACEABILITY.md`, `RUNBOOK.md`, `GLOSSARY.md`.
+
 # 07 — Technical Requirements — MOD03 Mangaly
 
 ## Revision history
@@ -1779,3 +1781,21 @@ Per IA102: this is a **distinct failure mode from "the write was lost"** — wit
 ## Approval
 
 Architect — [ ] Approved — name, date
+
+
+---
+
+# As-built addendum (2026-11-22): technical as-built summary
+
+Full endpoint list (202 operations, API-001 to API-202): `API-REFERENCE.md`. Environment names: `RUNBOOK.md` section 5. Architecture: `architecture.md`. Data: `07a-data-model-appendix.md`.
+
+- **Processes:** mangaly-web (Next.js, 3000) to mangaly-service (FastAPI, 8000) to PostgreSQL (schemas `mangaly_*`) and to horoscope-service (Node, 8013, service token plus `x-mangaly-viewer`). Sign-in through ForKhatri identity (8100); `proxy.ts` handoff in tunnels.
+- **Components in `mangaly-service/app/components/`:** agents, assisted_matching, audit_bridge, authorization, billing, communication, compatibility, connection, discovery, guides, home_circle, horoscope, identity_bridge, lifecycle, notification_bridge, operations, places, profile, safety, shortlist, trust, wedding. Cross-cutting: idempotency, rate_limiting, events (outbox), i18n, db, config.
+- **Config modules:** `matching_engine.py`, `plans.py`, `profile_schema.py`, `profile_tiers.py`, `ranking_weights.py`, `safety_taxonomy.py`, `thresholds.py`, `paging.py`, `settings.py` (80 settings).
+- **Integrations:** ForKhatri identity; horoscope-service; Anthropic API (matchmaker and biodata reader; keyword fallback without a key); object storage (media, documents, offline media); OpenStreetMap-derived places (`import_osm_places.py`; critique flags OSM policy risk for live search); payments sandbox with Razorpay placeholders and future payment-services; SMS (Twilio, DLT) placeholders; PagerDuty and CSAM report endpoint placeholders.
+- **Realtime / caching:** no dedicated realtime layer found (message delivery mechanism unverified; see `lib/messages.ts`). Daily pick is computed by `compute_daily_picks.py`.
+- **Media:** `/media/{profile_id}/{filename}`; documents via `/profile/documents/{id}/file`; offline media via the agents route; photos shrunk in the browser.
+- **Error model:** `{"error":{"code","message","fields"}}`; notable codes `FORBIDDEN`, `verification_required`.
+- **Rate limits (settings):** login failures, OTP resend, Home Circle invites, connection requests per day, message sends per hour, reports and blocks per day, matchmaker per day; face match 10 per day (durable limiter).
+- **Versioning:** service 0.1.0; plan catalogue 2026-09; duplicate API aliases `/connection` and `/connections`, `/messages` and `/conversations`.
+- **Performance budgets:** none formally set in code; Discover skeleton delay on dev is a known issue (critique M6).

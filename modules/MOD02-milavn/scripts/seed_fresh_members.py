@@ -38,6 +38,12 @@ RAW = [
     ("Venkatesh Naidu", "te"),    # 27 Vyapar: plumber who can barely type, wants work today
     ("Mohan Lal Khatri", "hi"),   # 28 Vyapar: shop owner hiring a helper
     ("Kamala Devi", "te"),        # 29 Vyapar: homemaker selling pickles from home
+    # 30-34: throwaway members for account-deletion tests (one per area), safe to delete
+    ("Delete Test Hub", "en"),        # 30
+    ("Delete Test Vyapar", "en"),     # 31
+    ("Delete Test Milavn", "en"),     # 32
+    ("Delete Test Mangalya", "en"),   # 33
+    ("Delete Test Counsel", "en"),    # 34
 ]
 MEMBERS = [
     {

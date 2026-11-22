@@ -136,6 +136,25 @@ class Settings(BaseSettings):
     admin_module_api_urls: dict[str, str] = {}
     admin_gateway_timeout_seconds: float = 8.0
 
+    # Account deletion (docs/ParentApp/ACCOUNT-DELETION.md): where identity asks each module to
+    # erase a member (POST /internal/v1/members/{id}/erase). Environment only
+    # (ERASE_MODULE_API_URLS); entries here win over MODULE_API_URLS / ADMIN_MODULE_API_URLS, so a
+    # deployment can point erasure at a private network address. Every module in SERVICE_KEYS
+    # must be reachable by one of the three, otherwise its deletion row stays failed (never skipped).
+    erase_module_api_urls: dict[str, str] = {}
+    erase_timeout_seconds: float = 60.0
+    # One-way tombstone for deleted members (HMAC-SHA256 of the member id). Real secret in production.
+    deletion_tombstone_pepper: str = "CHANGE_ME_dev_deletion_tombstone_pepper"
+    deletion_retry_interval_seconds: int = 30
+    deletion_retry_window_days: int = 7
+    deletion_rate_limit_per_hour: int = 3
+
+    @property
+    def erase_modules(self) -> dict[str, str | None]:
+        """Every registered module (those holding a service key) and its erase base URL, if configured."""
+        urls = {**self.admin_modules, **self.erase_module_api_urls}
+        return {module: urls.get(module) for module in self.service_keys}
+
     @property
     def admin_modules(self) -> dict[str, str]:
         return {**self.module_api_urls, **self.admin_module_api_urls}
@@ -169,6 +188,8 @@ class Settings(BaseSettings):
             or any("CHANGE_ME" in k or len(k) < 32 for k in self.service_keys.values())
         ):
             problems.append("OTP_PEPPER and SERVICE_KEYS must be real secrets of at least 32 characters")
+        if "CHANGE_ME" in self.deletion_tombstone_pepper or len(self.deletion_tombstone_pepper) < 32:
+            problems.append("DELETION_TOMBSTONE_PEPPER must be a real secret of at least 32 characters")
         if "console" in (self.sms_provider, self.email_provider):
             problems.append("SMS_PROVIDER and EMAIL_PROVIDER must not be console (use a real provider or disabled)")
         if self.email_provider == "resend" and (not self.resend_api_key or "CHANGE_ME" in self.resend_api_key):
