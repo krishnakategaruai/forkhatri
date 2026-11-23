@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { postJson } from "@/lib/api";
+import { clearAllDrafts } from "@/lib/draft";
 import { entranceUrl } from "@/lib/platform";
 
 /* Account deletion, kind B (docs/ParentApp/ACCOUNT-DELETION.md): "Delete my
@@ -23,6 +24,7 @@ export default function DeleteMyData() {
     const res = await postJson("/privacy/delete-account-data", { confirm: "DELETE" });
     setBusy(false);
     if (res.ok) {
+      await clearAllDrafts();
       try {
         Object.keys(window.localStorage)
           .filter((k) => k.startsWith("mangaly."))
@@ -32,7 +34,9 @@ export default function DeleteMyData() {
         /* storage unavailable: nothing to clear */
       }
       setState("done");
-      window.setTimeout(() => window.location.assign(entranceUrl()), 2500);
+      // Replace the deleted session's history entry so Back cannot restore
+      // the post-deletion screen from the browser's back/forward cache.
+      window.setTimeout(() => window.location.replace(entranceUrl()), 2500);
       return;
     }
     setState(res.status === 429 ? "limited" : res.status === 409 ? "role" : "error");

@@ -203,6 +203,10 @@ export default function Entrance({ initialSheet }: { initialSheet?: SheetKind })
 
   const onSignedIn = useCallback(
     async (signedIn: Member) => {
+      // A new sign-in starts clean: the "account deleted" notice (and a half-finished
+      // delete) from the previous person must never follow the new session.
+      setNotice(null);
+      setDeleteStarted(false);
       const nextLang = signedIn.preferred_language;
       const registry = await fetchRegistry(nextLang);
       const target = safeReturnTo(readReturnTo(), registry.modules);

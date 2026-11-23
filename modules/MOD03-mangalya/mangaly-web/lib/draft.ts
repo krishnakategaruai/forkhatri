@@ -83,3 +83,8 @@ export async function saveDraft(memberKey: string, draft: ProfileDraft): Promise
 export async function clearDraft(memberKey: string): Promise<void> {
   await run("readwrite", (s) => s.delete(memberKey));
 }
+
+/** Clear every locally saved profile draft after the member deletes their data. */
+export async function clearAllDrafts(): Promise<void> {
+  await run("readwrite", (s) => s.clear());
+}

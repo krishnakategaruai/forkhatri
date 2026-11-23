@@ -899,6 +899,7 @@
     },
     "resumeNote": "Your answers were kept on this phone.",
     "startAgain": "Start again",
+    "editBasics": "Edit name and basics",
     "stepOf": "{{current}} of {{total}}",
     "stepName": {
       "about": "About",

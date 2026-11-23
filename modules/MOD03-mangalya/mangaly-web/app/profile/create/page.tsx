@@ -771,6 +771,15 @@ function CreateProfileWizard() {
               {t("profile:onboard.startAgain")}
             </button>
           )}
+          {step !== "about" && (
+            <button
+              type="button"
+              className="link link--button"
+              onClick={() => setStep("about")}
+            >
+              {t("profile:onboard.editBasics")}
+            </button>
+          )}
         </div>
         <div className="progress" aria-hidden="true">
           <div className="progress__bar" style={{ width: `${((stepIndex + 1) / steps.length) * 100}%` }} />
