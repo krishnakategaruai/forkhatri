@@ -28,6 +28,7 @@
     "hasProfile": "has a Mangalya profile",
     "noOne": "No one on ForKhatri matches that. You can type their phone number instead.",
     "noCandidate": "No Mangalya profile matches that.",
+    "joinByNumber": "If {{number}} is already on ForKhatri, you can still ask to join: the request waits for them in Mangalya.",
     "inviteNumber": "Not on ForKhatri yet — we will invite {{number}} by phone.",
     "change": "Change",
     "youAreTheir": "You are their",
@@ -53,6 +54,18 @@
     "invitesYou": "{{name}} invites you into their Home Circle as their {{relationship}}",
     "addsYouTo": "{{name}} invites you into {{candidate}}'s Home Circle, as {{first}}'s {{relationship}}",
     "someone": "Someone"
+  },
+  "waiting": {
+    "title": "Waiting to join",
+    "invitedAs": "Invited as {{relationship}}",
+    "notAccepted": "Not accepted yet"
+  },
+  "drafts": {
+    "title": "Profiles you are still making",
+    "kept": "Kept on this phone",
+    "continue": "Continue",
+    "unnamed": "Not named yet",
+    "newOne": "Start another profile"
   },
   "lookingFor": {
     "chip": "Looking for {{value}}",

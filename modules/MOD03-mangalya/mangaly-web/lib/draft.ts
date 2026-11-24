@@ -71,6 +71,41 @@ async function run<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRe
   });
 }
 
+/* A member can keep several drafts at once (a brother's, a daughter's, their
+ * own). The first keeps the plain member key; later ones add "#<id>". */
+export function newDraftKey(memberKey: string): string {
+  return `${memberKey}#${Date.now().toString(36)}`;
+}
+
+export async function listDrafts(memberKey: string): Promise<{ key: string; draft: ProfileDraft }[]> {
+  const db = await open();
+  if (!db) return [];
+  return new Promise((resolve) => {
+    const out: { key: string; draft: ProfileDraft }[] = [];
+    try {
+      const tx = db.transaction(STORE, "readonly");
+      const req = tx.objectStore(STORE).openCursor();
+      req.onsuccess = () => {
+        const cur = req.result;
+        if (!cur) return;
+        const key = String(cur.key);
+        const d = cur.value as ProfileDraft;
+        if ((key === memberKey || key.startsWith(`${memberKey}#`)) && d && typeof d === "object" && "forWhom" in d) {
+          out.push({ key, draft: d });
+        }
+        cur.continue();
+      };
+      req.onerror = () => resolve([]);
+      tx.oncomplete = () => {
+        db.close();
+        resolve(out.sort((a, b) => b.draft.savedAt - a.draft.savedAt));
+      };
+    } catch {
+      resolve([]);
+    }
+  });
+}
+
 export async function loadDraft(memberKey: string): Promise<ProfileDraft | null> {
   const d = await run<ProfileDraft>("readonly", (s) => s.get(memberKey) as IDBRequest<ProfileDraft>);
   return d && typeof d === "object" && "forWhom" in d ? d : null;

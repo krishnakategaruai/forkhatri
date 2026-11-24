@@ -1002,6 +1002,8 @@
       "draftKept": "Nothing is shown to anyone yet. Open Mangalya again on this phone to carry on; you need at least one photo to publish.",
       "alreadyTitle": "This number is already on ForKhatri",
       "alreadyJoined": "{{name}} already has a ForKhatri account. Ask {{name}} to add you to their Home Circle with your mobile number; the invitation will appear here. Your draft stays on this phone.",
+      "askToJoin": "Ask to join {{name}}'s Home Circle",
+      "askSent": "Request sent. It waits for {{name}} in Mangalya and shows under \"Waiting to join\" on your Circle page.",
       "lookAroundMeanwhile": "Look around meanwhile",
       "backToDraft": "Back to my draft"
     },

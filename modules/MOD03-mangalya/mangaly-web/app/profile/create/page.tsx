@@ -15,8 +15,8 @@ import PlaceSearch, { type PlaceValue } from "@/components/PlaceSearch";
 import RelationChips from "@/components/RelationChips";
 import { setManaging } from "@/lib/api";
 import { writeBrowseLookingFor } from "@/lib/activeContext";
-import { clearDraft, loadDraft, saveDraft, type DraftFile, type ProfileDraft } from "@/lib/draft";
-import { type Relation } from "@/lib/homeCircle";
+import { clearDraft, listDrafts, loadDraft, newDraftKey, saveDraft, type DraftFile, type ProfileDraft } from "@/lib/draft";
+import { RELATION_ROLE, invite, type Relation } from "@/lib/homeCircle";
 import {
   attachDocument,
   biodataReaderAvailable,
@@ -89,7 +89,7 @@ export default function CreateProfilePage() {
   );
 }
 
-type Screen = "who" | "biodata" | "biodataCheck" | "form";
+type Screen = "who" | "biodata" | "biodataCheck" | "form" | "drafts";
 
 function CreateProfileWizard() {
   const { t, i18n } = useTranslation(["profile", "common", "circle", "verify"]);
@@ -134,8 +134,12 @@ function CreateProfileWizard() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<"draftKept" | "alreadyJoined" | null>(null);
+  const [askState, setAskState] = useState<"idle" | "sending" | "sent">("idle");
+  const [askError, setAskError] = useState<string | null>(null);
   const [ownName, setOwnName] = useState("");
+  // The key this draft is saved under: one per profile being made.
   const [memberKey, setMemberKey] = useState<string | null>(null);
+  const [drafts, setDrafts] = useState<{ key: string; draft: ProfileDraft }[]>([]);
   const [resumed, setResumed] = useState(false);
   const [lookAroundOpen, setLookAroundOpen] = useState(false);
   const [verified, setVerified] = useState<boolean | null>(null);
@@ -156,9 +160,26 @@ function CreateProfileWizard() {
       const s = await requireSession();
       if (!alive || !s) return;
       if (s.display_name) setOwnName(s.display_name);
-      const key = s.account_id || "member";
+      const base = s.account_id || "member";
+      const all = await listDrafts(base);
+      if (!alive) return;
+      const wanted = params.get("draft");
+      let key = base;
+      let d: ProfileDraft | null = null;
+      if (params.get("start") === "1") {
+        key = all.length > 0 ? newDraftKey(base) : base;
+      } else if (wanted && all.some((x) => x.key === wanted)) {
+        key = wanted;
+        d = await loadDraft(wanted);
+      } else if (all.length > 1 && !forParam) {
+        setDrafts(all);
+        setScreen("drafts");
+        return;
+      } else if (all.length >= 1) {
+        key = all[0].key;
+        d = all[0].draft;
+      }
       setMemberKey(key);
-      const d = params.get("start") === "1" ? null : await loadDraft(key);
       if (!alive) return;
       if (d) {
         setForWhom(d.forWhom as ForWhom);
@@ -416,6 +437,22 @@ function CreateProfileWizard() {
     setError(result.kind === "network" ? t("profile:error.network") : (result.message ?? t("profile:error.network")));
   }
 
+  /** The number is already on ForKhatri: ask to join their Home Circle instead. */
+  async function askToJoin() {
+    if (!relation) return;
+    setAskState("sending");
+    setAskError(null);
+    const outcome = await invite({
+      invitee_identifier: childPhone.replace(/[\s-]/g, ""),
+      relation,
+      relationship_type: RELATION_ROLE[relation],
+      direction: "to_candidate",
+    });
+    if (outcome.ok) return setAskState("sent");
+    setAskState("idle");
+    setAskError(outcome.message ?? t("profile:error.network"));
+  }
+
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (step === "work" && !forChild) return void publish(false);
@@ -502,6 +539,36 @@ function CreateProfileWizard() {
     );
   }
 
+  if (screen === "drafts") {
+    return (
+      <main className="screen screen--form">
+        <div className="form wizard-step">
+          <div className="wizard-step__head">
+            <h1 className="h2">{t("circle:drafts.title")}</h1>
+          </div>
+          <ul className="category-list">
+            {drafts.map(({ key, draft: d }) => (
+              <li key={key} className="category-card" style={{ width: "100%" }}>
+                <span className="category-card__body">
+                  <span className="category-card__title">{d.name.trim() || t("circle:drafts.unnamed")}</span>
+                  <span className="category-card__preview">{t("circle:drafts.kept")}</span>
+                </span>
+                <a className="btn btn--primary" href={`${window.location.pathname}?draft=${encodeURIComponent(key)}`}>
+                  {t("circle:drafts.continue")}
+                </a>
+              </li>
+            ))}
+          </ul>
+          <div className="form__actions">
+            <a className="link link--button" href={`${window.location.pathname}?start=1`}>
+              {t("circle:drafts.newOne")}
+            </a>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   if (notice === "draftKept" || notice === "alreadyJoined") {
     return (
       <main className="screen screen--form">
@@ -517,6 +584,18 @@ function CreateProfileWizard() {
                 : t("profile:onboard.publish.alreadyJoined", { name: firstName })}
             </p>
           </div>
+          {notice === "alreadyJoined" && relation && (
+            <div className="form__actions">
+              {askState === "sent" ? (
+                <p className="caption" role="status">{t("profile:onboard.publish.askSent", { name: firstName })}</p>
+              ) : (
+                <button type="button" className="btn btn--primary" disabled={askState === "sending"} onClick={() => void askToJoin()}>
+                  {t("profile:onboard.publish.askToJoin", { name: firstName })}
+                </button>
+              )}
+              {askError && <p className="form__error" role="alert">{askError}</p>}
+            </div>
+          )}
           <div className="form__actions">
             <button type="button" className="btn btn--primary" onClick={() => router.push("/discover")}>
               {t("profile:onboard.publish.lookAroundMeanwhile")}
@@ -988,6 +1067,15 @@ function CreateProfileWizard() {
                 </dd>
               </div>
             </dl>
+            <Field
+              label={t(`profile:onboard.about.name_${kin}`)}
+              value={name}
+              onChange={setName}
+              type="text"
+              autoComplete="off"
+              disabled={busy}
+              required
+            />
             <Field
               label={t(`profile:onboard.publish.phone_${kin === "self" ? "other" : kin}`)}
               value={childPhone}

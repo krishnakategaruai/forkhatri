@@ -119,7 +119,7 @@
     "homeCircle": "Home Circle",
     "signOut": "Sign out",
     "fillIn": "Fill in {{name}}'s profile",
-    "createForChild": "Create a profile for my son or daughter"
+    "createForChild": "Create a profile for a family member"
   },
   "requestPrompt": {
     "forYou": "A request for you",

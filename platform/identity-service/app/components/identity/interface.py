@@ -409,6 +409,20 @@ async def provision_member(
     return row.id, identifier.value
 
 
+async def member_by_phone(db: AsyncSession, *, raw_phone: str) -> tuple[UUID, str, str] | None:
+    """The existing member behind a mobile number: (member id, E.164 number,
+    display name), or None. For a module that has been asked to connect two
+    people who are both already on ForKhatri (a brother asking to join a
+    sister's Home Circle)."""
+    identifier = normalize(raw_phone)
+    if identifier.kind != "phone":
+        raise InvalidIdentifier("Enter a valid mobile number.")
+    member = await _member_by_identifier(db, identifier.value)
+    if member is None:
+        return None
+    return member.member_id, identifier.value, member.display_name
+
+
 async def members_by_id(db: AsyncSession, member_ids: list[UUID]) -> dict[UUID, Member]:
     """Active members among `member_ids` (unknown or inactive ids are omitted)."""
     if not member_ids:

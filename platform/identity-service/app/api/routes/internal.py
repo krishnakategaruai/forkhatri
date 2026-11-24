@@ -98,6 +98,29 @@ async def provision_member(
     return {"member_id": str(member_id), "phone_e164": phone_e164}
 
 
+class PhoneLookupRequest(BaseModel):
+    phone: str = Field(min_length=6, max_length=32)
+
+
+@router.post("/members/by-phone")
+async def member_by_phone(
+    body: PhoneLookupRequest, service: CallingService, db: DbSession, settings: AppSettings
+) -> dict[str, Any]:
+    """The existing member behind a mobile number, for a module connecting two
+    people who are both already on ForKhatri. Only services trusted with
+    identifiers may ask."""
+    if service not in settings.services_receiving_identifiers:
+        raise DomainError("service_forbidden", "This service may not look members up by number.", 403)
+    try:
+        found = await identity.member_by_phone(db, raw_phone=body.phone)
+    except identity.InvalidIdentifier as exc:
+        raise DomainError("identifier_invalid", str(exc), 422) from exc
+    if found is None:
+        raise DomainError("member_not_found", "No member has that number.", 404)
+    member_id, phone_e164, display_name = found
+    return {"member_id": str(member_id), "phone_e164": phone_e164, "display_name": display_name}
+
+
 @router.post("/members/{member_id}/retire-provisioned")
 async def retire_provisioned(
     member_id: UUID, service: CallingService, db: DbSession, settings: AppSettings

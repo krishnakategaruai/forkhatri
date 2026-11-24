@@ -285,6 +285,22 @@ async def invite(
         ).scalar_one_or_none()
 
     if direction == "to_candidate":
+        if invitee_account_id is None and identifier is not None and "@" not in identifier:
+            # On ForKhatri but never opened Mangalya: the platform knows them.
+            from app.components.identity_bridge import platform
+
+            try:
+                found = await platform.member_by_phone(phone=identifier)
+            except (platform.InvalidPhone, platform.PlatformIdentityUnavailable):
+                found = None
+            if found is not None:
+                member_id, phone_e164, display_name = found
+                invitee_account_id = (
+                    await session.execute(
+                        text("SELECT mangaly_identity.ensure_account_for_member(:id, :phone, :name)"),
+                        {"id": member_id, "phone": phone_e164, "name": display_name},
+                    )
+                ).scalar_one()
         if invitee_account_id is None:
             raise CandidateNotOnForKhatri
         candidate_account_id = invitee_account_id
@@ -414,6 +430,57 @@ async def list_pending_invitations(
             relation=row.relation,
         )
         for row in rows
+    ]
+
+
+@dataclass(frozen=True, slots=True)
+class SentInvitationSummary:
+    id: UUID
+    candidate_account_id: UUID
+    relationship_type: RelationshipType
+    relation: str | None
+    created_at: datetime
+    direction: str
+    invitee_hint: str | None
+
+
+def _mask_identifier(identifier: str | None) -> str | None:
+    if not identifier:
+        return None
+    if "@" in identifier:
+        local, _, domain = identifier.partition("@")
+        return f"{local[:1]}•••@{domain}"
+    digits = "".join(ch for ch in identifier if ch.isdigit())
+    return f"•••••{digits[-4:]}" if len(digits) >= 4 else None
+
+
+async def list_sent_invitations(
+    session: AsyncSession, *, inviter_account_id: UUID, candidate_account_id: UUID | None = None
+) -> list[SentInvitationSummary]:
+    """Invitations the caller sent that nobody has answered yet, so a circle can
+    show "waiting for acceptance" beside the people who have joined. The invitee
+    is shown only as a masked phone or email."""
+    rows = await session.execute(
+        text(
+            "SELECT id, candidate_profile_id, relationship_type, relation, created_at, "
+            "direction, invitee_identifier FROM mangaly_home_circle.invitation "
+            "WHERE inviter_account_id = :inviter AND status = 'pending' "
+            "AND (CAST(:candidate AS uuid) IS NULL OR candidate_profile_id = :candidate) "
+            "ORDER BY created_at DESC"
+        ),
+        {"inviter": inviter_account_id, "candidate": candidate_account_id},
+    )
+    return [
+        SentInvitationSummary(
+            id=r["id"],
+            candidate_account_id=r["candidate_profile_id"],
+            relationship_type=RelationshipType(r["relationship_type"]),
+            relation=r["relation"],
+            created_at=r["created_at"],
+            direction=r["direction"],
+            invitee_hint=_mask_identifier(r["invitee_identifier"]),
+        )
+        for r in rows.mappings()
     ]
 
 

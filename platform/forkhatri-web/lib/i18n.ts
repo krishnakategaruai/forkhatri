@@ -23,6 +23,7 @@ const en = {
   // Arrival
   arrivalKicker: "Welcome to ForKhatri",
   arrivalPromise: "Your community. Your opportunities. Your support. Your growth.",
+  arrivalStory: "ForKhatri is one home for the Khatri family: find work, find a life partner, find guidance, and stand by each other.",
   askIdentifier: "Let's begin. What's your mobile number or email?",
   identifierLabel: "Mobile number or email",
   identifierPlaceholder: "Mobile number or email",
@@ -219,6 +220,7 @@ const hi: Dictionary = {
 
   arrivalKicker: "ForKhatri में आपका स्वागत है",
   arrivalPromise: "आपका समुदाय। आपके अवसर। आपका साथ। आपकी प्रगति।",
+  arrivalStory: "ForKhatri खत्री परिवार का एक साझा घर है: यहाँ काम मिले, जीवनसाथी मिले, मार्गदर्शन मिले, और हम एक-दूसरे के साथ खड़े हों।",
   askIdentifier: "चलिए शुरू करें। आपका मोबाइल नंबर या ईमेल क्या है?",
   identifierLabel: "मोबाइल नंबर या ईमेल",
   identifierPlaceholder: "मोबाइल नंबर या ईमेल",
@@ -407,6 +409,7 @@ const te: Dictionary = {
 
   arrivalKicker: "ForKhatri కి స్వాగతం",
   arrivalPromise: "మీ సమాజం. మీ అవకాశాలు. మీ తోడు. మీ ఎదుగుదల.",
+  arrivalStory: "ForKhatri ఖత్రీ కుటుంబానికి ఒకే ఇల్లు: ఇక్కడ పని దొరుకుతుంది, జీవిత భాగస్వామి దొరుకుతారు, మార్గదర్శనం దొరుకుతుంది, ఒకరికొకరు తోడుగా నిలుస్తాం.",
   askIdentifier: "మొదలుపెడదాం. మీ మొబైల్ నంబర్ లేదా ఈమెయిల్ ఏమిటి?",
   identifierLabel: "మొబైల్ నంబర్ లేదా ఈమెయిల్",
   identifierPlaceholder: "మొబైల్ నంబర్ లేదా ఈమెయిల్",
@@ -595,6 +598,7 @@ const mr: Dictionary = {
 
   arrivalKicker: "ForKhatri मध्ये तुमचे स्वागत आहे",
   arrivalPromise: "तुमचा समाज. तुमच्या संधी. तुमची साथ. तुमची प्रगती.",
+  arrivalStory: "ForKhatri हे खत्री कुटुंबाचे एकच घर आहे: इथे काम मिळते, जीवनसाथी मिळतो, मार्गदर्शन मिळते आणि आपण एकमेकांच्या पाठीशी उभे राहतो.",
   askIdentifier: "चला सुरू करूया. तुमचा मोबाइल नंबर किंवा ईमेल काय आहे?",
   identifierLabel: "मोबाइल नंबर किंवा ईमेल",
   identifierPlaceholder: "मोबाइल नंबर किंवा ईमेल",
@@ -783,6 +787,7 @@ const kn: Dictionary = {
 
   arrivalKicker: "ForKhatri ಗೆ ಸ್ವಾಗತ",
   arrivalPromise: "ನಿಮ್ಮ ಸಮಾಜ. ನಿಮ್ಮ ಅವಕಾಶಗಳು. ನಿಮ್ಮ ಬೆಂಬಲ. ನಿಮ್ಮ ಬೆಳವಣಿಗೆ.",
+  arrivalStory: "ForKhatri ಖತ್ರಿ ಕುಟುಂಬಕ್ಕೆ ಒಂದೇ ಮನೆ: ಇಲ್ಲಿ ಕೆಲಸ ಸಿಗುತ್ತದೆ, ಜೀವನಸಂಗಾತಿ ಸಿಗುತ್ತಾರೆ, ಮಾರ್ಗದರ್ಶನ ಸಿಗುತ್ತದೆ, ಒಬ್ಬರಿಗೊಬ್ಬರು ಬೆಂಬಲವಾಗಿ ನಿಲ್ಲುತ್ತೇವೆ.",
   askIdentifier: "ಶುರು ಮಾಡೋಣ. ನಿಮ್ಮ ಮೊಬೈಲ್ ನಂಬರ್ ಅಥವಾ ಇಮೇಲ್ ಯಾವುದು?",
   identifierLabel: "ಮೊಬೈಲ್ ನಂಬರ್ ಅಥವಾ ಇಮೇಲ್",
   identifierPlaceholder: "ಮೊಬೈಲ್ ನಂಬರ್ ಅಥವಾ ಇಮೇಲ್",

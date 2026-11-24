@@ -185,6 +185,21 @@ export async function getContexts(): Promise<Contexts | null> {
   return await getJson<Contexts>('/home-circle/contexts');
 }
 
+export type SentInvitation = {
+  id: string;
+  candidate_account_id: string;
+  relationship_type: RelationshipType;
+  relation?: Relation | null;
+  created_at: string;
+  direction: 'to_member' | 'to_candidate';
+  invitee_hint?: string | null;
+};
+
+/** Invitations the caller sent that nobody has answered yet. */
+export async function listSentInvitations(forCandidate?: string): Promise<SentInvitation[]> {
+  return (await getJson<SentInvitation[]>(`/home-circle/invitations/sent${query({ for_candidate: forCandidate })}`)) ?? [];
+}
+
 /** Members of a candidate's circle; omitted ⇒ the caller's own. */
 export async function listMembers(forCandidate?: string): Promise<Member[]> {
   return (await getJson<Member[]>(`/home-circle/members${query({ for_candidate: forCandidate })}`)) ?? [];

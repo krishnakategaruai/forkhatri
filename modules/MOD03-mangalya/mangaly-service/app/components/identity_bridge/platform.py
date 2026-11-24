@@ -221,6 +221,25 @@ class InvalidPhone(Exception):
     """The platform did not accept the number as a mobile number."""
 
 
+async def member_by_phone(*, phone: str) -> tuple[UUID, str, str] | None:
+    """The existing ForKhatri member behind a number: (member id, E.164 number,
+    display name), or None when nobody has it. Raises `InvalidPhone` or
+    `PlatformIdentityUnavailable`."""
+    try:
+        response = await _get_client().post("/internal/v1/members/by-phone", json={"phone": phone})
+    except httpx.HTTPError as exc:
+        raise PlatformIdentityUnavailable from exc
+    if response.status_code == 404:
+        return None
+    if response.status_code == 422:
+        raise InvalidPhone
+    if response.status_code != 200:
+        logger.warning("member lookup by phone answered %s", response.status_code)
+        raise PlatformIdentityUnavailable
+    body = response.json()
+    return UUID(body["member_id"]), body["phone_e164"], body["display_name"]
+
+
 async def provision_member(*, phone: str, display_name: str, preferred_language: str) -> tuple[UUID, str]:
     """[DEC-V1-019] Ask the Identity & Trust Service to create a member for a
     son or daughter who has not joined yet. Their number is the key: when they

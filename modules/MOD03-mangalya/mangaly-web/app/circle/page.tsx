@@ -10,7 +10,8 @@ import Vignette from "@/components/Vignette";
 import CircleInvite from "@/components/CircleInvite";
 import RelationChips from "@/components/RelationChips";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { listDrafts, type ProfileDraft } from "@/lib/draft";
 import { useTranslation } from "react-i18next";
 
 import { Avatar } from "@/components/Avatar";
@@ -33,8 +34,10 @@ import {
   approveContactRequest,
   declineContactRequest,
   type ContactRequest,
+  listSentInvitations,
   listSharedNotes,
   listSuggestions,
+  type SentInvitation,
   readNote,
   removeMember,
   type Member,
@@ -73,6 +76,10 @@ type State = {
   /* Requests already sent for the candidate this screen is about — so a parent
    * opening Circle sees what has gone out, not just who is in the family. */
   sentForCandidate: Connection[];
+  /* Invitations sent that nobody has answered, and profiles still being made
+   * on this phone — both belong in the circle, not only the people who joined. */
+  sentInvitations: SentInvitation[];
+  drafts: { key: string; draft: ProfileDraft }[];
   snippets: Record<string, Snippet | null>;
 };
 
@@ -91,8 +98,11 @@ export default function CirclePage() {
     sharedNotes: [],
     suggestions: [],
     sentForCandidate: [],
+    sentInvitations: [],
+    drafts: [],
     snippets: {},
   });
+  const meKey = useRef<string | null>(null);
   // Who "you" are in a list of other people — used to mark your own row in the
   // circle and to say which requests you sent yourself.
   const [meAccountId, setMeAccountId] = useState<string | null>(null);
@@ -128,6 +138,10 @@ export default function CirclePage() {
       listContactRequests(),
       listSent(),
     ]);
+    const [sentInvitations, drafts] = await Promise.all([
+      listSentInvitations(circleOf).catch(() => []),
+      circleOf || !meKey.current ? Promise.resolve([]) : listDrafts(meKey.current),
+    ]);
     const subject = circleOf;
     // Own context: `/connections/sent` is already scoped to this member's
     // own search, so every row is a request sent for them.
@@ -154,6 +168,8 @@ export default function CirclePage() {
       sharedNotes,
       suggestions,
       sentForCandidate,
+      sentInvitations,
+      drafts,
       snippets: Object.fromEntries(snippetEntries),
     });
   }
@@ -169,6 +185,7 @@ export default function CirclePage() {
         return;
       }
       setMeAccountId(session.account_id);
+      meKey.current = session.account_id || "member";
       await refresh();
     })();
     return () => {
@@ -338,6 +355,54 @@ export default function CirclePage() {
                   {t("circle:contactRequests.decline")}
                 </button>
               </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ) : null;
+
+  const waitingCard =
+    state.sentInvitations.length > 0 ? (
+      <div className="card">
+        <h2 className="h2">{t("circle:waiting.title")}</h2>
+        <ul className="category-list">
+          {state.sentInvitations.map((inv) => (
+            <li key={inv.id} className="category-card" style={{ width: "100%" }}>
+              <Avatar anonymized size={44} />
+              <span className="category-card__body">
+                <span className="category-card__title">
+                  {inv.invitee_hint ?? t(relationKey(inv.relation, inv.relationship_type))}
+                </span>
+                <span className="category-card__preview">
+                  {[
+                    t("circle:waiting.invitedAs", {
+                      relationship: t(relationKey(inv.relation, inv.relationship_type)).toLowerCase(),
+                    }),
+                    t("circle:waiting.notAccepted"),
+                  ].join(" · ")}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ) : null;
+
+  const draftsCard =
+    state.drafts.length > 0 ? (
+      <div className="card">
+        <h2 className="h2">{t("circle:drafts.title")}</h2>
+        <ul className="category-list">
+          {state.drafts.map(({ key, draft: d }) => (
+            <li key={key} className="category-card" style={{ width: "100%" }}>
+              <Avatar name={d.name.trim() || undefined} anonymized={!d.name.trim()} size={44} />
+              <span className="category-card__body">
+                <span className="category-card__title">{d.name.trim() || t("circle:drafts.unnamed")}</span>
+                <span className="category-card__preview">{t("circle:drafts.kept")}</span>
+              </span>
+              <Link className="icon-btn icon-btn--text" href={`/profile/create?draft=${encodeURIComponent(key)}`}>
+                {t("circle:drafts.continue")}
+              </Link>
             </li>
           ))}
         </ul>
@@ -559,6 +624,8 @@ export default function CirclePage() {
             t("circle:members.emptyFamily", { name: firstName }),
           )}
 
+          {waitingCard}
+
           {/* A member can bring another relative in — the circle grows the way
               a real family does, not only through the candidate. */}
           <CircleInvite
@@ -661,6 +728,10 @@ export default function CirclePage() {
         {contactRequestsCard}
 
         {familyNotesCard}
+
+        {draftsCard}
+
+        {waitingCard}
 
         {/* People first, then the way to add more — the order WhatsApp's
             group info and Google Family both use. */}

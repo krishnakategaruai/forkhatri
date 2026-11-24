@@ -155,6 +155,38 @@ async def list_pending_invitations(
     ]
 
 
+class SentInvitationResponse(BaseModel):
+    id: str
+    candidate_account_id: str
+    relationship_type: str
+    relation: str | None = None
+    created_at: str
+    direction: str
+    invitee_hint: str | None = None
+
+
+@router.get("/invitations/sent", response_model=list[SentInvitationResponse])
+async def list_sent_invitations(
+    session: DbSession, account_id: AuthenticatedAccount, for_candidate: UUID | None = None
+) -> list[SentInvitationResponse]:
+    """Invitations the caller sent that are still waiting for an answer."""
+    rows = await home_circle.list_sent_invitations(
+        session, inviter_account_id=account_id, candidate_account_id=for_candidate
+    )
+    return [
+        SentInvitationResponse(
+            id=str(r.id),
+            candidate_account_id=str(r.candidate_account_id),
+            relationship_type=r.relationship_type.value,
+            relation=r.relation,
+            created_at=r.created_at.isoformat(),
+            direction=r.direction,
+            invitee_hint=r.invitee_hint,
+        )
+        for r in rows
+    ]
+
+
 class PersonResponse(BaseModel):
     account_id: str
     display_name: str | None

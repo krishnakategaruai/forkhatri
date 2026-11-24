@@ -435,6 +435,7 @@ export default function Arrival({ t, lang, onLang, returnModuleName, notice, onS
       </div>
 
       <p className="arrival-promise">{t("arrivalPromise")}</p>
+      <p className="arrival-story">{t("arrivalStory")}</p>
     </main>
   );
 }

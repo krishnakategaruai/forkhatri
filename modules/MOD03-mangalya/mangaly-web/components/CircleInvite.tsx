@@ -83,7 +83,7 @@ export default function CircleInvite({
   const shown = q.trim().length >= 2 ? results : [];
 
   async function send() {
-    if (!relation || (!picked && !(typedNumber && mode !== "join"))) return;
+    if (!relation || (!picked && !typedNumber)) return;
     setSending(true);
     setError(null);
     const outcome = await invite({
@@ -203,6 +203,11 @@ export default function CircleInvite({
               {mode === "join" ? (
                 <>
                   {t("circle:invite.noCandidate")}{" "}
+                  {typedNumber && (
+                    <>
+                      {t("circle:invite.joinByNumber", { number: typedNumber })}{" "}
+                    </>
+                  )}
                   <Link className="link" href="/profile/create?for=child">
                     {t("circle:invite.createForThem")}
                   </Link>
@@ -293,7 +298,7 @@ export default function CircleInvite({
           disabled={
             sending ||
             !relation ||
-            !(picked || (typedNumber && mode !== "join"))
+            !(picked || typedNumber)
           }
           onClick={() => void send()}
         >
